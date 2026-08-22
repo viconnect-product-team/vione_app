@@ -1,0 +1,341 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import {
+  Award,
+  Download,
+  Handshake,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  TrendingUp,
+  UserPlus,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { AppShell } from "@/components/dashboard/AppShell";
+import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/PageKit";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { useUrlState } from "@/hooks/use-url-state";
+import { useServerData } from "@/hooks/use-server-data";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import {
+  createSponsorFn,
+  deleteSponsorFn,
+  listSponsorsFn,
+  updateSponsorFn,
+  type Sponsor,
+} from "@/lib/sponsors.functions";
+import { SponsorOnboardWizard } from "@/components/dashboard/SponsorOnboardWizard";
+import { useFmt, useT, type TKey } from "@/lib/i18n";
+
+export const Route = createFileRoute("/sponsors")({
+  component: SponsorsPage,
+});
+
+const TIER_KEY: Record<Sponsor["tier"], TKey> = {
+  platinum: "sponsors.tier.platinum",
+  gold: "sponsors.tier.gold",
+  silver: "sponsors.tier.silver",
+  bronze: "sponsors.tier.bronze",
+};
+const TIER_COLOR: Record<Sponsor["tier"], string> = {
+  platinum: "oklch(0.55 0.05 280)",
+  gold: "oklch(0.72 0.15 85)",
+  silver: "oklch(0.75 0.02 250)",
+  bronze: "oklch(0.60 0.12 50)",
+};
+
+function SponsorsPage() {
+  const t = useT();
+  const fmt = useFmt();
+  const { data: SPONSORS, reload } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
+  const [q, setQ] = useUrlState<string>("q", "");
+  const [tier, setTier] = useState<Sponsor["tier"] | "all">("all");
+
+  const createFn = useServerFn(createSponsorFn);
+  const updateFn = useServerFn(updateSponsorFn);
+  const deleteFn = useServerFn(deleteSponsorFn);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Sponsor | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [onboardOpen, setOnboardOpen] = useState(false);
+
+  const fields: CrudField[] = [
+    { name: "name", label: t("sponsors.col.name"), type: "text", required: true },
+    {
+      name: "tier",
+      label: t("sponsors.col.tier"),
+      type: "select",
+      options: [
+        { value: "platinum", label: t("sponsors.tier.platinum") },
+        { value: "gold", label: t("sponsors.tier.gold") },
+        { value: "silver", label: t("sponsors.tier.silver") },
+        { value: "bronze", label: t("sponsors.tier.bronze") },
+      ],
+    },
+    { name: "contact", label: t("sponsors.col.contact"), type: "text" },
+    { name: "email", label: "Email", type: "text" },
+    { name: "phone", label: "Phone", type: "text" },
+    { name: "amount", label: t("sponsors.col.value"), type: "number" },
+    { name: "events", label: t("sponsors.col.events"), type: "number" },
+    {
+      name: "since",
+      label: t("sponsors.col.since"),
+      type: "text",
+      required: true,
+      placeholder: "2026-01-31",
+    },
+    {
+      name: "status",
+      label: t("sponsors.col.status"),
+      type: "select",
+      options: [
+        { value: "active", label: t("sponsors.status.active") },
+        { value: "expired", label: t("sponsors.status.expired") },
+      ],
+    },
+  ];
+
+  const onSubmit = async (v: CrudValues) => {
+    setSubmitting(true);
+    try {
+      if (editing) {
+        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        toast.success(t("common.updated"));
+      } else {
+        await createFn({ data: v as never });
+        toast.success(t("common.created"));
+      }
+      setOpen(false);
+      setEditing(null);
+      reload();
+    } catch {
+      toast.error(t("common.saveError"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onDelete = async (s: Sponsor) => {
+    if (!window.confirm(t("common.confirmDelete", { name: s.name }))) return;
+    setDeletingId(s.id);
+    try {
+      await deleteFn({ data: { id: s.id } });
+      toast.success(t("common.deletedToast"));
+      reload();
+    } catch {
+      toast.error(t("common.deleteError"));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    return SPONSORS.filter((s) => (tier === "all" ? true : s.tier === tier)).filter(
+      (s) => !ql || s.name.toLowerCase().includes(ql) || s.contact.toLowerCase().includes(ql),
+    );
+  }, [q, tier, SPONSORS]);
+
+  const tc = useTableControls<Sponsor>(
+    filtered,
+    {
+      code: (s) => s.id,
+      name: (s) => s.name,
+      tier: (s) => s.tier,
+      contact: (s) => s.contact,
+      value: (s) => s.amount,
+      events: (s) => s.events,
+      since: (s) => s.since,
+      status: (s) => s.status,
+    },
+    { initialSortKey: "value", initialSortDir: "desc", initialPageSize: 20 },
+  );
+
+  const totalAmount = SPONSORS.reduce((s, x) => s + x.amount, 0);
+
+  return (
+    <AppShell>
+      <PageHeader
+        title={t("sponsors.title")}
+        subtitle={t("sponsors.subtitle")}
+        actions={
+          <>
+            <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted">
+              <Download className="h-4 w-4 text-muted-foreground" />
+              {t("common.export")}
+            </button>
+            <button
+              onClick={() => setOnboardOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+            >
+              <UserPlus className="h-4 w-4 text-primary" />
+              {t("onb.open")}
+            </button>
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Plus className="h-4 w-4" />
+              {t("sponsors.add")}
+            </button>
+          </>
+        }
+      />
+
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={t("sponsors.kpi.total")}
+          value={SPONSORS.length}
+          icon={<Handshake className="h-4 w-4" />}
+        />
+        <StatCard
+          label={t("sponsors.kpi.value")}
+          value={fmt.money(totalAmount)}
+          tone="success"
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <StatCard
+          label={t("sponsors.kpi.platinum")}
+          value={SPONSORS.filter((s) => s.tier === "platinum").length}
+          tone="info"
+          icon={<Award className="h-4 w-4" />}
+        />
+        <StatCard
+          label={t("sponsors.kpi.active")}
+          value={SPONSORS.filter((s) => s.status === "active").length}
+          tone="success"
+          icon={<Handshake className="h-4 w-4" />}
+        />
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("sponsors.searchPh")}
+            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm shadow-[var(--shadow-card)] focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          />
+        </div>
+        <select
+          value={tier}
+          onChange={(e) => setTier(e.target.value as Sponsor["tier"] | "all")}
+          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+        >
+          <option value="all">{t("sponsors.allTiers")}</option>
+          <option value="platinum">{t("sponsors.tier.platinum")}</option>
+          <option value="gold">{t("sponsors.tier.gold")}</option>
+          <option value="silver">{t("sponsors.tier.silver")}</option>
+          <option value="bronze">{t("sponsors.tier.bronze")}</option>
+        </select>
+      </div>
+
+      <TableShell
+        columns={[
+          { label: t("sponsors.col.code"), key: "code" },
+          { label: t("sponsors.col.name"), key: "name" },
+          { label: t("sponsors.col.tier"), key: "tier" },
+          { label: t("sponsors.col.contact"), key: "contact" },
+          { label: t("sponsors.col.value"), key: "value" },
+          { label: t("sponsors.col.events"), key: "events" },
+          { label: t("sponsors.col.since"), key: "since" },
+          { label: t("sponsors.col.status"), key: "status" },
+          t("common.actions"),
+        ]}
+        sort={{ sortKey: tc.sortKey, sortDir: tc.sortDir, onSort: tc.toggleSort }}
+        footer={
+          <Pagination
+            page={tc.page}
+            pageCount={tc.pageCount}
+            pageSize={tc.pageSize}
+            total={tc.total}
+            from={tc.from}
+            to={tc.to}
+            onPage={tc.setPage}
+            onPageSize={tc.setPageSize}
+          />
+        }
+      >
+        {tc.pageRows.map((s) => (
+          <tr key={s.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
+            <td className="px-4 py-3 font-mono text-[12px] font-semibold text-primary">{s.id}</td>
+            <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
+            <td className="px-4 py-3">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"
+                style={{ background: TIER_COLOR[s.tier] }}
+              >
+                {t(TIER_KEY[s.tier])}
+              </span>
+            </td>
+            <td className="px-4 py-3">
+              <div className="text-foreground">{s.contact}</div>
+              <div className="text-[11px] text-muted-foreground">{s.email}</div>
+            </td>
+            <td className="px-4 py-3 font-semibold text-foreground">{fmt.money(s.amount)}</td>
+            <td className="px-4 py-3 text-foreground">{s.events}</td>
+            <td className="px-4 py-3 text-muted-foreground">{fmt.date(s.since)}</td>
+            <td className="px-4 py-3">
+              <Pill color={s.status === "active" ? "success" : "neutral"}>
+                {s.status === "active" ? t("sponsors.status.active") : t("sponsors.status.expired")}
+              </Pill>
+            </td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setEditing(s);
+                    setOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => onDelete(s)}
+                  disabled={deletingId === s.id}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </TableShell>
+
+      <CrudModal
+        open={open}
+        title={editing ? t("common.editTitle") : t("sponsors.add")}
+        fields={fields}
+        initial={editing ? (editing as unknown as CrudValues) : undefined}
+        submitting={submitting}
+        submitLabel={editing ? t("common.save") : t("common.create")}
+        cancelLabel={t("common.cancel")}
+        onSubmit={onSubmit}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
+      />
+
+      <SponsorOnboardWizard
+        open={onboardOpen}
+        onClose={() => setOnboardOpen(false)}
+        onCreated={() => {
+          setOnboardOpen(false);
+          reload();
+        }}
+      />
+    </AppShell>
+  );
+}

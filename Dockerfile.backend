@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1.4
+FROM node:20-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN npm install -g turbo
+
+COPY . .
+# Prune the workspace for the api app
+RUN turbo prune @vibe/api --docker
+
+# Add lockfile and package.json's of isolated subworkspace
+FROM node:20-alpine AS installer
+WORKDIR /app
+RUN apk add --no-cache python3 make g++ openssl
+# First install dependencies
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm ci
+
+# Build the project
+COPY --from=builder /app/out/full/ .
+# Generate Prisma Client
+RUN cd packages/db && npx prisma generate
+# Build the api
+RUN npx turbo run build --filter=@vibe/api...
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+RUN apk add --no-cache openssl
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=installer /app/packages/db/package.json ./packages/db/
+COPY --from=installer /app/packages/db/prisma ./packages/db/prisma
+
+COPY --from=installer /app/apps/api/package.json ./apps/api/
+COPY --from=installer /app/apps/api/dist ./apps/api/dist
+COPY --from=installer /app/node_modules ./node_modules
+
+# Add entrypoint for migration/seed (optional)
+COPY docker-entrypoint.s[h] ./
+RUN chmod +x docker-entrypoint.sh 2>/dev/null || true
+
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 4000
+CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; node apps/api/dist/src/main"]

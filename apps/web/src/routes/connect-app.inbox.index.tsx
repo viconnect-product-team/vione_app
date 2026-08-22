@@ -1,0 +1,145 @@
+// BC-Mobile-8A — Hộp thư nội bộ (danh sách cuộc trò chuyện).
+// Chỉ hiển thị cuộc trò chuyện có thật; không tạo danh sách gợi ý ảo.
+
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { Loader2, MessageSquare } from "lucide-react";
+import { useLang, useT } from "@/lib/i18n";
+import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
+import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
+import { useDmThreads } from "@/hooks/use-bc-dm";
+import type { BcDmThreadSummary } from "@/lib/business-connect/mobile/dm.types";
+
+export const Route = createFileRoute("/connect-app/inbox/")({
+  head: () => ({
+    meta: [
+      { title: "Tin nhắn — ViOne Connect" },
+      {
+        name: "description",
+        content: "Hộp thư nội bộ ViOne Connect: trao đổi trực tiếp với các kết nối đã chấp nhận.",
+      },
+      { property: "og:title", content: "Tin nhắn — ViOne Connect" },
+      {
+        property: "og:description",
+        content: "Trao đổi trực tiếp trong ứng dụng với những người bạn đã kết nối.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: InboxPage,
+});
+
+function timeLabel(iso: string | null, locale: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const sameDay = new Date().toDateString() === d.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" });
+}
+
+function Avatar({ thread }: { thread: BcDmThreadSummary }) {
+  if (thread.avatarUrl) {
+    return (
+      <img
+        src={thread.avatarUrl}
+        alt={thread.displayName}
+        className="h-12 w-12 shrink-0 rounded-full object-cover"
+        loading="lazy"
+      />
+    );
+  }
+  return (
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-accent)]">
+      {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
+    </div>
+  );
+}
+
+function InboxPage() {
+  const t = useT();
+  const { lang } = useLang();
+  const locale = lang === "en" ? "en-GB" : "vi-VN";
+  const query = useDmThreads();
+  const result = query.data;
+  const threads = result?.ok ? result.threads : [];
+
+  return (
+    <MobilePage>
+      <BusinessConnectTopBar title={t("bc.mobile.inbox.title")} back />
+      <div className="grid gap-4 pt-5">
+        <p className="text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">
+          {t("bc.mobile.inbox.desc")}
+        </p>
+
+        {query.isLoading ? (
+          <div className="flex items-center gap-2 py-10 text-[13px] text-[var(--bc-mobile-muted)]">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {t("bc.mobile.inbox.loading")}
+          </div>
+        ) : result && !result.ok ? (
+          <p className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 text-[13px] text-[var(--bc-mobile-muted)]">
+            {t("bc.mobile.inbox.error")}
+          </p>
+        ) : threads.length === 0 ? (
+          <div className="grid justify-items-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-5 py-10 text-center">
+            <MessageSquare
+              className="h-6 w-6 text-[var(--bc-mobile-accent)]"
+              aria-hidden="true"
+            />
+            <p className="text-[14px] font-medium text-[var(--bc-mobile-text)]">
+              {t("bc.mobile.inbox.empty.title")}
+            </p>
+            <p className="text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">
+              {t("bc.mobile.inbox.empty.desc")}
+            </p>
+            <Link
+              to="/connect-app/network"
+              className="mt-1 rounded-full border border-[var(--bc-mobile-border)] px-4 py-2 text-[12.5px] text-[var(--bc-mobile-text)]"
+            >
+              {t("bc.mobile.inbox.empty.cta")}
+            </Link>
+          </div>
+        ) : (
+          <ul className="grid gap-2">
+            {threads.map((thread) => (
+              <li key={thread.threadId}>
+                <Link
+                  to="/connect-app/inbox/$threadId"
+                  params={{ threadId: thread.threadId }}
+                  className="flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3 active:opacity-80"
+                >
+                  <Avatar thread={thread} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-[14px] font-medium text-[var(--bc-mobile-text)]">
+                        {thread.displayName}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-[var(--bc-mobile-muted)]">
+                        {timeLabel(thread.lastMessageAt, locale)}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-2">
+                      <span className="truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
+                        {thread.lastMessagePreview
+                          ? `${thread.lastMessageFromMe ? t("bc.mobile.inbox.you") : ""}${thread.lastMessagePreview}`
+                          : t("bc.mobile.inbox.noMessage")}
+                      </span>
+                      {thread.unreadCount > 0 ? (
+                        <span className="ml-auto shrink-0 rounded-full bg-[var(--bc-mobile-accent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--bc-mobile-on-accent,#04111F)]">
+                          {thread.unreadCount}
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </MobilePage>
+  );
+}

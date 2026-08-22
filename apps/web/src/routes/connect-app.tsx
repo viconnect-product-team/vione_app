@@ -1,0 +1,42 @@
+// BC-Mobile-0B — /connect-app parent layout route.
+// Auth-guarded (same pattern as /m), renders the BC mobile shell with its
+// own PWA manifest. Legacy routes (/m/*, /business-connect/*) are untouched.
+
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { BusinessConnectMobileShell } from "@/components/business-connect/mobile/BusinessConnectMobileShell";
+import { ConnectAppRouteError } from "@/components/business-connect/mobile/ConnectAppRouteError";
+import { BC_MANIFEST_HREF } from "@/lib/pwa-manifest";
+import { rememberVioneAppContext } from "@/lib/business-connect/mobile/vione-auth-context";
+
+export const Route = createFileRoute("/connect-app")({
+  ssr: false,
+  beforeLoad: async ({ location }) => {
+    rememberVioneAppContext();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      // Preserve the intended deep-link destination for post-auth return.
+      throw redirect({ to: "/auth", search: { redirect: location.href, m: "1" } });
+    }
+  },
+  head: () => ({
+    // Dark navy chrome (status bar / browser UI) to match the Connect-app tone.
+    meta: [
+      { name: "theme-color", content: "#050C15" },
+      { name: "color-scheme", content: "dark" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+    ],
+    links: [{ rel: "manifest", href: BC_MANIFEST_HREF }],
+  }),
+  component: ConnectAppLayout,
+  errorComponent: ConnectAppRouteError,
+});
+
+function ConnectAppLayout() {
+  return (
+    <BusinessConnectMobileShell>
+      <Outlet />
+    </BusinessConnectMobileShell>
+  );
+}

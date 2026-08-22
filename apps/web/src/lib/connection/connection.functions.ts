@@ -1,0 +1,146 @@
+// BC-5.0 — Canonical Connection server functions (RPC boundary).
+// Handlers dynamically import the *.server module to keep the client bundle
+// clean; the enclosing file is safe to import from client-reachable modules.
+
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type {
+  ConnectionRelationshipStateDTO,
+  ConnectionRequestDTO,
+  ConnectionSummaryDTO,
+} from "./types";
+
+const uuid = z.string().uuid();
+const mutationKey = z.string().min(8).max(200).optional();
+const listOpts = z
+  .object({
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional(),
+  })
+  .optional();
+
+export const sendConnectionRequestFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        targetPersonNodeId: uuid,
+        message: z.string().max(500).optional(),
+        mutationKey,
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.sendRequest(context.supabase, context.userId, data);
+  });
+
+export const acceptConnectionRequestFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.acceptRequest(
+      context.supabase,
+      context.userId,
+      data.requestId,
+      data.mutationKey,
+    );
+  });
+
+export const declineConnectionRequestFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.declineRequest(
+      context.supabase,
+      context.userId,
+      data.requestId,
+      data.mutationKey,
+    );
+  });
+
+export const cancelConnectionRequestFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.cancelRequest(
+      context.supabase,
+      context.userId,
+      data.requestId,
+      data.mutationKey,
+    );
+  });
+
+export const disconnectPersonFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid, mutationKey }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.disconnect(
+      context.supabase,
+      context.userId,
+      data.targetPersonNodeId,
+      data.mutationKey,
+    );
+  });
+
+export const blockPersonFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid, mutationKey }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.block(
+      context.supabase,
+      context.userId,
+      data.targetPersonNodeId,
+      data.mutationKey,
+    );
+  });
+
+export const unblockPersonFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.unblock(context.supabase, context.userId, data.targetPersonNodeId);
+  });
+
+export const resolveConnectionStateFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid }).parse(i))
+  .handler(async ({ data, context }): Promise<ConnectionRelationshipStateDTO> => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.resolveRelationshipState(
+      context.supabase,
+      context.userId,
+      data.targetPersonNodeId,
+    );
+  });
+
+export const listIncomingConnectionRequestsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
+  .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.listIncomingRequests(context.supabase, context.userId, data);
+  });
+
+export const listOutgoingConnectionRequestsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
+  .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.listOutgoingRequests(context.supabase, context.userId, data);
+  });
+
+export const listConnectionsFn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
+  .handler(async ({ data, context }): Promise<ConnectionSummaryDTO[]> => {
+    const { ConnectionService } = await import("./service.server");
+    return ConnectionService.listConnections(context.supabase, context.userId, data);
+  });

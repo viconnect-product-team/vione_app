@@ -1,0 +1,849 @@
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+  CalendarDays,
+  Download,
+  LayoutGrid,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Star,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { AppShell } from "@/components/dashboard/AppShell";
+import { PageHeader, StatCard } from "@/components/dashboard/PageKit";
+import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
+import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { EventWizard } from "@/components/dashboard/EventWizard";
+import {
+  createEventFn,
+  deleteEventFn,
+  listEventsFn,
+  updateEventFn,
+  type EventItem,
+} from "@/lib/events.functions";
+import {
+  getEventView,
+  setEventView,
+  getEventFilters,
+  saveEventFilter,
+  deleteEventFilter,
+  type EventView,
+  type EventSavedFilter,
+} from "@/lib/event-prefs";
+import { useFmt, useT, type TKey } from "@/lib/i18n";
+import { downloadCsv } from "@/lib/csv";
+
+export const Route = createFileRoute("/events")({
+  ssr: false,
+  loader: () => listEventsFn(),
+  component: EventsPage,
+});
+
+type Bucket = "all" | "today" | "week" | "upcoming" | "past";
+
+const STATUS_TONE: Record<EventItem["status"], { bg: string; fg: string }> = {
+  upcoming: { bg: "oklch(0.93 0.05 255)", fg: "oklch(0.45 0.16 265)" },
+  ongoing: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)" },
+  completed: { bg: "oklch(0.94 0.005 260)", fg: "oklch(0.50 0.02 260)" },
+  cancelled: { bg: "oklch(0.94 0.06 25)", fg: "oklch(0.50 0.20 25)" },
+};
+const STATUS_KEY: Record<EventItem["status"], TKey> = {
+  upcoming: "events.status.upcoming",
+  ongoing: "events.status.ongoing",
+  completed: "events.status.completed",
+  cancelled: "events.status.cancelled",
+};
+const TYPE_KEY: Record<EventItem["type"], TKey> = {
+  forum: "events.type.forum",
+  workshop: "events.type.workshop",
+  networking: "events.type.networking",
+  training: "events.type.training",
+};
+// Decorative branded covers per event type — purely visual, no fabricated data.
+const TYPE_COVER: Record<EventItem["type"], string> = {
+  forum: "linear-gradient(135deg, oklch(0.55 0.18 265), oklch(0.62 0.16 300))",
+  workshop: "linear-gradient(135deg, oklch(0.55 0.15 195), oklch(0.60 0.14 235))",
+  networking: "linear-gradient(135deg, oklch(0.58 0.16 330), oklch(0.60 0.16 20))",
+  training: "linear-gradient(135deg, oklch(0.55 0.15 155), oklch(0.60 0.14 195))",
+};
+
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function bucketOf(iso: string): Exclude<Bucket, "all"> {
+  const today = startOfDay(new Date());
+  const d = startOfDay(new Date(iso));
+  const diffDays = Math.round((d.getTime() - today.getTime()) / 86400000);
+  if (diffDays < 0) return "past";
+  if (diffDays === 0) return "today";
+  if (diffDays <= 7) return "week";
+  return "upcoming";
+}
+
+function EventsPage() {
+  const t = useT();
+  const fmt = useFmt();
+  const router = useRouter();
+  const events = Route.useLoaderData() as EventItem[];
+
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<EventItem["status"] | "all">("all");
+  const [type, setType] = useState<EventItem["type"] | "all">("all");
+  const [bucket, setBucket] = useState<Bucket>("all");
+  const [view, setView] = useState<EventView>("cards");
+  const [savedFilters, setSavedFilters] = useState<EventSavedFilter[]>([]);
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteEvent = useServerFn(deleteEventFn);
+  const createFn = useServerFn(createEventFn);
+  const updateFn = useServerFn(updateEventFn);
+  const [open, setOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editing, setEditing] = useState<EventItem | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setView(getEventView());
+    setSavedFilters(getEventFilters());
+  }, []);
+
+  const changeView = (v: EventView) => {
+    setView(v);
+    setEventView(v);
+  };
+
+  const fields: CrudField[] = [
+    { name: "name", label: t("events.col.event"), type: "text", required: true },
+    { name: "date", label: t("events.col.date"), type: "date", required: true },
+    { name: "location", label: t("events.col.location"), type: "text" },
+    { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
+    {
+      name: "type",
+      label: t("events.col.type"),
+      type: "select",
+      options: [
+        { value: "forum", label: t("events.type.forum") },
+        { value: "workshop", label: t("events.type.workshop") },
+        { value: "networking", label: t("events.type.networking") },
+        { value: "training", label: t("events.type.training") },
+      ],
+    },
+    {
+      name: "status",
+      label: t("events.col.status"),
+      type: "select",
+      options: [
+        { value: "upcoming", label: t("events.status.upcoming") },
+        { value: "ongoing", label: t("events.status.ongoing") },
+        { value: "completed", label: t("events.status.completed") },
+        { value: "cancelled", label: t("events.status.cancelled") },
+      ],
+    },
+  ];
+
+  const onSubmit = async (v: CrudValues) => {
+    setSubmitting(true);
+    try {
+      if (editing) {
+        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        toast.success(t("common.updated"));
+      } else {
+        await createFn({ data: v as never });
+        toast.success(t("common.created"));
+      }
+      setOpen(false);
+      setEditing(null);
+      await router.invalidate();
+    } catch {
+      toast.error(t("common.saveError"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onDelete = async (e: EventItem) => {
+    if (!window.confirm(t("events.deleteConfirm", { name: e.name }))) return;
+    setDeletingId(e.id);
+    try {
+      await deleteEvent({ data: { id: e.id } });
+      toast.success(t("events.deleted"));
+      await router.invalidate();
+    } catch {
+      toast.error(t("events.deleteError"));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const bucketCounts = useMemo(() => {
+    const c: Record<Bucket, number> = {
+      all: events.length,
+      today: 0,
+      week: 0,
+      upcoming: 0,
+      past: 0,
+    };
+    for (const e of events) c[bucketOf(e.date)]++;
+    return c;
+  }, [events]);
+
+  const filtered = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    return events
+      .filter((e) => (status === "all" ? true : e.status === status))
+      .filter((e) => (type === "all" ? true : e.type === type))
+      .filter((e) => (bucket === "all" ? true : bucketOf(e.date) === bucket))
+      .filter(
+        (e) => !ql || e.name.toLowerCase().includes(ql) || e.location.toLowerCase().includes(ql),
+      )
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [q, status, type, bucket, events]);
+
+  // Featured = soonest upcoming, non-cancelled event (visual highlight only).
+  const featured = useMemo(() => {
+    const today = startOfDay(new Date()).getTime();
+    return events
+      .filter((e) => e.status !== "cancelled" && startOfDay(new Date(e.date)).getTime() >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+  }, [events]);
+
+  const totalReg = events.reduce((s, e) => s + e.registered, 0);
+  const totalCap = events.reduce((s, e) => s + e.capacity, 0);
+
+  const hasActiveFilter = q.trim() !== "" || status !== "all" || type !== "all" || bucket !== "all";
+
+  const applySaved = (f: EventSavedFilter) => {
+    setQ(f.q);
+    setStatus((f.status as EventItem["status"] | "all") || "all");
+    setType((f.type as EventItem["type"] | "all") || "all");
+    setBucket((f.bucket as Bucket) || "all");
+  };
+
+  const onSaveFilter = () => {
+    const name = window.prompt(t("events.saveFilterPrompt"));
+    if (!name || !name.trim()) return;
+    const next = saveEventFilter({
+      id: `${Date.now()}`,
+      name: name.trim(),
+      q,
+      status,
+      type,
+      bucket,
+    });
+    setSavedFilters(next);
+    toast.success(t("events.filterSaved"));
+  };
+
+  const onDeleteFilter = (id: string) => {
+    setSavedFilters(deleteEventFilter(id));
+    toast.success(t("events.filterDeleted"));
+  };
+
+  const clearFilters = () => {
+    setQ("");
+    setStatus("all");
+    setType("all");
+    setBucket("all");
+  };
+
+  const handleExport = () => {
+    downloadCsv("events", filtered, [
+      { header: "Name", value: (e) => e.name },
+      { header: "Date", value: (e) => e.date },
+      { header: "Location", value: (e) => e.location },
+      { header: "Type", value: (e) => e.type },
+      { header: "Status", value: (e) => e.status },
+      { header: "Registered", value: (e) => e.registered },
+      { header: "Capacity", value: (e) => e.capacity },
+    ]);
+  };
+
+  const buckets: { key: Bucket; label: TKey }[] = [
+    { key: "all", label: "events.bucket.all" },
+    { key: "today", label: "events.bucket.today" },
+    { key: "week", label: "events.bucket.week" },
+    { key: "upcoming", label: "events.bucket.upcoming" },
+    { key: "past", label: "events.bucket.past" },
+  ];
+
+  return (
+    <AppShell>
+      <PageHeader
+        title={t("events.title")}
+        subtitle={t("events.subtitle")}
+        actions={
+          <>
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+              {t("common.export")}
+            </button>
+            <button
+              onClick={() => {
+                setWizardOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Plus className="h-4 w-4" />
+              {t("events.create")}
+            </button>
+          </>
+        }
+      />
+
+      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label={t("events.kpi.total")}
+          value={events.length}
+          icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
+        />
+        <StatCard
+          label={t("events.kpi.upcoming")}
+          value={events.filter((e) => e.status === "upcoming").length}
+          tone="info"
+          icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
+        />
+        <StatCard
+          label={t("events.kpi.totalReg")}
+          value={fmt.num(totalReg)}
+          hint={
+            totalCap > 0
+              ? t("events.kpi.fillRate", { n: Math.round((totalReg / totalCap) * 100) })
+              : undefined
+          }
+          tone="success"
+          icon={<Users className="h-4 w-4" aria-hidden="true" />}
+        />
+        <StatCard
+          label={t("events.kpi.capacity")}
+          value={fmt.num(totalCap)}
+          tone="warning"
+          icon={<Users className="h-4 w-4" aria-hidden="true" />}
+        />
+      </div>
+
+      {/* Featured event */}
+      {featured && (
+        <FeaturedCard
+          event={featured}
+          onOpen={() =>
+            router.navigate({ to: "/events/$eventId", params: { eventId: featured.id } })
+          }
+        />
+      )}
+
+      {/* Sticky search + controls */}
+      <div className="sticky top-2 z-10 mb-5 rounded-2xl border border-border bg-card/90 p-3 shadow-[var(--shadow-card)] backdrop-blur">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full min-w-0 sm:min-w-[220px] sm:flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("events.searchPh")}
+              className="h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-10"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as EventItem["type"] | "all")}
+              className="h-11 min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-10"
+            >
+              <option value="all">{t("events.filter.allTypes")}</option>
+              <option value="forum">{t("events.type.forum")}</option>
+              <option value="workshop">{t("events.type.workshop")}</option>
+              <option value="networking">{t("events.type.networking")}</option>
+              <option value="training">{t("events.type.training")}</option>
+            </select>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as EventItem["status"] | "all")}
+              className="h-11 min-w-0 rounded-lg border border-border bg-background px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-10"
+            >
+              <option value="all">{t("common.allStatuses")}</option>
+              <option value="upcoming">{t("events.status.upcoming")}</option>
+              <option value="ongoing">{t("events.status.ongoing")}</option>
+              <option value="completed">{t("events.status.completed")}</option>
+              <option value="cancelled">{t("events.status.cancelled")}</option>
+            </select>
+
+            {/* View toggle */}
+            <div className="col-span-2 flex items-center gap-1 rounded-lg border border-border bg-background p-1 sm:col-span-1">
+              <button
+                type="button"
+                onClick={() => changeView("cards")}
+                aria-label={t("events.view.cards")}
+                aria-pressed={view === "cards"}
+                title={t("events.view.cards")}
+                className={`grid h-9 flex-1 place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-8 sm:w-8 sm:flex-none ${
+                  view === "cards"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => changeView("calendar")}
+                aria-label={t("events.view.calendar")}
+                aria-pressed={view === "calendar"}
+                title={t("events.view.calendar")}
+                className={`grid h-9 flex-1 place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-8 sm:w-8 sm:flex-none ${
+                  view === "calendar"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Time buckets */}
+        <div className="-mx-3 mt-3 flex items-center gap-2 overflow-x-auto px-3 pb-1 no-scrollbar sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+          {buckets.map((b) => (
+            <button
+              key={b.key}
+              type="button"
+              onClick={() => setBucket(b.key)}
+              aria-pressed={bucket === b.key}
+              className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:py-1.5 ${
+                bucket === b.key
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-background text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t(b.label)} ({bucketCounts[b.key]})
+            </button>
+          ))}
+          <span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">
+            {t("events.results", { n: filtered.length })}
+          </span>
+        </div>
+
+        {/* Saved filters */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {savedFilters.map((f) => (
+            <span
+              key={f.id}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-xs font-medium text-foreground"
+            >
+              <button type="button" onClick={() => applySaved(f)} className="hover:text-primary">
+                {f.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteFilter(f.id)}
+                aria-label={t("events.filterDeleted")}
+                className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          {hasActiveFilter && (
+            <>
+              <button
+                type="button"
+                onClick={onSaveFilter}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                <Star className="h-3 w-3" aria-hidden="true" /> {t("events.saveFilter")}
+              </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" aria-hidden="true" /> {t("mdetail.reviews.clear")}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      {filtered.length === 0 ? (
+        hasActiveFilter ? (
+          <NoSearchResult />
+        ) : (
+          <EmptyState
+            icon={<CalendarDays className="h-6 w-6" />}
+            title={t("events.empty")}
+            action={
+              <button
+                onClick={() => {
+                  setWizardOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" /> {t("events.create")}
+              </button>
+            }
+          />
+        )
+      ) : view === "cards" ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((e) => (
+            <EventCard
+              key={e.id}
+              event={e}
+              deleting={deletingId === e.id}
+              onEdit={() => {
+                setEditing(e);
+                setOpen(true);
+              }}
+              onDelete={() => onDelete(e)}
+            />
+          ))}
+        </div>
+      ) : (
+        <CalendarView events={filtered} />
+      )}
+
+      <CrudModal
+        open={open}
+        title={editing ? t("common.editTitle") : t("events.create")}
+        fields={fields}
+        initial={editing ? (editing as unknown as CrudValues) : undefined}
+        submitting={submitting}
+        submitLabel={editing ? t("common.save") : t("common.create")}
+        cancelLabel={t("common.cancel")}
+        onSubmit={onSubmit}
+        onClose={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
+      />
+
+      <EventWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onCreated={(ev) => {
+          setWizardOpen(false);
+          router.invalidate();
+          router.navigate({ to: "/events/$eventId", params: { eventId: ev.id } });
+        }}
+      />
+    </AppShell>
+  );
+}
+
+function CapacityBar({ registered, capacity }: { registered: number; capacity: number }) {
+  const t = useT();
+  const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
+  const spots = Math.max(0, capacity - registered);
+  const full = capacity > 0 && registered >= capacity;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">{t("events.col.reg")}</span>
+        <span className="font-semibold text-foreground">
+          {registered}/{capacity}
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-secondary">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${pct}%`,
+            background: full ? "oklch(0.55 0.2 25)" : "var(--gradient-primary)",
+          }}
+        />
+      </div>
+      <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+        {full ? t("events.full") : t("events.spotsLeft", { n: spots })}
+      </p>
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: EventItem["status"] }) {
+  const t = useT();
+  const s = STATUS_TONE[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ background: s.bg, color: s.fg }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.fg }} aria-hidden="true" />
+      {t(STATUS_KEY[status])}
+    </span>
+  );
+}
+
+function EventCard({
+  event: e,
+  deleting,
+  onEdit,
+  onDelete,
+}: {
+  event: EventItem;
+  deleting: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const t = useT();
+  const fmt = useFmt();
+  return (
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
+      <div className="relative h-28 overflow-hidden" style={{ background: TYPE_COVER[e.type] }}>
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
+        />
+        <div className="absolute left-3 top-3">
+          <StatusPill status={e.status} />
+        </div>
+        <span className="absolute right-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground backdrop-blur">
+          {t(TYPE_KEY[e.type])}
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <Link
+            to="/events/$eventId"
+            params={{ eventId: e.id }}
+            className="line-clamp-2 text-base font-semibold text-foreground transition hover:text-primary"
+          >
+            {e.name}
+          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label={t("common.edit")}
+              title={t("common.edit")}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+            </button>
+            {e.status !== "cancelled" && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={deleting}
+                aria-label={t("events.delete")}
+                title={t("events.delete")}
+                className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {fmt.date(e.date)}
+        </div>
+        <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="truncate">{e.location || "—"}</span>
+        </div>
+        <div className="mt-auto">
+          <CapacityBar registered={e.registered} capacity={e.capacity} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function FeaturedCard({ event: e, onOpen }: { event: EventItem; onOpen: () => void }) {
+  const t = useT();
+  const fmt = useFmt();
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mb-5 block w-full overflow-hidden rounded-3xl border border-border text-left shadow-[var(--shadow-card)] transition hover:shadow-[var(--shadow-glow)]"
+    >
+      <div className="relative grid gap-0 md:grid-cols-[1.1fr_1fr]">
+        <div className="relative min-h-[180px] p-6" style={{ background: TYPE_COVER[e.type] }}>
+          <div
+            className="absolute inset-0 opacity-25"
+            style={{ background: "radial-gradient(circle at 85% 15%, white, transparent 55%)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex h-full flex-col">
+            <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> {t("events.featured")}
+            </span>
+            <h2 className="mt-auto text-2xl font-bold text-primary-foreground drop-shadow-sm">
+              {e.name}
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium text-primary-foreground/90">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarDays className="h-4 w-4" aria-hidden="true" /> {fmt.date(e.date)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="h-4 w-4" aria-hidden="true" /> {e.location || "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col justify-center gap-4 bg-card p-6">
+          <div className="flex items-center gap-2">
+            <StatusPill status={e.status} />
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t(TYPE_KEY[e.type])}
+            </span>
+          </div>
+          <CapacityBar registered={e.registered} capacity={e.capacity} />
+          <span
+            className="inline-flex w-fit items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            {t("events.viewDetail")}
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function CalendarView({ events }: { events: EventItem[] }) {
+  const t = useT();
+  const fmt = useFmt();
+  const [cursor, setCursor] = useState(() => {
+    const first = events[0] ? new Date(events[0].date) : new Date();
+    return new Date(first.getFullYear(), first.getMonth(), 1);
+  });
+
+  const byDay = useMemo(() => {
+    const m = new Map<string, EventItem[]>();
+    for (const e of events) {
+      const key = new Date(e.date).toDateString();
+      const arr = m.get(key) ?? [];
+      arr.push(e);
+      m.set(key, arr);
+    }
+    return m;
+  }, [events]);
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = (firstDay.getDay() + 6) % 7; // Monday-first
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+
+  const weekdays =
+    fmt.locale === "en-US"
+      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      : ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  const todayKey = new Date().toDateString();
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)] sm:p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setCursor(new Date(year, month - 1, 1))}
+          aria-label="‹"
+          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-base font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+        >
+          ‹
+        </button>
+        <h3 className="text-sm font-semibold text-foreground">
+          {cursor.toLocaleDateString(fmt.locale, { month: "long", year: "numeric" })}
+        </h3>
+        <button
+          type="button"
+          onClick={() => setCursor(new Date(year, month + 1, 1))}
+          aria-label="›"
+          className="grid h-10 w-10 place-items-center rounded-lg border border-border text-base font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+        >
+          ›
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-[11px]">
+        {weekdays.map((d) => (
+          <div key={d} className="py-1">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-1">
+        {cells.map((date, i) => {
+          if (!date)
+            return <div key={`e${i}`} className="min-h-[52px] rounded-lg sm:min-h-[76px]" />;
+          const dayEvents = byDay.get(date.toDateString()) ?? [];
+          const isToday = date.toDateString() === todayKey;
+          return (
+            <div
+              key={date.toISOString()}
+              className={`min-h-[52px] rounded-lg border p-1 text-left sm:min-h-[76px] sm:p-1.5 ${
+                isToday ? "border-primary bg-primary/5" : "border-border bg-background"
+              }`}
+            >
+              <span
+                className={`text-[11px] font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
+              >
+                {date.getDate()}
+              </span>
+              {/* Mobile: compact color dots */}
+              {dayEvents.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
+                  {dayEvents.slice(0, 4).map((e) => (
+                    <span
+                      key={e.id}
+                      title={e.name}
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: TYPE_COVER[e.type] }}
+                    />
+                  ))}
+                </div>
+              )}
+              {/* sm+: labelled chips */}
+              <div className="mt-1 hidden space-y-1 sm:block">
+                {dayEvents.slice(0, 2).map((e) => (
+                  <div
+                    key={e.id}
+                    title={e.name}
+                    className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground"
+                    style={{ background: TYPE_COVER[e.type] }}
+                  >
+                    {e.name}
+                  </div>
+                ))}
+                {dayEvents.length > 2 && (
+                  <div className="px-1 text-[10px] font-medium text-muted-foreground">
+                    +{dayEvents.length - 2}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {events.length === 0 && (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          {t("events.calendar.noEvents")}
+        </p>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE_NAME:-app-frontend}:latest
+    container_name: app_frontend_prod
+    restart: always
+    environment:
+      - PORT=8080
+    ports:
+      - "${TARGET_PROD_PORT_FRONTEND:-5000}:8080"
+    depends_on:
+      - backend
+    networks:
+      - target_network
+
+  backend:
+    image: ${BACKEND_IMAGE_NAME:-app-backend}:latest
+    container_name: app_backend_prod
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    ports:
+      - "${TARGET_PROD_PORT_BACKEND:-5001}:4000"
+    networks:
+      - target_network
+
+networks:
+  target_network:
+    driver: bridge
