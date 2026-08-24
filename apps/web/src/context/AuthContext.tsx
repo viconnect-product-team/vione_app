@@ -21,8 +21,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Helper to set cookie
     const setCookie = (session: Session | null) => {
       if (session) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax; secure`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${session.expires_in}; SameSite=Lax; secure`;
+        const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; secure' : '';
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`;
+        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`;
       } else {
         document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;

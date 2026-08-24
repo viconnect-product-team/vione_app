@@ -155,8 +155,9 @@ function AuthPage() {
         if (error) throw error;
         
         if (data.session) {
-          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax; secure`;
-          document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax; secure`;
+          const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; secure' : '';
+          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax${secure}`;
+          document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax${secure}`;
           setAuthData(data.session);
           applyRememberPreference(remember, email);
           await goPostLogin();
