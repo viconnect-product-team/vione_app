@@ -48,15 +48,27 @@ if (-not $SkipBuild) {
 }
 
 Write-Host "`n[3/6] Dong bo va chuyen giao tep tin len may chu ha tang ($SERVER_IP)..." -ForegroundColor Cyan
-Invoke-CheckedCommand -Description "Chuyen giao tep tin qua cong mang bao mat SCP" -Action {
-    scp backend.tar frontend.tar .env.production docker-compose.clean.yml "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
-}
 
-Write-Host "`n[4/6] Kich hoat lenh giai nen va khoi tao dich vu tu xa thong qua SSH..." -ForegroundColor Cyan
-$REMOTE_CMD = "cd $REMOTE_PATH; mv docker-compose.clean.yml docker-compose.yml; mv .env.production .env; docker load -i backend.tar; docker load -i frontend.tar; docker compose up -d --force-recreate; rm backend.tar frontend.tar"
+if ($SkipBuild) {
+    Invoke-CheckedCommand -Description "Chuyen giao config qua SCP (chi config, khong co tar)" -Action {
+        scp .env.production docker-compose.clean.yml "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
+    }
 
-Invoke-CheckedCommand -Description "Thuc thi cau truc container tu xa" -Action {
-    ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
+    Write-Host "`n[4/6] Khoi dong lai container voi config moi (khong tai lai image)..." -ForegroundColor Cyan
+    $REMOTE_CMD = "cd $REMOTE_PATH; mv docker-compose.clean.yml docker-compose.yml; mv .env.production .env; sed -i 's/\r//g' .env docker-compose.yml; docker compose down --remove-orphans; docker rm -f app_backend_prod app_frontend_prod 2>/dev/null || true; docker compose up -d --force-recreate --remove-orphans"
+    Invoke-CheckedCommand -Description "Khoi dong lai container tu xa" -Action {
+        ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
+    }
+} else {
+    Invoke-CheckedCommand -Description "Chuyen giao tep tin qua cong mang bao mat SCP" -Action {
+        scp backend.tar frontend.tar .env.production docker-compose.clean.yml "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
+    }
+
+    Write-Host "`n[4/6] Kich hoat lenh giai nen va khoi tao dich vu tu xa thong qua SSH..." -ForegroundColor Cyan
+    $REMOTE_CMD = "cd $REMOTE_PATH; mv docker-compose.clean.yml docker-compose.yml; mv .env.production .env; sed -i 's/\r//g' .env docker-compose.yml; docker load -i backend.tar; docker load -i frontend.tar; docker compose down --remove-orphans; docker rm -f app_backend_prod app_frontend_prod 2>/dev/null || true; docker compose up -d --force-recreate --remove-orphans; rm backend.tar frontend.tar"
+    Invoke-CheckedCommand -Description "Thuc thi cau truc container tu xa" -Action {
+        ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
+    }
 }
 
 Write-Host "`n[5/6] Tien hanh don dep bo nho dem tam thoi tai may cuc bo..." -ForegroundColor Cyan

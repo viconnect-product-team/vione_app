@@ -6,4 +6,5 @@ import { defineConfig } from "nitro/config";
 // (node-server preset) build. Auto-loaded and merged by Nitro.
 export default defineConfig({
   noExternals: true,
+  preset: 'node-server',
 });

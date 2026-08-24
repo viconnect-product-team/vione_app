@@ -1,12 +1,16 @@
-version: '3.8'
+# version: '3.8'  # obsolete field removed to suppress docker compose warning
 
 services:
   frontend:
     image: ${FRONTEND_IMAGE_NAME:-app-frontend}:latest
     container_name: app_frontend_prod
     restart: always
+    env_file:
+      - .env
     environment:
       - PORT=8080
+      - HOST=0.0.0.0
+      - NITRO_HOST=0.0.0.0
     ports:
       - "${TARGET_PROD_PORT_FRONTEND:-5000}:8080"
     depends_on:

@@ -32,6 +32,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=installer /app/packages/db/package.json ./packages/db/
 COPY --from=installer /app/packages/db/prisma ./packages/db/prisma
+COPY --from=installer /app/packages/db/index.js ./packages/db/
 
 COPY --from=installer /app/apps/api/package.json ./apps/api/
 COPY --from=installer /app/apps/api/dist ./apps/api/dist
@@ -45,4 +46,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 4000
-CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; node apps/api/dist/src/main"]
+CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; node apps/api/dist/main"]

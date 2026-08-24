@@ -24,22 +24,42 @@ export const Route = createFileRoute("/api/public/avatar/$owner/$file")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        // Thử tạo signed URL (hoạt động với private bucket + service role key).
         const { data, error } = await supabaseAdmin.storage
           .from(AVATAR_BUCKET)
           .createSignedUrl(`${owner}/${file}`, 600);
 
-        if (error || !data?.signedUrl) {
-          return new Response("Not found", { status: 404 });
+        if (!error && data?.signedUrl) {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: data.signedUrl,
+              // Public image, but the signed target expires — keep the hop fresh.
+              "Cache-Control": "public, max-age=300",
+            },
+          });
         }
 
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: data.signedUrl,
-            // Public image, but the signed target expires — keep the hop fresh.
-            "Cache-Control": "public, max-age=300",
-          },
-        });
+        // Fallback: nếu bucket là public, thử lấy public URL trực tiếp.
+        if (error) {
+          console.warn("[avatar-route] createSignedUrl failed, trying public URL fallback:", error.message);
+        }
+        const { data: pubData } = supabaseAdmin.storage
+          .from(AVATAR_BUCKET)
+          .getPublicUrl(`${owner}/${file}`);
+
+        if (pubData?.publicUrl) {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: pubData.publicUrl,
+              "Cache-Control": "public, max-age=300",
+            },
+          });
+        }
+
+        return new Response("Not found", { status: 404 });
       },
     },
   },

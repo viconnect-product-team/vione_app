@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">uniBusiness</string>
-    <string name="title_activity_main">uniBusiness</string>
-    <string name="package_name">connect.vn.unibusiness</string>
-    <string name="custom_url_scheme">connect.vn.unibusiness</string>
-</resources>

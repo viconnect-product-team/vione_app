@@ -53,7 +53,8 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
         setFailed(true);
         return;
       }
-      onChange(`${window.location.origin}/api/public/avatar/${path}`);
+      // Dùng relative URL để ảnh hoạt động trên mọi domain (local, dev server, production).
+      onChange(`/api/public/avatar/${path}`);
     } catch {
       setFailed(true);
     } finally {

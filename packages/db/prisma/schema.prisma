@@ -250,7 +250,7 @@ model basic_service_catalog {
   service_group String
   level         String   @default("commune")
   is_required   Boolean  @default(true)
-  source_ref    String   @default("QĐ 3416/QĐ-BYT")
+  source_ref    String   @default("QÄ 3416/QÄ-BYT")
   description   String?
   order_index   Int      @default(0)
   is_active     Boolean  @default(true)
@@ -461,7 +461,7 @@ model clinical_visits {
   tenant_id              String                  @db.Uuid
   encounter_id           String?                 @db.Uuid
   resident_code          String
-  visit_date             DateTime                @default(dbgenerated("CURRENT_DATE")) @db.Date
+  visit_date             DateTime                @default(now()) @db.Date
   chief_complaint        String?
   diagnosis_code         String?
   diagnosis_text         String?
@@ -891,7 +891,7 @@ model fhir_conformance_runs {
   pass_count    Int      @default(0)
   fail_count    Int      @default(0)
   warn_count    Int      @default(0)
-  pass_rate     Decimal? @default(dbgenerated("\nCASE\n    WHEN (total_bundles > 0) THEN round(((100.0 * (pass_count)::numeric) / (total_bundles)::numeric), 2)\n    ELSE (0)::numeric\nEND")) @db.Decimal
+  pass_rate     Decimal? @db.Decimal
   duration_ms   Int?
   notes         String?
   errors        Json     @default("[]")
@@ -1591,7 +1591,7 @@ model master_persons {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   mpi_no               String                 @unique @default(dbgenerated("((('MPI-'::text || to_char(now(), 'YYYYMMDD'::text)) || '-'::text) || substr(replace((gen_random_uuid())::text, '-'::text, ''::text), 1, 12))"))
   full_name            String
-  full_name_norm       String?                @default(dbgenerated("lower(regexp_replace(COALESCE(full_name, ''::text), '\\s+'::text, ' '::text, 'g'::text))"))
+  full_name_norm       String?
   gender               String?
   dob                  DateTime?              @db.Date
   cccd                 String?
@@ -1632,7 +1632,7 @@ model maternal_anc_visits {
   pregnancy_id         String               @db.Uuid
   resident_code        String
   visit_no             Int                  @default(1)
-  visit_date           DateTime             @default(dbgenerated("CURRENT_DATE")) @db.Date
+  visit_date           DateTime             @default(now()) @db.Date
   gest_week            Int?
   weight_kg            Decimal?             @db.Decimal
   bp_systolic          Int?
@@ -1818,7 +1818,7 @@ model md_drugs {
   name                         String
   active_ingredient            String?
   strength                     String?
-  unit                         String                         @default("viên")
+  unit                         String                         @default("viĂªn")
   form                         String?
   route                        String?
   atc_code                     String?
@@ -1948,7 +1948,7 @@ model md_practitioners {
   email             String?
   status            String    @default("active")
   source            String    @default("manual")
-  effective_from    DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  effective_from    DateTime  @default(now()) @db.Date
   effective_to      DateTime? @db.Date
   is_active         Boolean   @default(true)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
@@ -1972,7 +1972,7 @@ model md_services {
   code                   String                   @unique
   name                   String
   category               String?
-  unit                   String?                  @default("lần")
+  unit                   String?                  @default("láº§n")
   bhyt_price             Decimal?                 @db.Decimal
   source                 String?                  @default("TT 22/2023/TT-BYT")
   version                String?
@@ -2268,7 +2268,7 @@ model pediatric_measurements {
   id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String             @db.Uuid
   child_id           String             @db.Uuid
-  measure_date       DateTime           @default(dbgenerated("CURRENT_DATE")) @db.Date
+  measure_date       DateTime           @default(now()) @db.Date
   age_months         Int?
   weight_kg          Decimal?           @db.Decimal(5, 2)
   height_cm          Decimal?           @db.Decimal(5, 2)
@@ -2561,7 +2561,7 @@ model prescription_items {
   frequency              String?
   duration_days          Int?
   quantity               Decimal                 @default(0) @db.Decimal
-  unit                   String                  @default("viên")
+  unit                   String                  @default("viĂªn")
   instructions           String?
   is_active              Boolean                 @default(true)
   created_by             String?                 @db.Uuid
@@ -2903,7 +2903,7 @@ model stories {
   content               String
   image                 String?
   author                String                  @db.VarChar(120)
-  published_at          DateTime                @default(dbgenerated("CURRENT_DATE")) @db.Date
+  published_at          DateTime                @default(now()) @db.Date
   category              String                  @default("general") @db.VarChar(100)
   is_published          Boolean                 @default(true)
   created_at            DateTime                @default(now()) @db.Timestamp(6)
@@ -3231,10 +3231,6 @@ model vital_signs {
 }
 
 /// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model users {
-// }
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
 // model certificates_qualifications {
 // }
 
@@ -3292,6 +3288,10 @@ model vital_signs {
 
 /// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
 // model user_function_pinned {
+// }
+
+/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
+// model users {
 // }
 
 /// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
@@ -3704,4 +3704,94 @@ enum tenant_type {
   province
   district
   commune
+}
+
+model member_business_cards {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String   @unique
+  card_kind          String
+  status             String
+  public_mode        String
+  display_name       String?
+  professional_title String?
+  company_name       String?
+  avatar_url         String?
+  owner_user_id      String?  @db.Uuid
+  member_id          String?  @db.Uuid
+  association_id     String?  @db.Uuid
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  skills       business_card_skills[]
+  services     business_card_services[]
+  needs        business_card_needs[]
+  leads        business_card_leads[]
+  interactions business_card_interactions[]
+}
+
+model business_card_skills {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id        String  @db.Uuid
+  association_id String? @db.Uuid
+  label          String
+  sort_order     Int     @default(0)
+
+  card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+}
+
+model business_card_services {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id        String  @db.Uuid
+  association_id String? @db.Uuid
+  title          String
+  description    String?
+  category       String?
+  sort_order     Int     @default(0)
+
+  card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+}
+
+model business_card_needs {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id        String  @db.Uuid
+  association_id String? @db.Uuid
+  title          String
+  description    String?
+  category       String?
+  sort_order     Int     @default(0)
+
+  card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+}
+
+model business_card_leads {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id         String   @db.Uuid
+  owner_member_id String?  @db.Uuid
+  requester_name  String
+  requester_email String?
+  requester_phone String?
+  message         String?
+  lead_type       String
+  status          String
+  preferred_time  String?
+  metadata        Json     @default("{}")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+}
+
+model business_card_interactions {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  card_id          String   @db.Uuid
+  interaction_type String
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
+}
+
+model users {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username String @unique
+  password String
 }
