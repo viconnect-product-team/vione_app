@@ -41,9 +41,14 @@ import {
   ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
+  Contrast,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useTheme } from "@/lib/theme";
 
 type Item = { key: TKey; icon: LucideIcon; to?: string };
 
@@ -425,6 +430,24 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Theme switcher — hiển thị khi sidebar mở, hoặc icon thu gọn khi collapsed */}
+      <div
+        className={`flex items-center border-t border-sidebar-border pb-2 pt-3 ${
+          isCollapsed ? "justify-center px-2" : "px-4"
+        }`}
+      >
+        {isCollapsed ? (
+          <ThemeToggleIconBtn />
+        ) : (
+          <div className="flex w-full items-center justify-between">
+            <span className="text-[11px] font-medium text-sidebar-foreground/60">
+              {t("theme.label")}
+            </span>
+            <ThemeSwitcher />
+          </div>
+        )}
+      </div>
+
       {/* Upgrade card */}
       {!isCollapsed && (
         <div className="p-4">
@@ -446,5 +469,23 @@ export function Sidebar({
         </div>
       )}
     </aside>
+  );
+}
+
+/** Mini cycling icon button dùng khi sidebar thu gọn. */
+function ThemeToggleIconBtn() {
+  const { theme, toggle } = useTheme();
+  const icons = { light: Sun, dark: Moon, contrast: Contrast };
+  const Icon = icons[theme];
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label="Đổi giao diện"
+      title="Đổi giao diện"
+      className="flex h-9 w-9 items-center justify-center rounded-full text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+    >
+      <Icon className="h-4 w-4" />
+    </button>
   );
 }

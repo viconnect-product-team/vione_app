@@ -45,11 +45,16 @@ type VioneAuthSignals = {
   standalone: boolean;
 };
 
-/** Quyết định giao diện đăng nhập mà không dựa vào manifest của trình duyệt. */
+/** Quyết định giao diện đăng nhập mà không dựa vào manifest của trình duyệt.
+ *
+ * KHÔNG dùng `directAuth` trong điều kiện OR chung: signal này (`!redirectTo`)
+ * bật true khi mở /auth trực tiếp (refresh, bookmark) mà không có redirect param,
+ * khiến người dùng Dashboard bị đẩy sang màn ViOne ConnectApp sai.
+ * directAuth chỉ có ý nghĩa khi standalone hoặc remembered — hai signal kia đã đủ.
+ */
 export function shouldUseVioneAuth(signals: VioneAuthSignals): boolean {
   return (
     signals.mobileParam ||
-    signals.directAuth ||
     signals.remembered ||
     signals.standalone ||
     isConnectAppDestination(signals.redirectPath)

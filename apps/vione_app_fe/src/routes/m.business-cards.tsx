@@ -83,6 +83,7 @@ import {
 import { listReplyTemplatesFn, type ReplyTemplateRow } from "@/lib/reply-templates.functions";
 import { useServerData } from "@/hooks/use-server-data";
 import { LinkMemberProfile } from "@/components/dashboard/LinkMemberProfile";
+import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
 
 type BusinessCardsSearch = {
   tab?: "cards" | "leads" | "stats";
@@ -1682,7 +1683,15 @@ function CardEditor({
             <Input value={d.companyName} onChange={(v) => set("companyName", v)} />
           </Field>
           <Field label={t("bc.f.avatar")}>
-            <Input value={d.avatarUrl} onChange={(v) => set("avatarUrl", v)} />
+            <AvatarUploadField
+              value={d.avatarUrl}
+              onChange={(url) => set("avatarUrl", url)}
+            />
+            <Input
+              value={d.avatarUrl}
+              onChange={(v) => set("avatarUrl", v)}
+              placeholder="https://..."
+            />
           </Field>
           <Field label={t("bc.f.headline")}>
             <Input value={d.headline} onChange={(v) => set("headline", v)} />

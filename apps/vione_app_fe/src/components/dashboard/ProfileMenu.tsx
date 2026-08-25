@@ -25,6 +25,7 @@ export function ProfileMenu() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
 
@@ -34,6 +35,7 @@ export function ProfileMenu() {
       if (!active || !data.user) return;
       setUserId(data.user.id);
       setEmail(data.user.email ?? "");
+      setAvatarUrl((data.user.user_metadata?.avatar_url as string) ?? "");
       const { data: prof } = await supabase
         .from("profiles")
         .select("full_name")
@@ -73,10 +75,18 @@ export function ProfileMenu() {
         aria-expanded={open}
       >
         <div
-          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-primary-foreground"
-          style={{ background: "var(--gradient-primary)" }}
+          className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-primary-foreground"
+          style={avatarUrl ? undefined : { background: "var(--gradient-primary)" }}
         >
-          {initials(displayName)}
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              className="size-full object-cover"
+            />
+          ) : (
+            initials(displayName)
+          )}
         </div>
         <div className="hidden leading-tight text-left sm:block">
           <div className="max-w-[140px] truncate text-xs font-semibold text-foreground">

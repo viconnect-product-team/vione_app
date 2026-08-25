@@ -6,6 +6,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { supabase } from "@/integrations/supabase/client";
 import { useT, type TKey } from "@/lib/i18n";
+import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Hồ sơ cá nhân — ViOne" }] }),
@@ -18,6 +19,7 @@ type Form = {
   title: string;
   location: string;
   bio: string;
+  avatar_url: string;
 };
 
 const FIELDS: { key: keyof Form; labelKey: TKey; type?: "textarea" }[] = [
@@ -41,6 +43,7 @@ function ProfilePage() {
     title: "",
     location: "",
     bio: "",
+    avatar_url: "",
   });
 
   useEffect(() => {
@@ -66,6 +69,7 @@ function ProfilePage() {
           title: p.title ?? "",
           location: p.location ?? "",
           bio: p.bio ?? "",
+          avatar_url: (data.user.user_metadata?.avatar_url as string) ?? "",
         });
         setLoading(false);
       }
@@ -82,19 +86,27 @@ function ProfilePage() {
   async function save() {
     if (!userId) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: userId,
-        email,
-        full_name: form.full_name.trim(),
-        phone: form.phone.trim() || null,
-        title: form.title.trim() || null,
-        location: form.location.trim() || null,
-        bio: form.bio.trim() || null,
-      },
-      { onConflict: "id" },
-    );
+    // Save avatar_url into user_metadata (profiles table has no avatar column)
+    const avatarMeta = form.avatar_url.trim();
+    const [profileResult, metaResult] = await Promise.all([
+      supabase.from("profiles").upsert(
+        {
+          id: userId,
+          email,
+          full_name: form.full_name.trim(),
+          phone: form.phone.trim() || null,
+          title: form.title.trim() || null,
+          location: form.location.trim() || null,
+          bio: form.bio.trim() || null,
+        },
+        { onConflict: "id" },
+      ),
+      supabase.auth.updateUser({
+        data: { avatar_url: avatarMeta || null },
+      }),
+    ]);
     setSaving(false);
+    const error = profileResult.error ?? metaResult.error;
     if (error) {
       toast.error(error.message);
       return;
@@ -124,6 +136,17 @@ function ProfilePage() {
           <div className="mt-4 text-sm text-muted-foreground">{t("profile.loading")}</div>
         ) : (
           <div className="mt-4 space-y-4">
+            {/* Avatar upload */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                {t("profile.avatar")}
+              </label>
+              <AvatarUploadField
+                value={form.avatar_url}
+                onChange={(url) => set("avatar_url", url)}
+                disabled={saving}
+              />
+            </div>
             {FIELDS.map((f) => (
               <div key={f.key}>
                 <label className="mb-1 block text-sm font-medium text-foreground">

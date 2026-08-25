@@ -1115,10 +1115,58 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
   animation: spin 10s linear infinite;
 }
 
+
 .animate-\[spin_15s_linear_infinite_reverse\] {
   animation: spin 15s linear infinite reverse;
 }
 
+
 .animate-\[spin_20s_linear_infinite\] {
   animation: spin 20s linear infinite;
+}
+
+/* Utility to force-enable motion regardless of OS prefers-reduced-motion.
+   Use by adding `class="force-motion"` to <html> or <body> when animations
+   are intentionally required (developer/devtools override). This preserves
+   existing reduced-motion behavior unless explicitly opted-in. */
+.force-motion {
+  scroll-behavior: smooth !important;
+}
+.force-motion *,
+.force-motion *::before,
+.force-motion *::after {
+  /* Undo 'animation: none' and ensure animations run */
+  animation: initial !important;
+  -webkit-animation: initial !important;
+  animation-play-state: running !important;
+  -webkit-animation-play-state: running !important;
+  transition: initial !important;
+}
+
+/* Re-apply common named animations that may be disabled under reduced-motion */
+.force-motion .vba-pop-in,
+.force-motion .vba-badge-pop {
+  animation: vba-pop-in var(--motion-base) var(--motion-ease) both !important;
+}
+.force-motion .bc-home-enter {
+  animation: bc-home-enter 160ms ease-out !important;
+}
+.force-motion .vba-animate {
+  animation: vba-fade-up 0.4s ease-out both !important;
+}
+.force-motion .vba-shimmer,
+.force-motion .vba-shine,
+.force-motion .data-dot,
+.force-motion .animate-spin-10,
+.force-motion .animate-spin-15-reverse,
+.force-motion .animate-spin-20 {
+  /* Preserve existing infinite/long-running animations */
+  animation-play-state: running !important;
+}
+
+/* Ensure interactive transitions are restored when forcing motion */
+.force-motion .bc-cta-gold,
+.force-motion .bc-cta-gold-soft,
+.force-motion .vba-gold-grad {
+  transition: transform 150ms ease-out !important;
 }

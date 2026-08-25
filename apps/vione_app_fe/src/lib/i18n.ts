@@ -2271,6 +2271,7 @@ export const translations = {
   "profile.menu.logout": { vi: "Đăng xuất", en: "Sign out" },
   "profile.title": { vi: "Hồ sơ cá nhân", en: "Profile" },
   "profile.fullName": { vi: "Họ và tên", en: "Full name" },
+  "profile.avatar": { vi: "Ảnh đại diện", en: "Avatar" },
   "profile.email": { vi: "Email", en: "Email" },
   "profile.saved": { vi: "Đã cập nhật hồ sơ", en: "Profile updated" },
   "profile.pwd.title": { vi: "Đổi mật khẩu", en: "Change password" },

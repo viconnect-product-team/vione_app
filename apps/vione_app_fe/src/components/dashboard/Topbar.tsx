@@ -54,7 +54,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         <AssociationSwitcher />
         <LangSwitcher />
 
-        <ThemeSwitcher className="hidden sm:inline-flex" />
+        <ThemeSwitcher />
 
         <NotificationCenter />
 

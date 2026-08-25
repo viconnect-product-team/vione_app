@@ -79,6 +79,11 @@ function AuthPage() {
   useEffect(() => {
     const detected = hasRememberedVioneAppContext() || isVioneStandaloneContext();
     setBrowserVioneContext(detected);
+    // Chỉ ghi nhớ context khi có tín hiệu ViOne thực sự:
+    // - mobileParam=1 (link từ QR hoặc PWA prompt)
+    // - destPath bắt đầu /connect-app (redirect từ AuthGate sau khi offline)
+    // - standalone/remembered đã được xác nhận
+    // KHÔNG ghi khi chỉ là reload /auth không có redirect (directAuth=!redirectTo)
     if (detected || mobileParam === "1" || destPath.startsWith("/connect-app")) {
       rememberVioneAppContext();
     }
@@ -86,7 +91,8 @@ function AuthPage() {
   const isMobileAuth = shouldUseVioneAuth({
     mobileParam: mobileParam === "1",
     redirectPath: destPath,
-    directAuth: !redirectTo,
+    // directAuth không còn dùng trong shouldUseVioneAuth nhưng giữ lại type để không break interface
+    directAuth: false,
     remembered: browserVioneContext,
     standalone: browserVioneContext,
   });
@@ -95,7 +101,7 @@ function AuthPage() {
     const currentVioneContext = shouldUseVioneAuth({
       mobileParam: mobileParam === "1",
       redirectPath: safeRedirect(redirectTo) ?? "",
-      directAuth: !redirectTo,
+      directAuth: false, // xem comment trên isMobileAuth — không dùng directAuth để tránh false positive
       remembered: hasRememberedVioneAppContext(),
       standalone: isVioneStandaloneContext(),
     });

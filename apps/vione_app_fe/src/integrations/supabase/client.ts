@@ -10,6 +10,19 @@ function createSupabaseClient() {
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    const missing = [
+      !SUPABASE_URL && "VITE_SUPABASE_URL",
+      !SUPABASE_PUBLISHABLE_KEY && "VITE_SUPABASE_PUBLISHABLE_KEY",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(
+      `[Supabase] Missing required environment variable(s): ${missing}.\n` +
+        `Copy .env.example → .env and fill in your Supabase project credentials.`,
+    );
+  }
+  // Legacy warn kept for partial-missing edge-cases (belt-and-suspenders).
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     console.warn(`[Supabase] Missing Supabase environment variable(s).`);
   }
 
