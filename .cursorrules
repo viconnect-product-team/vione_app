@@ -1,0 +1,51 @@
+# Vibe App Monorepo - Cursor Rules
+
+## Tech Stack
+- **Monorepo**: Turborepo, npm workspaces.
+- **Frontend (@vibe/web)**: TanStack React Start, Vite, React 19, TailwindCSS 4, Radix UI, Lucide React, Zod, React Query.
+- **Backend (@vibe/api)**: NestJS, Passport, JWT.
+- **Database (@vibe/db)**: Prisma ORM, PostgreSQL.
+- **Mobile (@vibe/mobile)**: Capacitor (Android & iOS).
+- **Environment**: Node.js >= 22 (Node 22 is required for native globalThis.WebSocket support on both local and server runtime environments).
+
+## Folder Structure
+- `apps/web/`: Frontend application (TanStack Start).
+- `apps/api/`: Backend application (NestJS).
+- `apps/mobile/`: Native Capacitor wrappers (Android/iOS).
+- `packages/db/`: Database models and Prisma client.
+
+## Coding Conventions
+- **TypeScript**: Strict typing, no `any` unless absolutely necessary.
+- **Formatting**: Prettier is used for formatting (`npm run format`).
+- **Linting**: ESLint is configured for both frontend and backend.
+- **Monorepo Scripts**: Run commands via `turbo` from the root (e.g., `npm run dev`, `npm run build`).
+- **Asset/Avatar Paths**: Always use relative URLs (e.g. `/api/public/...`) instead of absolute URLs containing `window.location.origin` to ensure assets work across different domains, ports, and subnets.
+- **Vite & PWA Plugins**: Do NOT add manual Vite or PWA plugins to `apps/web/vite.config.ts` unless extending. The preset `@lovable.dev/vite-tanstack-config` already manages these; duplicate declarations break the build.
+- **Cookie Security**: When setting auth cookies, the `secure` flag must only be attached if the current protocol is HTTPS (`window.location.protocol === 'https:'`). Bypassing this is required to allow auth sessions to be saved when accessing Server Dev over HTTP.
+
+## Deployment Workflow (SSH & Docker)
+The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy.ps1`.
+**Deployment Rules:**
+- **Local Build**: Frontend must be built locally to prevent OOM errors on the server (`--max-old-space-size` is used).
+- **Dockerization**: Two separate Dockerfiles are used: `Dockerfile.frontend` and `Dockerfile.backend`. Both must use `node:22-alpine` as their base image to avoid WebSocket errors.
+- **Tarball Transfer**: Images are saved as `.tar` files locally and transferred securely via SCP to avoid Docker Hub overhead.
+- **Server Execution**: SSH is used to load images, replace Windows line endings in config files (using `sed`), and restart containers via docker-compose.
+- **Data/Volume Safety**: Always use `docker compose down --remove-orphans` and `docker compose up -d --force-recreate` instead of manual container deletion to preserve volume mapping safely.
+- **No Hardcoded Env Vars**: Never hardcode environment variables in codebase or Dockerfiles. They must be injected via `.env.production` (transferred as `.env` on server) and consumed in `docker-compose.yml`.
+
+## Context Synchronization
+- **ALWAYS** check and keep `MEMORY.md` updated with any new architectural decisions, port mappings, infrastructure changes, or caveats.
+
+## Troubleshooting & Bug Fixes Log
+*(Quy tắc: Bất kỳ lỗi/cấu hình sai nào phát sinh khi phát triển hoặc deploy phải được ghi nhận vào đây và MEMORY.md để AI/Dev tránh lặp lại)*
+
+| Vấn đề / Lỗi gặp phải (Issue) | Nguyên nhân gốc rễ (Root Cause) | Giải pháp / Cách fix triệt để (Solution) | Cách phòng tránh (Prevention) |
+| :--- | :--- | :--- | :--- |
+| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file pps/web/nitro.config.ts. | Đảm bảo khai báo rõ preset: 'node-server' cho các project SSR chạy Node container. |
+| **Lỗi Prisma P1013 (unsupported startup parameter)** | Prisma kết nối Supabase qua PgBouncer (port 6432) thiếu flag. | Thêm ?pgbouncer=true vào URL. | Luôn thêm pgbouncer=true khi gọi pooler. |
+| **Lỗi Prisma báo sai port (invalid port) do BOM** | File .env.production lưu với UTF-8 with BOM trên Windows có chứa ký tự tàng hình. | Đổi encoding sang UTF-8 (không BOM). | Luôn dùng UTF-8 thuần trên Windows cho config. |
+| **Không truy cập được Frontend từ ngoài Host (Connection Refused)** | Nitro mặc định chỉ bind 127.0.0.1 bên trong container. | Thêm HOST=0.0.0.0 và NITRO_HOST=0.0.0.0 vào docker-compose.clean.yml. | Khai báo biến môi trường Host bind là 0.0.0.0. |
+| **Backend crash do WebSocket undefined trên Node 20** | Dockerfile dùng 
+ode:20-alpine thiếu globalThis.WebSocket. | Dùng 
+ode:22-alpine làm base image. | Đồng nhất version LTS 22+ giữa local và Docker. |
+| **Lỗi file cấu hình Windows khi chạy trên Linux (CRLF)** | Windows dùng \r\n khiến bash script trên Linux lỗi phân tích cú pháp. | Dùng sed -i 's/\r//g' trước khi chạy. | Lưu các tệp script và config ở định dạng LF. |

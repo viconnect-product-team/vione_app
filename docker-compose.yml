@@ -7,6 +7,6 @@ services:
     container_name: github-demo-qlhh
     restart: always
     ports:
-      - "3007:3000"
+      - "5000:4000"
     env_file:
       - .env

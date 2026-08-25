@@ -28,13 +28,13 @@ if (-not $SkipBuild) {
     Write-Host "`n[0/6] Build Frontend (Web) cuc bo tren Windows de tranh loi tran RAM (OOM) trong Docker..." -ForegroundColor Cyan
     $env:NODE_OPTIONS="--max-old-space-size=8192"
     Invoke-CheckedCommand -Description "NPM Install" -Action { npm install }
-    Invoke-CheckedCommand -Description "Build Web App" -Action { npx turbo run build --filter=@vibe/web }
+    Invoke-CheckedCommand -Description "Build Web App" -Action { npx turbo run build --filter=@vibe/vione_app_fe }
 
     Write-Host "`n[1/6] Khoi tao quy trinh Build Docker Images tieu chuan..." -ForegroundColor Cyan
-    Invoke-CheckedCommand -Description "Xay dung Backend Image (uniBussiness Connect)" -Action {
+    Invoke-CheckedCommand -Description "Xay dung Backend Image (vione_app)" -Action {
         docker build -t app-backend:latest -f Dockerfile.backend .
     }
-    Invoke-CheckedCommand -Description "Xay dung Frontend Image (uniBussiness Connect)" -Action {
+    Invoke-CheckedCommand -Description "Xay dung Frontend Image (vione_app)" -Action {
         docker build -t app-frontend:latest -f Dockerfile.frontend .
     }
 

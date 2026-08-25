@@ -3,15 +3,13 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# The frontend is now pre-built on the host to avoid Docker OOM issues
-COPY apps/web/.output ./apps/web/.output
-COPY apps/web/docker-entrypoint.sh ./apps/web/
+COPY apps/vione_app_fe/.output ./apps/vione_app_fe/.output
+COPY apps/vione_app_fe/docker-entrypoint.sh ./apps/vione_app_fe/
 
-RUN chmod +x ./apps/web/docker-entrypoint.sh || true
+RUN chmod +x ./apps/vione_app_fe/docker-entrypoint.sh || true
 RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 4000
-# Run from within apps/web
-WORKDIR /app/apps/web
+WORKDIR /app/apps/vione_app_fe
 CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; else node .output/server/index.mjs; fi"]

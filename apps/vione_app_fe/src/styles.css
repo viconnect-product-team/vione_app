@@ -1063,3 +1063,62 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+    box-shadow: 0 0 0px #EA9A41;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px #EA9A41, 0 0 20px #EA9A41;
+  }
+}
+
+.data-dot {
+  position: absolute;
+  background-color: #EA9A41;
+  border-radius: 50%;
+  animation: pulse-dot infinite ease-in-out;
+  pointer-events: none;
+}
+
+.animate-spin-10 {
+  animation: spin 10s linear infinite;
+}
+
+.animate-spin-15-reverse {
+  animation: spin 15s linear infinite reverse;
+}
+
+.animate-spin-20 {
+  animation: spin 20s linear infinite;
+}
+
+.animate-\[spin_10s_linear_infinite\] {
+  animation: spin 10s linear infinite;
+}
+
+.animate-\[spin_15s_linear_infinite_reverse\] {
+  animation: spin 15s linear infinite reverse;
+}
+
+.animate-\[spin_20s_linear_infinite\] {
+  animation: spin 20s linear infinite;
+}

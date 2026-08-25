@@ -1,5 +1,5 @@
 {
-  "name": "@vibe/web",
+  "name": "@vibe/vione_app_fe",
   "private": true,
   "sideEffects": false,
   "type": "module",

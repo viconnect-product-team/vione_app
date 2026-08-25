@@ -5,8 +5,7 @@ RUN apk add --no-cache libc6-compat
 RUN npm install -g turbo
 
 COPY . .
-# Prune the workspace for the api app
-RUN turbo prune @vibe/api --docker
+RUN turbo prune @vibe/vione_app_be --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM node:22-alpine AS installer
@@ -22,8 +21,7 @@ RUN npm ci
 COPY --from=builder /app/out/full/ .
 # Generate Prisma Client
 RUN cd packages/db && npx prisma generate
-# Build the api
-RUN npx turbo run build --filter=@vibe/api...
+RUN npx turbo run build --filter=@vibe/vione_app_be...
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -34,8 +32,8 @@ COPY --from=installer /app/packages/db/package.json ./packages/db/
 COPY --from=installer /app/packages/db/prisma ./packages/db/prisma
 COPY --from=installer /app/packages/db/index.js ./packages/db/
 
-COPY --from=installer /app/apps/api/package.json ./apps/api/
-COPY --from=installer /app/apps/api/dist ./apps/api/dist
+COPY --from=installer /app/apps/vione_app_be/package.json ./apps/vione_app_be/
+COPY --from=installer /app/apps/vione_app_be/dist ./apps/vione_app_be/dist
 COPY --from=installer /app/node_modules ./node_modules
 
 # Add entrypoint for migration/seed (optional)
@@ -46,4 +44,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 4000
-CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; node apps/api/dist/main"]
+CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; node apps/vione_app_be/dist/main"]

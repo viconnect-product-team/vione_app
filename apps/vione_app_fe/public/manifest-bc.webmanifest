@@ -1,14 +1,14 @@
 {
-  "name": "ViOne Business Connect",
-  "short_name": "ViOne",
+  "name": "vione_app",
+  "short_name": "vione_app",
   "description": "Nền tảng kết nối, ghi nhớ và phát triển các mối quan hệ kinh doanh.",
   "id": "/connect-app",
   "start_url": "/connect-app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050C15",
-  "theme_color": "#050C15",
+  "background_color": "#19120c",
+  "theme_color": "#19120c",
   "lang": "vi",
   "icons": [
     {
