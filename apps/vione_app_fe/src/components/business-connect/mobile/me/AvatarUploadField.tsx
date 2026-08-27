@@ -13,7 +13,7 @@ import {
   MOMENT_IMAGE_ACCEPT,
 } from "@/lib/business-connect/mobile/moment-image";
 import { useT } from "@/lib/i18n";
-import { NEST_API_URL } from "@/lib/api-client";
+import { getNestApiUrl } from "@/lib/api-client";
 import { getImageUrl } from "@/lib/image";
 
 export type AvatarUploadFieldProps = {
@@ -48,7 +48,7 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
       const formData = new FormData();
       formData.append("file", processed.image.blob, "avatar.jpg");
 
-      const res = await fetch(`${NEST_API_URL}/upload/avatar`, {
+      const res = await fetch(getNestApiUrl("/upload/avatar"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -118,7 +118,12 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
             <button
               type="button"
               disabled={disabled || busy}
-              onClick={() => onChange("")}
+              onClick={() => {
+                onChange("");
+                if (inputRef.current) {
+                  inputRef.current.value = "";
+                }
+              }}
               className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[13.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
             >
               <Trash2 aria-hidden className="size-4" strokeWidth={1.8} />

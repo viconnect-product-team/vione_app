@@ -145,11 +145,14 @@ function SettingsPage() {
                 </label>
                 <select
                   value={lang}
-                  onChange={(e) => setLang(e.target.value as "vi" | "en")}
+                  onChange={(e) => setLang(e.target.value as any)}
                   className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium"
                 >
                   <option value="vi">Tiếng Việt</option>
                   <option value="en">English</option>
+                  <option value="lo">ພາສາລາວ</option>
+                  <option value="km">ភាសាខ្មែរ</option>
+                  <option value="my">မြန်မာဘာသာ</option>
                 </select>
               </div>
             </div>

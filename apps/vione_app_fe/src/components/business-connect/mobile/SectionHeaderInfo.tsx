@@ -6,6 +6,7 @@ import {
   Bell, 
   ChevronRight 
 } from "lucide-react";
+import { MobileSearchBar } from "./MobileSearchBar";
 
 const tabs = [
   { id: "network", label: "Mạng lưới" },
@@ -131,25 +132,11 @@ export const SectionHeaderInfo = (): JSX.Element => {
         role="search"
         onSubmit={(event) => event.preventDefault()}
       >
-        <div className="flex flex-col items-start relative flex-1 self-stretch grow">
-          <label htmlFor={searchId} className="sr-only">
-            Tìm người, công ty, chức danh
-          </label>
-          <div className="flex items-center pl-10 pr-4 py-3 relative self-stretch w-full h-[42px] bg-[#251e18] rounded-lg overflow-hidden border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ffb971]">
-            <input
-              id={searchId}
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Tìm người, công ty, chức danh..."
-              className="relative bg-transparent outline-none border-none flex items-center w-full [font-family:'Inter-Light',Helvetica] font-light text-[#d8c3b1] placeholder:text-[#d8c3b180] text-sm tracking-[0] leading-[normal]"
-            />
-          </div>
-          <Search
-            className="absolute top-[calc(50%_-_7.5px)] left-3 w-[15px] h-[15px] text-[#d8c3b180] pointer-events-none"
-            aria-hidden="true"
-          />
-        </div>
+        <MobileSearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Tìm người, công ty, chức danh..."
+        />
         <button
           type="button"
           onClick={() => setIsFilterOpen((currentValue) => !currentValue)}

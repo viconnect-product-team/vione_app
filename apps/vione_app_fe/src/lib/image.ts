@@ -10,6 +10,9 @@ export function getImageUrl(path: string | null | undefined): string {
   // VITE_API_URL là địa chỉ NestJS Backend
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  let cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (cleanPath.startsWith("/upload/")) {
+    cleanPath = `/api${cleanPath}`;
+  }
   return `${cleanBase}${cleanPath}`;
 }

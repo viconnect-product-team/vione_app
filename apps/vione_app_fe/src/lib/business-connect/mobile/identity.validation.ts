@@ -128,7 +128,23 @@ export const identityUpdateSchema = z
     jobTitle: optionalText(IDENTITY_LIMITS.jobTitle),
     companyName: optionalText(IDENTITY_LIMITS.companyName),
     bio: optionalText(IDENTITY_LIMITS.bio, true),
-    avatarUrl: optionalUrl(IDENTITY_LIMITS.website),
+    avatarUrl: z
+      .string()
+      .max(IDENTITY_LIMITS.website + 200)
+      .transform((s) => s.trim())
+      .refine(
+        (s) =>
+          s === "" ||
+          s.startsWith("/") ||
+          normalizeIdentityUrl(s, IDENTITY_LIMITS.website) !== null,
+        "invalid or unsafe URL"
+      )
+      .transform((s) => {
+        if (s === "") return null;
+        if (s.startsWith("/")) return s;
+        return normalizeIdentityUrl(s, IDENTITY_LIMITS.website);
+      })
+      .nullable(),
     primaryEmail: optionalEmail,
     primaryPhone: optionalPhone,
     website: optionalUrl(IDENTITY_LIMITS.website),

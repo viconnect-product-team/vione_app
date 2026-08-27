@@ -568,6 +568,7 @@ function ContactSection({
             type="email"
             error={errors.email}
             maxLength={255}
+            placeholder="company@example.com"
           />
           <Field
             icon={Phone}
@@ -576,6 +577,7 @@ function ContactSection({
             onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
             error={errors.phone}
             maxLength={32}
+            placeholder="Ví dụ: +84 901 234 567"
           />
           <Field
             icon={MapPin}
@@ -585,6 +587,7 @@ function ContactSection({
             error={errors.address}
             maxLength={255}
             multiline
+            placeholder="Nhập địa chỉ đầy đủ của doanh nghiệp..."
           />
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -617,6 +620,7 @@ function Field({
   error,
   maxLength,
   multiline,
+  placeholder,
 }: {
   icon: typeof Users;
   label: string;
@@ -626,6 +630,7 @@ function Field({
   error?: string;
   maxLength?: number;
   multiline?: boolean;
+  placeholder?: string;
 }) {
   return (
     <label className="block">
@@ -638,6 +643,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           maxLength={maxLength}
+          placeholder={placeholder}
           rows={2}
           className={`w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary/30 ${
             error ? "border-destructive" : "border-border"
@@ -649,7 +655,8 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           maxLength={maxLength}
-          className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary/30 ${
+          placeholder={placeholder}
+          className={`h-9 w-full rounded-lg border bg-background px-3 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary/30 ${
             error ? "border-destructive" : "border-border"
           }`}
         />

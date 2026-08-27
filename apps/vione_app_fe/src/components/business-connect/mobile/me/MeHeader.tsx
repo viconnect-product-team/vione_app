@@ -36,9 +36,9 @@ export function MeHeader({
         minHeight: "calc(var(--bc-mobile-safe-top-compact) + var(--bc-mobile-header-h))",
       }}
     >
-      <span
+      <div
         aria-hidden="true"
-        className="grid shrink-0 place-items-center rounded-full p-[2px]"
+        className="relative shrink-0 rounded-full overflow-hidden"
         style={{
           background: "var(--bc-mobile-accent-grad)",
           height: "var(--bc-mobile-header-avatar)",
@@ -49,15 +49,29 @@ export function MeHeader({
           <img
             src={avatarUrl}
             alt=""
-            className="h-full w-full rounded-full object-cover"
+            className="absolute rounded-full object-cover"
+            style={{
+              top: "2px",
+              left: "2px",
+              width: "calc(100% - 4px)",
+              height: "calc(100% - 4px)",
+            }}
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <span className="grid h-full w-full place-items-center rounded-full bg-[var(--bc-mobile-surface)] text-[15px] font-semibold text-[var(--bc-mobile-accent)]">
+          <span
+            className="absolute grid place-items-center rounded-full bg-[var(--bc-mobile-surface)] text-[15px] font-semibold text-[var(--bc-mobile-accent)]"
+            style={{
+              top: "2px",
+              left: "2px",
+              width: "calc(100% - 4px)",
+              height: "calc(100% - 4px)",
+            }}
+          >
             {initials ?? <User className="h-5 w-5" strokeWidth={1.6} />}
           </span>
         )}
-      </span>
+      </div>
 
       <div className="min-w-0 flex-1">
         <h1 className="flex items-center gap-1.5 text-[length:var(--bc-mobile-header-title)] font-semibold leading-tight tracking-tight text-[var(--bc-mobile-text)]">

@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { getNestApiUrl } from "@/lib/api-client";
+
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, TableShell } from "@/components/dashboard/PageKit";
 import { EmptyState, ListSkeleton, NoSearchResult } from "@/components/dashboard/StateKit";
@@ -156,12 +157,13 @@ function DocsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fields: CrudField[] = [
-    { name: "name", label: t("doc.col.name"), type: "text", required: true },
-    { name: "category", label: t("doc.col.cat"), type: "text", required: true },
+    { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
+    { name: "category", label: t("doc.col.cat"), type: "text", required: true, placeholder: "Nhập danh mục (ví dụ: Tài chính, Nhân sự...)" },
     {
       name: "type",
       label: t("doc.col.type"),
       type: "select",
+      placeholder: "Chọn định dạng tệp...",
       options: [
         { value: "pdf", label: "PDF" },
         { value: "docx", label: "DOCX" },
@@ -169,8 +171,8 @@ function DocsPage() {
         { value: "pptx", label: "PPTX" },
       ],
     },
-    { name: "size", label: t("doc.col.size"), type: "text", placeholder: "2.4 MB" },
-    { name: "uploadedBy", label: t("doc.col.uploader"), type: "text" },
+    { name: "size", label: t("doc.col.size"), type: "text", placeholder: "Ví dụ: 2.4 MB" },
+    { name: "uploadedBy", label: t("doc.col.uploader"), type: "text", placeholder: "Tên người tải lên..." },
   ];
 
   const onSubmit = async (v: CrudValues) => {
@@ -227,10 +229,27 @@ function DocsPage() {
   const onUploadFile = async (f: File) => {
     setUploading(true);
     try {
-      const safeName = f.name.replace(/[^\w.-]+/g, "_");
-      const path = `${crypto.randomUUID()}-${safeName}`;
-      const { error } = await supabase.storage.from("documents").upload(path, f);
-      if (error) throw error;
+      const formData = new FormData();
+      formData.append("file", f);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+      const headers = new Headers();
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+
+      const response = await fetch(getNestApiUrl("/upload/file"), {
+        method: "POST",
+        body: formData,
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+      const resData = await response.json();
+      const path = resData.url;
+
       const ext = (f.name.split(".").pop() ?? "").toLowerCase();
       const type = (
         ["pdf", "docx", "xlsx", "pptx"].includes(ext) ? ext : "pdf"

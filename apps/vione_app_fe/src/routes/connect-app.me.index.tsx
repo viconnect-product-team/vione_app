@@ -563,10 +563,10 @@ function ConnectAppMePage() {
                     }`}
                   >
                     {code === "vi" ? "Tiếng Việt" :
-                     code === "en" ? "Tiếng Anh" :
-                     code === "lo" ? "Tiếng Lào" :
-                     code === "km" ? "Tiếng Campuchia" :
-                     "Tiếng Myanmar"}
+                     code === "en" ? "English" :
+                     code === "lo" ? "ພາສາລາວ" :
+                     code === "km" ? "ភាសាខ្មែរ" :
+                     "မြန်မာဘာသာ"}
                   </button>
                 ))}
               </div>

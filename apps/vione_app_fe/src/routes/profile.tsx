@@ -4,9 +4,9 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
-import { supabase } from "@/integrations/supabase/client";
 import { useT, type TKey } from "@/lib/i18n";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Hồ sơ cá nhân — ViOne" }] }),
@@ -48,32 +48,43 @@ function ProfilePage() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!active) return;
-      if (!data.user) {
-        navigate({ to: "/auth" });
-        return;
-      }
-      setUserId(data.user.id);
-      setEmail(data.user.email ?? "");
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, phone, title, location, bio")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (active) {
-        const p = (prof ?? {}) as Partial<Form>;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
+    if (!token) {
+      navigate({ to: "/auth" });
+      return;
+    }
+
+    let decodedUser: any = null;
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      decodedUser = JSON.parse(window.atob(base64));
+      setEmail(decodedUser.username || "");
+      setUserId(decodedUser.sub);
+    } catch (e) {
+      navigate({ to: "/auth" });
+      return;
+    }
+
+    fetchNestApi("/profile")
+      .then((prof) => {
+        if (!active) return;
+        const p = prof || {};
         setForm({
-          full_name: p.full_name ?? (data.user.user_metadata?.full_name as string) ?? "",
-          phone: p.phone ?? "",
-          title: p.title ?? "",
-          location: p.location ?? "",
-          bio: p.bio ?? "",
-          avatar_url: (data.user.user_metadata?.avatar_url as string) ?? "",
+          full_name: p.display_name || decodedUser.name || "",
+          phone: p.phone || "",
+          title: p.professional_title || "",
+          location: p.region || "",
+          bio: p.bio || "",
+          avatar_url: p.avatar_url || "",
         });
         setLoading(false);
-      }
-    });
+      })
+      .catch((e) => {
+        console.error("Error loading profile:", e);
+        if (active) setLoading(false);
+      });
+
     return () => {
       active = false;
     };
@@ -86,32 +97,24 @@ function ProfilePage() {
   async function save() {
     if (!userId) return;
     setSaving(true);
-    // Save avatar_url into user_metadata (profiles table has no avatar column)
-    const avatarMeta = form.avatar_url.trim();
-    const [profileResult, metaResult] = await Promise.all([
-      supabase.from("profiles").upsert(
-        {
-          id: userId,
-          email,
-          full_name: form.full_name.trim(),
-          phone: form.phone.trim() || null,
-          title: form.title.trim() || null,
-          location: form.location.trim() || null,
+    try {
+      await fetchNestApi("/profile", {
+        method: "POST",
+        body: JSON.stringify({
+          display_name: form.full_name.trim(),
+          professional_title: form.title.trim() || null,
+          region: form.location.trim() || null,
           bio: form.bio.trim() || null,
-        },
-        { onConflict: "id" },
-      ),
-      supabase.auth.updateUser({
-        data: { avatar_url: avatarMeta || null },
-      }),
-    ]);
-    setSaving(false);
-    const error = profileResult.error ?? metaResult.error;
-    if (error) {
+          avatar_url: form.avatar_url.trim() || null,
+          phone: form.phone.trim() || null,
+        }),
+      });
+      toast.success(t("profile.saved"));
+    } catch (error: any) {
       toast.error(error.message);
-      return;
+    } finally {
+      setSaving(false);
     }
-    toast.success(t("profile.saved"));
   }
 
   return (
@@ -196,3 +199,4 @@ function ProfilePage() {
     </AppShell>
   );
 }
+

@@ -61,6 +61,10 @@ export function ProfileMenu() {
   const displayName = fullName || email || "—";
 
   async function handleLogout() {
+    localStorage.removeItem('vibe_token');
+    localStorage.removeItem('vibe_refresh_token');
+    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     await supabase.auth.signOut();
     toast.success(t("profile.loggedOut"));
     navigate({ to: "/auth", replace: true });

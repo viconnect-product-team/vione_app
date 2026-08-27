@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+
 
 type AuthContextType = {
   user: User | null;
@@ -87,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('vibe_refresh_token');
     document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setStatus('out');

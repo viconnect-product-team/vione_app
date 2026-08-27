@@ -23,6 +23,7 @@ import { reportCommunityMetric } from "@/lib/business-connect/mobile/community.t
 import type { CommunitySummaryDTO } from "@/lib/business-connect/mobile/community.types";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { ViOneLogo } from "../ViOneLogo";
+import { MobileSearchBar } from "../MobileSearchBar";
 import icon from "../icon.svg";
 import { CommunityJoinSection } from "./CommunityJoinSection";
 import { CommunityJoinHistory } from "./CommunityJoinHistory";
@@ -154,31 +155,11 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
               role="search"
               onSubmit={(event) => event.preventDefault()}
             >
-              <div className="flex flex-col items-start relative flex-1 self-stretch grow w-full">
-                <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ffb971]">
-                  <label htmlFor="bc-community-search" className="sr-only">
-                    Tìm hiệp hội, nhóm, sự kiện...
-                  </label>
-                  <input
-                    id="bc-community-search"
-                    className="w-full bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
-                    style={{ WebkitAppearance: "none", appearance: "none", boxShadow: "none" }}
-                    type="search"
-                    value={term}
-                    onChange={(e) => setTerm(e.target.value)}
-                    placeholder="Tìm hiệp hội, nhóm, sự kiện..."
-                    aria-label="Tìm hiệp hội, nhóm, sự kiện..."
-                    autoComplete="off"
-                    spellCheck="false"
-                  />
-                </div>
-                <img
-                  className="absolute top-1/2 -translate-y-1/2 left-3 w-[15px] h-[15px] pointer-events-none"
-                  alt=""
-                  aria-hidden="true"
-                  src={icon}
-                />
-              </div>
+            <MobileSearchBar
+              value={term}
+              onChange={setTerm}
+              placeholder="Tìm hiệp hội, nhóm, sự kiện..."
+            />
             </form>
 
             {tab === "history" ? (

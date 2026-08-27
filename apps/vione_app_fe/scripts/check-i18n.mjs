@@ -1,13 +1,8 @@
 // Build-time guard: fail the build when a literal i18n key used anywhere in
-// the app (t("...")) is missing from src/lib/i18n.ts, or is defined but empty
-// in either language (vi / en).
+// the app (t("...")) is missing from locales JSON, or is defined but empty.
 //
 // Runs in prebuild (see package.json). Exits non-zero so broken/half-translated
 // labels are caught before shipping instead of rendering raw keys.
-//
-// Scope is intentionally conservative: only *literal* t("...") calls are
-// checked. Dynamically-built keys (t(SOME_MAP[x]), t(`a.${b}`)) are skipped —
-// they can't be verified statically and would produce false positives.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -15,40 +10,27 @@ import { dirname, resolve, join, extname } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
+const repoRoot = resolve(root, "../..");
 
-const I18N_FILE = resolve(root, "src/lib/i18n.ts");
+const localesDir = resolve(repoRoot, "packages/shared/locales");
 const SCAN_DIRS = ["src/routes", "src/components"].map((d) => resolve(root, d));
 const EXTS = new Set([".ts", ".tsx"]);
 
-// ---- 1. Collect defined keys + per-key vi/en presence --------------------
-const i18nSrc = readFileSync(I18N_FILE, "utf8");
+// ---- 1. Load JSON translation dictionaries --------------------
+const vi = JSON.parse(readFileSync(join(localesDir, "vi.json"), "utf8"));
+const en = JSON.parse(readFileSync(join(localesDir, "en.json"), "utf8"));
+const lo = JSON.parse(readFileSync(join(localesDir, "lo.json"), "utf8"));
+const km = JSON.parse(readFileSync(join(localesDir, "km.json"), "utf8"));
+const my = JSON.parse(readFileSync(join(localesDir, "my.json"), "utf8"));
 
-// Match each `"key": {` and remember where its entry starts so we can slice
-// the body (which may span multiple lines) up to the next entry.
-const entryStarts = [...i18nSrc.matchAll(/"([^"\n]+)"\s*:\s*\{/g)].map((m) => ({
-  key: m[1],
-  index: m.index,
-}));
-
-const defined = new Map(); // key -> { vi: bool, en: bool }
-for (let i = 0; i < entryStarts.length; i++) {
-  const { key, index } = entryStarts[i];
-  const end = i + 1 < entryStarts.length ? entryStarts[i + 1].index : i18nSrc.length;
-  const body = i18nSrc.slice(index, end);
-  // Values may be double- or single-quoted (single quotes used when the text
-  // contains a double quote, e.g. "{name}" prompts).
-  const vi = /\bvi\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const en = /\ben\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const lo = /\blo\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const km = /\bkm\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const my = /\bmy\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const val = (m) => (m ? (m[1] ?? m[2] ?? "") : "");
+const defined = new Map();
+for (const key of Object.keys(vi)) {
   defined.set(key, {
-    vi: !!vi && val(vi).trim().length > 0,
-    en: !!en && val(en).trim().length > 0,
-    lo: !!lo && val(lo).trim().length > 0,
-    km: !!km && val(km).trim().length > 0,
-    my: !!my && val(my).trim().length > 0,
+    vi: !!vi[key] && vi[key].trim().length > 0,
+    en: !!en[key] && en[key].trim().length > 0,
+    lo: !!lo[key] && lo[key].trim().length > 0,
+    km: !!km[key] && km[key].trim().length > 0,
+    my: !!my[key] && my[key].trim().length > 0,
   });
 }
 
@@ -68,9 +50,6 @@ const used = new Map(); // key -> Set(relative file paths)
 for (const dir of SCAN_DIRS) {
   for (const file of walk(dir)) {
     const src = readFileSync(file, "utf8");
-    // Only scan files where `t` is the global translator (from useT()). Files
-    // with their own local `t` (e.g. card.$code.tsx uses a local lookup table)
-    // reference a different, self-contained key space.
     if (!/\buseT\s*\(/.test(src)) continue;
     for (const m of src.matchAll(/\bt\(\s*"([^"]+)"/g)) {
       const key = m[1];
@@ -104,8 +83,8 @@ if (missing.length || emptyLang.length) {
     console.error(`\nThiếu bản dịch (${emptyLang.length}):`);
     for (const k of emptyLang.sort()) console.error(`  - ${k}`);
   }
-  console.error(`\nCập nhật src/lib/i18n.ts (cả vi và en) rồi build lại.\n`);
+  console.error(`\nCập nhật file JSON tương ứng trong packages/shared/locales/ rồi build lại.\n`);
   process.exit(1);
 }
 
-console.log(`[i18n-check] OK — ${used.size} key i18n dùng trong app đều có bản dịch vi + en.`);
+console.log(`[i18n-check] OK — ${used.size} key i18n dùng trong app đều có bản dịch đầy đủ.`);

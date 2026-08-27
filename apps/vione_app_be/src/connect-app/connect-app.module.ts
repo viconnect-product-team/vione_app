@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ConnectAppController, ConnectAppPublicController } from './connect-app.controller';
+import { MeController } from './me.controller';
+import { CommunityController } from './community.controller';
+import { NetworkController } from './network.controller';
+import { PublicController } from './public.controller';
 import { ConnectAppService } from './connect-app.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  controllers: [ConnectAppController, ConnectAppPublicController],
+  imports: [PrismaModule],
+  controllers: [MeController, CommunityController, NetworkController, PublicController],
   providers: [ConnectAppService],
+  exports: [ConnectAppService],
 })
 export class ConnectAppModule {}

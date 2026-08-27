@@ -23,6 +23,7 @@ import {
 import { useMemo, useState, useId } from "react";
 import { useFmt, useLang, useT } from "@/lib/i18n";
 import icon from "./icon.svg";
+import { MobileSearchBar } from "./MobileSearchBar";
 import image from "./image.svg";
 import { ViOneLogo } from "./ViOneLogo";
 import {
@@ -215,31 +216,11 @@ export function NetworkHome() {
           role="search"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="flex flex-col items-start relative flex-1 self-stretch grow w-full">
-            <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ffb971]">
-              <label htmlFor={searchId} className="sr-only">
-                Tìm người, công ty, chức danh...
-              </label>
-              <input
-                id={searchId}
-                className="w-full bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
-                style={{ WebkitAppearance: "none", appearance: "none", boxShadow: "none" }}
-                type="search"
-                value={term}
-                onChange={(event) => setTerm(event.target.value)}
-                placeholder="Tìm người, công ty, chức danh..."
-                aria-label="Tìm người, công ty, chức danh..."
-                autoComplete="off"
-                spellCheck="false"
-              />
-            </div>
-            <img
-              className="absolute top-1/2 -translate-y-1/2 left-3 w-[15px] h-[15px] pointer-events-none"
-              alt=""
-              aria-hidden="true"
-              src={icon}
+            <MobileSearchBar
+              value={term}
+              onChange={setTerm}
+              placeholder="Tìm người, công ty, chức danh..."
             />
-          </div>
           <div className="relative shrink-0">
             <button
               className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea9a41] hover:border-[#ffb971] transition-colors"

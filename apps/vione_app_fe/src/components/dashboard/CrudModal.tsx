@@ -16,6 +16,7 @@ export type CrudField =
       type: "select";
       options: { value: string; label: string }[];
       required?: boolean;
+      placeholder?: string;
     };
 
 export type CrudValues = Record<string, string | number>;
@@ -52,7 +53,7 @@ export function CrudModal({
       for (const f of fields) {
         base[f.name] =
           initial?.[f.name] ??
-          (f.type === "number" ? 0 : f.type === "select" ? (f.options[0]?.value ?? "") : "");
+          (f.type === "number" ? 0 : f.type === "select" ? (f.placeholder ? "" : (f.options[0]?.value ?? "")) : "");
       }
       setValues(base);
     }
@@ -98,6 +99,11 @@ export function CrudModal({
                   onChange={(e) => set(f.name, e.target.value)}
                   className={`${inputCls} font-medium`}
                 >
+                  {f.placeholder && (
+                    <option value="" disabled hidden={f.required}>
+                      {f.placeholder}
+                    </option>
+                  )}
                   {f.options.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}

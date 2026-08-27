@@ -21,7 +21,7 @@ export class AuthGuard implements CanActivate {
     try {
       // 1. Thử verify bằng JWT_SECRET của NestJS backend
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'secretKey',
+        secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
       });
       request['user'] = payload;
       return true;

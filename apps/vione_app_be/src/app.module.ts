@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { BusinessCardModule } from './business-card/business-card.module';
 import { UploadModule } from './upload/upload.module';
 import { ConnectAppModule } from './connect-app/connect-app.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConnectAppModule } from './connect-app/connect-app.module';
     BusinessCardModule,
     UploadModule,
     ConnectAppModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

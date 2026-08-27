@@ -1,10 +1,10 @@
 services:
   app:
-    image: registry-harbor.ubos.vn/github-demo/qlhh:latest
+    image: registry-harbor.ubos.vn/github-demo/vione:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: github-demo-qlhh
+    container_name: vione-app
     restart: always
     ports:
       - "5000:4000"

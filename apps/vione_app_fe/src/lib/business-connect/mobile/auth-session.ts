@@ -132,6 +132,13 @@ export async function signOutSession(queryClient?: {
     /* vẫn phải dọn sạch dấu vết cục bộ dù gọi máy chủ thất bại */
   }
   purgeStoredAuthTokens();
+  const local = safeLocal();
+  if (local) {
+    local.removeItem('vibe_token');
+    local.removeItem('vibe_refresh_token');
+    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
   safeSession()?.removeItem(TAB_MARKER_KEY);
   clearLastMobileRoute();
   if (!getRememberPreference()) safeLocal()?.removeItem(EMAIL_KEY);

@@ -1,41 +1,40 @@
 // Build-time guard: warn/fail when i18n keys used for notification
-// status / priority / unread labels do not exist in src/lib/i18n.ts.
+// status / priority / unread labels do not exist in locales JSON.
 //
 // Runs in prebuild (see package.json). Exits non-zero on missing keys so
 // broken labels are caught before shipping instead of rendering raw keys.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
+const repoRoot = resolve(root, "../..");
 
-const I18N_FILE = resolve(root, "src/lib/i18n.ts");
+const localesDir = resolve(repoRoot, "packages/shared/locales");
 const SCREEN_FILE = resolve(root, "src/routes/m.notifications.tsx");
 
 // Only guard the label groups the notification screen relies on.
 const GUARDED = /^m\.notifications\.(status|priority|filter)\./;
 
-const i18nSrc = readFileSync(I18N_FILE, "utf8");
 const screenSrc = readFileSync(SCREEN_FILE, "utf8");
 
-// Collect defined translation keys: matches `"some.key": {`.
+// Load JSON translation dictionaries
+const vi = JSON.parse(readFileSync(join(localesDir, "vi.json"), "utf8"));
+const en = JSON.parse(readFileSync(join(localesDir, "en.json"), "utf8"));
+const lo = JSON.parse(readFileSync(join(localesDir, "lo.json"), "utf8"));
+const km = JSON.parse(readFileSync(join(localesDir, "km.json"), "utf8"));
+const my = JSON.parse(readFileSync(join(localesDir, "my.json"), "utf8"));
+
 const defined = new Map();
-for (const match of i18nSrc.matchAll(/"([^"]+)"\s*:\s*(\{[\s\S]*?\})/g)) {
-  const [key, body] = [match[1], match[2]];
-  const vi = /\bvi\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const en = /\ben\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const lo = /\blo\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const km = /\bkm\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const my = /\bmy\s*:\s*(?:"([^]*?)"|'([^]*?)')/.exec(body);
-  const val = (m) => (m ? (m[1] ?? m[2] ?? "") : "");
+for (const key of Object.keys(vi)) {
   defined.set(key, {
-    vi: !!vi && val(vi).trim().length > 0,
-    en: !!en && val(en).trim().length > 0,
-    lo: !!lo && val(lo).trim().length > 0,
-    km: !!km && val(km).trim().length > 0,
-    my: !!my && val(my).trim().length > 0,
+    vi: !!vi[key] && vi[key].trim().length > 0,
+    en: !!en[key] && en[key].trim().length > 0,
+    lo: !!lo[key] && lo[key].trim().length > 0,
+    km: !!km[key] && km[key].trim().length > 0,
+    my: !!my[key] && my[key].trim().length > 0,
   });
 }
 
@@ -54,7 +53,7 @@ if (missing.length > 0) {
     "\n[i18n-check] Thiếu key i18n cho nhãn trạng thái/priority/unread trong màn hình thông báo:",
   );
   for (const k of missing) console.error(`  - ${k}`);
-  console.error(`\nThêm các key trên vào src/lib/i18n.ts (cả vi, en, lo, km, my) rồi build lại.\n`);
+  console.error(`\nThêm các key trên vào file JSON tương ứng trong packages/shared/locales/ rồi build lại.\n`);
   process.exit(1);
 }
 
