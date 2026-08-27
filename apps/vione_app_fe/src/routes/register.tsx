@@ -3,7 +3,6 @@
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 import { takeScannedCard } from "@/lib/business-connect/mobile/auth-scan";
 import {
@@ -11,6 +10,8 @@ import {
   type SignUpStatus,
 } from "@/components/business-connect/mobile/ConnectAppSignUp";
 import { applyRememberPreference } from "@/lib/business-connect/mobile/auth-session";
+import { fetchNestApi } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
   ssr: false,
@@ -28,7 +29,8 @@ export const Route = createFileRoute("/register")({
       { property: "og:title", content: "Tạo tài khoản — Business Connect" },
       {
         property: "og:description",
-        content: "Đăng ký Business Connect và kích hoạt danh thiếp điện tử của bạn.",
+        content:
+          "Đăng ký tài khoản Business Connect để kích hoạt danh tính doanh nghiệp và danh thiếp điện tử.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -41,26 +43,26 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const t = useT();
   const navigate = useNavigate();
-  const { email: emailParam } = Route.useSearch();
+  const search = Route.useSearch();
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState(emailParam ?? "");
+  const [email, setEmail] = useState(search.email ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<SignUpStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Prefill from a business card the user confirmed on the sign-in screen.
+  // Scan detection
   useEffect(() => {
     const card = takeScannedCard();
-    if (!card) return;
-    if (card.fullName) setFullName((v: string) => v || card.fullName!);
-    if (card.email) setEmail((v: string) => v || card.email!);
+    if (card) {
+      if (card.ownerEmail) setEmail(card.ownerEmail);
+      if (card.ownerName) setFullName(card.ownerName);
+    }
   }, []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/connect-app/activate" });
-    });
+    const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+    if (token) navigate({ to: "/connect-app/activate" });
   }, [navigate]);
 
   async function submit() {
@@ -90,22 +92,13 @@ function RegisterPage() {
     setStatus("loading");
     setErrorMessage(null);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: mail,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/connect-app/activate`,
-          data: { full_name: name },
-        },
+      await fetchNestApi("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ username: mail, password, name }),
       });
-      if (error) throw error;
       applyRememberPreference(true, mail);
-      if (data.session) {
-        // Auto-confirm enabled: continue straight into identity activation.
-        navigate({ to: "/connect-app/activate" });
-        return;
-      }
-      setStatus("sent");
+      toast.success(t("auth.signUpSuccess"));
+      navigate({ to: "/auth", replace: true });
     } catch (e) {
       setStatus("error");
       setErrorMessage(e instanceof Error ? e.message : t("auth.genericError"));

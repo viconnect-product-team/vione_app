@@ -146,13 +146,12 @@ export function HomeNotificationsMenu({ unreadCount }: { unreadCount: number | n
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        style={{ height: "var(--bc-mobile-header-action)", width: "var(--bc-mobile-header-action)" }}
-        className="relative grid place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+        className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41]"
       >
-        <Bell className="h-5 w-5" strokeWidth={1.6} />
+        <Bell className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
         {hasUnread ? (
-          <span className="absolute right-0.5 top-0.5 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-[var(--bc-mobile-accent)] px-1 text-[9px] font-semibold leading-none text-[var(--bc-mobile-accent-on)]">
-            {unreadCount > 9 ? "9+" : unreadCount}
+          <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[#ea9a41] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#2c1600]">
+            {unreadCount}
           </span>
         ) : null}
       </button>

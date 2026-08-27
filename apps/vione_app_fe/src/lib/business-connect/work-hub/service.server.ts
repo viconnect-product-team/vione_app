@@ -27,8 +27,7 @@ import { WorkHubError } from "./errors";
 
 type Sb = SupabaseClient<any, any, any>;
 
-async function resolveAll(sb: Sb, userId: string, now: string): Promise<WorkHubItemDTO[]> {
-  const raw = await WorkHubRepository.load(sb, userId, now);
+export function resolveAllFromRaw(raw: any, now: string): WorkHubItemDTO[] {
   const items: WorkHubItemDTO[] = [];
   for (const r of raw.connectionRequests) {
     const it = resolveConnectionRequest(r, { now });
@@ -57,6 +56,11 @@ async function resolveAll(sb: Sb, userId: string, now: string): Promise<WorkHubI
   return sortWorkHubItems(dedupeWorkHubItems(items));
 }
 
+async function resolveAll(sb: Sb, userId: string, now: string): Promise<WorkHubItemDTO[]> {
+  const raw = await WorkHubRepository.load(sb, userId, now);
+  return resolveAllFromRaw(raw, now);
+}
+
 function applyFilters(items: WorkHubItemDTO[], filters: WorkHubListFilters): WorkHubItemDTO[] {
   return items.filter((it) => {
     if (filters.category && it.category !== filters.category) return false;
@@ -82,6 +86,11 @@ export const WorkHubService = {
 
   async getOverview(sb: Sb, userId: string, now: string): Promise<WorkHubOverviewDTO> {
     const items = await resolveAll(sb, userId, now);
+    return buildOverview(items, now);
+  },
+
+  getOverviewFromRaw(raw: any, now: string): WorkHubOverviewDTO {
+    const items = resolveAllFromRaw(raw, now);
     return buildOverview(items, now);
   },
 

@@ -13,8 +13,8 @@ export const Route = createFileRoute("/connect-app")({
   ssr: false,
   beforeLoad: async ({ location }) => {
     rememberVioneAppContext();
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+    if (!token) {
       // Preserve the intended deep-link destination for post-auth return.
       throw redirect({ to: "/auth", search: { redirect: location.href, m: "1" } });
     }

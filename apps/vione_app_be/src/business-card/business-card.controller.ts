@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { BusinessCardService } from './business-card.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -31,7 +41,11 @@ export class BusinessCardController {
 
   @UseGuards(AuthGuard)
   @Patch(':id/status')
-  setStatus(@Request() req: any, @Param('id') id: string, @Body('status') status: string) {
+  setStatus(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('status') status: string,
+  ) {
     return this.businessCardService.setStatus(req.user.sub, id, status);
   }
   @UseGuards(AuthGuard)
@@ -67,20 +81,42 @@ export class BusinessCardController {
 
   @UseGuards(AuthGuard)
   @Patch('leads/:id/status')
-  updateLeadStatus(@Request() req: any, @Param('id') id: string, @Body() body: any) {
-    return this.businessCardService.updateLeadStatus(req.user.sub, id, body.status, body.note);
+  updateLeadStatus(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.businessCardService.updateLeadStatus(
+      req.user.sub,
+      id,
+      body.status,
+      body.note,
+    );
   }
 
   @UseGuards(AuthGuard)
   @Post('leads/:id/reply')
-  sendLeadReply(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  sendLeadReply(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.businessCardService.sendLeadReply(req.user.sub, id, body);
   }
 
   @UseGuards(AuthGuard)
   @Post('leads/:id/workflow')
-  processLeadWorkflow(@Request() req: any, @Param('id') id: string, @Body() body: any) {
-    return this.businessCardService.processLeadWorkflow(req.user.sub, id, body.status, body.note);
+  processLeadWorkflow(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.businessCardService.processLeadWorkflow(
+      req.user.sub,
+      id,
+      body.status,
+      body.note,
+    );
   }
 
   @UseGuards(AuthGuard)
@@ -91,4 +127,3 @@ export class BusinessCardController {
     return this.businessCardService.getLeadStats(req.user.sub, days);
   }
 }
-

@@ -27,6 +27,7 @@ import {
   resolveVionePostLoginPath,
   shouldUseVioneAuth,
 } from "@/lib/business-connect/mobile/vione-auth-context";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (
@@ -151,20 +152,22 @@ function AuthPage() {
     setLastAction("password");
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
+        await fetchNestApi("/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ username: email, password }),
+        });
         toast.success(t("auth.signUpSuccess"));
-        // automatically switch to sign in mode or auto login
         setMode("signin");
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        
-        if (data.session) {
+        const res = await fetchNestApi("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
+        if (res.access_token) {
           const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; secure' : '';
-          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax${secure}`;
-          document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${data.session.expires_in}; SameSite=Lax${secure}`;
-          setAuthData(data.session);
+          document.cookie = `sb-access-token=${res.access_token}; path=/; max-age=3600; SameSite=Lax${secure}`;
+          document.cookie = `sb-refresh-token=${res.refresh_token || ''}; path=/; max-age=604800; SameSite=Lax${secure}`;
+          setAuthData(res);
           applyRememberPreference(remember, email);
           await goPostLogin();
         } else {
@@ -181,24 +184,172 @@ function AuthPage() {
     }
   }
 
+  // Google Sign-In helper using GIS (Google Identity Services)
+  const loginGoogleWeb = (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
+      
+      const initializeGis = () => {
+        try {
+          (window as any).google.accounts.id.initialize({
+            client_id: clientId,
+            ux_mode: "popup",
+            callback: (res: any) => {
+              if (res.credential) {
+                resolve(res.credential);
+              } else {
+                reject(new Error("No credential returned from Google"));
+              }
+            },
+          });
+          
+          // Trigger prompt
+          (window as any).google.accounts.id.prompt((notification: any) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // Fallback to custom button click or prompt skipped
+              // We can render a hidden button to trigger standard popup
+              (window as any).google.accounts.id.renderButton(
+                document.getElementById("hidden-google-btn"),
+                { theme: "outline", size: "large" }
+              );
+              const btn = document.getElementById("hidden-google-btn")?.querySelector("div");
+              if (btn) btn.click();
+            }
+          });
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if ((window as any).google?.accounts?.id) {
+        initializeGis();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGis;
+      script.onerror = () => reject(new Error("Failed to load Google GIS SDK"));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Sign In with Apple helper using Apple Sign-In JS
+  const loginAppleWeb = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || "your-apple-client-id";
+      
+      const initializeApple = () => {
+        try {
+          (window as any).AppleID.auth.init({
+            clientId: clientId,
+            scope: "name email",
+            redirectURI: window.location.origin + "/auth",
+            usePopup: true,
+          });
+          (window as any).AppleID.auth.signIn()
+            .then(resolve)
+            .catch(reject);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if ((window as any).AppleID) {
+        initializeApple();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+      script.async = true;
+      script.onload = initializeApple;
+      script.onerror = () => reject(new Error("Failed to load Apple Sign-In SDK"));
+      document.head.appendChild(script);
+    });
+  };
+
   async function oauth(provider: "google" | "apple") {
     setOauthPending(provider);
     setAuthError(null);
     setAuthErrorInfo(null);
     setLastAction(provider);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}${resolveVionePostLoginPath(
-            safeRedirect(redirectTo),
-            hasRememberedVioneAppContext(),
-          ) ?? (hasRememberedVioneAppContext() ? "/connect-app" : "/")}`,
-        },
-      });
-      if (error) throw error;
-      // Trình duyệt sẽ chuyển hướng ngay lập tức
-    } catch (e) {
+      if (provider === "google") {
+        let idToken = "";
+        
+        // Capacitor check for mobile native login
+        if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform()) {
+          const googleAuthPkg = "@codetrix-studio/capacitor-google-auth";
+          const { GoogleAuth } = await import(/* @vite-ignore */ googleAuthPkg);
+          const googleUser = await GoogleAuth.signIn();
+          idToken = googleUser.authentication.idToken;
+        } else {
+          idToken = await loginGoogleWeb();
+        }
+
+        if (!idToken) throw new Error("Google login failed - no token received");
+
+        // Send token to custom backend NestJS
+        const customSession = await fetchNestApi("/auth/google", {
+          method: "POST",
+          body: JSON.stringify({ token: idToken }),
+        });
+
+        setAuthData(customSession);
+        applyRememberPreference(remember, customSession.user.email);
+        await goPostLogin();
+      } else {
+        let appleResult: any = null;
+        
+        // Capacitor check for mobile native login
+        if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform()) {
+          const appleSignInPkg = "@capacitor-community/apple-sign-in";
+          const { SignInWithApple } = await import(/* @vite-ignore */ appleSignInPkg);
+          const result = await SignInWithApple.authorize({
+            clientId: import.meta.env.VITE_APPLE_CLIENT_ID || "your-apple-client-id",
+            redirectUri: window.location.origin + "/auth",
+            scopes: "email name",
+          });
+          appleResult = {
+            authorization: {
+              id_token: result.response.identityToken,
+              code: result.response.authorizationCode,
+            },
+            user: result.response.email ? {
+              email: result.response.email,
+              name: {
+                firstName: result.response.givenName || "",
+                lastName: result.response.familyName || "",
+              }
+            } : null
+          };
+        } else {
+          appleResult = await loginAppleWeb();
+        }
+
+        if (!appleResult || !appleResult.authorization?.id_token) {
+          throw new Error("Apple login failed - no token received");
+        }
+
+        // Send identity token to custom backend NestJS
+        const customSession = await fetchNestApi("/auth/apple", {
+          method: "POST",
+          body: JSON.stringify({
+            identityToken: appleResult.authorization.id_token,
+            authorizationCode: appleResult.authorization.code,
+            fullName: appleResult.user?.name,
+            email: appleResult.user?.email,
+          }),
+        });
+
+        setAuthData(customSession);
+        applyRememberPreference(remember, customSession.user.email);
+        await goPostLogin();
+      }
+    } catch (e: any) {
       const info = classifyAuthError(e, { provider });
       setAuthErrorInfo(info);
       setAuthError(t(info.messageKey as Parameters<typeof t>[0]));
@@ -326,7 +477,7 @@ function AuthPage() {
           <Button
             onClick={submit}
             disabled={loading}
-            className="h-11 w-full rounded-xl text-sm font-semibold"
+            className="h-11 w-full rounded-xl text-sm font-semibold border border-solid border-[#ea9a41] bg-[#ea9a41]/10 text-[#ffb971] hover:bg-[#ea9a41] hover:text-white transition-all duration-200"
           >
             {loading
               ? t("auth.processing")
@@ -352,7 +503,7 @@ function AuthPage() {
         <Button
           onClick={google}
           variant="outline"
-          className="h-11 w-full rounded-xl text-sm font-medium"
+          className="h-11 w-full rounded-xl text-sm font-medium border border-solid border-[#ea9a4150] bg-transparent text-[#d8c3b1] hover:border-[#ffb971] hover:text-[#ffb971] hover:bg-[#ffb971]/10 transition-all duration-200"
         >
           {t("auth.googleButton")}
         </Button>

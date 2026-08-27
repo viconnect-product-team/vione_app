@@ -154,6 +154,26 @@ function GrowthBars({ data }: { data: DashboardStats["growth"] }) {
 
 function Index() {
   const { tenant, tenantHost } = Route.useLoaderData();
+
+  // If an auth callback (code/token) is present, let the normal auth flow run
+  // so sessions are established before we redirect.
+  const hasCallback = hasAuthCallbackParams();
+  const navigate = useNavigate();
+
+  // Force root to the connect-app landing for all visitors unless an auth
+  // callback is present. This ensures visiting http://localhost:5173/ opens
+  // the business-connect landing instead of the legacy dashboard.
+  // NOTE: this is a client-side replace so it won't affect API/static paths.
+  useEffect(() => {
+    try {
+      if (!hasCallback && typeof window !== "undefined" && window.location.pathname === "/") {
+        navigate({ to: "/connect-app", replace: true });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [hasCallback, navigate]);
+
   // Session guard: on any host (including custom tenant domains), an
   // authenticated user that lands on "/" is routed to their role home:
   // members → /m, admins → /. Covers OAuth flows whose redirect_uri returns
@@ -240,7 +260,9 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
       if (authStatus === 'out') {
         if (redirectAnonToLanding) {
           setStatus("redirecting");
-          navigate({ to: "/landing" });
+          // Redirect anonymous visitors to the connect-app landing instead
+          // of the legacy /landing page so the SPA defaults to the BC flows.
+          navigate({ to: "/connect-app" });
           return;
         }
         setStatus("idle");

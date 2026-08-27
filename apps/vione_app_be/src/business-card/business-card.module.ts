@@ -6,6 +6,6 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [AuthModule],
   controllers: [BusinessCardController],
-  providers: [BusinessCardService]
+  providers: [BusinessCardService],
 })
 export class BusinessCardModule {}

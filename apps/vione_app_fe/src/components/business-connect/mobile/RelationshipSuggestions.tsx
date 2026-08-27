@@ -12,6 +12,7 @@ import { ChevronRight, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLang, useT } from "@/lib/i18n";
+import { MilestoneIcon } from "./NavIcons";
 import {
   useDismissRelationshipRecommendation,
   useTodayRelationshipRecommendations,
@@ -44,8 +45,12 @@ function SuggestionRow({
   dismissPending: boolean;
 }) {
   const t = useT();
+  const [hidden, setHidden] = useState(false);
   const name = rec.person.displayName?.trim() || "—";
   const meta = [rec.person.industryLabel, rec.person.areaLabel].filter(Boolean).join(" · ");
+
+  if (hidden) return null;
+
   return (
     <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3">
       <button
@@ -57,13 +62,14 @@ function SuggestionRow({
       >
         <X aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.8} />
       </button>
+
+      {/* Avatar + tên + meta */}
       <Link
         to="/connect-app/network/$personId"
         params={{ personId: rec.person.personId }}
         aria-label={t("bc.mobile.intel.open", { name })}
         onClick={() => {
           trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_OPENED", { surface: "home" });
-          // 6C: coarse behavioral signal (fire-and-forget; server gates learning).
           recordIntelInteraction("recommendation_opened", "reconnect");
         }}
         className={`block rounded-xl ${FOCUS}`}
@@ -95,15 +101,31 @@ function SuggestionRow({
             ) : null}
           </span>
         </span>
-        <span className="mt-2 block truncate text-[12px] text-[var(--bc-mobile-muted)]">
+
+        {/* Mốc thời gian */}
+        <span className="mt-2 flex items-center gap-1 text-[12px] text-[var(--bc-mobile-muted)]">
+          <MilestoneIcon className="h-2.5 w-2.5 shrink-0 text-[var(--bc-mobile-muted)]" />
           {t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days })}
         </span>
-        <span
-          className={`mt-2.5 flex min-h-[38px] items-center justify-center rounded-full border border-[var(--bc-mobile-border-gold)] px-3 text-[13px] font-medium text-[var(--bc-mobile-accent)]`}
+      </Link>
+
+      {/* CTA buttons */}
+      <div className="mt-2.5 flex flex-col gap-1.5">
+        <Link
+          to="/connect-app/network/$personId"
+          params={{ personId: rec.person.personId }}
+          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border-gold)] px-3 text-[13px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_10%,transparent)] ${FOCUS}`}
         >
           {t("bc.mobile.intel.card.message")}
-        </span>
-      </Link>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setHidden(true)}
+          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-3 text-[13px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] ${FOCUS}`}
+        >
+          Ẩn hồ sơ
+        </button>
+      </div>
     </li>
   );
 }
@@ -139,9 +161,10 @@ function FilterChip({
       onClick={onClick}
       className={`${CHIP_BASE} ${FOCUS} ${
         active
-          ? "border-transparent bg-[var(--bc-mobile-accent)] text-[var(--bc-mobile-navy)]"
+          ? "border-transparent text-[#2c1600] font-semibold"
           : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
       }`}
+      style={active ? { background: "linear-gradient(270deg, #ab6d3c 0%, #fde6b4 100%)" } : undefined}
     >
       {label}
     </button>

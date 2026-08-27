@@ -12088,10 +12088,11 @@ export function baseLang(lang: Lang): BaseLang {
   return lang === "vi" ? "vi" : "en";
 }
 
-/** Resolve a key for any language: overlay → English → Vietnamese. */
 export function translate(key: TKey, lang: Lang): string {
-  if (lang === "vi" || lang === "en") return translations[key][lang];
-  return localeOverlays[lang]?.[key] ?? translations[key].en;
+  const entry = translations[key];
+  if (!entry) return String(key);
+  if (lang === "vi" || lang === "en") return entry[lang] ?? entry.en ?? entry.vi ?? String(key);
+  return localeOverlays[lang]?.[key] ?? entry.en ?? entry.vi ?? String(key);
 }
 
 

@@ -548,25 +548,29 @@ function ConnectAppMePage() {
               <div
                 role="group"
                 aria-label={t("bc.mobile.me.language.title")}
-                className="flex items-center gap-2 py-1"
+                className="grid grid-cols-2 gap-2 py-1"
               >
-                {(["vi", "en"] as const).map((code) => (
+                {(["vi", "en", "lo", "km", "my"] as const).map((code) => (
                   <button
                     key={code}
                     type="button"
                     onClick={() => setLang(code)}
                     aria-pressed={lang === code}
-                    className={`flex-1 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition ${
+                    className={`rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition text-center ${
                       lang === code
-                        ? "border-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-accent)]/12 text-[var(--bc-mobile-accent)]"
+                        ? "border-[#ea9a41] bg-[#ea9a4112] text-[#ffb971]"
                         : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
                     }`}
                   >
-                    {code === "vi" ? t("bc.mobile.me.language.vi") : t("bc.mobile.me.language.en")}
+                    {code === "vi" ? "Tiếng Việt" :
+                     code === "en" ? "Tiếng Anh" :
+                     code === "lo" ? "Tiếng Lào" :
+                     code === "km" ? "Tiếng Campuchia" :
+                     "Tiếng Myanmar"}
                   </button>
                 ))}
               </div>
-              <p className="pb-1 text-[12px] leading-relaxed text-[var(--bc-mobile-muted)]">
+              <p className="mt-2 pb-1 text-[12px] leading-relaxed text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.me.language.hint")}
               </p>
             </SectionCard>

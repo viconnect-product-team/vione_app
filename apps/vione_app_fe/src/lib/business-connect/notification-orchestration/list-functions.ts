@@ -111,10 +111,13 @@ export const listNotificationsFn = createServerFn({ method: "GET" })
 export const getUnreadNotificationCountFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
-    const supabase = context.supabase as unknown as Sb;
-    const r = await supabase.rpc("bnotif_unread_count");
-    if (r.error) throw new NotificationError("NOTIFICATION_INTERNAL_ERROR", r.error.message);
-    return { count: (r.data as number) ?? 0 };
+    try {
+      const { token } = context as any;
+      const { fetchNestApiFromServer } = await import("../../api-client");
+      return await fetchNestApiFromServer("/connect-app/notifications/unread-count", token);
+    } catch {
+      return { count: 0 };
+    }
   });
 
 const idSchema = z.object({ id: z.string().uuid() });

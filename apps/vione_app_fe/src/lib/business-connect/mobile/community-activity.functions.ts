@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchNestApiFromServer } from "../../api-client";
 import type {
   CommunityActivityPreviewDTO,
   CommunityEventDetailDTO,
@@ -253,10 +254,11 @@ export const getCommunityActivityPreviewFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => previewInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityActivityPreviewDTO | null> => {
-    const { getCommunityActivityPreview } = await import("./community-activity.server");
-    return getCommunityActivityPreview({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-    });
+    try {
+      const { token } = context as any;
+      return await fetchNestApiFromServer(`/connect-app/community/${data.communityId}/activity-preview`, token);
+    } catch (e) {
+      console.error("Failed to get community activity preview from NestJS:", e);
+      return { nextEvents: [], openOpportunities: [] };
+    }
   });

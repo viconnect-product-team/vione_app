@@ -214,7 +214,7 @@ function ActivateIdentityPage() {
             <Link
               to="/connect-app/me"
               className="mt-8 flex h-14 w-full items-center justify-center rounded-xl text-[17px] font-semibold text-[#1b1206]"
-              style={{ background: "linear-gradient(180deg, #e6c98d 0%, #f2b45a 100%)" }}
+              style={{ background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)" }}
             >
               {t("bc.mobile.activate.goToMe")}
             </Link>
@@ -314,7 +314,7 @@ function ActivateIdentityPage() {
                 type="submit"
                 disabled={saving}
                 className="relative flex h-14 w-full items-center justify-center rounded-xl text-[17px] font-semibold text-[#1b1206] disabled:opacity-60"
-                style={{ background: "linear-gradient(180deg, #e6c98d 0%, #f2b45a 100%)" }}
+                style={{ background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)" }}
               >
                 {saving ? (
                   <>

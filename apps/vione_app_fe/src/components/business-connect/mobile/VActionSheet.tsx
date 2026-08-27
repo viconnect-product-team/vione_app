@@ -342,7 +342,7 @@ function IdentityCard({ identity }: { identity: BusinessIdentity }) {
         className="pointer-events-none absolute -bottom-5 right-1 select-none font-serif text-[132px] font-semibold leading-none"
         style={{
           background:
-            "linear-gradient(160deg, var(--bc-gold-600, #d99a3e) 0%, var(--bc-gold-500, #e9a943) 45%, var(--bc-gold-300, #ffdfa8) 100%)",
+            "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
           color: "transparent",

@@ -8,14 +8,13 @@
 
 import { useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   processMomentImage,
   MOMENT_IMAGE_ACCEPT,
 } from "@/lib/business-connect/mobile/moment-image";
 import { useT } from "@/lib/i18n";
-
-const AVATAR_BUCKET = "identity-avatars";
+import { NEST_API_URL } from "@/lib/api-client";
+import { getImageUrl } from "@/lib/image";
 
 export type AvatarUploadFieldProps = {
   value: string;
@@ -39,22 +38,37 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
         setFailed(true);
         return;
       }
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) {
+      
+      const token = localStorage.getItem("vibe_token");
+      if (!token) {
         setFailed(true);
         return;
       }
-      const path = `${userId}/${crypto.randomUUID()}.jpg`;
-      const { error } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(path, processed.image.blob, { contentType: "image/jpeg", upsert: false });
-      if (error) {
+
+      const formData = new FormData();
+      formData.append("file", processed.image.blob, "avatar.jpg");
+
+      const res = await fetch(`${NEST_API_URL}/upload/avatar`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
         setFailed(true);
         return;
       }
-      // Dùng relative URL để ảnh hoạt động trên mọi domain (local, dev server, production).
-      onChange(`/api/public/avatar/${path}`);
+
+      const resData = await res.json();
+      if (!resData.url) {
+        setFailed(true);
+        return;
+      }
+
+      // Lưu relative path vào DB (ví dụ: /uploads/avatars/xxx.jpg)
+      onChange(resData.url);
     } catch {
       setFailed(true);
     } finally {
@@ -69,7 +83,7 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
         <div className="size-16 shrink-0 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
           {value ? (
             <img
-              src={value}
+              src={getImageUrl(value)}
               alt={t("bc.mobile.me.field.avatar")}
               className="size-full object-cover"
               loading="lazy"

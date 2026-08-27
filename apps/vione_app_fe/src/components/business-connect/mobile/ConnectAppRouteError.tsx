@@ -16,6 +16,16 @@ export function ConnectAppRouteError({
   useEffect(() => {
     // Ghi log chi tiết để chẩn đoán (thông báo mặc định không nêu nguyên nhân).
     console.error("[connect-app] route error", error);
+    const msg = error instanceof Error ? error.message : String(error ?? "");
+    if (msg.includes("Unauthorized") || msg.includes("Invalid local token")) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem('vibe_token');
+        localStorage.removeItem('vibe_refresh_token');
+        document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        window.location.href = `/auth?reason=expired&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      }
+    }
   }, [error]);
 
   const message = error instanceof Error ? error.message : String(error ?? "");

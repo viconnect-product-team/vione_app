@@ -20,8 +20,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useId } from "react";
 import { useFmt, useLang, useT } from "@/lib/i18n";
+import icon from "./icon.svg";
+import image from "./image.svg";
+import { ViOneLogo } from "./ViOneLogo";
 import {
   useBusinessConnectNetwork,
   type BcMobileNetworkPerson,
@@ -56,11 +59,18 @@ const FILTER_TKEY = {
   contact_shared: "bc.mobile.network.tag.shared",
 } as const;
 
+const tabs = [
+  { id: "network", label: "Mạng lưới" },
+  { id: "customers", label: "Khách hàng" },
+  { id: "suggestions", label: "Gợi ý (AI)" },
+];
+
 export function NetworkHome() {
   const t = useT();
+  const searchId = useId();
   const { lang } = useLang();
   const { openV } = useVSheet();
-  const [tab, setTab] = useState<"network" | "customers">("network");
+  const [tab, setTab] = useState<"network" | "customers" | "suggestions">("network");
   const [term, setTerm] = useState("");
   const [sort, setSort] = useState<NetworkSort>("recent");
   const [filter, setFilter] = useState<NetworkFilter>("all");
@@ -111,131 +121,141 @@ export function NetworkHome() {
 
   return (
     <>
-      <BusinessConnectTopBar />
+      {/* Sticky Header thương hiệu chung */}
+      <header className="sticky top-0 z-50 flex items-center justify-between border-t border-solid border-[#ffffff14] bg-[#1e1c18f2] backdrop-blur-md px-5 py-3 -mx-4">
+        <div className="relative inline-flex flex-none flex-col items-start gap-1">
+          <ViOneLogo className="h-5 w-[77px]" />
+          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
+            Chào buổi chiều,
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Luồng icon add thêm để quét danh thiếp, đặt ngay bên cạnh chuông thông báo ở Network */}
+          <Link
+            to="/connect-app/card-scan"
+            aria-label={t("bc.mobile.network.addPerson")}
+            className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors"
+          >
+            <UserPlus className="h-5 w-5" strokeWidth={1.8} />
+          </Link>
+          <NetworkNotificationsButton />
+        </div>
+      </header>
+
+      <div aria-hidden="true" style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }} />
 
       <main id="bc-mobile-network" className="contents">
-        {/* A — Header: tiêu đề + số liệu quan hệ + thêm người */}
-        <div
-          className="flex items-start justify-between gap-3"
-          style={{ minHeight: "var(--bc-mobile-header-h)" }}
-        >
-          <div className="min-w-0">
-            <h1 className="text-[length:var(--bc-mobile-header-title)] font-semibold leading-tight tracking-tight text-[var(--bc-mobile-text)]">
-              {t("bc.mobile.network.title")}
-            </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13.5px] text-[var(--bc-mobile-muted)]">
-              <span>
-                {t("bc.mobile.network.stats.connections", { count: network.people.length })}
-              </span>
-              {recommendations.length > 0 ? (
-                <>
-                  <span aria-hidden="true">•</span>
-                  <span className="text-[var(--bc-mobile-accent)]">
-                    {t("bc.mobile.network.stats.nurture", { count: recommendations.length })}
-                  </span>
-                </>
-              ) : null}
-            </p>
-          </div>
-          <div
-            className="flex shrink-0 items-center"
-            style={{
-              gap: "var(--bc-mobile-header-gap)",
-              paddingRight: "var(--bc-mobile-safe-right)",
-            }}
-          >
-            <NetworkNotificationsButton />
-            <Link
-              to="/connect-app/card-scan"
-              aria-label={t("bc.mobile.network.addPerson")}
-              style={{ height: "var(--bc-mobile-header-action)", width: "var(--bc-mobile-header-action)" }}
-              className="bc-cta-gold grid shrink-0 place-items-center rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-            >
-              <UserPlus style={{ height: "var(--bc-mobile-header-icon)", width: "var(--bc-mobile-header-icon)" }} strokeWidth={1.9} />
-            </Link>
-          </div>
-        </div>
 
-        {/* A2 — Tab: Mạng lưới · Khách hàng của tôi (nhóm riêng, khác Cộng đồng) */}
-        <div
-          role="tablist"
-          aria-label={t("bc.mobile.network.title")}
-          className="mt-4 grid grid-cols-2 gap-1 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-1"
-        >
-          {(["network", "customers"] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => setTab(key)}
-              className={`min-h-10 rounded-xl text-[14px] font-semibold transition-colors ${
-                tab === key
-                  ? "bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-accent)]"
-                  : "text-[var(--bc-mobile-muted)]"
-              }`}
+        {/* A — Header: tiêu đề + số liệu quan hệ xuất từ Figma */}
+        <header className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
+          <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
+            <h1
+              id="network-heading"
+              className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#f2efe9e6] text-2xl tracking-[0] leading-8"
             >
-              {t(`bc.mobile.network.tab.${key}` as const)}
-            </button>
-          ))}
-        </div>
+              Network
+            </h1>
+          </div>
+          <p className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] mt-[-0.5px]">
+            <span className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#d8c3b1b2] text-xs tracking-[0] leading-4 whitespace-nowrap">
+              {network.people.length} kết nối
+            </span>
+            <span
+              className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#d8c3b1b2] text-xs tracking-[0] leading-4 whitespace-nowrap"
+              aria-hidden="true"
+            >
+              •
+            </span>
+            <span className="mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#ffb971] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
+              {recommendations.length} cần chăm sóc
+            </span>
+          </p>
+        </header>
+
+        {/* A2 — Tab categories cuộn ngang xuất từ Figma */}
+        <nav
+          className="mt-4 flex items-start gap-2 px-0 py-1 relative self-stretch w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Network categories"
+        >
+          {tabs.map((tabItem) => {
+            const isActive = tab === tabItem.id;
+
+            return (
+              <button
+                key={tabItem.id}
+                type="button"
+                onClick={() => setTab(tabItem.id as any)}
+                aria-pressed={isActive}
+                className={`all-unset box-border inline-flex flex-col px-4 py-1.5 flex-[0_0_auto] rounded-full border items-center justify-center relative border-solid transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#ffb97133] border-[#ffb9714c]"
+                    : "bg-[#251e18] border-[#ea9a4126]"
+                }`}
+              >
+                <span
+                  className={`justify-center [font-family:'Inter-Medium',Helvetica] font-medium text-sm text-center leading-5 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
+                    isActive ? "text-[#ffb971]" : "text-[#d8c3b1]"
+                  }`}
+                >
+                  {tabItem.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
         {tab === "customers" ? (
           <CustomersPanel />
         ) : (
         <>
 
-        {/* B — Ô tìm kiếm + bộ lọc */}
-        <div className="mt-4 flex items-center gap-2.5">
-
-          <div
-            role="search"
-            className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 transition-colors duration-150 focus-within:ring-2 focus-within:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
-          >
-            <label htmlFor="bc-network-search" className="sr-only">
-              {t("bc.mobile.network.search.label")}
-            </label>
-            <Search
+        {/* B — Ô tìm kiếm + bộ lọc xuất từ Figma */}
+        <form
+          className="mt-4 flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]"
+          role="search"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <div className="flex flex-col items-start relative flex-1 self-stretch grow w-full">
+            <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ffb971]">
+              <label htmlFor={searchId} className="sr-only">
+                Tìm người, công ty, chức danh...
+              </label>
+              <input
+                id={searchId}
+                className="w-full bg-transparent border-none outline-none focus:ring-0 focus:outline-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
+                style={{ WebkitAppearance: "none", appearance: "none", boxShadow: "none" }}
+                type="search"
+                value={term}
+                onChange={(event) => setTerm(event.target.value)}
+                placeholder="Tìm người, công ty, chức danh..."
+                aria-label="Tìm người, công ty, chức danh..."
+                autoComplete="off"
+                spellCheck="false"
+              />
+            </div>
+            <img
+              className="absolute top-1/2 -translate-y-1/2 left-3 w-[15px] h-[15px] pointer-events-none"
+              alt=""
               aria-hidden="true"
-              className="h-[18px] w-[18px] shrink-0 text-[var(--bc-mobile-muted)]"
-              strokeWidth={1.8}
+              src={icon}
             />
-            <input
-              id="bc-network-search"
-              type="search"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder={t("bc.mobile.network.search.placeholder")}
-              autoComplete="off"
-              className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[var(--bc-mobile-text)] outline-none placeholder:text-[var(--bc-mobile-muted)] [&::-webkit-search-cancel-button]:hidden"
-            />
-            {term ? (
-              <button
-                type="button"
-                onClick={clearSearch}
-                aria-label={t("bc.mobile.network.search.clear")}
-                className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 hover:bg-[var(--bc-mobile-border)] hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
-              >
-                <X aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-              </button>
-            ) : null}
           </div>
           <div className="relative shrink-0">
             <button
+              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea9a41] hover:border-[#ffb971] transition-colors"
               type="button"
-              onClick={() => setSortOpen((v) => !v)}
-              aria-expanded={sortOpen}
-              aria-label={t("bc.mobile.network.filter")}
-              className={`relative grid h-12 w-12 place-items-center rounded-2xl border bg-[var(--bc-mobile-surface-2)] transition-colors hover:border-[var(--bc-mobile-accent)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] ${
-                filtering
-                  ? "border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)]"
-              }`}
+              aria-label="Mở bộ lọc tìm kiếm"
+              aria-pressed={sortOpen}
+              onClick={() => setSortOpen((active) => !active)}
             >
-              <SlidersHorizontal className="h-[19px] w-[19px]" strokeWidth={1.8} />
-              {filtering ? (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--bc-mobile-accent)]" />
-              ) : null}
+              <span className="inline-flex items-center flex-[0_0_auto] flex-col relative">
+                <img
+                  className="relative w-[15px] h-[15px]"
+                  alt=""
+                  aria-hidden="true"
+                  src={image}
+                />
+              </span>
             </button>
             {sortOpen ? (
               <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-lg">
@@ -287,7 +307,7 @@ export function NetworkHome() {
               </div>
             ) : null}
           </div>
-        </div>
+        </form>
 
         {network.initialLoading ? (
           <NetworkSkeleton />
@@ -301,88 +321,98 @@ export function NetworkHome() {
           )
         ) : (
           <>
-            <NetworkAiMatchStrip peopleById={peopleById} allowedIds={allowedIds} />
-            <NetworkNurtureList allowedIds={allowedIds} />
-            {!narrowed && recent.length > 0 ? <NetworkRecentStrip people={recent} /> : null}
+            {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network hoặc suggestions */}
+            {(tab === "network" || tab === "suggestions") && (
+              <>
+                <NetworkAiMatchStrip peopleById={peopleById} allowedIds={allowedIds} />
+                <NetworkNurtureList allowedIds={allowedIds} />
+              </>
+            )}
 
+            {/* Gặp gần đây và Feed cuộc gặp - Chỉ hiển thị khi tab là network */}
+            {tab === "network" && (
+              <>
+                {!narrowed && recent.length > 0 ? <NetworkRecentStrip people={recent} /> : null}
 
-            {/* Ghi khoảnh khắc nhanh */}
-            {!narrowed ? (
-              <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-accent)]/30 bg-[var(--bc-mobile-surface)] p-3.5">
-                <Link
-                  to="/connect-app/moment"
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-accent)]/60 text-[var(--bc-mobile-accent)]"
-                  >
-                    <Sparkles className="h-5 w-5" strokeWidth={1.9} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[16px] font-semibold text-[var(--bc-mobile-accent)]">
-                      {t("bc.mobile.network.compose.title")}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[13px] text-[var(--bc-mobile-muted)]">
-                      {t("bc.mobile.network.compose.subtitle")}
-                    </span>
-                  </span>
-                </Link>
-                <Link
-                  to="/connect-app/card-scan"
-                  aria-label={t("bc.mobile.network.compose.scan")}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-                >
-                  <Camera className="h-[21px] w-[21px]" strokeWidth={1.7} />
-                </Link>
-              </div>
-            ) : null}
-
-            {/* Khoảnh khắc gần đây / danh sách người */}
-            <section className="mt-6">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="min-w-0 truncate text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--bc-mobile-text)]">
-                  {showFeed ? t("bc.mobile.network.moments.title") : t("bc.mobile.network.people")}
-                </h2>
-                {narrowed ? (
-                  <p
-                    aria-live="polite"
-                    className="shrink-0 text-[12.5px] text-[var(--bc-mobile-muted)]"
-                  >
-                    {t("bc.mobile.network.results", { count: people.length })}
-                    {filtering ? ` · ${t(FILTER_TKEY[filter])}` : ""}
-                  </p>
+                {/* Ghi khoảnh khắc nhanh */}
+                {!narrowed ? (
+                  <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-accent)]/30 bg-[var(--bc-mobile-surface)] p-3.5">
+                    <Link
+                      to="/connect-app/moment"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-accent)]/60 text-[var(--bc-mobile-accent)]"
+                      >
+                        <Sparkles className="h-5 w-5" strokeWidth={1.9} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[16px] font-semibold text-[var(--bc-mobile-accent)]">
+                          {t("bc.mobile.network.compose.title")}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[13px] text-[var(--bc-mobile-muted)]">
+                          {t("bc.mobile.network.compose.subtitle")}
+                        </span>
+                      </span>
+                    </Link>
+                    <Link
+                      to="/connect-app/card-scan"
+                      aria-label={t("bc.mobile.network.compose.scan")}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+                    >
+                      <Camera className="h-[21px] w-[21px]" strokeWidth={1.7} />
+                    </Link>
+                  </div>
                 ) : null}
-              </div>
 
-              {showFeed ? (
-                <ul
-                  aria-label={t("bc.mobile.network.list.label")}
-                  aria-busy={feed.isLoadingMore}
-                  className="space-y-3"
-                >
-                  {feed.items.map((item) => (
-                    <NetworkFeedCard
-                      key={item.momentId}
-                      item={item}
-                      person={peopleById.get(item.personId) ?? null}
-                    />
-                  ))}
-                </ul>
-              ) : people.length === 0 ? (
-                <NetworkFilterEmpty onReset={() => setFilter("all")} />
-              ) : (
-                <ul
-                  aria-label={t("bc.mobile.network.list.label")}
-                  aria-busy={network.isLoadingMore}
-                  className="space-y-2.5"
-                >
-                  {people.map((person) => (
-                    <NetworkPersonRow key={person.personId} person={person} />
-                  ))}
-                </ul>
-              )}
-            </section>
+                {/* Khoảnh khắc gần đây / danh sách người */}
+                <section className="mt-6">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h2 className="min-w-0 truncate text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--bc-mobile-text)]">
+                      {showFeed ? t("bc.mobile.network.moments.title") : t("bc.mobile.network.people")}
+                    </h2>
+                    {narrowed ? (
+                      <p
+                        aria-live="polite"
+                        className="shrink-0 text-[12.5px] text-[var(--bc-mobile-muted)]"
+                      >
+                        {t("bc.mobile.network.results", { count: people.length })}
+                        {filtering ? ` · ${t(FILTER_TKEY[filter])}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {showFeed ? (
+                    <ul
+                      aria-label={t("bc.mobile.network.list.label")}
+                      aria-busy={feed.isLoadingMore}
+                      className="space-y-3"
+                    >
+                      {feed.items.map((item) => (
+                        <NetworkFeedCard
+                          key={item.momentId}
+                          item={item}
+                          person={peopleById.get(item.personId) ?? null}
+                        />
+                      ))}
+                    </ul>
+                  ) : people.length === 0 ? (
+                    <NetworkFilterEmpty onReset={() => setFilter("all")} />
+                  ) : (
+                    <ul
+                      aria-label={t("bc.mobile.network.list.label")}
+                      aria-busy={network.isLoadingMore}
+                      className="space-y-2.5"
+                    >
+                      {people.map((person) => (
+                        <NetworkPersonRow key={person.personId} person={person} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </>
+            )}
 
 
             {showFeed && feed.hasMore ? (
@@ -455,20 +485,19 @@ function NetworkAiMatchStrip({
   return (
     <section aria-label={t("bc.mobile.network.aimatch.title")} className="mt-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold text-[var(--bc-mobile-text)]">
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-[#ffb971]">
           <Sparkles
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-[var(--bc-mobile-accent)]"
-            strokeWidth={1.8}
+            className="h-4 w-4 shrink-0 text-[#ffb971] fill-current"
           />
           <span className="truncate">{t("bc.mobile.network.aimatch.title")}</span>
         </h2>
         <Link
           to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-1 text-[13px] font-medium text-[var(--bc-mobile-muted)]"
+          className="inline-flex shrink-0 items-center gap-0.5 text-xs text-[#d8c3b180] hover:text-[#ffb971] transition-colors"
         >
           {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -478,63 +507,35 @@ function NetworkAiMatchStrip({
           const roleLine = [rec.person.headline, rec.person.companyName]
             .filter(Boolean)
             .join(" · ");
+          const daysText = rec.reason.days > 0 
+            ? `${rec.reason.days} ngày từ lần gặp...`
+            : "Gặp gần đây...";
+
           return (
-            <li key={rec.id} className="w-[264px] shrink-0 snap-start">
-              <div className="flex h-full flex-col rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4">
-                <button
-                  type="button"
-                  onClick={() => setOpenId(rec.id)}
-                  aria-label={`${t("bc.mobile.network.aimatch.open")} — ${name}`}
-                  className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] rounded-xl"
-                >
-                  <span className="flex items-center gap-3">
-                    <img
-                      src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
-                      alt=""
-                      loading="lazy"
-                      width={512}
-                      height={640}
-                      className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[var(--bc-mobile-accent)]/70"
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
-                        {name}
-                      </span>
-                      {roleLine ? (
-                        <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
-                          {roleLine}
-                        </span>
-                      ) : null}
-                      <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-accent)]">
-                        {rec.reason.days > 0
-                          ? t("bc.mobile.network.suggest.days", { count: rec.reason.days })
-                          : t("bc.mobile.network.suggest.recent")}
-                      </span>
-                    </span>
+            <li key={rec.id} className="w-[260px] shrink-0 snap-start">
+              <button
+                type="button"
+                onClick={() => setOpenId(rec.id)}
+                className="flex items-center gap-3.5 w-full bg-[#251e18] rounded-2xl p-3.5 border border-solid border-[#ea9a4126] hover:border-[#ea9a4166] text-left transition-colors"
+              >
+                <img
+                  src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
+                  alt={name}
+                  loading="lazy"
+                  className="w-12 h-12 rounded-full object-cover border border-solid border-[#ea9a4126]"
+                />
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-semibold text-[15px] text-[#f2efe9] truncate">
+                    {name}
                   </span>
-
-                  {rec.aiSuggestion ? (
-                    <span className="mt-3 line-clamp-3 block text-[13px] leading-relaxed text-[var(--bc-mobile-text)]">
-                      {rec.aiSuggestion}
-                    </span>
-                  ) : null}
-                </button>
-
-                <div className="mt-auto flex items-center gap-2 pt-4">
-                  <AiMatchConnectAction
-                    personName={rec.person.displayName}
-                    target={targetFor(rec.person.personId)}
-                    compact
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(rec.id)}
-                    className="inline-flex min-h-[42px] flex-1 items-center justify-center rounded-xl border border-[var(--bc-mobile-accent)]/60 px-3 text-[14px] font-semibold text-[var(--bc-mobile-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-                  >
-                    {t("bc.mobile.network.aimatch.reason")}
-                  </button>
+                  <span className="font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
+                    {roleLine}
+                  </span>
+                  <span className="font-light text-xs text-[#ffb971] mt-1.5">
+                    {daysText}
+                  </span>
                 </div>
-              </div>
+              </button>
             </li>
           );
         })}
@@ -559,75 +560,78 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
   const recommendations = allowedIds
     ? all.filter((r) => allowedIds.has(r.person.personId))
     : all;
-  const items = recommendations.filter((r) => r.reason.days > 0).slice(0, 3);
+
+  // Lọc trùng theo personId để đảm bảo danh sách hiển thị đa dạng, chất lượng hơn
+  const uniqueItems: typeof recommendations = [];
+  const seenIds = new Set<string>();
+  for (const rec of recommendations) {
+    if (rec.reason.days > 0 && !seenIds.has(rec.person.personId)) {
+      seenIds.add(rec.person.personId);
+      uniqueItems.push(rec);
+    }
+  }
+  const items = uniqueItems.slice(0, 3);
   if (items.length === 0) return null;
 
   return (
     <section aria-label={t("bc.mobile.network.nurture.title")} className="mt-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold text-[var(--bc-mobile-text)]">
-          <Bell
-            aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-[var(--bc-mobile-accent)]"
-            strokeWidth={1.8}
-          />
+        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-[#f2efe9]">
+          <Bell aria-hidden="true" className="h-4 w-4 shrink-0 text-[#f2efe980]" />
           <span className="truncate">
             {t("bc.mobile.network.nurture.title")} ({recommendations.length})
           </span>
         </h2>
         <Link
           to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-1 text-[13px] font-medium text-[var(--bc-mobile-muted)]"
+          className="inline-flex shrink-0 items-center gap-0.5 text-xs text-[#d8c3b180] hover:text-[#ffb971] transition-colors"
         >
           {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <ul className="mt-3 divide-y divide-[var(--bc-mobile-border)] overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]">
-        {items.map((rec) => {
+      <div className="mt-3 flex flex-col w-full bg-[#251e18]/60 rounded-2xl border border-solid border-[#ea9a4126] overflow-hidden">
+        {items.map((rec, index) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]
             .filter(Boolean)
             .join(" · ");
+          const daysText = rec.reason.days > 0 
+            ? `${rec.reason.days} ngày chưa liên hệ`
+            : "Chưa liên hệ...";
+
           return (
-            <li key={rec.id}>
-              <Link
-                to="/connect-app/network/$personId"
-                params={{ personId: rec.person.personId }}
-                className="flex min-h-[72px] items-center gap-3 px-3.5 py-3 transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-              >
-                <img
-                  src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
-                  alt=""
-                  loading="lazy"
-                  width={512}
-                  height={640}
-                  className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
-                    {name}
-                  </span>
-                  {roleLine ? (
-                    <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
-                      {roleLine}
-                    </span>
-                  ) : null}
-                  <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-accent)]">
-                    {t("bc.mobile.network.nurture.days", { count: rec.reason.days })}
-                  </span>
+            <Link
+              key={rec.id}
+              to="/connect-app/network/$personId"
+              params={{ personId: rec.person.personId }}
+              className={`flex items-center gap-3.5 p-3.5 hover:bg-[#251e18] transition-colors ${
+                index !== items.length - 1 ? "border-b border-solid border-[#ea9a411a]" : ""
+              }`}
+            >
+              <img
+                src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
+                alt={name}
+                loading="lazy"
+                className="w-11 h-11 rounded-full object-cover border border-solid border-[#ea9a4115]"
+              />
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="font-semibold text-[15px] text-[#f2efe9] truncate">
+                  {name}
                 </span>
-                <ChevronRight
-                  aria-hidden="true"
-                  className="h-4.5 w-4.5 shrink-0 text-[var(--bc-mobile-muted)]"
-                  strokeWidth={1.8}
-                />
-              </Link>
-            </li>
+                <span className="font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
+                  {roleLine}
+                </span>
+                <span className="font-light text-xs text-[#ffb971] mt-1">
+                  {daysText}
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#d8c3b180] shrink-0" />
+            </Link>
           );
         })}
-      </ul>
+      </div>
     </section>
   );
 }
@@ -699,12 +703,13 @@ function NetworkNotificationsButton() {
           ? t("bc.mobile.home.notifications.unread", { count: unread })
           : t("bc.mobile.home.notifications")
       }
-      style={{ height: "var(--bc-mobile-header-action)", width: "var(--bc-mobile-header-action)" }}
-      className="relative grid place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+      className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41]"
     >
-      <Bell style={{ height: "var(--bc-mobile-header-icon)", width: "var(--bc-mobile-header-icon)" }} strokeWidth={1.7} />
+      <Bell className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
       {hasUnread ? (
-        <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[var(--bc-mobile-accent)]" />
+        <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[#ea9a41] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#2c1600]">
+          {unread}
+        </span>
       ) : null}
     </Link>
   );

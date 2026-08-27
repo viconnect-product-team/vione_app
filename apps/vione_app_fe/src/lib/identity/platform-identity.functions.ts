@@ -16,22 +16,60 @@ import type {
   UserProfile,
   AssociationIdentity,
 } from "./identity.types";
+import { fetchNestApiFromServer } from "../api-client";
 
 /** Global identity context for the signed in user (no member required). */
 export const getCurrentUserFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<GlobalIdentityContext> => {
-    const { supabase, userId, user } = context as unknown as any;
-    await requirePlatformUser(supabase, userId);
-    return buildGlobalIdentityContext(supabase, userId, user?.email ?? null);
+    const { token, userId, user } = context as any;
+    const profile = await fetchNestApiFromServer("/connect-app/me/profile", token);
+    return {
+      userId,
+      email: user?.email || (profile ? profile.email : null),
+      profile: profile ? {
+        userId: profile.user_id,
+        displayName: profile.display_name,
+        avatarUrl: profile.avatar_url,
+        professionalTitle: profile.professional_title,
+        companyName: profile.company_name,
+        industry: profile.industry,
+        region: profile.region,
+        bio: profile.bio,
+        locale: profile.locale,
+        timezone: profile.timezone,
+        onboardingStatus: profile.onboarding_status,
+        accountStatus: profile.account_status,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      } : null,
+      hasProfile: profile !== null,
+    };
   });
 
 /** Read the current user's global profile (null if not created yet). */
 export const getProfileFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<UserProfile | null> => {
-    const { supabase, userId } = context;
-    return resolveUserProfile(supabase, userId);
+    const { token } = context as any;
+    const profile = await fetchNestApiFromServer("/connect-app/me/profile", token);
+    if (!profile) return null;
+    return {
+      userId: profile.user_id,
+      displayName: profile.display_name,
+      avatarUrl: profile.avatar_url,
+      professionalTitle: profile.professional_title,
+      companyName: profile.company_name,
+      industry: profile.industry,
+      region: profile.region,
+      bio: profile.bio,
+      locale: profile.locale,
+      timezone: profile.timezone,
+      onboardingStatus: profile.onboarding_status,
+      accountStatus: profile.account_status,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
+    };
   });
 
 const profileUpdateSchema = z.object({
@@ -52,10 +90,8 @@ export const upsertProfileFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => profileUpdateSchema.parse(d))
   .handler(async ({ data, context }): Promise<UserProfile> => {
-    const { supabase, userId } = context;
-    type ProfileInsert =
-      import("@/integrations/supabase/types").Database["public"]["Tables"]["user_profiles"]["Insert"];
-    const payload: ProfileInsert = { user_id: userId };
+    const { token } = context as any;
+    const payload: any = {};
     if (data.displayName !== undefined) payload.display_name = data.displayName;
     if (data.avatarUrl !== undefined) payload.avatar_url = data.avatarUrl;
     if (data.professionalTitle !== undefined) payload.professional_title = data.professionalTitle;
@@ -67,22 +103,33 @@ export const upsertProfileFn = createServerFn({ method: "POST" })
     if (data.timezone !== undefined) payload.timezone = data.timezone;
     if (data.onboardingStatus !== undefined) payload.onboarding_status = data.onboardingStatus;
 
-    const { error } = await supabase
-      .from("user_profiles")
-      .upsert(payload, { onConflict: "user_id" });
-    if (error) throw new Error(error.message);
-
-    const profile = await resolveUserProfile(supabase, userId);
-    if (!profile) throw new Error("Failed to load profile after upsert");
-    return profile;
+    const profile = await fetchNestApiFromServer("/connect-app/me/profile", token, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    return {
+      userId: profile.user_id,
+      displayName: profile.display_name,
+      avatarUrl: profile.avatar_url,
+      professionalTitle: profile.professional_title,
+      companyName: profile.company_name,
+      industry: profile.industry,
+      region: profile.region,
+      bio: profile.bio,
+      locale: profile.locale,
+      timezone: profile.timezone,
+      onboardingStatus: profile.onboarding_status,
+      accountStatus: profile.account_status,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
+    };
   });
 
 /** Association contexts for the current user (compatibility layer; [] is valid). */
 export const getAssociationsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AssociationIdentity[]> => {
-    const { supabase, userId } = context;
-    return getAssociationContexts(supabase, userId);
+  .handler(async (): Promise<AssociationIdentity[]> => {
+    return [];
   });
 
 /**
@@ -92,11 +139,32 @@ export const getAssociationsFn = createServerFn({ method: "GET" })
 export const resolvePlatformIdentityFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PlatformIdentity> => {
-    const { supabase, userId, user } = context as unknown as any;
-    await requirePlatformUser(supabase, userId);
-    const [global, associations] = await Promise.all([
-      buildGlobalIdentityContext(supabase, userId, user?.email ?? null),
-      getAssociationContexts(supabase, userId),
-    ]);
-    return { global, associations, communities: [] };
+    const { token, userId, user } = context as any;
+    const profileRes = await fetchNestApiFromServer("/connect-app/me/profile", token);
+    const globalProfile = profileRes ? {
+      userId: profileRes.user_id,
+      displayName: profileRes.display_name,
+      avatarUrl: profileRes.avatar_url,
+      professionalTitle: profileRes.professional_title,
+      companyName: profileRes.company_name,
+      industry: profileRes.industry,
+      region: profileRes.region,
+      bio: profileRes.bio,
+      locale: profileRes.locale,
+      timezone: profileRes.timezone,
+      onboardingStatus: profileRes.onboarding_status,
+      accountStatus: profileRes.account_status,
+      createdAt: profileRes.created_at,
+      updatedAt: profileRes.updated_at,
+    } : null;
+    return {
+      global: {
+        userId,
+        email: user?.email || (profileRes ? profileRes.email : null),
+        profile: globalProfile,
+        hasProfile: profileRes !== null,
+      },
+      associations: [],
+      communities: [],
+    };
   });

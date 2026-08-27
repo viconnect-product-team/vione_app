@@ -38,7 +38,8 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
   const vControls = useMemo(() => ({ openV }), [openV]);
   return (
     <VSheetContext.Provider value={vControls}>
-      <div className="bc-app bc-app-viewport">
+      {/* data-motion="forced" explicitly overrides reduced-motion inside the BC shell */}
+      <div className="bc-app bc-app-viewport" data-motion="forced">
         <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col">
           <BcMobileOfflineBanner />
           {children}

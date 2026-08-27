@@ -12,6 +12,22 @@ type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -19,43 +35,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Helper to set cookie
-    const setCookie = (session: Session | null) => {
-      if (session) {
+    const setCookie = (sess: Session | null) => {
+      if (sess) {
         const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; secure' : '';
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${session.expires_in}; SameSite=Lax${secure}`;
+        document.cookie = `sb-access-token=${sess.access_token}; path=/; max-age=${sess.expires_in}; SameSite=Lax${secure}`;
+        document.cookie = `sb-refresh-token=${sess.refresh_token || ''}; path=/; max-age=${sess.expires_in}; SameSite=Lax${secure}`;
       } else {
         document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       }
     };
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setStatus(session ? 'in' : 'out');
-      setCookie(session);
-    });
+    const checkLocalToken = (): boolean => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
+      if (token) {
+        const decoded = decodeJwt(token);
+        if (decoded && decoded.exp * 1000 > Date.now()) {
+          const userObj = {
+            id: decoded.sub,
+            email: decoded.username,
+            user_metadata: {
+              full_name: decoded.name || '',
+              avatar_url: decoded.avatar_url || '',
+            }
+          } as any;
+          setUser(userObj);
+          const mockSession = {
+            access_token: token,
+            refresh_token: localStorage.getItem('vibe_refresh_token') || '',
+            expires_in: 3600,
+            token_type: 'bearer',
+            user: userObj
+          } as any;
+          setSession(mockSession);
+          setStatus('in');
+          setCookie(mockSession);
+          return true;
+        }
+      }
+      return false;
+    };
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setStatus(session ? 'in' : 'out');
-      setCookie(session);
-    });
-
-    return () => subscription.unsubscribe();
+    const hasLocal = checkLocalToken();
+    if (!hasLocal) {
+      setStatus('out');
+    }
   }, []);
 
   const logout = async () => {
+    localStorage.removeItem('vibe_token');
+    localStorage.removeItem('vibe_refresh_token');
+    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setStatus('out');
   };
 
-  const setAuthData = (newSession: Session) => {
-    setSession(newSession);
-    setUser(newSession.user);
+  const setAuthData = (newSession: any) => {
+    if (newSession.user && newSession.user.id) {
+      // Custom backend session
+      const mappedUser = {
+        id: newSession.user.id,
+        email: newSession.user.email || newSession.user.username,
+        user_metadata: {
+          full_name: newSession.user.name || '',
+          avatar_url: newSession.user.avatar_url || '',
+        },
+      } as any;
+      
+      localStorage.setItem('vibe_token', newSession.access_token);
+      if (newSession.refresh_token) {
+        localStorage.setItem('vibe_refresh_token', newSession.refresh_token);
+      }
+      
+      setUser(mappedUser);
+      setSession({
+        access_token: newSession.access_token,
+        refresh_token: newSession.refresh_token || '',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: mappedUser
+      } as any);
+    } else {
+      // Supabase session
+      setSession(newSession);
+      setUser(newSession.user);
+    }
     setStatus('in');
   };
 

@@ -3,6 +3,7 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import crypto from "crypto";
 
 export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
@@ -40,6 +41,44 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       throw new Error("Unauthorized: No token provided");
     }
 
+    // Verify NestJS JWT locally using JWT_SECRET
+    const JWT_SECRET = process.env.JWT_SECRET || "super-secret-jwt-key";
+    let decoded: any = null;
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const [headerB64, payloadB64, signatureB64] = parts;
+        const calculatedSig = crypto
+          .createHmac('sha256', JWT_SECRET)
+          .update(`${headerB64}.${payloadB64}`)
+          .digest('base64')
+          .replace(/=/g, '')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_');
+
+        if (signatureB64 === calculatedSig) {
+          const payloadJson = Buffer.from(payloadB64, 'base64').toString('utf8');
+          decoded = JSON.parse(payloadJson);
+        }
+      }
+    } catch (e) {
+      console.error("[Auth Middleware] JWT verification error:", e);
+    }
+
+    if (!decoded || !decoded.sub) {
+      throw new Error("Unauthorized: Invalid local token");
+    }
+
+    const mockUser = {
+      id: decoded.sub,
+      email: decoded.username || "",
+      role: "authenticated",
+      user_metadata: {
+        full_name: decoded.name || "",
+        avatar_url: decoded.avatar_url || "",
+      }
+    };
+
     const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {
       global: {
         headers: {
@@ -53,25 +92,14 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       },
     });
 
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-
-      if (error || !user) {
-        throw new Error("Unauthorized: Invalid token");
-      }
-
-      return next({
-        context: {
-          supabase,
-          userId: user.id,
-          userRole: (user.role as string) || "user",
-          user,
-          token,
-        },
-      });
-    } catch (error) {
-      console.error("[Auth Middleware] Error:", error);
-      throw error;
-    }
+    return next({
+      context: {
+        supabase,
+        userId: decoded.sub,
+        userRole: "authenticated",
+        user: mockUser,
+        token,
+      },
+    });
   },
 );

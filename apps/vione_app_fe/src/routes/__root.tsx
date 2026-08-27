@@ -188,9 +188,25 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const redirectScript = `(${String(function () {
+    // Immediately redirect root to /connect-app when no auth callback is present.
+    try {
+      var p = location.pathname;
+      var search = new URLSearchParams(location.search);
+      var hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+      var hasCallback = search.get("code") || search.get("token_hash") || hash.get("access_token") || hash.get("code");
+      if (!hasCallback && p === "/") {
+        location.replace("/connect-app");
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  })})();`;
+
   return (
     <html lang="en">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
       </head>
       <body>
@@ -303,6 +319,10 @@ function RootComponent() {
     };
   }, []);
 
+  // Keep the app's motion system disabled when the user prefers reduced motion,
+  // and leave explicit per-screen entrance animations in CSS instead of toggling
+  // a broad global class for the whole document.
+
   // Hydrate from localStorage on mount
   useEffect(() => {
     try {
@@ -329,6 +349,26 @@ function RootComponent() {
 
   const setLang = (l: Lang) => setLangState(l);
 
+  // Redirect legacy/non-supported routes to the /connect-app landing so the
+  // UI remains focused on the four supported screens. This runs client-side
+  // only and preserves API/static paths.
+  const navigate = useNavigate();
+  useEffect(() => {
+    try {
+      const p = window.location.pathname;
+      // Allow asset and api paths to load normally
+      if (p.startsWith("/api") || p.startsWith("/_static") || p.startsWith("/assets") || p.startsWith("/public")) return;
+      // Allow root and any /connect-app subpath (includes /connect-app/community/*, /connect-app/network/*, /connect-app/me/*)
+      if (p === "/" || p === "/connect-app" || p === "/connect-app/" || p.startsWith("/connect-app/")) {
+        return;
+      }
+      // Otherwise redirect to the connect-app landing
+      navigate({ to: "/connect-app", replace: true });
+    } catch {
+      /* ignore */
+    }
+  }, [navigate]);
+
   return (
     <LangContext.Provider value={{ lang, setLang }}>
       <QueryClientProvider client={queryClient}>
@@ -351,6 +391,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { status, user, logout } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [expired, setExpired] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const stopResume = startSessionResume(() => {
@@ -441,13 +486,15 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }, [status, isPublic, navigate, expired]);
 
   if (isPublic) return <>{children}</>;
-  if (status === "loading") {
+
+  if (!isMounted || status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
+
   if (status === "out") return null;
   return <>{children}</>;
 }

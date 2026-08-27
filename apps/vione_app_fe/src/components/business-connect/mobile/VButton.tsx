@@ -4,6 +4,7 @@
 
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { VIconMark } from "./VIconMark";
 
 export function VButton({
   onClick,
@@ -15,6 +16,7 @@ export function VButton({
   className?: string;
 }) {
   const t = useT();
+
   return (
     <button
       type="button"
@@ -24,43 +26,40 @@ export function VButton({
       aria-disabled={disabled ?? undefined}
       className={cn(
         "group relative grid h-[72px] w-[72px] min-h-[52px] min-w-[52px] place-items-center rounded-full",
-        "transition-[transform,filter] duration-150 ease-out",
-        "hover:brightness-110",
-        "active:scale-[0.95] active:brightness-90",
+        "transition-[transform,filter,box-shadow] duration-150 ease-out",
+        "hover:brightness-105",
+        "active:scale-[0.95] active:brightness-95",
         "disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100 disabled:hover:brightness-100",
         "motion-reduce:transition-none motion-reduce:active:scale-100",
         className,
       )}
       style={{
+        // Champagne brand gradient: #AB6D3C → #FDE6B4
         background:
-          "radial-gradient(circle at 35% 30%, #f2b45a 0%, #e09d43 35%, #c17a2e 70%, #a86624 100%)",
+          "linear-gradient(135deg, #AB6D3C 0%, #D7A568 52%, #FDE6B4 100%)",
         boxShadow:
-          "0 12px 30px -10px color-mix(in oklab, #a86624 75%, transparent), inset 0 1px 1px rgba(255,255,255,0.25)",
+          "0 12px 30px -10px rgba(171, 109, 60, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
       }}
     >
-      {/* Vòng viền vàng đậm tách nút V khỏi thanh nav */}
+      {/* Vòng viền champagne giúp nút tách khỏi thanh navigation */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-[5px] rounded-full border-[2.5px] border-[#e9a943] bg-[var(--bc-mobile-surface)] transition-opacity duration-150 group-disabled:opacity-40 motion-reduce:transition-none"
+        className="pointer-events-none absolute -inset-[5px] rounded-full border-[2.5px] border-[#AB6D3C] bg-[var(--bc-mobile-surface)] transition-opacity duration-150 group-disabled:opacity-40 motion-reduce:transition-none"
         style={{ zIndex: -1 }}
       />
-      {/* Quầng sáng vàng đậm nổi bật quanh nút */}
+
+      {/* Quầng sáng champagne xung quanh nút */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-[18px] rounded-full opacity-90 blur-[14px] transition-opacity duration-150 group-hover:opacity-100 group-active:opacity-70 group-disabled:opacity-30 motion-reduce:transition-none"
+        className="pointer-events-none absolute -inset-[18px] rounded-full opacity-70 blur-[14px] transition-opacity duration-150 group-hover:opacity-90 group-active:opacity-60 group-disabled:opacity-30 motion-reduce:transition-none"
         style={{
           zIndex: -2,
           background:
-            "radial-gradient(circle, color-mix(in oklab, #e9a943 50%, transparent) 0%, transparent 60%)",
+            "radial-gradient(circle, rgba(171, 109, 60, 0.32) 0%, rgba(253, 230, 180, 0.12) 40%, transparent 70%)",
         }}
       />
-      <span
-        aria-hidden="true"
-        className="font-serif text-[32px] font-semibold leading-none tracking-tight text-[#101722] transition-transform duration-150 ease-out group-active:scale-95 motion-reduce:transition-none"
-        style={{ fontFeatureSettings: '"ss01"' }}
-      >
-        V
-      </span>
+
+      <VIconMark size={44} />
     </button>
   );
 }

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { SavedCardService } from "./saved-card.service";
 import { SavedCardTagService } from "./saved-card-tag.service";
+import { fetchNestApiFromServer } from "../api-client";
 import type {
   SavedCardCollection,
   SavedCardSearchQuery,
@@ -123,10 +124,11 @@ export const searchSavedCardsFn = createServerFn({ method: "GET" })
       })
       .parse(d),
   )
-  .handler(
-    ({ data, context }): Promise<SavedCard[]> =>
-      SavedCardService.search(context.supabase, context.userId, data as SavedCardSearchQuery),
-  );
+  .handler(async ({ data, context }): Promise<SavedCard[]> => {
+    const { token } = context as any;
+    const url = `/connect-app/network/saved-cards${data.text ? `?term=${encodeURIComponent(data.text)}` : ""}`;
+    return fetchNestApiFromServer(url, token);
+  });
 
 // ── Sync + AI ─────────────────────────────────────────────────────────────────
 

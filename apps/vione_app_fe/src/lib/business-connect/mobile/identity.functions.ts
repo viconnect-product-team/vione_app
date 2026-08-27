@@ -7,15 +7,6 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { allowPublicRequest } from "@/lib/public-rate-limit";
-import {
-  getMyIdentity,
-  getOrCreateMyShareLink,
-  getPublicIdentityByToken,
-  rotateMyShareLink,
-  updateMyVisibility,
-  upsertMyIdentity,
-} from "./identity.service";
 import {
   identityUpdateSchema,
   publicTokenSchema,
@@ -26,6 +17,7 @@ import type {
   MyIdentityPayload,
   PublicIdentityResult,
 } from "./identity.types";
+import { fetchNestApi, fetchNestApiFromServer } from "../../api-client";
 
 // ---------------------------------------------------------------------------
 // Owner endpoints (authenticated)
@@ -34,7 +26,8 @@ import type {
 export const bcIdentityGetMineFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(
-    ({ context }): Promise<MyIdentityPayload> => getMyIdentity(context.supabase, context.userId),
+    ({ context }): Promise<MyIdentityPayload> =>
+      fetchNestApiFromServer("/connect-app/me/identity", context.token),
   );
 
 export const bcIdentityUpsertFn = createServerFn({ method: "POST" })
@@ -42,7 +35,10 @@ export const bcIdentityUpsertFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => identityUpdateSchema.parse(data))
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
-      upsertMyIdentity(context.supabase, context.userId, data),
+      fetchNestApiFromServer("/connect-app/me/identity", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcIdentityUpdateVisibilityFn = createServerFn({ method: "POST" })
@@ -50,44 +46,36 @@ export const bcIdentityUpdateVisibilityFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => visibilityUpdateSchema.parse(data))
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
-      updateMyVisibility(context.supabase, context.userId, data),
+      fetchNestApiFromServer("/connect-app/me/identity/visibility", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcIdentityGetOrCreateShareLinkFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(
     ({ context }): Promise<IdentityShareLinkInfo> =>
-      getOrCreateMyShareLink(context.supabase, context.userId),
+      fetchNestApiFromServer("/connect-app/me/identity/share-link", context.token, {
+        method: "POST",
+      }),
   );
 
 export const bcIdentityRotateShareLinkFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(
     ({ context }): Promise<IdentityShareLinkInfo> =>
-      rotateMyShareLink(context.supabase, context.userId),
+      fetchNestApiFromServer("/connect-app/me/identity/share-link/rotate", context.token, {
+        method: "POST",
+      }),
   );
 
 // ---------------------------------------------------------------------------
 // Public resolver (anonymous) — the ONLY public surface of the identity.
-// Malformed tokens fail in the validator before any DB work. Per-client
-// rate budget blunts token enumeration / scraping (best-effort per edge
-// instance, same convention as the public .vcf endpoint).
 // ---------------------------------------------------------------------------
-
-const PUBLIC_RATE_LIMIT = 60;
-const PUBLIC_RATE_WINDOW_MS = 10 * 60 * 1000;
 
 export const bcIdentityPublicByTokenFn = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => publicTokenSchema.parse(data))
   .handler(async ({ data }): Promise<PublicIdentityResult> => {
-    const { getRequestHeader, getRequestIP } = await import("@tanstack/react-start/server");
-    const key =
-      getRequestHeader("cf-connecting-ip") ||
-      getRequestIP({ xForwardedFor: true }) ||
-      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "unknown";
-    if (!allowPublicRequest(`bc-id-public:${key}`, PUBLIC_RATE_LIMIT, PUBLIC_RATE_WINDOW_MS)) {
-      return { state: "unavailable" };
-    }
-    return getPublicIdentityByToken(data);
+    return fetchNestApi(`/connect-app/public/identity/${data}`);
   });

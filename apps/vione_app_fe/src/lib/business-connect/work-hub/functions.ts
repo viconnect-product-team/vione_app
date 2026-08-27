@@ -37,9 +37,11 @@ export const getWorkHubSummaryFn = createServerFn({ method: "GET" })
 export const getWorkHubOverviewFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context as Ctx;
+    const { token } = context as any;
+    const { fetchNestApiFromServer } = await import("../../api-client");
+    const raw = await fetchNestApiFromServer("/connect-app/briefing", token);
     const { WorkHubService } = await import("./service.server");
-    return WorkHubService.getOverview(supabase, userId, new Date().toISOString());
+    return WorkHubService.getOverviewFromRaw(raw, new Date().toISOString());
   });
 
 export const listWorkHubItemsFn = createServerFn({ method: "POST" })

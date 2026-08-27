@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function MobilePage({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={cn("flex flex-1 flex-col", className)}
+      className={cn("bc-page-enter flex flex-1 flex-col", className)}
       style={{
         paddingLeft: "max(1.25rem, var(--bc-mobile-safe-left))",
         paddingRight: "max(1.25rem, var(--bc-mobile-safe-right))",

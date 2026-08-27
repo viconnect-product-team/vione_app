@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -8,11 +8,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'SECRET_KEY', // TODO: Move to .env
+      secretOrKey: process.env.JWT_SECRET || 'super-secret-jwt-key',
     });
   }
 
   async validate(payload: any) {
-    return { id: payload.sub, username: payload.username };
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (payload.sub !== 'mock-admin-id' && !uuidRegex.test(payload.sub)) {
+      throw new UnauthorizedException('Invalid user ID format');
+    }
+    const id = payload.sub === 'mock-admin-id' ? '00000000-0000-0000-0000-000000000000' : payload.sub;
+    return { id, username: payload.username };
   }
 }
+

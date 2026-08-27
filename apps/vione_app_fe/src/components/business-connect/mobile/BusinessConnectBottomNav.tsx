@@ -4,24 +4,44 @@
 // Notifications / Messages / AI / QR / NFC are intentionally NOT tabs.
 
 import { Link } from "@tanstack/react-router";
-import { Home, Network, Users, CircleUserRound, type LucideIcon } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { VButton } from "./VButton";
+import {
+  NavHomeIcon,
+  NavNetworkIcon,
+  NavCommunityIcon,
+  NavMeIcon,
+} from "./NavIcons";
+import type { ComponentType } from "react";
 
-type NavTab = { to: string; key: TKey; icon: LucideIcon; exact?: boolean };
+type NavTab = {
+  to: string;
+  key: TKey;
+  icon: ComponentType<{ className?: string }>;
+  exact?: boolean;
+};
 
-const HOME_TAB: NavTab = { to: "/connect-app", key: "bc.mobile.nav.home", icon: Home, exact: true };
+const HOME_TAB: NavTab = {
+  to: "/connect-app",
+  key: "bc.mobile.nav.home",
+  icon: NavHomeIcon,
+  exact: true,
+};
 const NETWORK_TAB: NavTab = {
   to: "/connect-app/network",
   key: "bc.mobile.nav.network",
-  icon: Network,
+  icon: NavNetworkIcon,
 };
 const COMMUNITY_TAB: NavTab = {
   to: "/connect-app/community",
   key: "bc.mobile.nav.community",
-  icon: Users,
+  icon: NavCommunityIcon,
 };
-const ME_TAB: NavTab = { to: "/connect-app/me", key: "bc.mobile.nav.me", icon: CircleUserRound };
+const ME_TAB: NavTab = {
+  to: "/connect-app/me",
+  key: "bc.mobile.nav.me",
+  icon: NavMeIcon,
+};
 
 export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void }) {
   const t = useT();
@@ -45,7 +65,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
           className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[var(--bc-mobile-accent)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
         />
         <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_14%,transparent)] motion-reduce:transition-none">
-          <Icon className="h-[21px] w-[21px]" strokeWidth={1.9} />
+          <Icon className="h-[20px] w-[20px]" />
         </span>
         <span className="text-[10.5px] font-medium leading-none group-data-[status=active]:font-semibold">
           {t(tab.key)}
@@ -84,3 +104,4 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
     </nav>
   );
 }
+
