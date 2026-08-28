@@ -16,11 +16,11 @@ export function LangSwitcher({
   const isOverlay = variant === "overlay";
 
   const wrap = isOverlay
-    ? "inline-flex items-center rounded-full border border-border/20 bg-foreground/40 p-0.5 text-[11px] font-semibold backdrop-blur-md"
-    : "inline-flex items-center rounded-full border border-border bg-card p-0.5 text-xs font-semibold";
+    ? "inline-flex items-center rounded-lg bg-foreground/40 p-0.5 text-[11px] font-semibold backdrop-blur-md gap-0.5"
+    : "inline-flex items-center rounded-lg bg-card p-0.5 text-xs font-semibold gap-0.5";
 
   const baseBtn =
-    "relative inline-flex h-7 min-w-[40px] items-center justify-center gap-1 rounded-full px-2.5 transition-colors";
+    "relative inline-flex h-7 min-w-[40px] items-center justify-center gap-1 rounded-md px-2.5 transition-colors";
 
   const activeCls = isOverlay
     ? "bg-card text-[oklch(0.18_0.04_265)] shadow-sm"

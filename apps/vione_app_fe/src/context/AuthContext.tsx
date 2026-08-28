@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 
 type AuthContextType = {
@@ -70,6 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(mockSession);
           setStatus('in');
           setCookie(mockSession);
+          
+          // Sync session to Supabase Client for storage RLS permission checks
+          void supabase.auth.setSession({
+            access_token: token,
+            refresh_token: mockSession.refresh_token,
+          });
+
           return true;
         }
       }
@@ -90,6 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setStatus('out');
+    // Clear session on Supabase Client
+    void supabase.auth.signOut();
   };
 
   const setAuthData = (newSession: any) => {
@@ -110,13 +120,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setUser(mappedUser);
-      setSession({
+      const mockSession = {
         access_token: newSession.access_token,
         refresh_token: newSession.refresh_token || '',
         expires_in: 3600,
         token_type: 'bearer',
         user: mappedUser
-      } as any);
+      } as any;
+      setSession(mockSession);
+
+      // Sync session to Supabase Client for storage RLS permission checks
+      void supabase.auth.setSession({
+        access_token: newSession.access_token,
+        refresh_token: mockSession.refresh_token,
+      });
     } else {
       // Supabase session
       setSession(newSession);

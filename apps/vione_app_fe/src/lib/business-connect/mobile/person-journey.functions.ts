@@ -1,11 +1,10 @@
 // BC-Mobile-2D — Person Journey RPC boundary (thin adapter).
-//
-// Read-only GET. All composition lives in person-journey.server.ts, loaded
-// inside the handler so the server-only module never enters client bundles.
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchNestApiFromServer } from "../../api-client";
 import type { BcMobilePersonJourneyResult } from "./person-journey.types";
 
 const inputSchema = z.object({
@@ -20,10 +19,11 @@ export const bcMobilePersonJourneyFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => inputSchema.parse(i))
   .handler(async ({ data, context }): Promise<BcMobilePersonJourneyResult> => {
-    const { getBcMobilePersonJourneyPage } = await import("./person-journey.server");
-    return getBcMobilePersonJourneyPage(context.supabase as never, context.userId, {
-      personId: data.personId,
-      cursor: data.cursor ?? null,
-      limit: data.limit,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("personId", data.personId);
+    if (data.cursor) queryParams.set("cursor", data.cursor);
+    if (data.limit !== undefined) queryParams.set("limit", String(data.limit));
+    const queryString = queryParams.toString();
+    const endpoint = `/connect-app/network/person-journey${queryString ? `?${queryString}` : ""}`;
+    return fetchNestApiFromServer(endpoint, context.token);
   });

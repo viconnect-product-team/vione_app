@@ -9,9 +9,9 @@ async function main() {
   const cols = await client.query(`
     SELECT column_name, data_type 
     FROM information_schema.columns 
-    WHERE table_name = 'guest_contacts'
+    WHERE table_name = 'users' AND table_schema = 'auth'
   `);
-  console.log("guest_contacts columns:");
+  console.log("auth.users columns:");
   cols.rows.forEach(r => console.log(`  ${r.column_name}: ${r.data_type}`));
 
   await client.end();

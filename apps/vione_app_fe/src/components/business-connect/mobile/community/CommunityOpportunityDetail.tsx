@@ -41,6 +41,7 @@ import type {
 } from "@/lib/business-connect/mobile/community-activity.types";
 import { supabase } from "@/integrations/supabase/client";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { uploadFileToNest, NEST_API_URL } from "@/lib/api-client";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityError } from "./CommunityHome";
 import { ActivityListSkeleton } from "./CommunityEvents";
@@ -353,15 +354,10 @@ function NoteAttachments({
     if (!viewerId) return;
     setUploading(true);
     try {
-      const safeName = file.name.replace(/[^-\w.]+/g, "_").slice(-80);
-      const path = `${viewerId}/${crypto.randomUUID()}-${safeName}`;
-      const { error: upErr } = await supabase.storage
-        .from("opportunity-attachments")
-        .upload(path, file, { contentType: file.type || "application/octet-stream" });
-      if (upErr) throw upErr;
+      const minioPath = await uploadFileToNest(file, file.name);
       await onAdd({
         kind: "file",
-        storagePath: path,
+        storagePath: minioPath,
         title: title.trim() || file.name,
         mimeType: file.type || "application/octet-stream",
         sizeBytes: file.size,
@@ -381,6 +377,13 @@ function NoteAttachments({
       return;
     }
     if (!item.storagePath) return;
+
+    if (item.storagePath.startsWith('/upload/')) {
+      const fullUrl = `${NEST_API_URL}/api${item.storagePath}`;
+      window.open(fullUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     const { data, error: signErr } = await supabase.storage
       .from("opportunity-attachments")
       .createSignedUrl(item.storagePath, 300);

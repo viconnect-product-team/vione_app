@@ -27,17 +27,24 @@ type SupaLike = {
   };
 };
 
-/** Re-signs stored product-media paths into short-lived display URLs. */
 async function signMediaValues(supabase: SupaLike, values: string[]): Promise<string[]> {
   const out: string[] = [];
   for (const v of values) {
+    if (v && (v.startsWith('/upload/') || (v.startsWith('http') && !v.includes('supabase.co/storage')))) {
+      out.push(v);
+      continue;
+    }
     const path = toStoragePath(v);
     if (!path) {
       out.push(v);
       continue;
     }
-    const { data } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, VIEW_TTL);
-    out.push(data?.signedUrl ?? "");
+    try {
+      const { data } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, VIEW_TTL);
+      out.push(data?.signedUrl ?? "");
+    } catch {
+      out.push(v);
+    }
   }
   return out.filter(Boolean);
 }

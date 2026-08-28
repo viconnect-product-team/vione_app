@@ -82,13 +82,6 @@ export function ExecutiveHome() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            to="/connect-app/inbox"
-            aria-label={t("bc.mobile.inbox.title")}
-            className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14]"
-          >
-            <MessageSquare aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
-          </Link>
           <HomeNotificationsMenu unreadCount={unread} />
         </div>
       </header>
@@ -217,7 +210,6 @@ function TodayDate() {
   );
 }
 
-/** Thao tác nhanh — chỉ trỏ tới các route đã tồn tại. */
 function QuickActions() {
   const t = useT();
   const items = [
@@ -492,6 +484,7 @@ function Greeting({
   const role = [profileIdentity?.jobTitle, profileIdentity?.companyName]
     .filter((p): p is string => Boolean(p && p.trim()))
     .join(" · ");
+  const t = useT();
 
   return (
     <div className="relative mt-4">
@@ -557,6 +550,15 @@ function Greeting({
                 </span>
               </span>
             </div>
+          </div>
+          <div className="ml-auto shrink-0 flex items-center">
+            <Link
+              to="/connect-app/inbox"
+              aria-label={t("bc.mobile.inbox.title")}
+              className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#251e18]"
+            >
+              <MessageSquare aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+            </Link>
           </div>
         </div>
       </section>

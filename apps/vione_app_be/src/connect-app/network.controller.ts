@@ -135,4 +135,20 @@ export class NetworkController {
   async reportUser(@Request() req, @Body() data: any) {
     return this.connectAppService.reportUser(req.user.id, data);
   }
+
+  // --- Person Plan ---
+  @Post('person-plan/create')
+  async createPersonPlan(@Request() req, @Body() data: any) {
+    return this.connectAppService.createPersonPlan(req.user.id, data);
+  }
+
+  @Post('person-plan/list')
+  async listPersonPlans(@Request() req, @Body() data: any) {
+    return this.connectAppService.listPersonPlans(req.user.id, data);
+  }
+
+  @Post('person-plan/set-status')
+  async setPersonPlanStatus(@Request() req, @Body() data: any) {
+    return this.connectAppService.setPersonPlanStatus(req.user.id, data);
+  }
 }

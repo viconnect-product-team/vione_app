@@ -22,11 +22,11 @@ export function ThemeSwitcher({
   const isOverlay = variant === "overlay";
 
   const wrap = isOverlay
-    ? "inline-flex items-center rounded-full border border-border/20 bg-foreground/40 p-0.5 backdrop-blur-md"
-    : "inline-flex items-center rounded-full border border-border bg-card p-0.5";
+    ? "inline-flex items-center rounded-lg bg-foreground/40 p-0.5 backdrop-blur-md gap-0.5"
+    : "inline-flex items-center rounded-lg bg-card p-0.5 gap-0.5";
 
   const baseBtn =
-    "inline-flex h-7 w-8 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+    "inline-flex h-7 w-8 items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 
   const activeCls = isOverlay
     ? "bg-card text-foreground shadow-sm"

@@ -15,16 +15,28 @@ function mapEndpoint(endpoint: string): string {
     mapped = '/me/identity/share-link';
   } else if (mapped === '/connect-app/me/identity/share-link/rotate') {
     mapped = '/me/identity/share-link/rotate';
+  } else if (mapped.startsWith('/connect-app/me/showcase')) {
+    mapped = mapped.replace('/connect-app/me/showcase', '/me/showcase');
   } else if (mapped === '/connect-app/abuse/report') {
     mapped = '/network/abuse/report';
   } else if (mapped.startsWith('/connect-app/community/')) {
     mapped = mapped.replace('/connect-app/community/', '/community/');
   } else if (mapped.startsWith('/connect-app/network/')) {
     mapped = mapped.replace('/connect-app/network/', '/network/');
+  } else if (mapped.startsWith('/connect-app/me/')) {
+    mapped = mapped.replace('/connect-app/me/', '/me/');
+  } else if (mapped.startsWith('/connect-app/dm/')) {
+    mapped = mapped.replace('/connect-app/dm/', '/dm/');
+  } else if (mapped.startsWith('/connect-app/customer/')) {
+    mapped = mapped.replace('/connect-app/customer/', '/customer/');
+  } else if (mapped.startsWith('/connect-app/card-scan/')) {
+    mapped = mapped.replace('/connect-app/card-scan/', '/card-scan/');
   } else if (mapped.startsWith('/connect-app/public/identity/')) {
     mapped = mapped.replace('/connect-app/public/identity/', '/public/identity/');
   } else if (mapped.startsWith('/connect-app/notifications')) {
     mapped = mapped.replace('/connect-app/notifications', '/me/notifications');
+  } else if (mapped.startsWith('/connect-app/moment/')) {
+    mapped = mapped.replace('/connect-app/moment/', '/moment/');
   }
 
   const clean = mapped.startsWith('/') ? mapped : `/${mapped}`;
@@ -179,4 +191,29 @@ export async function fetchNestApiFromServer(endpoint: string, token: string, op
   });
 
   return handleResponse(response);
+}
+
+export async function uploadFileToNest(file: File | Blob, filename: string): Promise<string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
+  const headers = new Headers();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const formData = new FormData();
+  formData.append('file', file, filename);
+
+  const response = await fetch(`${NEST_API_URL}/api/upload/file`, {
+    method: 'POST',
+    body: formData,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+
+  const text = await response.text();
+  const data = JSON.parse(text); // Bypasses automatic URL transform so we get raw path e.g., "/upload/file/documents/..."
+  return data.url;
 }

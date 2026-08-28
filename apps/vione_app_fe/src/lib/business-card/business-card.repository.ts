@@ -65,25 +65,31 @@ export const BusinessCardRepository = {
     return (data ?? null) as RawCardRow | null;
   },
 
-  /** Full row by slug (RLS decides visibility — used for owner/manager preview). */
   async findFullBySlug(supabase: SupabaseClient, slug: string) {
-    const { data, error } = await supabase
-      .from(CARD_TABLE)
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    let query = supabase.from(CARD_TABLE).select("*");
+    if (isUuid) {
+      query = query.or(`id.eq.${slug},slug.eq.${slug}`);
+    } else {
+      query = query.eq("slug", slug);
+    }
+    const { data, error } = await query.maybeSingle();
     if (error) throw new Error(error.message);
     return (data ?? null) as RawCardRow | null;
   },
 
-  /** Published row by slug (anon client → RLS returns published+public only). */
   async findPublishedBySlug(supabase: SupabaseClient, slug: string) {
-    const { data, error } = await supabase
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    let query = supabase
       .from(CARD_TABLE)
       .select("*")
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+      .eq("status", "published");
+    if (isUuid) {
+      query = query.or(`id.eq.${slug},slug.eq.${slug}`);
+    } else {
+      query = query.eq("slug", slug);
+    }
+    const { data, error } = await query.maybeSingle();
     if (error) throw new Error(error.message);
     return (data ?? null) as RawCardRow | null;
   },
@@ -106,14 +112,18 @@ export const BusinessCardRepository = {
     return (data ?? []) as { slug: string; updated_at: string | null }[];
   },
 
-  /** Admin-only public_mode probe for a published slug (gate signal, no content). */
   async findPublishedPublicMode(supabase: SupabaseClient, slug: string) {
-    const { data } = await supabase
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    let query = supabase
       .from(CARD_TABLE)
       .select("public_mode")
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+      .eq("status", "published");
+    if (isUuid) {
+      query = query.or(`id.eq.${slug},slug.eq.${slug}`);
+    } else {
+      query = query.eq("slug", slug);
+    }
+    const { data } = await query.maybeSingle();
     return (data as { public_mode: PublicMode } | null) ?? null;
   },
 

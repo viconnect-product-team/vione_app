@@ -20,10 +20,12 @@ import {
   Share2,
   Sparkles,
   Trophy,
+  Trash2,
 } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
+import type { IdentityShowcaseItem } from "@/lib/business-connect/mobile/identity-showcase.service";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { MeHeader } from "@/components/business-connect/mobile/me/MeHeader";
 import { MeSheet } from "@/components/business-connect/mobile/me/MeSheet";
@@ -32,6 +34,10 @@ import { MeQuickContact } from "@/components/business-connect/mobile/me/MeQuickC
 import { MeAboutPanel } from "@/components/business-connect/mobile/me/MeAboutPanel";
 import { MeShowcasePanel } from "@/components/business-connect/mobile/me/MeShowcasePanel";
 import { useMyIdentityShowcase } from "@/hooks/use-my-identity-showcase";
+import {
+  bcIdentityShowcaseAddItemFn,
+  bcIdentityShowcaseDeleteItemFn,
+} from "@/lib/business-connect/mobile/identity-showcase.functions";
 import { IdentityPrivacySheet } from "@/components/business-connect/mobile/me/IdentityPrivacySheet";
 import {
   IdentityQrSheet,
@@ -87,6 +93,8 @@ type OpenSheet =
   | "nfc"
   | "nfc-choose"
   | "tap-connect"
+  | "business_area"
+  | "client"
   | null;
 
 const rowClass =
@@ -214,7 +222,7 @@ function ConnectAppMePage() {
     id: item.id,
     title: item.title,
     subtitle: item.subtitle,
-    onOpen: () => void navigate({ to: "/connect-app/me/edit" }),
+    onOpen: () => setSheet("business_area"),
   }));
   const clientItems = showcaseQuery.data?.clients ?? [];
   const clientLogoItems = clientItems.filter((item) => !!item.logoUrl);
@@ -240,7 +248,7 @@ function ConnectAppMePage() {
       id: item.id,
       title: item.title,
       subtitle: item.subtitle,
-      onOpen: () => void navigate({ to: "/connect-app/me/edit" }),
+      onOpen: () => setSheet("client"),
     }));
 
 
@@ -428,8 +436,8 @@ function ConnectAppMePage() {
               title={t("bc.mobile.me.business.title")}
               emptyLabel={t("bc.mobile.me.business.empty")}
               rows={businessAreaRows}
-              onViewAll={() => void navigate({ to: "/connect-app/me/edit" })}
-              onAdd={() => void navigate({ to: "/connect-app/me/edit" })}
+              onViewAll={() => setSheet("business_area")}
+              onAdd={() => setSheet("business_area")}
             />
 
             {/* 5 — Khách hàng & Dấu ấn (logo thật của tài khoản). */}
@@ -441,9 +449,8 @@ function ConnectAppMePage() {
               rows={clientRows}
               logos={clientLogos}
               extraCount={clientExtraCount}
-              onViewAll={() => void navigate({ to: "/connect-app/me/edit" })}
-
-              onAdd={() => void navigate({ to: "/connect-app/me/edit" })}
+              onViewAll={() => setSheet("client")}
+              onAdd={() => setSheet("client")}
             />
 
 
@@ -710,6 +717,215 @@ function ConnectAppMePage() {
           registerTag={() => registerNfcTag({ data: { shareToken: shareLink.token } })}
         />
       )}
+
+      {sheet === "business_area" && identity && (
+        <ShowcaseManageSheet
+          kind="business_area"
+          items={showcaseQuery.data?.businessAreas ?? []}
+          onClose={() => setSheet(null)}
+          onRefresh={() => void showcaseQuery.refetch()}
+          userId={user?.id ?? ""}
+        />
+      )}
+
+      {sheet === "client" && identity && (
+        <ShowcaseManageSheet
+          kind="client"
+          items={showcaseQuery.data?.clients ?? []}
+          onClose={() => setSheet(null)}
+          onRefresh={() => void showcaseQuery.refetch()}
+          userId={user?.id ?? ""}
+        />
+      )}
     </MobilePage>
+  );
+}
+
+function ShowcaseManageSheet({
+  kind,
+  items,
+  onClose,
+  onRefresh,
+  userId,
+}: {
+  kind: "business_area" | "client";
+  items: IdentityShowcaseItem[];
+  onClose: () => void;
+  onRefresh: () => void;
+  userId: string;
+}) {
+  const t = useT();
+  const addItem = useServerFn(bcIdentityShowcaseAddItemFn);
+  const deleteItem = useServerFn(bcIdentityShowcaseDeleteItemFn);
+
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleAdd() {
+    if (!title.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addItem({
+        data: {
+          kind,
+          title: title.trim(),
+          subtitle: subtitle.trim() || null,
+          logoUrl: kind === "client" ? (logoUrl.trim() || null) : null,
+          sortOrder: items.length,
+        },
+      });
+
+      setTitle("");
+      setSubtitle("");
+      setLogoUrl("");
+      onRefresh();
+    } catch (e: any) {
+      setError(e.message || "Lỗi thêm mục");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    setError(null);
+    try {
+      await deleteItem({ data: { id } });
+      onRefresh();
+    } catch (e: any) {
+      setError(e.message || "Lỗi xóa mục");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const sheetTitle = kind === "business_area" ? "Lĩnh vực kinh doanh" : "Khách hàng & Đối tác";
+  const emptyMessage = kind === "business_area" ? "Chưa có lĩnh vực kinh doanh nào" : "Chưa có khách hàng nào";
+
+  return (
+    <MeSheet
+      title={sheetTitle}
+      subtitle={kind === "business_area" ? "Quản lý danh sách lĩnh vực/sản phẩm kinh doanh của bạn." : "Quản lý danh sách khách hàng và đối tác của bạn."}
+      onClose={onClose}
+    >
+      <div className="flex flex-col gap-4 pb-6">
+        {/* List of current items */}
+        <div className="max-h-[220px] overflow-y-auto divide-y divide-[var(--bc-mobile-border)]/40 pr-1">
+          {items.length === 0 ? (
+            <p className="py-4 text-center text-[13px] text-[var(--bc-mobile-muted)] italic">
+              {emptyMessage}
+            </p>
+          ) : (
+            items.map((item) => (
+              <div key={item.id} className="flex items-center justify-between py-2.5 gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="block break-words text-[13.5px] font-semibold text-[var(--bc-mobile-text)]">
+                    {item.title}
+                  </span>
+                  {item.subtitle && (
+                    <span className="block break-words text-[12px] text-[var(--bc-mobile-muted)]">
+                      {item.subtitle}
+                    </span>
+                  )}
+                  {item.logoUrl && (
+                    <span className="block break-words text-[11px] text-[var(--bc-mobile-muted)]/70 truncate max-w-[200px]">
+                      Logo: {item.logoUrl}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={deletingId === item.id}
+                  onClick={() => void handleDelete(item.id)}
+                  aria-label="Xóa"
+                  className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                >
+                  {deletingId === item.id ? (
+                    <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4.5 w-4.5" />
+                  )}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add new form */}
+        <div className="border-t border-[var(--bc-mobile-border)]/40 pt-4 flex flex-col gap-3">
+          <h3 className="text-[13.5px] font-bold text-[var(--bc-mobile-text)]">
+            Thêm mục mới
+          </h3>
+          {error && (
+            <p role="alert" className="text-[12px] text-rose-500">
+              {error}
+            </p>
+          )}
+          
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px] font-medium text-[var(--bc-mobile-muted)]">
+              {kind === "business_area" ? "Tên lĩnh vực / Sản phẩm *" : "Tên khách hàng / Đối tác *"}
+            </label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={saving}
+              placeholder={kind === "business_area" ? "Ví dụ: Phát triển Phần mềm" : "Ví dụ: Tập đoàn Viconnect"}
+              className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px] font-medium text-[var(--bc-mobile-muted)]">
+              Mô tả chi tiết (Tùy chọn)
+            </label>
+            <input
+              type="text"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              disabled={saving}
+              placeholder="Ví dụ: Thiết kế hệ thống, lập trình di động..."
+              className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+            />
+          </div>
+
+          {kind === "client" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[12px] font-medium text-[var(--bc-mobile-muted)]">
+                Đường dẫn ảnh Logo (Tùy chọn URL)
+              </label>
+              <input
+                type="url"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                disabled={saving}
+                placeholder="https://example.com/logo.png"
+                className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+              />
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={saving || !title.trim()}
+            onClick={() => void handleAdd()}
+            className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Thêm mới"
+            )}
+          </button>
+        </div>
+      </div>
+    </MeSheet>
   );
 }

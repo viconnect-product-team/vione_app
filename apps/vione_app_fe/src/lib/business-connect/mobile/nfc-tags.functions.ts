@@ -1,14 +1,9 @@
 // BC-Mobile-5C — NFC tag registry RPC (thin wrappers only).
-// Actor always from requireSupabaseAuth, never from client input.
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  listMyNfcTags,
-  registerMyNfcTag,
-  renameMyNfcTag,
-  revokeMyNfcTag,
-} from "./nfc-tags.service";
+import { fetchNestApiFromServer } from "../../api-client";
 import {
   nfcTagRegisterSchema,
   nfcTagRenameSchema,
@@ -19,7 +14,8 @@ import type { IdentityNfcTagInfo } from "./nfc-tags.types";
 export const bcIdentityNfcTagsListFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(
-    ({ context }): Promise<IdentityNfcTagInfo[]> => listMyNfcTags(context.supabase, context.userId),
+    ({ context }): Promise<IdentityNfcTagInfo[]> =>
+      fetchNestApiFromServer("/connect-app/me/nfc/list", context.token),
   );
 
 export const bcIdentityNfcTagRegisterFn = createServerFn({ method: "POST" })
@@ -27,7 +23,10 @@ export const bcIdentityNfcTagRegisterFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => nfcTagRegisterSchema.parse(data))
   .handler(
     ({ data, context }): Promise<IdentityNfcTagInfo> =>
-      registerMyNfcTag(context.supabase, context.userId, data),
+      fetchNestApiFromServer("/connect-app/me/nfc/register", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcIdentityNfcTagRevokeFn = createServerFn({ method: "POST" })
@@ -35,7 +34,10 @@ export const bcIdentityNfcTagRevokeFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => nfcTagRevokeSchema.parse(data))
   .handler(
     ({ data, context }): Promise<IdentityNfcTagInfo> =>
-      revokeMyNfcTag(context.supabase, context.userId, data.tagId),
+      fetchNestApiFromServer("/connect-app/me/nfc/revoke", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcIdentityNfcTagRenameFn = createServerFn({ method: "POST" })
@@ -43,5 +45,8 @@ export const bcIdentityNfcTagRenameFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => nfcTagRenameSchema.parse(data))
   .handler(
     ({ data, context }): Promise<IdentityNfcTagInfo> =>
-      renameMyNfcTag(context.supabase, context.userId, data),
+      fetchNestApiFromServer("/connect-app/me/nfc/rename", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );

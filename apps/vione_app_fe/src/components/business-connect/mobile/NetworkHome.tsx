@@ -132,14 +132,6 @@ export function NetworkHome() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Luồng icon add thêm để quét danh thiếp, đặt ngay bên cạnh chuông thông báo ở Network */}
-          <Link
-            to="/connect-app/card-scan"
-            aria-label={t("bc.mobile.network.addPerson")}
-            className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors"
-          >
-            <UserPlus className="h-5 w-5" strokeWidth={1.8} />
-          </Link>
           <NetworkNotificationsButton />
         </div>
       </header>
@@ -148,15 +140,21 @@ export function NetworkHome() {
 
       <main id="bc-mobile-network" className="contents">
 
-        {/* A — Header: tiêu đề + số liệu quan hệ xuất từ Figma */}
         <header className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-          <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
+          <div className="flex items-center justify-between relative self-stretch w-full flex-[0_0_auto]">
             <h1
               id="network-heading"
-              className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#f2efe9e6] text-2xl tracking-[0] leading-8"
+              className="relative flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#f2efe9e6] text-2xl tracking-[0] leading-8"
             >
               Network
             </h1>
+            <Link
+              to="/connect-app/card-scan"
+              aria-label={t("bc.mobile.network.addPerson")}
+              className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#251e18]"
+            >
+              <UserPlus className="h-5 w-5" strokeWidth={1.8} />
+            </Link>
           </div>
           <p className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] mt-[-0.5px]">
             <span className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#d8c3b1b2] text-xs tracking-[0] leading-4 whitespace-nowrap">
@@ -351,7 +349,7 @@ export function NetworkHome() {
                 {/* Khoảnh khắc gần đây / danh sách người */}
                 <section className="mt-6">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="min-w-0 truncate text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--bc-mobile-text)]">
+                    <h2 className="min-w-0 truncate text-[10px] font-medium tracking-[1px] uppercase text-[#d8c3b1cc]">
                       {showFeed ? t("bc.mobile.network.moments.title") : t("bc.mobile.network.people")}
                     </h2>
                     {narrowed ? (
@@ -440,6 +438,10 @@ export function NetworkHome() {
  * "AI Match – Nên kết nối hôm nay" — dải ngang gợi ý quan hệ (6A).
  * Chỉ hiển thị dữ liệu xác định: số ngày từ lần gặp gần nhất + gợi ý của V.
  */
+/**
+ * "AI Match – Nên kết nối hôm nay" — dải ngang gợi ý quan hệ (6A).
+ * Chỉ hiển thị dữ liệu xác định: số ngày từ lần gặp gần nhất + gợi ý của V.
+ */
 function NetworkAiMatchStrip({
   peopleById,
   allowedIds,
@@ -466,24 +468,24 @@ function NetworkAiMatchStrip({
 
   return (
     <section aria-label={t("bc.mobile.network.aimatch.title")} className="mt-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-[#ffb971]">
+      <div className="flex items-center justify-between w-full gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#ffb971e6]">
           <Sparkles
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-[#ffb971] fill-current"
+            className="h-[12.83px] w-[12.83px] shrink-0 text-[#ffb971e6] fill-current"
           />
-          <span className="truncate">{t("bc.mobile.network.aimatch.title")}</span>
+          <span className="truncate leading-5">{t("bc.mobile.network.aimatch.title")}</span>
         </h2>
         <Link
           to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-0.5 text-xs text-[#d8c3b180] hover:text-[#ffb971] transition-colors"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
         >
           {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
+          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" />
         </Link>
       </div>
 
-      <ul className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {recommendations.map((rec) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]
@@ -494,26 +496,30 @@ function NetworkAiMatchStrip({
             : "Gặp gần đây...";
 
           return (
-            <li key={rec.id} className="w-[260px] shrink-0 snap-start">
+            <li key={rec.id} className="w-[169px] h-[93px] shrink-0 snap-start">
               <button
                 type="button"
                 onClick={() => setOpenId(rec.id)}
-                className="flex items-center gap-3.5 w-full bg-[#251e18] rounded-2xl p-3.5 border border-solid border-[#ea9a4126] hover:border-[#ea9a4166] text-left transition-colors"
+                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#251e18] rounded-xl p-3 border border-solid border-[#ea9a4126] hover:border-[#ea9a4166] text-left transition-colors box-border"
               >
-                <img
-                  src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
-                  alt={name}
-                  loading="lazy"
-                  className="w-12 h-12 rounded-full object-cover border border-solid border-[#ea9a4126]"
-                />
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="font-semibold text-[15px] text-[#f2efe9] truncate">
-                    {name}
-                  </span>
-                  <span className="font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
-                    {roleLine}
-                  </span>
-                  <span className="font-light text-xs text-[#ffb971] mt-1.5">
+                <div className="flex items-center gap-3 w-full">
+                  <img
+                    src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
+                    alt={name}
+                    loading="lazy"
+                    className="w-10 h-10 rounded-full object-cover border border-solid border-[#ea9a4126] shrink-0"
+                  />
+                  <div className="flex flex-col min-w-0 flex-1 gap-0">
+                    <span className="font-medium text-sm text-[#f2efe9] leading-5 truncate">
+                      {name}
+                    </span>
+                    <span className="font-light text-[10px] text-[#d8c3b1] leading-[15px] truncate">
+                      {roleLine}
+                    </span>
+                  </div>
+                </div>
+                <div className="pt-1 w-full">
+                  <span className="font-light text-[10px] text-[#ffb971] leading-[15px] block truncate">
                     {daysText}
                   </span>
                 </div>
@@ -557,23 +563,23 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
 
   return (
     <section aria-label={t("bc.mobile.network.nurture.title")} className="mt-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold text-[#f2efe9]">
-          <Bell aria-hidden="true" className="h-4 w-4 shrink-0 text-[#f2efe980]" />
-          <span className="truncate">
+      <div className="flex items-center justify-between w-full gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#d8c3b1cc]">
+          <Bell aria-hidden="true" className="h-[11.67px] w-[9.33px] shrink-0 text-[#d8c3b1cc]" />
+          <span className="truncate leading-5">
             {t("bc.mobile.network.nurture.title")} ({recommendations.length})
           </span>
         </h2>
         <Link
           to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-0.5 text-xs text-[#d8c3b180] hover:text-[#ffb971] transition-colors"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
         >
           {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
+          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" />
         </Link>
       </div>
 
-      <div className="mt-3 flex flex-col w-full bg-[#251e18]/60 rounded-2xl border border-solid border-[#ea9a4126] overflow-hidden">
+      <div className="mt-3 flex flex-col w-full bg-[#251e18] rounded-xl border border-solid border-[#ea9a4126] overflow-hidden box-border">
         {items.map((rec, index) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]
@@ -588,28 +594,28 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
               key={rec.id}
               to="/connect-app/network/$personId"
               params={{ personId: rec.person.personId }}
-              className={`flex items-center gap-3.5 p-3.5 hover:bg-[#251e18] transition-colors ${
-                index !== items.length - 1 ? "border-b border-solid border-[#ea9a411a]" : ""
+              className={`flex items-center justify-between gap-3 p-3 hover:bg-[#251e18] transition-colors ${
+                index !== items.length - 1 ? "border-b border-solid border-[#ea9a4180]" : ""
               }`}
             >
               <img
                 src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
                 alt={name}
                 loading="lazy"
-                className="w-11 h-11 rounded-full object-cover border border-solid border-[#ea9a4115]"
+                className="w-9 h-9 rounded-full object-cover border border-solid border-[#ea9a4126] shrink-0"
               />
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-semibold text-[15px] text-[#f2efe9] truncate">
+              <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                <span className="font-medium text-sm text-[#f2efe9] truncate">
                   {name}
                 </span>
-                <span className="font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
+                <span className="font-light text-[11px] text-[#d8c3b1] truncate">
                   {roleLine}
                 </span>
-                <span className="font-light text-xs text-[#ffb971] mt-1">
+                <span className="font-light text-[10px] text-[#ffb971] mt-0.5 block truncate">
                   {daysText}
                 </span>
               </div>
-              <ChevronRight className="w-4 h-4 text-[#d8c3b180] shrink-0" />
+              <ChevronRight className="w-[5.5px] h-[9px] text-[#d8c3b1] shrink-0" />
             </Link>
           );
         })}
@@ -627,38 +633,49 @@ function NetworkRecentStrip({ people }: { people: BcMobileNetworkPerson[] }) {
   const fmt = useFmt();
   return (
     <section aria-label={t("bc.mobile.network.recent.title")} className="mt-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-[var(--bc-mobile-text)]">
+      <div className="flex items-center justify-between w-full gap-2">
+        <h2 className="text-[10px] font-medium tracking-[1px] uppercase text-[#d8c3b1cc]">
           {t("bc.mobile.network.recent.title")}
         </h2>
-        <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--bc-mobile-muted)]">
+        <Link
+          to="/connect-app"
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
+        >
           {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-        </span>
+          <ChevronRight aria-hidden="true" className="h-4 w-4 text-[#d8c3b1]" />
+        </Link>
       </div>
-      <ul className="-mx-4 mt-3 flex snap-x gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {people.map((person) => {
+      <ul className="mt-3 flex snap-x gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {people.map((person, index) => {
           const name = person.displayName ?? t("bc.mobile.network.unknownPerson");
+          const isFirst = index === 0;
+
           return (
-            <li key={person.personId} className="w-[86px] shrink-0 snap-start text-center">
+            <li key={person.personId} className="w-[81.5px] shrink-0 snap-start flex flex-col items-center">
               <Link
                 to="/connect-app/network/$personId"
                 params={{ personId: person.personId }}
-                className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+                className="w-full flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41] rounded-xl"
               >
-                <img
-                  src={avatarOrDemo(person.avatarUrl, person.personId)}
-                  alt=""
-                  loading="lazy"
-                  width={512}
-                  height={640}
-                  className="mx-auto h-[76px] w-[76px] rounded-full object-cover ring-2 ring-[var(--bc-mobile-accent)]/70"
-                />
-                <span className="mt-2 block truncate text-[12.5px] font-semibold text-[var(--bc-mobile-text)]">
+                <div
+                  className={`w-12 h-12 rounded-full p-[2px] flex items-center justify-center box-border ${
+                    isFirst
+                      ? "border-2 border-solid border-[#ffb971]"
+                      : "border border-solid border-[#ea9a4126]"
+                  }`}
+                >
+                  <img
+                    src={avatarOrDemo(person.avatarUrl, person.personId)}
+                    alt=""
+                    loading="lazy"
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                  />
+                </div>
+                <span className="mt-1 block w-full truncate text-[10px] font-medium text-[#f2efe9] text-center leading-[15px]">
                   {name}
                 </span>
                 {person.context?.at ? (
-                  <span className="mt-0.5 block truncate text-[11.5px] text-[var(--bc-mobile-muted)]">
+                  <span className="block w-full truncate text-[9px] font-light text-[#d8c3b1] text-center leading-none mt-0.5">
                     {fmt.rel(person.context.at)}
                   </span>
                 ) : null}

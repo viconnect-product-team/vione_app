@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -71,5 +71,20 @@ export class MeController {
   @Post('notifications/prefs')
   async setNotificationPrefs(@Request() req, @Body() prefs: any) {
     return this.connectAppService.setNotificationPrefs(req.user.id, prefs);
+  }
+
+  @Get('showcase')
+  async getMyShowcase(@Request() req) {
+    return this.connectAppService.getMyShowcase(req.user.id);
+  }
+
+  @Post('showcase')
+  async addShowcaseItem(@Request() req, @Body() data: any) {
+    return this.connectAppService.addShowcaseItem(req.user.id, data);
+  }
+
+  @Delete('showcase/:id')
+  async deleteShowcaseItem(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.deleteShowcaseItem(req.user.id, id);
   }
 }

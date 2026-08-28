@@ -52,6 +52,7 @@ import {
   bcMobileMomentFinalizeFn,
   bcMobileMomentPrepareFn,
 } from "@/lib/business-connect/mobile/moment.functions";
+import { uploadFileToNest } from "@/lib/api-client";
 import {
   MOMENT_IMAGE_ACCEPT,
   processMomentImage,
@@ -491,18 +492,13 @@ export function MomentComposer({ personId }: { personId: string }) {
         return;
       }
 
-      // Upload to the deterministic slots (slot i ↔ photo i, same order).
+      // Upload to MinIO instead of Supabase
+      const mediaPaths: Record<string, string> = {};
       if (prep.photos.length > 0) setUploading({ done: 0, total: prep.photos.length });
       await mapWithConcurrency(prep.photos, 2, async (slot, i) => {
         const blob = validPhotos[i]!.blob!;
-        const { error } = await supabase.storage
-          .from(MOMENT_MEDIA_BUCKET)
-          .upload(slot.storagePath, blob, {
-            contentType: "image/jpeg",
-            cacheControl: "31536000",
-            upsert: false,
-          });
-        if (error) throw error;
+        const minioPath = await uploadFileToNest(blob, `${slot.mediaId}.jpg`);
+        mediaPaths[slot.mediaId] = minioPath;
         setUploading((prev) =>
           prev ? { done: Math.min(prev.done + 1, prev.total), total: prev.total } : prev,
         );
@@ -513,6 +509,7 @@ export function MomentComposer({ personId }: { personId: string }) {
         data: {
           momentId: prep.momentId,
           uploadedMediaIds: prep.photos.map((s) => s.mediaId),
+          mediaPaths,
         },
       });
       if (!fin.ok) {

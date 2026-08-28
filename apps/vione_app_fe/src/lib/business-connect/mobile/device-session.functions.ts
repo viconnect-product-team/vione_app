@@ -1,14 +1,10 @@
 // Phiên & thiết bị — RPC mỏng (thin wrappers only).
-// Chủ thể luôn từ requireSupabaseAuth, không bao giờ nhận từ client.
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  listMyDeviceSessions,
-  revokeMyDeviceSession,
-  touchMyDeviceSession,
-} from "./device-session.service";
+import { fetchNestApiFromServer } from "../../api-client";
 import type { DeviceSessionInfo } from "./device-session.types";
 
 const deviceKeySchema = z.string().min(6).max(120);
@@ -33,7 +29,10 @@ export const bcDeviceSessionsListFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => listSchema.parse(data))
   .handler(
     ({ data, context }): Promise<DeviceSessionInfo[]> =>
-      listMyDeviceSessions(context.supabase, context.userId, data.deviceKey ?? null),
+      fetchNestApiFromServer("/connect-app/me/device-session/list", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
@@ -41,7 +40,10 @@ export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => heartbeatSchema.parse(data))
   .handler(
     ({ data, context }): Promise<{ revoked: boolean }> =>
-      touchMyDeviceSession(context.supabase, context.userId, data),
+      fetchNestApiFromServer("/connect-app/me/device-session/touch", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );
 
 export const bcDeviceSessionRevokeFn = createServerFn({ method: "POST" })
@@ -49,10 +51,8 @@ export const bcDeviceSessionRevokeFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => revokeSchema.parse(data))
   .handler(
     ({ data, context }): Promise<DeviceSessionInfo> =>
-      revokeMyDeviceSession(
-        context.supabase,
-        context.userId,
-        data.sessionId,
-        data.deviceKey ?? null,
-      ),
+      fetchNestApiFromServer("/connect-app/me/device-session/revoke", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   );

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
+import { z } from 'zod';
 
 const formatVNTime = (date: Date) => {
   const utc = date.getTime() + date.getTimezoneOffset() * 60000;
@@ -1173,25 +1174,119 @@ export class ConnectAppService {
   }
 
   async getNetworkFeed(userId: string, cursor: string | null) {
-    const occurredAt = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
-    if (cursor && occurredAt >= cursor) {
-      return { items: [], nextCursor: null };
+    const limit = 12;
+    let momentRows: any[];
+
+    if (cursor) {
+      momentRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, target_kind, target_user_id, target_card_id, target_guest_id, occurred_at, event_name, place_label, note
+        FROM public.business_relationship_moments
+        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+          AND occurred_at < ${new Date(cursor)}
+        ORDER BY occurred_at DESC, id DESC
+        LIMIT ${limit + 1}
+      `.catch(() => []);
+    } else {
+      momentRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, target_kind, target_user_id, target_card_id, target_guest_id, occurred_at, event_name, place_label, note
+        FROM public.business_relationship_moments
+        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+        ORDER BY occurred_at DESC, id DESC
+        LIMIT ${limit + 1}
+      `.catch(() => []);
     }
-    return {
-      items: [
-        {
-          momentId: 'moment-hidden-member-uuid',
-          personId: 'g:hidden-member-uuid',
-          occurredAt: occurredAt,
-          eventName: 'Thành viên ẩn',
-          placeLabel: 'GEM Center, TP.HCM',
-          note: 'Gặp tại phiên thảo luận về CĐS. Trao đổi khả năng hợp tác nền tảng bán lẻ.',
-          photoUrls: [],
-          photoCount: 0,
+
+    let nextCursor: string | null = null;
+    if (momentRows.length > limit) {
+      const nextItem = momentRows.pop();
+      nextCursor = nextItem.occurred_at ? new Date(nextItem.occurred_at).toISOString() : null;
+    }
+
+    const momentIds = momentRows.map(m => m.id);
+    let mediaRows: any[] = [];
+    if (momentIds.length > 0) {
+      mediaRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, moment_id, storage_path, sort_order
+        FROM public.business_relationship_moment_media
+        WHERE moment_id = ANY(${momentIds}::uuid[])
+        ORDER BY sort_order ASC
+      `.catch(() => []);
+    }
+
+    const mediaByMomentId = new Map<string, any[]>();
+    for (const m of mediaRows) {
+      const list = mediaByMomentId.get(m.moment_id) || [];
+      list.push(m);
+      mediaByMomentId.set(m.moment_id, list);
+    }
+
+    const legacyPaths: string[] = [];
+    for (const m of mediaRows) {
+      if (m.storage_path && !m.storage_path.startsWith('/upload/')) {
+        legacyPaths.push(m.storage_path);
+      }
+    }
+
+    const signed: Record<string, string> = {};
+    if (legacyPaths.length > 0 && process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+      try {
+        const res = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/sign/relationship-moments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            paths: legacyPaths,
+            expiresIn: 3600,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json() as any[];
+          for (const item of data) {
+            if (item.path && item.signedUrl) {
+              signed[item.path] = item.signedUrl.startsWith('http') 
+                ? item.signedUrl 
+                : `${process.env.SUPABASE_URL}/storage/v1${item.signedUrl}`;
+            }
+          }
         }
-      ],
-      nextCursor: null,
-    };
+      } catch (err) {
+        console.error('Error signing feed media urls:', err);
+      }
+    }
+
+    const items = momentRows.map(row => {
+      let personId = '';
+      if (row.target_kind === 'connection') {
+        personId = `u:${row.target_user_id}`;
+      } else if (row.target_kind === 'saved_card') {
+        personId = `c:${row.target_card_id}`;
+      } else if (row.target_kind === 'guest_contact') {
+        personId = `g:${row.target_guest_id}`;
+      }
+
+      const slots = mediaByMomentId.get(row.id) || [];
+      const photoUrls = slots.map(s => {
+        if (s.storage_path.startsWith('/upload/')) {
+          return s.storage_path;
+        }
+        return signed[s.storage_path] || '';
+      }).filter(Boolean);
+
+      return {
+        momentId: row.id,
+        personId,
+        occurredAt: row.occurred_at ? new Date(row.occurred_at).toISOString() : new Date().toISOString(),
+        eventName: row.event_name || null,
+        placeLabel: row.place_label || null,
+        note: row.note || null,
+        photoUrls,
+        photoCount: slots.length,
+      };
+    });
+
+    return { items, nextCursor };
   }
 
   async getCommunityActivityPreview(userId: string, communityId: string) {
@@ -1292,18 +1387,43 @@ export class ConnectAppService {
   }
 
   async getConnectionState(userId: string, targetUserId: string) {
+    if (userId === targetUserId) {
+      return {
+        targetUserId,
+        status: 'none',
+        direction: 'self',
+        connectionId: null,
+        blocked: false,
+      };
+    }
+
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, requester_user_id, recipient_user_id as target_user_id, status FROM public.user_connections
+      SELECT id, requester_user_id, recipient_user_id, status FROM public.user_connections
       WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
          OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${userId}::uuid)
       LIMIT 1
     `.catch(() => []);
-    if (rows.length === 0) return { state: 'none', connectionId: null };
+
+    if (rows.length === 0) {
+      return {
+        targetUserId,
+        status: 'none',
+        direction: 'none',
+        connectionId: null,
+        blocked: false,
+      };
+    }
+
     const r = rows[0];
-    let state = 'none';
-    if (r.status === 'accepted') state = 'connected';
-    else if (r.status === 'pending') state = r.requester_user_id === userId ? 'outgoing_pending' : 'incoming_pending';
-    return { state, connectionId: r.id };
+    const direction = r.requester_user_id === userId ? 'outgoing' : 'incoming';
+
+    return {
+      targetUserId,
+      status: r.status,
+      direction,
+      connectionId: r.id,
+      blocked: r.status === 'blocked',
+    };
   }
 
   async getConnectionStateByToken(userId: string, token: string) {
@@ -1331,7 +1451,22 @@ export class ConnectAppService {
     if (targetUserId === userId) {
       return { state: 'self', connectionId: null };
     }
-    return this.getConnectionState(userId, targetUserId);
+
+    const pairState = await this.getConnectionState(userId, targetUserId);
+
+    let state = 'unavailable';
+    if (pairState.status === 'none') {
+      state = 'none';
+    } else if (pairState.status === 'accepted') {
+      state = 'connected';
+    } else if (pairState.status === 'pending') {
+      state = pairState.direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+    }
+
+    return {
+      state,
+      connectionId: pairState.connectionId,
+    };
   }
 
   async sendConnectionRequestByToken(userId: string, token: string, mutationKey?: string) {
@@ -1597,6 +1732,3813 @@ export class ConnectAppService {
     `;
     return { reportId: id };
   }
+
+  async getMyShowcase(userId: string) {
+    const items = await this.prisma.$queryRaw<any[]>`
+      SELECT id, kind, title, subtitle, logo_url AS "logoUrl"
+      FROM public.business_identity_showcase_items
+      WHERE owner_user_id = ${userId}::uuid
+      ORDER BY sort_order ASC, created_at ASC
+      LIMIT 120
+    `;
+    return {
+      businessAreas: items.filter((i) => i.kind === 'business_area'),
+      clients: items.filter((i) => i.kind === 'client'),
+      metrics: items.filter((i) => i.kind === 'metric'),
+      interests: items.filter((i) => i.kind === 'interest'),
+      clientMetrics: items.filter((i) => i.kind === 'client_metric'),
+    };
+  }
+
+  async addShowcaseItem(userId: string, data: any) {
+    const { kind, title, subtitle, logoUrl, sortOrder } = data;
+    await this.prisma.$executeRaw`
+      INSERT INTO public.business_identity_showcase_items (
+        owner_user_id, kind, title, subtitle, logo_url, sort_order
+      ) VALUES (
+        ${userId}::uuid, ${kind}, ${title}, ${subtitle || null}, ${logoUrl || null}, ${sortOrder || 0}
+      )
+    `;
+    return { success: true };
+  }
+
+  async deleteShowcaseItem(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_identity_showcase_items
+      WHERE id = ${id}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+    return { success: true };
+  }
+
+  // --- Moments (BC-Mobile-2E) ---
+  
+  async prepareMoment(userId: string, input: any) {
+    const { personId, occurredAt, eventName, placeLabel, note, photoCount, clientToken } = input;
+
+    const m = /^([ucg]):([0-9a-fA-F-]{36})$/.exec(personId);
+    if (!m) throw new ForbiddenException('relationship_not_authorized');
+    const namespace = m[1];
+    const targetId = m[2].toLowerCase();
+
+    let targetKind = 'connection';
+    let targetUserId: string | null = null;
+    let targetCardId: string | null = null;
+    let targetGuestId: string | null = null;
+
+    if (namespace === 'u') {
+      if (targetId === userId) throw new ForbiddenException('relationship_not_authorized');
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.user_connections
+        WHERE status = 'accepted'::public.global_connection_status
+          AND ((requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetId}::uuid)
+            OR (requester_user_id = ${targetId}::uuid AND recipient_user_id = ${userId}::uuid))
+        LIMIT 1
+      `.catch(() => []);
+      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      targetKind = 'connection';
+      targetUserId = targetId;
+    } else if (namespace === 'g') {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.guest_contacts
+        WHERE owner_user_id = ${userId}::uuid AND id = ${targetId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      targetKind = 'guest_contact';
+      targetGuestId = targetId;
+    } else {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.saved_business_cards
+        WHERE owner_user_id = ${userId}::uuid AND target_card_id = ${targetId}::uuid AND archived = false
+        LIMIT 1
+      `.catch(() => []);
+      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      targetKind = 'saved_card';
+      targetCardId = targetId;
+    }
+
+    const existingRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, status FROM public.business_relationship_moments
+      WHERE owner_user_id = ${userId}::uuid AND client_token = ${clientToken}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    let momentId: string;
+
+    if (existingRows.length > 0) {
+      const existing = existingRows[0];
+      momentId = existing.id;
+      if (existing.status === 'active') {
+        return { ok: true, alreadySaved: true, momentId, photos: [] };
+      }
+      await this.prisma.$executeRaw`
+        UPDATE public.business_relationship_moments
+        SET occurred_at = ${new Date(occurredAt)},
+            event_name = ${eventName || null},
+            place_label = ${placeLabel || null},
+            note = ${note || null},
+            updated_at = now()
+        WHERE id = ${momentId}::uuid
+      `;
+    } else {
+      momentId = crypto.randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.business_relationship_moments (
+          id, owner_user_id, target_kind, target_user_id, target_card_id, target_guest_id,
+          occurred_at, event_name, place_label, note, status, client_token, created_at, updated_at
+        ) VALUES (
+          ${momentId}::uuid, ${userId}::uuid, ${targetKind},
+          ${targetUserId ? targetUserId : null}::uuid,
+          ${targetCardId ? targetCardId : null}::uuid,
+          ${targetGuestId ? targetGuestId : null}::uuid,
+          ${new Date(occurredAt)}, ${eventName || null}, ${placeLabel || null}, ${note || null},
+          'pending', ${clientToken}::uuid, now(), now()
+        )
+      `;
+    }
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const photos: any[] = [];
+    if (photoCount > 0) {
+      for (let i = 0; i < photoCount; i++) {
+        const mediaId = crypto.randomUUID();
+        const storagePath = `${userId}/${momentId}/${mediaId}.jpg`;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.business_relationship_moment_media (
+            id, moment_id, owner_user_id, storage_path, media_type, sort_order
+          ) VALUES (
+            ${mediaId}::uuid, ${momentId}::uuid, ${userId}::uuid, ${storagePath}, 'image/jpeg', ${i}
+          )
+        `;
+        photos.push({
+          mediaId,
+          storagePath,
+          sortOrder: i,
+        });
+      }
+    }
+
+    return { ok: true, alreadySaved: false, momentId, photos };
+  }
+
+  async finalizeMoment(userId: string, input: any) {
+    const { momentId, uploadedMediaIds, mediaPaths } = input;
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, status FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+    const moment = momentRows[0];
+    if (moment.status === 'active') return { ok: true, momentId };
+
+    // Update storage paths if mediaPaths mapping is provided
+    if (mediaPaths && typeof mediaPaths === 'object') {
+      for (const [mediaId, storagePath] of Object.entries(mediaPaths)) {
+        await this.prisma.$executeRaw`
+          UPDATE public.business_relationship_moment_media
+          SET storage_path = ${storagePath}
+          WHERE id = ${mediaId}::uuid AND owner_user_id = ${userId}::uuid
+        `;
+      }
+    }
+
+    const slots = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid
+    `.catch(() => []);
+
+    const slotIds = new Set(slots.map((s) => s.id));
+    const keep = uploadedMediaIds.filter((id) => slotIds.has(id));
+
+    if (keep.length > 0) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_relationship_moment_media
+        WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid AND NOT (id = ANY(${keep}::uuid[]))
+      `;
+    } else {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_relationship_moment_media
+        WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      `;
+    }
+
+    await this.prisma.$executeRaw`
+      UPDATE public.business_relationship_moments
+      SET status = 'active', updated_at = now()
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid AND status = 'pending'
+    `;
+
+    return { ok: true, momentId };
+  }
+
+  async updateMoment(userId: string, input: any) {
+    const { momentId, occurredAt, eventName, placeLabel, note } = input;
+
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+
+    await this.prisma.$executeRaw`
+      UPDATE public.business_relationship_moments
+      SET occurred_at = ${new Date(occurredAt)},
+          event_name = ${eventName || null},
+          place_label = ${placeLabel || null},
+          note = ${note || null},
+          updated_at = now()
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    return { ok: true, momentId };
+  }
+
+  async deleteMoment(userId: string, momentId: string) {
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    return { ok: true, momentId };
+  }
+
+  async listMomentPhotos(userId: string, momentId: string) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(momentId)) {
+      return {
+        ok: true,
+        momentId,
+        max: 6,
+        photos: [],
+      };
+    }
+
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) {
+      return {
+        ok: true,
+        momentId,
+        max: 6,
+        photos: [],
+      };
+    }
+
+    const slots = await this.prisma.$queryRaw<any[]>`
+      SELECT id, moment_id, storage_path, sort_order
+      FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid
+      ORDER BY sort_order ASC
+    `.catch(() => []);
+
+    const signed: Record<string, string> = {};
+    if (slots.length > 0 && process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+      try {
+        const paths = slots.map((s) => s.storage_path);
+        const res = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/sign/relationship-moments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            paths,
+            expiresIn: 300,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json() as any[];
+          for (const item of data) {
+            if (item.path && item.signedUrl) {
+              signed[item.path] = item.signedUrl.startsWith('http') 
+                ? item.signedUrl 
+                : `${process.env.SUPABASE_URL}/storage/v1${item.signedUrl}`;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error signing media urls:', err);
+      }
+    }
+
+    return {
+      ok: true,
+      momentId,
+      max: 6,
+      photos: slots.map((s) => ({
+        mediaId: s.id,
+        storagePath: s.storage_path,
+        sortOrder: s.sort_order,
+        url: signed[s.storage_path] || null,
+      })),
+    };
+  }
+
+  async addMomentPhotoSlots(userId: string, momentId: string, count: number) {
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT sort_order FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid
+    `.catch(() => [] as any[]);
+
+    if (existing.length + count > 6) {
+      throw new BadRequestException('photo_count');
+    }
+
+    const startSort = existing.reduce((max, s) => Math.max(max, s.sort_order + 1), 0);
+    const photos: any[] = [];
+    for (let i = 0; i < count; i++) {
+      const mediaId = crypto.randomUUID();
+      const storagePath = `${userId}/${momentId}/${mediaId}.jpg`;
+      const sortOrder = startSort + i;
+      await this.prisma.$executeRaw`
+        INSERT INTO public.business_relationship_moment_media (
+          id, moment_id, owner_user_id, storage_path, media_type, sort_order
+        ) VALUES (
+          ${mediaId}::uuid, ${momentId}::uuid, ${userId}::uuid, ${storagePath}, 'image/jpeg', ${sortOrder}
+        )
+      `;
+      photos.push({
+        mediaId,
+        storagePath,
+        sortOrder,
+      });
+    }
+
+    return { ok: true, momentId, photos };
+  }
+
+  async commitMomentPhotos(userId: string, input: any) {
+    const { momentId, addedMediaIds, uploadedMediaIds, mediaPaths } = input;
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+
+    // Update storage paths if mediaPaths mapping is provided
+    if (mediaPaths && typeof mediaPaths === 'object') {
+      for (const [mediaId, storagePath] of Object.entries(mediaPaths)) {
+        await this.prisma.$executeRaw`
+          UPDATE public.business_relationship_moment_media
+          SET storage_path = ${storagePath}
+          WHERE id = ${mediaId}::uuid AND owner_user_id = ${userId}::uuid
+        `;
+      }
+    }
+
+    const slots = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid
+    `.catch(() => []);
+
+    const uploaded = new Set(uploadedMediaIds);
+    const drop = slots.filter((s) => addedMediaIds.includes(s.id) && !uploaded.has(s.id));
+    if (drop.length > 0) {
+      const dropIds = drop.map((s) => s.id);
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_relationship_moment_media
+        WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid AND id = ANY(${dropIds}::uuid[])
+      `;
+    }
+
+    return { ok: true, momentId };
+  }
+
+  async removeMomentPhoto(userId: string, momentId: string, mediaId: string) {
+    const momentRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moments
+      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (momentRows.length === 0) throw new NotFoundException('not_found');
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_relationship_moment_media
+      WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid AND id = ${mediaId}::uuid
+    `;
+
+    return { ok: true, momentId };
+  }
+
+  // --- Reminders ---
+
+  async listMomentReminders(userId: string, momentId: string | null, includeDone: boolean, limit: number) {
+    let query;
+    if (momentId) {
+      if (includeDone) {
+        query = this.prisma.$queryRaw<any[]>`
+          SELECT id, moment_id, remind_at, label, status, completed_at
+          FROM public.business_relationship_moment_reminders
+          WHERE owner_user_id = ${userId}::uuid AND moment_id = ${momentId}::uuid
+          ORDER BY remind_at ASC
+          LIMIT ${limit}
+        `;
+      } else {
+        query = this.prisma.$queryRaw<any[]>`
+          SELECT id, moment_id, remind_at, label, status, completed_at
+          FROM public.business_relationship_moment_reminders
+          WHERE owner_user_id = ${userId}::uuid AND moment_id = ${momentId}::uuid AND status = 'pending'
+          ORDER BY remind_at ASC
+          LIMIT ${limit}
+        `;
+      }
+    } else {
+      if (includeDone) {
+        query = this.prisma.$queryRaw<any[]>`
+          SELECT id, moment_id, remind_at, label, status, completed_at
+          FROM public.business_relationship_moment_reminders
+          WHERE owner_user_id = ${userId}::uuid
+          ORDER BY remind_at ASC
+          LIMIT ${limit}
+        `;
+      } else {
+        query = this.prisma.$queryRaw<any[]>`
+          SELECT id, moment_id, remind_at, label, status, completed_at
+          FROM public.business_relationship_moment_reminders
+          WHERE owner_user_id = ${userId}::uuid AND status = 'pending'
+          ORDER BY remind_at ASC
+          LIMIT ${limit}
+        `;
+      }
+    }
+
+    const rows = await query.catch(() => []);
+    return {
+      ok: true,
+      reminders: rows.map((r) => ({
+        id: r.id,
+        momentId: r.moment_id,
+        remindAt: r.remind_at ? new Date(r.remind_at).toISOString() : null,
+        label: r.label,
+        status: r.status,
+        completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
+      })),
+    };
+  }
+
+  async createMomentReminder(userId: string, momentId: string, remindAt: string, label: string | null) {
+    const countRow = await this.prisma.$queryRaw<any[]>`
+      SELECT COUNT(id)::int as count FROM public.business_relationship_moment_reminders
+      WHERE owner_user_id = ${userId}::uuid AND moment_id = ${momentId}::uuid AND status = 'pending'
+    `.catch(() => []);
+
+    const count = countRow[0]?.count || 0;
+    if (count >= 5) {
+      return { ok: false, error: 'limit_reached' };
+    }
+
+    const id = crypto.randomUUID();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.business_relationship_moment_reminders (
+        id, moment_id, owner_user_id, remind_at, label, status
+      ) VALUES (
+        ${id}::uuid, ${momentId}::uuid, ${userId}::uuid, ${new Date(remindAt)}, ${label || null}, 'pending'
+      )
+    `;
+
+    return {
+      ok: true,
+      reminder: {
+        id,
+        momentId,
+        remindAt: new Date(remindAt).toISOString(),
+        label,
+        status: 'pending',
+        completedAt: null,
+      },
+    };
+  }
+
+  async setMomentReminderStatus(userId: string, reminderId: string, status: string) {
+    const completedAt = status === 'done' ? new Date() : null;
+
+    const rowBefore = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.business_relationship_moment_reminders
+      WHERE id = ${reminderId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (rowBefore.length === 0) return { ok: false, error: 'not_found' };
+
+    await this.prisma.$executeRaw`
+      UPDATE public.business_relationship_moment_reminders
+      SET status = ${status},
+          completed_at = ${completedAt}
+      WHERE id = ${reminderId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const rowAfter = await this.prisma.$queryRaw<any[]>`
+      SELECT id, moment_id, remind_at, label, status, completed_at
+      FROM public.business_relationship_moment_reminders
+      WHERE id = ${reminderId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    const r = rowAfter[0];
+    return {
+      ok: true,
+      reminder: {
+        id: r.id,
+        momentId: r.moment_id,
+        remindAt: r.remind_at ? new Date(r.remind_at).toISOString() : null,
+        label: r.label,
+        status: r.status,
+        completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
+      },
+    };
+  }
+
+  async deleteMomentReminder(userId: string, reminderId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_relationship_moment_reminders
+      WHERE id = ${reminderId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+    return { ok: true, reminderId };
+  }
+
+  // ==========================================
+  // BC-Mobile-5C — NFC Device Sessions & Tags
+  // ==========================================
+
+  async listMyDeviceSessions(userId: string, currentKey: string | null) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, device_key, device_label, platform, browser, is_standalone, first_seen_at, last_seen_at, revoked_at
+      FROM public.user_device_sessions
+      WHERE user_id = ${userId}::uuid
+      ORDER BY last_seen_at DESC
+    `.catch(() => [] as any[]);
+
+    return rows.map(r => ({
+      id: r.id,
+      deviceKey: r.device_key,
+      label: r.device_label ?? "Thiết bị",
+      platform: r.platform,
+      browser: r.browser,
+      isStandalone: r.is_standalone,
+      firstSeenAt: r.first_seen_at ? new Date(r.first_seen_at).toISOString() : null,
+      lastSeenAt: r.last_seen_at ? new Date(r.last_seen_at).toISOString() : null,
+      revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
+      isCurrent: currentKey !== null && r.device_key === currentKey,
+    }));
+  }
+
+  async touchMyDeviceSession(userId: string, input: any) {
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, revoked_at FROM public.user_device_sessions
+      WHERE user_id = ${userId}::uuid AND device_key = ${input.deviceKey}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const first = existing[0];
+    if (first?.revoked_at) return { revoked: true };
+
+    const now = new Date();
+    if (first) {
+      await this.prisma.$executeRaw`
+        UPDATE public.user_device_sessions
+        SET last_seen_at = ${now}
+        WHERE id = ${first.id}::uuid
+      `;
+      return { revoked: false };
+    }
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.user_device_sessions (
+        user_id, device_key, device_label, platform, browser, is_standalone, first_seen_at, last_seen_at
+      ) VALUES (
+        ${userId}::uuid, ${input.deviceKey}, ${input.label || null}, ${input.platform || null},
+        ${input.browser || null}, ${input.isStandalone || false}, ${now}, ${now}
+      )
+    `;
+    return { revoked: false };
+  }
+
+  async revokeMyDeviceSession(userId: string, sessionId: string, currentKey: string | null) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.user_device_sessions
+      SET revoked_at = ${now}
+      WHERE id = ${sessionId}::uuid AND user_id = ${userId}::uuid
+    `;
+
+    const updated = await this.prisma.$queryRaw<any[]>`
+      SELECT id, device_key, device_label, platform, browser, is_standalone, first_seen_at, last_seen_at, revoked_at
+      FROM public.user_device_sessions
+      WHERE id = ${sessionId}::uuid AND user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const r = updated[0];
+    if (!r) throw new NotFoundException('session_not_found');
+
+    return {
+      id: r.id,
+      deviceKey: r.device_key,
+      label: r.device_label ?? "Thiết bị",
+      platform: r.platform,
+      browser: r.browser,
+      isStandalone: r.is_standalone,
+      firstSeenAt: r.first_seen_at ? new Date(r.first_seen_at).toISOString() : null,
+      lastSeenAt: r.last_seen_at ? new Date(r.last_seen_at).toISOString() : null,
+      revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
+      isCurrent: currentKey !== null && r.device_key === currentKey,
+    };
+  }
+
+  async listMyNfcTags(userId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.label, t.status, t.written_at, t.updated_at,
+             l.status as link_status, l.last_used_at as link_last_used_at
+      FROM public.identity_nfc_tags t
+      LEFT JOIN public.identity_share_links l ON t.share_link_id = l.id
+      WHERE t.owner_user_id = ${userId}::uuid
+      ORDER BY t.created_at DESC
+    `.catch(() => [] as any[]);
+
+    return rows.map(r => {
+      let derivedStatus = 'STALE';
+      if (r.status === 'revoked') derivedStatus = 'REVOKED';
+      else if (r.link_status === 'active') derivedStatus = 'ACTIVE';
+
+      return {
+        id: r.id,
+        label: r.label,
+        status: derivedStatus,
+        writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
+        lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+        updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+      };
+    });
+  }
+
+  async registerMyNfcTag(userId: string, input: any) {
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT id, identity_id, status FROM public.identity_share_links
+      WHERE owner_user_id = ${userId}::uuid AND public_token = ${input.shareToken} AND status = 'active'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const link = links[0];
+    if (!link) throw new BadRequestException('share_link_not_found');
+
+    const tagId = crypto.randomUUID();
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.identity_nfc_tags (
+        id, owner_user_id, identity_id, share_link_id, label, status, written_at, created_at, updated_at
+      ) VALUES (
+        ${tagId}::uuid, ${userId}::uuid, ${link.identity_id}::uuid, ${link.id}::uuid, ${input.label || null}, 'active', ${now}, ${now}, ${now}
+      )
+    `;
+
+    const tagRows = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.label, t.status, t.written_at, t.updated_at,
+             l.status as link_status, l.last_used_at as link_last_used_at
+      FROM public.identity_nfc_tags t
+      LEFT JOIN public.identity_share_links l ON t.share_link_id = l.id
+      WHERE t.id = ${tagId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const r = tagRows[0];
+    if (!r) throw new BadRequestException('failed_to_register');
+
+    let derivedStatus = 'STALE';
+    if (r.status === 'revoked') derivedStatus = 'REVOKED';
+    else if (r.link_status === 'active') derivedStatus = 'ACTIVE';
+
+    return {
+      id: r.id,
+      label: r.label,
+      status: derivedStatus,
+      writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+    };
+  }
+
+  async revokeMyNfcTag(userId: string, tagId: string) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.identity_nfc_tags
+      SET status = 'revoked', revoked_at = ${now}, updated_at = ${now}
+      WHERE id = ${tagId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const tagRows = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.label, t.status, t.written_at, t.updated_at,
+             l.status as link_status, l.last_used_at as link_last_used_at
+      FROM public.identity_nfc_tags t
+      LEFT JOIN public.identity_share_links l ON t.share_link_id = l.id
+      WHERE t.id = ${tagId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const r = tagRows[0];
+    if (!r) throw new NotFoundException('tag_not_found');
+
+    let derivedStatus = 'STALE';
+    if (r.status === 'revoked') derivedStatus = 'REVOKED';
+    else if (r.link_status === 'active') derivedStatus = 'ACTIVE';
+
+    return {
+      id: r.id,
+      label: r.label,
+      status: derivedStatus,
+      writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+    };
+  }
+
+  async renameMyNfcTag(userId: string, input: any) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.identity_nfc_tags
+      SET label = ${input.label || null}, updated_at = ${now}
+      WHERE id = ${input.tagId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const tagRows = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.label, t.status, t.written_at, t.updated_at,
+             l.status as link_status, l.last_used_at as link_last_used_at
+      FROM public.identity_nfc_tags t
+      LEFT JOIN public.identity_share_links l ON t.share_link_id = l.id
+      WHERE t.id = ${input.tagId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const r = tagRows[0];
+    if (!r) throw new NotFoundException('tag_not_found');
+
+    let derivedStatus = 'STALE';
+    if (r.status === 'revoked') derivedStatus = 'REVOKED';
+    else if (r.link_status === 'active') derivedStatus = 'ACTIVE';
+
+    return {
+      id: r.id,
+      label: r.label,
+      status: derivedStatus,
+      writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-8A — Inbox Direct Messaging (DM)
+  // ==========================================
+
+  async listMyDmThreads(userId: string) {
+    const threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+      FROM public.bc_dm_threads
+      WHERE pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid
+      ORDER BY last_message_at DESC NULLS LAST, updated_at DESC
+    `.catch(() => [] as any[]);
+
+    if (threads.length === 0) return [];
+
+    const counterpartIds = threads.map(t => t.pair_user_low === userId ? t.pair_user_high : t.pair_user_low);
+
+    const cards = await this.prisma.$queryRaw<any[]>`
+      SELECT owner_user_id, display_name, headline, professional_title, company_name, avatar_url, card_kind
+      FROM public.member_business_cards
+      WHERE owner_user_id::uuid = ANY(${counterpartIds}::uuid[])
+        AND status = 'published'
+        AND public_mode = 'public'
+    `.catch(() => [] as any[]);
+
+    const cardMap = new Map<string, any>();
+    for (const c of cards) {
+      const uid = c.owner_user_id;
+      if (!uid) continue;
+      const isPrimary = c.card_kind === 'primary';
+      if (cardMap.has(uid) && !isPrimary) continue;
+      cardMap.set(uid, {
+        displayName: c.display_name ?? null,
+        avatarUrl: c.avatar_url ?? null,
+        headline: c.headline ?? c.professional_title ?? null,
+        companyName: c.company_name ?? null,
+      });
+    }
+
+    const unreadCounts = await this.prisma.$queryRaw<any[]>`
+      SELECT thread_id, COUNT(*)::int as count FROM public.bc_dm_messages
+      WHERE thread_id::uuid = ANY(${threads.map(t => t.id)}::uuid[])
+        AND sender_user_id != ${userId}::uuid
+        AND read_at IS NULL
+        AND retracted_at IS NULL
+      GROUP BY thread_id
+    `.catch(() => [] as any[]);
+
+    const unreadMap = new Map<string, number>();
+    for (const uc of unreadCounts) {
+      unreadMap.set(uc.thread_id, uc.count);
+    }
+
+    return threads.map(t => {
+      const counterpartId = t.pair_user_low === userId ? t.pair_user_high : t.pair_user_low;
+      const card = cardMap.get(counterpartId) ?? {
+        displayName: 'Thành viên Vione',
+        avatarUrl: null,
+        headline: null,
+        companyName: null,
+      };
+
+      return {
+        id: t.id,
+        counterpartId,
+        counterpart: card,
+        lastMessageAt: t.last_message_at ? new Date(t.last_message_at).toISOString() : null,
+        lastMessagePreview: t.last_message_preview,
+        lastMessageSenderId: t.last_message_sender_id,
+        unreadCount: unreadMap.get(t.id) ?? 0,
+        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
+      };
+    });
+  }
+
+  async openMyDmThread(userId: string, counterpartUserId: string) {
+    if (userId === counterpartUserId) throw new BadRequestException('cannot_chat_self');
+
+    const [low, high] = userId < counterpartUserId ? [userId, counterpartUserId] : [counterpartUserId, userId];
+    const connections = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.user_connections
+      WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid AND status = 'accepted'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (connections.length === 0) {
+      throw new ForbiddenException('connection_not_accepted');
+    }
+
+    let threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+      FROM public.bc_dm_threads
+      WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    let thread = threads[0];
+    if (!thread) {
+      const threadId = crypto.randomUUID();
+      const now = new Date();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.bc_dm_threads (
+          id, pair_user_low, pair_user_high, created_by, created_at, updated_at
+        ) VALUES (
+          ${threadId}::uuid, ${low}::uuid, ${high}::uuid, ${userId}::uuid, ${now}, ${now}
+        )
+      `;
+      threads = await this.prisma.$queryRaw<any[]>`
+        SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+        FROM public.bc_dm_threads WHERE id = ${threadId}::uuid LIMIT 1
+      `.catch(() => [] as any[]);
+      thread = threads[0];
+    }
+
+    const cards = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name, headline, professional_title, company_name, avatar_url, card_kind
+      FROM public.member_business_cards
+      WHERE owner_user_id = ${counterpartUserId}::uuid
+        AND status = 'published'
+        AND public_mode = 'public'
+    `.catch(() => [] as any[]);
+
+    const card = cards.find(c => c.card_kind === 'primary') || cards[0] || {
+      display_name: 'Thành viên Vione',
+      avatar_url: null,
+      headline: null,
+      company_name: null,
+    };
+
+    return {
+      id: thread.id,
+      counterpartId: counterpartUserId,
+      counterpart: {
+        displayName: card.display_name ?? 'Thành viên Vione',
+        avatarUrl: card.avatar_url ?? null,
+        headline: card.headline ?? card.professional_title ?? null,
+        companyName: card.company_name ?? null,
+      },
+      lastMessageAt: thread.last_message_at ? new Date(thread.last_message_at).toISOString() : null,
+      lastMessagePreview: thread.last_message_preview,
+      lastMessageSenderId: thread.last_message_sender_id,
+      unreadCount: 0,
+      updatedAt: thread.updated_at ? new Date(thread.updated_at).toISOString() : null,
+    };
+  }
+
+  async listMyDmThreadMessages(userId: string, threadId: string) {
+    const threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high FROM public.bc_dm_threads
+      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (threads.length === 0) throw new ForbiddenException('thread_access_denied');
+
+    const messages = await this.prisma.$queryRaw<any[]>`
+      SELECT id, thread_id, sender_user_id, body, client_token, created_at, read_at, retracted_at
+      FROM public.bc_dm_messages
+      WHERE thread_id = ${threadId}::uuid
+      ORDER BY created_at ASC
+      LIMIT 1000
+    `.catch(() => [] as any[]);
+
+    return messages.map(m => ({
+      id: m.id,
+      threadId: m.thread_id,
+      senderUserId: m.sender_user_id,
+      body: m.retracted_at ? "" : m.body,
+      clientToken: m.client_token,
+      createdAt: m.created_at ? new Date(m.created_at).toISOString() : null,
+      readAt: m.read_at ? new Date(m.read_at).toISOString() : null,
+      retractedAt: m.retracted_at ? new Date(m.retracted_at).toISOString() : null,
+    }));
+  }
+
+  async sendMyDmMessage(userId: string, threadId: string, input: any) {
+    const threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high FROM public.bc_dm_threads
+      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (threads.length === 0) throw new ForbiddenException('thread_access_denied');
+
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_dm_messages
+      WHERE client_token = ${input.clientToken} AND thread_id = ${threadId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (existing.length > 0) {
+      throw new BadRequestException('duplicate_message_token');
+    }
+
+    const msgId = crypto.randomUUID();
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_dm_messages (
+        id, thread_id, sender_user_id, body, client_token, created_at
+      ) VALUES (
+        ${msgId}::uuid, ${threadId}::uuid, ${userId}::uuid, ${input.body}, ${input.clientToken}, ${now}
+      )
+    `;
+
+    const preview = input.body.substring(0, 160);
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_dm_threads
+      SET last_message_at = ${now},
+          last_message_preview = ${preview},
+          last_message_sender_id = ${userId}::uuid,
+          updated_at = ${now}
+      WHERE id = ${threadId}::uuid
+    `;
+
+    return {
+      id: msgId,
+      threadId,
+      senderUserId: userId,
+      body: input.body,
+      clientToken: input.clientToken,
+      createdAt: now.toISOString(),
+      readAt: null,
+      retractedAt: null,
+    };
+  }
+
+  async markMyDmThreadRead(userId: string, threadId: string) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_dm_messages
+      SET read_at = ${now}
+      WHERE thread_id = ${threadId}::uuid AND sender_user_id != ${userId}::uuid AND read_at IS NULL
+    `;
+    return { ok: true };
+  }
+
+  async retractMyDmMessage(userId: string, messageId: string) {
+    const now = new Date();
+    const messages = await this.prisma.$queryRaw<any[]>`
+      SELECT id, thread_id FROM public.bc_dm_messages
+      WHERE id = ${messageId}::uuid AND sender_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (messages.length === 0) throw new ForbiddenException('cannot_retract_foreign_message');
+
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_dm_messages
+      SET retracted_at = ${now}
+      WHERE id = ${messageId}::uuid
+    `;
+
+    const m = messages[0];
+    const lastMsg = await this.prisma.$queryRaw<any[]>`
+      SELECT body, sender_user_id, created_at, retracted_at FROM public.bc_dm_messages
+      WHERE thread_id = ${m.thread_id}::uuid
+      ORDER BY created_at DESC
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (lastMsg.length > 0) {
+      const lm = lastMsg[0];
+      const preview = lm.retracted_at ? "Tin nhắn đã bị thu hồi" : lm.body.substring(0, 160);
+      await this.prisma.$executeRaw`
+        UPDATE public.bc_dm_threads
+        SET last_message_preview = ${preview}
+        WHERE id = ${m.thread_id}::uuid
+      `;
+    }
+
+    return { ok: true };
+  }
+
+  // ==========================================
+  // BC-Mobile-8A — Customer Relationship CRM
+  // ==========================================
+
+  async listBcCustomers(userId: string) {
+    const customers = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.bc_customers
+      WHERE owner_user_id = ${userId}::uuid
+      ORDER BY created_at DESC
+    `.catch(() => [] as any[]);
+
+    if (customers.length === 0) return { customers: [] };
+
+    const customerIds = customers.map(c => c.id);
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT customer_id, tag_id FROM public.bc_customer_tag_links
+      WHERE customer_id::uuid = ANY(${customerIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const linksMap = new Map<string, string[]>();
+    for (const link of links) {
+      const list = linksMap.get(link.customer_id) ?? [];
+      list.push(link.tag_id);
+      linksMap.set(link.customer_id, list);
+    }
+
+    const result = customers.map(c => ({
+      id: c.id,
+      personId: composePersonId(c.target_kind, c.target_user_id, c.target_card_id, c.target_guest_id),
+      displayName: c.display_name,
+      companyName: c.company_name,
+      stage: c.stage,
+      expectedValue: c.expected_value ? Number(c.expected_value) : null,
+      currency: c.currency,
+      sourceLabel: c.source_label,
+      note: c.note,
+      nextActionAt: c.next_action_at ? new Date(c.next_action_at).toISOString() : null,
+      lastContactAt: c.last_contact_at ? new Date(c.last_contact_at).toISOString() : null,
+      tagIds: linksMap.get(c.id) ?? [],
+      createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
+      updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : null,
+    }));
+
+    return { customers: result };
+  }
+
+  async createBcCustomer(userId: string, input: any) {
+    const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers
+      WHERE owner_user_id = ${userId}::uuid
+        AND target_kind = ${targetKind}
+        AND (
+          (target_kind = 'connection' AND target_user_id = ${targetUserId}::uuid) OR
+          (target_kind = 'saved_card' AND target_card_id = ${targetCardId}::uuid) OR
+          (target_kind = 'guest_contact' AND target_guest_id = ${targetGuestId}::uuid)
+        )
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (existing.length > 0) {
+      throw new BadRequestException('customer_already_exists');
+    }
+
+    const customerId = crypto.randomUUID();
+    const now = new Date();
+    const nextAction = input.nextActionAt ? new Date(input.nextActionAt) : null;
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_customers (
+        id, owner_user_id, target_kind, target_user_id, target_card_id, target_guest_id,
+        display_name, company_name, stage, expected_value, currency, source_label, note,
+        next_action_at, created_at, updated_at
+      ) VALUES (
+        ${customerId}::uuid, ${userId}::uuid, ${targetKind}, ${targetUserId}::uuid, ${targetCardId}::uuid, ${targetGuestId}::uuid,
+        ${input.displayName || null}, ${input.companyName || null}, ${input.stage || 'prospect'},
+        ${input.expectedValue || null}, ${input.currency || 'VND'}, ${input.sourceLabel || null}, ${input.note || null},
+        ${nextAction}, ${now}, ${now}
+      )
+    `;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.bc_customers WHERE id = ${customerId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const c = rows[0];
+    if (!c) throw new InternalServerErrorException('failed_to_create_customer');
+
+    return {
+      customer: {
+        id: c.id,
+        personId: input.personId,
+        displayName: c.display_name,
+        companyName: c.company_name,
+        stage: c.stage,
+        expectedValue: c.expected_value ? Number(c.expected_value) : null,
+        currency: c.currency,
+        sourceLabel: c.source_label,
+        note: c.note,
+        nextActionAt: c.next_action_at ? new Date(c.next_action_at).toISOString() : null,
+        lastContactAt: null,
+        tagIds: [],
+        createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
+        updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : null,
+      }
+    };
+  }
+
+  async updateBcCustomer(userId: string, input: any) {
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.bc_customers
+      WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const c = existing[0];
+    if (!c) throw new NotFoundException('customer_not_found');
+
+    const now = new Date();
+    const stage = input.stage !== undefined ? input.stage : c.stage;
+    const expectedValue = input.expectedValue !== undefined ? input.expectedValue : c.expected_value;
+    const currency = input.currency !== undefined ? input.currency : c.currency;
+    const sourceLabel = input.sourceLabel !== undefined ? input.sourceLabel : c.source_label;
+    const note = input.note !== undefined ? input.note : c.note;
+    const nextActionAt = input.nextActionAt !== undefined ? (input.nextActionAt ? new Date(input.nextActionAt) : null) : c.next_action_at;
+
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_customers
+      SET stage = ${stage},
+          expected_value = ${expectedValue},
+          currency = ${currency},
+          source_label = ${sourceLabel},
+          note = ${note},
+          next_action_at = ${nextActionAt},
+          updated_at = ${now}
+      WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT tag_id FROM public.bc_customer_tag_links
+      WHERE customer_id = ${input.customerId}::uuid
+    `.catch(() => [] as any[]);
+
+    return {
+      customer: {
+        id: c.id,
+        personId: composePersonId(c.target_kind, c.target_user_id, c.target_card_id, c.target_guest_id),
+        displayName: c.display_name,
+        companyName: c.company_name,
+        stage,
+        expectedValue: expectedValue ? Number(expectedValue) : null,
+        currency,
+        sourceLabel,
+        note,
+        nextActionAt: nextActionAt ? new Date(nextActionAt).toISOString() : null,
+        lastContactAt: c.last_contact_at ? new Date(c.last_contact_at).toISOString() : null,
+        tagIds: links.map(l => l.tag_id),
+        createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
+        updatedAt: now.toISOString(),
+      }
+    };
+  }
+
+  async deleteBcCustomer(userId: string, customerId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_tag_links WHERE customer_id = ${customerId}::uuid
+    `;
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_logs WHERE customer_id = ${customerId}::uuid
+    `;
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_needs WHERE customer_id = ${customerId}::uuid
+    `;
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  async listBcCustomerLogs(userId: string, customerId: string) {
+    const customer = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+
+    const logs = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.bc_customer_logs
+      WHERE customer_id = ${customerId}::uuid
+      ORDER BY occurred_at DESC
+    `.catch(() => [] as any[]);
+
+    return {
+      logs: logs.map(l => ({
+        id: l.id,
+        customerId: l.customer_id,
+        kind: l.kind,
+        body: l.body,
+        occurredAt: l.occurred_at ? new Date(l.occurred_at).toISOString() : null,
+        createdAt: l.created_at ? new Date(l.created_at).toISOString() : null,
+      }))
+    };
+  }
+
+  async addBcCustomerLog(userId: string, input: any) {
+    const customer = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+
+    const logId = crypto.randomUUID();
+    const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_customer_logs (
+        id, customer_id, kind, body, occurred_at, created_at, updated_at
+      ) VALUES (
+        ${logId}::uuid, ${input.customerId}::uuid, ${input.kind}, ${input.body || null}, ${occurredAt}, ${now}, ${now}
+      )
+    `;
+
+    if (input.kind !== 'note' && input.kind !== 'stage_change') {
+      await this.prisma.$executeRaw`
+        UPDATE public.bc_customers
+        SET last_contact_at = ${occurredAt}
+        WHERE id = ${input.customerId}::uuid
+      `;
+    }
+
+    return {
+      log: {
+        id: logId,
+        customerId: input.customerId,
+        kind: input.kind,
+        body: input.body,
+        occurredAt: occurredAt.toISOString(),
+        createdAt: now.toISOString(),
+      }
+    };
+  }
+
+  async listBcCustomerTags(userId: string) {
+    const tags = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.name, t.normalized_name, t.created_at, t.updated_at, COUNT(l.customer_id)::int as count
+      FROM public.bc_customer_tags t
+      LEFT JOIN public.bc_customer_tag_links l ON t.id = l.tag_id
+      WHERE t.owner_user_id = ${userId}::uuid
+      GROUP BY t.id
+      ORDER BY t.name ASC
+    `.catch(() => [] as any[]);
+
+    return {
+      tags: tags.map(t => ({
+        id: t.id,
+        name: t.name,
+        normalizedName: t.normalized_name,
+        count: t.count ?? 0,
+        createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
+        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
+      }))
+    };
+  }
+
+  async createBcCustomerTag(userId: string, name: string) {
+    const normalizedName = name.trim().toLowerCase();
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, normalized_name, created_at, updated_at FROM public.bc_customer_tags
+      WHERE owner_user_id = ${userId}::uuid AND normalized_name = ${normalizedName}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (existing.length > 0) {
+      const t = existing[0];
+      return {
+        tag: {
+          id: t.id,
+          name: t.name,
+          normalizedName: t.normalized_name,
+          count: 0,
+          createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
+          updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
+        }
+      };
+    }
+
+    const tagId = crypto.randomUUID();
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_customer_tags (
+        id, owner_user_id, name, normalized_name, created_at, updated_at
+      ) VALUES (
+        ${tagId}::uuid, ${userId}::uuid, ${name.trim()}, ${normalizedName}, ${now}, ${now}
+      )
+    `;
+
+    return {
+      tag: {
+        id: tagId,
+        name: name.trim(),
+        normalizedName,
+        count: 0,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      }
+    };
+  }
+
+  async renameBcCustomerTag(userId: string, tagId: string, name: string) {
+    const normalizedName = name.trim().toLowerCase();
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_customer_tags
+      SET name = ${name.trim()},
+          normalized_name = ${normalizedName},
+          updated_at = ${now}
+      WHERE id = ${tagId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    const tags = await this.prisma.$queryRaw<any[]>`
+      SELECT t.id, t.name, t.normalized_name, t.created_at, t.updated_at, COUNT(l.customer_id)::int as count
+      FROM public.bc_customer_tags t
+      LEFT JOIN public.bc_customer_tag_links l ON t.id = l.tag_id
+      WHERE t.id = ${tagId}::uuid
+      GROUP BY t.id
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const t = tags[0];
+    if (!t) throw new NotFoundException('tag_not_found');
+
+    return {
+      tag: {
+        id: t.id,
+        name: t.name,
+        normalizedName: t.normalized_name,
+        count: t.count ?? 0,
+        createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
+        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
+      }
+    };
+  }
+
+  async deleteBcCustomerTag(userId: string, tagId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_tag_links WHERE tag_id = ${tagId}::uuid
+    `;
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_tags WHERE id = ${tagId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  async setBcCustomerTags(userId: string, customerId: string, names: string[]) {
+    const customer = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+
+    const tagIds: string[] = [];
+    for (const name of names) {
+      const res = await this.createBcCustomerTag(userId, name);
+      tagIds.push(res.tag.id);
+    }
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_tag_links WHERE customer_id = ${customerId}::uuid
+    `;
+
+    for (const tagId of tagIds) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.bc_customer_tag_links (customer_id, tag_id)
+        VALUES (${customerId}::uuid, ${tagId}::uuid)
+      `;
+    }
+
+    return { tagIds };
+  }
+
+  async listBcCustomerNeeds(userId: string, customerId: string) {
+    const customer = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+
+    const needs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, customer_id, kind, body, priority, status, created_at, updated_at
+      FROM public.bc_customer_needs
+      WHERE customer_id = ${customerId}::uuid
+      ORDER BY created_at DESC
+    `.catch(() => [] as any[]);
+
+    return {
+      needs: needs.map(n => ({
+        id: n.id,
+        customerId: n.customer_id,
+        kind: n.kind,
+        body: n.body,
+        priority: n.priority,
+        status: n.status,
+        createdAt: n.created_at ? new Date(n.created_at).toISOString() : null,
+        updatedAt: n.updated_at ? new Date(n.updated_at).toISOString() : null,
+      }))
+    };
+  }
+
+  async addBcCustomerNeed(userId: string, input: any) {
+    const customer = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customers WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+
+    const needId = crypto.randomUUID();
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_customer_needs (
+        id, customer_id, kind, body, priority, status, created_at, updated_at
+      ) VALUES (
+        ${needId}::uuid, ${input.customerId}::uuid, ${input.kind}, ${input.body}, ${input.priority || 'medium'}, 'open', ${now}, ${now}
+      )
+    `;
+
+    return {
+      need: {
+        id: needId,
+        customerId: input.customerId,
+        kind: input.kind,
+        body: input.body,
+        priority: input.priority || 'medium',
+        status: 'open',
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      }
+    };
+  }
+
+  async updateBcCustomerNeed(userId: string, input: any) {
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT n.id, n.customer_id, n.kind, n.body, n.priority, n.status, n.created_at
+      FROM public.bc_customer_needs n
+      JOIN public.bc_customers c ON n.customer_id = c.id
+      WHERE n.id = ${input.needId}::uuid AND c.owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const n = existing[0];
+    if (!n) throw new NotFoundException('need_not_found');
+
+    const now = new Date();
+    const body = input.body !== undefined ? input.body : n.body;
+    const priority = input.priority !== undefined ? input.priority : n.priority;
+    const status = input.status !== undefined ? input.status : n.status;
+
+    await this.prisma.$executeRaw`
+      UPDATE public.bc_customer_needs
+      SET body = ${body},
+          priority = ${priority},
+          status = ${status},
+          updated_at = ${now}
+      WHERE id = ${input.needId}::uuid
+    `;
+
+    return {
+      need: {
+        id: n.id,
+        customerId: n.customer_id,
+        kind: n.kind,
+        body,
+        priority,
+        status,
+        createdAt: n.created_at ? new Date(n.created_at).toISOString() : null,
+        updatedAt: now.toISOString(),
+      }
+    };
+  }
+
+  async deleteBcCustomerNeed(userId: string, needId: string) {
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT n.id FROM public.bc_customer_needs n
+      JOIN public.bc_customers c ON n.customer_id = c.id
+      WHERE n.id = ${needId}::uuid AND c.owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (existing.length === 0) throw new ForbiddenException('need_access_denied');
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.bc_customer_needs WHERE id = ${needId}::uuid
+    `;
+
+    return { ok: true };
+  }
+
+  // --- AI Tag Suggestions ---
+
+  async suggestCustomerTags(userId: string, customerId: string) {
+    const customers = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name, company_name, stage, note FROM public.bc_customers
+      WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const c = customers[0];
+    if (!c) throw new NotFoundException('customer_not_found');
+
+    const logs = await this.prisma.$queryRaw<any[]>`
+      SELECT kind, body, occurred_at FROM public.bc_customer_logs
+      WHERE customer_id = ${customerId}::uuid
+      ORDER BY occurred_at DESC
+      LIMIT 20
+    `.catch(() => [] as any[]);
+
+    const needs = await this.prisma.$queryRaw<any[]>`
+      SELECT kind, body, status, priority FROM public.bc_customer_needs
+      WHERE customer_id = ${customerId}::uuid
+      ORDER BY created_at DESC
+      LIMIT 20
+    `.catch(() => [] as any[]);
+
+    const existingTags = await this.prisma.$queryRaw<any[]>`
+      SELECT name FROM public.bc_customer_tags
+      WHERE owner_user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+
+    const currentTags = await this.prisma.$queryRaw<any[]>`
+      SELECT t.name FROM public.bc_customer_tags t
+      JOIN public.bc_customer_tag_links l ON t.id = l.tag_id
+      WHERE l.customer_id = ${customerId}::uuid
+    `.catch(() => [] as any[]);
+
+    const feedback = await this.prisma.$queryRaw<any[]>`
+      SELECT tag_name, verdict FROM public.bc_customer_tag_suggestion_feedback
+      WHERE customer_id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+
+    const approvedTagNames = feedback.filter(f => f.verdict === 'good').map(f => f.tag_name);
+    const rejectedTagNames = feedback.filter(f => f.verdict === 'bad').map(f => f.tag_name);
+
+    const logTexts = logs.map(l => `[${l.occurred_at ? new Date(l.occurred_at).toLocaleDateString() : ''} - ${l.kind}] ${l.body || ''}`);
+    const needTexts = needs.map(n => `[${n.status} - ${n.priority}] ${n.body}`);
+
+    const response = await suggestCustomerTags({
+      stageLabel: c.stage,
+      displayName: c.display_name || '',
+      companyName: c.company_name || '',
+      note: c.note || '',
+      logs: logTexts,
+      needs: needTexts,
+      existingTagNames: existingTags.map(t => t.name),
+      currentTagNames: currentTags.map(t => t.name),
+      approvedTagNames,
+      rejectedTagNames,
+    });
+
+    if (!response.ok) {
+      throw new BadRequestException('ai_suggestion_failed');
+    }
+
+    const runId = crypto.randomUUID();
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.bc_customer_tag_suggestion_runs (
+        id, customer_id, owner_user_id, suggestions, created_at
+      ) VALUES (
+        ${runId}::uuid, ${customerId}::uuid, ${userId}::uuid, ${JSON.stringify(response.suggestions)}::jsonb, ${now}
+      )
+    `;
+
+    return {
+      runId,
+      suggestions: response.suggestions,
+    };
+  }
+
+  async listCustomerTagSuggestHistory(userId: string, customerId: string) {
+    const runs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, customer_id, created_at, suggestions FROM public.bc_customer_tag_suggestion_runs
+      WHERE customer_id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
+      ORDER BY created_at DESC
+      LIMIT 10
+    `.catch(() => [] as any[]);
+
+    return {
+      runs: runs.map(r => ({
+        id: r.id,
+        customerId: r.customer_id,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+        suggestions: r.suggestions,
+      }))
+    };
+  }
+
+  async saveCustomerTagSuggestFeedback(userId: string, input: any) {
+    const now = new Date();
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.bc_customer_tag_suggestion_feedback
+      WHERE customer_id = ${input.customerId}::uuid
+        AND owner_user_id = ${userId}::uuid
+        AND tag_name = ${input.tagName}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (existing.length > 0) {
+      await this.prisma.$executeRaw`
+        UPDATE public.bc_customer_tag_suggestion_feedback
+        SET verdict = ${input.verdict},
+            run_id = ${input.runId || null}::uuid,
+            updated_at = ${now}
+        WHERE id = ${existing[0].id}::uuid
+      `;
+    } else {
+      const feedbackId = crypto.randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.bc_customer_tag_suggestion_feedback (
+          id, customer_id, owner_user_id, run_id, tag_name, verdict, created_at, updated_at
+        ) VALUES (
+          ${feedbackId}::uuid, ${input.customerId}::uuid, ${userId}::uuid, ${input.runId || null}::uuid, ${input.tagName}, ${input.verdict}, ${now}, ${now}
+        )
+      `;
+    }
+
+    return { ok: true };
+  }
+
+  async listCustomerTagSuggestFeedback(userId: string, customerId: string) {
+    const feedback = await this.prisma.$queryRaw<any[]>`
+      SELECT id, customer_id, run_id, tag_name, verdict, created_at, updated_at
+      FROM public.bc_customer_tag_suggestion_feedback
+      WHERE customer_id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
+      ORDER BY updated_at DESC
+    `.catch(() => [] as any[]);
+
+    return {
+      feedback: feedback.map(f => ({
+        id: f.id,
+        customerId: f.customer_id,
+        runId: f.run_id,
+        tagName: f.tag_name,
+        verdict: f.verdict,
+        createdAt: f.created_at ? new Date(f.created_at).toISOString() : null,
+        updatedAt: f.updated_at ? new Date(f.updated_at).toISOString() : null,
+      }))
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-4A/4B — Business Card Scanning
+  // ==========================================
+
+  async cardScanOcr(userId: string, imageDataUrl: string, clientToken: string) {
+    const raw = await runCardOcrVision(imageDataUrl);
+    const scanId = crypto.randomUUID();
+    const result = candidateFromRawModelOutput(raw, scanId);
+    return result;
+  }
+
+  async cardScanResolve(
+    userId: string,
+    input: { email: string | null; phone: string | null; displayName?: string | null; companyName?: string | null }
+  ) {
+    const email = input.email ? input.email.trim().toLowerCase() : null;
+    const phone = input.phone ? input.phone.trim() : null;
+    const phoneDigits = phone ? phone.replace(/[^0-9]/g, '') : null;
+    const name = input.displayName ? input.displayName.trim().toLowerCase() : null;
+    const company = input.companyName ? input.companyName.trim().toLowerCase() : null;
+    const domain = email ? email.split('@')[1]?.toLowerCase() : null;
+
+    if (!email && !phone && !name && !company) {
+      return { state: 'none', candidates: [] };
+    }
+
+    const matches = await this.prisma.$queryRaw<any[]>`
+      WITH matches AS (
+        SELECT
+          'g:' || g.id::text AS person_id,
+          'guest'::text AS kind,
+          g.display_name AS display_name,
+          g.title AS title,
+          g.company_name AS company_name,
+          (${email} IS NOT NULL AND g.email = ${email}) AS email_hit,
+          (${phoneDigits} IS NOT NULL AND g.phone IS NOT NULL
+            AND regexp_replace(g.phone, '[^0-9]', '', 'g') = ${phoneDigits}) AS phone_hit,
+          (${name} IS NOT NULL AND g.display_name IS NOT NULL
+            AND lower(regexp_replace(btrim(g.display_name), '\\s+', ' ', 'g')) = ${name}) AS name_hit,
+          (${company} IS NOT NULL AND g.company_name IS NOT NULL
+            AND lower(regexp_replace(btrim(g.company_name), '\\s+', ' ', 'g')) = ${company}) AS company_hit,
+          (${domain} IS NOT NULL AND g.email IS NOT NULL
+            AND lower(split_part(g.email, '@', 2)) = ${domain}) AS domain_hit
+        FROM public.guest_contacts g
+        WHERE g.owner_user_id = ${userId}::uuid
+          AND (
+            (${email} IS NOT NULL AND g.email = ${email})
+            OR (${phoneDigits} IS NOT NULL AND g.phone IS NOT NULL
+                AND regexp_replace(g.phone, '[^0-9]', '', 'g') = ${phoneDigits})
+            OR (${name} IS NOT NULL AND g.display_name IS NOT NULL
+                AND lower(regexp_replace(btrim(g.display_name), '\\s+', ' ', 'g')) = ${name})
+            OR (${company} IS NOT NULL AND g.company_name IS NOT NULL
+                AND lower(regexp_replace(btrim(g.company_name), '\\s+', ' ', 'g')) = ${company})
+          )
+
+        UNION ALL
+
+        SELECT
+          'c:' || c.id::text,
+          'saved_card'::text,
+          c.display_name,
+          c.professional_title,
+          c.company_name,
+          (${email} IS NOT NULL AND c.work_email IS NOT NULL AND lower(btrim(c.work_email)) = ${email}),
+          (${phoneDigits} IS NOT NULL AND c.work_phone IS NOT NULL
+            AND regexp_replace(c.work_phone, '[^0-9]', '', 'g') = ${phoneDigits}),
+          (${name} IS NOT NULL AND c.display_name IS NOT NULL
+            AND lower(regexp_replace(btrim(c.display_name), '\\s+', ' ', 'g')) = ${name}),
+          (${company} IS NOT NULL AND c.company_name IS NOT NULL
+            AND lower(regexp_replace(btrim(c.company_name), '\\s+', ' ', 'g')) = ${company}),
+          (${domain} IS NOT NULL AND c.work_email IS NOT NULL
+            AND lower(split_part(btrim(c.work_email), '@', 2)) = ${domain})
+        FROM public.saved_business_cards s
+        JOIN public.member_business_cards c ON c.id = s.target_card_id
+        WHERE s.owner_user_id = ${userId}::uuid
+          AND s.archived = false
+          AND (
+            (${email} IS NOT NULL AND c.work_email IS NOT NULL AND lower(btrim(c.work_email)) = ${email})
+            OR (${phoneDigits} IS NOT NULL AND c.work_phone IS NOT NULL
+                AND regexp_replace(c.work_phone, '[^0-9]', '', 'g') = ${phoneDigits})
+            OR (${name} IS NOT NULL AND c.display_name IS NOT NULL
+                AND lower(regexp_replace(btrim(c.display_name), '\\s+', ' ', 'g')) = ${name})
+            OR (${company} IS NOT NULL AND c.company_name IS NOT NULL
+                AND lower(regexp_replace(btrim(c.company_name), '\\s+', ' ', 'g')) = ${company})
+          )
+
+        UNION ALL
+
+        SELECT
+          'u:' || cp.counterpart::text,
+          'connection'::text,
+          c.display_name,
+          c.professional_title,
+          c.company_name,
+          (${email} IS NOT NULL AND c.work_email IS NOT NULL AND lower(btrim(c.work_email)) = ${email}),
+          (${phoneDigits} IS NOT NULL AND c.work_phone IS NOT NULL
+            AND regexp_replace(c.work_phone, '[^0-9]', '', 'g') = ${phoneDigits}),
+          (${name} IS NOT NULL AND c.display_name IS NOT NULL
+            AND lower(regexp_replace(btrim(c.display_name), '\\s+', ' ', 'g')) = ${name}),
+          (${company} IS NOT NULL AND c.company_name IS NOT NULL
+            AND lower(regexp_replace(btrim(c.company_name), '\\s+', ' ', 'g')) = ${company}),
+          (${domain} IS NOT NULL AND c.work_email IS NOT NULL
+            AND lower(split_part(btrim(c.work_email), '@', 2)) = ${domain})
+        FROM (
+          SELECT DISTINCT
+            CASE WHEN uc.pair_user_low = ${userId}::uuid THEN uc.pair_user_high ELSE uc.pair_user_low END AS counterpart
+          FROM public.user_connections uc
+          WHERE uc.status = 'accepted'
+            AND uc.blocked_by_user_id IS NULL
+            AND (uc.pair_user_low = ${userId}::uuid OR uc.pair_user_high = ${userId}::uuid)
+        ) cp
+        JOIN public.member_business_cards c
+          ON c.owner_user_id = cp.counterpart AND c.status = 'published'
+        WHERE (
+          (${email} IS NOT NULL AND c.work_email IS NOT NULL AND lower(btrim(c.work_email)) = ${email})
+          OR (${phoneDigits} IS NOT NULL AND c.work_phone IS NOT NULL
+              AND regexp_replace(c.work_phone, '[^0-9]', '', 'g') = ${phoneDigits})
+          OR (${name} IS NOT NULL AND c.display_name IS NOT NULL
+              AND lower(regexp_replace(btrim(c.display_name), '\\s+', ' ', 'g')) = ${name})
+          OR (${company} IS NOT NULL AND c.company_name IS NOT NULL
+              AND lower(regexp_replace(btrim(c.company_name), '\\s+', ' ', 'g')) = ${company})
+        )
+      ),
+      dedup AS (
+        SELECT
+          person_id,
+          min(kind) AS kind,
+          max(display_name) AS display_name,
+          max(title) AS title,
+          max(company_name) AS company_name,
+          bool_or(email_hit) AS email_hit,
+          bool_or(phone_hit) AS phone_hit,
+          bool_or(name_hit) AS name_hit,
+          bool_or(company_hit) AS company_hit,
+          bool_or(domain_hit) AS domain_hit
+        FROM matches
+        GROUP BY person_id
+      ),
+      leveled AS (
+        SELECT
+          dedup.*,
+          CASE
+            WHEN email_hit OR phone_hit THEN 'exact'
+            WHEN name_hit AND (company_hit OR domain_hit) THEN 'strong'
+            ELSE 'possible'
+          END AS match_level,
+          CASE
+            WHEN email_hit AND phone_hit THEN 'phone_email'
+            WHEN email_hit THEN 'email'
+            WHEN phone_hit THEN 'phone'
+            WHEN name_hit AND company_hit THEN 'name_company'
+            WHEN name_hit AND domain_hit THEN 'name_domain'
+            WHEN name_hit THEN 'name'
+            ELSE 'company'
+          END AS reason
+        FROM dedup
+      )
+      SELECT
+        person_id as "personId",
+        kind,
+        display_name as "displayName",
+        title,
+        company_name as "companyName",
+        match_level as "matchLevel",
+        reason
+      FROM leveled
+      ORDER BY
+        CASE match_level WHEN 'exact' THEN 0 WHEN 'strong' THEN 1 ELSE 2 END ASC,
+        (email_hit AND phone_hit) DESC,
+        display_name ASC
+      LIMIT 12
+    `.catch(() => [] as any[]);
+
+    const state =
+      matches.length === 0
+        ? 'none'
+        : matches.length === 1 && matches[0].matchLevel === 'exact'
+        ? 'exact'
+        : 'ambiguous';
+
+    return {
+      state,
+      candidates: matches,
+    };
+  }
+
+  async cardScanSave(userId: string, input: any) {
+    const clientToken = input.clientToken;
+    const scanId = input.scanId;
+    const displayName = input.displayName;
+    const phone = input.phone;
+    const email = input.email;
+    const companyName = input.companyName;
+    const title = input.title;
+    const website = input.website;
+    const address = input.address;
+    const resolution = input.resolution;
+    const targetPersonId = input.targetPersonId;
+    const confirmedNew = input.confirmedNew || false;
+    const fieldChoices = input.fieldChoices || {};
+
+    const replays = await this.prisma.$queryRaw<any[]>`
+      SELECT id, display_name, title, company_name FROM public.guest_contacts
+      WHERE owner_user_id = ${userId}::uuid
+        AND source_card_id IS NULL
+        AND client_token = ${clientToken}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (replays.length > 0) {
+      const r = replays[0];
+      return {
+        ok: true,
+        result: 'replay',
+        personId: `g:${r.id}`,
+        displayName: r.display_name,
+        title: r.title,
+        companyName: r.company_name,
+      };
+    }
+
+    if (resolution === 'update') {
+      if (!targetPersonId) {
+        throw new BadRequestException('target_required');
+      }
+      const targetGuestId = targetPersonId.substring(2);
+      const targets = await this.prisma.$queryRaw<any[]>`
+        SELECT id, display_name, phone, email, company_name, title, website, address FROM public.guest_contacts
+        WHERE id = ${targetGuestId}::uuid AND owner_user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const target = targets[0];
+      if (!target) throw new NotFoundException('target_not_found');
+
+      const fName = fieldChoices.displayName === 'card' ? displayName : (target.display_name || displayName);
+      const fPhone = fieldChoices.phone === 'card' ? phone : (target.phone || phone);
+      const fEmail = fieldChoices.email === 'card' ? email : (target.email || email);
+      const fCompany = fieldChoices.companyName === 'card' ? companyName : (target.company_name || companyName);
+      const fTitle = fieldChoices.title === 'card' ? title : (target.title || title);
+      const fWebsite = fieldChoices.website === 'card' ? website : (target.website || website);
+      const fAddress = fieldChoices.address === 'card' ? address : (target.address || address);
+
+      const now = new Date();
+      await this.prisma.$executeRaw`
+        UPDATE public.guest_contacts SET
+          display_name = ${fName},
+          phone = ${fPhone},
+          email = ${fEmail},
+          company_name = ${fCompany},
+          title = ${fTitle},
+          website = ${fWebsite},
+          address = ${fAddress},
+          capture_scan_id = ${scanId}::uuid,
+          last_shared_at = ${now},
+          updated_at = ${now}
+        WHERE id = ${targetGuestId}::uuid
+      `;
+
+      return {
+        ok: true,
+        result: 'updated',
+        personId: `g:${targetGuestId}`,
+        displayName: fName,
+        title: fTitle,
+        companyName: fCompany,
+      };
+    }
+
+    if (!confirmedNew) {
+      const dups = await this.cardScanResolve(userId, { email, phone, displayName, companyName });
+      if (dups.state !== 'none') {
+        return { ok: false, error: 'match_conflict' };
+      }
+    }
+
+    const guestId = crypto.randomUUID();
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.guest_contacts (
+        id, owner_user_id, source_card_id, display_name, phone, email, company_name, title,
+        website, address, source, client_token, first_captured_at, capture_scan_id, created_at, updated_at
+      ) VALUES (
+        ${guestId}::uuid, ${userId}::uuid, NULL, ${displayName}, ${phone}, ${email}, ${companyName}, ${title},
+        ${website}, ${address}, 'business_card_scan', ${clientToken}, ${now}, ${scanId}::uuid, ${now}, ${now}
+      )
+    `;
+
+    return {
+      ok: true,
+      result: 'created',
+      personId: `g:${guestId}`,
+      displayName,
+      title,
+      companyName,
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-6C — Personalization settings
+  // ==========================================
+
+  async getPersonalization(userId: string) {
+    const prefs = await this.prisma.$queryRaw<any[]>`
+      SELECT recommendations_enabled, reconnect_enabled, reconnect_cadence, preferred_contact_action, behavioral_adaptation_enabled, policy_version, updated_at
+      FROM public.relationship_intelligence_preferences
+      WHERE viewer_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const p = prefs[0] || {
+      recommendations_enabled: true,
+      reconnect_enabled: true,
+      reconnect_cadence: 'auto',
+      preferred_contact_action: 'auto',
+      behavioral_adaptation_enabled: true,
+      policy_version: 'v1',
+      updated_at: null,
+    };
+
+    const preferences = {
+      recommendationsEnabled: p.recommendations_enabled !== false,
+      reconnectEnabled: p.reconnect_enabled !== false,
+      reconnectCadence: p.reconnect_cadence || 'auto',
+      preferredContactAction: p.preferred_contact_action || 'auto',
+      behavioralAdaptationEnabled: p.behavioral_adaptation_enabled !== false,
+      policyVersion: p.policy_version || 'v1',
+      updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : null,
+    };
+
+    // Derived values (simple baseline reconnectcadence calculation matching engine)
+    let reconnectThresholdDays = 45;
+    if (preferences.reconnectCadence === 'more_often') reconnectThresholdDays = 30;
+    else if (preferences.reconnectCadence === 'less_often') reconnectThresholdDays = 60;
+
+    let preferredAction: string | null = null;
+    if (preferences.preferredContactAction !== 'auto') {
+      preferredAction = preferences.preferredContactAction;
+    }
+
+    return {
+      preferences,
+      profile: {
+        reconnectThresholdDays,
+        cadenceSource: preferences.reconnectCadence === 'auto' ? 'default' : 'explicit',
+        preferredAction,
+        actionSource: preferences.preferredContactAction === 'auto' ? 'default' : 'explicit',
+      },
+    };
+  }
+
+  async updatePersonalizationPreferences(userId: string, input: any) {
+    const current = await this.getPersonalization(userId);
+    const next = {
+      ...current.preferences,
+      ...input,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.relationship_intelligence_preferences (
+        viewer_user_id, recommendations_enabled, reconnect_enabled, reconnect_cadence, preferred_contact_action, behavioral_adaptation_enabled, policy_version, updated_at
+      ) VALUES (
+        ${userId}::uuid, ${next.recommendationsEnabled}, ${next.reconnectEnabled}, ${next.reconnectCadence}, ${next.preferredContactAction}, ${next.behavioralAdaptationEnabled}, ${next.policyVersion}, ${new Date(next.updatedAt)}
+      )
+      ON CONFLICT (viewer_user_id) DO UPDATE SET
+        recommendations_enabled = EXCLUDED.recommendations_enabled,
+        reconnect_enabled = EXCLUDED.reconnect_enabled,
+        reconnect_cadence = EXCLUDED.reconnect_cadence,
+        preferred_contact_action = EXCLUDED.preferred_contact_action,
+        behavioral_adaptation_enabled = EXCLUDED.behavioral_adaptation_enabled,
+        policy_version = EXCLUDED.policy_version,
+        updated_at = EXCLUDED.updated_at
+    `;
+
+    return this.getPersonalization(userId);
+  }
+
+  async recordPersonalizationInteraction(userId: string, input: any) {
+    const prefs = await this.getPersonalization(userId);
+    if (!prefs.preferences.behavioralAdaptationEnabled) {
+      return { ok: true, recorded: false };
+    }
+
+    const type = ['recommendation_opened', 'recommendation_dismissed'].includes(input.kind) ? input.recommendationType : null;
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.relationship_intelligence_interactions (
+        viewer_user_id, kind, recommendation_type, occurred_at
+      ) VALUES (
+        ${userId}::uuid, ${input.kind}, ${type || null}, ${now}
+      )
+    `;
+
+    // Prune interactions older than 30 days
+    const pruneBefore = new Date(Date.now() - 30 * 86400000);
+    await this.prisma.$executeRaw`
+      DELETE FROM public.relationship_intelligence_interactions
+      WHERE viewer_user_id = ${userId}::uuid AND occurred_at < ${pruneBefore}
+    `;
+
+    return { ok: true, recorded: true };
+  }
+
+  async resetPersonalization(userId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.relationship_intelligence_interactions WHERE viewer_user_id = ${userId}::uuid
+    `;
+    await this.prisma.$executeRaw`
+      DELETE FROM public.relationship_intelligence_preferences WHERE viewer_user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  // ==========================================
+  // BC-Mobile-6D — Person Plans
+  // ==========================================
+
+  async createPersonPlan(userId: string, input: any) {
+    const planId = crypto.randomUUID();
+    const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+    const now = new Date();
+    const dueAt = new Date(input.dueAt);
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.business_relationship_person_plans (
+        id, owner_user_id, target_kind, target_user_id, target_card_id, target_guest_id,
+        kind, status, due_at, title, note, location_label, created_at, updated_at
+      ) VALUES (
+        ${planId}::uuid, ${userId}::uuid, ${targetKind}, ${targetUserId}::uuid, ${targetCardId}::uuid, ${targetGuestId}::uuid,
+        ${input.kind}, 'pending', ${dueAt}, ${input.title || null}, ${input.note || null}, ${input.locationLabel || null}, ${now}, ${now}
+      )
+    `;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_relationship_person_plans WHERE id = ${planId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const p = rows[0];
+    if (!p) throw new InternalServerErrorException('failed_to_create_plan');
+
+    return {
+      plan: {
+        id: p.id,
+        personId: input.personId,
+        kind: p.kind,
+        status: p.status,
+        dueAt: p.due_at ? new Date(p.due_at).toISOString() : '',
+        title: p.title,
+        note: p.note,
+        locationLabel: p.location_label,
+        completedAt: null,
+        createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
+        updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : null,
+      }
+    };
+  }
+
+  async listPersonPlans(userId: string, input: any) {
+    let query: any;
+    const limit = Math.min(50, input.limit || 20);
+
+    let rows: any[];
+    if (input.personId) {
+      const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.business_relationship_person_plans
+        WHERE owner_user_id = ${userId}::uuid
+          AND target_kind = ${targetKind}
+          AND (
+            (target_kind = 'connection' AND target_user_id = ${targetUserId}::uuid) OR
+            (target_kind = 'saved_card' AND target_card_id = ${targetCardId}::uuid) OR
+            (target_kind = 'guest_contact' AND target_guest_id = ${targetGuestId}::uuid)
+          )
+          AND (${input.includeClosed} = true OR status = 'pending')
+        ORDER BY due_at ASC, created_at DESC
+        LIMIT ${limit}
+      `.catch(() => [] as any[]);
+    } else {
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.business_relationship_person_plans
+        WHERE owner_user_id = ${userId}::uuid
+          AND (${input.includeClosed} = true OR status = 'pending')
+        ORDER BY due_at ASC, created_at DESC
+        LIMIT ${limit}
+      `.catch(() => [] as any[]);
+    }
+
+    const plans = rows.map(p => ({
+      id: p.id,
+      personId: composePersonId(p.target_kind, p.target_user_id, p.target_card_id, p.target_guest_id),
+      kind: p.kind,
+      status: p.status,
+      dueAt: p.due_at ? new Date(p.due_at).toISOString() : '',
+      title: p.title,
+      note: p.note,
+      locationLabel: p.location_label,
+      completedAt: p.completed_at ? new Date(p.completed_at).toISOString() : null,
+      createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
+      updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : null,
+    }));
+
+    return { plans };
+  }
+
+  async setPersonPlanStatus(userId: string, input: any) {
+    const now = new Date();
+    const completedAt = input.status === 'done' ? now : null;
+
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_relationship_person_plans
+      WHERE id = ${input.planId}::uuid AND owner_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const p = existing[0];
+    if (!p) throw new NotFoundException('plan_not_found');
+
+    await this.prisma.$executeRaw`
+      UPDATE public.business_relationship_person_plans
+      SET status = ${input.status},
+          completed_at = ${completedAt},
+          updated_at = ${now}
+      WHERE id = ${input.planId}::uuid AND owner_user_id = ${userId}::uuid
+    `;
+
+    return {
+      plan: {
+        id: p.id,
+        personId: composePersonId(p.target_kind, p.target_user_id, p.target_card_id, p.target_guest_id),
+        kind: p.kind,
+        status: input.status,
+        dueAt: p.due_at ? new Date(p.due_at).toISOString() : '',
+        title: p.title,
+        note: p.note,
+        locationLabel: p.location_label,
+        completedAt: completedAt ? completedAt.toISOString() : null,
+        createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
+        updatedAt: now.toISOString(),
+      }
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-2D/2E — Person Journey
+  // ==========================================
+
+  async getPersonJourney(userId: string, input: any) {
+    const personId = input.personId;
+    const targetUserId = personId.substring(2); // 'u:uuid'
+    const parsed = parsePersonId(personId);
+
+    // 1. Query Pair state if connection
+    if (parsed.targetKind === 'connection') {
+      const low = userId < targetUserId ? userId : targetUserId;
+      const high = userId < targetUserId ? targetUserId : userId;
+      const connections = await this.prisma.$queryRaw<any[]>`
+        SELECT status, blocked_by_user_id FROM public.user_connections
+        WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid
+        LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const cState = connections[0];
+      if (!cState || cState.status !== 'accepted' || cState.blocked_by_user_id !== null) {
+        return { status: 'unavailable' };
+      }
+    }
+
+    // 2. Fetch moments for target
+    let momentsQuery: any;
+    if (parsed.targetKind === 'connection') {
+      momentsQuery = this.prisma.$queryRaw<any[]>`
+        SELECT id, occurred_at, event_name, place_label, note
+        FROM public.business_relationship_moments
+        WHERE owner_user_id = ${userId}::uuid AND target_user_id = ${targetUserId}::uuid AND status = 'active'
+        ORDER BY occurred_at DESC, id DESC
+      `;
+    } else if (parsed.targetKind === 'saved_card') {
+      momentsQuery = this.prisma.$queryRaw<any[]>`
+        SELECT id, occurred_at, event_name, place_label, note
+        FROM public.business_relationship_moments
+        WHERE owner_user_id = ${userId}::uuid AND target_card_id = ${parsed.targetCardId}::uuid AND status = 'active'
+        ORDER BY occurred_at DESC, id DESC
+      `;
+    } else {
+      momentsQuery = this.prisma.$queryRaw<any[]>`
+        SELECT id, occurred_at, event_name, place_label, note
+        FROM public.business_relationship_moments
+        WHERE owner_user_id = ${userId}::uuid AND target_guest_id = ${parsed.targetGuestId}::uuid AND status = 'active'
+        ORDER BY occurred_at DESC, id DESC
+      `;
+    }
+
+    const moments = await momentsQuery.catch(() => [] as any[]);
+    const momentIds = moments.map(m => m.id);
+
+    const momentMedia = momentIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
+      SELECT moment_id, storage_path, sort_order FROM public.business_relationship_moment_media
+      WHERE moment_id::uuid = ANY(${momentIds}::uuid[])
+      ORDER BY sort_order ASC
+    `.catch(() => [] as any[]) : [];
+
+    const mediaMap = new Map<string, any[]>();
+    for (const m of momentMedia) {
+      const list = mediaMap.get(m.moment_id) ?? [];
+      list.push(m);
+      mediaMap.set(m.moment_id, list);
+    }
+
+    // Compose journey items
+    const items: any[] = [];
+
+    // Add moments as items
+    for (const m of moments) {
+      const mediaFiles = mediaMap.get(m.id) ?? [];
+      const photoPath = mediaFiles[0]?.storage_path ?? null;
+
+      // Note: we can generate a public URL from bucket or sign it
+      // Let's formulate a mock/direct path or URL since we're inside NestJS
+      const photoUrl = photoPath ? `/storage/relationship-moments/${photoPath}` : null;
+
+      items.push({
+        id: `moment:${m.id}`,
+        kind: 'moment',
+        occurredAt: m.occurred_at ? new Date(m.occurred_at).toISOString() : null,
+        provenance: { domain: 'moment' },
+        moment: {
+          title: m.event_name,
+          placeLabel: m.place_label,
+          note: m.note,
+          photoUrl,
+          photoCount: mediaFiles.length,
+        }
+      });
+    }
+
+    // Add milestones: saved_card milestone
+    if (parsed.targetKind === 'saved_card') {
+      const savedCards = await this.prisma.$queryRaw<any[]>`
+        SELECT saved_at FROM public.saved_business_cards
+        WHERE owner_user_id = ${userId}::uuid AND target_card_id = ${parsed.targetCardId}::uuid AND archived = false
+        LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const sc = savedCards[0];
+      if (sc) {
+        items.push({
+          id: `card_saved:${parsed.targetCardId}`,
+          kind: 'card_saved',
+          occurredAt: sc.saved_at ? new Date(sc.saved_at).toISOString() : null,
+          provenance: { domain: 'saved_card' },
+        });
+      }
+    }
+
+    // Add guest origin milestones
+    if (parsed.targetKind === 'guest_contact') {
+      const guests = await this.prisma.$queryRaw<any[]>`
+        SELECT first_shared_at, source FROM public.guest_contacts
+        WHERE id = ${parsed.targetGuestId}::uuid AND owner_user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const g = guests[0];
+      if (g) {
+        const isScanned = g.source === 'business_card_scan';
+        items.push({
+          id: isScanned ? `business_card_scanned:${parsed.targetGuestId}` : `contact_shared:${parsed.targetGuestId}`,
+          kind: isScanned ? 'business_card_scanned' : 'contact_shared',
+          occurredAt: g.first_shared_at ? new Date(g.first_shared_at).toISOString() : null,
+          provenance: { domain: 'guest_contact' },
+        });
+      }
+    }
+
+    // Add graph connections milestone if connection exists
+    if (parsed.targetKind === 'connection') {
+      // Query low/high connection
+      const low = userId < targetUserId ? userId : targetUserId;
+      const high = userId < targetUserId ? targetUserId : userId;
+      const connections = await this.prisma.$queryRaw<any[]>`
+        SELECT created_at, status FROM public.user_connections
+        WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid AND status = 'accepted'
+        LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const c = connections[0];
+      if (c) {
+        items.push({
+          id: `connected_to:${targetUserId}`,
+          kind: 'connected',
+          occurredAt: c.created_at ? new Date(c.created_at).toISOString() : null,
+          provenance: { domain: 'graph' },
+        });
+      }
+    }
+
+    // Sort items occurredAt DESC
+    items.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+
+    return {
+      status: 'ok',
+      page: {
+        items,
+        nextCursor: null,
+      }
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-7B+ — Community News
+  // ==========================================
+
+  async listCommunityNews(userId: string, communityId: string, offset: number) {
+    // 1. Verify membership
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const limit = 10;
+    const news = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, excerpt, category, author, published_at, views, status, created_at
+      FROM public.news
+      WHERE association_id = ${communityId}::uuid AND status = 'published'
+      ORDER BY created_at DESC
+      OFFSET ${offset} LIMIT ${limit}
+    `.catch(() => [] as any[]);
+
+    const total = await this.prisma.$queryRaw<any[]>`
+      SELECT COUNT(*)::int as count FROM public.news
+      WHERE association_id = ${communityId}::uuid AND status = 'published'
+    `.catch(() => [{ count: 0 }]);
+
+    const totalCount = total[0]?.count ?? 0;
+    const items = news.map(row => ({
+      newsRef: row.id,
+      title: row.title || "",
+      excerpt: row.excerpt || null,
+      category: row.category || null,
+      author: row.author || null,
+      publishedLabel: row.published_at ? new Date(row.published_at).toLocaleDateString() : null,
+      views: row.views || 0,
+    }));
+
+    const nextOffset = offset + items.length < totalCount ? offset + items.length : null;
+
+    return { items, totalCount, nextOffset };
+  }
+
+  async getCommunityNewsDetail(userId: string, communityId: string, newsRef: string) {
+    // 1. Verify membership
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const news = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, excerpt, category, author, published_at, views, status, created_at
+      FROM public.news
+      WHERE association_id = ${communityId}::uuid AND id = ${newsRef}::uuid AND status = 'published'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const row = news[0];
+    if (!row) throw new NotFoundException('news_not_found');
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const assoc = assocs[0] || { name: "" };
+
+    // Increment view count
+    await this.prisma.$executeRaw`
+      UPDATE public.news SET views = COALESCE(views, 0) + 1 WHERE id = ${newsRef}::uuid
+    `.catch(() => {});
+
+    return {
+      news: {
+        newsRef: row.id,
+        title: row.title || "",
+        excerpt: row.excerpt || null,
+        category: row.category || null,
+        author: row.author || null,
+        publishedLabel: row.published_at ? new Date(row.published_at).toLocaleDateString() : null,
+        views: (row.views || 0) + 1,
+      },
+      communityName: assoc.name,
+    };
+  }
+
+  // ==========================================
+  // BC-Mobile-7B+ — Community Join Requests
+  // ==========================================
+
+  async listJoinableCommunities(userId: string) {
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+    const joined = new Set(memberships.map(m => m.association_id));
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, logo_url, tagline FROM public.associations
+      WHERE landing_published = true
+      ORDER BY name ASC
+      LIMIT 50
+    `.catch(() => [] as any[]);
+
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id, status, created_at FROM public.community_join_requests
+      WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+
+    const byAssoc = new Map<string, any>();
+    for (const r of requests) {
+      byAssoc.set(r.association_id, {
+        status: r.status,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      });
+    }
+
+    return assocs
+      .filter(a => !joined.has(a.id))
+      .map(a => {
+        const req = byAssoc.get(a.id);
+        return {
+          communityId: a.id,
+          name: a.name,
+          logoUrl: a.logo_url || null,
+          shortDescription: a.tagline || null,
+          status: req?.status ?? 'none',
+          requestedAt: req?.createdAt ?? null,
+        };
+      });
+  }
+
+  async requestCommunityJoin(userId: string, input: { communityId: string; note?: string | null }) {
+    const communityId = input.communityId;
+    const note = input.note ? input.note.trim().slice(0, 500) : null;
+
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length > 0) return { status: 'approved' };
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.associations WHERE id = ${communityId}::uuid AND landing_published = true LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (assocs.length === 0) throw new BadRequestException('community_join_unavailable');
+
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT id, status FROM public.community_join_requests
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const existing = requests[0];
+    const now = new Date();
+
+    if (existing) {
+      if (existing.status === 'pending' || existing.status === 'approved') {
+        return { status: existing.status };
+      }
+      await this.prisma.$executeRaw`
+        UPDATE public.community_join_requests
+        SET status = 'pending',
+            decided_at = NULL,
+            message = ${note},
+            created_at = ${now}
+        WHERE id = ${existing.id}::uuid
+      `;
+      return { status: 'pending' };
+    }
+
+    const reqId = crypto.randomUUID();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_join_requests (
+        id, user_id, association_id, status, message, created_at, updated_at
+      ) VALUES (
+        ${reqId}::uuid, ${userId}::uuid, ${communityId}::uuid, 'pending', ${note}, ${now}, ${now}
+      )
+    `;
+
+    return { status: 'pending' };
+  }
+
+  async cancelCommunityJoin(userId: string, input: { communityId: string; cancelReason?: string | null }) {
+    const communityId = input.communityId;
+    const reason = input.cancelReason ? input.cancelReason.trim().slice(0, 500) : null;
+
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT id, status FROM public.community_join_requests
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const existing = requests[0];
+    if (!existing) return { status: 'none' };
+    if (existing.status !== 'pending') return { status: existing.status };
+
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.community_join_requests
+      SET status = 'cancelled',
+          decided_at = ${now},
+          cancel_reason = ${reason},
+          updated_at = ${now}
+      WHERE id = ${existing.id}::uuid
+    `;
+
+    return { status: 'cancelled' };
+  }
+
+  async listCommunityJoinHistory(userId: string) {
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT id, association_id, status, message, cancel_reason, created_at, decided_at
+      FROM public.community_join_requests
+      WHERE user_id = ${userId}::uuid
+      ORDER BY created_at DESC
+      LIMIT 30
+    `.catch(() => [] as any[]);
+
+    if (requests.length === 0) return [];
+
+    const assocIds = Array.from(new Set(requests.map(r => r.association_id)));
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, logo_url FROM public.associations
+      WHERE id::uuid = ANY(${assocIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const assocMap = new Map(assocs.map(a => [a.id, a]));
+
+    return requests.map(r => {
+      const assoc: any = assocMap.get(r.association_id) ?? { name: "—", logo_url: null };
+      return {
+        requestId: r.id,
+        communityId: r.association_id,
+        name: assoc.name,
+        logoUrl: assoc.logo_url || null,
+        status: r.status,
+        requestedAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+        decidedAt: r.decided_at ? new Date(r.decided_at).toISOString() : null,
+        reason: r.message || null,
+        cancelReason: r.cancel_reason || null,
+      };
+    });
+  }
+
+  async syncCommunityJoinDecisions(userId: string) {
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT id, association_id, status, decided_at
+      FROM public.community_join_requests
+      WHERE user_id = ${userId}::uuid AND status IN ('approved', 'rejected')
+      ORDER BY decided_at DESC NULLS LAST
+      LIMIT 20
+    `.catch(() => [] as any[]);
+
+    if (requests.length === 0) return [];
+
+    const dedupeKeys = requests.map(r => `community_join:${r.id}:${r.status}`);
+
+    const existingNotifs = await this.prisma.$queryRaw<any[]>`
+      SELECT dedupe_key FROM public.business_notifications
+      WHERE recipient_user_id = ${userId}::uuid AND dedupe_key = ANY(${dedupeKeys})
+    `.catch(() => [] as any[]);
+
+    const notifiedKeys = new Set(existingNotifs.map(n => n.dedupe_key));
+    const pendingRequests = requests.filter(r => !notifiedKeys.has(`community_join:${r.id}:${r.status}`));
+
+    if (pendingRequests.length === 0) return [];
+
+    const assocIds = Array.from(new Set(pendingRequests.map(r => r.association_id)));
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name FROM public.associations WHERE id::uuid = ANY(${assocIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const nameMap = new Map(assocs.map(a => [a.id, a.name]));
+    const now = new Date();
+
+    const output: any[] = [];
+    for (const r of pendingRequests) {
+      const name = nameMap.get(r.association_id) || "—";
+      const approved = r.status === 'approved';
+      const notifId = crypto.randomUUID();
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, action_label_key, action_kind, action_target, safe_display_data,
+          priority, status, delivered_at, dedupe_key
+        ) VALUES (
+          ${notifId}::uuid, ${userId}::uuid, 'community', ${r.id}::uuid,
+          ${approved ? 'community.join.approved' : 'community.join.rejected'},
+          ${approved ? 'community_join_approved' : 'community_join_rejected'},
+          ${approved ? 'bc.notif.kind.community_join_approved.title' : 'bc.notif.kind.community_join_rejected.title'},
+          ${approved ? 'bc.notif.kind.community_join_approved.body' : 'bc.notif.kind.community_join_rejected.body'},
+          'bc.notif.action.viewJoinHistory', 'open_route',
+          ${JSON.stringify({ route: "/connect-app/community", search: { tab: "history" } })}::jsonb,
+          ${JSON.stringify({ communityName: name })}::jsonb,
+          'normal', 'delivered', ${now}, ${`community_join:${r.id}:${r.status}`}
+        )
+      `.catch(() => {});
+
+      output.push({
+        communityId: r.association_id,
+        name,
+        status: r.status,
+      });
+    }
+
+    return output;
+  }
+
+  async listCommunityJoinAdminRequests(userId: string) {
+    const managed = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND role = 'admin'
+    `.catch(() => [] as any[]);
+
+    const assocIds = Array.from(new Set(managed.map(m => m.association_id)));
+    if (assocIds.length === 0) return [];
+
+    const requests = await this.prisma.$queryRaw<any[]>`
+      SELECT id, user_id, association_id, status, message, created_at, decided_at
+      FROM public.community_join_requests
+      WHERE association_id::uuid = ANY(${assocIds}::uuid[])
+      ORDER BY created_at DESC
+      LIMIT 100
+    `.catch(() => [] as any[]);
+
+    if (requests.length === 0) return [];
+
+    const requesterIds = Array.from(new Set(requests.map(r => r.user_id)));
+    const profiles = await this.prisma.$queryRaw<any[]>`
+      SELECT id, full_name FROM public.profiles WHERE id::uuid = ANY(${requesterIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name FROM public.associations WHERE id::uuid = ANY(${assocIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const assocMap = new Map(assocs.map(a => [a.id, a.name]));
+
+    return requests.map(r => ({
+      requestId: r.id,
+      communityId: r.association_id,
+      communityName: assocMap.get(r.association_id) || "—",
+      requesterName: profileMap.get(r.user_id) || null,
+      status: r.status,
+      note: r.message || null,
+      requestedAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      decidedAt: r.decided_at ? new Date(r.decided_at).toISOString() : null,
+    }));
+  }
+
+  // ==========================================
+  // BC-Mobile-7B+ — Community Invites
+  // ==========================================
+
+  async listCommunityInvites(userId: string, communityId: string) {
+    const invites = await this.prisma.$queryRaw<any[]>`
+      SELECT id, email, note, status, created_at, responded_at, token, locale, email_subject, email_body, invited_role, accepted_by
+      FROM public.community_invitations
+      WHERE association_id = ${communityId}::uuid AND invited_by = ${userId}::uuid
+      ORDER BY created_at DESC
+    `.catch(() => [] as any[]);
+
+    return invites.map(row => ({
+      inviteRef: row.id,
+      email: row.email,
+      note: row.note || null,
+      status: row.status,
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+      respondedAt: row.responded_at ? new Date(row.responded_at).toISOString() : null,
+      token: row.token,
+      locale: row.locale || "vi",
+      emailSubject: row.email_subject || null,
+      emailBody: row.email_body || null,
+      invitedRole: row.invited_role || "member",
+      acceptedRole: row.status === 'accepted' ? (row.invited_role || "member") : null,
+      canManageRole: row.status === 'accepted' && row.accepted_by !== userId,
+    }));
+  }
+
+  async createCommunityInvite(userId: string, input: any) {
+    const inviteId = crypto.randomUUID();
+    const token = crypto.randomBytes(32).toString('hex');
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_invitations (
+        id, association_id, invited_by, email, note, invite_url, locale, invited_role, status, token, created_at, updated_at
+      ) VALUES (
+        ${inviteId}::uuid, ${input.communityId}::uuid, ${userId}::uuid, ${input.email}, ${input.note || null},
+        ${input.inviteUrl || null}, ${input.locale || 'vi'}, ${input.invitedRole || 'member'}, 'pending', ${token}, ${now}, ${now}
+      )
+    `;
+
+    return {
+      inviteRef: inviteId,
+      token,
+      status: 'pending',
+    };
+  }
+
+  async listCommunityInviteTemplates(userId: string, communityId: string) {
+    const templates = await this.prisma.$queryRaw<any[]>`
+      SELECT locale, subject, body FROM public.community_invite_templates
+      WHERE association_id = ${communityId}::uuid
+    `.catch(() => [] as any[]);
+
+    const mapping = templates.map(t => ({
+      locale: t.locale,
+      subject: t.subject,
+      body: t.body,
+    }));
+
+    return {
+      templates: mapping.length > 0 ? mapping : [
+        { locale: "vi", subject: "Lời mời tham gia cộng đồng", body: "Xin chào, bạn đã được mời." },
+        { locale: "en", subject: "Community Invitation", body: "Hello, you have been invited." }
+      ],
+      canEdit: true,
+    };
+  }
+
+  async saveCommunityInviteTemplate(userId: string, input: any) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_invite_templates (
+        association_id, locale, subject, body, created_at, updated_at
+      ) VALUES (
+        ${input.communityId}::uuid, ${input.locale}, ${input.subject}, ${input.body}, ${now}, ${now}
+      )
+      ON CONFLICT (association_id, locale) DO UPDATE SET
+        subject = EXCLUDED.subject,
+        body = EXCLUDED.body,
+        updated_at = EXCLUDED.updated_at
+    `;
+    return { ok: true };
+  }
+
+  async resetCommunityInviteTemplate(userId: string, input: any) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.community_invite_templates
+      WHERE association_id = ${input.communityId}::uuid AND locale = ${input.locale}
+    `;
+    return { ok: true };
+  }
+
+  async cancelCommunityInvite(userId: string, inviteRef: string) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.community_invitations
+      SET status = 'cancelled', updated_at = ${now}
+      WHERE id = ${inviteRef}::uuid AND invited_by = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  async resendCommunityInvite(userId: string, inviteRef: string, locale?: string) {
+    const now = new Date();
+    if (locale) {
+      await this.prisma.$executeRaw`
+        UPDATE public.community_invitations
+        SET locale = ${locale}, updated_at = ${now}
+        WHERE id = ${inviteRef}::uuid AND invited_by = ${userId}::uuid
+      `;
+    }
+    return { ok: true };
+  }
+
+  async getCommunityInviteByToken(userId: string, token: string) {
+    const invites = await this.prisma.$queryRaw<any[]>`
+      SELECT id, association_id, email, note, status, created_at, invited_role
+      FROM public.community_invitations
+      WHERE token = ${token}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const inv = invites[0];
+    if (!inv) throw new NotFoundException('invite_not_found');
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT name FROM public.associations WHERE id = ${inv.association_id}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const assoc = assocs[0] || { name: "" };
+
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.memberships WHERE user_id = ${userId}::uuid AND association_id = ${inv.association_id}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    return {
+      inviteRef: inv.id,
+      communityId: inv.association_id,
+      communityName: assoc.name,
+      status: inv.status,
+      note: inv.note || null,
+      maskedEmail: inv.email, // simple return without mask for convenience
+      createdAt: inv.created_at ? new Date(inv.created_at).toISOString() : null,
+      alreadyMember: memberships.length > 0,
+      invitedRole: inv.invited_role || "member",
+    };
+  }
+
+  async acceptCommunityInvite(userId: string, token: string, email: string) {
+    const invites = await this.prisma.$queryRaw<any[]>`
+      SELECT id, association_id, email, status, invited_role
+      FROM public.community_invitations
+      WHERE token = ${token}
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const inv = invites[0];
+    if (!inv) throw new NotFoundException('invite_not_found');
+
+    if (inv.email.trim().toLowerCase() !== email.trim().toLowerCase()) {
+      throw new BadRequestException('email_mismatch');
+    }
+
+    if (inv.status !== 'pending') {
+      throw new BadRequestException('not_pending');
+    }
+
+    const communityId = inv.association_id;
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const role = inv.invited_role || "member";
+    const now = new Date();
+
+    if (existing.length === 0) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.memberships (user_id, association_id, role, created_at, updated_at)
+        VALUES (${userId}::uuid, ${communityId}::uuid, ${role}, ${now}, ${now})
+      `;
+    } else if (role === 'admin') {
+      await this.prisma.$executeRaw`
+        UPDATE public.memberships SET role = 'admin', updated_at = ${now} WHERE id = ${existing[0].id}::uuid
+      `;
+    }
+
+    await this.prisma.$executeRaw`
+      UPDATE public.community_invitations
+      SET status = 'accepted', responded_at = ${now}, accepted_by = ${userId}::uuid, updated_at = ${now}
+      WHERE id = ${inv.id}::uuid
+    `;
+
+    return {
+      ok: true,
+      communityId,
+      alreadyMember: existing.length > 0,
+      role,
+    };
+  }
+
+  async updateAcceptedInviteRole(userId: string, inviteRef: string, role: string) {
+    const invites = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id, status, accepted_by FROM public.community_invitations
+      WHERE id = ${inviteRef}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const invite = invites[0];
+    if (!invite || invite.status !== 'accepted' || !invite.accepted_by) {
+      throw new BadRequestException('not_accepted');
+    }
+
+    const communityId = invite.association_id;
+    const targetUserId = invite.accepted_by;
+
+    // Check if viewer is admin
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (!memberships[0] || memberships[0].role !== 'admin') {
+      throw new ForbiddenException('forbidden');
+    }
+
+    // Update role
+    const target = await this.prisma.$queryRaw<any[]>`
+      SELECT id, role FROM public.memberships WHERE user_id = ${targetUserId}::uuid AND association_id = ${communityId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (!target[0]) throw new BadRequestException('not_accepted');
+    const oldRole = target[0].role;
+
+    if (oldRole === role) return { ok: true };
+
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.memberships SET role = ${role}, updated_at = ${now} WHERE id = ${target[0].id}::uuid
+    `;
+
+    const eventId = crypto.randomUUID();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_member_role_events (
+        id, association_id, invitation_id, target_user_id, actor_user_id, old_role, new_role, created_at
+      ) VALUES (
+        ${eventId}::uuid, ${communityId}::uuid, ${inviteRef}::uuid, ${targetUserId}::uuid, ${userId}::uuid, ${oldRole}, ${role}, ${now}
+      )
+    `;
+
+    return { ok: true };
+  }
+
+  async listInviteRoleHistory(userId: string, inviteRef: string) {
+    const invites = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.community_invitations WHERE id = ${inviteRef}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const invite = invites[0];
+    if (!invite) return [];
+
+    // Verify membership
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.memberships WHERE user_id = ${userId}::uuid AND association_id = ${invite.association_id}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) return [];
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, old_role, new_role, created_at, actor_user_id
+      FROM public.community_member_role_events
+      WHERE invitation_id = ${inviteRef}::uuid
+      ORDER BY created_at DESC
+      LIMIT 20
+    `.catch(() => [] as any[]);
+
+    if (rows.length === 0) return [];
+
+    const actorIds = Array.from(new Set(rows.map(r => r.actor_user_id)));
+    const profiles = await this.prisma.$queryRaw<any[]>`
+      SELECT id, full_name FROM public.profiles WHERE id::uuid = ANY(${actorIds}::uuid[])
+    `.catch(() => [] as any[]);
+
+    const nameMap = new Map(profiles.map(p => [p.id, p.full_name]));
+
+    return rows.map(r => ({
+      eventRef: r.id,
+      oldRole: r.old_role,
+      newRole: r.new_role,
+      changedAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      actorName: nameMap.get(r.actor_user_id) || null,
+    }));
+  }
+
+  // ==========================================
+  // BC-Mobile-7B — Community Activity & Opportunities
+  // ==========================================
+
+  async listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) {
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const limit = 10;
+    const now = new Date();
+
+    let events: any[];
+    if (tab === 'registered') {
+      events = await this.prisma.$queryRaw<any[]>`
+        SELECT e.* FROM public.events e
+        JOIN public.event_registrations r ON e.id = r.event_id
+        WHERE e.association_id = ${communityId}::uuid AND r.user_id = ${userId}::uuid AND e.status = 'published'
+        ORDER BY e.start_at ASC
+        OFFSET ${offset} LIMIT ${limit}
+      `.catch(() => [] as any[]);
+    } else {
+      events = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events
+        WHERE association_id = ${communityId}::uuid AND status = 'published' AND start_at >= ${now}
+        ORDER BY start_at ASC
+        OFFSET ${offset} LIMIT ${limit}
+      `.catch(() => [] as any[]);
+    }
+
+    const eventIds = events.map(e => e.id);
+    const registrations = eventIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
+      SELECT event_id FROM public.event_registrations
+      WHERE user_id = ${userId}::uuid AND event_id::uuid = ANY(${eventIds}::uuid[])
+    `.catch(() => [] as any[]) : [];
+
+    const regSet = new Set(registrations.map(r => r.event_id));
+
+    const totalCount = events.length; // rough estimate
+    const items = events.map(e => ({
+      eventRef: e.id,
+      title: e.title,
+      summary: e.summary || null,
+      startAt: e.start_at ? new Date(e.start_at).toISOString() : null,
+      locationLabel: e.location_label || null,
+      photoUrl: e.photo_url || null,
+      registered: regSet.has(e.id),
+    }));
+
+    return {
+      items,
+      totalCount,
+      nextOffset: items.length === limit ? offset + limit : null,
+    };
+  }
+
+  async getCommunityEventDetail(userId: string, communityId: string, eventRef: string) {
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const events = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events
+      WHERE association_id = ${communityId}::uuid AND id = ${eventRef}::uuid AND status = 'published'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const e = events[0];
+    if (!e) throw new NotFoundException('event_not_found');
+
+    const registrations = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.event_registrations
+      WHERE user_id = ${userId}::uuid AND event_id = ${eventRef}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    return {
+      event: {
+        eventRef: e.id,
+        title: e.title,
+        summary: e.summary || null,
+        description: e.description || null,
+        startAt: e.start_at ? new Date(e.start_at).toISOString() : null,
+        endAt: e.end_at ? new Date(e.end_at).toISOString() : null,
+        locationLabel: e.location_label || null,
+        photoUrl: e.photo_url || null,
+        registered: registrations.length > 0,
+      },
+      communityName: "",
+    };
+  }
+
+  async registerCommunityEvent(userId: string, communityId: string, eventRef: string) {
+    const now = new Date();
+    const regId = crypto.randomUUID();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.event_registrations (
+        id, event_id, user_id, status, created_at, updated_at
+      ) VALUES (
+        ${regId}::uuid, ${eventRef}::uuid, ${userId}::uuid, 'registered', ${now}, ${now}
+      )
+      ON CONFLICT (event_id, user_id) DO NOTHING
+    `;
+    return { ok: true };
+  }
+
+  async cancelCommunityEventRegistration(userId: string, communityId: string, eventRef: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_registrations
+      WHERE event_id = ${eventRef}::uuid AND user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  async listCommunityOpportunities(userId: string, communityId: string, query: string, offset: number) {
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const limit = 10;
+    const opportunities = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.opportunities
+      WHERE association_id = ${communityId}::uuid AND status = 'published'
+        AND (${query} = '' OR title ILIKE ${'%' + query + '%'})
+      ORDER BY created_at DESC
+      OFFSET ${offset} LIMIT ${limit}
+    `.catch(() => [] as any[]);
+
+    const oppIds = opportunities.map(o => o.id);
+    const interests = oppIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
+      SELECT opportunity_id, interest_level FROM public.opportunity_interests
+      WHERE user_id = ${userId}::uuid AND opportunity_id::uuid = ANY(${oppIds}::uuid[])
+    `.catch(() => [] as any[]) : [];
+
+    const interestMap = new Map(interests.map(i => [i.opportunity_id, i.interest_level]));
+
+    const totalCount = opportunities.length; // rough estimate
+    const items = opportunities.map(o => ({
+      opportunityRef: o.id,
+      title: o.title,
+      summary: o.summary || null,
+      endsAt: o.ends_at ? new Date(o.ends_at).toISOString() : null,
+      valLabel: o.value_label || null,
+      status: o.status,
+      interested: interestMap.has(o.id),
+      interestLevel: interestMap.get(o.id) || null,
+    }));
+
+    return {
+      items,
+      totalCount,
+      nextOffset: items.length === limit ? offset + limit : null,
+    };
+  }
+
+  async getCommunityOpportunityDetail(userId: string, communityId: string, opportunityRef: string) {
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+
+    const opportunities = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.opportunities
+      WHERE association_id = ${communityId}::uuid AND id = ${opportunityRef}::uuid AND status = 'published'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const o = opportunities[0];
+    if (!o) throw new NotFoundException('opportunity_not_found');
+
+    const interests = await this.prisma.$queryRaw<any[]>`
+      SELECT interest_level FROM public.opportunity_interests
+      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const followups = await this.prisma.$queryRaw<any[]>`
+      SELECT progress, note, next_action_at FROM public.community_opportunity_followups
+      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const f = followups[0] || { progress: 'planned', note: '', next_action_at: null };
+
+    const attachments = await this.prisma.$queryRaw<any[]>`
+      SELECT id, kind, title, url, storage_path, mime_type, size_bytes
+      FROM public.community_opportunity_followup_attachments
+      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
+    `.catch(() => [] as any[]);
+
+    return {
+      opportunity: {
+        opportunityRef: o.id,
+        title: o.title,
+        summary: o.summary || null,
+        description: o.description || null,
+        endsAt: o.ends_at ? new Date(o.ends_at).toISOString() : null,
+        valLabel: o.value_label || null,
+        interested: interests.length > 0,
+        interestLevel: interests[0]?.interest_level || null,
+        progress: f.progress,
+        progressNote: f.note,
+        nextActionAt: f.next_action_at ? new Date(f.next_action_at).toISOString() : null,
+        attachments: attachments.map(a => ({
+          id: a.id,
+          kind: a.kind,
+          title: a.title,
+          url: a.url,
+          storagePath: a.storage_path,
+          mimeType: a.mime_type,
+          sizeBytes: a.size_bytes ? Number(a.size_bytes) : 0,
+        })),
+      },
+      communityName: "",
+    };
+  }
+
+  async expressCommunityOpportunityInterest(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+    interestLevel?: string
+  ) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.opportunity_interests (
+        id, opportunity_id, user_id, interest_level, created_at, updated_at
+      ) VALUES (
+        ${crypto.randomUUID()}::uuid, ${opportunityRef}::uuid, ${userId}::uuid, ${interestLevel || 'high'}, ${now}, ${now}
+      )
+      ON CONFLICT (opportunity_id, user_id) DO UPDATE SET
+        interest_level = EXCLUDED.interest_level,
+        updated_at = EXCLUDED.updated_at
+    `;
+    return { ok: true };
+  }
+
+  async withdrawCommunityOpportunityInterest(userId: string, communityId: string, opportunityRef: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.opportunity_interests
+      WHERE opportunity_id = ${opportunityRef}::uuid AND user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
+
+  async scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, opportunityRef: string, inDays: number) {
+    const nextAction = new Date(Date.now() + inDays * 24 * 60 * 60 * 1000);
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_opportunity_followups (
+        user_id, opportunity_id, next_action_at, progress, note, created_at, updated_at
+      ) VALUES (
+        ${userId}::uuid, ${opportunityRef}::uuid, ${nextAction}, 'planned', '', ${now}, ${now}
+      )
+      ON CONFLICT (user_id, opportunity_id) DO UPDATE SET
+        next_action_at = EXCLUDED.next_action_at,
+        updated_at = EXCLUDED.updated_at
+    `;
+    return { ok: true };
+  }
+
+  async updateCommunityOpportunityFollowUp(userId: string, communityId: string, opportunityRef: string, action: string) {
+    const now = new Date();
+    if (action === 'done' || action === 'cancel') {
+      await this.prisma.$executeRaw`
+        UPDATE public.community_opportunity_followups
+        SET next_action_at = NULL, updated_at = ${now}
+        WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
+      `;
+    }
+    return { ok: true };
+  }
+
+  async saveCommunityOpportunityProgress(userId: string, communityId: string, opportunityRef: string, progress: string, note: string) {
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_opportunity_followups (
+        user_id, opportunity_id, progress, note, created_at, updated_at
+      ) VALUES (
+        ${userId}::uuid, ${opportunityRef}::uuid, ${progress}, ${note}, ${now}, ${now}
+      )
+      ON CONFLICT (user_id, opportunity_id) DO UPDATE SET
+        progress = EXCLUDED.progress,
+        note = EXCLUDED.note,
+        updated_at = EXCLUDED.updated_at
+    `;
+    return { ok: true };
+  }
+
+  async addCommunityOpportunityAttachment(userId: string, input: any) {
+    const attachmentId = crypto.randomUUID();
+    const now = new Date();
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.community_opportunity_followup_attachments (
+        id, user_id, opportunity_id, kind, title, url, storage_path, mime_type, size_bytes, created_at, updated_at
+      ) VALUES (
+        ${attachmentId}::uuid, ${userId}::uuid, ${input.opportunityRef}::uuid, ${input.kind},
+        ${input.title || null}, ${input.url || null}, ${input.storagePath || null},
+        ${input.mimeType || null}, ${input.sizeBytes || null}, ${now}, ${now}
+      )
+    `;
+    return { ok: true };
+  }
+
+  async removeCommunityOpportunityAttachment(userId: string, attachmentId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.community_opportunity_followup_attachments
+      WHERE id = ${attachmentId}::uuid AND user_id = ${userId}::uuid
+    `;
+    return { ok: true };
+  }
 }
+
+// ==========================================
+// OCR & AI Suggestions Global Helper Functions
+// ==========================================
+
+function parsePersonId(personId: string) {
+  const kindChar = personId.substring(0, 1);
+  const idVal = personId.substring(2);
+  let targetKind = 'connection';
+  let targetUserId: string | null = null;
+  let targetCardId: string | null = null;
+  let targetGuestId: string | null = null;
+
+  if (kindChar === 'u') {
+    targetKind = 'connection';
+    targetUserId = idVal;
+  } else if (kindChar === 'c') {
+    targetKind = 'saved_card';
+    targetCardId = idVal;
+  } else if (kindChar === 'g') {
+    targetKind = 'guest_contact';
+    targetGuestId = idVal;
+  }
+
+  return { targetKind, targetUserId, targetCardId, targetGuestId };
+}
+
+function composePersonId(targetKind: string, targetUserId: string | null, targetCardId: string | null, targetGuestId: string | null) {
+  if (targetKind === 'connection' && targetUserId) return `u:${targetUserId}`;
+  if (targetKind === 'saved_card' && targetCardId) return `c:${targetCardId}`;
+  if (targetKind === 'guest_contact' && targetGuestId) return `g:${targetGuestId}`;
+  return '';
+}
+
+const OCR_MODEL_MAX_LINES = 40;
+const ocrModelOutputSchema = z
+  .object({
+    isBusinessCard: z.boolean(),
+    unusableReason: z.string().max(120).nullish(),
+    lines: z
+      .array(
+        z
+          .object({
+            text: z.string().min(1).max(200),
+            confidence: z.number().min(0).max(1),
+          })
+          .strict(),
+      )
+      .max(OCR_MODEL_MAX_LINES),
+    displayNameLine: z.number().int().min(0).nullable(),
+    titleLine: z.number().int().min(0).nullable(),
+    companyNameLine: z.number().int().min(0).nullable(),
+    addressLine: z.number().int().min(0).nullable(),
+    qrPresent: z.boolean().nullish(),
+  })
+  .strict();
+
+function normalizeText(s: string): string {
+  return s.normalize("NFC").replace(/\s+/g, " ").trim();
+}
+
+function clamp01(n: number): number {
+  return Math.min(1, Math.max(0, n));
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
+const EMAIL_SUSPECT_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*,[A-Za-z]{2,}/g;
+
+function extractEmails(lines: any[], warnings: string[]): any[] {
+  const out: any[] = [];
+  const seen = new Set<string>();
+  let uncertain = false;
+  for (const line of lines) {
+    for (const m of line.text.matchAll(EMAIL_RE)) {
+      const value = m[0].toLowerCase();
+      if (seen.has(value)) continue;
+      seen.add(value);
+      out.push({ value, confidence: clamp01(line.confidence), sourceText: line.text });
+    }
+    for (const m of line.text.matchAll(EMAIL_SUSPECT_RE)) {
+      const value = m[0].toLowerCase();
+      if (seen.has(value)) continue;
+      seen.add(value);
+      uncertain = true;
+      out.push({
+        value,
+        confidence: round2(clamp01(line.confidence) * 0.5),
+        sourceText: line.text,
+      });
+    }
+  }
+  if (uncertain) warnings.push("email_uncertain");
+  return out;
+}
+
+const PHONE_RE = /\+?\d[\d\s().-]{5,}\d/g;
+
+function detectPhoneLabel(lineText: string): string | undefined {
+  const s = lineText.toLowerCase();
+  if (s.includes("fax")) return "fax";
+  if (s.includes("hotline")) return "hotline";
+  const tokens = s.split(/[^a-z0-9à-ỹ]+/u).filter(Boolean);
+  const has = (set: readonly string[]) => tokens.some((tok) => set.includes(tok));
+  if (has(["mobile", "mobi", "cell", "hp"]) || s.includes("di động") || s.includes("di dong")) {
+    return "mobile";
+  }
+  if (
+    has(["office", "tel", "phone", "đt", "dt"]) ||
+    s.includes("văn phòng") ||
+    s.includes("van phong")
+  ) {
+    return "office";
+  }
+  return undefined;
+}
+
+function normalizePhoneDigits(raw: string): string {
+  const plus = raw.trimStart().startsWith("+");
+  const digits = raw.replace(/\D/g, "");
+  return plus ? `+${digits}` : digits;
+}
+
+function extractPhones(lines: any[], warnings: string[]): any[] {
+  const out: any[] = [];
+  const seen = new Set<string>();
+  let uncertain = false;
+  for (const line of lines) {
+    for (const m of line.text.matchAll(PHONE_RE)) {
+      const digits = m[0].replace(/\D/g, "");
+      if (digits.length < 7 || digits.length > 15) continue;
+      const value = normalizePhoneDigits(m[0]);
+      if (seen.has(value)) continue;
+      seen.add(value);
+      const label = detectPhoneLabel(line.text);
+      if (line.confidence < 0.5 || digits.length < 8) uncertain = true;
+      out.push({
+        value,
+        confidence: clamp01(line.confidence),
+        sourceText: line.text,
+        ...(label ? { label } : {}),
+      });
+    }
+  }
+  if (uncertain) warnings.push("phone_uncertain");
+  return out;
+}
+
+const URL_RE = /(?:https?:\/\/|www\.)[^\s<>()"']+/gi;
+
+function extractWebsite(lines: any[]): any | undefined {
+  for (const line of lines) {
+    for (const m of line.text.matchAll(URL_RE)) {
+      let raw = m[0].replace(/[.,;:!?)}\]]+$/, "");
+      if (raw.includes("@")) continue;
+      if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== "http:" && u.protocol !== "https:") continue;
+        return { value: u.toString(), confidence: clamp01(line.confidence), sourceText: line.text };
+      } catch {
+        continue;
+      }
+    }
+  }
+  return undefined;
+}
+
+const CONTACT_PATTERN = /@|\(?\+?\d[\d\s().-]{6,}\d/;
+
+function pickClassifiedLine(
+  lines: any[],
+  index: number | null,
+  opts: { maxLen: number; forbidContactPattern?: boolean },
+): any | undefined {
+  if (index === null) return undefined;
+  const line = lines[index];
+  if (!line) return undefined;
+  const value = normalizeText(line.text);
+  if (!value || value.length > opts.maxLen) return undefined;
+  if (opts.forbidContactPattern && CONTACT_PATTERN.test(value)) return undefined;
+  return { value, confidence: clamp01(line.confidence), sourceText: line.text };
+}
+
+function buildCandidateFromModel(model: any, scanId: string): any {
+  if (!model.isBusinessCard) return { ok: false, code: "unusable" };
+
+  const lines: any[] = model.lines
+    .map((l) => ({ text: normalizeText(l.text), confidence: clamp01(l.confidence) }))
+    .filter((l) => l.text.length > 0);
+  if (lines.length === 0) return { ok: false, code: "unusable" };
+
+  const warnings: string[] = [];
+  if (model.qrPresent) warnings.push("qr_present");
+
+  const displayName = pickClassifiedLine(lines, model.displayNameLine, {
+    maxLen: 80,
+    forbidContactPattern: true,
+  });
+  if (model.displayNameLine !== null && !displayName) warnings.push("name_needs_review");
+
+  const title = pickClassifiedLine(lines, model.titleLine, { maxLen: 120 });
+  if (model.titleLine !== null && !title) warnings.push("title_needs_review");
+
+  const companyName = pickClassifiedLine(lines, model.companyNameLine, { maxLen: 120 });
+  if (model.companyNameLine !== null && !companyName) warnings.push("company_needs_review");
+
+  const address = pickClassifiedLine(lines, model.addressLine, { maxLen: 160 });
+  if (model.addressLine !== null && !address) warnings.push("address_needs_review");
+
+  const emails = extractEmails(lines, warnings);
+  const phones = extractPhones(lines, warnings);
+  const website = extractWebsite(lines);
+
+  if (!displayName) warnings.push("no_name");
+  const hasChannel = phones.length > 0 || emails.length > 0 || website !== undefined;
+  if (!hasChannel) warnings.push("no_contact_channel");
+  if (!displayName && !hasChannel) return { ok: false, code: "unusable" };
+
+  const present: any[] = [
+    ...(displayName ? [displayName] : []),
+    ...(title ? [title] : []),
+    ...(companyName ? [companyName] : []),
+    ...(website ? [website] : []),
+    ...(address ? [address] : []),
+    ...phones,
+    ...emails,
+  ];
+  const overallConfidence =
+    present.length === 0
+      ? 0
+      : round2(present.reduce((sum, f) => sum + f.confidence, 0) / present.length);
+
+  return {
+    ok: true,
+    candidate: {
+      schemaVersion: 1,
+      scanId,
+      status: "candidate",
+      fields: {
+        ...(displayName ? { displayName } : {}),
+        ...(title ? { title } : {}),
+        ...(companyName ? { companyName } : {}),
+        phones,
+        emails,
+        ...(website ? { website } : {}),
+        ...(address ? { address } : {}),
+      },
+      warnings,
+      overallConfidence,
+    },
+  };
+}
+
+function candidateFromRawModelOutput(raw: unknown, scanId: string): any {
+  const parsed = ocrModelOutputSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, code: "invalid_output" };
+  const built = buildCandidateFromModel(parsed.data, scanId);
+  if (!built.ok) return { ok: false, code: "unusable" };
+  return { ok: true, candidate: built.candidate };
+}
+
+async function runCardOcrVision(imageDataUrl: string): Promise<unknown> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new Error("OCR runtime is not configured");
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      temperature: 0.1,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a business-card OCR extraction engine inside a contact-acquisition pipeline.
+Return STRICT JSON only:
+{
+  "isBusinessCard": boolean,
+  "unusableReason": string | null,
+  "lines": [ { "text": string, "confidence": number } ],
+  "displayNameLine": number | null,
+  "titleLine": number | null,
+  "companyNameLine": number | null,
+  "addressLine": number | null,
+  "qrPresent": boolean
+}`
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Read this business card image and return JSON." },
+            { type: "image_url", image_url: { url: imageDataUrl } }
+          ]
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) throw new Error(`OCR provider error ${response.status}`);
+  const json = await response.json() as any;
+  const content = json?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OCR provider returned an empty response");
+  return JSON.parse(content);
+}
+
+async function suggestCustomerTags(input: {
+  stageLabel: string;
+  displayName: string;
+  companyName: string;
+  note: string;
+  logs: string[];
+  needs: string[];
+  existingTagNames: string[];
+  currentTagNames: string[];
+  approvedTagNames?: string[];
+  rejectedTagNames?: string[];
+}) {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) return { ok: false, error: "unavailable" as const };
+
+  const context = [
+    `Tên: ${input.displayName || "(không rõ)"}`,
+    `Công ty: ${input.companyName || "(không rõ)"}`,
+    `Giai đoạn: ${input.stageLabel}`,
+    `Ghi chú: ${input.note || "(trống)"}`,
+    `Lịch sử chăm sóc:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join("\n") : "(trống)"}`,
+    `Điểm đau & nhu cầu:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join("\n") : "(trống)"}`,
+    `Nhãn đã gắn: ${input.currentTagNames.join(", ") || "(chưa có)"}`,
+    `Danh mục nhãn hiện có: ${input.existingTagNames.join(", ") || "(chưa có)"}`,
+    `Nhãn người dùng đánh giá ĐÚNG trước đây: ${(input.approvedTagNames ?? []).join(", ") || "(chưa có)"}`,
+    `Nhãn người dùng đánh giá SAI trước đây (tuyệt đối không đề xuất lại): ${
+      (input.rejectedTagNames ?? []).join(", ") || "(chưa có)"
+    }`,
+  ].join("\n");
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: `Bạn là trợ lý phân nhóm khách hàng cho một người bán hàng cá nhân.
+Đề xuất tối đa 5 NHÃN ngắn để phân nhóm khách hàng.
+Trả về DUY NHẤT JSON dạng: {"suggestions":[{"name":"...","reason":"...","confidence":0.8}]}. Không markdown.`
+        },
+        { role: "user", content: context }
+      ]
+    })
+  });
+
+  if (!response.ok) return { ok: false, error: "unavailable" as const };
+  const json = await response.json() as any;
+  const content = json?.choices?.[0]?.message?.content ?? "";
+  
+  try {
+    const text = content.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) return { ok: false, error: "unavailable" as const };
+    const parsed = JSON.parse(text.slice(start, end + 1)) as any;
+    const rawSuggestions = (parsed.suggestions ?? []).map((s: any) => ({
+      name: String(s.name || '').trim().slice(0, 24),
+      reason: String(s.reason || '').trim().slice(0, 120),
+      confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
+    })).filter((s: any) => s.name.length > 0).slice(0, 5);
+
+    const existing = new Set(input.existingTagNames.map(n => n.toLowerCase()));
+    const already = new Set(input.currentTagNames.map(n => n.toLowerCase()));
+    const seen = new Set<string>();
+    const suggestions: any[] = [];
+    
+    for (const s of rawSuggestions) {
+      const key = s.name.toLowerCase();
+      if (seen.has(key) || already.has(key)) continue;
+      seen.add(key);
+      suggestions.push({
+        name: s.name,
+        reason: s.reason,
+        existing: existing.has(key),
+        confidence: s.confidence,
+      });
+    }
+
+    return { ok: true, suggestions };
+  } catch {
+    return { ok: false, error: "unavailable" as const };
+  }
+}
+
+
 
 

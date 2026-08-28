@@ -20,6 +20,7 @@ import {
   bcMobileMomentPhotoSlotsFn,
   bcMobileMomentPhotosFn,
 } from "@/lib/business-connect/mobile/moment.functions";
+import { uploadFileToNest } from "@/lib/api-client";
 
 const MOMENT_MEDIA_BUCKET = "relationship-moments";
 
@@ -105,16 +106,16 @@ export function MomentPhotosEditor({
       }
 
       const uploaded: string[] = [];
+      const mediaPaths: Record<string, string> = {};
       for (let i = 0; i < slots.photos.length; i += 1) {
         const slot = slots.photos[i]!;
-        const { error } = await supabase.storage
-          .from(MOMENT_MEDIA_BUCKET)
-          .upload(slot.storagePath, blobs[i]!, {
-            contentType: "image/jpeg",
-            cacheControl: "31536000",
-            upsert: true,
-          });
-        if (!error) uploaded.push(slot.mediaId);
+        try {
+          const minioPath = await uploadFileToNest(blobs[i]!, `${slot.mediaId}.jpg`);
+          mediaPaths[slot.mediaId] = minioPath;
+          uploaded.push(slot.mediaId);
+        } catch (err) {
+          console.error("Upload error for slot:", slot.mediaId, err);
+        }
       }
 
       await bcMobileMomentPhotoCommitFn({
@@ -122,6 +123,7 @@ export function MomentPhotosEditor({
           momentId,
           addedMediaIds: slots.photos.map((s) => s.mediaId),
           uploadedMediaIds: uploaded,
+          mediaPaths,
         },
       });
 

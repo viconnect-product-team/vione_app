@@ -1,9 +1,10 @@
 // BC-Mobile-7B+ — Community news server-fn thin wrappers.
-// Module scope: imports, erased types, exported server functions only.
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchNestApiFromServer } from "../../api-client";
 import type { CommunityNewsDetailDTO, CommunityNewsPageDTO } from "./community-news.types";
 
 const listInput = z.object({
@@ -15,13 +16,10 @@ export const listCommunityNewsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => listInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsPageDTO | null> => {
-    const { listCommunityNews } = await import("./community-news.server");
-    return listCommunityNews({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      offset: data.offset,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
+    return fetchNestApiFromServer(`/connect-app/community/news/list?${queryParams.toString()}`, context.token);
   });
 
 const detailInput = z.object({
@@ -33,11 +31,8 @@ export const getCommunityNewsDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => detailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsDetailDTO | null> => {
-    const { getCommunityNewsDetail } = await import("./community-news.server");
-    return getCommunityNewsDetail({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      newsRef: data.newsRef,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    queryParams.set("newsRef", data.newsRef);
+    return fetchNestApiFromServer(`/connect-app/community/news/detail?${queryParams.toString()}`, context.token);
   });

@@ -1,6 +1,5 @@
-// BC-Mobile-7B — Community activity server-fn thin wrappers (module scope:
-// imports, erased types, exported server functions only). All logic lives in
-// community-activity.server.ts; actors always come from requireSupabaseAuth.
+// BC-Mobile-7B — Community activity server-fn thin wrappers.
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -27,14 +26,11 @@ export const listCommunityEventsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventsInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventPageDTO | null> => {
-    const { listCommunityEvents } = await import("./community-activity.server");
-    return listCommunityEvents({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      tab: data.tab,
-      offset: data.offset,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    queryParams.set("tab", data.tab);
+    if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
+    return fetchNestApiFromServer(`/connect-app/community/activity/events/list?${queryParams.toString()}`, context.token);
   });
 
 const eventDetailInput = z.object({
@@ -46,25 +42,19 @@ export const getCommunityEventDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventDetailDTO | null> => {
-    const { getCommunityEventDetail } = await import("./community-activity.server");
-    return getCommunityEventDetail({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      eventRef: data.eventRef,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    queryParams.set("eventRef", data.eventRef);
+    return fetchNestApiFromServer(`/connect-app/community/activity/events/detail?${queryParams.toString()}`, context.token);
   });
 
 export const registerCommunityEventFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { registerCommunityEvent } = await import("./community-activity.server");
-    return registerCommunityEvent({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      eventRef: data.eventRef,
+    return fetchNestApiFromServer("/connect-app/community/activity/events/register", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -72,12 +62,9 @@ export const cancelCommunityEventRegistrationFn = createServerFn({ method: "POST
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { cancelCommunityEventRegistration } = await import("./community-activity.server");
-    return cancelCommunityEventRegistration({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      eventRef: data.eventRef,
+    return fetchNestApiFromServer("/connect-app/community/activity/events/cancel-registration", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -91,14 +78,11 @@ export const listCommunityOpportunitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunitiesInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityPageDTO | null> => {
-    const { listCommunityOpportunities } = await import("./community-activity.server");
-    return listCommunityOpportunities({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      query: data.query,
-      offset: data.offset,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    if (data.query) queryParams.set("query", data.query);
+    if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
+    return fetchNestApiFromServer(`/connect-app/community/activity/opportunities/list?${queryParams.toString()}`, context.token);
   });
 
 const opportunityDetailInput = z.object({
@@ -110,13 +94,10 @@ export const getCommunityOpportunityDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityDetailDTO | null> => {
-    const { getCommunityOpportunityDetail } = await import("./community-activity.server");
-    return getCommunityOpportunityDetail({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-    });
+    const queryParams = new URLSearchParams();
+    queryParams.set("communityId", data.communityId);
+    queryParams.set("opportunityRef", data.opportunityRef);
+    return fetchNestApiFromServer(`/connect-app/community/activity/opportunities/detail?${queryParams.toString()}`, context.token);
   });
 
 const opportunityInterestInput = opportunityDetailInput.extend({
@@ -127,13 +108,9 @@ export const expressCommunityOpportunityInterestFn = createServerFn({ method: "P
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityInterestInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { expressCommunityOpportunityInterest } = await import("./community-activity.server");
-    return expressCommunityOpportunityInterest({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-      interestLevel: data.interestLevel,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/express-interest", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -141,12 +118,9 @@ export const withdrawCommunityOpportunityInterestFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { withdrawCommunityOpportunityInterest } = await import("./community-activity.server");
-    return withdrawCommunityOpportunityInterest({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/withdraw-interest", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -158,13 +132,9 @@ export const scheduleCommunityOpportunityFollowUpFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => followUpScheduleInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { scheduleCommunityOpportunityFollowUp } = await import("./community-activity.server");
-    return scheduleCommunityOpportunityFollowUp({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-      inDays: data.inDays,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/schedule-followup", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -176,13 +146,9 @@ export const updateCommunityOpportunityFollowUpFn = createServerFn({ method: "PO
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => followUpUpdateInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { updateCommunityOpportunityFollowUp } = await import("./community-activity.server");
-    return updateCommunityOpportunityFollowUp({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-      action: data.action,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/update-followup", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -195,14 +161,9 @@ export const saveCommunityOpportunityProgressFn = createServerFn({ method: "POST
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => progressInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { saveCommunityOpportunityProgress } = await import("./community-activity.server");
-    return saveCommunityOpportunityProgress({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-      progress: data.progress,
-      note: data.note ?? null,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/save-progress", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -219,18 +180,9 @@ export const addCommunityOpportunityAttachmentFn = createServerFn({ method: "POS
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => attachmentAddInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { addCommunityOpportunityAttachment } = await import("./community-activity.server");
-    return addCommunityOpportunityAttachment({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      opportunityRef: data.opportunityRef,
-      kind: data.kind,
-      title: data.title ?? null,
-      url: data.url ?? null,
-      storagePath: data.storagePath ?? null,
-      mimeType: data.mimeType ?? null,
-      sizeBytes: data.sizeBytes ?? null,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/add-attachment", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -240,11 +192,9 @@ export const removeCommunityOpportunityAttachmentFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => attachmentRemoveInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { removeCommunityOpportunityAttachment } = await import("./community-activity.server");
-    return removeCommunityOpportunityAttachment({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      attachmentId: data.attachmentId,
+    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/remove-attachment", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 

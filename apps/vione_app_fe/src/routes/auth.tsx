@@ -5,13 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 import { getPostLoginRouteFn } from "@/lib/landing-route.functions";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { LangSwitcher } from "@/components/LangSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { LuxuryLangSwitcher } from "@/components/LuxuryLangSwitcher";
 import { toast } from "sonner";
 import { ChevronLeft, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConnectAppSignIn } from "@/components/business-connect/mobile/ConnectAppSignIn";
+import { ViOneLogo } from "@/components/business-connect/mobile/ViOneLogo";
 import { AuthCardScanSheet } from "@/components/business-connect/mobile/AuthCardScanSheet";
 import { rememberScannedCard } from "@/lib/business-connect/mobile/auth-scan";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
@@ -436,24 +436,17 @@ function AuthPage() {
       />
 
       <div className="relative w-full max-w-sm rounded-3xl border border-border bg-card p-7 shadow-elevated">
-        <div className="flex items-center justify-between">
-          <Link
-            to="/landing"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
+        <div className="absolute right-4 top-4 flex items-center gap-3 md:right-8 md:top-8">
+          <Link to="/" className="text-sm font-medium hover:underline text-muted-foreground mr-1">
             {t("auth.backToLanding")}
           </Link>
-          <LangSwitcher />
-          <ThemeSwitcher />
+          <LuxuryLangSwitcher />
         </div>
 
         {/* Brand crest */}
         <div className="mt-6 flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-primary/10">
-            <Crown className="h-7 w-7 text-primary" />
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-primary">
+          <ViOneLogo className="h-8 w-auto text-primary" />
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-primary">
             {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">{t("auth.subtitle")}</p>

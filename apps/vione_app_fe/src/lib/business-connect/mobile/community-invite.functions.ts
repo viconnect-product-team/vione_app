@@ -1,23 +1,21 @@
 // BC — Community email invite server fns (thin wrappers only).
+// Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchNestApiFromServer } from "../../api-client";
 import type { CommunityInviteDTO } from "./community-invite.server";
 import type { CommunityInviteTemplateDTO } from "./community-invite-template";
 
 const communityIdSchema = z.string().uuid();
+const localeSchema = z.enum(["vi", "en"]);
 
 export const listCommunityInvitesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ communityId: communityIdSchema }).parse(i))
   .handler(async ({ data, context }): Promise<CommunityInviteDTO[]> => {
-    const { listCommunityInvites } = await import("./community-invite.server");
-    return listCommunityInvites({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-    });
+    return fetchNestApiFromServer(`/connect-app/community/invite/list?communityId=${data.communityId}`, context.token);
   });
 
 const createInviteInput = z.object({
@@ -33,20 +31,11 @@ export const createCommunityInviteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => createInviteInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { createCommunityInvite } = await import("./community-invite.server");
-    return createCommunityInvite({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      email: data.email,
-      note: data.note ?? null,
-      inviteUrl: data.inviteUrl ?? null,
-      locale: data.locale ?? "vi",
-      invitedRole: data.invitedRole ?? "member",
+    return fetchNestApiFromServer("/connect-app/community/invite/create", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
-
-const localeSchema = z.enum(["vi", "en"]);
 
 export const listCommunityInviteTemplatesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -56,12 +45,7 @@ export const listCommunityInviteTemplatesFn = createServerFn({ method: "GET" })
       data,
       context,
     }): Promise<{ templates: CommunityInviteTemplateDTO[]; canEdit: boolean }> => {
-      const { listCommunityInviteTemplates } = await import("./community-invite.server");
-      return listCommunityInviteTemplates({
-        user: context.supabase as never,
-        viewerId: context.userId,
-        communityId: data.communityId,
-      });
+      return fetchNestApiFromServer(`/connect-app/community/invite/templates?communityId=${data.communityId}`, context.token);
     },
   );
 
@@ -78,14 +62,9 @@ export const saveCommunityInviteTemplateFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { saveCommunityInviteTemplate } = await import("./community-invite.server");
-    return saveCommunityInviteTemplate({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      locale: data.locale,
-      subject: data.subject,
-      body: data.body,
+    return fetchNestApiFromServer("/connect-app/community/invite/save-template", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -95,12 +74,9 @@ export const resetCommunityInviteTemplateFn = createServerFn({ method: "POST" })
     z.object({ communityId: communityIdSchema, locale: localeSchema }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { resetCommunityInviteTemplate } = await import("./community-invite.server");
-    return resetCommunityInviteTemplate({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      communityId: data.communityId,
-      locale: data.locale,
+    return fetchNestApiFromServer("/connect-app/community/invite/reset-template", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -108,11 +84,9 @@ export const cancelCommunityInviteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ inviteRef: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { cancelCommunityInvite } = await import("./community-invite.server");
-    return cancelCommunityInvite({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      inviteRef: data.inviteRef,
+    return fetchNestApiFromServer("/connect-app/community/invite/cancel", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -124,12 +98,9 @@ export const resendCommunityInviteFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { resendCommunityInvite } = await import("./community-invite.server");
-    return resendCommunityInvite({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      inviteRef: data.inviteRef,
-      locale: data.locale,
+    return fetchNestApiFromServer("/connect-app/community/invite/resend", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -139,8 +110,7 @@ export const getCommunityInviteByTokenFn = createServerFn({ method: "GET" })
     z.object({ token: z.string().trim().min(8).max(120) }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { getCommunityInviteByToken } = await import("./community-invite.server");
-    return getCommunityInviteByToken({ viewerId: context.userId, token: data.token });
+    return fetchNestApiFromServer(`/connect-app/community/invite/by-token?token=${encodeURIComponent(data.token)}`, context.token);
   });
 
 export const acceptCommunityInviteFn = createServerFn({ method: "POST" })
@@ -154,11 +124,9 @@ export const acceptCommunityInviteFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { acceptCommunityInviteByToken } = await import("./community-invite.server");
-    return acceptCommunityInviteByToken({
-      viewerId: context.userId,
-      token: data.token,
-      email: data.email,
+    return fetchNestApiFromServer("/connect-app/community/invite/accept", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -170,12 +138,9 @@ export const updateAcceptedInviteRoleFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { updateAcceptedInviteRole } = await import("./community-invite.server");
-    return updateAcceptedInviteRole({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      inviteRef: data.inviteRef,
-      role: data.role,
+    return fetchNestApiFromServer("/connect-app/community/invite/update-role", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -183,10 +148,5 @@ export const listInviteRoleHistoryFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ inviteRef: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { listInviteRoleHistory } = await import("./community-invite.server");
-    return listInviteRoleHistory({
-      user: context.supabase as never,
-      viewerId: context.userId,
-      inviteRef: data.inviteRef,
-    });
+    return fetchNestApiFromServer(`/connect-app/community/invite/role-history?inviteRef=${data.inviteRef}`, context.token);
   });
