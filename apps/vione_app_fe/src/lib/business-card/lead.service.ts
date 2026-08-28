@@ -49,7 +49,8 @@ function readReplies(meta: Record<string, unknown> | null): LeadReplyEntry[] {
     }));
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const NEST_API = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`;
 const getHeaders = (token?: string): Record<string, string> => {
   const defaultToken = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
   const t = token || defaultToken;

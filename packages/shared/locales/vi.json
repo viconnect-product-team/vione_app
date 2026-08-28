@@ -6527,5 +6527,7 @@
   "bc.mobile.community.opportunities.contactNote": "Thông tin liên hệ chỉ khả dụng khi bạn gửi Quan tâm hoặc qua hồ sơ người đăng.",
   "bc.mobile.community.opportunities.closedNote": "Cơ hội này không còn nhận quan tâm.",
   "bc.mobile.community.opportunities.openOpportunity": "Xem chi tiết cơ hội",
-  "bc.mobile.community.opportunities.viewAll": "Xem tất cả cơ hội"
+  "bc.mobile.community.opportunities.viewAll": "Xem tất cả cơ hội",
+  "bc.notif.kind.meeting_upcoming_reminder.title": "Lịch hẹn sắp diễn ra",
+  "bc.notif.kind.meeting_upcoming_reminder.body": "Cuộc gặp '{meetingTitle}' sẽ bắt đầu vào lúc {scheduledAt} (trong vòng 30 phút nữa)."
 }

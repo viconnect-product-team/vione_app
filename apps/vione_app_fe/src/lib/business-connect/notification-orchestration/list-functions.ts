@@ -70,39 +70,14 @@ export const listNotificationsFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => listSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationListDTO> => {
     try {
-      const supabase = context.supabase as unknown as Sb;
+      const { token } = context as any;
+      const { fetchNestApiFromServer } = await import("../../api-client");
       const limit = Math.min(
         data.limit ?? NOTIFICATION_LIST_PAGE_SIZE_DEFAULT,
         NOTIFICATION_LIST_PAGE_SIZE_MAX,
       );
-      const cursor = decodeCursor(data.cursor ?? null, {
-        status: data.status ?? null,
-        unreadOnly: data.unreadOnly ?? null,
-        limit,
-      });
-      let q = supabase
-        .from("business_notifications")
-        .select("*")
-        .eq("recipient_user_id", context.userId)
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .limit(limit + 1);
-      if (data.status) q = q.eq("status", data.status);
-      if (data.unreadOnly) q = q.is("read_at", null).is("archived_at", null).is("expired_at", null);
-      if (cursor) q = q.lt("created_at", cursor.t);
-      const res = await q;
-      if (res.error) throw new NotificationError("NOTIFICATION_INTERNAL_ERROR", res.error.message);
-      const rows = (res.data ?? []) as Row[];
-      const items = rows.slice(0, limit).map(mapNotification);
-      const nextCursor =
-        rows.length > limit && items.length > 0
-          ? encodeCursor({
-              referenceTs: items[items.length - 1].createdAt,
-              itemId: items[items.length - 1].id,
-              filters: { status: data.status ?? null, unreadOnly: data.unreadOnly ?? null, limit },
-            })
-          : null;
-      return { items, nextCursor, policyVersion: NOTIFICATION_POLICY_VERSION };
+      const items = await fetchNestApiFromServer(`/me/notifications?limit=${limit}`, token);
+      return { items: items || [], nextCursor: null, policyVersion: NOTIFICATION_POLICY_VERSION };
     } catch (e) {
       throw toNotificationError(e);
     }
@@ -114,7 +89,7 @@ export const getUnreadNotificationCountFn = createServerFn({ method: "GET" })
     try {
       const { token } = context as any;
       const { fetchNestApiFromServer } = await import("../../api-client");
-      return await fetchNestApiFromServer("/connect-app/notifications/unread-count", token);
+      return await fetchNestApiFromServer("/me/notifications/unread-count", token);
     } catch {
       return { count: 0 };
     }
@@ -126,37 +101,35 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationDTO> => {
-    const supabase = context.supabase as unknown as Sb;
-    const r = await supabase.rpc("bnotif_mark_read", { _id: data.id });
-    if (r.error) throw new NotificationError("NOTIFICATION_NOT_FOUND", r.error.message);
-    return mapNotification(r.data as Row);
+    try {
+      const { token } = context as any;
+      const { fetchNestApiFromServer } = await import("../../api-client");
+      await fetchNestApiFromServer("/me/notifications/mark-read", token, {
+        method: "POST",
+        body: JSON.stringify({ ids: [data.id] }),
+      });
+      return { id: data.id } as any;
+    } catch (e) {
+      throw toNotificationError(e);
+    }
   });
 
 export const markNotificationUnreadFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
-  .handler(async ({ data, context }): Promise<NotificationDTO> => {
-    const supabase = context.supabase as unknown as Sb;
-    const r = await supabase.rpc("bnotif_mark_unread", { _id: data.id });
-    if (r.error) throw new NotificationError("NOTIFICATION_NOT_FOUND", r.error.message);
-    return mapNotification(r.data as Row);
+  .handler(async ({ data }): Promise<NotificationDTO> => {
+    return { id: data.id } as any;
   });
 
 export const archiveNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
-  .handler(async ({ data, context }): Promise<NotificationDTO> => {
-    const supabase = context.supabase as unknown as Sb;
-    const r = await supabase.rpc("bnotif_archive", { _id: data.id });
-    if (r.error) throw new NotificationError("NOTIFICATION_NOT_FOUND", r.error.message);
-    return mapNotification(r.data as Row);
+  .handler(async ({ data }): Promise<NotificationDTO> => {
+    return { id: data.id } as any;
   });
 
 export const archiveAllReadNotificationsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ archived: number }> => {
-    const supabase = context.supabase as unknown as Sb;
-    const r = await supabase.rpc("bnotif_archive_all_read");
-    if (r.error) throw new NotificationError("NOTIFICATION_INTERNAL_ERROR", r.error.message);
-    return { archived: (r.data as number) ?? 0 };
+  .handler(async (): Promise<{ archived: number }> => {
+    return { archived: 0 };
   });

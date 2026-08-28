@@ -22,7 +22,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { MeHeader } from "@/components/business-connect/mobile/me/MeHeader";
@@ -156,6 +156,7 @@ function ConnectAppMePage() {
   const { lang, setLang } = useLang();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const getMine = useServerFn(bcIdentityGetMineFn);
   const getOrCreateLink = useServerFn(bcIdentityGetOrCreateShareLinkFn);
   const rotateLink = useServerFn(bcIdentityRotateShareLinkFn);
@@ -183,8 +184,8 @@ function ConnectAppMePage() {
 
   useEffect(() => {
     void load();
-    void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-  }, [load]);
+    setEmail(user?.email ?? null);
+  }, [load, user]);
 
   /** Đăng xuất: xoá cache riêng tư + phiên, rồi thay thế lịch sử về màn đăng nhập. */
   async function handleSignOut() {

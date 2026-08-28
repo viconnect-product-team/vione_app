@@ -7,7 +7,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, CheckCircle2, ChevronLeft, Loader2, Shield } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import {
   bcIdentityGetMineFn,
   bcIdentityUpsertFn,
@@ -59,6 +59,7 @@ const EMPTY: Form = {
 function ActivateIdentityPage() {
   const t = useT();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const getMine = useServerFn(bcIdentityGetMineFn);
   const upsert = useServerFn(bcIdentityUpsertFn);
 
@@ -72,24 +73,21 @@ function ActivateIdentityPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [{ data: auth }, payload] = await Promise.all([
-        supabase.auth.getUser(),
-        getMine({}).catch(() => null),
-      ]);
+      const payload = await getMine({}).catch(() => null);
       if (!alive) return;
       const identity = payload?.identity ?? null;
       setExisting(identity);
       setForm({
         displayName:
           identity?.displayName ??
-          (typeof auth.user?.user_metadata?.full_name === "string"
-            ? auth.user.user_metadata.full_name
+          (typeof user?.user_metadata?.full_name === "string"
+            ? user.user_metadata.full_name
             : "") ??
           "",
         jobTitle: identity?.jobTitle ?? "",
         companyName: identity?.companyName ?? "",
         headline: identity?.headline ?? "",
-        primaryEmail: identity?.primaryEmail ?? auth.user?.email ?? "",
+        primaryEmail: identity?.primaryEmail ?? user?.email ?? "",
         primaryPhone: identity?.primaryPhone ?? "",
         website: identity?.website ?? "",
       });
@@ -98,7 +96,7 @@ function ActivateIdentityPage() {
     return () => {
       alive = false;
     };
-  }, [getMine]);
+  }, [getMine, user]);
 
   const canContinue = useMemo(() => form.displayName.trim().length > 0, [form.displayName]);
 

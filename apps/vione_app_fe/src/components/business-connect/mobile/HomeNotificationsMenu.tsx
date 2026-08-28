@@ -9,8 +9,13 @@ import { useT, hasTKey } from "@/lib/i18n";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/use-bc-notifications";
 import type { NotificationDTO } from "@/lib/business-connect/notification-orchestration/types";
 
-function text(t: ReturnType<typeof useT>, key: string, fallback: string): string {
-  return key && hasTKey(key) ? t(key) : fallback;
+function text(
+  t: ReturnType<typeof useT>,
+  key: string,
+  fallback: string,
+  vars?: Record<string, any>
+): string {
+  return key && hasTKey(key) ? t(key as any, vars) : fallback;
 }
 
 function UnreadList({ onClose }: { onClose: () => void }) {
@@ -60,11 +65,11 @@ function UnreadList({ onClose }: { onClose: () => void }) {
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13.5px] font-medium text-[var(--bc-mobile-text)]">
-                {text(t, n.titleKey, n.notificationKind)}
+                {text(t, n.titleKey, n.notificationKind, n.safeDisplayData)}
               </p>
-              {text(t, n.bodyKey, "") ? (
+              {text(t, n.bodyKey, "", n.safeDisplayData) ? (
                 <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
-                  {text(t, n.bodyKey, "")}
+                  {text(t, n.bodyKey, "", n.safeDisplayData)}
                 </p>
               ) : null}
               {n.action.targetRoute ? (
@@ -73,7 +78,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
                   onClick={onClose}
                   className="mt-1 inline-block text-[12.5px] font-medium text-[var(--bc-mobile-accent)]"
                 >
-                  {text(t, n.action.labelKey, t("bc.mobile.home.notifications.panel.open"))}
+                  {text(t, n.action.labelKey, t("bc.mobile.home.notifications.panel.open"), n.safeDisplayData)}
                 </Link>
               ) : null}
             </div>

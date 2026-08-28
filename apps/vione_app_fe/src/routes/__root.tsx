@@ -189,13 +189,14 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   const redirectScript = `(${String(function () {
-    // Immediately redirect root to /connect-app when no auth callback is present.
+    // Immediately redirect root to /connect-app when no auth callback is present and on mobile.
     try {
       var p = location.pathname;
+      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
       var search = new URLSearchParams(location.search);
       var hash = new URLSearchParams(location.hash.replace(/^#/, ""));
       var hasCallback = search.get("code") || search.get("token_hash") || hash.get("access_token") || hash.get("code");
-      if (!hasCallback && p === "/") {
+      if (!hasCallback && p === "/" && isMobile) {
         location.replace("/connect-app");
       }
     } catch (e) {
@@ -349,30 +350,15 @@ function RootComponent() {
 
   const setLang = (l: Lang) => setLangState(l);
 
-  // Redirect legacy/non-supported routes to the /connect-app landing so the
-  // UI remains focused on the four supported screens. This runs client-side
-  // only and preserves API/static paths.
-  const navigate = useNavigate();
-  useEffect(() => {
-    try {
-      const p = window.location.pathname;
-      // Allow asset and api paths to load normally
-      if (p.startsWith("/api") || p.startsWith("/_static") || p.startsWith("/assets") || p.startsWith("/public")) return;
-      // Allow root and any /connect-app subpath (includes /connect-app/community/*, /connect-app/network/*, /connect-app/me/*)
-      if (p === "/" || p === "/connect-app" || p === "/connect-app/" || p.startsWith("/connect-app/")) {
-        return;
-      }
-      // Otherwise redirect to the connect-app landing
-      navigate({ to: "/connect-app", replace: true });
-    } catch {
-      /* ignore */
-    }
-  }, [navigate]);
-
   return (
     <LangContext.Provider value={{ lang, setLang }}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
+          {/* Global Luxury Ambient Glowing Backgrounds */}
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+            <div className="luxury-glow-1" />
+            <div className="luxury-glow-2" />
+          </div>
           <MockModeBanner />
           <AuthProvider>
             <AuthGate>
@@ -396,6 +382,40 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Limit mobile visitors to ONLY the 4 connect-app mobile routes (and public pages),
+  // while letting desktop visitors access all legacy/PWA pages (like /m or /events).
+  useEffect(() => {
+    try {
+      const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
+      if (!isMobile) return;
+
+      const p = window.location.pathname;
+      // Allow assets, api, and connect-app
+      if (p.startsWith("/api") || p.startsWith("/_static") || p.startsWith("/assets") || p.startsWith("/public")) return;
+      if (p.startsWith("/connect-app")) return;
+
+      // Allow public pages
+      if (
+        p === "/auth" ||
+        p === "/register" ||
+        p === "/forgot-password" ||
+        p === "/reset-password" ||
+        p === "/install" ||
+        p === "/landing" ||
+        p === "/demo" ||
+        p.startsWith("/h/") ||
+        p.startsWith("/card/") ||
+        p === "/verify"
+      ) {
+        return;
+      }
+
+      navigate({ to: "/connect-app", replace: true });
+    } catch {
+      /* ignore */
+    }
+  }, [pathname, navigate]);
 
   useEffect(() => {
     const stopResume = startSessionResume(() => {
@@ -458,6 +478,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // the marketing landing page, and the QR-opened membership card.
   const isPublic =
     pathname === "/auth" ||
+    pathname === "/register" ||
     pathname === "/forgot-password" ||
     pathname === "/reset-password" ||
     pathname === "/install" ||

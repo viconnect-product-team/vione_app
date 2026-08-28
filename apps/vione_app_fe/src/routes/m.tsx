@@ -23,7 +23,8 @@ export const Route = createFileRoute("/m")({
   beforeLoad: async ({ location }) => {
     // Shortcut ViOne cũ có thể vẫn khởi động tại `/m`. Nhận diện bằng ngữ cảnh
     // trình duyệt và chuyển sang màn đăng nhập Connect-app, không dựa vào manifest.
-    const isVioneLaunch = hasRememberedVioneAppContext() || isVioneStandaloneContext();
+    const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
+    const isVioneLaunch = isMobile && (hasRememberedVioneAppContext() || isVioneStandaloneContext());
     if (isVioneLaunch) rememberVioneAppContext();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {

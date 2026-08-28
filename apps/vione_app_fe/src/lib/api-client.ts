@@ -104,7 +104,10 @@ async function handleResponse(response: Response) {
       localStorage.removeItem('vibe_refresh_token');
       document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      window.location.href = `/auth?reason=expired&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      const pathname = window.location.pathname;
+      if (pathname !== '/auth') {
+        window.location.href = `/auth?reason=expired&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      }
     }
     throw new Error("Unauthorized");
   }

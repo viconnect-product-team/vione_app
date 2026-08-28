@@ -33,6 +33,7 @@ import {
 import { useState } from "react";
 import { HomeNotificationsMenu } from "./HomeNotificationsMenu";
 import { hasTKey, useFmt, useLang, useT, type TKey } from "@/lib/i18n";
+import { getVNTimeGreeting } from "@/lib/utils";
 import {
   getGreetingDaypart,
   useBusinessConnectHome,
@@ -77,7 +78,7 @@ export function ExecutiveHome() {
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
-            Chào buổi chiều,
+            {getVNTimeGreeting()}
           </p>
         </div>
         <div className="flex items-center gap-3">

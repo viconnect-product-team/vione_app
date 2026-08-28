@@ -6527,5 +6527,7 @@
   "bc.mobile.community.opportunities.contactNote": "Contact details are only available when you express interest or via the poster's profile.",
   "bc.mobile.community.opportunities.closedNote": "This opportunity is no longer accepting interest.",
   "bc.mobile.community.opportunities.openOpportunity": "View opportunity",
-  "bc.mobile.community.opportunities.viewAll": "View all opportunities"
+  "bc.mobile.community.opportunities.viewAll": "View all opportunities",
+  "bc.notif.kind.meeting_upcoming_reminder.title": "Upcoming Meeting",
+  "bc.notif.kind.meeting_upcoming_reminder.body": "Meeting '{meetingTitle}' is starting at {scheduledAt} (in less than 30 minutes)."
 }

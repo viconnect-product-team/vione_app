@@ -53,6 +53,10 @@ type VioneAuthSignals = {
  * directAuth chỉ có ý nghĩa khi standalone hoặc remembered — hai signal kia đã đủ.
  */
 export function shouldUseVioneAuth(signals: VioneAuthSignals): boolean {
+  if (typeof window !== "undefined") {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+    if (!isMobile) return false;
+  }
   return (
     signals.mobileParam ||
     signals.remembered ||

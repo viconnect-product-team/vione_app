@@ -4,7 +4,8 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "inspect": "node C:\\Users\\vumik\\.gemini\\antigravity-ide\\brain\\3808a238-9901-4013-9cd6-93e4dca9f9d8\\scratch\\inspect_admin_hash.js"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

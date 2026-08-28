@@ -160,13 +160,14 @@ function Index() {
   const hasCallback = hasAuthCallbackParams();
   const navigate = useNavigate();
 
-  // Force root to the connect-app landing for all visitors unless an auth
+  // Force root to the connect-app landing for mobile visitors unless an auth
   // callback is present. This ensures visiting http://localhost:5173/ opens
-  // the business-connect landing instead of the legacy dashboard.
+  // the business-connect landing instead of the legacy dashboard on mobile.
   // NOTE: this is a client-side replace so it won't affect API/static paths.
   useEffect(() => {
     try {
-      if (!hasCallback && typeof window !== "undefined" && window.location.pathname === "/") {
+      const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
+      if (!hasCallback && typeof window !== "undefined" && window.location.pathname === "/" && isMobile) {
         navigate({ to: "/connect-app", replace: true });
       }
     } catch {
@@ -260,9 +261,14 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
       if (authStatus === 'out') {
         if (redirectAnonToLanding) {
           setStatus("redirecting");
-          // Redirect anonymous visitors to the connect-app landing instead
-          // of the legacy /landing page so the SPA defaults to the BC flows.
-          navigate({ to: "/connect-app" });
+          // Redirect anonymous visitors to the connect-app landing on mobile,
+          // but to /landing page on desktop.
+          const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
+          if (isMobile) {
+            navigate({ to: "/connect-app" });
+          } else {
+            navigate({ to: "/landing" });
+          }
           return;
         }
         setStatus("idle");

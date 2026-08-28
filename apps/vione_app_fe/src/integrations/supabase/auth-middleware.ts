@@ -79,12 +79,10 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       }
     };
 
+    // Do NOT pass the local NestJS token in the Authorization header of Supabase client,
+    // as it will fail Supabase JWT signature verification (No suitable key or wrong key type).
+    // The middleware already decodes and exposes context.userId/context.user.
     const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
       auth: {
         storage: undefined,
         persistSession: false,

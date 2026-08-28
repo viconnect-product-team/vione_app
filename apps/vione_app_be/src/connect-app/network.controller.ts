@@ -101,6 +101,16 @@ export class NetworkController {
     return this.connectAppService.getConnectionState(req.user.id, targetUserId);
   }
 
+  @Get('token-state/:token')
+  async getConnectionStateByToken(@Request() req, @Param('token') token: string) {
+    return this.connectAppService.getConnectionStateByToken(req.user.id, token);
+  }
+
+  @Post('token-connect')
+  async sendConnectionRequestByToken(@Request() req, @Body('token') token: string, @Body('mutationKey') mutationKey?: string) {
+    return this.connectAppService.sendConnectionRequestByToken(req.user.id, token, mutationKey);
+  }
+
   @Get('connection/:connectionId')
   async getConnectionById(@Request() req, @Param('connectionId') connectionId: string) {
     return this.connectAppService.getConnectionById(req.user.id, connectionId);

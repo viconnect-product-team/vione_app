@@ -2,12 +2,71 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 
+const formatVNTime = (date: Date) => {
+  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+  const vnDate = new Date(utc + 3600000 * 7);
+  const hh = String(vnDate.getHours()).padStart(2, '0');
+  const mm = String(vnDate.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
 @Injectable()
 export class ConnectAppService {
   constructor(private prisma: PrismaService) {}
 
   async getBriefing(userId: string) {
     const now = new Date();
+
+    // Check for meetings starting within 30 minutes to push to notifications
+    try {
+      const thirtyMinsFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+      const upcomingMeetings = await this.prisma.$queryRaw<any[]>`
+        SELECT id, title, scheduled_start_at
+        FROM public.business_meetings
+        WHERE organizer_user_id = ${userId}::uuid
+          AND status = 'confirmed'::public.business_meeting_status
+          AND scheduled_start_at >= ${now}
+          AND scheduled_start_at <= ${thirtyMinsFromNow}
+      `.catch(() => []);
+
+      for (const m of upcomingMeetings) {
+        const existingNotif = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.business_notifications
+          WHERE recipient_user_id = ${userId}::uuid
+            AND source_domain = 'meeting'
+            AND source_record_id = ${m.id}
+            AND notification_kind = 'meeting_upcoming_reminder'
+        `.catch(() => []);
+
+        if (existingNotif.length === 0) {
+          const notifId = crypto.randomUUID();
+          const formattedStart = formatVNTime(new Date(m.scheduled_start_at));
+          const safeData = JSON.stringify({
+            meetingTitle: m.title,
+            scheduledAt: formattedStart
+          });
+          const actionTarget = JSON.stringify({
+            route: '/connect-app'
+          });
+
+          const dedupeKey = `meeting_upcoming_reminder:${userId}:${m.id}`;
+          await this.prisma.$executeRaw`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+              priority, status, created_at, updated_at, dedupe_key
+            ) VALUES (
+              ${notifId}::uuid, ${userId}::uuid, 'meeting', ${m.id}, 'upcoming_reminder', 'meeting_upcoming_reminder',
+              'bc.notif.kind.meeting_upcoming_reminder.title', 'bc.notif.kind.meeting_upcoming_reminder.body',
+              ${safeData}::jsonb, 'open_meeting_detail', 'bc.notif.action.view', ${actionTarget}::jsonb,
+              'high', 'delivered', ${now}, ${now}, ${dedupeKey}
+            )
+          `;
+        }
+      }
+    } catch (e) {
+      console.error('Error generating upcoming meeting notifications:', e);
+    }
 
     // 1. Connection requests
     const connectionRequests = await this.prisma.$queryRaw`
@@ -40,9 +99,21 @@ export class ConnectAppService {
     const businessMeetings = await this.prisma.$queryRaw`
       SELECT id, status, scheduled_start_at, organizer_user_id
       FROM public.business_meetings
+      WHERE organizer_user_id = ${userId}::uuid
       ORDER BY scheduled_start_at ASC NULLS LAST
       LIMIT 50
     `.catch(() => []) as any[];
+
+    // Fetch registered community events
+    const registeredEvents = await this.prisma.$queryRaw<any[]>`
+      SELECT er.event_id as id, er.status as reg_status, e.name as title, e.date as scheduled_start_at, e.status as status, e.association_id
+      FROM public.event_registrations er
+      JOIN public.events e ON er.event_id = e.id
+      JOIN public.members m ON er.member_code = m.code AND er.association_id = m.association_id
+      WHERE m.user_id = ${userId}::uuid AND er.status = 'confirmed' AND e.status IN ('upcoming', 'ongoing')
+      ORDER BY e.date ASC
+      LIMIT 50
+    `.catch(() => []);
 
     // 5. Followups
     const businessMeetingFollowUps = await this.prisma.$queryRaw`
@@ -92,23 +163,41 @@ export class ConnectAppService {
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : now.toISOString(),
         counterpartDisplayName: null,
       })),
-      meetingWorkspaceItems: businessMeetings.map(r => {
-        const isUpcoming = r.status === 'confirmed' && r.scheduled_start_at && new Date(r.scheduled_start_at) >= now;
-        return {
-          meetingId: String(r.id),
-          status: String(r.status),
-          bucket: isUpcoming ? 'upcoming' : r.status === 'completed' ? 'history' : 'overview',
-          suggestedActionKind: r.status === 'proposed'
-            ? 'respond_meeting'
-            : r.status === 'confirmed' && !r.scheduled_start_at
-              ? 'schedule_meeting'
-              : 'view_meeting',
-          scheduledStartAt: r.scheduled_start_at ? new Date(r.scheduled_start_at).toISOString() : null,
-          viewerRole: r.organizer_user_id === userId ? 'organizer' : 'attendee',
-          counterpartDisplayName: null,
-          hasOutcome: false,
-        };
-      }),
+      meetingWorkspaceItems: [
+        ...businessMeetings.map(r => {
+          const isUpcoming = r.status === 'confirmed' && r.scheduled_start_at && new Date(r.scheduled_start_at) >= now;
+          return {
+            meetingId: String(r.id),
+            status: String(r.status),
+            bucket: isUpcoming ? 'upcoming' : r.status === 'completed' ? 'history' : 'overview',
+            suggestedActionKind: r.status === 'proposed'
+              ? 'respond_meeting'
+              : r.status === 'confirmed' && !r.scheduled_start_at
+                ? 'schedule_meeting'
+                : 'view_meeting',
+            scheduledStartAt: r.scheduled_start_at ? new Date(r.scheduled_start_at).toISOString() : null,
+            viewerRole: r.organizer_user_id === userId ? 'organizer' : 'attendee',
+            counterpartDisplayName: null,
+            hasOutcome: false,
+          };
+        }),
+        ...registeredEvents.map(e => {
+          const eventDate = new Date(e.scheduled_start_at);
+          eventDate.setHours(8, 0, 0, 0);
+          return {
+            meetingId: String(e.id),
+            status: String(e.status),
+            bucket: 'upcoming',
+            suggestedActionKind: 'view_meeting',
+            scheduledStartAt: eventDate.toISOString(),
+            viewerRole: 'attendee',
+            counterpartDisplayName: String(e.title),
+            hasOutcome: false,
+            isEvent: true,
+            communityId: String(e.association_id),
+          };
+        })
+      ],
       meetingFollowUps: businessMeetingFollowUps.map(r => {
         const isOverdue = r.due_at && new Date(r.due_at) < now;
         return {
@@ -1147,7 +1236,7 @@ export class ConnectAppService {
   async getUnreadNotificationCount(userId: string) {
     const countRes = await this.prisma.$queryRaw<any[]>`
       SELECT COUNT(id)::int as count FROM public.business_notifications
-      WHERE recipient_user_id = ${userId}::uuid AND status = 'unread'
+      WHERE recipient_user_id = ${userId}::uuid AND status = 'delivered'
     `.catch(() => [{ count: 0 }]);
     return { count: countRes[0]?.count || 0 };
   }
@@ -1215,6 +1304,63 @@ export class ConnectAppService {
     if (r.status === 'accepted') state = 'connected';
     else if (r.status === 'pending') state = r.requester_user_id === userId ? 'outgoing_pending' : 'incoming_pending';
     return { state, connectionId: r.id };
+  }
+
+  async getConnectionStateByToken(userId: string, token: string) {
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT id, identity_id, status FROM public.identity_share_links
+      WHERE public_token = ${token} AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (links.length === 0) {
+      return { state: 'unavailable', connectionId: null };
+    }
+    const link = links[0];
+
+    const identities = await this.prisma.$queryRaw<any[]>`
+      SELECT owner_user_id FROM public.business_identities
+      WHERE id = ${link.identity_id}::uuid AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (identities.length === 0) {
+      return { state: 'unavailable', connectionId: null };
+    }
+    const targetUserId = identities[0].owner_user_id;
+    if (targetUserId === userId) {
+      return { state: 'self', connectionId: null };
+    }
+    return this.getConnectionState(userId, targetUserId);
+  }
+
+  async sendConnectionRequestByToken(userId: string, token: string, mutationKey?: string) {
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT id, identity_id, status FROM public.identity_share_links
+      WHERE public_token = ${token} AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (links.length === 0) {
+      throw new NotFoundException('Identity not found or unavailable');
+    }
+    const link = links[0];
+
+    const identities = await this.prisma.$queryRaw<any[]>`
+      SELECT owner_user_id FROM public.business_identities
+      WHERE id = ${link.identity_id}::uuid AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (identities.length === 0) {
+      throw new NotFoundException('Identity not found or unavailable');
+    }
+    const targetUserId = identities[0].owner_user_id;
+    if (targetUserId === userId) {
+      throw new Error('Self connection not allowed');
+    }
+
+    return this.sendConnectionRequest(userId, { targetUserId });
   }
 
   async getConnectionById(userId: string, connectionId: string) {
@@ -1326,8 +1472,10 @@ export class ConnectAppService {
 
   async listNotifications(userId: string, limit: number = 30) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, type::text as type, connection_id, actor_summary, read_at, created_at
-      FROM public.gn_notifications
+      SELECT id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+             title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+             priority, status, created_at, updated_at, read_at
+      FROM public.business_notifications
       WHERE recipient_user_id = ${userId}::uuid
       ORDER BY created_at DESC
       LIMIT ${limit}
@@ -1338,27 +1486,50 @@ export class ConnectAppService {
 
     return rows.map(r => ({
       id: r.id,
-      type: r.type,
-      connectionId: r.connection_id || null,
-      actor: r.actor_summary || null,
-      read: r.read_at != null,
+      recipientUserId: r.recipient_user_id,
+      sourceDomain: r.source_domain || 'meeting',
+      sourceRecordId: r.source_record_id || '',
+      eventKind: r.event_kind || '',
+      notificationKind: r.notification_kind || '',
+      titleKey: r.title_key || '',
+      bodyKey: r.body_key || '',
+      safeDisplayData: r.safe_display_data || {},
+      action: {
+        kind: r.action_kind || 'none',
+        labelKey: r.action_label_key || 'bc.notif.action.view',
+        targetRoute: r.action_target?.route || null,
+        targetParams: r.action_target?.params || null,
+        targetSearch: r.action_target?.search || null,
+        requiresConfirmation: false,
+        canonicalCapability: null,
+      },
+      priority: r.priority || 'normal',
+      status: r.status || 'unread',
+      scheduledFor: null,
+      deliveredAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      readAt: r.read_at ? new Date(r.read_at).toISOString() : null,
+      archivedAt: null,
+      expiredAt: null,
+      dedupeKey: r.id,
+      schemaVersion: 1,
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
     }));
   }
 
   async markNotificationsRead(userId: string, ids?: string[]) {
     if (ids && ids.length > 0) {
       await this.prisma.$executeRaw`
-        UPDATE public.gn_notifications
-        SET read_at = now()
+        UPDATE public.business_notifications
+        SET status = 'read', read_at = now()
         WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${ids}::uuid[])
       `;
       return ids.length;
     } else {
       const res = await this.prisma.$executeRaw`
-        UPDATE public.gn_notifications
-        SET read_at = now()
-        WHERE recipient_user_id = ${userId}::uuid AND read_at IS NULL
+        UPDATE public.business_notifications
+        SET status = 'read', read_at = now()
+        WHERE recipient_user_id = ${userId}::uuid AND status = 'unread'
       `;
       return res;
     }

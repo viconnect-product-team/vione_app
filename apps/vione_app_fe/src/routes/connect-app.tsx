@@ -3,7 +3,6 @@
 // own PWA manifest. Legacy routes (/m/*, /business-connect/*) are untouched.
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { BusinessConnectMobileShell } from "@/components/business-connect/mobile/BusinessConnectMobileShell";
 import { ConnectAppRouteError } from "@/components/business-connect/mobile/ConnectAppRouteError";
 import { BC_MANIFEST_HREF } from "@/lib/pwa-manifest";

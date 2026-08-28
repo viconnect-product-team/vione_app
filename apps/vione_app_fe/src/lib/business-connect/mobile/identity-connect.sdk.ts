@@ -6,20 +6,20 @@
 //
 // Client-safe: statically imports only *.functions (RPC stubs) and types.
 
-import {
-  bcIdentityConnectionStateFn,
-  bcIdentitySendConnectionRequestFn,
-} from "./identity-connect.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 import type { IdentityConnectionState } from "./identity-connect.types";
 import type { GlobalConnectionMutationResult } from "@/lib/global-network/types";
 
 export const IdentityConnectSDK = {
   getState: (token: string): Promise<IdentityConnectionState> =>
-    bcIdentityConnectionStateFn({ data: token }),
+    fetchNestApi(`/connect-app/network/token-state/${token}`),
 
   send: (token: string, mutationKey?: string): Promise<GlobalConnectionMutationResult> =>
-    bcIdentitySendConnectionRequestFn({ data: { token, mutationKey } }),
+    fetchNestApi("/connect-app/network/token-connect", {
+      method: "POST",
+      body: JSON.stringify({ token, mutationKey }),
+    }),
 
   accept: (connectionId: string, mutationKey?: string): Promise<GlobalConnectionMutationResult> =>
     GlobalNetworkSDK.mutations.accept(connectionId, mutationKey),

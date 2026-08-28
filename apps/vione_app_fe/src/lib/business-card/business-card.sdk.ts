@@ -96,7 +96,8 @@ function currentOrigin(origin?: string): string {
   return typeof window !== "undefined" ? window.location.origin : "";
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const NEST_API = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`;
 const getHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
   return token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : { "Content-Type": "application/json" };
@@ -180,17 +181,64 @@ export const BusinessCardSDK = {
 
   /** List the caller's global (owner-scoped) cards. */
   async listGlobal(): Promise<BusinessCardSummary[]> {
-    return listMyGlobalCardsFn();
+    const res = await fetch(`${API_URL}/business-cards`, { headers: getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch global cards");
+    const rawList = await res.json();
+    return rawList.map((c: any) => ({
+      id: c.id,
+      slug: c.slug,
+      cardKind: c.card_kind,
+      status: c.status,
+      publicMode: c.public_mode,
+      displayName: c.display_name,
+      professionalTitle: c.professional_title,
+      companyName: c.company_name,
+      avatarUrl: c.avatar_url,
+      updatedAt: c.updated_at
+    }));
   },
 
   /** Get one global card the caller owns (works on drafts). */
   async getGlobal(id: string): Promise<BusinessCard> {
-    return getMyGlobalCardFn({ data: { id } });
+    const res = await fetch(`${API_URL}/business-cards/${id}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch global card");
+    const c = await res.json();
+    return {
+      id: c.id,
+      slug: c.slug,
+      cardKind: c.card_kind,
+      status: c.status,
+      publicMode: c.public_mode,
+      displayName: c.display_name,
+      professionalTitle: c.professional_title,
+      companyName: c.company_name,
+      avatarUrl: c.avatar_url,
+      updatedAt: c.updated_at,
+      themeId: c.theme_id,
+      bio: c.bio,
+      email: c.email,
+      phone: c.phone,
+      website: c.website,
+      skills: (c.skills || []).map((s: any) => s.skill_name || s),
+      services: (c.services || []).map((s: any) => ({ title: s.title, description: s.description })),
+      needs: (c.needs || []).map((n: any) => n.need_name || n),
+    };
   },
 
   /** Create a prefilled draft global card owned by the caller. */
   async createGlobalDraft(): Promise<{ id: string }> {
-    return createGlobalCardDraftFn();
+    const res = await fetch(`${API_URL}/business-cards`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        card_kind: "custom",
+        status: "draft",
+        slug: `card-${Math.random().toString(36).substring(2, 10)}`,
+      })
+    });
+    if (!res.ok) throw new Error("Failed to create draft card");
+    const data = await res.json();
+    return { id: data.id };
   },
 
   /** Publish a card. */

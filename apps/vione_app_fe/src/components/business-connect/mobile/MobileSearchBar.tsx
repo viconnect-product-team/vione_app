@@ -26,7 +26,7 @@ export function MobileSearchBar({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
+          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:!outline-none focus:!ring-0 focus:!border-none focus-visible:ring-0 focus-visible:outline-none focus-visible:!ring-0 focus-visible:!outline-none focus-visible:!border-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
           style={{
             background: "transparent",
             border: "none",

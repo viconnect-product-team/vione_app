@@ -382,10 +382,11 @@ export function ConnectAppSignIn({
           <button
             type="submit"
             disabled={busy}
-            className="bc-cta-gold relative flex h-12 w-full items-center justify-center rounded-xl text-[17px] font-semibold"
+            className="luxury-btn relative flex h-12 w-full items-center justify-center rounded-xl border border-solid text-[17px] font-semibold hover:bg-[#f2b45a]/10 hover:shadow-[0_0_15px_rgba(242,180,90,0.15)]"
+            style={{ borderColor: GOLD, color: GOLD, background: "transparent" }}
           >
             {loading ? t("bc.mobile.auth.processing") : t("bc.mobile.auth.signIn")}
-            {!loading && <ArrowRight className="absolute right-6 h-5 w-5" aria-hidden="true" />}
+            {!loading && <ArrowRight className="luxury-arrow absolute right-6 h-5 w-5" aria-hidden="true" />}
           </button>
         </form>
 

@@ -230,13 +230,18 @@ export interface MeetingWorkspaceItemLike {
   viewerRole: string;
   counterpartDisplayName?: string | null;
   hasOutcome?: boolean;
+  isEvent?: boolean;
+  communityId?: string;
 }
 
 export function resolveMeetingWorkspaceItem(
   m: MeetingWorkspaceItemLike,
   ctx: ResolveContextBase,
 ): WorkHubItemDTO | null {
-  const target = `/business-connect/meetings/${m.meetingId}`;
+  const isEvent = m.isEvent === true;
+  const target = isEvent
+    ? `/connect-app/community/${m.communityId}/events/${m.meetingId}`
+    : `/business-connect/meetings/${m.meetingId}`;
   const display: WorkHubDisplayData = {
     counterpartDisplayName: m.counterpartDisplayName ?? null,
     scalars: { viewerRole: m.viewerRole, status: m.status },

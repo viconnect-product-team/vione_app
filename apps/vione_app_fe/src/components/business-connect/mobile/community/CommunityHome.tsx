@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { getVNTimeGreeting } from "@/lib/utils";
 import { useMyCommunities } from "@/hooks/use-community";
 import { useCommunityActivityPreview } from "@/hooks/use-community-activity";
 import { useBusinessConnectHome } from "@/hooks/use-business-connect-home";
@@ -73,7 +74,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
-            Chào buổi chiều,
+            {getVNTimeGreeting()}
           </p>
         </div>
         <div className="flex items-center gap-3">
