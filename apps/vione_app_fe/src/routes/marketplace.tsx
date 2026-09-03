@@ -583,7 +583,7 @@ function ProductModal({
                 onChange={(e) => setCategory(e.target.value as ProductCategoryKey)}
                 className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
               >
-                {CATEGORIES.map((c) => (
+                {CATEGORIES.map((c: any) => (
                   <option key={c} value={c}>
                     {t(c)}
                   </option>
@@ -1091,7 +1091,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
           >
             {t("mk.filter.all")}
           </button>
-          {CATEGORIES.map((c) => (
+          {CATEGORIES.map((c: any) => (
             <button
               key={c}
               onClick={() => setCat(c)}

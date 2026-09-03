@@ -129,7 +129,7 @@ export function buildContextBundle(input: BuildContextInput): ContextBundle {
   bundle.metrics = result.metrics;
   bundle.limitations = result.limitations;
   bundle.suggestedActions = result.suggestedActions
-    .filter((a) => !a.route || isKnownRoute(a.route))
+    .filter((a: any) => !a.route || isKnownRoute(a.route))
     .concat([{ label: "Bắt đầu chủ đề mới", intent: "new-topic" }]);
 
   return bundle;

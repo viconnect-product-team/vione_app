@@ -18,7 +18,7 @@ export function IncomingRequestsList() {
   const decline = useDeclineRequest();
 
   const userIds = useMemo(
-    () => (q.data ?? []).map((r) => r.requester.userId!).filter(Boolean),
+    () => (q.data ?? []).map((r: any) => r.requester.userId!).filter(Boolean),
     [q.data],
   );
   const counterparts = useCounterparts(userIds);
@@ -44,7 +44,7 @@ export function IncomingRequestsList() {
   }
   return (
     <ul role="list" className="flex flex-col gap-3" data-testid="bc-incoming-list">
-      {rows.map((r) => {
+      {rows.map((r: any) => {
         const cp = counterparts.data?.get(r.requester.userId ?? "");
         const busy = accept.isPending || decline.isPending;
         return (

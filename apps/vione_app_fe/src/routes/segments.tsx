@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Download, Filter, PieChart, Search, Tags, TrendingUp, Users } from "lucide-react";
@@ -14,7 +13,7 @@ import {
   type MemberStatus,
   type RegionKey,
 } from "@/lib/members-data";
-import { listMembersFn } from "@/lib/members.functions";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/segments")({
   component: SegmentsPage,
@@ -165,10 +164,10 @@ function DonutChart({ data }: { data: { key: MemberLevelKey; count: number }[] }
 function SegmentsPage() {
   const t = useT();
   const navigate = useNavigate();
-  const listMembers = useServerFn(listMembersFn);
   const { data: MEMBERS = [] } = useQuery<Member[]>({
     queryKey: ["members"],
-    queryFn: () => listMembers() as Promise<Member[]>,
+    queryFn: () =>
+      fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []),
   });
 
   const [q, setQ] = useState("");
@@ -337,7 +336,7 @@ function SegmentsPage() {
             <option value="all">
               {t("members.filter.region")}: {t("members.filter.all")}
             </option>
-            {REGIONS.map((r) => (
+            {REGIONS.map((r: any) => (
               <option key={r} value={r}>
                 {t(r)}
               </option>

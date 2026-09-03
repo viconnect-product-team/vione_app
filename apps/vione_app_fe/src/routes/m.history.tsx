@@ -137,7 +137,7 @@ function HistoryScreen() {
           data.events.length === 0 ? (
             <Empty label={t("m.history.empty")} />
           ) : (
-            data.events.map((e) => (
+            data.events.map((e: any) => (
               <div key={e.id} className="vba-card flex items-center gap-3 px-4 py-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--vba-gold)]/10 text-[var(--vba-gold)]">
                   <CalendarDays className="h-5 w-5" />
@@ -168,7 +168,7 @@ function HistoryScreen() {
         ) : data.activities.length === 0 ? (
           <Empty label={t("m.history.empty")} />
         ) : (
-          data.activities.map((a) => (
+          data.activities.map((a: any) => (
             <div key={a.id} className="vba-card flex items-center gap-3 px-4 py-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--vba-gold)]/10 text-[var(--vba-gold)]">
                 <Activity className="h-5 w-5" />

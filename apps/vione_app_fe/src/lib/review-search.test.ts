@@ -46,7 +46,7 @@ describe("validateReviewSearchStrict (400-style)", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.status).toBe(400);
-      expect(res.errors.map((e) => e.path).sort()).toEqual(["reviewFilter", "reviewSort"]);
+      expect(res.errors.map((e: any) => e.path).sort()).toEqual(["reviewFilter", "reviewSort"]);
     }
   });
 
@@ -97,7 +97,7 @@ describe("computeReviewSearchValidity (drives 400 error UI)", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.status).toBe(400);
-      expect(res.errors.map((e) => e.path)).toEqual(["reviewFilter"]);
+      expect(res.errors.map((e: any) => e.path)).toEqual(["reviewFilter"]);
     }
   });
 
@@ -105,7 +105,7 @@ describe("computeReviewSearchValidity (drives 400 error UI)", () => {
     const res = computeReviewSearchValidity("?reviewFilter=x&reviewSort=y");
     expect(res.ok).toBe(false);
     if (!res.ok)
-      expect(res.errors.map((e) => e.path).sort()).toEqual(["reviewFilter", "reviewSort"]);
+      expect(res.errors.map((e: any) => e.path).sort()).toEqual(["reviewFilter", "reviewSort"]);
   });
 
   it("reset defaults resolve back to a valid ok state", () => {

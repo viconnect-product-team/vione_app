@@ -66,7 +66,7 @@ export function ReportUserDialog({
 
         <fieldset className="flex flex-col gap-2" disabled={busy}>
           <legend className="sr-only">{t("connect.network.report.title")}</legend>
-          {GN_REPORT_CATEGORIES.map((c) => (
+          {GN_REPORT_CATEGORIES.map((c: any) => (
             <label
               key={c}
               className="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm text-foreground transition hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-primary/5"

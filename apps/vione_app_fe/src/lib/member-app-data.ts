@@ -300,7 +300,7 @@ export function resolveCheckin(
   method: "qr" | "nfc",
   history: CheckinRecord[],
 ): CheckinRecord {
-  const event = checkinEvents.find((e) => e.code === payload);
+  const event = checkinEvents.find((e: any) => e.code === payload);
   let status: CheckinStatus;
   if (!event) {
     status = "invalid";

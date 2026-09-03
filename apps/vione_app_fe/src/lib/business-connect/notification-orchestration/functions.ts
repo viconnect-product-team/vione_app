@@ -8,7 +8,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { NotificationError, toNotificationError } from "./errors";
 import { DEFAULT_PREFERENCES, validateCategory, validateDigestMode } from "./preference-policy";
 import { normalizeQuietHours } from "./quiet-hours-policy";
@@ -82,7 +82,7 @@ function mapOverride(r: OverrideRow): NotificationPreferenceOverrideDTO {
 // ── getPreferences ──────────────────────────────────────────────────────────
 
 export const getNotificationPreferencesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({
       context,
@@ -93,7 +93,7 @@ export const getNotificationPreferencesFn = createServerFn({ method: "GET" })
       try {
         const { userId } = context;
         const supabase =
-          context.supabase as unknown as import("@supabase/supabase-js").SupabaseClient<
+          null as any as unknown as import("@supabase/supabase-js").SupabaseClient<
             any,
             "public",
             any
@@ -125,7 +125,7 @@ export const getNotificationPreferencesFn = createServerFn({ method: "GET" })
           .eq("user_id", userId);
         if (ovQ.error)
           throw new NotificationError("NOTIFICATION_INTERNAL_ERROR", ovQ.error.message);
-        const overrides = (ovQ.data ?? []).map((r) => mapOverride(r as OverrideRow));
+        const overrides = (ovQ.data ?? []).map((r: any) => mapOverride(r as OverrideRow));
         return { preferences: prefs, overrides };
       } catch (e) {
         throw toNotificationError(e);
@@ -165,13 +165,13 @@ function toRow(p: Partial<NotificationPreferencesDTO>): Record<string, unknown> 
 }
 
 export const updateNotificationPreferencesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updatePrefsSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationPreferencesDTO> => {
     try {
       const { userId } = context;
       const supabase =
-        context.supabase as unknown as import("@supabase/supabase-js").SupabaseClient<
+        null as any as unknown as import("@supabase/supabase-js").SupabaseClient<
           any,
           "public",
           any
@@ -233,7 +233,7 @@ const overrideSchema = z.object({
 });
 
 export const updateNotificationPreferenceOverrideFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => overrideSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationPreferenceOverrideDTO> => {
     try {
@@ -243,7 +243,7 @@ export const updateNotificationPreferenceOverrideFn = createServerFn({ method: "
       );
       const { userId } = context;
       const supabase =
-        context.supabase as unknown as import("@supabase/supabase-js").SupabaseClient<
+        null as any as unknown as import("@supabase/supabase-js").SupabaseClient<
           any,
           "public",
           any
@@ -269,7 +269,7 @@ export const updateNotificationPreferenceOverrideFn = createServerFn({ method: "
   });
 
 export const deleteNotificationPreferenceOverrideFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ notificationKind: z.enum(NOTIFICATION_KINDS) }).parse(d),
   )
@@ -277,7 +277,7 @@ export const deleteNotificationPreferenceOverrideFn = createServerFn({ method: "
     try {
       const { userId } = context;
       const supabase =
-        context.supabase as unknown as import("@supabase/supabase-js").SupabaseClient<
+        null as any as unknown as import("@supabase/supabase-js").SupabaseClient<
           any,
           "public",
           any

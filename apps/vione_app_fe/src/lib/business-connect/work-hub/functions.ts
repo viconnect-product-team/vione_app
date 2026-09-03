@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   WORK_HUB_CATEGORIES,
   WORK_HUB_SOURCE_TYPES,
@@ -27,15 +27,15 @@ const filterSchema = z.object({
 });
 
 export const getWorkHubSummaryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context as Ctx;
+    const { supabase, userId } = context as unknown as Ctx;
     const { WorkHubService } = await import("./service.server");
     return WorkHubService.getSummary(supabase, userId, new Date().toISOString());
   });
 
 export const getWorkHubOverviewFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
     const { token } = context as any;
     const { fetchNestApiFromServer } = await import("../../api-client");
@@ -45,10 +45,10 @@ export const getWorkHubOverviewFn = createServerFn({ method: "GET" })
   });
 
 export const listWorkHubItemsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => filterSchema.parse(input ?? {}))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context as Ctx;
+    const { supabase, userId } = context as unknown as Ctx;
     const { WorkHubService } = await import("./service.server");
     return WorkHubService.listItems(supabase, userId, new Date().toISOString(), {
       category: data.category ?? null,

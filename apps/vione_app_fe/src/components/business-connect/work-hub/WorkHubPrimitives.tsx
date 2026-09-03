@@ -71,7 +71,7 @@ export function WorkHubSummaryCards({
       aria-label={t("bc.workHub.title")}
       className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
     >
-      {cards.map((c) => (
+      {cards.map((c: any) => (
         <div key={c.key} role="listitem" className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t(c.key)}

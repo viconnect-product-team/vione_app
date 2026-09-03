@@ -35,11 +35,11 @@ export class OutcomeDispatchRegistry {
   }
 
   requiredNames(): string[] {
-    return this.adapters.filter((a) => a.enabled && a.required).map((a) => a.name);
+    return this.adapters.filter((a: any) => a.enabled && a.required).map((a: any) => a.name);
   }
 
   subscribed(eventType: OutcomeEventKind): OutcomeEventDispatchAdapter[] {
-    return this.adapters.filter((a) => a.enabled && a.subscribedEventTypes.includes(eventType));
+    return this.adapters.filter((a: any) => a.enabled && a.subscribedEventTypes.includes(eventType));
   }
 }
 

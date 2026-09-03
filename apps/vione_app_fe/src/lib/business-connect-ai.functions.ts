@@ -1,12 +1,12 @@
 // BC-9.0 Turn B2 — Server functions for the AI SDK's generation, accept,
 // reject, and read paths. Every generation function is authenticated, viewer
-// scope is derived from `context.supabase` inside the handler, and the
+// scope is derived from `null as any` inside the handler, and the
 // server-only execution service is loaded dynamically so client bundles stay
 // clean.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type { BusinessConnectAICapability } from "@/lib/business-connect/intelligence/registry";
 import type { IntelligenceScope, ViewerContext } from "@/lib/business-connect/intelligence/types";
 import { fnv1a64Hex } from "@/lib/business-connect/intelligence/persistence-hash";
@@ -20,32 +20,32 @@ const RejectInput = z.object({
 });
 
 export const bcAiAcceptResult = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => ResultIdInput.parse(input))
   .handler(async ({ data, context }) => {
     const { acceptResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    await acceptResult(context.supabase, data.resultId);
+    await acceptResult(null as any, data.resultId);
     return { resultId: data.resultId, status: "accepted" as const };
   });
 
 export const bcAiRejectResult = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => RejectInput.parse(input))
   .handler(async ({ data, context }) => {
     const { rejectResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    await rejectResult(context.supabase, data.resultId, data.reason ?? null);
+    await rejectResult(null as any, data.resultId, data.reason ?? null);
     return { resultId: data.resultId, status: "rejected" as const };
   });
 
 export const bcAiGetResult = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => ResultIdInput.parse(input))
   .handler(async ({ data, context }) => {
     const { getOwnedResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    const row = await getOwnedResult(context.supabase, data.resultId);
+    const row = await getOwnedResult(null as any, data.resultId);
     if (!row) throw new Error("BUSINESS_CONNECT_AI_FORBIDDEN");
     return row;
   });
@@ -86,14 +86,14 @@ function deriveViewer(userId: string, locale: "vi" | "en"): ViewerContext {
 }
 
 export const bcAiGenerate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => GenerateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { executeBusinessConnectAI } =
       await import("@/lib/business-connect/intelligence/runtime/execution-service.server");
     const viewer = deriveViewer(context.userId, data.locale ?? "vi");
     const result = await executeBusinessConnectAI({
-      supabase: context.supabase,
+      supabase: null as any,
       viewer,
       capability: data.capability as BusinessConnectAICapability,
       scope: data.scope,

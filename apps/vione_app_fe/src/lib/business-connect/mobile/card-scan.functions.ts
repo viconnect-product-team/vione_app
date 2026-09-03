@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type { CardScanResponse } from "./card-scan.types";
 
@@ -19,7 +19,7 @@ const scanInput = z.object({
 });
 
 export const bcMobileCardScanFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => scanInput.parse(data))
   .handler(async ({ data, context }): Promise<CardScanResponse> => {
     return fetchNestApiFromServer("/connect-app/card-scan", context.token, {

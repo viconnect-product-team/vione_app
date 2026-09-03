@@ -61,7 +61,7 @@ export function buildIdentityVCard(
   }
 
   lines.push("END:VCARD");
-  return lines.map((l) => foldVCardLine(l)).join("\r\n") + "\r\n";
+  return lines.map((l: any) => foldVCardLine(l)).join("\r\n") + "\r\n";
 }
 
 /** Download filename: safe ASCII base, never user-controlled path chars. */

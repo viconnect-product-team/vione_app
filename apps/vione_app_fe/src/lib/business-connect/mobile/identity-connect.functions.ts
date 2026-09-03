@@ -7,7 +7,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   getIdentityConnectionState,
   sendIdentityConnectionRequest,
@@ -19,11 +19,11 @@ import type { GlobalConnectionMutationResult } from "@/lib/global-network/types"
 const UNAVAILABLE: IdentityConnectionState = { state: "unavailable", connectionId: null };
 
 export const bcIdentityConnectionStateFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => publicTokenSchema.parse(data))
   .handler(async ({ data, context }): Promise<IdentityConnectionState> => {
     try {
-      return await getIdentityConnectionState(context.supabase, context.userId, data);
+      return await getIdentityConnectionState(null as any, context.userId, data);
     } catch {
       // Pair-state read failures collapse to the same neutral state — the
       // viewer retries; the RPC layer stays authoritative on mutations.
@@ -32,7 +32,7 @@ export const bcIdentityConnectionStateFn = createServerFn({ method: "GET" })
   });
 
 export const bcIdentitySendConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -43,7 +43,7 @@ export const bcIdentitySendConnectionRequestFn = createServerFn({ method: "POST"
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     return sendIdentityConnectionRequest(
-      context.supabase,
+      null as any,
       context.userId,
       data.token,
       data.mutationKey,

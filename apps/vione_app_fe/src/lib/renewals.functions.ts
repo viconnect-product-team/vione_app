@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { RenewalRecord } from "./renewal-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { addOneYear, toRecord, type Row } from "./renewals-calc";
 
 const codeFromId = (id: string) => id.replace(/^RNW-/, "");
@@ -10,23 +10,23 @@ const NO_PERMISSION =
   "Không thể cập nhật hội viên — bạn không có quyền quản trị trong không gian làm việc này.";
 
 export const listRenewalsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalRecord[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase.from("members").select("*").order("code", { ascending: true });
+    const activeId = await getActiveAssociationId(null as any);
+    let query = (null as any).from("members").select("*").order("code", { ascending: true });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => toRecord(r as Row));
+    return (data ?? []).map((r: any) => toRecord(r as Row));
   });
 
 export const renewMembershipFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
-    const { data: cur, error: cErr } = await context.supabase
+    const { data: cur, error: cErr } = await (null as any)
       .from("members")
       .select("term_end")
       .eq("code", code)
@@ -36,7 +36,7 @@ export const renewMembershipFn = createServerFn({ method: "POST" })
     const base = (cur as Row).term_end ? new Date((cur as Row).term_end as string) : new Date();
     const newEnd = addOneYear(base).toISOString().slice(0, 10);
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("members")
       .update({
         new_term_end: newEnd,
@@ -53,13 +53,13 @@ export const renewMembershipFn = createServerFn({ method: "POST" })
   });
 
 export const bulkRenewMembershipFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ ids: z.array(z.string().min(1).max(128)).min(1).max(500) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ renewed: number }> => {
     const codes = data.ids.map(codeFromId);
-    const { data: rows, error: cErr } = await context.supabase
+    const { data: rows, error: cErr } = await (null as any)
       .from("members")
       .select("code, term_end, renewed_at")
       .in("code", codes);
@@ -70,7 +70,7 @@ export const bulkRenewMembershipFn = createServerFn({ method: "POST" })
       if (row.renewed_at) continue;
       const base = row.term_end ? new Date(row.term_end as string) : new Date();
       const newEnd = addOneYear(base).toISOString().slice(0, 10);
-      const { data: upd, error } = await context.supabase
+      const { data: upd, error } = await (null as any)
         .from("members")
         .update({
           new_term_end: newEnd,
@@ -89,11 +89,11 @@ export const bulkRenewMembershipFn = createServerFn({ method: "POST" })
   });
 
 export const sendRenewalReminderFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
-    const { data: cur, error: cErr } = await context.supabase
+    const { data: cur, error: cErr } = await (null as any)
       .from("members")
       .select("reminder_count")
       .eq("code", code)
@@ -101,7 +101,7 @@ export const sendRenewalReminderFn = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     if (!cur) throw new Error("Không tìm thấy hội viên.");
     const next = (((cur as Row).reminder_count as number) ?? 0) + 1;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("members")
       .update({
         reminder_count: next,
@@ -116,11 +116,11 @@ export const sendRenewalReminderFn = createServerFn({ method: "POST" })
   });
 
 export const cancelRenewalFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("members")
       .update({
         new_term_end: null,
@@ -135,7 +135,7 @@ export const cancelRenewalFn = createServerFn({ method: "POST" })
   });
 
 export const setPaymentStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -146,7 +146,7 @@ export const setPaymentStatusFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("members")
       .update({
         payment_status: data.status,

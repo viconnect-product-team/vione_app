@@ -24,6 +24,12 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    return this.authService.refreshToken(refreshToken);
+  }
+
   @Post('register')
   async register(@Body() registerDto: Record<string, any>) {
     return this.authService.register(registerDto);
@@ -57,3 +63,4 @@ export class AuthController {
     return req.user;
   }
 }
+

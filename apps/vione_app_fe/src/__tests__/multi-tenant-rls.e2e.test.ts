@@ -126,7 +126,7 @@ describe.skipIf(!canRun)("multi-tenant RLS isolation (live DB)", () => {
       .select("id")
       .eq("association_id", A.assocId);
     expect(error).toBeNull();
-    expect((data ?? []).map((r) => r.id)).toContain(A.memberId);
+    expect((data ?? []).map((r: any) => r.id)).toContain(A.memberId);
   });
 
   it("admin CANNOT read members of ANOTHER association (cross-tenant denied)", async () => {
@@ -135,7 +135,7 @@ describe.skipIf(!canRun)("multi-tenant RLS isolation (live DB)", () => {
       .select("id")
       .eq("association_id", A.assocId);
     expect(error).toBeNull(); // RLS filters rows; not a hard error
-    expect((data ?? []).map((r) => r.id)).not.toContain(A.memberId);
+    expect((data ?? []).map((r: any) => r.id)).not.toContain(A.memberId);
     expect(data ?? []).toHaveLength(0);
   });
 

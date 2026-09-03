@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // Data fields that can be embedded into an event's ticket QR code.
 export const QR_FIELDS = ["registration_code", "verify_url", "ticket_code"] as const;
@@ -86,49 +86,24 @@ function mapReg(r: Row): Registration {
   };
 }
 
+import { fetchNestApiFromServer } from "./api-client";
+
 export const listEventsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase.from("events").select("*").order("date", { ascending: true });
-    if (activeId) query = query.eq("association_id", activeId);
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    return (data ?? []).map(mapEvent);
+    return fetchNestApiFromServer("/events", context.token);
   });
 
 export const listRegistrationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("event_registrations")
-      .select("*")
-      .order("registered_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data ?? []).map(mapReg);
+    return fetchNestApiFromServer("/events/registrations", context.token);
   });
 
 export const listEventsWithRegistrationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let evQuery = context.supabase.from("events").select("*").order("date", { ascending: true });
-    if (activeId) evQuery = evQuery.eq("association_id", activeId);
-    const [ev, reg] = await Promise.all([
-      evQuery,
-      context.supabase
-        .from("event_registrations")
-        .select("*")
-        .order("registered_at", { ascending: false }),
-    ]);
-    if (ev.error) throw new Error(ev.error.message);
-    if (reg.error) throw new Error(reg.error.message);
-    return {
-      events: (ev.data ?? []).map(mapEvent),
-      registrations: (reg.data ?? []).map(mapReg),
-    };
+    return fetchNestApiFromServer("/events/with-registrations", context.token);
   });
 
 const eventInput = z.object({
@@ -141,23 +116,14 @@ const eventInput = z.object({
 });
 
 export const createEventFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => eventInput.parse(d))
   .handler(async ({ data, context }): Promise<EventItem> => {
-    const { genCode, logActivity } = await import("./crud.server");
-    const id = genCode("EV");
-    const { data: row, error } = await context.supabase
-      .from("events")
-      .insert({ id, ...data, registered: 0 })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
-      action: "Tạo sự kiện",
-      target: data.name,
-      category: "event",
+    const res = await fetchNestApiFromServer("/events", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return mapEvent(row);
+    return res.event ?? res;
   });
 
 // ---- Event creation wizard: event info + ticket types + QR content ----
@@ -175,84 +141,35 @@ const wizardInput = eventInput.extend({
 });
 
 export const createEventWithConfigFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => wizardInput.parse(d))
   .handler(async ({ data, context }): Promise<{ event: EventItem; tickets: TicketType[] }> => {
-    const { genCode, logActivity } = await import("./crud.server");
-    const { qrFields, tickets, ...eventData } = data;
-    // Dedupe QR fields while preserving order.
-    const qr = Array.from(new Set(qrFields));
-    const id = genCode("EV");
-    const { data: row, error } = await context.supabase
-      .from("events")
-      .insert({ id, ...eventData, registered: 0, qr_fields: qr })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-
-    let ticketRows: TicketType[] = [];
-    if (tickets.length) {
-      const payload = tickets.map((tkt, i) => ({
-        id: `${genCode("TK")}-${i}`,
-        event_id: id,
-        name: tkt.name,
-        price: tkt.price,
-        quantity: tkt.quantity,
-        description: tkt.description,
-        sort_order: i,
-      }));
-      const { data: trows, error: terr } = await context.supabase
-        .from("event_ticket_types")
-        .insert(payload)
-        .select("*");
-      if (terr) throw new Error(terr.message);
-      ticketRows = (trows ?? []).map(mapTicket);
-    }
-
-    await logActivity(context.supabase, {
-      action: "Tạo sự kiện (wizard)",
-      target: data.name,
-      category: "event",
+    return fetchNestApiFromServer("/events", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return { event: mapEvent(row), tickets: ticketRows };
   });
 
 export const listEventTicketTypesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ eventId: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<TicketType[]> => {
-    const { data: rows, error } = await context.supabase
-      .from("event_ticket_types")
-      .select("*")
-      .eq("event_id", data.eventId)
-      .order("sort_order", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (rows ?? []).map(mapTicket);
+    return fetchNestApiFromServer(`/events/${encodeURIComponent(data.eventId)}/tickets`, context.token);
   });
 
 export const updateEventFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => eventInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<EventItem> => {
-    const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await context.supabase
-      .from("events")
-      .update(rest)
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
-      action: "Cập nhật sự kiện",
-      target: data.name,
-      category: "event",
+    return fetchNestApiFromServer(`/events/${encodeURIComponent(id)}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
     });
-    return mapEvent(row);
   });
 
 export const updateEventQrFieldsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -262,67 +179,17 @@ export const updateEventQrFieldsFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<EventItem> => {
-    const { logActivity } = await import("./crud.server");
-    const qr = Array.from(new Set(data.qrFields));
-    const { data: row, error } = await context.supabase
-      .from("events")
-      .update({ qr_fields: qr })
-      .eq("id", data.id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
-      action: "Cập nhật định dạng QR sự kiện",
-      target: row.name as string,
-      category: "event",
+    return fetchNestApiFromServer(`/events/${encodeURIComponent(data.id)}/qr-fields`, context.token, {
+      method: "PUT",
+      body: JSON.stringify({ qrFields: data.qrFields }),
     });
-    return mapEvent(row);
   });
 
 export const deleteEventFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean; cancelledRegistrations: number }> => {
-    // Resolve the event (needed for the audit target + to confirm it exists).
-    const ev = await context.supabase
-      .from("events")
-      .select("id, name")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (ev.error) throw new Error(ev.error.message);
-    if (!ev.data) throw new Error("Event not found");
-
-    // Business rule: cancelling an event soft-cancels its registrations (tickets)
-    // so the history is preserved. Only flip rows that are not already cancelled.
-    const reg = await context.supabase
-      .from("event_registrations")
-      .update({ status: "cancelled" })
-      .eq("event_id", data.id)
-      .neq("status", "cancelled")
-      .select("id");
-    if (reg.error) throw new Error(reg.error.message);
-    const cancelledRegistrations = (reg.data ?? []).length;
-
-    // Soft-cancel the event itself instead of deleting it.
-    const { error } = await context.supabase
-      .from("events")
-      .update({ status: "cancelled" })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-
-    // Audit log (best-effort: never fail the action because logging failed).
-    const now = new Date();
-    const at = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`;
-    const code = `L-${now.getTime().toString(36).toUpperCase()}`;
-    const { error: logError } = await context.supabase.from("activity_log").insert({
-      code,
-      user: "system",
-      action: `Hủy sự kiện (${cancelledRegistrations} đăng ký bị hủy)`,
-      target: ev.data.name as string,
-      category: "event",
-      at,
+    return fetchNestApiFromServer(`/events/${encodeURIComponent(data.id)}`, context.token, {
+      method: "DELETE",
     });
-    if (logError) console.error("activity_log insert failed:", logError.message);
-
-    return { ok: true, cancelledRegistrations };
   });

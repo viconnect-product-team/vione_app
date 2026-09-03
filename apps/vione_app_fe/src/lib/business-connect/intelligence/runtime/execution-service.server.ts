@@ -124,7 +124,7 @@ function buildResponseMeta(
       isStale: false,
     },
     limitations,
-    citations: citations.map((c) => ({
+    citations: citations.map((c: any) => ({
       sourceType: c.sourceType as ResponseMeta["citations"][number]["sourceType"],
       sourceRef: c.sourceRef,
       updatedAt: c.updatedAt,

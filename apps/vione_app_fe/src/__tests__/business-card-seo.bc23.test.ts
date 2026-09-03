@@ -142,7 +142,7 @@ describe("JSON-LD structured data", () => {
       "@graph": Record<string, unknown>[];
     };
     expect(g["@context"]).toBe("https://schema.org");
-    const types = g["@graph"].map((n) => n["@type"]);
+    const types = g["@graph"].map((n: any) => n["@type"]);
     expect(types).toContain("ProfilePage");
     expect(types).toContain("BreadcrumbList");
     expect(types).toContain("WebSite");

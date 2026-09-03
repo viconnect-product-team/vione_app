@@ -104,7 +104,7 @@ export const MeetingFollowUpService = {
   ): Promise<MeetingFollowUpDTO[]> {
     assertUuid(meetingId, "MEETING_FOLLOW_UP_NOT_FOUND");
     const rows = await MeetingFollowUpRepository.listByMeeting(sb, meetingId);
-    return rows.map((r) => toFollowUpDTO(r, ctx));
+    return rows.map((r: any) => toFollowUpDTO(r, ctx));
   },
 
   async createFollowUp(

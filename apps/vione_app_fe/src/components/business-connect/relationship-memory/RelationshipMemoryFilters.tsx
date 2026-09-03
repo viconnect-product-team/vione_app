@@ -63,7 +63,7 @@ interface Props {
 }
 
 function toggleFrom<T>(arr: ReadonlyArray<T>, item: T): T[] {
-  return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
+  return arr.includes(item) ? arr.filter((x: any) => x !== item) : [...arr, item];
 }
 
 export function RelationshipMemoryFilters({ value, onChange }: Props) {
@@ -153,7 +153,7 @@ export function RelationshipMemoryFilters({ value, onChange }: Props) {
           {t("bc.memory.filter.confidence")}
         </legend>
         <div className="flex flex-wrap gap-1.5">
-          {(["any", "medium", "high", "verified"] as ConfidenceFilter[]).map((c) => {
+          {(["any", "medium", "high", "verified"] as ConfidenceFilter[]).map((c: any) => {
             const active = value.confidence === c;
             return (
               <button

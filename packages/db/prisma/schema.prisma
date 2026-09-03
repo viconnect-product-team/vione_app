@@ -3822,3 +3822,182 @@ model user_profiles {
   updated_at         DateTime @default(now()) @db.Timestamptz(6)
 }
 
+model members {
+  id             String    @id @db.Text
+  code           String    @db.Text
+  name           String    @db.Text
+  contact        String?   @default("") @db.Text
+  email          String?   @default("") @db.Text
+  phone          String?   @default("") @db.Text
+  type           String?   @db.Text
+  level          String?   @db.Text
+  industry       String?   @db.Text
+  region         String?   @db.Text
+  status         String?   @db.Text
+  joined_at      DateTime? @db.Date
+  fee_year       Int?
+  fee_paid       Boolean?  @default(false)
+  address        String?   @default("") @db.Text
+  website        String?   @db.Text
+  tax_code       String?   @db.Text
+  employees      Int?
+  about          String?   @default("") @db.Text
+  term_end       DateTime? @db.Date
+  reminder_count Int?      @default(0)
+  last_reminder  DateTime? @db.Date
+  renewed_at     DateTime? @db.Date
+  new_term_end   DateTime? @db.Date
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+  user_id        String?   @db.Uuid
+  association_id String    @db.Uuid
+  payment_status String    @default("unpaid") @db.Text
+}
+
+model events {
+  id             String   @id @db.Text
+  name           String   @db.Text
+  date           DateTime @db.Date
+  location       String?  @default("") @db.Text
+  capacity       Int      @default(0)
+  registered     Int      @default(0)
+  status         String   @default("upcoming") @db.Text
+  type           String   @default("forum") @db.Text
+  qr_fields      String[] @default(["registration_code"])
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+  association_id String   @db.Uuid
+}
+
+model event_ticket_types {
+  id             String   @id @db.Text
+  event_id       String   @db.Text
+  association_id String   @db.Uuid
+  name           String   @db.Text
+  price          Decimal  @default(0) @db.Decimal
+  quantity       Int      @default(0)
+  description    String?  @default("") @db.Text
+  sort_order     Int      @default(0)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model event_registrations {
+  id             String   @id @db.Text
+  event_id       String   @db.Text
+  member_code    String   @db.Text
+  member_name    String?  @default("") @db.Text
+  email          String?  @default("") @db.Text
+  registered_at  DateTime @default(now()) @db.Date
+  status         String   @default("confirmed") @db.Text
+  ticket_type    String   @default("standard") @db.Text
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+  association_id String   @db.Uuid
+}
+
+model member_checkins {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_id      String   @db.Text
+  member_code    String   @db.Text
+  event_id       String?  @db.Text
+  event_title    String   @db.Text
+  status         String   @db.Text
+  method         String   @db.Text
+  checked_at     DateTime @db.Timestamptz(6)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  association_id String   @db.Uuid
+}
+
+model activity_log {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code           String   @db.Text
+  user           String   @db.Text
+  action         String   @db.Text
+  target         String   @db.Text
+  category       String   @db.Text
+  at             String   @db.Text
+  ip             String?  @default("") @db.Text
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+  association_id String   @db.Uuid
+}
+
+model invoices {
+  id             String    @id @db.Text
+  member_id      String    @db.Text
+  invoice_no     String    @db.Text
+  year           Int
+  amount         BigInt    @default(0)
+  due_date       DateTime  @db.Date
+  paid_at        DateTime? @db.Date
+  status         String    @db.Text
+  method         String?   @db.Text
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+  association_id String    @db.Uuid
+}
+
+model companies {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_user_id String   @db.Uuid
+  name          String   @db.Text
+  slug          String   @db.Text
+  logo_url      String?  @db.Text
+  cover_url     String?  @db.Text
+  industry      String?  @db.Text
+  size          String?  @db.Text
+  country       String?  @db.Text
+  city          String?  @db.Text
+  website       String?  @db.Text
+  email         String?  @db.Text
+  phone         String?  @db.Text
+  description   String?  @db.Text
+  verified      Boolean  @default(false)
+  visibility    String   @default("public") @db.Text
+  status        String   @default("active") @db.Text
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model company_members {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_id String   @db.Uuid
+  user_id    String?  @db.Uuid
+  email      String?  @db.Text
+  role       String   @default("member") @db.Text
+  status     String   @default("active") @db.Text
+  invited_by String?  @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model associations {
+  id                                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                              String    @db.Text
+  slug                              String?   @db.Text
+  logo_url                          String?   @db.Text
+  brand_primary                     String?   @db.Text
+  tagline                           String?   @db.Text
+  about                             String?   @db.Text
+  contact_email                     String?   @db.Text
+  landing_published                 Boolean   @default(false)
+  ssl_status                        String    @default("none") @db.Text
+  ssl_checked_at                    DateTime? @db.Timestamptz(6)
+  ssl_active_at                     DateTime? @db.Timestamptz(6)
+  public_card_enabled               Boolean   @default(true)
+  public_card_requires_active_member Boolean  @default(true)
+  created_at                        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                        DateTime  @default(now()) @db.Timestamptz(6)
+}
+
+model memberships {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  association_id String   @db.Uuid
+  role           String   @default("member")
+  is_default     Boolean  @default(false)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+}
+

@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type { BcMobilePersonJourneyResult } from "./person-journey.types";
 
@@ -16,7 +16,7 @@ const inputSchema = z.object({
 });
 
 export const bcMobilePersonJourneyFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => inputSchema.parse(i))
   .handler(async ({ data, context }): Promise<BcMobilePersonJourneyResult> => {
     const queryParams = new URLSearchParams();

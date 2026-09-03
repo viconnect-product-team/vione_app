@@ -123,7 +123,7 @@ export async function getBcMobilePersonJourneyPage(
         const rows = (data ?? []) as unknown as RawMomentJourneyRow[];
         if (rows.length === 0) return [];
 
-        const ids = rows.map((r) => r.id);
+        const ids = rows.map((r: any) => r.id);
         const media = await sb
           .from(MOMENT_MEDIA_TABLE)
           .select("moment_id, storage_path, sort_order")

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { relTime } from "./shared";
 import { resolveMemberCode } from "@/lib/member-identity";
 
@@ -25,7 +25,7 @@ export type ChatMessage = {
 const resolveMyCode = resolveMemberCode;
 
 export const listConversations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyConversation[]> => {
     const { supabase, userId } = context;
     const myCode = await resolveMyCode(supabase, userId);
@@ -76,7 +76,7 @@ export const listConversations = createServerFn({ method: "GET" })
   });
 
 export const listMessages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ peerCode: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/) }).parse(d),
   )
@@ -119,7 +119,7 @@ export const listMessages = createServerFn({ method: "GET" })
   });
 
 export const sendMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({ peerCode: z.string().min(1).max(64), text: z.string().trim().min(1).max(2000) })

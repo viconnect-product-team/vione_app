@@ -119,7 +119,7 @@ describe("BC-4.3 recency decay", () => {
 describe("BC-4.3 category caps & bounds", () => {
   it("all scores clamp to [0,1]", () => {
     // Saturate every registered signal maximally
-    const obs = listContributions().map((c) => ({
+    const obs = listContributions().map((c: any) => ({
       signalKind: c.signalKind,
       count: 10_000,
       lastAt: NOW.toISOString(),

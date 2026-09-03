@@ -102,7 +102,7 @@ export async function searchMemoriesStructured(
         ? allowedForSensitivityCeiling(r.sensitivity, filters.maxSensitivity)
         : true,
     )
-    .map((r) => shapeSearchResult(r, null, filters, now));
+    .map((r: any) => shapeSearchResult(r, null, filters, now));
 
   return {
     items,
@@ -166,7 +166,7 @@ export async function searchMemoriesSemantic(
         return false;
       return true;
     })
-    .map((r) => shapeSearchResult(r, r.similarity ?? null, filters, now))
+    .map((r: any) => shapeSearchResult(r, r.similarity ?? null, filters, now))
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit);
 

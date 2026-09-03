@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { resolveAssociationId } from "@/lib/current-member";
 
 // Reply templates managed per-association. Channel mirrors the business-card
@@ -50,7 +50,7 @@ const templateInput = z.object({
 
 // Members: active templates only (RLS also enforces this). Ordered by priority.
 export const listReplyTemplatesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<ReplyTemplateRow[]> => {
     const { supabase } = context;
     const assoc = await resolveAssociationId(supabase);
@@ -62,12 +62,12 @@ export const listReplyTemplatesFn = createServerFn({ method: "GET" })
       .order("priority", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return (data ?? []).map((r) => mapRow(r as Record<string, unknown>));
+    return (data ?? []).map((r: any) => mapRow(r as Record<string, unknown>));
   });
 
 // Managers: all templates (active + inactive) for the management screen.
 export const listAllReplyTemplatesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<ReplyTemplateRow[]> => {
     const { supabase } = context;
     const assoc = await resolveAssociationId(supabase);
@@ -78,11 +78,11 @@ export const listAllReplyTemplatesFn = createServerFn({ method: "GET" })
       .order("priority", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return (data ?? []).map((r) => mapRow(r as Record<string, unknown>));
+    return (data ?? []).map((r: any) => mapRow(r as Record<string, unknown>));
   });
 
 export const upsertReplyTemplateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input) => templateInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -118,7 +118,7 @@ export const upsertReplyTemplateFn = createServerFn({ method: "POST" })
   });
 
 export const deleteReplyTemplateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;

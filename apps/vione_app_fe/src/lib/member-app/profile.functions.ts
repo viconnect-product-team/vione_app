@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fmtDate, resolveAssociationId } from "./shared";
 import { buildNonMemberIdentity } from "@/lib/member-identity";
 
@@ -60,14 +60,14 @@ const DEFAULT_BENEFITS: MemberBenefit[] = [
 ];
 
 export const getActiveAssociationId = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<string | null> => {
     const { supabase, userId } = context;
     return resolveAssociationId(supabase, userId);
   });
 
 export const getMyBenefits = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MemberBenefit[]> => {
     const { supabase, userId } = context;
     const associationId = await resolveAssociationId(supabase, userId);
@@ -79,7 +79,7 @@ export const getMyBenefits = createServerFn({ method: "GET" })
       .order("sort_order", { ascending: true });
     const rows = (data ?? []) as any[];
     if (rows.length === 0) return DEFAULT_BENEFITS;
-    return rows.map((r) => ({
+    return rows.map((r: any) => ({
       titleVi: r.title_vi ?? "",
       titleEn: r.title_en ?? "",
       descVi: r.desc_vi ?? "",
@@ -88,7 +88,7 @@ export const getMyBenefits = createServerFn({ method: "GET" })
   });
 
 export const getMyAssociationBrand = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyAssociationBrand | null> => {
     const { supabase, userId } = context;
     let associationId: string | null = null;
@@ -136,64 +136,10 @@ export const getMyAssociationBrand = createServerFn({ method: "GET" })
     };
   });
 
+import { fetchNestApiFromServer } from "@/lib/api-client";
+
 export const getMyMember = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyMember | null> => {
-    const { supabase, userId } = context;
-    // Only the member record explicitly linked to this user counts. Never fall
-    // back to email-matching or "first member" — that leaks another member's
-    // PII to admins/users who don't have their own member profile.
-    const { data } = await supabase.from("members").select("*").eq("user_id", userId).maybeSingle();
-    if (!data) {
-      // No linked member profile (e.g. association admin). Surface the user's
-      // own identity from their profile + auth metadata so the PWA shows the
-      // correct name/email/avatar instead of someone else's data.
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", userId)
-        .maybeSingle();
-      const { data: authData } = await supabase.auth.getUser();
-      if (!prof && !authData?.user) return null;
-      const { name, email, avatar } = buildNonMemberIdentity({
-        profile: prof,
-        authUser: authData?.user ?? null,
-      });
-      return {
-        code: "",
-        name,
-        status: "",
-        validUntil: null,
-        verified: false,
-        type: "individual",
-        title: "",
-        email,
-        phone: "",
-        taxCode: null,
-        industry: "",
-        region: "",
-        address: "",
-        website: null,
-        joinedAt: null,
-        avatar,
-      };
-    }
-    return {
-      code: data.code,
-      name: data.name,
-      status: data.status,
-      validUntil: fmtDate(data.term_end ?? data.new_term_end),
-      verified: data.status === "active",
-      type: data.type === "individual" ? "individual" : "company",
-      title: data.contact ?? "",
-      email: data.email,
-      phone: data.phone,
-      taxCode: data.tax_code,
-      industry: data.industry,
-      region: data.region,
-      address: data.address,
-      website: data.website,
-      joinedAt: fmtDate(data.joined_at),
-      avatar: (data as any).avatar || null,
-    };
+    return fetchNestApiFromServer("/members/me", context.token);
   });

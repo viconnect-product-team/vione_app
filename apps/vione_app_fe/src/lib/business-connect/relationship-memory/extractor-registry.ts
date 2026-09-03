@@ -177,7 +177,7 @@ export const RELATIONSHIP_MEMORY_EXTRACTORS: ReadonlyArray<RelationshipMemoryExt
   ]);
 
 const BY_ID: ReadonlyMap<string, RelationshipMemoryExtractorDefinition> = new Map(
-  RELATIONSHIP_MEMORY_EXTRACTORS.map((e) => [e.extractorId, e]),
+  RELATIONSHIP_MEMORY_EXTRACTORS.map((e: any) => [e.extractorId, e]),
 );
 
 const ALLOWED_DOMAINS: ReadonlySet<string> = new Set(RELATIONSHIP_MEMORY_ALLOWED_SOURCE_DOMAINS);

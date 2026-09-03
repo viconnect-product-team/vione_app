@@ -67,7 +67,7 @@ export class MockAiProvider implements AiProvider {
       model: "mock",
       answer: mock.answer,
       reasoningSummary: mock.reasoningSummary,
-      evidenceIds: mock.evidence.map((e) => e.id),
+      evidenceIds: mock.evidence.map((e: any) => e.id),
       limitations: mock.limitations,
       suggestedActions: mock.suggestedActions,
       confidence,

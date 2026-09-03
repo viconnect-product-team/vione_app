@@ -172,7 +172,7 @@ function ConnectAppNotificationsPage() {
             className="grid gap-3"
             data-testid="bc-notifications-list"
           >
-            {items.map((n) => {
+            {items.map((n: any) => {
               const unread = n.readAt === null;
               return (
                 <li

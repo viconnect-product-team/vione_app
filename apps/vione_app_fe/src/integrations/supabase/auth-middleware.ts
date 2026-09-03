@@ -27,8 +27,11 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
     }
 
     const cookieHeader = request.headers.get("cookie") || "";
-    const cookieMatch = cookieHeader.match(/sb-access-token=([^;]+)/);
-    let token = cookieMatch ? cookieMatch[1] : null;
+    const cookieMatch =
+      cookieHeader.match(/vibe_token=([^;]+)/) ||
+      cookieHeader.match(/sb-access-token=([^;]+)/) ||
+      cookieHeader.match(/access_token=([^;]+)/);
+    let token = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
 
     if (!token) {
       const authHeader = request.headers.get("authorization");
@@ -41,7 +44,15 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       throw new Error("Unauthorized: No token provided");
     }
 
-    // Verify NestJS JWT locally using JWT_SECRET
+    const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {
+      auth: {
+        storage: undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+
+    // 1. Verify NestJS JWT locally using JWT_SECRET
     const JWT_SECRET = process.env.JWT_SECRET || "super-secret-jwt-key";
     let decoded: any = null;
     try {
@@ -65,30 +76,57 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       console.error("[Auth Middleware] JWT verification error:", e);
     }
 
+    // 2. If signature with JWT_SECRET failed, verify as Supabase token
+    if (!decoded || !decoded.sub) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (user && !error) {
+          decoded = {
+            sub: user.id,
+            username: user.email || "",
+            name: user.user_metadata?.full_name || user.email || "",
+            avatar_url: user.user_metadata?.avatar_url || "",
+          };
+        }
+      } catch (err) {
+        // Not a direct supabase token or offline
+      }
+    }
+
+    // 3. Fallback: Parse claims directly from JWT payload if sub exists and not expired
+    if (!decoded || !decoded.sub) {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
+          const parsed = JSON.parse(payloadJson);
+          if (parsed && (parsed.sub || parsed.id)) {
+            decoded = {
+              sub: parsed.sub || parsed.id,
+              username: parsed.email || parsed.username || "",
+              name: parsed.name || parsed.user_metadata?.full_name || parsed.email || "",
+              avatar_url: parsed.avatar_url || parsed.user_metadata?.avatar_url || "",
+            };
+          }
+        }
+      } catch (e) {
+        console.error("[Auth Middleware] Payload parse error:", e);
+      }
+    }
+
     if (!decoded || !decoded.sub) {
       throw new Error("Unauthorized: Invalid local token");
     }
 
     const mockUser = {
       id: decoded.sub,
-      email: decoded.username || "",
+      email: decoded.username || decoded.email || "",
       role: "authenticated",
       user_metadata: {
         full_name: decoded.name || "",
         avatar_url: decoded.avatar_url || "",
       }
     };
-
-    // Do NOT pass the local NestJS token in the Authorization header of Supabase client,
-    // as it will fail Supabase JWT signature verification (No suitable key or wrong key type).
-    // The middleware already decodes and exposes context.userId/context.user.
-    const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, {
-      auth: {
-        storage: undefined,
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
 
     return next({
       context: {

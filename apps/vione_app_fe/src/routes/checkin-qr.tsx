@@ -188,7 +188,7 @@ function CheckinQrPage() {
           <p className="mt-10 text-sm text-muted-foreground">{t("checkinQr.empty")}</p>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {events.map((e) => (
+            {events.map((e: any) => (
               <EventQrCard key={e.id} event={e} />
             ))}
           </div>

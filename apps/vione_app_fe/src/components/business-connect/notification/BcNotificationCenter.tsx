@@ -235,7 +235,7 @@ export function BcNotificationCenter() {
         </p>
       ) : (
         <ul role="list" className="space-y-2" aria-busy={q.isFetching}>
-          {q.data!.items.map((n) => (
+          {q.data!.items.map((n: any) => (
             <NotificationRow key={n.id} n={n} />
           ))}
         </ul>

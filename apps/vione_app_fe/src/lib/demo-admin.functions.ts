@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { z } from "zod";
 
 export const DEMO_LEAD_STATUSES = [
@@ -88,10 +88,10 @@ const SELECT =
 
 /** Admin-only: list demo booking leads (RLS restricts reads to admins). */
 export const listDemoLeads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    let q = context.supabase
+    let q = (null as any)
       .from("demo_requests")
       .select(SELECT)
       .order("created_at", { ascending: false })
@@ -118,7 +118,7 @@ export const listDemoLeads = createServerFn({ method: "GET" })
 
 /** Admin-only: update a lead's status and/or internal notes. */
 export const updateDemoLead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateInput.parse(d))
   .handler(async ({ data, context }) => {
     const patch: {
@@ -135,7 +135,7 @@ export const updateDemoLead = createServerFn({ method: "POST" })
     if (data.adminNotes !== undefined) patch.admin_notes = data.adminNotes;
     if (Object.keys(patch).length === 0) throw new Error("Nothing to update");
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("demo_requests")
       .update(patch)
       .eq("id", data.id)
@@ -187,10 +187,10 @@ const funnelInput = z.object({
 
 /** Admin-only: CTA source/intent attribution funnel for landing page leads. */
 export const getCtaFunnel = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => funnelInput.parse(d ?? {}))
   .handler(async ({ data, context }): Promise<CtaFunnel> => {
-    let q = context.supabase
+    let q = (null as any)
       .from("demo_requests")
       .select("status, cta_source, cta_intent, created_at")
       .order("created_at", { ascending: false })

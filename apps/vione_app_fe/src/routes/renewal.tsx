@@ -234,7 +234,7 @@ function RenewalPage() {
 
   const handleBulkRemind = async () => {
     const targets = filtered.filter((r) => r.status === "due" || r.status === "overdue");
-    await Promise.all(targets.map((r) => remindFn({ data: { id: r.id } })));
+    await Promise.all(targets.map((r: any) => remindFn({ data: { id: r.id } })));
     toast.success(t("renewal.toast.bulk").replace("{n}", String(targets.length)));
     router.invalidate();
   };
@@ -246,7 +246,7 @@ function RenewalPage() {
       return;
     }
     if (!confirm(t("renewal.confirmBulkRenew").replace("{n}", String(targets.length)))) return;
-    const res = await bulkRenewFn({ data: { ids: targets.map((r) => r.id) } });
+    const res = await bulkRenewFn({ data: { ids: targets.map((r: any) => r.id) } });
     toast.success(t("renewal.toast.bulkRenewed").replace("{n}", String(res.renewed)));
     router.invalidate();
   };
@@ -409,7 +409,7 @@ function RenewalPage() {
                   </td>
                 </tr>
               )}
-              {filtered.map((r) => (
+              {filtered.map((r: any) => (
                 <tr
                   key={r.id}
                   onClick={(e) => {

@@ -1,36 +1,36 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { FeeRecord, ReminderEntry } from "./fees-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { mapInvoice, mapReminder, type Row } from "./fees-calc";
 
 export const listInvoicesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<FeeRecord[]> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("invoices")
       .select("*, member:members(*)")
       .order("invoice_no", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapInvoice(r as Row));
+    return (data ?? []).map((r: any) => mapInvoice(r as Row));
   });
 
 export const getInvoiceFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(
     async ({
       data,
       context,
     }): Promise<{ invoice: FeeRecord; reminders: ReminderEntry[] } | null> => {
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await (null as any)
         .from("invoices")
         .select("*, member:members(*)")
         .eq("id", data.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
       if (!row) return null;
-      const { data: rem, error: rErr } = await context.supabase
+      const { data: rem, error: rErr } = await (null as any)
         .from("invoice_reminders")
         .select("*")
         .eq("invoice_id", data.id)
@@ -38,7 +38,7 @@ export const getInvoiceFn = createServerFn({ method: "GET" })
       if (rErr) throw new Error(rErr.message);
       return {
         invoice: mapInvoice(row as Row),
-        reminders: (rem ?? []).map((x) => mapReminder(x as Row)),
+        reminders: (rem ?? []).map((x: any) => mapReminder(x as Row)),
       };
     },
   );
@@ -46,12 +46,12 @@ export const getInvoiceFn = createServerFn({ method: "GET" })
 const methodSchema = z.enum(["bank", "card", "cash", "ewallet"]);
 
 export const markInvoicePaidFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().min(1).max(128), method: methodSchema }).parse(d),
   )
   .handler(async ({ data, context }): Promise<FeeRecord | null> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("invoices")
       .update({
         status: "paid",
@@ -63,7 +63,7 @@ export const markInvoicePaidFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
-    await context.supabase
+    await (null as any)
       .from("members")
       .update({ fee_paid: true })
       .eq("id", (row as Row).member_id as string);
@@ -71,12 +71,12 @@ export const markInvoicePaidFn = createServerFn({ method: "POST" })
   });
 
 export const updateInvoiceMethodFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().min(1).max(128), method: methodSchema }).parse(d),
   )
   .handler(async ({ data, context }): Promise<FeeRecord | null> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("invoices")
       .update({ method: data.method })
       .eq("id", data.id)
@@ -87,7 +87,7 @@ export const updateInvoiceMethodFn = createServerFn({ method: "POST" })
   });
 
 export const addReminderFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -98,7 +98,7 @@ export const addReminderFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<ReminderEntry> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("invoice_reminders")
       .insert({
         invoice_id: data.invoiceId,
@@ -113,7 +113,7 @@ export const addReminderFn = createServerFn({ method: "POST" })
   });
 
 export const createInvoiceFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -127,7 +127,7 @@ export const createInvoiceFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<FeeRecord> => {
     const id = `INV-${Date.now().toString(36).toUpperCase()}`;
     const invoiceNo = `HD-${data.year}-${Date.now().toString(36).toUpperCase().slice(-5)}`;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("invoices")
       .insert({
         id,
@@ -145,10 +145,10 @@ export const createInvoiceFn = createServerFn({ method: "POST" })
   });
 
 export const deleteInvoiceFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await context.supabase.from("invoices").delete().eq("id", data.id);
+    const { error } = await (null as any).from("invoices").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

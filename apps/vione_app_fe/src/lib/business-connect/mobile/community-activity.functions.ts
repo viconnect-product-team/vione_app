@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
   CommunityActivityPreviewDTO,
@@ -23,7 +23,7 @@ const eventsInput = z.object({
 });
 
 export const listCommunityEventsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => eventsInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventPageDTO | null> => {
     const queryParams = new URLSearchParams();
@@ -42,14 +42,14 @@ const eventDetailInput = z.object({
 });
 
 export const getCommunityEventDetailFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventDetailDTO | null> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}`, context.token);
   });
 
 export const registerCommunityEventFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}/registrations`, context.token, {
@@ -58,7 +58,7 @@ export const registerCommunityEventFn = createServerFn({ method: "POST" })
   });
 
 export const cancelCommunityEventRegistrationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}/registrations`, context.token, {
@@ -73,7 +73,7 @@ const opportunitiesInput = z.object({
 });
 
 export const listCommunityOpportunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => opportunitiesInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityPageDTO | null> => {
     const queryParams = new URLSearchParams();
@@ -92,7 +92,7 @@ const opportunityDetailInput = z.object({
 });
 
 export const getCommunityOpportunityDetailFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityDetailDTO | null> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/opportunities/${data.opportunityRef}`, context.token);
@@ -103,7 +103,7 @@ const opportunityInterestInput = opportunityDetailInput.extend({
 });
 
 export const expressCommunityOpportunityInterestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => opportunityInterestInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef, interestLevel } = data;
@@ -114,7 +114,7 @@ export const expressCommunityOpportunityInterestFn = createServerFn({ method: "P
   });
 
 export const withdrawCommunityOpportunityInterestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef } = data;
@@ -128,7 +128,7 @@ const followUpScheduleInput = opportunityDetailInput.extend({
 });
 
 export const scheduleCommunityOpportunityFollowUpFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => followUpScheduleInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef, inDays } = data;
@@ -143,7 +143,7 @@ const followUpUpdateInput = opportunityDetailInput.extend({
 });
 
 export const updateCommunityOpportunityFollowUpFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => followUpUpdateInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef, action } = data;
@@ -159,7 +159,7 @@ const progressInput = opportunityDetailInput.extend({
 });
 
 export const saveCommunityOpportunityProgressFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => progressInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef, progress, note } = data;
@@ -179,7 +179,7 @@ const attachmentAddInput = opportunityDetailInput.extend({
 });
 
 export const addCommunityOpportunityAttachmentFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => attachmentAddInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { communityId, opportunityRef, ...rest } = data;
@@ -192,7 +192,7 @@ export const addCommunityOpportunityAttachmentFn = createServerFn({ method: "POS
 const attachmentRemoveInput = z.object({ attachmentId: z.string().uuid() });
 
 export const removeCommunityOpportunityAttachmentFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => attachmentRemoveInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     return fetchNestApiFromServer(`/connect-app/community/opportunities/attachments/${data.attachmentId}`, context.token, {
@@ -203,7 +203,7 @@ export const removeCommunityOpportunityAttachmentFn = createServerFn({ method: "
 const previewInput = z.object({ communityId: communityIdSchema });
 
 export const getCommunityActivityPreviewFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => previewInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityActivityPreviewDTO | null> => {
     try {

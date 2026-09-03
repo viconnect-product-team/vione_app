@@ -223,7 +223,7 @@ export class RelationshipGraphWriteService {
       limit,
     });
     emitGraphTelemetry({ event: "graph_timeline_queried", count: res.rows.length });
-    return { items: res.rows.map((r) => this.mapTimelineRow(r)), nextCursor: res.nextCursor };
+    return { items: res.rows.map((r: any) => this.mapTimelineRow(r)), nextCursor: res.nextCursor };
   }
 
   async pairTimeline(q: PairTimelineQuery): Promise<TimelinePage> {
@@ -236,7 +236,7 @@ export class RelationshipGraphWriteService {
       limit,
     });
     emitGraphTelemetry({ event: "graph_timeline_queried", count: res.rows.length });
-    return { items: res.rows.map((r) => this.mapTimelineRow(r)), nextCursor: res.nextCursor };
+    return { items: res.rows.map((r: any) => this.mapTimelineRow(r)), nextCursor: res.nextCursor };
   }
 
   async history(q: TimelineQuery): Promise<TimelinePage> {

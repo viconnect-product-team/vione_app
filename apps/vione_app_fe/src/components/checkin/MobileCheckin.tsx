@@ -152,7 +152,7 @@ export function MobileCheckin({
   }
 
   const searchResults = q.trim()
-    ? attendees.filter((a) =>
+    ? attendees.filter((a: any) =>
         [a.name, a.company, a.phone].some((f) => f.toLowerCase().includes(q.toLowerCase())),
       )
     : [];
@@ -319,7 +319,7 @@ export function MobileCheckin({
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {searchResults.map((a) => (
+                  {searchResults.map((a: any) => (
                     <button
                       key={a.id}
                       onClick={() => {

@@ -167,6 +167,6 @@ export function computeStrength(input: ComputeInput): RelationshipStrengthResult
     calculatedAt: now.toISOString(),
     freshness: computeFreshness([...merged.values()], nowMs),
     contributions,
-    explanationKeys: contributions.map((c) => c.explanationKey),
+    explanationKeys: contributions.map((c: any) => c.explanationKey),
   };
 }

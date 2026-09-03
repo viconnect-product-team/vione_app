@@ -157,7 +157,7 @@ export class IntroductionAnalyticsService {
       const rows = (data ?? []) as Array<OverviewRow & { metric_date: string }>;
       return {
         filters: f,
-        points: rows.map((r) => ({
+        points: rows.map((r: any) => ({
           metricDate: r.metric_date,
           counts: countsFromRow(r),
         })),
@@ -190,7 +190,7 @@ export class IntroductionAnalyticsService {
       }>;
       return {
         filters: f,
-        rows: rows.map((r) => {
+        rows: rows.map((r: any) => {
           const sample = n(r.sample_size);
           return {
             metric: r.metric_kind as TimeToOutcomeDTO["rows"][number]["metric"],
@@ -234,7 +234,7 @@ export class IntroductionAnalyticsService {
         filters: rest,
         buckets: rows
           .filter((r) => r.path_depth === 2 || r.path_depth === 3)
-          .map((r) => {
+          .map((r: any) => {
             const counts = {
               requested: n(r.requested_count),
               accepted: n(r.accepted_count),
@@ -301,7 +301,7 @@ export class IntroductionAnalyticsService {
               r.confidence_bucket === "medium" ||
               r.confidence_bucket === "high",
           )
-          .map((r) => {
+          .map((r: any) => {
             const counts = {
               requested: n(r.requested_count),
               accepted: n(r.accepted_count),

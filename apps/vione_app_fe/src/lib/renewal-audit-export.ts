@@ -67,7 +67,7 @@ async function sha256Hex(input: string): Promise<string> {
 /** Chuỗi chuẩn hoá dùng để băm — thay đổi bất kỳ trường nào sẽ đổi mã. */
 export function buildAuditDigestPayload(rows: RenewalAuditEntry[]): string {
   return rows
-    .map((r) =>
+    .map((r: any) =>
       [
         r.id,
         r.eventType,
@@ -194,7 +194,7 @@ export async function exportRenewalAuditPDF(
       lines.push(`Lỗi: ${r.errorCode ?? "—"}${r.errorMessage ? ` — ${r.errorMessage}` : ""}`);
     }
 
-    const wrapped = lines.flatMap((l) => doc.splitTextToSize(T(l), contentW - 12) as string[]);
+    const wrapped = lines.flatMap((l: any) => doc.splitTextToSize(T(l), contentW - 12) as string[]);
     const blockH = wrapped.length * 13 + 14;
     ensure(blockH + 6);
 

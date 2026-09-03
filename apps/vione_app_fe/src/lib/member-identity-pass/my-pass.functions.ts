@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   type PassStatus,
   type MyIdentityPass,
@@ -14,7 +14,7 @@ import {
 } from "./shared";
 
 export const getMyIdentityPassFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyIdentityPass> => {
     const { supabase } = context;
     // BC-1.2: use the narrow additive null-safe wrapper over current_member_id()

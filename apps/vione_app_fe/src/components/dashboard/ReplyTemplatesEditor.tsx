@@ -191,7 +191,7 @@ export function ReplyTemplatesEditor() {
                 }
                 className={inputCls}
               >
-                {CHANNELS.map((c) => (
+                {CHANNELS.map((c: any) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -325,7 +325,7 @@ export function ReplyTemplatesEditor() {
         </p>
       ) : (
         <ul className="space-y-2">
-          {rows.map((r) => (
+          {rows.map((r: any) => (
             <li
               key={r.id}
               className="flex items-center gap-3 rounded-lg border border-border bg-background p-3"

@@ -212,7 +212,7 @@ function AuditLogPage() {
       t("bcaudit.col.actor"),
       t("bcaudit.col.detail"),
     ];
-    const lines = sortedRows.map((r) => {
+    const lines = sortedRows.map((r: any) => {
       const detail = r.from || r.to ? `${r.from ?? ""} -> ${r.to ?? ""}` : (r.reason ?? "");
       return [
         fmtDate(r.createdAt),
@@ -223,7 +223,7 @@ function AuditLogPage() {
         r.actorName ?? t("bcaudit.actor.system"),
         detail,
       ]
-        .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+        .map((c: any) => `"${String(c).replace(/"/g, '""')}"`)
         .join(",");
     });
     const csv = [header.join(","), ...lines].join("\n");
@@ -281,7 +281,7 @@ function AuditLogPage() {
     }
     drawHeader();
 
-    sortedRows.forEach((r) => {
+    sortedRows.forEach((r: any) => {
       if (y > 195) {
         doc.addPage();
         y = 16;
@@ -387,7 +387,7 @@ function AuditLogPage() {
           className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="all">{t("bcaudit.filter.all")}</option>
-          {ACTION_TYPES.map((a) => (
+          {ACTION_TYPES.map((a: any) => (
             <option key={a} value={a}>
               {t(actionLabelKey(a))}
             </option>
@@ -446,7 +446,7 @@ function AuditLogPage() {
           aria-label={t("bcaudit.page.size")}
           className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {[10, 25, 50, 100].map((n) => (
+          {[10, 25, 50, 100].map((n: any) => (
             <option key={n} value={n}>
               {n} / {t("bcaudit.page.size")}
             </option>
@@ -480,7 +480,7 @@ function AuditLogPage() {
             "",
           ]}
         >
-          {pagedRows.map((r) => (
+          {pagedRows.map((r: any) => (
             <tr key={r.id} className="border-b border-border last:border-0">
               <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                 {fmtDate(r.createdAt)}
@@ -645,7 +645,7 @@ function AuditDetailModal({
                     {t("bcaudit.detail.fieldChanges")}
                   </div>
                   <div className="space-y-2">
-                    {entry.changes.map((c) => (
+                    {entry.changes.map((c: any) => (
                       <div key={c.field} className="rounded-md border border-border p-2.5">
                         <div className="mb-1.5 text-xs font-semibold text-foreground">
                           {fieldLabel(c.field)}

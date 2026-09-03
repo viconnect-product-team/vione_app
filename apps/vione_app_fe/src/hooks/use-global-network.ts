@@ -36,11 +36,11 @@ export function useNetworkSection(section: NetworkSection) {
     let active = true;
     try {
       const list = await LOADERS[section]();
-      const ids = Array.from(new Set(list.map((c) => c.counterpartUserId)));
+      const ids = Array.from(new Set(list.map((c: any) => c.counterpartUserId)));
       const summaries = ids.length ? await GlobalNetworkSDK.counterparts.resolvePublic(ids) : [];
       const byId = new Map(summaries.map((s) => [s.userId, s]));
       if (!active) return;
-      setRows(list.map((c) => ({ ...c, counterpart: byId.get(c.counterpartUserId) ?? null })));
+      setRows(list.map((c: any) => ({ ...c, counterpart: byId.get(c.counterpartUserId) ?? null })));
       setError(null);
     } catch (e) {
       if (active) setError(e instanceof Error ? e.message : "error");

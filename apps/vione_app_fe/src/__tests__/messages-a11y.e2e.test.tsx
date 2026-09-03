@@ -16,8 +16,8 @@ const BASE: MyConversation[] = [
   { peerCode: "P2", name: "Beta LLC", last: "Thanks!", time: "1h", unread: 0 },
 ];
 
-let dataset: MyConversation[] = BASE.map((c) => ({ ...c }));
-const listConversations = vi.fn(async () => dataset.map((c) => ({ ...c })));
+let dataset: MyConversation[] = BASE.map((c: any) => ({ ...c }));
+const listConversations = vi.fn(async () => dataset.map((c: any) => ({ ...c })));
 
 vi.mock("@/lib/member-app.functions", () => ({
   checkRenewalReminder: vi.fn(async () => ({ created: false })),
@@ -76,7 +76,7 @@ async function getList(): Promise<HTMLElement> {
 }
 
 beforeEach(() => {
-  dataset = BASE.map((c) => ({ ...c }));
+  dataset = BASE.map((c: any) => ({ ...c }));
   window.localStorage.clear();
   window.localStorage.setItem("vba.lang", "en");
 });

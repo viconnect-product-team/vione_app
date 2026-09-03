@@ -49,7 +49,7 @@ export function IntroductionRequestsWorkspace() {
           )}
           {incoming.data && incoming.data.items.length > 0 && (
             <ul className="space-y-3" role="list">
-              {incoming.data.items.map((r) => (
+              {incoming.data.items.map((r: any) => (
                 <IntroductionRequestRow
                   key={r.id}
                   request={r}
@@ -76,7 +76,7 @@ export function IntroductionRequestsWorkspace() {
           )}
           {outgoing.data && outgoing.data.items.length > 0 && (
             <ul className="space-y-3" role="list">
-              {outgoing.data.items.map((r) => (
+              {outgoing.data.items.map((r: any) => (
                 <IntroductionRequestRow
                   key={r.id}
                   request={r}

@@ -140,7 +140,7 @@ export function computeChannelPlan(input: {
     const externals: NotificationChannel[] = channels.filter((c) => c !== "in_app");
     const inApp: NotificationChannel[] = channels.filter((c) => c === "in_app");
     if (externals.length && quiet.window) {
-      const [h, m] = quiet.window.end.split(":").map((n) => Number.parseInt(n, 10));
+      const [h, m] = quiet.window.end.split(":").map((n: any) => Number.parseInt(n, 10));
       const defer = new Date(input.now);
       defer.setUTCHours(h, m, 0, 0);
       if (defer <= input.now) defer.setUTCDate(defer.getUTCDate() + 1);

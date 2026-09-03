@@ -362,7 +362,7 @@ describe("BC-7.9 outcome service — behavioural contract", () => {
     expect(b.id).toBe(a.id);
     expect(b.version).toBe(1);
     // Exactly-one created event
-    expect(harness.events.filter((e) => e.type === "business_meeting_outcome_created").length).toBe(
+    expect(harness.events.filter((e: any) => e.type === "business_meeting_outcome_created").length).toBe(
       1,
     );
   });
@@ -413,7 +413,7 @@ describe("BC-7.9 outcome service — behavioural contract", () => {
     });
     expect(updated.version).toBe(2);
     expect(updated.outcomeType).toBe("agreement_reached");
-    expect(harness.events.filter((e) => e.type === "business_meeting_outcome_updated").length).toBe(
+    expect(harness.events.filter((e: any) => e.type === "business_meeting_outcome_updated").length).toBe(
       1,
     );
   });
@@ -455,7 +455,7 @@ describe("BC-7.9 outcome service — behavioural contract", () => {
     expect(f2.id).toBe(f1.id);
     expect(f2.version).toBe(f1.version);
     expect(
-      harness.events.filter((e) => e.type === "business_meeting_outcome_finalized").length,
+      harness.events.filter((e: any) => e.type === "business_meeting_outcome_finalized").length,
     ).toBe(1);
   });
 
@@ -491,7 +491,7 @@ describe("BC-7.9 outcome service — behavioural contract", () => {
       meetingId: MID,
       expectedVersion: 2,
     });
-    const keys = harness.events.map((e) => e.mutationKey);
+    const keys = harness.events.map((e: any) => e.mutationKey);
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys).toEqual([
       `outcome_create:o-${MID}`,

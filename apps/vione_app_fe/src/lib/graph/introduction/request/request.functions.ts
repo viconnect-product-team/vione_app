@@ -1,13 +1,13 @@
 // BC-6.2 — Introduction Request server-fn RPC boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type { IntroductionRequestDTO, IntroductionRequestPageDTO } from "./types";
 
 const uuid = z.string().uuid();
 
 export const sendIntroductionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -20,48 +20,48 @@ export const sendIntroductionRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    const svc = new IntroductionRequestService(context.supabase as never, context.userId);
+    const svc = new IntroductionRequestService(null as any as never, context.userId);
     return svc.sendRequest(data);
   });
 
 const idOnly = z.object({ requestId: uuid });
 
 export const acceptIntroductionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).acceptRequest(
+    return new IntroductionRequestService(null as any as never, context.userId).acceptRequest(
       data.requestId,
     );
   });
 
 export const declineIntroductionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).declineRequest(
+    return new IntroductionRequestService(null as any as never, context.userId).declineRequest(
       data.requestId,
     );
   });
 
 export const cancelIntroductionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).cancelRequest(
+    return new IntroductionRequestService(null as any as never, context.userId).cancelRequest(
       data.requestId,
     );
   });
 
 export const getIntroductionRequestFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).getRequest(
+    return new IntroductionRequestService(null as any as never, context.userId).getRequest(
       data.requestId,
     );
   });
@@ -75,21 +75,21 @@ const listOpts = z
   .optional();
 
 export const listIncomingIntroductionRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestPageDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).listIncoming(
+    return new IntroductionRequestService(null as any as never, context.userId).listIncoming(
       data,
     );
   });
 
 export const listOutgoingIntroductionRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestPageDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(context.supabase as never, context.userId).listOutgoing(
+    return new IntroductionRequestService(null as any as never, context.userId).listOutgoing(
       data,
     );
   });

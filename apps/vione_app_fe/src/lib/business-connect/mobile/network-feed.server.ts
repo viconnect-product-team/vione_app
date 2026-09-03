@@ -69,7 +69,7 @@ export async function listNetworkFeedPage(
     .eq("owner_user_id", args.viewerId)
     .in(
       "moment_id",
-      page.map((r) => r.id),
+      page.map((r: any) => r.id),
     )
     .order("sort_order", { ascending: true });
 

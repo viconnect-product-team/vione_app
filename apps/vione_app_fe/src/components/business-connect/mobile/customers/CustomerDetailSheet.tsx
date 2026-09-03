@@ -109,7 +109,7 @@ export function CustomerDetailSheet({
           onClick={() =>
             void suggestFeedback.submit
               .mutateAsync({ tagName: name, verdict: "bad", runId: runRef })
-              .then(() => setSuggestions((prev) => prev.filter((x) => x.name !== name)))
+              .then(() => setSuggestions((prev) => prev.filter((x: any) => x.name !== name)))
           }
           className={`${base} ${
             verdict === "bad"
@@ -124,7 +124,7 @@ export function CustomerDetailSheet({
   };
 
   const tagNamesOf = (ids: string[]) =>
-    ids.map((id) => tags.find((tg) => tg.id === id)?.name).filter((n): n is string => Boolean(n));
+    ids.map((id: any) => tags.find((tg) => tg.id === id)?.name).filter((n): n is string => Boolean(n));
 
   const toggleTag = async (tagId: string) => {
     const next = tagIds.includes(tagId)
@@ -429,7 +429,7 @@ export function CustomerDetailSheet({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSuggestions((prev) => prev.filter((x) => x.name !== s.name))}
+                  onClick={() => setSuggestions((prev) => prev.filter((x: any) => x.name !== s.name))}
                   aria-label={t("bc.mobile.customers.tagSuggest.dismiss")}
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
                 >

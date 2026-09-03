@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { relTime, fmtDate } from "./shared";
 
 // ---------- News ----------
@@ -15,14 +15,14 @@ export type NewsItem = {
 };
 
 export const listNews = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<NewsItem[]> => {
-    const { data } = await context.supabase
+    const { data } = await (null as any)
       .from("news")
       .select("*")
       .eq("status", "published")
       .order("created_at", { ascending: false });
-    return (data ?? []).map((n) => ({
+    return (data ?? []).map((n: any) => ({
       id: n.id,
       title: n.title,
       category: n.category ?? "",
@@ -44,9 +44,9 @@ export type LibraryDoc = {
 };
 
 export const listDocuments = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<LibraryDoc[]> => {
-    const { data } = await context.supabase
+    const { data } = await (null as any)
       .from("documents")
       .select("*")
       .order("uploaded_at", { ascending: false, nullsFirst: false });
@@ -90,9 +90,9 @@ function mapPerk(p: any): Perk {
 }
 
 export const listPerks = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Perk[]> => {
-    const { data } = await context.supabase
+    const { data } = await (null as any)
       .from("perks")
       .select("*")
       .eq("status", "active")
@@ -101,10 +101,10 @@ export const listPerks = createServerFn({ method: "GET" })
   });
 
 export const getPerk = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }): Promise<Perk | null> => {
-    const { data: row } = await context.supabase
+    const { data: row } = await (null as any)
       .from("perks")
       .select("*")
       .eq("id", data.id)

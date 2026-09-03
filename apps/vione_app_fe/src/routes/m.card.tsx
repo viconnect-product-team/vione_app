@@ -567,7 +567,7 @@ function CardScreen() {
 
         {/* Quick actions */}
         <div className="mt-5 grid grid-cols-4 gap-3">
-          {actions.map((a) => {
+          {actions.map((a: any) => {
             const Icon = a.icon;
             return (
               <Link key={a.label} to={a.to} className="flex flex-col items-center gap-2">

@@ -66,7 +66,7 @@ export function RelationshipTimeline(props: RelationshipTimelineProps) {
     const raw = (query.data?.pages ?? []).flatMap((p) => p.items);
     // Client-side category filter for pair mode (SDK-pair path has no filter arg).
     if (isPair && filter !== "all") {
-      return raw.filter((e) => e.eventCategory === filter);
+      return raw.filter((e: any) => e.eventCategory === filter);
     }
     return raw;
   }, [query.data, filter, isPair]);

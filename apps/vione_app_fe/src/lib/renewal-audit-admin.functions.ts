@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -71,7 +71,7 @@ async function resolveScope(context: Ctx): Promise<AdminRenewalAuditScope> {
 
 /** Associations the caller may inspect. Empty list ⇒ not an admin. */
 export const getRenewalAuditScopeFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminRenewalAuditScope> => resolveScope(context as Ctx));
 
 const querySchema = z.object({
@@ -85,12 +85,12 @@ const querySchema = z.object({
 });
 
 export const searchRenewalAuditLogFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => querySchema.parse(input ?? {}))
   .handler(async ({ context, data }): Promise<AdminRenewalAuditRow[]> => {
     const ctx = context as Ctx;
     const scope = await resolveScope(ctx);
-    const allowedIds = scope.associations.map((a) => a.id);
+    const allowedIds = scope.associations.map((a: any) => a.id);
     if (!scope.isPlatformAdmin && !allowedIds.length) throw new Error("Forbidden");
 
     // Privileged read: audit rows belong to other members, so RLS-as-user

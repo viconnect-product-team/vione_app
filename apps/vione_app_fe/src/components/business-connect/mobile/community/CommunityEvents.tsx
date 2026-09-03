@@ -111,7 +111,7 @@ export function CommunityEvents({ communityId }: { communityId: string }) {
               aria-busy={events.isLoadingMore}
               className="mt-2 divide-y divide-[var(--bc-mobile-border)]"
             >
-              {events.events.map((e) => (
+              {events.events.map((e: any) => (
                 <EventRow key={e.eventRef} communityId={communityId} event={e} />
               ))}
             </ul>

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/drawer";
 import { useT, type TKey } from "@/lib/i18n";
 import {
-  bcMobileMomentDeleteFn,
+  deleteMomentDirect,
   bcMobileMomentUpdateFn,
 } from "@/lib/business-connect/mobile/moment.functions";
 import { MomentPhotosEditor } from "./MomentPhotosEditor";
@@ -141,7 +141,8 @@ export function MomentManageSheet({
     setBusy("delete");
     setErrorKey(null);
     try {
-      const res = await bcMobileMomentDeleteFn({ data: { momentId } });
+      // Use direct API call to bypass requireSupabaseAuth middleware
+      const res = await deleteMomentDirect(momentId);
       if (!res.ok) {
         setErrorKey(errorKeyFor(res.error, "bc.mobile.moment.error.delete"));
         setBusy(false);

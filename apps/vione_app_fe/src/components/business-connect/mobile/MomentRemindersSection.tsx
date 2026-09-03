@@ -126,7 +126,7 @@ export function MomentRemindersSection({ momentId }: { momentId: string }) {
       }
       setErrorKey(null);
       toast.success(t("bc.mobile.moment.reminder.deleted"));
-      setItems((prev) => prev.filter((x) => x.id !== r.id));
+      setItems((prev) => prev.filter((x: any) => x.id !== r.id));
     } catch {
       setErrorKey("bc.mobile.moment.reminder.error.unavailable");
     } finally {
@@ -165,7 +165,7 @@ export function MomentRemindersSection({ momentId }: { momentId: string }) {
         </p>
       ) : (
         <ul className="mt-3 space-y-2">
-          {items.map((r) => {
+          {items.map((r: any) => {
             const overdue = r.status === "pending" && Date.parse(r.remindAt) < now;
             return (
               <li

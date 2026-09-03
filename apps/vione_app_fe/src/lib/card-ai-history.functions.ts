@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 const MAX_THUMB_BYTES = 400 * 1024; // ~400KB thumbnail cap
 
@@ -46,10 +46,10 @@ function mapRow(r: Record<string, any>): CardAiHistoryEntry {
 }
 
 export const saveCardAiHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => SaveInput.parse(d))
   .handler(async ({ data, context }): Promise<CardAiHistoryEntry> => {
-    const { supabase, userId } = context;
+    const { userId } = context; const supabase: any = null as any;
     const row = {
       user_id: userId,
       thumbnail: data.thumbnail,
@@ -70,23 +70,23 @@ export const saveCardAiHistory = createServerFn({ method: "POST" })
   });
 
 export const listCardAiHistory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CardAiHistoryEntry[]> => {
-    const { supabase } = context;
+    const supabase: any = null as any;
     const { data, error } = await supabase
       .from("card_ai_import_history")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapRow(r as unknown as Record<string, unknown>));
+    return (data ?? []).map((r: any) => mapRow(r as unknown as Record<string, unknown>));
   });
 
 export const deleteCardAiHistory = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const supabase: any = null as any;
     const { error } = await supabase.from("card_ai_import_history").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };

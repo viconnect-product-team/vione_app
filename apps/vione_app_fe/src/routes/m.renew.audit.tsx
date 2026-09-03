@@ -271,7 +271,7 @@ function RenewalAuditLogScreen() {
                   : "Chưa có sự kiện nào trong nhật ký."}
               </li>
             )}
-            {filtered.map((r) => (
+            {filtered.map((r: any) => (
               <li key={r.id} className="rounded-xl border border-border/10 bg-card/5 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

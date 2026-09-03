@@ -114,8 +114,8 @@ export function CustomersPanel() {
         const has = c.tagIds.includes(tag.id);
         if (has === add) continue;
         const current = c.tagIds
-          .map((id) => tags.find((tg) => tg.id === id)?.name)
-          .filter((n): n is string => Boolean(n));
+          .map((id: any) => tags.find((tg) => tg.id === id)?.name)
+          .filter((n: any): n is string => Boolean(n));
         const names = add
           ? [...current, tag.name].slice(0, CUSTOMER_MAX_TAGS_PER_CUSTOMER)
           : current.filter((n) => n !== tag.name);
@@ -258,7 +258,7 @@ export function CustomersPanel() {
         </div>
       ) : (
         <ul className="mt-4 space-y-3" aria-label={t("bc.mobile.customers.list.label")}>
-          {filtered.map((c) => (
+          {filtered.map((c: any) => (
             <li key={c.id} className="flex items-center gap-2.5">
               {selectMode ? (
                 <button
@@ -279,8 +279,8 @@ export function CustomersPanel() {
                 <CustomerRow
                   customer={c}
                   tagNames={c.tagIds
-                    .map((id) => tags.find((tag) => tag.id === id)?.name)
-                    .filter((n): n is string => Boolean(n))}
+                    .map((id: any) => tags.find((tag) => tag.id === id)?.name)
+                    .filter((n: any): n is string => Boolean(n))}
                   onOpen={() => (selectMode ? toggleSelected(c.id) : setOpenId(c.id))}
                 />
               </div>
@@ -298,7 +298,7 @@ export function CustomersPanel() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setSelected(new Set(filtered.map((c) => c.id)))}
+                onClick={() => setSelected(new Set(filtered.map((c: any) => c.id)))}
                 className="min-h-9 rounded-lg border border-[var(--bc-mobile-border)] px-3 text-[12.5px] text-[var(--bc-mobile-text)]"
               >
                 {t("bc.mobile.customers.bulk.selectAll")}
@@ -355,7 +355,7 @@ export function CustomersPanel() {
 
       {picking ? (
         <CustomerPersonPicker
-          existingPersonIds={new Set(customers.map((c) => c.personId))}
+          existingPersonIds={new Set(customers.map((c: any) => c.personId))}
           busy={create.isPending}
           onClose={() => setPicking(false)}
           onPick={async (person) => {
@@ -468,7 +468,7 @@ function CustomerRow({
         </span>
         {tagNames.length > 0 ? (
           <span className="mt-1.5 flex flex-wrap gap-1.5">
-            {tagNames.slice(0, 3).map((n) => (
+            {tagNames.slice(0, 3).map((n: any) => (
               <span
                 key={n}
                 className="rounded-full border border-[var(--bc-mobile-border)] px-2 py-0.5 text-[11.5px] text-[var(--bc-mobile-muted)]"

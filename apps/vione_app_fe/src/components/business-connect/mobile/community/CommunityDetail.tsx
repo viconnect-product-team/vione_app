@@ -18,7 +18,7 @@ import { daysLeftLabel, opportunityCategoryLabel } from "./CommunityOpportunitie
 export function CommunityDetail({ communityId }: { communityId: string }) {
   const t = useT();
   const fmt = useFmt();
-  const { detail, unavailable, initialLoading, coreError, retry } = useCommunityDetail(communityId);
+  const { detail, unavailable, initialLoading, error: coreError, retry } = useCommunityDetail(communityId);
   const activity = useCommunityActivityPreview(communityId);
 
   return (
@@ -188,7 +188,7 @@ function ActivityPreviews({
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--bc-mobile-border)]">
-            {events.map((e) => {
+            {events.map((e: any) => {
               const parts = eventDateParts(e.startAt);
               return (
                 <li key={e.eventRef}>

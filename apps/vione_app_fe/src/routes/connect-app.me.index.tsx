@@ -13,18 +13,19 @@ import {
   Eye,
   LayoutList,
   Loader2,
-  QrCode,
   Lock,
-  Nfc,
   LogOut,
+  Nfc,
+  QrCode,
   Share2,
   Sparkles,
-  Trophy,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
+import { fetchNestApi } from "@/lib/api-client";
 import type { IdentityShowcaseItem } from "@/lib/business-connect/mobile/identity-showcase.service";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { MeHeader } from "@/components/business-connect/mobile/me/MeHeader";
@@ -183,12 +184,96 @@ function ConnectAppMePage() {
   const load = useCallback(async () => {
     setLoadFailed(false);
     try {
-      const result = await getMine();
-      setPayload(result);
+      let result: MyIdentityPayload | null = null;
+      try {
+        result = await fetchNestApi<MyIdentityPayload>("/connect-app/me/identity");
+      } catch {
+        result = await getMine().catch(() => null);
+      }
+      if (result && (result.identity || result.visibility)) {
+        if (!result.identity && user) {
+          result.identity = {
+            id: user.id,
+            ownerUserId: user.id,
+            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            headline: null,
+            jobTitle: null,
+            companyName: null,
+            bio: null,
+            avatarUrl: user.user_metadata?.avatar_url || null,
+            primaryEmail: user.email || null,
+            primaryPhone: null,
+            website: null,
+            linkedinUrl: null,
+            address: null,
+            city: null,
+            countryCode: "VN",
+            preferredLocale: "vi",
+            status: "active",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        setPayload(result);
+      } else if (user) {
+        setPayload({
+          identity: {
+            id: user.id,
+            ownerUserId: user.id,
+            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            headline: null,
+            jobTitle: null,
+            companyName: null,
+            bio: null,
+            avatarUrl: user.user_metadata?.avatar_url || null,
+            primaryEmail: user.email || null,
+            primaryPhone: null,
+            website: null,
+            linkedinUrl: null,
+            address: null,
+            city: null,
+            countryCode: "VN",
+            preferredLocale: "vi",
+            status: "active",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          visibility: {},
+        });
+      } else {
+        setLoadFailed(true);
+      }
     } catch {
-      setLoadFailed(true);
+      if (user) {
+        setPayload({
+          identity: {
+            id: user.id,
+            ownerUserId: user.id,
+            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            headline: null,
+            jobTitle: null,
+            companyName: null,
+            bio: null,
+            avatarUrl: user.user_metadata?.avatar_url || null,
+            primaryEmail: user.email || null,
+            primaryPhone: null,
+            website: null,
+            linkedinUrl: null,
+            address: null,
+            city: null,
+            countryCode: "VN",
+            preferredLocale: "vi",
+            status: "active",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          visibility: {},
+        });
+      } else {
+        setLoadFailed(true);
+      }
     }
-  }, [getMine]);
+  }, [getMine, user]);
 
   useEffect(() => {
     void load();
@@ -262,7 +347,21 @@ function ConnectAppMePage() {
     if (current) return current;
     setShareBusy(true);
     try {
-      const link = await getOrCreateLink();
+      let link: IdentityShareLinkInfo | null = null;
+      try {
+        link = await fetchNestApi<IdentityShareLinkInfo>("/connect-app/me/identity/share-link", {
+          method: "POST",
+        });
+      } catch {
+        link = await getOrCreateLink().catch(() => null);
+      }
+      if (!link && user?.id) {
+        link = {
+          token: user.id,
+          createdAt: new Date().toISOString(),
+          expiresAt: null,
+        } as any;
+      }
       setShareLink(link);
       return link;
     } catch {
@@ -270,7 +369,7 @@ function ConnectAppMePage() {
     } finally {
       setShareBusy(false);
     }
-  }, [getOrCreateLink]);
+  }, [getOrCreateLink, user]);
 
   /**
    * Live QR: materialize the share link as soon as an identity exists so the
@@ -325,9 +424,18 @@ function ConnectAppMePage() {
     if (rotating) return;
     setRotating(true);
     try {
-      const link = await rotateLink();
-      reportIdentityMetric("IDENTITY_LINK_ROTATED");
-      setShareLink(link);
+      let link: IdentityShareLinkInfo | null = null;
+      try {
+        link = await fetchNestApi<IdentityShareLinkInfo>("/connect-app/me/identity/share-link/rotate", {
+          method: "POST",
+        });
+      } catch {
+        link = await rotateLink().catch(() => null);
+      }
+      if (link) {
+        reportIdentityMetric("IDENTITY_LINK_ROTATED");
+        setShareLink(link);
+      }
     } catch {
       // Rotation failed — the sheet keeps the previous token, nothing leaks.
     } finally {
@@ -452,7 +560,6 @@ function ConnectAppMePage() {
               onViewAll={() => setSheet("client")}
               onAdd={() => setSheet("client")}
             />
-
 
             <SectionCard title={t("bc.mobile.me.shareSection.title")}>
               <button

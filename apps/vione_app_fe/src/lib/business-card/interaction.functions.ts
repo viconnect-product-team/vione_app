@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { BusinessInteractionService } from "./interaction.service";
 
 const interactionTypeSchema = z.enum([
@@ -32,7 +32,7 @@ const metadataSchema = z.record(z.string(), z.unknown()).optional();
 
 /** Create an immutable business interaction on a relationship the caller owns. */
 export const createInteractionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -48,7 +48,7 @@ export const createInteractionFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(({ data, context }) =>
-    BusinessInteractionService.create(context.supabase, context.userId, {
+    BusinessInteractionService.create(null as any, context.userId, {
       relationshipId: data.relationshipId,
       companyId: data.companyId ?? null,
       type: data.type,
@@ -62,7 +62,7 @@ export const createInteractionFn = createServerFn({ method: "POST" })
 
 /** Patch an interaction the caller owns. */
 export const updateInteractionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -79,7 +79,7 @@ export const updateInteractionFn = createServerFn({ method: "POST" })
   )
   .handler(({ data, context }) => {
     const { id, ...patch } = data;
-    return BusinessInteractionService.update(context.supabase, context.userId, id, {
+    return BusinessInteractionService.update(null as any, context.userId, id, {
       ...patch,
       metadata: patch.metadata as Record<string, never> | undefined,
     });
@@ -87,26 +87,26 @@ export const updateInteractionFn = createServerFn({ method: "POST" })
 
 /** Delete an interaction the caller owns. */
 export const deleteInteractionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    BusinessInteractionService.delete(context.supabase, context.userId, data.id),
+    BusinessInteractionService.delete(null as any, context.userId, data.id),
   );
 
 /** List interactions for one relationship or the whole graph (newest first). */
 export const listInteractionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ relationshipId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(({ data, context }) =>
-    BusinessInteractionService.list(context.supabase, context.userId, data.relationshipId),
+    BusinessInteractionService.list(null as any, context.userId, data.relationshipId),
   );
 
 /** Derived interaction timeline for one relationship. */
 export const interactionTimelineFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ relationshipId: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    BusinessInteractionService.timeline(context.supabase, context.userId, data.relationshipId),
+    BusinessInteractionService.timeline(null as any, context.userId, data.relationshipId),
   );

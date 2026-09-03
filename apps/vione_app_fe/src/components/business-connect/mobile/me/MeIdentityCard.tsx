@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Nfc, QrCode } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { NEST_API_URL } from "@/lib/api-client";
 import type { BusinessIdentity } from "@/lib/business-connect/mobile/identity.types";
 
 function initialsOf(name: string | null, emailFallback: string | null): string {
@@ -91,7 +92,13 @@ export function MeIdentityCard({
         </div>
         {identity?.avatarUrl && !avatarFailed ? (
           <img
-            src={identity.avatarUrl}
+            src={
+              identity.avatarUrl.startsWith("/upload/")
+                ? `${NEST_API_URL}/api${identity.avatarUrl}`
+                : identity.avatarUrl.startsWith("/uploads/")
+                ? `${NEST_API_URL}${identity.avatarUrl}`
+                : identity.avatarUrl
+            }
             alt=""
             onError={() => setAvatarFailed(true)}
             className="aspect-[4/5] w-[40%] max-w-[164px] shrink-0 rounded-[18px] object-cover ring-1 ring-[var(--bc-mobile-border-gold)]"

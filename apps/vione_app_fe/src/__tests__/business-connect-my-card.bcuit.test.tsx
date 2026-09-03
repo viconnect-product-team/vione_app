@@ -28,7 +28,7 @@ vi.mock("@/lib/business-card", () => ({
   BusinessCardSDK: {
     listGlobal: vi.fn(async () => {
       if (cardsError) throw cardsError;
-      return cardsData.map((c) => ({ ...c }));
+      return cardsData.map((c: any) => ({ ...c }));
     }),
     globalEligibility: vi.fn(async () => ({ eligible })),
     getGlobal: (id: string) => getGlobal(id),
@@ -38,7 +38,7 @@ vi.mock("@/lib/business-card", () => ({
 
 vi.mock("@/lib/business-card/saved-card.sdk", () => ({
   SavedCardSDK: {
-    search: vi.fn(async () => savedData.map((c) => ({ ...c }))),
+    search: vi.fn(async () => savedData.map((c: any) => ({ ...c }))),
     recordOpen: (id: string) => recordOpen(id),
     collections: { list: vi.fn(async () => []) },
     tags: { list: vi.fn(async () => []) },

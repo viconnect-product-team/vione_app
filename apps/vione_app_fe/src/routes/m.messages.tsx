@@ -84,7 +84,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
             {t("m.messages.empty")}
           </p>
         )}
-        {conversations.map((c) => (
+        {conversations.map((c: any) => (
           <div key={c.peerCode} role="listitem">
             <button
               onClick={() => onOpen(c)}

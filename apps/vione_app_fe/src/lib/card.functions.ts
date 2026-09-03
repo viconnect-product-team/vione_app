@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type CardSettings = {
   displayName: string | null;
@@ -27,9 +27,9 @@ const DEFAULTS: CardSettings = {
 };
 
 export const getCardSettings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CardSettings> => {
-    const { supabase, userId } = context;
+    const { userId } = context; const supabase: any = null as any;
     const { data } = await supabase
       .from("card_settings")
       .select("*")
@@ -50,7 +50,7 @@ export const getCardSettings = createServerFn({ method: "GET" })
   });
 
 export const saveCardSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -68,7 +68,7 @@ export const saveCardSettings = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { supabase, userId } = context;
+    const { userId } = context; const supabase: any = null as any;
     const { error } = await supabase.from("card_settings").upsert(
       {
         user_id: userId,

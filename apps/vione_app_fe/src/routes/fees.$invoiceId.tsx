@@ -531,7 +531,7 @@ function InvoiceDetailPage() {
             action={
               isAdmin && !isPaid ? (
                 <div className="flex items-center gap-1">
-                  {(["email", "sms", "zalo", "call"] as ReminderChannel[]).map((c) => {
+                  {(["email", "sms", "zalo", "call"] as ReminderChannel[]).map((c: any) => {
                     const Icon = channelIcon[c];
                     return (
                       <button
@@ -555,7 +555,7 @@ function InvoiceDetailPage() {
               </p>
             ) : (
               <ol className="relative space-y-4 border-l border-border pl-5">
-                {reminders.map((r) => {
+                {reminders.map((r: any) => {
                   const Icon = channelIcon[r.channel];
                   return (
                     <li key={r.id} className="relative">

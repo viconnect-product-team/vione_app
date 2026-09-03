@@ -18,7 +18,7 @@ export function ConnectedPeopleList() {
   const t = useT();
   const q = useConnectedPeople();
   const userIds = useMemo(
-    () => (q.data ?? []).map((r) => r.person.userId!).filter(Boolean),
+    () => (q.data ?? []).map((r: any) => r.person.userId!).filter(Boolean),
     [q.data],
   );
   const counterparts = useCounterparts(userIds);
@@ -63,7 +63,7 @@ export function ConnectedPeopleList() {
   return (
     <>
       <ul role="list" className="flex flex-col gap-3" data-testid="bc-connected-list">
-        {rows.map((r) => {
+        {rows.map((r: any) => {
           const cp = counterparts.data?.get(r.person.userId ?? "");
           const label = cp?.displayName?.trim() || (r.person.userId ?? "").slice(0, 8);
           return (

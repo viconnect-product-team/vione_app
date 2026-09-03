@@ -161,7 +161,7 @@ export function MembershipTimeline({
       });
     }
 
-    const visible = isAdmin ? list : list.filter((e) => !e.adminOnly);
+    const visible = isAdmin ? list : list.filter((e: any) => !e.adminOnly);
     visible.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return typeof limit === "number" ? visible.slice(0, limit) : visible;
   }, [member, reviews, products, interactions, isAdmin, limit, t]);
@@ -178,12 +178,12 @@ export function MembershipTimeline({
 
   return (
     <ol className="relative space-y-5 border-l border-border pl-6">
-      {events.map((e) => {
+      {events.map((e: any) => {
         const Icon = e.icon;
         return (
           <li key={e.id} className="relative">
             <span
-              className={`absolute -left-[31px] grid h-7 w-7 place-items-center rounded-full border ${toneRing[e.tone]}`}
+              className={`absolute -left-[31px] grid h-7 w-7 place-items-center rounded-full border ${(toneRing as any)[e.tone]}`}
             >
               <Icon className="h-3.5 w-3.5" />
             </span>

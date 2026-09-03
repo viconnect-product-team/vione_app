@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import {
   PERSON_PLAN_MAX_LOCATION_LEN,
@@ -34,7 +34,7 @@ const createInput = z.object({
 });
 
 export const bcMobilePersonPlanCreateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => createInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plan: BcMobilePersonPlan }>> => {
@@ -52,7 +52,7 @@ const listInput = z.object({
 });
 
 export const bcMobilePersonPlansFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => listInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plans: BcMobilePersonPlan[] }>> => {
@@ -78,7 +78,7 @@ const statusInput = z.object({
 });
 
 export const bcMobilePersonPlanSetStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => statusInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plan: BcMobilePersonPlan }>> => {

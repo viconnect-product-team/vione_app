@@ -242,7 +242,7 @@ export const TIER_BANDS: readonly TierBand[] = Object.freeze([
 ]);
 
 const BY_KIND: ReadonlyMap<StrengthSignalKind, StrengthContribution> = new Map(
-  REGISTRY.map((c) => [c.signalKind, c] as const),
+  REGISTRY.map((c: any) => [c.signalKind, c] as const),
 );
 
 // Integrity checks (module-load time).

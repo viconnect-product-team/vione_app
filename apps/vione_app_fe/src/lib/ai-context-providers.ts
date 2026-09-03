@@ -266,9 +266,9 @@ export function eventProvider(data: SafeEvent[] | undefined): ProviderResult {
     res.limitations.push("Chưa có sự kiện nào trong phạm vi quyền truy cập của bạn.");
     return res;
   }
-  const upcoming = data.filter((e) => e.isUpcoming);
+  const upcoming = data.filter((e: any) => e.isUpcoming);
   res.metrics = { total: data.length, upcoming: upcoming.length };
-  res.sources = (upcoming.length > 0 ? upcoming : data).slice(0, 8).map((e) => ({
+  res.sources = (upcoming.length > 0 ? upcoming : data).slice(0, 8).map((e: any) => ({
     id: e.id,
     type: "event",
     title: e.title,
@@ -289,9 +289,9 @@ export function marketplaceProvider(data: SafeListing[] | undefined): ProviderRe
   }
   res.metrics = {
     total: data.length,
-    mine: data.filter((l) => l.isMine).length,
+    mine: data.filter((l: any) => l.isMine).length,
   };
-  res.sources = data.slice(0, 8).map((l) => ({
+  res.sources = data.slice(0, 8).map((l: any) => ({
     id: l.id,
     type: "marketplace",
     title: l.title,
@@ -315,7 +315,7 @@ export function notificationProvider(data: SafeNotification[] | undefined): Prov
   }
   const unread = data.filter((n) => !n.read);
   res.metrics = { total: data.length, unread: unread.length };
-  res.sources = data.slice(0, 8).map((n) => ({
+  res.sources = data.slice(0, 8).map((n: any) => ({
     id: n.id,
     type: "notification",
     title: n.title,

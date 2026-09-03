@@ -235,7 +235,7 @@ export function IntroductionAnalyticsWorkspace() {
                   label: "bc.introAnalytics.rate.progression",
                   value: overview.data.rates.progressionRate,
                 },
-              ].map((r) => (
+              ].map((r: any) => (
                 <div key={r.label} className="rounded-md border bg-muted/30 p-3">
                   <div className="text-xs text-muted-foreground">{t(r.label as TKey)}</div>
                   <div className="mt-1 text-xl font-semibold tabular-nums">
@@ -364,9 +364,9 @@ export function IntroductionAnalyticsWorkspace() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tto.data.rows.map((r) => (
+                  {tto.data.rows.map((r: any) => (
                     <tr key={r.metric} className="border-t">
-                      <td className="py-2 pr-4">{t(TIME_METRIC_LABELS[r.metric])}</td>
+                      <td className="py-2 pr-4">{t((TIME_METRIC_LABELS as any)[r.metric])}</td>
                       <td className="py-2 pr-4 tabular-nums">{fmtDuration(r.p50Seconds)}</td>
                       <td className="py-2 pr-4 tabular-nums">{fmtDuration(r.p75Seconds)}</td>
                       <td className="py-2 pr-4 tabular-nums">{fmtDuration(r.p90Seconds)}</td>

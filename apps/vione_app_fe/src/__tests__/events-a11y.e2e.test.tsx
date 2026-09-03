@@ -32,8 +32,8 @@ const BASE: MyEvent[] = [
   },
 ];
 
-let dataset: MyEvent[] = BASE.map((e) => ({ ...e }));
-const listMyEvents = vi.fn(async () => dataset.map((e) => ({ ...e })));
+let dataset: MyEvent[] = BASE.map((e: any) => ({ ...e }));
+const listMyEvents = vi.fn(async () => dataset.map((e: any) => ({ ...e })));
 
 vi.mock("@/lib/member-app.functions", () => ({
   checkRenewalReminder: vi.fn(async () => ({ created: false })),
@@ -91,7 +91,7 @@ async function getList(): Promise<HTMLElement> {
 }
 
 beforeEach(() => {
-  dataset = BASE.map((e) => ({ ...e }));
+  dataset = BASE.map((e: any) => ({ ...e }));
   window.localStorage.clear();
   window.localStorage.setItem("vba.lang", "en");
 });

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 export type Document = {
@@ -14,7 +14,7 @@ export type Document = {
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Document[]> => {
     const { token } = context as any;
     const data = await fetchNestApiFromServer("/documents", token);
@@ -31,7 +31,7 @@ const docInput = z.object({
 });
 
 export const createDocumentFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => docInput.parse(d))
   .handler(async ({ data, context }): Promise<Document> => {
     const { token } = context as any;
@@ -42,7 +42,7 @@ export const createDocumentFn = createServerFn({ method: "POST" })
   });
 
 export const updateDocumentFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => docInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Document> => {
     const { token } = context as any;
@@ -55,7 +55,7 @@ export const updateDocumentFn = createServerFn({ method: "POST" })
 
 /** Issues a short-lived URL for the document's attached file. */
 export const getDocumentUrlFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<string | null> => {
     const { token } = context as any;
@@ -67,7 +67,7 @@ export const getDocumentUrlFn = createServerFn({ method: "GET" })
   });
 
 export const deleteDocumentFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { token } = context as any;

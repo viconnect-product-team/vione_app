@@ -164,7 +164,7 @@ describe("community summary + ordering", () => {
       { ...base, communityId: "d", name: "Zulu", isDefault: true },
       { ...base, communityId: "a", name: "Bình", isDefault: false },
     ]);
-    expect(sorted.map((c) => c.communityId)).toEqual(["d", "z", "a"]);
+    expect(sorted.map((c: any) => c.communityId)).toEqual(["d", "z", "a"]);
   });
 });
 

@@ -505,7 +505,7 @@ async function composeMeetingList(
         }),
       );
       const counterpartIds = roleAndProposal
-        .map((r) => r.counterpartId)
+        .map((r: any) => r.counterpartId)
         .filter((v): v is string => Boolean(v));
       const counterparts = await deps.projectCounterparts(counterpartIds);
       return roleAndProposal.map(

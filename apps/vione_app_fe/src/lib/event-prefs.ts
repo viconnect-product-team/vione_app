@@ -47,7 +47,7 @@ export function getEventFilters(): EventSavedFilter[] {
 }
 
 export function saveEventFilter(f: EventSavedFilter): EventSavedFilter[] {
-  const cur = getEventFilters().filter((x) => x.id !== f.id);
+  const cur = getEventFilters().filter((x: any) => x.id !== f.id);
   const next = [...cur, f].slice(-12);
   try {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(next));
@@ -58,7 +58,7 @@ export function saveEventFilter(f: EventSavedFilter): EventSavedFilter[] {
 }
 
 export function deleteEventFilter(id: string): EventSavedFilter[] {
-  const next = getEventFilters().filter((x) => x.id !== id);
+  const next = getEventFilters().filter((x: any) => x.id !== id);
   try {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(next));
   } catch {

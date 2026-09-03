@@ -196,12 +196,16 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                   </section>
                 ) : (
                   <ul aria-label={t("bc.mobile.community.list.label")} className="mt-4 space-y-3.5">
-                    {visible.map((c) => (
+                    {visible.map((c: any) => (
                       <CommunityCard key={c.communityId} community={c} />
                     ))}
                   </ul>
                 )}
                 <CommunityJoinStatusCards term={term} />
+
+                {/* Sắp diễn ra & Cơ hội kinh doanh trong cộng đồng */}
+                <CommunityUpcomingEvents communities={communities} />
+                <CommunityOpportunitiesSection communities={communities} />
 
                 {/* F — Cộng đồng gợi ý (yêu cầu tham gia) */}
                 {!query ? (

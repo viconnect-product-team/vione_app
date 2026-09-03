@@ -76,7 +76,7 @@ export function CustomerTasksPanel({ onOpen }: { onOpen: (customerId: string) =>
       </div>
 
       <ul className="mt-3 space-y-2.5">
-        {tasks.map((c) => {
+        {tasks.map((c: any) => {
           const days = daysUntilNextAction(c);
           const late = days !== null && days < 0;
           return (
@@ -93,7 +93,7 @@ export function CustomerTasksPanel({ onOpen }: { onOpen: (customerId: string) =>
                   {c.displayName ?? t("bc.mobile.customers.unnamed")}
                 </p>
                 <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
-                  {t(CUSTOMER_STAGE_TASK_TKEY[c.stage] as TKey)}
+                  {t((CUSTOMER_STAGE_TASK_TKEY as any)[c.stage] as TKey)}
                 </p>
               </button>
 

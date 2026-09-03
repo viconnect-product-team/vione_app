@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { MeetingWorkspaceService } from "./service.server";
 import { MeetingWorkspaceError } from "./errors";
 import {
@@ -42,7 +42,7 @@ const filtersSchema = z.object({
 // ── getWorkspaceSummaryFn ────────────────────────────────────────────────────
 
 export const getWorkspaceSummaryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MeetingWorkspaceSummaryDTO> => {
     const c = context as unknown as Ctx;
 
@@ -52,7 +52,7 @@ export const getWorkspaceSummaryFn = createServerFn({ method: "GET" })
 // ── listWorkspaceMeetingsFn ─────────────────────────────────────────────────
 
 export const listWorkspaceMeetingsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => filtersSchema.parse(d))
   .handler(async ({ context, data }): Promise<MeetingWorkspaceListDTO> => {
     const c = context as unknown as Ctx;
@@ -74,7 +74,7 @@ export const listWorkspaceMeetingsFn = createServerFn({ method: "POST" })
 // down to one meeting so we reuse a single code path.
 
 export const getMeetingWorkspaceDetailFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ context, data }): Promise<MeetingWorkspaceItemDTO> => {
     const c = context as unknown as Ctx;
@@ -140,7 +140,7 @@ export interface MeetingWorkspaceTimelinePageDTO {
 }
 
 export const getMeetingWorkspaceTimelineFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => timelineInputSchema.parse(d))
   .handler(async ({ context, data }): Promise<MeetingWorkspaceTimelinePageDTO> => {
     const c = context as unknown as Ctx;

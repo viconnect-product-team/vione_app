@@ -115,7 +115,7 @@ export const SavedCardTagRepository = {
       .select("tag_id")
       .eq("saved_card_id", savedCardId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as { tag_id: string }[]).map((r) => r.tag_id);
+    return ((data ?? []) as { tag_id: string }[]).map((r: any) => r.tag_id);
   },
 
   async addLinks(supabase: SupabaseClient, savedCardId: string, tagIds: string[]): Promise<void> {

@@ -60,6 +60,34 @@ export class AuthService {
     };
   }
 
+  async refreshToken(refreshToken: string) {
+    try {
+      const decoded = this.jwtService.verify(refreshToken) as any;
+      if (decoded?.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token type');
+      }
+      const user = await this.usersService.findById(decoded.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      const payload = { username: user.username, sub: user.id };
+      const newRefreshPayload = { sub: user.id, type: 'refresh' };
+      return {
+        access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
+        refresh_token: this.jwtService.sign(newRefreshPayload, { expiresIn: '7d' }),
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          name: user.name,
+          avatar_url: user.avatar_url,
+        },
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Refresh token hết hạn hoặc không hợp lệ');
+    }
+  }
+
   async register(data: any) {
     const existingUser = await this.usersService.findByUsername(data.username);
     if (existingUser) {

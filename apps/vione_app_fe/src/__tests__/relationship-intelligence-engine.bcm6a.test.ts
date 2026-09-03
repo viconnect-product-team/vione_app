@@ -104,7 +104,7 @@ describe("rankReconnectCandidates — deterministic ordering", () => {
       { personId: "u:a", kind: "connection", days: 90, evidenceKind: "connected" },
       { personId: "u:c", kind: "connection", days: 50, evidenceKind: "connected" },
     ]);
-    expect(ranked.map((r) => r.personId)).toEqual(["u:a", "u:b", "u:c"]);
+    expect(ranked.map((r: any) => r.personId)).toEqual(["u:a", "u:b", "u:c"]);
   });
 
   it("same inputs ⇒ identical outputs (no randomness, no clock drift)", () => {

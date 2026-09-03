@@ -64,7 +64,7 @@ export function buildUserContextMessage(input: PromptBuildInput): string {
     sourceLines,
     metricLines ? `\nSố liệu tổng hợp:\n${metricLines}` : "",
     bundle.limitations.length
-      ? `\nGiới hạn đã biết:\n${bundle.limitations.map((l) => `- ${l}`).join("\n")}`
+      ? `\nGiới hạn đã biết:\n${bundle.limitations.map((l: any) => `- ${l}`).join("\n")}`
       : "",
     `\nRoute được phép: ${input.allowedRoutes.join(", ")}`,
     "",

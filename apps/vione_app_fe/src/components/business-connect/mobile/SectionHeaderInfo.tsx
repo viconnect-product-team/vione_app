@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import React, { useId, useState } from "react";
 import { 
   Search, 
   SlidersHorizontal, 
@@ -57,7 +57,7 @@ const nurtureConnections = [
   },
 ];
 
-export const SectionHeaderInfo = (): JSX.Element => {
+export const SectionHeaderInfo = (): React.ReactElement => {
   const [activeTab, setActiveTab] = useState("network");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);

@@ -6,7 +6,7 @@ import { join } from "node:path";
 // Deterministic guardrail (no DB / network).
 //
 // Multi-tenant isolation in this app relies on every server function running
-// through `requireSupabaseAuth`, which gives the handler a `context.supabase`
+// through `requireSupabaseAuth`, which gives the handler a `(null as any)`
 // client scoped to the signed-in user. Row Level Security then enforces both
 // "must be authenticated" and "cannot read/write another association's data".
 //

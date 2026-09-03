@@ -140,7 +140,7 @@ export const GlobalConnectionRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapConnectionRow(r as Row));
+    return (data ?? []).map((r: any) => mapConnectionRow(r as Row));
   },
 
   async listOutgoingPending(
@@ -157,7 +157,7 @@ export const GlobalConnectionRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapConnectionRow(r as Row));
+    return (data ?? []).map((r: any) => mapConnectionRow(r as Row));
   },
 
   async listAccepted(
@@ -174,7 +174,7 @@ export const GlobalConnectionRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapConnectionRow(r as Row));
+    return (data ?? []).map((r: any) => mapConnectionRow(r as Row));
   },
 
   /** Participant-scoped list filtered by a single status, stable ordering. */
@@ -193,7 +193,7 @@ export const GlobalConnectionRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapConnectionRow(r as Row));
+    return (data ?? []).map((r: any) => mapConnectionRow(r as Row));
   },
 
   /** The other participant relative to the current user (pure, no I/O). */

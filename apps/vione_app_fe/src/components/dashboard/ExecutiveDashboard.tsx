@@ -33,7 +33,8 @@ import {
 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { getDashboardStatsFn, type DashboardStats } from "@/lib/dashboard.functions";
-import { listEventsFn, type EventItem } from "@/lib/events.functions";
+import type { EventItem } from "@/lib/events.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { listOpportunitiesFn } from "@/lib/opportunities.functions";
 import { listActivityLogFn } from "@/lib/activity.functions";
 import type { Opportunity } from "@/lib/opportunities-data";
@@ -224,7 +225,6 @@ function GrowthArea({ data }: { data: DashboardStats["growth"] }) {
 export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   const t = useT();
   const getStats = useServerFn(getDashboardStatsFn);
-  const getEvents = useServerFn(listEventsFn);
   const getOpps = useServerFn(listOpportunitiesFn);
   const getActivity = useServerFn(listActivityLogFn);
   const unread = useUnreadNotifications();
@@ -236,7 +236,14 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   });
   const eventsQ = useQuery({
     queryKey: ["dashboard-events"],
-    queryFn: () => getEvents({}),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<EventItem[]>("/events");
+        return Array.isArray(res) ? res : [];
+      } catch {
+        return [];
+      }
+    },
     enabled: authReady,
   });
   const oppsQ = useQuery({
@@ -255,7 +262,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   const upcoming = useMemo<EventItem[]>(() => {
     const list = eventsQ.data ?? [];
     return list
-      .filter((e) => e.status === "upcoming" || e.status === "ongoing")
+      .filter((e: any) => e.status === "upcoming" || e.status === "ongoing")
       .sort((a, b) => +new Date(a.date) - +new Date(b.date))
       .slice(0, 4);
   }, [eventsQ.data]);
@@ -428,7 +435,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
             <EmptyState />
           ) : (
             <ul className="space-y-2.5">
-              {upcoming.map((e) => {
+              {upcoming.map((e: any) => {
                 const d = new Date(e.date);
                 return (
                   <li key={e.id}>
@@ -485,7 +492,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
             <EmptyState />
           ) : (
             <ul className="space-y-3.5">
-              {recent.map((a) => (
+              {recent.map((a: any) => (
                 <li key={a.id} className="flex items-start gap-3">
                   <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-bold text-foreground">
                     {(a.user || "?").slice(0, 2).toUpperCase()}

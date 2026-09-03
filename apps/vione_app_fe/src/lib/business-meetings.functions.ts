@@ -12,7 +12,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { createBusinessMeetingSDK } from "./business-meetings/sdk";
 import type { MeetingServiceDeps } from "./business-meetings/service";
 import { BUSINESS_MEETING_TYPES, BUSINESS_MEETING_LOCATION_TYPES } from "./business-meetings/types";
@@ -34,7 +34,7 @@ async function sdkFor(context: Ctx) {
     projectCounterparts: projectCounterpartSummaries,
   };
 
-  return createBusinessMeetingSDK(context.supabase as any, context.userId, deps);
+  return createBusinessMeetingSDK(null as any as any, context.userId, deps);
 }
 
 const mutationKey = z.string().min(8).max(200).optional();
@@ -55,7 +55,7 @@ const createDraftInput = z.object({
 });
 
 export const createMeetingDraftFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createDraftInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -76,7 +76,7 @@ const proposeInput = z.object({
 });
 
 export const proposeMeetingTimeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => proposeInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -97,7 +97,7 @@ const proposeNewTimeInput = z.object({
 });
 
 export const rescheduleMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => proposeNewTimeInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -108,7 +108,7 @@ export const rescheduleMeetingFn = createServerFn({ method: "POST" })
 const acceptInput = z.object({ meetingId: uuid, proposalVersion: version, mutationKey });
 
 export const acceptMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => acceptInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -123,7 +123,7 @@ const declineInput = z.object({
 });
 
 export const declineMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => declineInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -136,7 +136,7 @@ export const declineMeetingFn = createServerFn({ method: "POST" })
 const tentativeInput = z.object({ meetingId: uuid, proposalVersion: version, mutationKey });
 
 export const tentativelyAcceptMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => tentativeInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -153,7 +153,7 @@ const cancelInput = z.object({
 });
 
 export const cancelMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => cancelInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -171,7 +171,7 @@ const finalizeInput = z.object({
 });
 
 export const completeMeetingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => finalizeInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -182,7 +182,7 @@ export const completeMeetingFn = createServerFn({ method: "POST" })
   });
 
 export const markMeetingNoShowFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => finalizeInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -202,7 +202,7 @@ const listInput = z
   .optional();
 
 export const getMeetingDetailFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ data, context }): Promise<MeetingDetailDTO> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -210,7 +210,7 @@ export const getMeetingDetailFn = createServerFn({ method: "GET" })
   });
 
 export const listUpcomingMeetingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingListItemDTO[]> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -218,7 +218,7 @@ export const listUpcomingMeetingsFn = createServerFn({ method: "GET" })
   });
 
 export const listPendingMeetingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingListItemDTO[]> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -226,7 +226,7 @@ export const listPendingMeetingsFn = createServerFn({ method: "GET" })
   });
 
 export const listPastMeetingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingListItemDTO[]> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -234,14 +234,14 @@ export const listPastMeetingsFn = createServerFn({ method: "GET" })
   });
 
 export const countMeetingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MeetingCountsDTO> => {
     const sdk = await sdkFor(context as unknown as Ctx);
     return sdk.counts();
   });
 
 export const listCancelledMeetingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingListItemDTO[]> => {
     const sdk = await sdkFor(context as unknown as Ctx);
@@ -249,7 +249,7 @@ export const listCancelledMeetingsFn = createServerFn({ method: "GET" })
   });
 
 export const getMeetingProposalHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
     const sdk = await sdkFor(context as unknown as Ctx);

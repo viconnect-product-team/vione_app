@@ -35,5 +35,5 @@ export function toConnectionDTOs(
   conns: GlobalConnection[],
   currentUserId: string,
 ): GlobalConnectionDTO[] {
-  return conns.map((c) => toConnectionDTO(c, currentUserId));
+  return conns.map((c: any) => toConnectionDTO(c, currentUserId));
 }

@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { checkAiRateLimit } from "@/lib/ai-rate-limit";
 import { CARD_TEMPLATES, recommendTemplate, type CardLayout } from "@/lib/card-templates";
 
@@ -132,7 +132,7 @@ function chooseTemplate(
 }
 
 export const analyzeCardImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data, context }): Promise<CardAiSuggestion> => {
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -141,14 +141,20 @@ export const analyzeCardImage = createServerFn({ method: "POST" })
     // Identity comes from the verified auth context — never client input.
     // Rate limit is bound to the authenticated user; users without an active
     // association share a fallback bucket so the card builder keeps working.
-    const { data: associationId } = await context.supabase.rpc("current_association_id");
+    // Get associationId from NestJS roles endpoint for rate limiting
+    let associationId: string | null = null;
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const roles = await fetchNestApiFromServer("/ai/roles", context.token) as any;
+      associationId = roles?.associationId ?? null;
+    } catch { /* fallback: no association */ }
     const rl = checkAiRateLimit({
       userId: context.userId,
-      associationId:
-        typeof associationId === "string" && associationId ? associationId : "no-association",
+      associationId: associationId ?? "no-association",
       role: "member",
     });
     if (!rl.allowed) throw new Error(rl.message);
+
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
@@ -305,18 +311,22 @@ function buildTemplateCatalogText(): string {
 }
 
 export const recommendOptimalTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => OptimalInput.parse(d))
   .handler(async ({ data, context }): Promise<OptimalTemplatePick> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing on server");
 
     // Same identity + spend guard as analyzeCardImage.
-    const { data: associationId } = await context.supabase.rpc("current_association_id");
+    let associationId2: string | null = null;
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const roles = await fetchNestApiFromServer("/ai/roles", context.token) as any;
+      associationId2 = roles?.associationId ?? null;
+    } catch { /* fallback */ }
     const rl = checkAiRateLimit({
       userId: context.userId,
-      associationId:
-        typeof associationId === "string" && associationId ? associationId : "no-association",
+      associationId: associationId2 ?? "no-association",
       role: "member",
     });
     if (!rl.allowed) throw new Error(rl.message);
@@ -410,7 +420,7 @@ ${data.industryHint ? `Industry hint: ${data.industryHint}` : ""}`;
     const rationale = pickStr(parsed.rationale, 400) ?? "";
     const alts = Array.isArray(parsed.alternates) ? parsed.alternates : [];
     const alternates = alts
-      .map((a) => {
+      .map((a: any) => {
         const rec = a as Record<string, unknown>;
         const id = pickStr(rec.templateId, 60) ?? "";
         const reason = pickStr(rec.reason, 200) ?? "";

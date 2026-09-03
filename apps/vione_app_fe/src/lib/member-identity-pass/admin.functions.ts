@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   type PassStatus,
   type MyIdentityPass,
@@ -14,7 +14,7 @@ import {
 } from "./shared";
 
 export const getMemberPassesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ passes: AdminPass[]; events: IdentityEvent[] }> => {
     const { supabase } = context;
@@ -83,7 +83,7 @@ export const getMemberPassesFn = createServerFn({ method: "GET" })
 // 2. issueMemberPassFn — admin creates a pass if none active exists
 // ---------------------------------------------------------------------------
 export const issueMemberPassFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; passId: string }> => {
     const { supabase, userId } = context;
@@ -142,7 +142,7 @@ export const issueMemberPassFn = createServerFn({ method: "POST" })
 // 3. suspendMemberPassFn — admin, reason required
 // ---------------------------------------------------------------------------
 export const suspendMemberPassFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ passId: z.string().uuid(), reason: z.string().trim().min(3).max(500) }).parse(d),
   )
@@ -182,7 +182,7 @@ export const suspendMemberPassFn = createServerFn({ method: "POST" })
 // 4. renewMemberPassFn — admin, extends expiry, bumps version
 // ---------------------------------------------------------------------------
 export const renewMemberPassFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ passId: z.string().uuid(), expiresAt: z.string().datetime().optional() }).parse(d),
   )
@@ -226,7 +226,7 @@ export const renewMemberPassFn = createServerFn({ method: "POST" })
 // 5. replaceMemberPassFn — admin, revokes old, issues new serial
 // ---------------------------------------------------------------------------
 export const replaceMemberPassFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ passId: z.string().uuid(), reason: z.string().trim().min(3).max(500) }).parse(d),
   )

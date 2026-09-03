@@ -48,7 +48,7 @@ export function getLocalHhmm(instant: Date, timezone: string): string {
 }
 
 function hhmmToMinutes(v: string): number {
-  const [h, m] = v.split(":").map((n) => Number.parseInt(n, 10));
+  const [h, m] = v.split(":").map((n: any) => Number.parseInt(n, 10));
   return h * 60 + m;
 }
 

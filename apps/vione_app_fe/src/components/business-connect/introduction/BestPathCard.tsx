@@ -13,7 +13,7 @@ interface Props {
 
 export function BestPathCard({ path, targetLabel, highlighted }: Props) {
   const t = useT();
-  const intermediaries = path.intermediaries.map((x) => x.personNodeId);
+  const intermediaries = path.intermediaries.map((x: any) => x.personNodeId);
   const primary = path.intermediaries[0];
   const intermediaryLabel = primary ? `#${primary.personNodeId.slice(0, 8)}` : targetLabel;
   return (
@@ -42,7 +42,7 @@ export function BestPathCard({ path, targetLabel, highlighted }: Props) {
 
       {path.reasons.length > 0 && (
         <ul className="mt-4 flex flex-wrap gap-1.5" aria-label={t("bc.intro.pageTitle")}>
-          {path.reasons.slice(0, 4).map((r) => (
+          {path.reasons.slice(0, 4).map((r: any) => (
             <li
               key={r.code}
               className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-muted-foreground"

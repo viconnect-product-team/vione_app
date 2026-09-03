@@ -19,7 +19,7 @@ import { useT, type TKey } from "@/lib/i18n";
 import { EmptyState } from "@/components/dashboard/StateKit";
 import type { Member } from "@/lib/members-data";
 import { hydrateMembers } from "@/lib/members-data";
-import { listMembersFn } from "@/lib/members.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   acceptRequest,
   cancelRequest,
@@ -195,8 +195,8 @@ export function MemberNetworking({
     let active = true;
     void (async () => {
       try {
-        const members = await listMembersFn();
-        if (active) hydrateMembers(members);
+        const members = await fetchNestApi<Member[]>("/members");
+        if (active && Array.isArray(members)) hydrateMembers(members);
       } catch {
         /* non-fatal: suggestions simply stay empty */
       }

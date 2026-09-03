@@ -195,12 +195,12 @@ describe("orderRelationshipActions", () => {
   });
 
   it("preferred call → [call, email, moment]; preferred email → [email, call, moment]", () => {
-    expect(orderRelationshipActions([moment, email, call], "call").map((a) => a.kind)).toEqual([
+    expect(orderRelationshipActions([moment, email, call], "call").map((a: any) => a.kind)).toEqual([
       "call",
       "email",
       "save_meeting_moment",
     ]);
-    expect(orderRelationshipActions([moment, call, email], "email").map((a) => a.kind)).toEqual([
+    expect(orderRelationshipActions([moment, call, email], "email").map((a: any) => a.kind)).toEqual([
       "email",
       "call",
       "save_meeting_moment",
@@ -210,12 +210,12 @@ describe("orderRelationshipActions", () => {
   it("pure permutation, input not mutated", () => {
     const input = [moment, email, call];
     const out = orderRelationshipActions(input, "email");
-    expect(out.map((a) => a.kind).sort()).toEqual(input.map((a) => a.kind).sort());
-    expect(input.map((a) => a.kind)).toEqual(["save_meeting_moment", "email", "call"]);
+    expect(out.map((a: any) => a.kind).sort()).toEqual(input.map((a: any) => a.kind).sort());
+    expect(input.map((a: any) => a.kind)).toEqual(["save_meeting_moment", "email", "call"]);
   });
 
   it("only one contact available → it leads regardless of preference", () => {
-    expect(orderRelationshipActions([moment, email], "call").map((a) => a.kind)).toEqual([
+    expect(orderRelationshipActions([moment, email], "call").map((a: any) => a.kind)).toEqual([
       "email",
       "save_meeting_moment",
     ]);

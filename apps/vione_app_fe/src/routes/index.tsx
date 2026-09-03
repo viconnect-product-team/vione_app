@@ -275,22 +275,10 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
         return;
       }
       
-      setStatus("redirecting");
-      try {
-        const to = await resolveRoute({});
-        if (!active) return;
-        console.info("[post-login-redirect]", JSON.stringify({ to, from: "/" }));
-        if (to !== "/") {
-          navigate({ to });
-        } else {
-          setStatus("idle");
-        }
-      } catch (e) {
-        console.error(
-          "[post-login-redirect] route resolution failed — staying on /",
-          e instanceof Error ? e.message : String(e),
-        );
-        if (active) setStatus("idle");
+      if (authStatus === 'in') {
+        // Authenticated users stay on the main CRM dashboard
+        setStatus("idle");
+        return;
       }
     }
     void route();

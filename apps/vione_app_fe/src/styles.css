@@ -103,15 +103,16 @@
   --input: oklch(0.92 0.01 260);
   --ring: oklch(0.45 0.22 270);
 
-  /* Sidebar — deep indigo */
-  --sidebar: oklch(0.22 0.06 265);
-  --sidebar-foreground: oklch(0.85 0.03 260);
+  /* Sidebar — Light mode */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
   --sidebar-primary: oklch(0.55 0.2 285);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.28 0.07 268);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(0.3 0.06 268);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: oklch(0.55 0.2 285);
+  --gradient-sidebar: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 
   --chart-1: oklch(0.55 0.2 270);
   --chart-2: oklch(0.65 0.18 340);
@@ -149,10 +150,15 @@
   --info: oklch(0.74 0.14 240);
   --info-foreground: oklch(0.16 0.03 265);
 
-  --sidebar: oklch(0.18 0.04 265);
+  --sidebar: oklch(0.14 0.03 265);
   --sidebar-foreground: oklch(0.9 0.02 260);
-  --sidebar-accent: oklch(0.26 0.06 268);
+  --sidebar-primary: oklch(0.62 0.22 285);
+  --sidebar-primary-foreground: oklch(0.15 0.03 265);
+  --sidebar-accent: oklch(0.22 0.05 268);
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.62 0.22 285);
+  --gradient-sidebar: linear-gradient(180deg, oklch(0.16 0.04 265), oklch(0.12 0.03 265));
 
   --chart-1: oklch(0.68 0.19 285);
   --chart-2: oklch(0.72 0.17 340);
@@ -198,14 +204,15 @@
   --input: oklch(0.85 0.02 260);
   --ring: oklch(0.9 0.16 290);
 
-  --sidebar: oklch(0.1 0.02 265);
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.78 0.18 285);
-  --sidebar-primary-foreground: oklch(0.1 0.02 265);
-  --sidebar-accent: oklch(0.24 0.06 268);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.8 0.02 260);
-  --sidebar-ring: oklch(0.9 0.16 290);
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #f2b45a;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1e1e1e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #ffffff;
+  --gradient-sidebar: #000000;
 
   --shadow-card: none;
   --shadow-elevated: none;
@@ -582,16 +589,16 @@ input[type="radio"] {
   --bc-mobile-navy-deep: var(--bc-bg-deep);
   --bc-mobile-app-gradient: linear-gradient(180deg, #03080f 0%, #050c15 48%, #08101b 100%);
 
-  /* Text */
+  /* Text - aligned with login screen palette (#f5f7fa, #D4C3A3, #d8c3b1) */
   --bc-text-primary: #f5f7fa;
-  --bc-text-secondary: #b8c0cd;
-  --bc-text-tertiary: #9ca5b7;
-  --bc-text-disabled: #7b8496;
+  --bc-text-secondary: #D4C3A3;
+  --bc-text-tertiary: #d8c3b1;
+  --bc-text-disabled: #8c8273;
 
   --bc-mobile-ivory: var(--bc-text-primary);
   --bc-mobile-text: var(--bc-text-primary);
   --bc-mobile-text-2: var(--bc-text-secondary);
-  --bc-mobile-muted: var(--bc-text-tertiary);
+  --bc-mobile-muted: var(--bc-text-secondary);
   --bc-mobile-disabled: var(--bc-text-disabled);
 
   /* Borders — hairline, almost invisible */

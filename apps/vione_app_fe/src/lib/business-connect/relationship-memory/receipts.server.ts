@@ -151,7 +151,7 @@ export const ExtractionReceiptRepository = {
       );
     }
     const rows = (data ?? []) as Array<Record<string, unknown>>;
-    return rows.map((r) => {
+    return rows.map((r: any) => {
       const dto = toDTO(r);
       return { ...dto, claimToken: (r.claim_token as string) ?? token };
     });

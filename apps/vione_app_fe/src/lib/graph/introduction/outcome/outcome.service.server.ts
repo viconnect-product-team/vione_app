@@ -198,7 +198,7 @@ export class IntroductionOutcomeService {
     const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
     if (error) throw toIntroductionOutcomeError(error);
     return {
-      items: (data ?? []).map((r) => toDTO(r, uid)),
+      items: (data ?? []).map((r: any) => toDTO(r, uid)),
       nextCursor: null,
     };
   }

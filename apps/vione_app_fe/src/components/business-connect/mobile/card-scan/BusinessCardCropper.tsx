@@ -256,7 +256,7 @@ export function BusinessCardCropper({
           {t("bc.mobile.cardScan.crop.hint")}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
-          {ASPECTS.map((a) => (
+          {ASPECTS.map((a: any) => (
             <button
               key={a.key}
               type="button"

@@ -4,6 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { bcMobileNetworkFeedFn } from "@/lib/business-connect/mobile/network-feed.functions";
 import type { BcNetworkFeedItem } from "@/lib/business-connect/mobile/network-feed.types";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const networkFeedKeys = {
   root: ["bc-mobile", "network-feed"] as const,
@@ -17,7 +18,19 @@ export function useNetworkFeed() {
     enabled: viewerId !== null,
     staleTime: 30_000,
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam }) => bcMobileNetworkFeedFn({ data: { cursor: pageParam } }),
+    queryFn: async ({ pageParam }) => {
+      try {
+        const res = await fetchNestApi<{ items: BcNetworkFeedItem[]; nextCursor: string | null }>(
+          `/connect-app/network/feed${pageParam ? `?cursor=${pageParam}` : ""}`
+        );
+        if (res && Array.isArray(res.items)) {
+          return res;
+        }
+      } catch (err) {
+        console.warn("Direct fetchNestApi feed failed, falling back to serverFn:", err);
+      }
+      return bcMobileNetworkFeedFn({ data: { cursor: pageParam } });
+    },
     getNextPageParam: (last) => last.nextCursor,
   });
 

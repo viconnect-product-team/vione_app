@@ -262,7 +262,7 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setType(e.target.value as OpportunityTypeKey)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               >
-                {OPPORTUNITY_TYPES.map((c) => (
+                {OPPORTUNITY_TYPES.map((c: any) => (
                   <option key={c} value={c}>
                     {t(c)}
                   </option>
@@ -514,7 +514,7 @@ function OpportunitiesPage() {
           opp: o,
           items: interests.filter((it) => it.opportunityId === o.id),
         }))
-        .filter((x) => x.items.length > 0),
+        .filter((x: any) => x.items.length > 0),
     [myOpps, interests],
   );
 
@@ -599,7 +599,7 @@ function OpportunitiesPage() {
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             >
               <option value="all">{t("opp.filter.all")}</option>
-              {OPPORTUNITY_TYPES.map((c) => (
+              {OPPORTUNITY_TYPES.map((c: any) => (
                 <option key={c} value={c}>
                   {t(c)}
                 </option>

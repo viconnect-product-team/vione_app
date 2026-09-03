@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -35,7 +35,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useT, type TKey } from "@/lib/i18n";
 import { type Member, type MemberStatus } from "@/lib/members-data";
-import { getMemberFn, updateMemberContactFn } from "@/lib/members.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   ACTIVITY_LABEL,
   EVENT_ROLE_LABEL,
@@ -47,17 +47,20 @@ import {
   type EventRole,
   type PayStatus,
 } from "@/lib/companies-history";
-import { getCompanyHistoryFn, type CompanyHistory } from "@/lib/companies.functions";
+import type { CompanyHistory } from "@/lib/companies.functions";
 
 export const Route = createFileRoute("/companies/$companyId")({
   ssr: false,
   loader: async ({ params }) => {
-    const company = await getMemberFn({ data: { id: params.companyId } });
+    const [company, history] = await Promise.all([
+      fetchNestApi<Member>(`/members/${params.companyId}`),
+      fetchNestApi<CompanyHistory>(`/members/${params.companyId}/history`),
+    ]);
     if (!company || company.type !== "company") throw notFound();
-    const history = await getCompanyHistoryFn({
-      data: { id: company.id, code: company.code, name: company.name },
-    });
-    return { company, history };
+    return {
+      company,
+      history: history || { activities: [], events: [], payments: [] },
+    };
   },
   component: CompanyDetailPage,
   notFoundComponent: NotFound,
@@ -155,7 +158,6 @@ function relativeDate(iso: string) {
 
 function CompanyDetailPage() {
   const t = useT();
-  const saveContact = useServerFn(updateMemberContactFn);
   const { company: loaded, history } = Route.useLoaderData() as {
     company: Member;
     history: CompanyHistory;
@@ -172,7 +174,13 @@ function CompanyDetailPage() {
 
   const handleSaveContact = (next: typeof contact) => {
     setContact(next);
-    void saveContact({ data: { id: loaded.id, ...next } });
+    void fetchNestApi(`/members/${loaded.id}/contact`, {
+      method: "PATCH",
+      body: JSON.stringify(next),
+    }).catch((err) => {
+      console.error("[Companies] Failed to update contact:", err);
+      toast.error(t("common.saveError") || "Không thể cập nhật thông tin liên hệ");
+    });
   };
 
   const totalPaid = useMemo(
@@ -674,7 +682,7 @@ function ActivityTab({ entries }: { entries: CompanyHistory["activities"] }) {
         {t("cdetail.activity.title")}
       </h3>
       <ol className="relative space-y-5 border-l-2 border-border pl-6">
-        {entries.map((a) => {
+        {entries.map((a: any) => {
           const st = ACT_STYLE[a.type];
           return (
             <li key={a.id} className="relative">
@@ -714,7 +722,7 @@ function EventsTab({ entries }: { entries: CompanyHistory["events"] }) {
         <h3 className="text-base font-semibold text-foreground">{t("cdetail.events.title")}</h3>
       </div>
       <div className="divide-y divide-border">
-        {entries.map((e) => (
+        {entries.map((e: any) => (
           <div
             key={e.id}
             className="flex flex-wrap items-center justify-between gap-3 p-4 transition hover:bg-muted/30"

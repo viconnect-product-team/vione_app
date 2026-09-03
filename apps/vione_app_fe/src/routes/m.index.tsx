@@ -200,7 +200,7 @@ function Home() {
 
       {/* Quick actions */}
       <div className="mx-4 mt-5 grid grid-cols-4 gap-3">
-        {quickActionDefs.map((a) => {
+        {quickActionDefs.map((a: any) => {
           const Icon = a.icon;
           return (
             <Link key={a.key} to={a.to} className="flex flex-col items-center gap-2">

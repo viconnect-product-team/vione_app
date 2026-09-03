@@ -413,7 +413,7 @@ function LandingPage() {
             className="hidden items-center gap-8 md:flex"
             aria-label={tx({ vi: "Điều hướng trang", en: "Page navigation" })}
           >
-            {nav.map((n) => (
+            {nav.map((n: any) => (
               <a
                 key={n.href}
                 href={n.href}

@@ -9,7 +9,6 @@
 // the top of *.functions.ts. The *.server resolver is loaded lazily inside the
 // helper at call time.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveMemberIdOrNull } from "@/lib/current-member";
 
 export type BusinessCardAuthz = {
@@ -40,13 +39,17 @@ export const BC_AUTHZ_ERR = {
  * authorization path handled by the admin functions.
  */
 export async function requireBusinessCardOwner(
-  supabase: SupabaseClient,
+  // Accepts either a JWT token (string) or a legacy SupabaseClient — the
+  // supabase value is no longer used at runtime; only token is forwarded
+  // to resolveMemberIdOrNull for legacy_member ownership.
+  supabaseOrToken: string | any,
   userId: string,
   cardId: string,
 ): Promise<BusinessCardAuthz> {
+  const token = typeof supabaseOrToken === "string" ? supabaseOrToken : "";
   const { resolveBusinessCardOwnerContext } = await import("@/lib/identity/identity-bridge.server");
 
-  const ctx = await resolveBusinessCardOwnerContext(supabase as any, cardId);
+  const ctx = await resolveBusinessCardOwnerContext(null as any, cardId);
 
   if (ctx.ownershipMode === "global_user") {
     if (!ctx.ownerUserId || ctx.ownerUserId !== userId) {
@@ -62,7 +65,7 @@ export async function requireBusinessCardOwner(
   }
 
   if (ctx.ownershipMode === "legacy_member") {
-    const memberId = await resolveMemberIdOrNull(supabase);
+    const memberId = await resolveMemberIdOrNull(token);
     if (!memberId || memberId !== ctx.memberId) {
       throw new Error(BC_AUTHZ_ERR.FORBIDDEN);
     }
@@ -83,12 +86,12 @@ export async function requireBusinessCardOwner(
  * card, or null otherwise. Never returns a value for an unresolved card.
  */
 export async function canManageBusinessCard(
-  supabase: SupabaseClient,
+  supabaseOrToken: string | any,
   userId: string,
   cardId: string,
 ): Promise<BusinessCardAuthz | null> {
   try {
-    return await requireBusinessCardOwner(supabase, userId, cardId);
+    return await requireBusinessCardOwner(supabaseOrToken, userId, cardId);
   } catch {
     return null;
   }

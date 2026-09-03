@@ -136,7 +136,7 @@ export function CustomerNeedsSection({ customerId }: { customerId: string }) {
                   )}
                 </p>
                 <ul className="mt-1.5 space-y-2">
-                  {groups[k].map((n) => (
+                  {groups[k].map((n: any) => (
                     <NeedRow
                       key={n.id}
                       need={n}

@@ -161,7 +161,7 @@ export class IntroductionRequestService {
       intermediaryNodeIds: match.intermediaries.map((i) => i.personNodeId),
       targetNodeId: match.target.personNodeId,
       confidence: match.confidence,
-      reasonCodes: match.reasons.map((r) => r.code),
+      reasonCodes: match.reasons.map((r: any) => r.code),
       generatedAt: match.generatedAt,
     };
 
@@ -290,7 +290,7 @@ export class IntroductionRequestService {
     const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
     if (error) throw toIntroductionRequestError(error);
     return {
-      items: (data ?? []).map((r) => toDTO(r, uid)),
+      items: (data ?? []).map((r: any) => toDTO(r, uid)),
       nextCursor: null,
     };
   }

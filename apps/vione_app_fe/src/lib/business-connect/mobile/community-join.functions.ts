@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
   CommunityJoinAdminRequestDTO,
@@ -13,13 +13,13 @@ import type {
 } from "./community-join.types";
 
 export const listJoinableCommunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CommunityJoinCandidateDTO[]> => {
     return fetchNestApiFromServer("/connect-app/community/joinable", context.token);
   });
 
 export const requestCommunityJoinFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -37,7 +37,7 @@ export const requestCommunityJoinFn = createServerFn({ method: "POST" })
   });
 
 export const cancelCommunityJoinFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -55,13 +55,13 @@ export const cancelCommunityJoinFn = createServerFn({ method: "POST" })
   });
 
 export const listCommunityJoinHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CommunityJoinHistoryItemDTO[]> => {
     return fetchNestApiFromServer("/connect-app/community/join-requests/history", context.token);
   });
 
 export const syncCommunityJoinDecisionsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({
       context,
@@ -73,7 +73,7 @@ export const syncCommunityJoinDecisionsFn = createServerFn({ method: "POST" })
   );
 
 export const listCommunityJoinAdminRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CommunityJoinAdminRequestDTO[]> => {
     return fetchNestApiFromServer("/connect-app/community/join-requests/admin", context.token);
   });

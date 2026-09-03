@@ -79,7 +79,7 @@ export const MeetingRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapMeetingRow(r as never));
+    return (data ?? []).map((r: any) => mapMeetingRow(r as never));
   },
 
   /** Meetings awaiting the viewer's response (proposed + pending participant). */
@@ -105,7 +105,7 @@ export const MeetingRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapMeetingRow(r as never));
+    return (data ?? []).map((r: any) => mapMeetingRow(r as never));
   },
 
   async listPast(
@@ -122,7 +122,7 @@ export const MeetingRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapMeetingRow(r as never));
+    return (data ?? []).map((r: any) => mapMeetingRow(r as never));
   },
 
   /** Cancelled meetings only (subset of PAST) for the viewer. */
@@ -140,7 +140,7 @@ export const MeetingRepository = {
     q = applyRange(q, options);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapMeetingRow(r as never));
+    return (data ?? []).map((r: any) => mapMeetingRow(r as never));
   },
 
   async getParticipants(supabase: DB, meetingId: string): Promise<BusinessMeetingParticipantDTO[]> {
@@ -150,7 +150,7 @@ export const MeetingRepository = {
       .eq("meeting_id", meetingId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapParticipantRow(r as never));
+    return (data ?? []).map((r: any) => mapParticipantRow(r as never));
   },
 
   async getActiveProposal(
@@ -183,7 +183,7 @@ export const MeetingRepository = {
       .eq("meeting_id", meetingId)
       .order("version", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => mapProposalRow(r as never));
+    return (data ?? []).map((r: any) => mapProposalRow(r as never));
   },
 
   async getViewerRole(

@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   RELATIONSHIP_MEMORY_KINDS,
   RELATIONSHIP_MEMORY_SENSITIVITY,
@@ -38,7 +38,7 @@ const baseFilters = {
 };
 
 export const searchRelationshipMemoriesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -48,7 +48,7 @@ export const searchRelationshipMemoriesFn = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context as Ctx;
+    const { supabase } = context as unknown as Ctx;
     const filters = {
       subject: data.subject ?? undefined,
       kinds: data.kinds ?? undefined,
@@ -73,7 +73,7 @@ export const searchRelationshipMemoriesFn = createServerFn({ method: "POST" })
   });
 
 export const listRelevantRelationshipMemoriesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -85,7 +85,7 @@ export const listRelevantRelationshipMemoriesFn = createServerFn({ method: "POST
       .parse(input ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context as Ctx;
+    const { supabase } = context as unknown as Ctx;
     const { searchMemoriesStructured } = await import("./retrieval.server");
     return await searchMemoriesStructured(supabase, {
       subject: data.subject ?? undefined,
@@ -96,7 +96,7 @@ export const listRelevantRelationshipMemoriesFn = createServerFn({ method: "POST
   });
 
 export const getRelationshipMemoryGraphContextFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -107,7 +107,7 @@ export const getRelationshipMemoryGraphContextFn = createServerFn({ method: "POS
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context as Ctx;
+    const { supabase } = context as unknown as Ctx;
     const { getMemoryGraphContext } = await import("./graph-context.server");
     return await getMemoryGraphContext(supabase, {
       rootMemoryId: data.memoryId,

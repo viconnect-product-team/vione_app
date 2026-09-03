@@ -201,7 +201,7 @@ export class RecommendationService {
         const examples =
           q.includeReasonDetails === false
             ? undefined
-            : exampleIds.map((id) => nodeById.get(id)).filter((n): n is GraphNodeDTO => Boolean(n));
+            : exampleIds.map((id: any) => nodeById.get(id)).filter((n): n is GraphNodeDTO => Boolean(n));
         reasons.push({
           code: src.reasonCode,
           summaryKey: `graph.recommendation.reason.${src.reasonCode.toLowerCase()}`,

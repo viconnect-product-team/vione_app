@@ -18,6 +18,8 @@ import { getCurrentUserFn } from "@/lib/identity/platform-identity.functions";
 import { getWorkHubOverviewFn } from "@/lib/business-connect/work-hub/functions";
 import { NotificationOrchestrationSDK } from "@/lib/business-connect/notification-orchestration/sdk";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { useAuth } from "@/context/AuthContext";
+import { fetchNestApi } from "@/lib/api-client";
 import type {
   WorkHubCategory,
   WorkHubItemDTO,
@@ -177,39 +179,76 @@ export function getGreetingDaypart(date: Date = new Date()): BcMobileDaypart {
 
 export function useBusinessConnectHome() {
   const viewerId = useViewerUserId();
+  const { user, status: authStatus } = useAuth();
   const getIdentity = useServerFn(getCurrentUserFn);
   const getOverview = useServerFn(getWorkHubOverviewFn);
   const getUnreadCount = useServerFn(NotificationOrchestrationSDK.getUnreadCount);
 
   return useQuery<BcMobileHomeData>({
-    queryKey: bcMobileHomeKeys.home(viewerId ?? "viewer-pending"),
-    enabled: viewerId !== null,
+    queryKey: bcMobileHomeKeys.home(viewerId ?? user?.id ?? "viewer-pending"),
+    enabled: authStatus !== "loading",
     staleTime: 15_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      // Identity is the core source: its failure is the Home-level retry state.
-      const identity = await getIdentity();
-      // Secondary sources degrade independently — a failure in one must not
-      // destroy the rest of Home, and never substitutes mock data.
-      const [overview, unread] = await Promise.allSettled([getOverview(), getUnreadCount({})]);
+      // 1. Identity
+      let displayName: string | null = user?.user_metadata?.full_name || user?.email || null;
+      let avatarUrl: string | null = user?.user_metadata?.avatar_url || null;
+      let email: string | null = user?.email || null;
+
+      try {
+        const nestProfile = await fetchNestApi<any>("/connect-app/me/profile");
+        if (nestProfile) {
+          displayName = nestProfile.display_name || nestProfile.displayName || displayName;
+          avatarUrl = nestProfile.avatar_url || nestProfile.avatarUrl || avatarUrl;
+          email = nestProfile.email || email;
+        }
+      } catch {
+        try {
+          const identity = await getIdentity();
+          if (identity) {
+            displayName = identity.profile?.displayName ?? displayName;
+            avatarUrl = identity.profile?.avatarUrl ?? avatarUrl;
+            email = identity.email ?? email;
+          }
+        } catch {}
+      }
+
+      // 2. Overview & Unread
+      let todayItems: BcMobileTodayItem[] = [];
+      let todayPool: BcMobileTodayItem[] = [];
+      let unreadCount: number | null = 0;
+
+      try {
+        const [overviewRes, unreadRes] = await Promise.allSettled([
+          fetchNestApi<any>("/connect-app/briefing").catch(() => getOverview()),
+          fetchNestApi<{ count: number }>("/me/notifications/unread-count").catch(() => getUnreadCount({})),
+        ]);
+
+        if (overviewRes.status === "fulfilled" && overviewRes.value) {
+          const overviewVal = overviewRes.value;
+          if (overviewVal.previews) {
+            todayPool = selectTodayItems(overviewVal, BC_MOBILE_HOME_TODAY_POOL_SIZE);
+            todayItems = todayPool.slice(0, BC_MOBILE_HOME_MAX_TODAY_ITEMS);
+          }
+        }
+
+        if (unreadRes.status === "fulfilled" && unreadRes.value) {
+          unreadCount = unreadRes.value.count ?? 0;
+        }
+      } catch {}
+
       return {
         identity: {
-          displayName: identity.profile?.displayName ?? null,
-          avatarUrl: identity.profile?.avatarUrl ?? null,
-          email: identity.email,
+          displayName: displayName || "Hội viên ViOne",
+          avatarUrl,
+          email,
         },
-        today: (() => {
-          if (overview.status !== "fulfilled") {
-            return { status: "error" as const, items: [], pool: [] };
-          }
-          const pool = selectTodayItems(overview.value, BC_MOBILE_HOME_TODAY_POOL_SIZE);
-          return {
-            status: "ok" as const,
-            items: pool.slice(0, BC_MOBILE_HOME_MAX_TODAY_ITEMS),
-            pool,
-          };
-        })(),
-        unreadNotificationCount: unread.status === "fulfilled" ? unread.value.count : null,
+        today: {
+          status: "ok",
+          items: todayItems,
+          pool: todayPool,
+        },
+        unreadNotificationCount: unreadCount,
       };
     },
   });

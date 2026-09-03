@@ -169,7 +169,7 @@ function MembershipHistory({
         </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
-          {entries.map((e) => (
+          {entries.map((e: any) => (
             <li
               key={e.communityId}
               className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-4 py-3"

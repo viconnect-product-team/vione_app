@@ -2,7 +2,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { MeetingAgendaService } from "./service.server";
 import { MEETING_AGENDA_STATUSES } from "./types";
 
@@ -66,7 +66,7 @@ const deleteSchema = z.object({
 });
 
 export const listMeetingAgendaFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -74,7 +74,7 @@ export const listMeetingAgendaFn = createServerFn({ method: "POST" })
   });
 
 export const createAgendaItemFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -90,7 +90,7 @@ export const createAgendaItemFn = createServerFn({ method: "POST" })
   });
 
 export const updateAgendaItemFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -110,7 +110,7 @@ export const updateAgendaItemFn = createServerFn({ method: "POST" })
   });
 
 export const setAgendaItemStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => setStatusSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -118,7 +118,7 @@ export const setAgendaItemStatusFn = createServerFn({ method: "POST" })
   });
 
 export const reorderAgendaFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => reorderSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -131,7 +131,7 @@ export const reorderAgendaFn = createServerFn({ method: "POST" })
   });
 
 export const deleteAgendaItemFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => deleteSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;

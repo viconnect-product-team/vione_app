@@ -324,7 +324,7 @@ export const ConnectionService = {
     try {
       const me = await requireGlobalNetworkUser(sb, userId);
       const rows = await GlobalConnectionRepository.listIncomingPending(sb, me.userId, options);
-      return Promise.all(rows.map((r) => toRequestDTO(sb, r)));
+      return Promise.all(rows.map((r: any) => toRequestDTO(sb, r)));
     } catch (e) {
       throw toConnectionError(e);
     }
@@ -334,7 +334,7 @@ export const ConnectionService = {
     try {
       const me = await requireGlobalNetworkUser(sb, userId);
       const rows = await GlobalConnectionRepository.listOutgoingPending(sb, me.userId, options);
-      return Promise.all(rows.map((r) => toRequestDTO(sb, r)));
+      return Promise.all(rows.map((r: any) => toRequestDTO(sb, r)));
     } catch (e) {
       throw toConnectionError(e);
     }
@@ -359,7 +359,7 @@ export const ConnectionService = {
           };
         }),
       );
-      return results.filter((x) => x.person.personNodeId.length > 0);
+      return results.filter((x: any) => x.person.personNodeId.length > 0);
     } catch (e) {
       throw toConnectionError(e);
     }
@@ -389,7 +389,7 @@ export const ConnectionService = {
       .eq("node_kind", "person")
       .eq("external_ref_type", "user_profile")
       .in("external_ref_id", Array.from(others));
-    return (nodes ?? []).map((n) => (n as { id: string }).id);
+    return (nodes ?? []).map((n: any) => (n as { id: string }).id);
   },
 };
 

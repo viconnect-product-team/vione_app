@@ -2,7 +2,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { MeetingPrivateNoteService, MeetingSharedNoteService } from "./notes-service.server";
 import { MEETING_NOTE_CONTENT_MAX } from "./types";
 
@@ -20,7 +20,7 @@ const upsertPrivateSchema = z.object({
 });
 
 export const getMyPrivateNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => getPrivateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -28,7 +28,7 @@ export const getMyPrivateNoteFn = createServerFn({ method: "POST" })
   });
 
 export const upsertPrivateNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => upsertPrivateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -50,7 +50,7 @@ const publishSharedSchema = z.object({
 });
 
 export const getSharedNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => getSharedSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -58,7 +58,7 @@ export const getSharedNoteFn = createServerFn({ method: "POST" })
   });
 
 export const initSharedNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => initSharedSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -66,7 +66,7 @@ export const initSharedNoteFn = createServerFn({ method: "POST" })
   });
 
 export const updateSharedNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSharedSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -74,7 +74,7 @@ export const updateSharedNoteFn = createServerFn({ method: "POST" })
   });
 
 export const publishSharedNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => publishSharedSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;

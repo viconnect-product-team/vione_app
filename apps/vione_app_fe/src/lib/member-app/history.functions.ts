@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // ---------- History (transactions + activity) ----------
 export type MyHistoryActivity = {
@@ -45,7 +45,7 @@ function historyActType(category: string | null, action: string): MyHistoryActiv
 
 /** Returns the signed-in member's own recent transactions, events and activity. */
 export const getMyHistory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyHistory> => {
     const { supabase, userId } = context;
     const { data: me } = await supabase
@@ -68,7 +68,7 @@ export const getMyHistory = createServerFn({ method: "GET" })
         .in("target", targets)
         .order("created_at", { ascending: false })
         .limit(50);
-      activities = (rows ?? []).map((r) => ({
+      activities = (rows ?? []).map((r: any) => ({
         id: r.code as string,
         type: historyActType(r.category as string | null, r.action as string),
         title: r.action as string,
@@ -85,7 +85,7 @@ export const getMyHistory = createServerFn({ method: "GET" })
         .eq("member_code", code)
         .order("registered_at", { ascending: false })
         .limit(50);
-      const eventIds = [...new Set((regs ?? []).map((r) => r.event_id as string).filter(Boolean))];
+      const eventIds = [...new Set((regs ?? []).map((r: any) => r.event_id as string).filter(Boolean))];
       const eventMap = new Map<string, { name: string; date: string }>();
       if (eventIds.length) {
         const { data: evs } = await supabase
@@ -95,7 +95,7 @@ export const getMyHistory = createServerFn({ method: "GET" })
         for (const e of evs ?? [])
           eventMap.set(e.id as string, { name: e.name as string, date: e.date as string });
       }
-      events = (regs ?? []).map((r) => {
+      events = (regs ?? []).map((r: any) => {
         const ev = eventMap.get(r.event_id as string);
         return {
           id: r.id as string,

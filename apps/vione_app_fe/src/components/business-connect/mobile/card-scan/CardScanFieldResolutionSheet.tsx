@@ -116,12 +116,12 @@ export function CardScanFieldResolutionSheet({
               role="radiogroup"
               aria-label={t("bc.mobile.cardScan.fields.title")}
             >
-              {conflicts.map((r) => {
-                const selected = choices[r.key] ?? "current";
+              {conflicts.map((r: any) => {
+                const selected = (choices as any)[r.key] ?? "current";
                 return (
                   <div key={r.key}>
                     <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]">
-                      {t(FIELD_LABEL[r.key])}
+                      {t((FIELD_LABEL as any)[r.key])}
                     </p>
                     <div className="space-y-1.5">
                       <ChoiceRow
@@ -149,9 +149,9 @@ export function CardScanFieldResolutionSheet({
                 {t("bc.mobile.cardScan.fields.fillTitle")}
               </p>
               <ul className="mt-1.5 space-y-1">
-                {fills.map((r) => (
+                {fills.map((r: any) => (
                   <li key={r.key} className="text-sm text-[var(--bc-mobile-text)]">
-                    <span className="font-medium">{t(FIELD_LABEL[r.key])}</span>
+                    <span className="font-medium">{t((FIELD_LABEL as any)[r.key])}</span>
                     <span className="text-[var(--bc-mobile-muted)]"> · {r.cardValue}</span>
                   </li>
                 ))}

@@ -98,7 +98,7 @@ export function RecommendationCard({ item, onDismiss, renderAction }: Props) {
           aria-label={t("bc.rec.title")}
           data-testid="rec-reasons"
         >
-          {item.reasons.slice(0, 3).map((r) => (
+          {item.reasons.slice(0, 3).map((r: any) => (
             <li key={r.code}>
               <RecommendationReasonChip reason={r} />
             </li>

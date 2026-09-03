@@ -121,7 +121,7 @@ function EmailPage() {
           t("email.col.actions"),
         ]}
       >
-        {CAMPAIGNS.map((c) => (
+        {CAMPAIGNS.map((c: any) => (
           <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
             <td className="px-4 py-3">
               <div className="font-semibold text-foreground">{c.name}</div>

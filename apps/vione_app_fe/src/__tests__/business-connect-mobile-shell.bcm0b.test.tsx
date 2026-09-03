@@ -156,7 +156,7 @@ describe("BC-Mobile-0B — frozen 5-position navigation", () => {
 
 describe("BC-Mobile-0B — V action sheet", () => {
   it("exposes all five frozen capabilities with truthful availability states", () => {
-    expect(V_ACTIONS.map((a) => a.id)).toEqual([
+    expect(V_ACTIONS.map((a: any) => a.id)).toEqual([
       "presentQr",
       "nfc",
       "scanQr",

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 
 const feedInput = z.object({
@@ -9,7 +9,7 @@ const feedInput = z.object({
 });
 
 export const bcMobileNetworkFeedFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => feedInput.parse(data ?? {}))
   .handler(async ({ data, context }) => {
     const { token } = context as any;

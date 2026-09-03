@@ -180,10 +180,10 @@ export async function listCommunityEvents(input: {
     .range(offset, offset + COMMUNITY_EVENTS_PAGE_SIZE - 1);
   if (error) return { items: [], totalCount, nextOffset: null };
 
-  const events = ((rows ?? []) as CommunityEventRow[]).filter((e) =>
+  const events = ((rows ?? []) as CommunityEventRow[]).filter((e: any) =>
     isEventListableStatus(e.status),
   );
-  const ids = events.map((e) => e.id);
+  const ids = events.map((e: any) => e.id);
   const [registered, counts] = await Promise.all([
     member
       ? activeRegistrationIds(admin, communityId, member.code, ids)
@@ -191,7 +191,7 @@ export async function listCommunityEvents(input: {
     registrationCounts(admin, communityId, ids),
   ]);
 
-  const items = events.map((e) =>
+  const items = events.map((e: any) =>
     mapCommunityEventSummary(e, {
       isRegistered: registered.has(e.id),
       activeRegistrations: counts.get(e.id) ?? 0,
@@ -934,17 +934,17 @@ export async function getCommunityActivityPreview(input: {
       .order("date", { ascending: true })
       .order("id", { ascending: true })
       .limit(COMMUNITY_ACTIVITY_PREVIEW_LIMIT);
-    const events = ((rows ?? []) as CommunityEventRow[]).filter((e) =>
+    const events = ((rows ?? []) as CommunityEventRow[]).filter((e: any) =>
       isEventListableStatus(e.status),
     );
-    const ids = events.map((e) => e.id);
+    const ids = events.map((e: any) => e.id);
     const [registered, counts] = await Promise.all([
       member
         ? activeRegistrationIds(admin, communityId, member.code, ids)
         : Promise.resolve(new Set<string>()),
       registrationCounts(admin, communityId, ids),
     ]);
-    nextEvents = events.map((e) =>
+    nextEvents = events.map((e: any) =>
       mapCommunityEventSummary(e, {
         isRegistered: registered.has(e.id),
         activeRegistrations: counts.get(e.id) ?? 0,

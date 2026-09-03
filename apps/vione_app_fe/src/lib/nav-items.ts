@@ -29,6 +29,7 @@ import {
   MessageSquare,
   Store,
   ShieldCheck,
+  UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
@@ -112,6 +113,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "nav.group.system",
     items: [
+      { key: "nav.account", icon: UserCog, to: "/account-settings" },
       { key: "nav.myperm", icon: ShieldCheck, to: "/my-permissions" },
       { key: "nav.settings", icon: Settings, to: "/settings" },
       { key: "nav.activity", icon: History, to: "/activity" },

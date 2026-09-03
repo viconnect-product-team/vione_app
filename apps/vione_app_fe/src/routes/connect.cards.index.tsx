@@ -72,7 +72,7 @@ function ConnectCardsPage() {
           <EmptyState title={t("connect.cards.empty")} description={t("connect.cards.emptyHint")} />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {cards.data.map((c) => (
+            {cards.data.map((c: any) => (
               <li key={c.id}>
                 <Link
                   to="/connect/cards/$cardId/edit"

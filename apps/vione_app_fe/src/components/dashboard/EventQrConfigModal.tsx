@@ -26,7 +26,7 @@ export function EventQrConfigModal({
   if (!open) return null;
 
   const toggle = (f: QrField) =>
-    setSelected((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+    setSelected((prev) => (prev.includes(f) ? prev.filter((x: any) => x !== f) : [...prev, f]));
 
   const valid = selected.length > 0;
 

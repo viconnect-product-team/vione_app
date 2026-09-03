@@ -16,7 +16,7 @@ let savedData: SavedCard[] = [];
 
 vi.mock("@/lib/business-card/saved-card.sdk", () => ({
   SavedCardSDK: {
-    search: vi.fn(async () => savedData.map((c) => ({ ...c }))),
+    search: vi.fn(async () => savedData.map((c: any) => ({ ...c }))),
     recordOpen: vi.fn(async () => makeSaved({ id: "r" })),
     collections: { list: vi.fn(async () => []) },
     tags: { list: vi.fn(async () => []) },

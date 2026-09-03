@@ -19,7 +19,6 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
@@ -31,32 +30,28 @@ import { EventSponsors } from "@/components/dashboard/EventSponsors";
 import { EventFeed } from "@/components/dashboard/EventFeed";
 import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
 import {
-  listEventsWithRegistrationsFn,
-  listEventTicketTypesFn,
-  updateEventFn,
-  updateEventQrFieldsFn,
-  deleteEventFn,
   type EventItem,
   type Registration,
   type TicketType,
   type QrField,
 } from "@/lib/events.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { useRole } from "@/hooks/use-role";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/events/$eventId")({
   ssr: false,
   loader: async ({ params }) => {
-    const [{ events, registrations }, tickets] = await Promise.all([
-      listEventsWithRegistrationsFn(),
-      listEventTicketTypesFn({ data: { eventId: params.eventId } }),
+    const [event, tickets, registrations] = await Promise.all([
+      fetchNestApi<EventItem>(`/events/${params.eventId}`).catch(() => null),
+      fetchNestApi<TicketType[]>(`/events/${params.eventId}/tickets`).catch(() => []),
+      fetchNestApi<Registration[]>(`/events/registrations?eventId=${params.eventId}`).catch(() => []),
     ]);
-    const event = events.find((e) => e.id === params.eventId);
     if (!event) throw notFound();
     return {
       event,
-      registrations: registrations.filter((r) => r.eventId === event.id),
-      tickets,
+      registrations: Array.isArray(registrations) ? registrations : [],
+      tickets: Array.isArray(tickets) ? tickets : [],
     };
   },
   component: EventDetailPage,
@@ -141,14 +136,12 @@ function EventDetailPage() {
   const { isAdmin, isPlatformAdmin } = useRole();
   const canManage = isAdmin || isPlatformAdmin;
 
-  const updateFn = useServerFn(updateEventFn);
-  const deleteFn = useServerFn(deleteEventFn);
   const [editOpen, setEditOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const countdown = useCountdown(event.date, event.status);
-  const s = STATUS_TONE[event.status];
+  const s = STATUS_TONE[event.status] ?? STATUS_TONE.upcoming;
   const cancelled = event.status === "cancelled";
 
   const fields: CrudField[] = [
@@ -183,12 +176,20 @@ function EventDetailPage() {
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
     try {
-      await updateFn({ data: { id: event.id, ...(v as object) } as never });
+      const payload = {
+        ...v,
+        capacity: v.capacity ? Number(v.capacity) : 0,
+      };
+      await fetchNestApi(`/events/${event.id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
       toast.success(t("common.updated"));
       setEditOpen(false);
       await router.invalidate();
-    } catch {
-      toast.error(t("common.saveError"));
+    } catch (err: any) {
+      console.error("[EventDetail] Update error:", err);
+      toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -198,11 +199,12 @@ function EventDetailPage() {
     if (!window.confirm(t("events.deleteConfirm", { name: event.name }))) return;
     setDeleting(true);
     try {
-      await deleteFn({ data: { id: event.id } });
+      await fetchNestApi(`/events/${event.id}`, { method: "DELETE" });
       toast.success(t("events.deleted"));
       await router.invalidate();
-    } catch {
-      toast.error(t("events.deleteError"));
+    } catch (err: any) {
+      console.error("[EventDetail] Delete error:", err);
+      toast.error(err?.message || t("events.deleteError"));
     } finally {
       setDeleting(false);
     }
@@ -508,7 +510,6 @@ function TicketsSection({
   const [busy, setBusy] = useState<string | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [savingQr, setSavingQr] = useState(false);
-  const updateQrFn = useServerFn(updateEventQrFieldsFn);
 
   const handleDownload = async (tk: TicketType, kind: "png" | "pdf") => {
     setBusy(`${tk.id}-${kind}`);
@@ -530,12 +531,16 @@ function TicketsSection({
   const applyQrFields = async (fields: QrField[]) => {
     setSavingQr(true);
     try {
-      await updateQrFn({ data: { id: event.id, qrFields: fields } });
+      await fetchNestApi(`/events/${event.id}/qr-fields`, {
+        method: "PUT",
+        body: JSON.stringify({ qrFields: fields }),
+      });
       toast.success(t("edetail.qr.saved"));
       setQrOpen(false);
       await router.invalidate();
-    } catch {
-      toast.error(t("edetail.qr.saveError"));
+    } catch (err: any) {
+      console.error("[EventDetail] Save QR fields error:", err);
+      toast.error(err?.message || t("edetail.qr.saveError"));
     } finally {
       setSavingQr(false);
     }

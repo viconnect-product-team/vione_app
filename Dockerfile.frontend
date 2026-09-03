@@ -3,11 +3,10 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY apps/vione_app_fe/.output ./apps/vione_app_fe/.output
-COPY apps/vione_app_fe/docker-entrypoint.sh ./apps/vione_app_fe/
+COPY --chown=appuser:appgroup apps/vione_app_fe/.output ./apps/vione_app_fe/.output
+COPY --chown=appuser:appgroup apps/vione_app_fe/docker-entrypoint.sh ./apps/vione_app_fe/
 
 RUN chmod +x ./apps/vione_app_fe/docker-entrypoint.sh || true
-RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 4000

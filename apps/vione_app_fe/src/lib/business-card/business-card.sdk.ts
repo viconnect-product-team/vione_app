@@ -98,7 +98,7 @@ function currentOrigin(origin?: string): string {
 
 const NEST_API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const API_URL = NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`;
-const getHeaders = () => {
+const getHeaders = (): HeadersInit => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
   return token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : { "Content-Type": "application/json" };
 };
@@ -216,13 +216,11 @@ export const BusinessCardSDK = {
       updatedAt: c.updated_at,
       themeId: c.theme_id,
       bio: c.bio,
-      email: c.email,
-      phone: c.phone,
       website: c.website,
       skills: (c.skills || []).map((s: any) => s.skill_name || s),
       services: (c.services || []).map((s: any) => ({ title: s.title, description: s.description })),
       needs: (c.needs || []).map((n: any) => n.need_name || n),
-    };
+    } as BusinessCard;
   },
 
   /** Create a prefilled draft global card owned by the caller. */

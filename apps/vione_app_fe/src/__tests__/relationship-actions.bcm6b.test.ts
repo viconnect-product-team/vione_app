@@ -39,7 +39,7 @@ function person(overrides: Partial<BcMobilePersonDetail> = {}): BcMobilePersonDe
 describe("BC-Mobile-6B — resolveRelationshipActions", () => {
   it("reconnect + full contact → call, email, save_meeting_moment (deterministic order)", () => {
     const a = resolveRelationshipActions(person(), "reconnect");
-    expect(a.actions.map((x) => x.kind)).toEqual(["call", "email", "save_meeting_moment", "create_follow_up", "schedule_meeting"]);
+    expect(a.actions.map((x: any) => x.kind)).toEqual(["call", "email", "save_meeting_moment", "create_follow_up", "schedule_meeting"]);
     expect(a.actions[0].destination).toBe("tel:+84901234567");
     expect(a.actions[1].destination).toBe("mailto:minh@example.com");
     expect(a.actions[2].destination).toBeNull();
@@ -58,7 +58,7 @@ describe("BC-Mobile-6B — resolveRelationshipActions", () => {
       },
     });
     const a = resolveRelationshipActions(p, "reconnect");
-    expect(a.actions.map((x) => x.kind)).toEqual(["save_meeting_moment", "create_follow_up", "schedule_meeting"]);
+    expect(a.actions.map((x: any) => x.kind)).toEqual(["save_meeting_moment", "create_follow_up", "schedule_meeting"]);
   });
 
   it("malformed/hostile phone values never produce a href", () => {
@@ -80,7 +80,7 @@ describe("BC-Mobile-6B — resolveRelationshipActions", () => {
           social: [],
         },
       });
-      const kinds = resolveRelationshipActions(p, "reconnect").actions.map((x) => x.kind);
+      const kinds = resolveRelationshipActions(p, "reconnect").actions.map((x: any) => x.kind);
       expect(kinds).not.toContain("call");
     }
   });
@@ -103,7 +103,7 @@ describe("BC-Mobile-6B — resolveRelationshipActions", () => {
           social: [],
         },
       });
-      const kinds = resolveRelationshipActions(p, "reconnect").actions.map((x) => x.kind);
+      const kinds = resolveRelationshipActions(p, "reconnect").actions.map((x: any) => x.kind);
       expect(kinds).not.toContain("email");
     }
   });
@@ -150,7 +150,7 @@ describe("BC-Mobile-6B — resolveRelationshipActions", () => {
       ],
     ] as const) {
       const a = resolveRelationshipActions(person({ personId, kind, relationship }), "reconnect");
-      expect(a.actions.map((x) => x.kind)).toEqual(["call", "email", "save_meeting_moment", "create_follow_up", "schedule_meeting"]);
+      expect(a.actions.map((x: any) => x.kind)).toEqual(["call", "email", "save_meeting_moment", "create_follow_up", "schedule_meeting"]);
     }
   });
 });

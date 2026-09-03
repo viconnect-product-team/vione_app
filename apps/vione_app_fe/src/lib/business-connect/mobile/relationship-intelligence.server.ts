@@ -45,7 +45,7 @@ async function listOldestConnections(
     .order("updated_at", { ascending: true })
     .limit(limit);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => {
+  return (data ?? []).map((r: any) => {
     const row = r as Record<string, unknown>;
     const requester = row.requester_user_id as string;
     return {
@@ -104,7 +104,7 @@ async function listSavedCardEdges(
     .limit(limit);
   if (error) throw new Error(error.message);
   return (data ?? [])
-    .map((r) => mapSavedEdge(r as Record<string, unknown>))
+    .map((r: any) => mapSavedEdge(r as Record<string, unknown>))
     .filter((e): e is SavedCardEdge => e !== null);
 }
 
@@ -147,7 +147,7 @@ async function listGuestEdges(
     .order("first_shared_at", { ascending: true })
     .limit(limit);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => mapGuestEdge(r as Record<string, unknown>));
+  return (data ?? []).map((r: any) => mapGuestEdge(r as Record<string, unknown>));
 }
 
 async function getGuestEdge(
@@ -239,7 +239,7 @@ async function listDismissals(supabase: DB, viewerId: string): Promise<Relations
     .eq("owner_user_id", viewerId)
     .gt("dismissed_until", new Date().toISOString());
   if (error) return []; // fail-open on read: recommendations still truthful
-  return (data ?? []).map((r) => {
+  return (data ?? []).map((r: any) => {
     const row = r as Record<string, unknown>;
     return {
       personId: row.person_id as string,

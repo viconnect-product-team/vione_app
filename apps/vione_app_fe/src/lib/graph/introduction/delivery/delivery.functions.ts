@@ -1,7 +1,7 @@
 // BC-6.3 — Introduction Delivery server-fn RPC boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   IntroductionDeliveryDTO,
   IntroductionDeliveryPageDTO,
@@ -11,7 +11,7 @@ import type {
 const uuid = z.string().uuid();
 
 export const deliverIntroductionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -24,7 +24,7 @@ export const deliverIntroductionFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<IntroductionDeliveryDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).deliverIntroduction(data);
   });
@@ -32,33 +32,33 @@ export const deliverIntroductionFn = createServerFn({ method: "POST" })
 const idOnly = z.object({ deliveryId: uuid });
 
 export const acknowledgeIntroductionDeliveryFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).acknowledgeDelivery(data.deliveryId);
   });
 
 export const revokeIntroductionDeliveryFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).revokeDelivery(data.deliveryId);
   });
 
 export const getIntroductionDeliveryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
-    return new IntroductionDeliveryService(context.supabase as never, context.userId).getDelivery(
+    return new IntroductionDeliveryService(null as any as never, context.userId).getDelivery(
       data.deliveryId,
     );
   });
@@ -72,45 +72,45 @@ const listOpts = z
   .optional();
 
 export const listIncomingIntroductionDeliveriesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryPageDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).listIncomingForTarget(data);
   });
 
 export const listOutgoingIntroductionDeliveriesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryPageDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).listOutgoingForIntermediary(data);
   });
 
 export const listRequesterIntroductionDeliveriesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionDeliveryPageDTO> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).listStatusForRequester(data);
   });
 
 export const listPendingIntroductionDeliveriesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator(() => ({}))
   .handler(async ({ context }): Promise<PendingDeliveryItemDTO[]> => {
     const { IntroductionDeliveryService } = await import("./delivery.service.server");
     return new IntroductionDeliveryService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).listPendingDeliveries();
   });

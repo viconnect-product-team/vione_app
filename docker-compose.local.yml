@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-      target: production
+      target: runner
     container_name: vione-backend-local
     restart: unless-stopped
     env_file:
@@ -19,6 +19,26 @@ services:
       - vione-network
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: vione-frontend-local
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - NITRO_HOST=0.0.0.0
+      - NODE_ENV=production
+    ports:
+      - "5000:5000"
+    depends_on:
+      - backend
+    networks:
+      - vione-network
 
   db:
     image: postgres:15

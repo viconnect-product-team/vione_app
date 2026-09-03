@@ -3,12 +3,18 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
   ScanDuplicateResolution,
   ScanSaveResponse,
 } from "./card-scan.review";
+
+/** Maps raw API resolve response to the local ScanDuplicateResolution shape. */
+export function mapResolveResponse(raw: unknown): ScanDuplicateResolution {
+  return raw as ScanDuplicateResolution;
+}
+
 
 const resolveInput = z.object({
   email: z.string().max(320).nullable(),
@@ -18,7 +24,7 @@ const resolveInput = z.object({
 });
 
 export const bcMobileCardScanResolveFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => resolveInput.parse(data))
   .handler(async ({ data, context }): Promise<ScanDuplicateResolution> => {
     return fetchNestApiFromServer("/connect-app/card-scan/resolve", context.token, {
@@ -54,7 +60,7 @@ const saveInput = z.object({
 });
 
 export const bcMobileCardScanSaveFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => saveInput.parse(data))
   .handler(async ({ data, context }): Promise<ScanSaveResponse> => {
     return fetchNestApiFromServer("/connect-app/card-scan/save", context.token, {

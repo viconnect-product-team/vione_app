@@ -1016,7 +1016,7 @@ function MemberDetailPage() {
               {t("mdetail.reviews.invalid.desc")}
             </p>
             <ul className="mt-3 inline-block text-left text-xs text-muted-foreground">
-              {reviewSearchValidity.errors.map((e) => (
+              {reviewSearchValidity.errors.map((e: any) => (
                 <li key={e.path}>• {e.message}</li>
               ))}
             </ul>
@@ -1200,7 +1200,7 @@ function MemberDetailPage() {
             ) : (
               <>
                 <div className="divide-y divide-border">
-                  {pagedReviews.map((r) => {
+                  {pagedReviews.map((r: any) => {
                     const ini = r.reviewerName
                       ? r.reviewerName
                           .split(" ")

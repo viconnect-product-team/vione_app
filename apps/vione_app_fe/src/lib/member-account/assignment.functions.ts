@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   type Ctx,
   assertAdmin,
@@ -22,9 +22,9 @@ export type AssignableUser = {
 
 // List auth users (via profiles) so the admin can pick an existing account.
 export const listAssignableUsersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AssignableUser[]> => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: profiles, error } = await supabaseAdmin
@@ -35,7 +35,7 @@ export const listAssignableUsersFn = createServerFn({ method: "GET" })
 
     // GUARD: only reveal member assignments within the caller's associations so
     // an association admin cannot learn which accounts belong to other tenants.
-    const { isPlatform, assocIds } = await callerScope(context as Ctx);
+    const { isPlatform, assocIds } = await callerScope(context as unknown as Ctx);
     let aq = supabaseAdmin
       .from("members")
       .select("id, name, user_id, association_id")
@@ -59,10 +59,10 @@ export const listAssignableUsersFn = createServerFn({ method: "GET" })
 
 // Get the currently linked account for a member.
 export const getMemberAccountFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member, error } = await supabaseAdmin
       .from("members")
@@ -72,7 +72,7 @@ export const getMemberAccountFn = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!member) return null;
     // GUARD: caller must administer this member's association.
-    await assertAssocAdmin(context as Ctx, member.association_id as string);
+    await assertAssocAdmin(context as unknown as Ctx, member.association_id as string);
     let account: { userId: string; email: string | null; fullName: string | null } | null = null;
     if (member.user_id) {
       const { data: prof } = await supabaseAdmin
@@ -93,7 +93,7 @@ export const getMemberAccountFn = createServerFn({ method: "GET" })
   });
 
 export const assignMemberUserFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -103,7 +103,7 @@ export const assignMemberUserFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: member, error: mErr } = await supabaseAdmin
@@ -114,7 +114,7 @@ export const assignMemberUserFn = createServerFn({ method: "POST" })
     if (mErr) throw new Error(mErr.message);
     if (!member) throw new Error("Không tìm thấy hội viên");
     // GUARD: caller must administer this member's association.
-    await assertAssocAdmin(context as Ctx, member.association_id as string);
+    await assertAssocAdmin(context as unknown as Ctx, member.association_id as string);
 
     // Ensure this user isn't already linked to another member
     const { data: taken } = await supabaseAdmin
@@ -133,7 +133,7 @@ export const assignMemberUserFn = createServerFn({ method: "POST" })
       .eq("id", data.memberId);
     if (error) throw new Error(error.message);
 
-    await logAccountAudit(supabaseAdmin, context as Ctx, {
+    await logAccountAudit(supabaseAdmin, context as unknown as Ctx, {
       memberId: member.id,
       memberName: member.name,
       action: member.user_id && member.user_id !== data.userId ? "reassign" : "assign",
@@ -145,7 +145,7 @@ export const assignMemberUserFn = createServerFn({ method: "POST" })
 
 // Create a new auth account and link it to the member.
 export const createMemberUserFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -160,7 +160,7 @@ export const createMemberUserFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: member, error: mErr } = await supabaseAdmin
@@ -171,7 +171,7 @@ export const createMemberUserFn = createServerFn({ method: "POST" })
     if (mErr) throw new Error(mErr.message);
     if (!member) throw new Error("Không tìm thấy hội viên");
     // GUARD: caller must administer this member's association.
-    await assertAssocAdmin(context as Ctx, member.association_id as string);
+    await assertAssocAdmin(context as unknown as Ctx, member.association_id as string);
 
     const selfSet = !data.password;
     const initialPassword = data.password || randomPassword();
@@ -225,7 +225,7 @@ export const createMemberUserFn = createServerFn({ method: "POST" })
       }
     }
 
-    await logAccountAudit(supabaseAdmin, context as Ctx, {
+    await logAccountAudit(supabaseAdmin, context as unknown as Ctx, {
       memberId: member.id,
       memberName: member.name,
       action: "create",
@@ -243,7 +243,7 @@ export const createMemberUserFn = createServerFn({ method: "POST" })
 
 // Send (or resend) an activation / set-password email to a member's account.
 export const sendMemberInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -253,7 +253,7 @@ export const sendMemberInviteFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member, error } = await supabaseAdmin
       .from("members")
@@ -263,7 +263,7 @@ export const sendMemberInviteFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!member) throw new Error("Không tìm thấy hội viên");
     // GUARD: caller must administer this member's association.
-    await assertAssocAdmin(context as Ctx, member.association_id as string);
+    await assertAssocAdmin(context as unknown as Ctx, member.association_id as string);
     if (!member?.user_id) throw new Error("Hội viên chưa được gán tài khoản");
     const { data: prof } = await supabaseAdmin
       .from("profiles")
@@ -274,7 +274,7 @@ export const sendMemberInviteFn = createServerFn({ method: "POST" })
     if (!email) throw new Error("Không tìm thấy email tài khoản");
     await sendActivationEmail(email, data.redirectTo);
 
-    await logAccountAudit(supabaseAdmin, context as Ctx, {
+    await logAccountAudit(supabaseAdmin, context as unknown as Ctx, {
       memberId: member.id,
       memberName: member.name,
       action: "invite",
@@ -286,10 +286,10 @@ export const sendMemberInviteFn = createServerFn({ method: "POST" })
 
 // Unlink the account from a member.
 export const unassignMemberUserFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context as Ctx);
+    await assertAdmin(context as unknown as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member } = await supabaseAdmin
       .from("members")
@@ -298,14 +298,14 @@ export const unassignMemberUserFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!member) throw new Error("Không tìm thấy hội viên");
     // GUARD: caller must administer this member's association.
-    await assertAssocAdmin(context as Ctx, member.association_id as string);
+    await assertAssocAdmin(context as unknown as Ctx, member.association_id as string);
     const { error } = await supabaseAdmin
       .from("members")
       .update({ user_id: null })
       .eq("id", data.memberId);
     if (error) throw new Error(error.message);
 
-    await logAccountAudit(supabaseAdmin, context as Ctx, {
+    await logAccountAudit(supabaseAdmin, context as unknown as Ctx, {
       memberId: data.memberId,
       memberName: member?.name ?? null,
       action: "unassign",

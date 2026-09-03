@@ -6,7 +6,7 @@
 // never from client input.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   identityUpdateSchema,
   publicTokenSchema,
@@ -24,14 +24,14 @@ import { fetchNestApi, fetchNestApiFromServer } from "../../api-client";
 // ---------------------------------------------------------------------------
 
 export const bcIdentityGetMineFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<MyIdentityPayload> =>
       fetchNestApiFromServer("/connect-app/me/identity", context.token),
   );
 
 export const bcIdentityUpsertFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => identityUpdateSchema.parse(data))
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
@@ -42,7 +42,7 @@ export const bcIdentityUpsertFn = createServerFn({ method: "POST" })
   );
 
 export const bcIdentityUpdateVisibilityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => visibilityUpdateSchema.parse(data))
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
@@ -53,7 +53,7 @@ export const bcIdentityUpdateVisibilityFn = createServerFn({ method: "POST" })
   );
 
 export const bcIdentityGetOrCreateShareLinkFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<IdentityShareLinkInfo> =>
       fetchNestApiFromServer("/connect-app/me/identity/share-link", context.token, {
@@ -62,7 +62,7 @@ export const bcIdentityGetOrCreateShareLinkFn = createServerFn({ method: "POST" 
   );
 
 export const bcIdentityRotateShareLinkFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<IdentityShareLinkInfo> =>
       fetchNestApiFromServer("/connect-app/me/identity/share-link/rotate", context.token, {
@@ -79,3 +79,19 @@ export const bcIdentityPublicByTokenFn = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<PublicIdentityResult> => {
     return fetchNestApi(`/connect-app/public/identity/${data}`);
   });
+
+// ── Client-side direct helpers (bypass requireSupabaseAuth middleware) ────────
+
+/** Lấy hoặc tạo share link trực tiếp qua JWT client. */
+export async function getOrCreateShareLinkDirect(): Promise<IdentityShareLinkInfo> {
+  return fetchNestApi<IdentityShareLinkInfo>("/connect-app/me/identity/share-link", {
+    method: "POST",
+  });
+}
+
+/** Rotate share link trực tiếp qua JWT client. */
+export async function rotateShareLinkDirect(): Promise<IdentityShareLinkInfo> {
+  return fetchNestApi<IdentityShareLinkInfo>("/connect-app/me/identity/share-link/rotate", {
+    method: "POST",
+  });
+}

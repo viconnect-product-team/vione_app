@@ -42,7 +42,7 @@ export const SavedCardService = {
 
   /** Idempotently seed the six system collections for the caller. */
   async ensureSystemCollections(supabase: SupabaseClient, userId: string): Promise<void> {
-    const rows = SYSTEM_COLLECTIONS.map((c) => ({
+    const rows = SYSTEM_COLLECTIONS.map((c: any) => ({
       owner_user_id: userId,
       slug: c.slug,
       name: c.name,
@@ -61,7 +61,7 @@ export const SavedCardService = {
       SavedCardCollectionRepository.listByOwner(supabase, userId),
       SavedCardRepository.collectionCounts(supabase, userId),
     ]);
-    return rows.map((r) => mapRowToCollection(r, counts[r.id as string] ?? 0));
+    return rows.map((r: any) => mapRowToCollection(r, counts[r.id as string] ?? 0));
   },
 
   async createCollection(

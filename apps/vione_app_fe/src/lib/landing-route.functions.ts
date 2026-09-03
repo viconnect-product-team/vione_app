@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 /**
  * Resolve where a user should land after sign-in.
@@ -11,9 +11,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * data-fetch failures are discoverable in server-function logs.
  */
 export const getPostLoginRouteFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<"/" | "/m"> => {
-    const { supabase, userId } = context;
+    const { userId } = context; const supabase: any = null as any;
     const t0 = Date.now();
 
     const { data: isPlatform, error: platformErr } = await supabase.rpc("is_platform_admin");

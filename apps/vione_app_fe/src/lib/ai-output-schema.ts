@@ -90,8 +90,8 @@ export function sanitizeStructuredOutput(
     evidenceIds: out.evidenceIds.filter((id) => idSet.has(id)),
     limitations: out.limitations.map(stripHtml),
     suggestedActions: out.suggestedActions
-      .filter((a) => !a.route || routeSet.has(a.route))
-      .map((a) => ({ ...a, label: stripHtml(a.label) })),
+      .filter((a: any) => !a.route || routeSet.has(a.route))
+      .map((a: any) => ({ ...a, label: stripHtml(a.label) })),
     confidence: out.confidence,
     clarificationQuestion: out.clarificationQuestion
       ? stripHtml(out.clarificationQuestion)

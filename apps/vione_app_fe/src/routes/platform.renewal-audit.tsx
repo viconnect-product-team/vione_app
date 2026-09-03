@@ -175,7 +175,7 @@ function RenewalAuditAdminPage() {
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
             >
               <option value="">{t("renewalAudit.filter.allAssociations")}</option>
-              {scope.associations.map((a) => (
+              {scope.associations.map((a: any) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
                 </option>
@@ -264,7 +264,7 @@ function RenewalAuditAdminPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.map((r: any) => (
                 <tr key={r.id} className="border-b border-border/60 align-top">
                   <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                     {fmtTime(r.createdAt)}

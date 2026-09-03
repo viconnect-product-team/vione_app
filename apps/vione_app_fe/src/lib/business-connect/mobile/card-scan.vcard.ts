@@ -73,7 +73,7 @@ export function buildScanDraftVCard(draft: ScanReviewDraft, origin?: string): st
   if (source) lines.push(`SOURCE:${escapeVCardValue(source)}`);
 
   lines.push("END:VCARD");
-  return lines.map((l) => foldVCardLine(l)).join("\r\n") + "\r\n";
+  return lines.map((l: any) => foldVCardLine(l)).join("\r\n") + "\r\n";
 }
 
 /**

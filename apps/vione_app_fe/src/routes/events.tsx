@@ -15,19 +15,15 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventWizard } from "@/components/dashboard/EventWizard";
 import {
-  createEventFn,
-  deleteEventFn,
-  listEventsFn,
-  updateEventFn,
   type EventItem,
 } from "@/lib/events.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   getEventView,
   setEventView,
@@ -42,7 +38,14 @@ import { downloadCsv } from "@/lib/csv";
 
 export const Route = createFileRoute("/events")({
   ssr: false,
-  loader: () => listEventsFn(),
+  loader: async () => {
+    try {
+      const res = await fetchNestApi<EventItem[]>("/events");
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
   component: EventsPage,
 });
 
@@ -104,9 +107,6 @@ function EventsPage() {
   const [savedFilters, setSavedFilters] = useState<EventSavedFilter[]>([]);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const deleteEvent = useServerFn(deleteEventFn);
-  const createFn = useServerFn(createEventFn);
-  const updateFn = useServerFn(updateEventFn);
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
@@ -154,18 +154,29 @@ function EventsPage() {
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
     try {
+      const payload = {
+        ...v,
+        capacity: v.capacity ? Number(v.capacity) : 0,
+      };
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        await fetchNestApi(`/events/${editing.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
         toast.success(t("common.updated"));
       } else {
-        await createFn({ data: v as never });
+        await fetchNestApi("/events", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
         toast.success(t("common.created"));
       }
       setOpen(false);
       setEditing(null);
       await router.invalidate();
-    } catch {
-      toast.error(t("common.saveError"));
+    } catch (err: any) {
+      console.error("[Events] Submit error:", err);
+      toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -175,11 +186,12 @@ function EventsPage() {
     if (!window.confirm(t("events.deleteConfirm", { name: e.name }))) return;
     setDeletingId(e.id);
     try {
-      await deleteEvent({ data: { id: e.id } });
+      await fetchNestApi(`/events/${e.id}`, { method: "DELETE" });
       toast.success(t("events.deleted"));
       await router.invalidate();
-    } catch {
-      toast.error(t("events.deleteError"));
+    } catch (err: any) {
+      console.error("[Events] Delete error:", err);
+      toast.error(err?.message || t("events.deleteError"));
     } finally {
       setDeletingId(null);
     }
@@ -200,9 +212,9 @@ function EventsPage() {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return events
-      .filter((e) => (status === "all" ? true : e.status === status))
-      .filter((e) => (type === "all" ? true : e.type === type))
-      .filter((e) => (bucket === "all" ? true : bucketOf(e.date) === bucket))
+      .filter((e: any) => (status === "all" ? true : e.status === status))
+      .filter((e: any) => (type === "all" ? true : e.type === type))
+      .filter((e: any) => (bucket === "all" ? true : bucketOf(e.date) === bucket))
       .filter(
         (e) => !ql || e.name.toLowerCase().includes(ql) || e.location.toLowerCase().includes(ql),
       )
@@ -213,7 +225,7 @@ function EventsPage() {
   const featured = useMemo(() => {
     const today = startOfDay(new Date()).getTime();
     return events
-      .filter((e) => e.status !== "cancelled" && startOfDay(new Date(e.date)).getTime() >= today)
+      .filter((e: any) => e.status !== "cancelled" && startOfDay(new Date(e.date)).getTime() >= today)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
   }, [events]);
 
@@ -312,7 +324,7 @@ function EventsPage() {
         />
         <StatCard
           label={t("events.kpi.upcoming")}
-          value={events.filter((e) => e.status === "upcoming").length}
+          value={events.filter((e: any) => e.status === "upcoming").length}
           tone="info"
           icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
         />
@@ -504,7 +516,7 @@ function EventsPage() {
         )
       ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((e) => (
+          {filtered.map((e: any) => (
             <EventCard
               key={e.id}
               event={e}
@@ -578,16 +590,19 @@ function CapacityBar({ registered, capacity }: { registered: number; capacity: n
   );
 }
 
-function StatusPill({ status }: { status: EventItem["status"] }) {
+function StatusPill({ status }: { status?: EventItem["status"] }) {
   const t = useT();
-  const s = STATUS_TONE[status];
+  const validStatus: EventItem["status"] =
+    status && STATUS_TONE[status] ? status : "upcoming";
+  const s = STATUS_TONE[validStatus] ?? STATUS_TONE.upcoming;
+  const labelKey = STATUS_KEY[validStatus] ?? "events.status.upcoming";
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
       style={{ background: s.bg, color: s.fg }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.fg }} aria-hidden="true" />
-      {t(STATUS_KEY[status])}
+      {t(labelKey)}
     </span>
   );
 }
@@ -607,7 +622,7 @@ function EventCard({
   const fmt = useFmt();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-      <div className="relative h-28 overflow-hidden" style={{ background: TYPE_COVER[e.type] }}>
+      <div className="relative h-28 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
         <div
           className="absolute inset-0 opacity-20"
           style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
@@ -616,7 +631,7 @@ function EventCard({
           <StatusPill status={e.status} />
         </div>
         <span className="absolute right-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground backdrop-blur">
-          {t(TYPE_KEY[e.type])}
+          {t(TYPE_KEY[e.type] ?? "events.type.forum")}
         </span>
       </div>
       <div className="flex flex-1 flex-col p-5">
@@ -806,7 +821,7 @@ function CalendarView({ events }: { events: EventItem[] }) {
               {/* Mobile: compact color dots */}
               {dayEvents.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
-                  {dayEvents.slice(0, 4).map((e) => (
+                  {dayEvents.slice(0, 4).map((e: any) => (
                     <span
                       key={e.id}
                       title={e.name}
@@ -818,7 +833,7 @@ function CalendarView({ events }: { events: EventItem[] }) {
               )}
               {/* sm+: labelled chips */}
               <div className="mt-1 hidden space-y-1 sm:block">
-                {dayEvents.slice(0, 2).map((e) => (
+                {dayEvents.slice(0, 2).map((e: any) => (
                   <div
                     key={e.id}
                     title={e.name}

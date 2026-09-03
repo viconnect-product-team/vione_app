@@ -15,7 +15,7 @@ export function TopIndustries() {
     <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
       <h3 className="mb-4 text-base font-semibold text-foreground">{t("industries.title")}</h3>
       <div className="space-y-3.5">
-        {rows.map((r) => (
+        {rows.map((r: any) => (
           <div key={r.key}>
             <div className="mb-1.5 flex items-center justify-between text-[13px]">
               <span className="text-foreground">{t(r.key)}</span>

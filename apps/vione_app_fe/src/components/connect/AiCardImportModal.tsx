@@ -583,7 +583,7 @@ export function AiCardImportModal({
   function revertItemFieldTo(id: string, key: keyof Draft, ts: number, label: string) {
     const it = items.find((x) => x.id === id);
     const entries = it?.history?.[key];
-    const entry = entries?.find((e) => e.ts === ts);
+    const entry = entries?.find((e: any) => e.ts === ts);
     if (!it || !it.draft || !entry) return;
     if (it.draft[key] === entry.value) {
       toast(t("connect.ai.import.fieldHistory.noop").replace("{label}", label));
@@ -740,7 +740,7 @@ export function AiCardImportModal({
     const it = items.find((x) => x.id === id);
     if (!it) return;
     setItems((list) =>
-      list.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
+      list.map((x: any) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
     );
     void analyzeOne(id, it.previewUrl);
   }
@@ -751,7 +751,7 @@ export function AiCardImportModal({
     setCropBusy(true);
     try {
       setItems((list) =>
-        list.map((x) =>
+        list.map((x: any) =>
           x.id === id
             ? {
                 ...x,
@@ -780,7 +780,7 @@ export function AiCardImportModal({
     const id = selected.id;
     const original = selected.originalUrl;
     setItems((list) =>
-      list.map((x) =>
+      list.map((x: any) =>
         x.id === id
           ? {
               ...x,
@@ -914,7 +914,7 @@ export function AiCardImportModal({
   async function removeHistoryEntry(id: string) {
     try {
       await deleteCardAiHistory({ data: { id } });
-      setHistory((h) => h.filter((e) => e.id !== id));
+      setHistory((h) => h.filter((e: any) => e.id !== id));
       toast.success(t("connect.ai.import.history.removed"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("connect.ai.import.history.saveErr"));
@@ -1827,7 +1827,7 @@ export function AiCardImportModal({
                                       {t("connect.ai.import.autoTemplateAlt")}
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                      {pick.alternates.map((a) => {
+                                      {pick.alternates.map((a: any) => {
                                         const at = getTemplate(a.templateId);
                                         return (
                                           <button
@@ -2386,7 +2386,7 @@ function EditField({
   const filteredEntries =
     historySourceFilter === "all"
       ? historyEntries
-      : historyEntries.filter((e) => e.source === historySourceFilter);
+      : historyEntries.filter((e: any) => e.source === historySourceFilter);
   const currentTs = historyEntries[historyEntries.length - 1]?.ts;
   return (
     <div className="space-y-1.5">

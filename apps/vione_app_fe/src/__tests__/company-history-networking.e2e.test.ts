@@ -181,7 +181,7 @@ describe.skipIf(!canRun)("company history + networking queries (live DB)", () =>
     expect(error).toBeNull();
     expect((regs ?? []).length).toBeGreaterThan(0);
 
-    const ids = [...new Set((regs ?? []).map((r) => r.event_id as string))];
+    const ids = [...new Set((regs ?? []).map((r: any) => r.event_id as string))];
     const { data: evs } = await client.from("events").select("id, name, registered").in("id", ids);
     expect((evs ?? [])[0]?.name).toBe("Hội nghị thường niên");
     expect((evs ?? [])[0]?.registered).toBe(42);

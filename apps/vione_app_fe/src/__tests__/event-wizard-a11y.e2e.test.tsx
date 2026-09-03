@@ -31,6 +31,10 @@ vi.mock("@tanstack/react-start", () => ({
   useServerFn: () => createFn,
 }));
 
+vi.mock("@/lib/api-client", () => ({
+  fetchNestApi: () => createFn(),
+}));
+
 vi.mock("@/lib/events.functions", () => ({
   createEventWithConfigFn: vi.fn(),
   QR_FIELDS: ["registration_code", "verify_url", "ticket_code"],

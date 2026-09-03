@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, KeyRound, LogOut, User as UserIcon } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, User as UserIcon, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
+import { fetchNestApi } from "@/lib/api-client";
 
 function initials(name: string) {
   return (
@@ -19,6 +21,7 @@ function initials(name: string) {
 export function ProfileMenu() {
   const t = useT();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
@@ -61,13 +64,26 @@ export function ProfileMenu() {
   const displayName = fullName || email || "—";
 
   async function handleLogout() {
+    try {
+      await logout();
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem('vibe_token');
     localStorage.removeItem('vibe_refresh_token');
-    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    await supabase.auth.signOut();
+    document.cookie = `sb-access-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `sb-refresh-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     toast.success(t("profile.loggedOut"));
-    navigate({ to: "/auth", replace: true });
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth";
+    } else {
+      navigate({ to: "/auth", replace: true });
+    }
   }
 
   return (
@@ -114,6 +130,15 @@ export function ProfileMenu() {
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
           >
             <UserIcon className="h-4 w-4 text-muted-foreground" /> {t("profile.menu.profile")}
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate({ to: "/account-settings" });
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+          >
+            <UserCog className="h-4 w-4 text-muted-foreground" /> {t("nav.account")}
           </button>
           <button
             onClick={() => {
@@ -246,12 +271,13 @@ function ProfileModal({
 
 function PasswordModal({ onClose }: { onClose: () => void }) {
   const t = useT();
+  const [currentPwd, setCurrentPwd] = useState("");
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    if (pwd.length < 8) {
+    if (pwd.length < 6) {
       toast.error(t("profile.pwd.tooShort"));
       return;
     }
@@ -260,19 +286,44 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: pwd });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const res = await fetchNestApi('/users/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: currentPwd,
+          newPassword: pwd,
+        }),
+      });
+
+      if (res && res.error) {
+        toast.error(res.message || res.error || "Không thể đổi mật khẩu");
+        return;
+      }
+
+      toast.success(t("profile.pwd.saved"));
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message || "Đã xảy ra lỗi khi đổi mật khẩu");
+    } finally {
+      setSaving(false);
     }
-    toast.success(t("profile.pwd.saved"));
-    onClose();
   }
 
   return (
     <Modal title={t("profile.pwd.title")} onClose={onClose}>
       <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-foreground">
+            Mật khẩu hiện tại
+          </label>
+          <input
+            type="password"
+            placeholder="Nhập mật khẩu hiện tại nếu có"
+            value={currentPwd}
+            onChange={(e) => setCurrentPwd(e.target.value)}
+            className="h-10 w-full rounded-lg border border-border bg-secondary px-3 text-sm text-foreground focus:border-ring focus:outline-none"
+          />
+        </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
             {t("profile.pwd.new")}

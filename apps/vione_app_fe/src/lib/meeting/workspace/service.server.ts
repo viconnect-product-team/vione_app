@@ -367,7 +367,7 @@ export const MeetingWorkspaceService = {
 
     const hasMore = rows.length > limit;
     const paged = hasMore ? rows.slice(0, limit) : rows;
-    const items: MeetingWorkspaceTimelineEventDTO[] = paged.map((r) => ({
+    const items: MeetingWorkspaceTimelineEventDTO[] = paged.map((r: any) => ({
       id: String(r.id),
       eventType: String(r.event_type),
       occurredAt: String(r.occurred_at),

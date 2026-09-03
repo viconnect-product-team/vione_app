@@ -27,7 +27,8 @@ export const Route = createFileRoute("/m")({
     const isVioneLaunch = isMobile && (hasRememberedVioneAppContext() || isVioneStandaloneContext());
     if (isVioneLaunch) rememberVioneAppContext();
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const hasLocal = typeof window !== "undefined" && Boolean(localStorage.getItem("vibe_token"));
+    if ((error || !data.user) && !hasLocal) {
       // Preserve the intended deep-link destination so we can return to it
       // after authentication (handles custom domains + browser refresh).
       throw redirect({

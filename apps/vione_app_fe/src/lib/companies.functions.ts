@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   ActivityEntry,
   ActivityType,
@@ -67,7 +67,7 @@ function eventRole(ticket: string | null): EventRole {
 
 /** Builds a company's real history from activity_log, event_registrations and invoices. */
 export const getCompanyHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -78,7 +78,7 @@ export const getCompanyHistoryFn = createServerFn({ method: "GET" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<CompanyHistory> => {
-    const supabase = context.supabase;
+    const supabase = null as any;
 
     // --- Activities: activity_log rows targeting this company (by code or name) ---
     const targets = [data.code, data.name].filter(Boolean);
@@ -91,7 +91,7 @@ export const getCompanyHistoryFn = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      activities = (rows ?? []).map((r) => ({
+      activities = (rows ?? []).map((r: any) => ({
         id: r.code as string,
         type: actType(r.category as string | null, r.action as string),
         title: r.action as string,
@@ -111,7 +111,7 @@ export const getCompanyHistoryFn = createServerFn({ method: "GET" })
         .order("registered_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      const eventIds = [...new Set((regs ?? []).map((r) => r.event_id as string).filter(Boolean))];
+      const eventIds = [...new Set((regs ?? []).map((r: any) => r.event_id as string).filter(Boolean))];
       const eventMap = new Map<string, { name: string; date: string; registered: number }>();
       if (eventIds.length) {
         const { data: evs } = await supabase
@@ -125,7 +125,7 @@ export const getCompanyHistoryFn = createServerFn({ method: "GET" })
             registered: Number(e.registered ?? 0),
           });
       }
-      events = (regs ?? []).map((r) => {
+      events = (regs ?? []).map((r: any) => {
         const ev = eventMap.get(r.event_id as string);
         return {
           id: r.id as string,

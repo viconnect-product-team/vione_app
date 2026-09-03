@@ -75,7 +75,7 @@ export function Pagination({
             onChange={(e) => onPageSize(Number(e.target.value))}
             className="h-8 rounded-lg border border-border bg-card px-2 text-sm font-medium text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
           >
-            {pageSizeOptions.map((n) => (
+            {pageSizeOptions.map((n: any) => (
               <option key={n} value={n}>
                 {n}
               </option>

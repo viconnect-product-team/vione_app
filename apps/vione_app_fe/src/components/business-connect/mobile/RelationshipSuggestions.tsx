@@ -7,8 +7,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { ChevronRight, RefreshCw, X } from "lucide-react";
+import { ChevronRight, RefreshCw, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLang, useT } from "@/lib/i18n";
@@ -18,7 +17,7 @@ import {
   useTodayRelationshipRecommendations,
 } from "@/hooks/use-relationship-intelligence";
 import { recordIntelInteraction } from "@/hooks/use-relationship-personalization";
-import { bcIdentityGetMineFn } from "@/lib/business-connect/mobile/identity.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { trackRelationshipIntel } from "@/lib/business-connect/mobile/relationship-intelligence.telemetry";
 import type { RelationshipRecommendation } from "@/lib/business-connect/mobile/relationship-intelligence.types";
@@ -75,21 +74,28 @@ function SuggestionRow({
         className={`block rounded-xl ${FOCUS}`}
       >
         <span className="flex items-center gap-2.5">
+          {/* Avatar — luôn hiện: ảnh thật hoặc chữ cái */}
           {rec.person.avatarUrl ? (
             <img
               src={rec.person.avatarUrl}
               alt=""
               loading="lazy"
+              onError={(e) => {
+                // Fallback về initials khi ảnh lỗi
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+                const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (sibling) sibling.style.display = "flex";
+              }}
               className="h-12 w-12 shrink-0 rounded-full object-cover"
             />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[13px] font-semibold text-[var(--bc-mobile-muted)]"
-            >
-              {initialsOf(rec.person.displayName)}
-            </span>
-          )}
+          ) : null}
+          <span
+            aria-hidden="true"
+            style={{ display: rec.person.avatarUrl ? "none" : "flex" }}
+            className="h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[13px] font-semibold text-[var(--bc-mobile-muted)]"
+          >
+            {initialsOf(rec.person.displayName)}
+          </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
               {name}
@@ -102,26 +108,35 @@ function SuggestionRow({
           </span>
         </span>
 
-        {/* Mốc thời gian */}
-        <span className="mt-2 flex items-center gap-1 text-[12px] text-[var(--bc-mobile-muted)]">
-          <MilestoneIcon className="h-2.5 w-2.5 shrink-0 text-[var(--bc-mobile-muted)]" />
-          {t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days })}
-        </span>
+        {/* AI Gợi ý hoặc Mốc thời gian */}
+        {rec.aiSuggestion ? (
+          <span className="mt-2 flex items-start gap-1.5 text-[12px] text-[var(--bc-mobile-accent)]">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--bc-mobile-accent)]" />
+            <span className="leading-snug line-clamp-2">{rec.aiSuggestion}</span>
+          </span>
+        ) : (
+          <span className="mt-2 flex items-center gap-1 text-[12px] text-[var(--bc-mobile-muted)]">
+            <MilestoneIcon className="h-2.5 w-2.5 shrink-0 text-[var(--bc-mobile-muted)]" />
+            {rec.reason.days > 0
+              ? t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days })
+              : "Gợi ý kết nối mới phù hợp ngành nghề & đối tác"}
+          </span>
+        )}
       </Link>
 
-      {/* CTA buttons */}
-      <div className="mt-2.5 flex flex-col gap-1.5">
+      {/* CTA buttons — bằng nhau, dùng grid */}
+      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
         <Link
           to="/connect-app/network/$personId"
           params={{ personId: rec.person.personId }}
-          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border-gold)] px-3 text-[13px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_10%,transparent)] ${FOCUS}`}
+          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border-gold)] px-2 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_10%,transparent)] ${FOCUS}`}
         >
           {t("bc.mobile.intel.card.message")}
         </Link>
         <button
           type="button"
           onClick={() => setHidden(true)}
-          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-3 text-[13px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] ${FOCUS}`}
+          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-2 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] ${FOCUS}`}
         >
           Ẩn hồ sơ
         </button>
@@ -179,15 +194,19 @@ export function RelationshipSuggestions() {
   const dismiss = useDismissRelationshipRecommendation();
 
   // Viewer area (own identity city) — powers the truthful "near me" filter.
+  // Uses fetchNestApi directly (bypass requireSupabaseAuth middleware).
   const viewerUserId = useViewerUserId();
-  const getMine = useServerFn(bcIdentityGetMineFn);
   const identity = useQuery({
     queryKey: ["bc-mobile", "intel", "viewer-area", viewerUserId ?? "anon"],
     enabled: Boolean(viewerUserId),
     staleTime: 300_000,
     queryFn: async () => {
-      const payload = await getMine();
-      return payload?.identity ?? null;
+      try {
+        const payload = await fetchNestApi<any>("/connect-app/me/identity");
+        return payload?.identity ?? null;
+      } catch {
+        return null;
+      }
     },
   });
   const viewerArea = normalizeArea(identity.data?.city ?? null);

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 import { BusinessCardService } from "@/lib/business-card/business-card.service";
 
@@ -113,28 +113,28 @@ const cardInput = z.object({
 // These functions only bind auth context + input validation to the service.
 
 export const listMyBusinessCardsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<BusinessCardSummary[]> =>
-      BusinessCardService.listMyCards(context.supabase),
+      BusinessCardService.listMyCards(null as any),
   );
 
 export const getMyBusinessCardFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<BusinessCard> =>
-      BusinessCardService.getMyCard(context.supabase, data.id),
+      BusinessCardService.getMyCard(null as any, data.id),
   );
 
 // Preview by slug (owner / manager, works on drafts). RLS restricts reads to the
 // owner (or an association manager), so drafts are only visible to their owner.
 export const getBusinessCardPreviewFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(60) }).parse(d))
   .handler(
     ({ data, context }): Promise<BusinessCard | null> =>
-      BusinessCardService.getPreviewBySlug(context.supabase, data.slug),
+      BusinessCardService.getPreviewBySlug(null as any, data.slug),
   );
 
 // Public profile by slug (no auth; respects public_mode). ownerUserId is never
@@ -153,16 +153,16 @@ export const listPublicProfileSlugsFn = createServerFn({ method: "GET" }).handle
 
 // Create / update (with child replace).
 export const saveBusinessCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => cardInput.parse(d))
   .handler(
     ({ data, context }): Promise<{ id: string }> =>
-      BusinessCardService.saveCard(context.supabase, context.userId, data),
+      BusinessCardService.saveCard(null as any, context.userId, data),
   );
 
 // Set status (publish / unpublish / archive).
 export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -173,25 +173,25 @@ export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
   )
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setStatus(context.supabase, context.userId, data.id, data.status),
+      BusinessCardService.setStatus(null as any, context.userId, data.id, data.status),
   );
 
 // Set Primary (demote current primary, promote target).
 export const setPrimaryBusinessCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setPrimary(context.supabase, context.userId, data.id),
+      BusinessCardService.setPrimary(null as any, context.userId, data.id),
   );
 
 // Delete.
 export const deleteBusinessCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.deleteCard(context.supabase, context.userId, data.id),
+      BusinessCardService.deleteCard(null as any, context.userId, data.id),
   );
 
 // ── Leads + analytics (thin adapters over LeadService) ─────────────────────
@@ -214,11 +214,11 @@ import { LeadService } from "@/lib/business-card/lead.service";
 import type { BusinessCardLead, BusinessCardStats } from "@/lib/business-card/lead.types";
 
 export const listMyBusinessCardLeadsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(({ context }): Promise<BusinessCardLead[]> => LeadService.listMyLeads(context.token));
 
 export const updateBusinessCardLeadStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -234,7 +234,7 @@ export const updateBusinessCardLeadStatusFn = createServerFn({ method: "POST" })
   );
 
 export const sendBusinessCardLeadReplyFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -254,7 +254,7 @@ export const sendBusinessCardLeadReplyFn = createServerFn({ method: "POST" })
 // Workflow action from the notification center: change status AND auto-append
 // an entry to the response history so the timeline reflects the action.
 export const processLeadWorkflowFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -271,7 +271,7 @@ export const processLeadWorkflowFn = createServerFn({ method: "POST" })
 
 // ── Analytics / Stats ─────────────────────────────────────────────────────
 export const getBusinessCardStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ days: z.number().int().min(7).max(90).optional() }).parse(d ?? {}),
   )

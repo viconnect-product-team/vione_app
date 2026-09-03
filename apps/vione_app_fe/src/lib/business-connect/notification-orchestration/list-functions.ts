@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { NotificationError, toNotificationError } from "./errors";
 import { decodeCursor, encodeCursor } from "./cursor";
 import {
@@ -66,7 +66,7 @@ function mapNotification(r: Row): NotificationDTO {
 }
 
 export const listNotificationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationListDTO> => {
     try {
@@ -84,7 +84,7 @@ export const listNotificationsFn = createServerFn({ method: "GET" })
   });
 
 export const getUnreadNotificationCountFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
     try {
       const { token } = context as any;
@@ -98,7 +98,7 @@ export const getUnreadNotificationCountFn = createServerFn({ method: "GET" })
 const idSchema = z.object({ id: z.string().uuid() });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
   .handler(async ({ data, context }): Promise<NotificationDTO> => {
     try {
@@ -115,21 +115,21 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
   });
 
 export const markNotificationUnreadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
   .handler(async ({ data }): Promise<NotificationDTO> => {
     return { id: data.id } as any;
   });
 
 export const archiveNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => idSchema.parse(d))
   .handler(async ({ data }): Promise<NotificationDTO> => {
     return { id: data.id } as any;
   });
 
 export const archiveAllReadNotificationsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async (): Promise<{ archived: number }> => {
     return { archived: 0 };
   });

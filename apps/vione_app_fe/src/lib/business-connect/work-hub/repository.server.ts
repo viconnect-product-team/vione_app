@@ -149,7 +149,7 @@ export const WorkHubRepository = {
     ]);
 
     return {
-      connectionRequests: (connectionRows as any[]).map((r) => ({
+      connectionRequests: (connectionRows as any[]).map((r: any) => ({
         id: String(r.id),
         direction: r.requester_user_id === userId ? ("outgoing" as const) : ("incoming" as const),
         status: String(r.status),
@@ -158,7 +158,7 @@ export const WorkHubRepository = {
         counterpartDisplayName: null,
         counterpartAvatarUrl: null,
       })),
-      introductionRequests: (introReqRows as any[]).map((r) => {
+      introductionRequests: (introReqRows as any[]).map((r: any) => {
         const role: "requester" | "intermediary" | "target" =
           r.intermediary_user_id === userId
             ? "intermediary"
@@ -176,13 +176,13 @@ export const WorkHubRepository = {
       }),
       introductionDeliveries: (introDeliveryRows as any[])
         .filter((r) => r.recipient_user_id === userId)
-        .map((r) => ({
+        .map((r: any) => ({
           id: String(r.id),
           status: String(r.status),
           createdAt: String(r.created_at),
           counterpartDisplayName: null,
         })),
-      meetingWorkspaceItems: (meetingRows as any[]).map((r) => ({
+      meetingWorkspaceItems: (meetingRows as any[]).map((r: any) => ({
         meetingId: String(r.id),
         status: String(r.status),
         bucket:
@@ -204,7 +204,7 @@ export const WorkHubRepository = {
       })),
       meetingFollowUps: (followUpRows as any[])
         .filter((r) => r.owner_user_id === userId)
-        .map((r) => ({
+        .map((r: any) => ({
           id: String(r.id),
           meetingId: String(r.meeting_id),
           status: String(r.status),
@@ -212,7 +212,7 @@ export const WorkHubRepository = {
           temporalState: classifyFollowUpTemporal(String(r.status), r.due_at ?? null, now),
           title: r.title ?? null,
         })),
-      relationshipActivity: (timelineRows as any[]).map((r) => ({
+      relationshipActivity: (timelineRows as any[]).map((r: any) => ({
         id: String(r.id),
         occurredAt: String(r.occurred_at),
         eventKind: String(r.event_kind),

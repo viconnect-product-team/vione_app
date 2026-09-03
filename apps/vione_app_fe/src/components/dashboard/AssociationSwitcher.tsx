@@ -98,7 +98,7 @@ export function AssociationSwitcher() {
   const active = items.find((a) => a.isActive) ?? items[0];
   const multi = items.length > 1;
   const q = query.trim().toLowerCase();
-  const filtered = q ? items.filter((a) => a.name.toLowerCase().includes(q)) : items;
+  const filtered = q ? items.filter((a: any) => a.name.toLowerCase().includes(q)) : items;
 
   const onSelect = async (a: MyAssociation) => {
     if (a.isActive || busy) {
@@ -173,7 +173,7 @@ export function AssociationSwitcher() {
                 {t("assoc.switch.noResult")}
               </p>
             )}
-            {filtered.map((a) => (
+            {filtered.map((a: any) => (
               <button
                 key={a.associationId}
                 onClick={() => onSelect(a)}

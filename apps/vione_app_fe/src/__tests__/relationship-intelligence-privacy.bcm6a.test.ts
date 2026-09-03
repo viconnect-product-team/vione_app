@@ -45,7 +45,7 @@ function makeDeps(
     ]),
     listRecentMomentEdges: vi.fn(async () => []),
     resolveConnectionSummaries: vi.fn(async (ids: string[]) =>
-      ids.map((id) => ({
+      ids.map((id: any) => ({
         userId: id,
         displayName: `User ${id.slice(-1)}`,
         avatarUrl: null,
@@ -91,7 +91,7 @@ describe("composeTodayRecommendations", () => {
     const deps = makeDeps();
     const { recommendations } = await composeTodayRecommendations(deps, VIEWER, "vi", NOW);
     expect(recommendations.length).toBeLessThanOrEqual(3);
-    expect(recommendations.map((r) => r.person.personId)).toEqual([
+    expect(recommendations.map((r: any) => r.person.personId)).toEqual([
       `u:${U1}`, // 90d
       `c:${C1}`, // 70d
       `g:${G1}`, // 60d
@@ -105,7 +105,7 @@ describe("composeTodayRecommendations", () => {
       listRecentMomentEdges: vi.fn(async () => [{ personId: `u:${U1}`, occurredAt: daysAgo(2) }]),
     });
     const { recommendations } = await composeTodayRecommendations(deps, VIEWER, "vi", NOW);
-    expect(recommendations.map((r) => r.person.personId)).not.toContain(`u:${U1}`);
+    expect(recommendations.map((r: any) => r.person.personId)).not.toContain(`u:${U1}`);
   });
 
   it("dismissal suppresses exactly one person", async () => {
@@ -115,7 +115,7 @@ describe("composeTodayRecommendations", () => {
       ]),
     });
     const { recommendations } = await composeTodayRecommendations(deps, VIEWER, "vi", NOW);
-    expect(recommendations.map((r) => r.person.personId)).not.toContain(`u:${U1}`);
+    expect(recommendations.map((r: any) => r.person.personId)).not.toContain(`u:${U1}`);
     expect(recommendations.length).toBeGreaterThan(0);
   });
 
@@ -156,8 +156,8 @@ describe("composeTodayRecommendations", () => {
     expect(fallback.recommendations[0]?.wordingSource).toBe("deterministic");
     expect(fallback.recommendations[0]?.aiSuggestion).toBeNull();
     // Ranking unchanged by AI failure — same deterministic order.
-    expect(fallback.recommendations.map((r) => r.person.personId)).toEqual(
-      aiResult.recommendations.map((r) => r.person.personId),
+    expect(fallback.recommendations.map((r: any) => r.person.personId)).toEqual(
+      aiResult.recommendations.map((r: any) => r.person.personId),
     );
   });
 

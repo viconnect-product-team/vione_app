@@ -40,7 +40,7 @@ export function NetworkNotificationsView() {
         <EmptyState title={t("connect.network.notif.empty")} />
       ) : (
         <ul className="flex flex-col gap-2" aria-live="polite">
-          {items.map((n) => {
+          {items.map((n: any) => {
             const name = actorName(n.actor?.displayName, t("connect.network.notif.someone"));
             const msg =
               n.type === "connection_accepted"

@@ -17,9 +17,10 @@ import {
   CheckCircle2,
   Clock,
   Briefcase,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { useT, type TKey } from "@/lib/i18n";
@@ -35,7 +36,7 @@ import {
   type MemberStatus,
   type RegionKey,
 } from "@/lib/members-data";
-import { createMemberFn, listMembersFn } from "@/lib/members.functions";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/companies")({
   head: () => ({
@@ -92,17 +93,23 @@ function initials(name: string) {
 
 function CompaniesPage() {
   const t = useT();
-  const listFn = useServerFn(listMembersFn);
   const [MEMBERS, setMembers] = useState<Member[]>([]);
+
+  const loadMembers = async () => {
+    try {
+      const res = await fetchNestApi<Member[]>("/members?type=company");
+      if (Array.isArray(res)) {
+        setMembers(res);
+      }
+    } catch (err) {
+      console.error("[Companies] Failed to load companies:", err);
+    }
+  };
+
   useEffect(() => {
-    let active = true;
-    listFn().then((data) => {
-      if (active) setMembers(data as Member[]);
-    });
-    return () => {
-      active = false;
-    };
-  }, [listFn]);
+    loadMembers();
+  }, []);
+
   const { isAdmin, loading: roleLoading } = useRole();
   const router = useRouter();
   const [q, setQ] = useUrlState<string>("q", "");
@@ -111,8 +118,9 @@ function CompaniesPage() {
   const [level, setLevel] = useState<"" | MemberLevelKey>("");
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const createFn = useServerFn(createMemberFn);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Member | null>(null);
+  const [deleting, setDeleting] = useState<Member | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fields: CrudField[] = [
@@ -169,22 +177,84 @@ function CompaniesPage() {
     { name: "about", label: t("members.f.about"), type: "textarea" },
   ];
 
+  const editInitial = (m: Member): CrudValues => ({
+    name: m.name,
+    contact: m.contact,
+    email: m.email,
+    phone: m.phone,
+    level: m.level,
+    industry: m.industry,
+    region: m.region,
+    status: m.status,
+    address: m.address,
+    website: m.website ?? "",
+    taxCode: m.taxCode ?? "",
+    employees: m.employees ?? 0,
+    about: m.about,
+  });
+
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
     try {
-      await createFn({ data: { ...(v as object), type: "company" } as never });
-      setMembers((await listFn()) as Member[]);
-      toast.success(t("companies.created"));
-      setOpen(false);
+      const payload = {
+        name: String(v.name || "").trim(),
+        contact: v.contact ? String(v.contact).trim() : undefined,
+        email: v.email ? String(v.email).trim() : undefined,
+        phone: v.phone ? String(v.phone).trim() : undefined,
+        type: "company" as const,
+        level: (v.level as any) || "memberLevel.medium",
+        industry: (v.industry as any) || "ind.trade",
+        region: (v.region as any) || "region.north",
+        status: (v.status as any) || "pending",
+        address: v.address ? String(v.address).trim() : undefined,
+        website: v.website ? String(v.website).trim() : undefined,
+        taxCode: v.taxCode ? String(v.taxCode).trim() : undefined,
+        employees: v.employees ? Number(v.employees) || 0 : undefined,
+        about: v.about ? String(v.about).trim() : undefined,
+      };
+
+      if (editing) {
+        await fetchNestApi(`/members/${editing.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        toast.success(t("members.updated") || "Cập nhật doanh nghiệp thành công");
+        setEditing(null);
+      } else {
+        await fetchNestApi("/members", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        toast.success(t("companies.created"));
+        setOpen(false);
+      }
+
+      await loadMembers();
       await router.invalidate({ sync: true });
-    } catch {
-      toast.error(t("common.saveError"));
+    } catch (err: any) {
+      console.error("[Companies] Submit error:", err);
+      toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Only companies on this page
+  const onConfirmDelete = async () => {
+    if (!deleting) return;
+    setSubmitting(true);
+    try {
+      await fetchNestApi(`/members/${deleting.id}`, { method: "DELETE" });
+      toast.success(t("members.deleted") || "Đã xóa doanh nghiệp");
+      setDeleting(null);
+      setMembers((prev) => prev.filter((m) => m.id !== deleting.id));
+      await router.invalidate({ sync: true });
+    } catch (err: any) {
+      toast.error(err?.message || t("common.deleteError"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const base = useMemo(() => MEMBERS.filter((m) => m.type === "company"), [MEMBERS]);
 
   const filtered = useMemo(() => {
@@ -283,7 +353,6 @@ function CompaniesPage() {
   return (
     <AppShell>
       <div className="space-y-5">
-        {/* Header */}
         <div
           className="overflow-hidden rounded-2xl p-5 text-primary-foreground shadow-[var(--shadow-elevated)]"
           style={{ background: "var(--gradient-card)" }}
@@ -324,7 +393,6 @@ function CompaniesPage() {
           </div>
         </div>
 
-        {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpis.map((k) => (
             <div
@@ -346,86 +414,92 @@ function CompaniesPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={t("companies.search")}
-                className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 flex-wrap items-center gap-2.5">
+              <div className="relative min-w-[200px] flex-1 lg:max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={t("companies.search")}
+                  className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                />
+              </div>
+              <FilterSelect
+                value={industry}
+                onChange={(v) => setIndustry(v as IndustryKey)}
+                placeholder={t("members.filter.industry")}
+                options={INDUSTRIES.map((k) => ({ value: k, label: t(k) }))}
               />
-            </div>
-            <FilterSelect
-              value={industry}
-              onChange={(v) => setIndustry(v as IndustryKey | "")}
-              placeholder={t("members.filter.industry")}
-              options={INDUSTRIES.map((k) => ({ value: k, label: t(k) }))}
-            />
-            <FilterSelect
-              value={region}
-              onChange={(v) => setRegion(v as RegionKey | "")}
-              placeholder={t("members.filter.region")}
-              options={REGIONS.map((k) => ({ value: k, label: t(k) }))}
-            />
-            <FilterSelect
-              value={level}
-              onChange={(v) => setLevel(v as MemberLevelKey | "")}
-              placeholder={t("members.filter.type")}
-              options={LEVELS.map((k) => ({ value: k, label: t(k) }))}
-            />
-            <button
-              onClick={reset}
-              className="h-10 whitespace-nowrap rounded-xl border border-border bg-background px-3 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              {t("members.filter.reset")}
-            </button>
-          </div>
-        </div>
-
-        {/* Toolbar: count + view toggle */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
-            {t("companies.count")}
-          </p>
-          <div className="inline-flex items-center rounded-full border border-border bg-card p-1">
-            {[
-              { k: "grid" as const, Icon: LayoutGrid, label: t("companies.view.grid") },
-              { k: "list" as const, Icon: ListIcon, label: t("companies.view.list") },
-            ].map((v) => {
-              const active = view === v.k;
-              return (
+              <FilterSelect
+                value={region}
+                onChange={(v) => setRegion(v as RegionKey)}
+                placeholder={t("members.filter.region")}
+                options={REGIONS.map((k) => ({ value: k, label: t(k) }))}
+              />
+              <FilterSelect
+                value={level}
+                onChange={(v) => setLevel(v as MemberLevelKey)}
+                placeholder={t("members.f.level")}
+                options={LEVELS.map((k) => ({ value: k, label: t(k) }))}
+              />
+              {(q || industry || region || level) && (
                 <button
-                  key={v.k}
-                  onClick={() => setView(v.k)}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    active
-                      ? "text-primary-foreground shadow-[var(--shadow-glow)]"
+                  onClick={reset}
+                  className="h-10 rounded-xl px-3 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                >
+                  {t("fees.clearFilters")}
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 border-t border-border pt-3 lg:border-t-0 lg:pt-0">
+              <div className="flex rounded-xl border border-border bg-background p-1">
+                <button
+                  onClick={() => setView("grid")}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                    view === "grid"
+                      ? "bg-primary text-primary-foreground shadow"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
-                  style={active ? { background: "var(--gradient-primary)" } : undefined}
+                  title={t("companies.view.grid")}
                 >
-                  <v.Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{v.label}</span>
+                  <LayoutGrid className="h-4 w-4" />
                 </button>
-              );
-            })}
+                <button
+                  onClick={() => setView("list")}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                    view === "list"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={t("companies.view.list")}
+                >
+                  <ListIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Body */}
-        {tc.total === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
-            {t("companies.empty")}
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center shadow-[var(--shadow-card)]">
+            <Building2 className="mx-auto h-12 w-12 text-muted-foreground/40" />
+            <h3 className="mt-4 text-base font-bold text-foreground">{t("companies.empty")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("state.empty.desc")}</p>
           </div>
         ) : view === "grid" ? (
           <div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {tc.pageRows.map((m) => (
-                <CompanyCard key={m.id} m={m} />
+                <CompanyCard
+                  key={m.id}
+                  m={m}
+                  isAdmin={isAdmin}
+                  onEdit={(target) => setEditing(target)}
+                  onDelete={(target) => setDeleting(target)}
+                />
               ))}
             </div>
             <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
@@ -443,12 +517,18 @@ function CompaniesPage() {
             </div>
           </div>
         ) : (
-          <CompanyTable rows={tc.pageRows} tc={tc} />
+          <CompanyTable
+            rows={tc.pageRows}
+            tc={tc}
+            isAdmin={isAdmin}
+            onEdit={(target) => setEditing(target)}
+            onDelete={(target) => setDeleting(target)}
+          />
         )}
       </div>
 
       <CrudModal
-        open={open}
+        open={open && !editing}
         title={t("companies.add")}
         fields={fields}
         submitting={submitting}
@@ -457,6 +537,50 @@ function CompaniesPage() {
         onSubmit={onSubmit}
         onClose={() => setOpen(false)}
       />
+
+      <CrudModal
+        open={!!editing}
+        title="Chỉnh sửa doanh nghiệp"
+        fields={fields}
+        initial={editing ? editInitial(editing) : undefined}
+        submitting={submitting}
+        submitLabel={t("common.save")}
+        cancelLabel={t("common.cancel")}
+        onSubmit={onSubmit}
+        onClose={() => setEditing(null)}
+      />
+
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+            onClick={() => setDeleting(null)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-glow)]">
+            <h3 className="text-base font-semibold text-foreground">{t("common.delete")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Bạn có chắc chắn muốn xóa doanh nghiệp{" "}
+              <strong className="text-foreground">{deleting.name}</strong> không?
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setDeleting(null)}
+                disabled={submitting}
+                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                onClick={onConfirmDelete}
+                disabled={submitting}
+                className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {t("common.delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
@@ -488,7 +612,17 @@ function FilterSelect({
   );
 }
 
-function CompanyCard({ m }: { m: Member }) {
+function CompanyCard({
+  m,
+  isAdmin,
+  onEdit,
+  onDelete,
+}: {
+  m: Member;
+  isAdmin?: boolean;
+  onEdit?: (m: Member) => void;
+  onDelete?: (m: Member) => void;
+}) {
   const t = useT();
   const s = statusStyle[m.status];
   return (
@@ -544,14 +678,34 @@ function CompanyCard({ m }: { m: Member }) {
           </span>
         </div>
 
-        <Link
-          to="/companies/$companyId"
-          params={{ companyId: m.id }}
-          className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-2.5 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-        >
-          {t("companies.viewProfile")}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="mt-4 flex items-center gap-2">
+          <Link
+            to="/companies/$companyId"
+            params={{ companyId: m.id }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background py-2 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+          >
+            {t("companies.viewProfile")}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => onEdit?.(m)}
+                title={t("common.edit")}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onDelete?.(m)}
+                title={t("common.delete")}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -566,7 +720,19 @@ function Row({ Icon, text }: { Icon: typeof Briefcase; text: string }) {
   );
 }
 
-function CompanyTable({ rows, tc }: { rows: Member[]; tc: TableControls<Member> }) {
+function CompanyTable({
+  rows,
+  tc,
+  isAdmin,
+  onEdit,
+  onDelete,
+}: {
+  rows: Member[];
+  tc: TableControls<Member>;
+  isAdmin?: boolean;
+  onEdit?: (m: Member) => void;
+  onDelete?: (m: Member) => void;
+}) {
   const t = useT();
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -647,14 +813,34 @@ function CompanyTable({ rows, tc }: { rows: Member[]; tc: TableControls<Member> 
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      to="/companies/$companyId"
-                      params={{ companyId: m.id }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-                    >
-                      {t("tbl.view")}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Link
+                        to="/companies/$companyId"
+                        params={{ companyId: m.id }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                      >
+                        {t("tbl.view")}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => onEdit?.(m)}
+                            title={t("common.edit")}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onDelete?.(m)}
+                            title={t("common.delete")}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

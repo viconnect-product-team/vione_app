@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 import type {
   CounterpartSummary,
@@ -31,7 +31,7 @@ const listSchema = z
 // ── Mutations ────────────────────────────────────────────────────────────────
 
 export const sendConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -50,7 +50,7 @@ export const sendConnectionRequestFn = createServerFn({ method: "POST" })
   });
 
 export const acceptConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z.object({ connectionId: uuidSchema, mutationKey: mutationKeySchema }).parse(input),
   )
@@ -64,7 +64,7 @@ export const acceptConnectionFn = createServerFn({ method: "POST" })
   });
 
 export const declineConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -84,7 +84,7 @@ export const declineConnectionFn = createServerFn({ method: "POST" })
   });
 
 export const cancelConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z.object({ connectionId: uuidSchema, mutationKey: mutationKeySchema }).parse(input),
   )
@@ -97,7 +97,7 @@ export const cancelConnectionFn = createServerFn({ method: "POST" })
   });
 
 export const disconnectConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -116,7 +116,7 @@ export const disconnectConnectionFn = createServerFn({ method: "POST" })
   });
 
 export const blockUserFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -137,7 +137,7 @@ export const blockUserFn = createServerFn({ method: "POST" })
 // ── Reads ────────────────────────────────────────────────────────────────────
 
 export const getConnectionStateFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => z.object({ targetUserId: uuidSchema }).parse(input))
   .handler(async ({ data, context }): Promise<PairState> => {
     const { token } = context as any;
@@ -145,7 +145,7 @@ export const getConnectionStateFn = createServerFn({ method: "GET" })
   });
 
 export const getConnectionByIdFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => z.object({ connectionId: uuidSchema }).parse(input))
   .handler(async ({ data, context }): Promise<GlobalConnectionDTO> => {
     const { token } = context as any;
@@ -153,7 +153,7 @@ export const getConnectionByIdFn = createServerFn({ method: "GET" })
   });
 
 export const listIncomingRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => listSchema.parse(input) ?? {})
   .handler(async ({ data, context }): Promise<GlobalConnectionDTO[]> => {
     const { token } = context as any;
@@ -166,7 +166,7 @@ export const listIncomingRequestsFn = createServerFn({ method: "GET" })
   });
 
 export const listOutgoingRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => listSchema.parse(input) ?? {})
   .handler(async ({ data, context }): Promise<GlobalConnectionDTO[]> => {
     const { token } = context as any;
@@ -179,7 +179,7 @@ export const listOutgoingRequestsFn = createServerFn({ method: "GET" })
   });
 
 export const listConnectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => listSchema.parse(input) ?? {})
   .handler(async ({ data, context }): Promise<GlobalConnectionDTO[]> => {
     const { token } = context as any;
@@ -192,7 +192,7 @@ export const listConnectionsFn = createServerFn({ method: "GET" })
   });
 
 export const countConnectionsByStatusFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<StatusCounts> => {
     const { token } = context as any;
     return fetchNestApiFromServer("/connect-app/network/connections/status-counts", token);
@@ -200,7 +200,7 @@ export const countConnectionsByStatusFn = createServerFn({ method: "GET" })
 
 // ── Public counterpart projection ──────────────────────────────────────────────
 export const resolvePublicCounterpartsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z.object({ userIds: z.array(z.string().uuid()).max(200) }).parse(input),
   )

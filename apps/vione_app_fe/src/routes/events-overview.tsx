@@ -2,12 +2,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CalendarDays, MapPin, Search, Users, UserCheck, Ticket } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
-import { getEventsOverviewFn, type EventOverviewRow } from "@/lib/events-overview.functions";
+import { fetchNestApi } from "@/lib/api-client";
+import type { EventOverviewRow } from "@/lib/events-overview.functions";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/events-overview")({
   ssr: false,
-  loader: () => getEventsOverviewFn(),
+  loader: async () => {
+    try {
+      const res = await fetchNestApi<EventOverviewRow[]>("/events/overview");
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
   component: EventsOverviewPage,
   head: () => ({
     meta: [

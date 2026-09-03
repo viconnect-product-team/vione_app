@@ -37,7 +37,7 @@ export function RelationshipTimelineFilters({
       aria-label={t("bc.timeline.filter.label")}
       className="flex flex-wrap gap-2 overflow-x-auto"
     >
-      {items.map((c) => {
+      {items.map((c: any) => {
         const active = value === c.key;
         return (
           <button

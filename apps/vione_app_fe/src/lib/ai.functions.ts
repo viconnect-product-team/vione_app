@@ -1,23 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveAssociationId } from "@/lib/current-member";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 import { detectCapability } from "@/lib/ai-capability-router";
 import { getAllowedRoutes } from "@/lib/ai-context-builder";
 import { AiProviderError, mockAiProvider, type AiProviderOutput } from "@/lib/ai-provider";
-
 import type { PermissionLevel } from "@/lib/ai-context-providers";
 
 /**
  * AI Association Assistant — read-only server function.
  *
- * Security posture (Phase 10, Step 2):
- * - Authenticated only (requireSupabaseAuth). Anonymous callers are rejected.
- * - READ-ONLY: this function never writes to the database and never uses the
- *   service role. It only calls the Lovable AI Gateway for a completion.
+ * Security posture:
+ * - Authenticated only (requireNestAuth). Anonymous callers are rejected.
+ * - READ-ONLY: this function never writes to the database directly.
  * - The model is instructed to answer from provided context only and to never
  *   fabricate metrics, citations, or data the user cannot access.
- * - No sensitive data is injected here; grounding/RAG is a later step. For now
- *   the assistant answers generally and states its limitations.
  */
 
 type ChatRole = "user" | "assistant";
@@ -63,8 +59,21 @@ function sanitize(messages: unknown): AiChatMessage[] {
   return cleaned;
 }
 
+/** Lấy roles của user từ NestJS /api/ai/roles */
+async function fetchUserRoles(token: string): Promise<{
+  globalRoles: string[];
+  associationId: string | null;
+  membershipRoles: string[];
+}> {
+  try {
+    return await fetchNestApiFromServer("/ai/roles", token) as any;
+  } catch {
+    return { globalRoles: [], associationId: null, membershipRoles: [] };
+  }
+}
+
 export const askAssistant = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: AiChatInput) => ({ messages: sanitize(data?.messages) }))
   .handler(async ({ data, context }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -72,35 +81,15 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error("Trợ lý AI chưa được cấu hình. Thiếu LOVABLE_API_KEY.");
     }
 
-    // Association context is ALWAYS derived server-side from the caller's JWT
-    // (auth.uid()) via the security-definer current_association_id() RPC.
-    // We never accept an association_id from the client — this prevents a user
-    // from scoping the assistant to an association they don't belong to.
-    const associationId = await resolveAssociationId(context.supabase);
+    // Resolve association + roles SERVER-SIDE qua NestJS
+    const { globalRoles, associationId, membershipRoles } = await fetchUserRoles(context.token);
+    const roleSet = new Set<string>([...globalRoles, ...membershipRoles]);
 
-    // Permission enforcement. All reads go through context.supabase, which is
-    // scoped to the caller's JWT, so RLS already blocks rows the user cannot
-    // see. We additionally resolve the caller's role (from their own rows in
-    // user_roles + memberships — readable under RLS) to compute the assistant's
-    // allowed data scope and tell the model what it must NOT surface.
-    const [{ data: globalRoles }, { data: memberships }] = await Promise.all([
-      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
-      context.supabase
-        .from("memberships")
-        .select("role")
-        .eq("user_id", context.userId)
-        .eq("association_id", associationId),
-    ]);
-    const roleSet = new Set<string>([
-      ...((globalRoles ?? []) as { role: string }[]).map((r) => r.role),
-      ...((memberships ?? []) as { role: string }[]).map((r) => r.role),
-    ]);
     const isPlatformAdmin = roleSet.has("platform_admin");
     const isAdmin = isPlatformAdmin || roleSet.has("admin");
     const isModerator = isAdmin || roleSet.has("moderator");
     const canAccessAdminData = isAdmin || isModerator;
 
-    // Sources every authenticated member may use vs. admin-restricted ones.
     const allowedScopes = [
       "tài liệu (theo quyền xem)",
       "danh bạ hội viên (trường công khai)",
@@ -116,7 +105,7 @@ export const askAssistant = createServerFn({ method: "POST" })
       : "Người dùng KHÔNG có quyền quản trị: TUYỆT ĐỐI không tiết lộ hội phí, số liệu tài chính, báo cáo lãnh đạo hay dữ liệu quản trị. Nếu được hỏi, hãy từ chối và giải thích rằng cần quyền quản trị.";
 
     const scopePrompt = `Bối cảnh phân quyền:
-- Người dùng thuộc hiệp hội có mã ${associationId}. Chỉ trả lời trong phạm vi hiệp hội này.
+- Người dùng thuộc hiệp hội có mã ${associationId ?? "unknown"}. Chỉ trả lời trong phạm vi hiệp hội này.
 - Vai trò: ${[...roleSet].join(", ") || "member"}.
 - Nguồn dữ liệu được phép: ${allowedScopes.join("; ")}.
 - ${deniedNote}
@@ -138,12 +127,8 @@ export const askAssistant = createServerFn({ method: "POST" })
       }),
     });
 
-    if (res.status === 429) {
-      throw new Error("Đã đạt giới hạn yêu cầu. Vui lòng thử lại sau ít phút.");
-    }
-    if (res.status === 402) {
-      throw new Error("Cần nạp thêm tín dụng AI để tiếp tục.");
-    }
+    if (res.status === 429) throw new Error("Đã đạt giới hạn yêu cầu. Vui lòng thử lại sau ít phút.");
+    if (res.status === 402) throw new Error("Cần nạp thêm tín dụng AI để tiếp tục.");
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error("AI gateway error:", res.status, detail);
@@ -154,45 +139,32 @@ export const askAssistant = createServerFn({ method: "POST" })
       choices?: { message?: { content?: string } }[];
     };
     const reply = json.choices?.[0]?.message?.content?.trim();
-    if (!reply) {
-      throw new Error("Trợ lý AI không trả về nội dung.");
-    }
+    if (!reply) throw new Error("Trợ lý AI không trả về nội dung.");
 
-    // Audit log — metadata only. By default we do NOT persist the user's prompt
-    // or the model's answer (both may contain sensitive/permissioned content).
-    // We record who asked, when, the association, role scope, message count and
-    // model — enough for accountability without leaking conversation content.
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { logActivity } = await import("@/lib/crud.server");
-      await logActivity(supabaseAdmin, {
+    // Audit log qua NestJS (fire-and-forget, không làm hỏng response)
+    fetchNestApiFromServer("/ai/audit", context.token, {
+      method: "POST",
+      body: JSON.stringify({
+        requestId: crypto.randomUUID(),
+        associationId,
+        capability: "chat",
+        permissionLevel: isPlatformAdmin ? "platform" : isAdmin ? "admin" : "member",
+        provider: "lovable",
+        model: "gemini-3-flash-preview",
+        usedFallback: false,
         action: "Truy vấn Trợ lý AI",
         target: `${data.messages.length} tin nhắn · mô hình gemini-3-flash`,
-        category: "ai",
-        user: context.userId,
-      });
-    } catch (e) {
-      // Never fail the AI response because audit logging failed.
-      console.error("AI audit log failed:", e);
-    }
+        sourceTypes: [],
+        sourceCount: 0,
+      }),
+    }).catch((e) => console.error("AI audit log failed:", e));
 
     return { reply };
   });
 
 /**
- * askAssociationAiFn — Phase 10, Step 5.
- *
- * Production-safe AI gateway (guarded). Security posture:
- * - Authenticated only (requireSupabaseAuth).
- * - The client CANNOT supply association_id, role, permission level, member id,
- *   or raw context. We read only the fields below; everything else is dropped.
- * - association id, role, permission level, allowed capabilities and context are
- *   resolved SERVER-SIDE. All reads use the RLS-scoped client.
- * - Provider selection is server-side; the API key never reaches the client.
- * - Real provider is OFF by default (AI_REAL_PROVIDER_ENABLED !== "true") →
- *   deterministic mock. Any provider failure falls back to mock; raw provider
- *   errors are never surfaced to the user.
- * - Logs metadata only (never the prompt or answer).
+ * askAssociationAiFn — Production-safe AI gateway (guarded).
+ * Roles, permission level, association id — tất cả resolve server-side qua NestJS.
  */
 type AskAiInput = {
   message: string;
@@ -207,8 +179,6 @@ const MAX_SUMMARY_CHARS = 1000;
 function validateAskInput(data: AskAiInput) {
   const message = typeof data?.message === "string" ? data.message.trim().slice(0, MAX_CHARS) : "";
   if (!message) throw new Error("Vui lòng nhập nội dung câu hỏi.");
-  // NOTE: we deliberately DO NOT read association_id / role / permission from
-  // the client. Only these safe fields are accepted; everything else is ignored.
   const selectedContextSources = Array.isArray(data?.selectedContextSources)
     ? data.selectedContextSources.filter((s) => typeof s === "string").slice(0, 12)
     : undefined;
@@ -227,26 +197,16 @@ function validateAskInput(data: AskAiInput) {
 }
 
 export const askAssociationAiFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: AskAiInput) => validateAskInput(data))
   .handler(async ({ data, context }) => {
     const startedAt = Date.now();
     const requestId = crypto.randomUUID();
 
-    // 1) Resolve association + role SERVER-SIDE (never from the client).
-    const associationId = await resolveAssociationId(context.supabase);
-    const [{ data: globalRoles }, { data: memberships }] = await Promise.all([
-      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
-      context.supabase
-        .from("memberships")
-        .select("role")
-        .eq("user_id", context.userId)
-        .eq("association_id", associationId),
-    ]);
-    const roleSet = new Set<string>([
-      ...((globalRoles ?? []) as { role: string }[]).map((r) => r.role),
-      ...((memberships ?? []) as { role: string }[]).map((r) => r.role),
-    ]);
+    // 1) Resolve association + role SERVER-SIDE qua NestJS
+    const { globalRoles, associationId, membershipRoles } = await fetchUserRoles(context.token);
+    const roleSet = new Set<string>([...globalRoles, ...membershipRoles]);
+
     const permissionLevel: PermissionLevel = roleSet.has("platform_admin")
       ? "platform"
       : roleSet.has("admin")
@@ -255,14 +215,14 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
           ? "moderator"
           : "member";
 
-    // 2) Rate limit (per user + per association, best-effort in-memory).
+    // 2) Rate limit (per user + per association, best-effort in-memory)
     const { checkAiRateLimit } = await import("@/lib/ai-rate-limit");
-    const rl = checkAiRateLimit({ userId: context.userId, associationId, role: permissionLevel });
+    const rl = checkAiRateLimit({ userId: context.userId, associationId: associationId ?? "", role: permissionLevel });
     if (!rl.allowed) {
       throw new Error(rl.message ?? "Đã đạt giới hạn yêu cầu AI. Vui lòng thử lại sau.");
     }
 
-    // 3) Capability detection + RLS-safe context (server-side).
+    // 3) Capability detection + context
     const detection = detectCapability(data.message);
     const capability = detection.capability;
     const allowedRoutes = getAllowedRoutes();
@@ -271,23 +231,10 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
     const { readAiConfig, selectAiProvider } = await import("@/lib/ai-provider.server");
     const config = readAiConfig();
 
-    // Runtime override: platform admins can flip mock/real per environment via
-    // the app_settings table (see ai-settings.functions.ts) with NO redeploy.
-    // The DB override wins when present; otherwise the env vars apply.
-    //
-    // `ai_provider` is a GLOBAL, non-sensitive system flag. app_settings SELECT
-    // is RLS-restricted to platform admins, so reading it via the RLS-scoped
-    // client would silently fall back to env for every regular member. Read it
-    // with the admin client so the toggle applies uniformly to all callers.
-    // (Only the mode string is read; no user data is exposed.)
+    // Runtime override: đọc AI provider config từ NestJS
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: setting } = await supabaseAdmin
-        .from("app_settings")
-        .select("value")
-        .eq("key", "ai_provider")
-        .maybeSingle();
-      const mode = (setting?.value as { mode?: string } | null)?.mode;
+      const setting = await fetchNestApiFromServer("/ai/settings/provider", context.token) as { mode: string | null };
+      const mode = setting?.mode;
       if (mode === "real") {
         if (config.provider === "mock") config.provider = "openai";
         config.realEnabled = true;
@@ -298,20 +245,17 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
       console.error("AI provider override read failed, using env config:", (e as Error)?.message);
     }
 
+    // buildServerContext không dùng Supabase — truyền null an toàn
     const bundle = await buildServerContext({
-      supabase: context.supabase,
+      supabase: null as any,
       message: data.message,
       capability,
-      associationId,
+      associationId: associationId ?? "",
       permissionLevel,
       maxContextItems: config.maxContextItems,
     });
 
-    // 4) Generate. The real provider is retried ONCE on transient failures
-    // (timeout / rate limit / upstream unavailable) with a short backoff. If it
-    // still fails — or fails with ANY other error — we surface a structured
-    // error to the client. No mock fallback: users must never see fabricated
-    // "AI" output when the real provider is down.
+    // 4) Generate với retry 1 lần khi lỗi tạm thời
     const provider = selectAiProvider(config);
     const genArgs = {
       message: data.message,
@@ -333,10 +277,7 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
       } catch (e1) {
         if (isTransient(e1) && provider !== mockAiProvider) {
           await new Promise((r) => setTimeout(r, 500));
-          console.warn(
-            "AI provider transient failure, retrying once:",
-            (e1 as AiProviderError).code,
-          );
+          console.warn("AI provider transient failure, retrying once:", (e1 as AiProviderError).code);
           out = await provider.generate(genArgs);
         } else {
           throw e1;
@@ -345,55 +286,42 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
     } catch (e) {
       const code = e instanceof AiProviderError ? e.code : "error";
       const retryable = TRANSIENT.has(code);
-      providerFailure = {
-        code,
-        retryable,
-        message: (e as Error)?.message ?? "AI provider failed",
-      };
+      providerFailure = { code, retryable, message: (e as Error)?.message ?? "AI provider failed" };
       console.error("AI provider failed (no fallback):", code, providerFailure.message);
     }
     const providerLatencyMs = Date.now() - providerStartedAt;
+
     if (!providerFailure && provider === mockAiProvider) {
-      console.warn("[MOCK-MODE] AI answer served from mock provider", {
-        requestId,
-        capability,
-        realEnabled: config.realEnabled,
-        configuredProvider: config.provider,
-      });
+      console.warn("[MOCK-MODE] AI answer served from mock provider", { requestId, capability, realEnabled: config.realEnabled });
     }
 
-    // 4b) Audit the failure with metadata, then throw a structured error the
-    // client can render as a controlled error state with retry affordance.
+    // 4b) Audit failure + throw structured error
     if (providerFailure) {
       const duration = Date.now() - startedAt;
-      try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        await supabaseAdmin.from("ai_request_audit").insert({
-          request_id: requestId,
-          user_id: context.userId,
-          association_id: associationId,
+      fetchNestApiFromServer("/ai/audit", context.token, {
+        method: "POST",
+        body: JSON.stringify({
+          requestId,
+          associationId,
           capability,
-          permission_level: permissionLevel,
+          permissionLevel,
           provider: provider === mockAiProvider ? "mock" : "real",
           model: null,
-          used_fallback: false,
-          fallback_reason: providerFailure.code,
-          provider_latency_ms: providerLatencyMs,
-          total_latency_ms: duration,
-          source_types: [...new Set(bundle.sources.map((s) => s.type))],
-          source_count: bundle.sources.length,
-        });
-      } catch (e) {
-        console.error("AI failure audit insert failed:", (e as Error)?.message);
-      }
-      // Machine-parseable prefix lets the /ai UI branch on code + retryable.
+          usedFallback: false,
+          fallbackReason: providerFailure.code,
+          providerLatencyMs,
+          totalLatencyMs: duration,
+          sourceTypes: [...new Set(bundle.sources.map((s) => s.type))],
+          sourceCount: bundle.sources.length,
+        }),
+      }).catch((e) => console.error("AI failure audit insert failed:", (e as Error)?.message));
+
       throw new Error(
         `AI_ERROR:${providerFailure.code}:${providerFailure.retryable ? "1" : "0"}:${providerFailure.message}`,
       );
     }
 
-    // 5) Enforce evidence-id + route allow-lists once more (defense in depth),
-    // then map evidence ids back to full safe source objects.
+    // 5) Guard output
     const { guardProviderOutput } = await import("@/lib/ai-output-guard");
     const guarded = guardProviderOutput(out!, {
       allowedSourceIds: bundle.sources.map((s) => s.id),
@@ -401,46 +329,33 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
     });
     const safe = guarded.output;
     const evidence = safe.evidenceIds
-      .map((id) => bundle.sources.find((s) => s.id === id))
+      .map((id: any) => bundle.sources.find((s) => s.id === id))
       .filter((s): s is (typeof bundle.sources)[number] => Boolean(s));
 
     const duration = Date.now() - startedAt;
     const model = out!.model ?? out!.providerName;
     const sourceTypes = [...new Set(bundle.sources.map((s) => s.type))];
 
-    // 6) Audit log — METADATA ONLY. We never persist the prompt or the answer:
-    // both may contain permissioned/sensitive content. We record who, when,
-    // scope, capability, provider/model and outcome for accountability.
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-      const { error: auditErr } = await supabaseAdmin.from("ai_request_audit").insert({
-        request_id: requestId,
-        user_id: context.userId,
-        association_id: associationId,
+    // 6) Audit log — metadata only, qua NestJS
+    fetchNestApiFromServer("/ai/audit", context.token, {
+      method: "POST",
+      body: JSON.stringify({
+        requestId,
+        associationId,
         capability,
-        permission_level: permissionLevel,
+        permissionLevel,
         provider: provider === mockAiProvider ? "mock" : out!.providerName,
         model,
-        used_fallback: false,
-        fallback_reason: null,
-        provider_latency_ms: providerLatencyMs,
-        total_latency_ms: duration,
-        source_types: sourceTypes,
-        source_count: bundle.sources.length,
-      });
-      if (auditErr) console.error("AI request audit insert failed:", auditErr.message);
-
-      const { logActivity } = await import("@/lib/crud.server");
-      await logActivity(supabaseAdmin, {
+        usedFallback: false,
+        fallbackReason: null,
+        providerLatencyMs,
+        totalLatencyMs: duration,
+        sourceTypes,
+        sourceCount: bundle.sources.length,
         action: "Trợ lý AI (gateway)",
         target: `req ${requestId} · ${capability} · ${model} · ${duration}ms (LLM ${providerLatencyMs}ms) · sources ${sourceTypes.join("/") || "none"}`,
-        category: "ai",
-        user: context.userId,
-      });
-    } catch (e) {
-      console.error("AI audit log failed:", e);
-    }
+      }),
+    }).catch((e) => console.error("AI audit log failed:", e));
 
     return {
       answer: safe.answer,

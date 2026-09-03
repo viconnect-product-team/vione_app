@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   ConnectionRelationshipStateDTO,
   ConnectionRequestDTO,
@@ -21,7 +21,7 @@ const listOpts = z
   .optional();
 
 export const sendConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -33,16 +33,16 @@ export const sendConnectionRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.sendRequest(context.supabase, context.userId, data);
+    return ConnectionService.sendRequest(null as any, context.userId, data);
   });
 
 export const acceptConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.acceptRequest(
-      context.supabase,
+      null as any,
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -50,12 +50,12 @@ export const acceptConnectionRequestFn = createServerFn({ method: "POST" })
   });
 
 export const declineConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.declineRequest(
-      context.supabase,
+      null as any,
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -63,12 +63,12 @@ export const declineConnectionRequestFn = createServerFn({ method: "POST" })
   });
 
 export const cancelConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ requestId: uuid, mutationKey }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.cancelRequest(
-      context.supabase,
+      null as any,
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -76,12 +76,12 @@ export const cancelConnectionRequestFn = createServerFn({ method: "POST" })
   });
 
 export const disconnectPersonFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid, mutationKey }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.disconnect(
-      context.supabase,
+      null as any,
       context.userId,
       data.targetPersonNodeId,
       data.mutationKey,
@@ -89,12 +89,12 @@ export const disconnectPersonFn = createServerFn({ method: "POST" })
   });
 
 export const blockPersonFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid, mutationKey }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.block(
-      context.supabase,
+      null as any,
       context.userId,
       data.targetPersonNodeId,
       data.mutationKey,
@@ -102,45 +102,45 @@ export const blockPersonFn = createServerFn({ method: "POST" })
   });
 
 export const unblockPersonFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.unblock(context.supabase, context.userId, data.targetPersonNodeId);
+    return ConnectionService.unblock(null as any, context.userId, data.targetPersonNodeId);
   });
 
 export const resolveConnectionStateFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid }).parse(i))
   .handler(async ({ data, context }): Promise<ConnectionRelationshipStateDTO> => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.resolveRelationshipState(
-      context.supabase,
+      null as any,
       context.userId,
       data.targetPersonNodeId,
     );
   });
 
 export const listIncomingConnectionRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listIncomingRequests(context.supabase, context.userId, data);
+    return ConnectionService.listIncomingRequests(null as any, context.userId, data);
   });
 
 export const listOutgoingConnectionRequestsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listOutgoingRequests(context.supabase, context.userId, data);
+    return ConnectionService.listOutgoingRequests(null as any, context.userId, data);
   });
 
 export const listConnectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionSummaryDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listConnections(context.supabase, context.userId, data);
+    return ConnectionService.listConnections(null as any, context.userId, data);
   });

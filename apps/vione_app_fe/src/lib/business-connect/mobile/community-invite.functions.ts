@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type { CommunityInviteDTO } from "./community-invite.server";
 import type { CommunityInviteTemplateDTO } from "./community-invite-template";
@@ -12,7 +12,7 @@ const communityIdSchema = z.string().uuid();
 const localeSchema = z.enum(["vi", "en"]);
 
 export const listCommunityInvitesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ communityId: communityIdSchema }).parse(i))
   .handler(async ({ data, context }): Promise<CommunityInviteDTO[]> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/invites`, context.token);
@@ -28,7 +28,7 @@ const createInviteInput = z.object({
 });
 
 export const createCommunityInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => createInviteInput.parse(i))
   .handler(async ({ data, context }) => {
     const { communityId, ...rest } = data;
@@ -39,7 +39,7 @@ export const createCommunityInviteFn = createServerFn({ method: "POST" })
   });
 
 export const listCommunityInviteTemplatesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ communityId: communityIdSchema }).parse(i))
   .handler(
     async ({
@@ -51,7 +51,7 @@ export const listCommunityInviteTemplatesFn = createServerFn({ method: "GET" })
   );
 
 export const saveCommunityInviteTemplateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -71,7 +71,7 @@ export const saveCommunityInviteTemplateFn = createServerFn({ method: "POST" })
   });
 
 export const resetCommunityInviteTemplateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z.object({ communityId: communityIdSchema, locale: localeSchema }).parse(i),
   )
@@ -84,7 +84,7 @@ export const resetCommunityInviteTemplateFn = createServerFn({ method: "POST" })
   });
 
 export const cancelCommunityInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ inviteRef: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     return fetchNestApiFromServer(`/connect-app/community/invites/${data.inviteRef}`, context.token, {
@@ -93,7 +93,7 @@ export const cancelCommunityInviteFn = createServerFn({ method: "POST" })
   });
 
 export const resendCommunityInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({ inviteRef: z.string().uuid(), locale: z.enum(["vi", "en"]).optional() })
@@ -108,7 +108,7 @@ export const resendCommunityInviteFn = createServerFn({ method: "POST" })
   });
 
 export const getCommunityInviteByTokenFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z.object({ token: z.string().trim().min(8).max(120) }).parse(i),
   )
@@ -117,7 +117,7 @@ export const getCommunityInviteByTokenFn = createServerFn({ method: "GET" })
   });
 
 export const acceptCommunityInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -134,7 +134,7 @@ export const acceptCommunityInviteFn = createServerFn({ method: "POST" })
   });
 
 export const updateAcceptedInviteRoleFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) =>
     z
       .object({ inviteRef: z.string().uuid(), role: z.enum(["admin", "member"]) })
@@ -149,7 +149,7 @@ export const updateAcceptedInviteRoleFn = createServerFn({ method: "POST" })
   });
 
 export const listInviteRoleHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ inviteRef: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     return fetchNestApiFromServer(`/connect-app/community/invites/${data.inviteRef}/role-history`, context.token);

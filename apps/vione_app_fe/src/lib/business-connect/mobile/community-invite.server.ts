@@ -94,7 +94,7 @@ export async function listCommunityInvites(input: {
   // Vai trò hiện tại của những người đã chấp nhận lời mời.
   const acceptedIds = rows
     .filter((r) => String(r.status) === "accepted" && r.accepted_by)
-    .map((r) => String(r.accepted_by));
+    .map((r: any) => String(r.accepted_by));
   if (acceptedIds.length > 0) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: memberRows } = await (supabaseAdmin as unknown as AnyClient)
@@ -591,7 +591,7 @@ export async function listInviteRoleHistory(input: {
   const rows = (data ?? []) as any[];
   if (rows.length === 0) return [];
 
-  const actorIds = Array.from(new Set(rows.map((r) => String(r.actor_user_id))));
+  const actorIds = Array.from(new Set(rows.map((r: any) => String(r.actor_user_id))));
   const { data: profiles } = await admin
     .from("profiles")
     .select("id, full_name, email")
@@ -602,7 +602,7 @@ export async function listInviteRoleHistory(input: {
     if (label) nameById.set(String(p.id), label);
   }
 
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     eventRef: String(r.id),
     oldRole: String(r.old_role) === "admin" ? "admin" : "member",
     newRole: String(r.new_role) === "admin" ? "admin" : "member",

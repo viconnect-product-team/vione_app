@@ -109,6 +109,16 @@ async function main() {
           updated_at = now()
       `, [identityId, actualUserId, name, email]);
 
+      // Insert into public.memberships (default association admin)
+      await client.query(`
+        INSERT INTO public.memberships (user_id, association_id, role, is_default, created_at, updated_at)
+        VALUES ($1::uuid, '3d668c0e-a309-46c5-a2f5-c7d5b8cb038b'::uuid, 'admin', true, now(), now())
+        ON CONFLICT (user_id, association_id) DO UPDATE SET
+          role = 'admin',
+          is_default = true,
+          updated_at = now()
+      `, [actualUserId]);
+
       console.log(`Created/Verified admin account: ${email} | Password: ${password}`);
     }
   }

@@ -56,8 +56,8 @@ export async function listJoinableCommunities(
   }
 
   return (assocs as any[])
-    .filter((a) => !joined.has(a.id))
-    .map((a) => {
+    .filter((a: any) => !joined.has(a.id))
+    .map((a: any) => {
       const req = byAssoc.get(a.id);
       return {
         communityId: a.id as string,
@@ -171,14 +171,14 @@ export async function listCommunityJoinHistory(
   if (rows.length === 0) return [];
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const ids = Array.from(new Set(rows.map((r) => r.association_id)));
+  const ids = Array.from(new Set(rows.map((r: any) => r.association_id)));
   const { data: assocs } = await (supabaseAdmin as AnyClient)
     .from("associations")
     .select("id, name, logo_url")
     .in("id", ids);
-  const byId = new Map(((assocs ?? []) as any[]).map((a) => [a.id as string, a]));
+  const byId = new Map(((assocs ?? []) as any[]).map((a: any) => [a.id as string, a]));
 
-  return rows.map((r) => {
+  return rows.map((r: any) => {
     const assoc = byId.get(r.association_id);
     return {
       requestId: r.id as string,
@@ -216,23 +216,23 @@ export async function syncCommunityJoinDecisionNotifications(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as AnyClient;
 
-  const dedupeKeys = rows.map((r) => `community_join:${r.id}:${r.status}`);
+  const dedupeKeys = rows.map((r: any) => `community_join:${r.id}:${r.status}`);
   const { data: existing } = await admin
     .from("business_notifications")
     .select("dedupe_key")
     .eq("recipient_user_id", viewerId)
     .in("dedupe_key", dedupeKeys);
-  const known = new Set(((existing ?? []) as any[]).map((n) => n.dedupe_key as string));
+  const known = new Set(((existing ?? []) as any[]).map((n: any) => n.dedupe_key as string));
 
   const pendingRows = rows.filter((r) => !known.has(`community_join:${r.id}:${r.status}`));
   if (pendingRows.length === 0) return [];
 
-  const ids = Array.from(new Set(pendingRows.map((r) => r.association_id)));
+  const ids = Array.from(new Set(pendingRows.map((r: any) => r.association_id)));
   const { data: assocs } = await admin.from("associations").select("id, name").in("id", ids);
-  const nameById = new Map(((assocs ?? []) as any[]).map((a) => [a.id as string, a.name as string]));
+  const nameById = new Map(((assocs ?? []) as any[]).map((a: any) => [a.id as string, a.name as string]));
 
   const nowIso = new Date().toISOString();
-  const inserts = pendingRows.map((r) => {
+  const inserts = pendingRows.map((r: any) => {
     const approved = r.status === "approved";
     const name = nameById.get(r.association_id) ?? "—";
     return {
@@ -263,7 +263,7 @@ export async function syncCommunityJoinDecisionNotifications(
     .upsert(inserts, { onConflict: "dedupe_key", ignoreDuplicates: true });
   if (error) return [];
 
-  return pendingRows.map((r) => ({
+  return pendingRows.map((r: any) => ({
     communityId: r.association_id as string,
     name: nameById.get(r.association_id) ?? "—",
     status: r.status as "approved" | "rejected",
@@ -305,18 +305,18 @@ export async function listCommunityJoinAdminRequests(
   const { data: assocs } = await admin
     .from("associations")
     .select("id, name")
-    .in("id", Array.from(new Set(rows.map((r) => r.association_id))));
-  const assocById = new Map(((assocs ?? []) as any[]).map((a) => [a.id as string, a.name as string]));
+    .in("id", Array.from(new Set(rows.map((r: any) => r.association_id))));
+  const assocById = new Map(((assocs ?? []) as any[]).map((a: any) => [a.id as string, a.name as string]));
 
   const { data: profiles } = await admin
     .from("profiles")
     .select("id, full_name")
-    .in("id", Array.from(new Set(rows.map((r) => r.user_id))));
+    .in("id", Array.from(new Set(rows.map((r: any) => r.user_id))));
   const nameByUser = new Map(
     ((profiles ?? []) as any[]).map((p) => [p.id as string, (p.full_name as string | null) ?? null]),
   );
 
-  return rows.map((r) => ({
+  return rows.map((r: any) => ({
     requestId: r.id as string,
     communityId: r.association_id as string,
     communityName: assocById.get(r.association_id) ?? "—",

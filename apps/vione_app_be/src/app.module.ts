@@ -10,6 +10,9 @@ import { BusinessCardModule } from './business-card/business-card.module';
 import { UploadModule } from './upload/upload.module';
 import { ConnectAppModule } from './connect-app/connect-app.module';
 import { DocumentsModule } from './documents/documents.module';
+import { EventsModule } from './events/events.module';
+import { MembersModule } from './members/members.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { DocumentsModule } from './documents/documents.module';
     UploadModule,
     ConnectAppModule,
     DocumentsModule,
+    EventsModule,
+    MembersModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

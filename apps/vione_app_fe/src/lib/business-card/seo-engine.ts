@@ -328,7 +328,7 @@ export function buildProfileHead(card: PublicBusinessCard, ctx: SeoContext): Pro
   const links: HeadLink[] = [
     { rel: "canonical", href: url },
     { rel: "alternate", href: url, hrefLang: locale },
-    ...alternates.map((l) => ({
+    ...alternates.map((l: any) => ({
       rel: "alternate",
       href: `${url}?lang=${encodeURIComponent(l)}`,
       hrefLang: l,
@@ -367,7 +367,7 @@ export function buildProfileSitemapEntry(
 
 export function renderSitemapXml(entries: SitemapEntry[]): string {
   const urls = entries
-    .map((e) =>
+    .map((e: any) =>
       [
         "  <url>",
         `    <loc>${escapeXml(e.loc)}</loc>`,

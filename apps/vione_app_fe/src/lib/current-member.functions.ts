@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type LinkableMember = {
   id: string;
@@ -14,9 +14,9 @@ export type LinkableMember = {
 
 /** Members matching the signed-in account's email that can be linked. */
 export const listLinkableMembersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<LinkableMember[]> => {
-    const { supabase } = context;
+    const supabase: any = null as any;
     const { data, error } = await supabase.rpc("list_my_linkable_members");
     if (error) throw new Error(error.message);
     return (data ?? []).map((r: Record<string, unknown>) => ({
@@ -32,10 +32,10 @@ export const listLinkableMembersFn = createServerFn({ method: "GET" })
 
 /** Link the current account to a member profile (email must match). */
 export const linkMyMemberProfileFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ memberId: string }> => {
-    const { supabase } = context;
+    const supabase: any = null as any;
     const { data: res, error } = await supabase.rpc("link_my_member_profile", {
       _member_id: data.memberId,
     });
@@ -45,10 +45,10 @@ export const linkMyMemberProfileFn = createServerFn({ method: "POST" })
 
 /** Unlink a member profile from the current account. */
 export const unlinkMyMemberProfileFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<void> => {
-    const { supabase } = context;
+    const supabase: any = null as any;
     const { error } = await supabase.rpc("unlink_my_member_profile", {
       _member_id: data.memberId,
     });

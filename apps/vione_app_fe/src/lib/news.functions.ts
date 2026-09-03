@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { NewsArticle } from "@/lib/extra-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 type Row = Record<string, unknown>;
 
@@ -19,11 +19,11 @@ function mapNews(n: Row): NewsArticle {
 }
 
 export const listNewsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<NewsArticle[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase.from("news").select("*").order("created_at", { ascending: true });
+    const activeId = await getActiveAssociationId(null as any);
+    let query = (null as any).from("news").select("*").order("created_at", { ascending: true });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw error;
@@ -40,12 +40,12 @@ const newsInput = z.object({
 });
 
 export const createNewsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => newsInput.parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("NEWS");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("news")
       .insert({
         code,
@@ -60,7 +60,7 @@ export const createNewsFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Tạo tin tức",
       target: data.title,
       category: "system",
@@ -69,11 +69,11 @@ export const createNewsFn = createServerFn({ method: "POST" })
   });
 
 export const updateNewsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => newsInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("news")
       .update({
         title: data.title,
@@ -87,7 +87,7 @@ export const updateNewsFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật tin tức",
       target: data.title,
       category: "system",
@@ -96,18 +96,18 @@ export const updateNewsFn = createServerFn({ method: "POST" })
   });
 
 export const deleteNewsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const found = await context.supabase
+    const found = await (null as any)
       .from("news")
       .select("title")
       .eq("code", data.id)
       .maybeSingle();
-    const { error } = await context.supabase.from("news").delete().eq("code", data.id);
+    const { error } = await (null as any).from("news").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa tin tức",
       target: (found.data?.title as string) ?? data.id,
       category: "system",

@@ -130,7 +130,7 @@ export function CommunityJoinStatusCards({ term }: { term?: string }) {
   return (
     <>
       <ul className="mt-3.5 space-y-3.5" data-testid="bc-community-join-status-cards">
-        {items.map((c) => (
+        {items.map((c: any) => (
           <li
             key={c.communityId}
             className="overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]"

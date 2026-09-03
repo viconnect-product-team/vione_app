@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type { CommunityNewsDetailDTO, CommunityNewsPageDTO } from "./community-news.types";
 
@@ -13,7 +13,7 @@ const listInput = z.object({
 });
 
 export const listCommunityNewsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => listInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsPageDTO | null> => {
     const queryParams = new URLSearchParams();
@@ -31,7 +31,7 @@ const detailInput = z.object({
 });
 
 export const getCommunityNewsDetailFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => detailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsDetailDTO | null> => {
     return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/news/${data.newsRef}`, context.token);

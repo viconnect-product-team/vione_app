@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { MeetingOutcomeService } from "./service.server";
 import { MEETING_OUTCOME_TYPES } from "./types";
 
@@ -34,7 +34,7 @@ const finalizeSchema = z.object({
 });
 
 export const getMeetingOutcomeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -43,7 +43,7 @@ export const getMeetingOutcomeFn = createServerFn({ method: "POST" })
   });
 
 export const createMeetingOutcomeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -56,7 +56,7 @@ export const createMeetingOutcomeFn = createServerFn({ method: "POST" })
   });
 
 export const updateMeetingOutcomeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -70,7 +70,7 @@ export const updateMeetingOutcomeFn = createServerFn({ method: "POST" })
   });
 
 export const finalizeMeetingOutcomeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => finalizeSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;

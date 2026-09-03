@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { relTime } from "./shared";
 
 export type MyProduct = {
@@ -15,9 +15,9 @@ export type MyProduct = {
 
 // ---------- Products ----------
 export const listMyProducts = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyProduct[]> => {
-    const { data } = await context.supabase
+    const { data } = await (null as any)
       .from("products")
       .select("*")
       .eq("status", "active")
@@ -34,7 +34,7 @@ export const listMyProducts = createServerFn({ method: "GET" })
   });
 
 export const requestQuote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({

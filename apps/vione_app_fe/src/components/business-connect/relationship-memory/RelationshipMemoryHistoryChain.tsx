@@ -48,7 +48,7 @@ export function RelationshipMemoryHistoryChain({ memoryId, onClose }: Props) {
             <p className="text-sm text-muted-foreground">{t("bc.memory.history.empty")}</p>
           ) : (
             <ol role="list" className="relative space-y-3 border-l border-border pl-4">
-              {nodes.map((n) => (
+              {nodes.map((n: any) => (
                 <li key={n.memoryId} className="relative">
                   <span
                     aria-hidden="true"

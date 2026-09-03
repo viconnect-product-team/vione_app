@@ -80,7 +80,7 @@ function FinanceReport() {
         <Card className="p-5">
           <h3 className="mb-4 text-sm font-semibold text-foreground">{t("freport.incomeBreak")}</h3>
           <div className="space-y-3.5">
-            {incomeByCat.map((c) => (
+            {incomeByCat.map((c: any) => (
               <div key={c.k}>
                 <div className="mb-1.5 flex items-center justify-between text-[13px]">
                   <span className="text-foreground">{c.k}</span>
@@ -108,7 +108,7 @@ function FinanceReport() {
             {t("freport.expenseBreak")}
           </h3>
           <div className="space-y-3.5">
-            {expenseByCat.map((c) => (
+            {expenseByCat.map((c: any) => (
               <div key={c.k}>
                 <div className="mb-1.5 flex items-center justify-between text-[13px]">
                   <span className="text-foreground">{c.k}</span>

@@ -1,7 +1,7 @@
 // Demo/ops helper: liệt kê sự kiện của hiệp hội hiện tại kèm dữ liệu check-in
 // (payload QR/NFC = event id — đúng chuẩn mà /m/checkin đang xác thực server-side).
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type CheckinQrEvent = {
   id: string;
@@ -15,14 +15,14 @@ export type CheckinQrEvent = {
 };
 
 export const getCheckinQrEventsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CheckinQrEvent[]> => {
     const [events, checkins] = await Promise.all([
-      context.supabase
+      (null as any)
         .from("events")
         .select("id, name, date, location, status, registered, capacity")
         .order("date", { ascending: true }),
-      context.supabase.from("member_checkins").select("event_id").eq("status", "success"),
+      (null as any).from("member_checkins").select("event_id").eq("status", "success"),
     ]);
     if (events.error) throw new Error(events.error.message);
 
@@ -33,7 +33,7 @@ export const getCheckinQrEventsFn = createServerFn({ method: "GET" })
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
 
-    return (events.data ?? []).map((e) => ({
+    return (events.data ?? []).map((e: any) => ({
       id: e.id as string,
       name: e.name as string,
       date: e.date as string,

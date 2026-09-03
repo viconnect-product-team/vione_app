@@ -13,7 +13,7 @@
 //     raw tenant ownership beyond the safe DTO below.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { resolveAssociationId } from "./member-app/shared";
 import { resolveMemberCode } from "./member-identity";
 
@@ -36,7 +36,7 @@ export type MemberContextDTO = {
 };
 
 export const getCurrentMemberContext = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MemberContextDTO> => {
     const { supabase, userId, user } = context;
 

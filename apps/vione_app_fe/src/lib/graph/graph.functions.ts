@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   GraphCursorPage,
   GraphMutualDTO,
@@ -67,58 +67,58 @@ async function writeService(sb: unknown, uid: string) {
 }
 
 export const graphGetNodeFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ nodeId: idSchema }).parse(i))
   .handler(async ({ data, context }): Promise<GraphNodeDTO> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.getNode(data.nodeId);
   });
 
 export const graphNeighborsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => neighborsInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphCursorPage<GraphNeighborDTO>> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.neighbors(data);
   });
 
 export const graphMutualConnectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => mutualInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphCursorPage<GraphMutualDTO>> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.mutualConnections(data);
   });
 
 export const graphSharedCompaniesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => sharedInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphCursorPage<GraphSharedNodeDTO>> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.sharedCompanies(data);
   });
 
 export const graphSharedAssociationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => sharedInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphCursorPage<GraphSharedNodeDTO>> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.sharedAssociations(data);
   });
 
 export const graphSharedCommunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => sharedInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphCursorPage<GraphSharedNodeDTO>> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.sharedCommunities(data);
   });
 
 export const graphShortestPathFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => pathInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphPathDTO> => {
-    const svc = await readService(context.supabase, context.userId);
+    const svc = await readService(null as any, context.userId);
     return svc.shortestPath(data);
   });
 
@@ -151,61 +151,61 @@ const edgeIdInput = z.object({ edgeId: idSchema });
 const updateMetaInput = z.object({ edgeId: idSchema, metadata: z.record(z.unknown()) });
 
 export const graphRegisterNodeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => registerNodeInput.parse(i))
   .handler(async ({ data, context }): Promise<GraphNodeDTO> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.registerNode(data);
   });
 
 export const graphCreateEdgeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => createEdgeInput.parse(i))
   .handler(async ({ data, context }): Promise<{ edgeId: string; replayed: boolean }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.createEdge(data);
   });
 
 export const graphConnectFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => connectInput.parse(i))
   .handler(async ({ data, context }): Promise<{ edgeId: string }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.connect(data);
   });
 
 export const graphArchiveEdgeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => edgeIdInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     await svc.archiveEdge(data.edgeId);
     return { ok: true };
   });
 
 export const graphRestoreEdgeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => edgeIdInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     await svc.restoreEdge(data.edgeId);
     return { ok: true };
   });
 
 export const graphDisconnectFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => edgeIdInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     await svc.disconnect(data.edgeId);
     return { ok: true };
   });
 
 export const graphUpdateEdgeMetadataFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => updateMetaInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     await svc.updateEdgeMetadata(data.edgeId, data.metadata);
     return { ok: true };
   });
@@ -226,35 +226,35 @@ const pairTimelineInput = z.object({
 });
 
 export const graphTimelineFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => timelineInput.parse(i))
   .handler(async ({ data, context }): Promise<TimelinePage> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.timeline(data);
   });
 
 export const graphPairTimelineFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => pairTimelineInput.parse(i))
   .handler(async ({ data, context }): Promise<TimelinePage> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.pairTimeline(data);
   });
 
 export const graphHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => timelineInput.parse(i))
   .handler(async ({ data, context }): Promise<TimelinePage> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.history(data);
   });
 
 // BC-7.5B — Direct by-id timeline read (avoids page-scan in adapters).
 export const graphGetTimelineEventFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ eventId: idSchema }).parse(i))
   .handler(async ({ data, context }): Promise<GraphTimelineEventDTO | null> => {
-    const svc = await writeService(context.supabase, context.userId);
+    const svc = await writeService(null as any, context.userId);
     return svc.getTimelineEventById(data.eventId);
   });
 

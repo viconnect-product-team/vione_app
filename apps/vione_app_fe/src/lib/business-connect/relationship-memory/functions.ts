@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   RELATIONSHIP_MEMORY_KINDS,
   RELATIONSHIP_MEMORY_STATUSES,
@@ -32,10 +32,10 @@ const filterSchema = z.object({
 });
 
 export const listRelationshipMemoriesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => filterSchema.parse(input ?? {}))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context as Ctx;
+    const { supabase, userId } = context as unknown as Ctx;
     const { RelationshipMemoryRepository } = await import("./repository.server");
     const result = await RelationshipMemoryRepository.list(supabase, userId, {
       subject: data.subject ?? undefined,
@@ -50,10 +50,10 @@ export const listRelationshipMemoriesFn = createServerFn({ method: "POST" })
   });
 
 export const getRelationshipMemoryByIdFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context as Ctx;
+    const { supabase, userId } = context as unknown as Ctx;
     const { RelationshipMemoryRepository } = await import("./repository.server");
     const result = await RelationshipMemoryRepository.getById(supabase, userId, data.id);
     return result as any;

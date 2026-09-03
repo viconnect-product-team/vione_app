@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { RelationshipService } from "./relationship.service";
 import type { SavedCard } from "./relationship.types";
 
@@ -15,24 +15,24 @@ const tagsSchema = z.array(z.string().max(60)).max(50);
 
 /** List the caller's saved relationships (newest first, live target summary). */
 export const listSavedCardsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<SavedCard[]> =>
-      RelationshipService.list(context.supabase, context.userId),
+      RelationshipService.list(null as any, context.userId),
   );
 
 /** Whether the caller has saved a given target card. */
 export const isSavedCardFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ targetCardId: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<boolean> =>
-      RelationshipService.exists(context.supabase, context.userId, data.targetCardId),
+      RelationshipService.exists(null as any, context.userId, data.targetCardId),
   );
 
 /** Save a relationship edge to a target card. */
 export const saveCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -46,7 +46,7 @@ export const saveCardFn = createServerFn({ method: "POST" })
   )
   .handler(
     ({ data, context }): Promise<SavedCard> =>
-      RelationshipService.save(context.supabase, context.userId, data),
+      RelationshipService.save(null as any, context.userId, data),
   );
 
 /**
@@ -55,7 +55,7 @@ export const saveCardFn = createServerFn({ method: "POST" })
  * private data — resolution is subject to the card's own visibility.
  */
 export const saveCardBySlugFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ slug: z.string().min(1).max(120), source: sourceSchema.optional() }).parse(d),
   )
@@ -65,7 +65,7 @@ export const saveCardBySlugFn = createServerFn({ method: "POST" })
     // longer carries it. Fails closed to a generic not-found.
     const targetCardId = await BusinessCardService.resolvePublicCardId(data.slug);
     if (!targetCardId) throw new Error("REL_TARGET_NOT_FOUND");
-    return RelationshipService.save(context.supabase, context.userId, {
+    return RelationshipService.save(null as any, context.userId, {
       targetCardId,
       source: data.source ?? "url",
     });
@@ -77,45 +77,45 @@ export const saveCardBySlugFn = createServerFn({ method: "POST" })
  * internal card id ever leaving the server.
  */
 export const isSavedCardBySlugFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }): Promise<boolean> => {
     const { BusinessCardService } = await import("./business-card.service");
     const targetCardId = await BusinessCardService.resolvePublicCardId(data.slug);
     if (!targetCardId) return false;
-    return RelationshipService.exists(context.supabase, context.userId, targetCardId);
+    return RelationshipService.exists(null as any, context.userId, targetCardId);
   });
 
 /** Remove a relationship edge by target card id. */
 export const removeSavedCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ targetCardId: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<{ removed: boolean }> =>
-      RelationshipService.unsave(context.supabase, context.userId, data.targetCardId),
+      RelationshipService.unsave(null as any, context.userId, data.targetCardId),
   );
 
 /** BC-Mobile-3A — Remove a relationship edge by public slug (id stays server-side). */
 export const removeSavedCardBySlugFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ slug: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }): Promise<{ removed: boolean }> => {
     const { BusinessCardService } = await import("./business-card.service");
     const targetCardId = await BusinessCardService.resolvePublicCardId(data.slug);
     if (!targetCardId) return { removed: false };
-    return RelationshipService.unsave(context.supabase, context.userId, targetCardId);
+    return RelationshipService.unsave(null as any, context.userId, targetCardId);
   });
 
 /** Set the favorite flag on an edge. */
 export const favoriteSavedCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ targetCardId: z.string().uuid(), favorite: z.boolean() }).parse(d),
   )
   .handler(
     ({ data, context }): Promise<SavedCard> =>
       RelationshipService.favorite(
-        context.supabase,
+        null as any,
         context.userId,
         data.targetCardId,
         data.favorite,
@@ -124,29 +124,29 @@ export const favoriteSavedCardFn = createServerFn({ method: "POST" })
 
 /** Replace the private tag set on an edge. */
 export const tagSavedCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ targetCardId: z.string().uuid(), tags: tagsSchema }).parse(d),
   )
   .handler(
     ({ data, context }): Promise<SavedCard> =>
-      RelationshipService.tag(context.supabase, context.userId, data.targetCardId, data.tags),
+      RelationshipService.tag(null as any, context.userId, data.targetCardId, data.tags),
   );
 
 /** Set the private note on an edge. */
 export const noteSavedCardFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ targetCardId: z.string().uuid(), notes: z.string().max(4000).nullable() }).parse(d),
   )
   .handler(
     ({ data, context }): Promise<SavedCard> =>
-      RelationshipService.note(context.supabase, context.userId, data.targetCardId, data.notes),
+      RelationshipService.note(null as any, context.userId, data.targetCardId, data.notes),
   );
 
 /** Patch owner-only relationship metadata (BC-2.4 + BC-2.5 intelligence fields). */
 export const updateSavedCardMetadataFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -176,7 +176,7 @@ export const updateSavedCardMetadataFn = createServerFn({ method: "POST" })
   .handler(({ data, context }): Promise<SavedCard> => {
     const { targetCardId, ...patch } = data;
     return RelationshipService.updateMetadata(
-      context.supabase,
+      null as any,
       context.userId,
       targetCardId,
       patch,
@@ -203,7 +203,7 @@ const eventTypeSchema = z.enum([
 
 /** Append an interaction event to a relationship's history/timeline. */
 export const recordRelationshipEventFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -215,7 +215,7 @@ export const recordRelationshipEventFn = createServerFn({ method: "POST" })
   )
   .handler(({ data, context }) =>
     RelationshipService.recordEvent(
-      context.supabase,
+      null as any,
       context.userId,
       data.targetCardId,
       data.type,
@@ -225,31 +225,31 @@ export const recordRelationshipEventFn = createServerFn({ method: "POST" })
 
 /** Derived timeline (edge timestamps + events) for one relationship. */
 export const relationshipTimelineFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ targetCardId: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    RelationshipService.timeline(context.supabase, context.userId, data.targetCardId),
+    RelationshipService.timeline(null as any, context.userId, data.targetCardId),
   );
 
 /** History events (newest first) for one relationship or the whole graph. */
 export const relationshipHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ targetCardId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(({ data, context }) =>
-    RelationshipService.history(context.supabase, context.userId, data.targetCardId),
+    RelationshipService.history(null as any, context.userId, data.targetCardId),
   );
 
 /** Dynamic smart collections over the caller's saved cards. */
 export const relationshipCollectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(({ context }) => RelationshipService.collections(context.supabase, context.userId));
+  .middleware([requireNestAuth])
+  .handler(({ context }) => RelationshipService.collections(null as any, context.userId));
 
 /** Deterministic relationship score for one relationship. */
 export const relationshipScoreFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ targetCardId: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    RelationshipService.relationshipScore(context.supabase, context.userId, data.targetCardId),
+    RelationshipService.relationshipScore(null as any, context.userId, data.targetCardId),
   );

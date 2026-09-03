@@ -36,7 +36,7 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (!assignTag) return;
-    setSelected(new Set(customers.filter((c) => c.tagIds.includes(assignTag.id)).map((c) => c.id)));
+    setSelected(new Set(customers.filter((c) => c.tagIds.includes(assignTag.id)).map((c: any) => c.id)));
   }, [assignTagId, assignTag, customers]);
 
   const listed = useMemo(() => {
@@ -48,7 +48,7 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
   }, [customers, term]);
 
   const namesOf = (ids: string[]) =>
-    ids.map((id) => tags.find((tg) => tg.id === id)?.name).filter((n): n is string => Boolean(n));
+    ids.map((id: any) => tags.find((tg) => tg.id === id)?.name).filter((n): n is string => Boolean(n));
 
   const applyAssignment = async () => {
     if (!assignTag) return;
@@ -115,7 +115,7 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
             </div>
 
             <ul className="mt-3 space-y-2">
-              {listed.map((c) => {
+              {listed.map((c: any) => {
                 const on = selected.has(c.id);
                 return (
                   <li key={c.id}>

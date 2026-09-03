@@ -87,7 +87,7 @@ function EventsScreen() {
             {t("m.events.empty")}
           </p>
         )}
-        {events.map((e) => (
+        {events.map((e: any) => (
           <div key={e.id} role="listitem" className="vba-card flex gap-3 p-3">
             <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl vba-gold-grad text-[#1a1206]">
               <span className="text-[22px] font-extrabold leading-none">{e.day}</span>

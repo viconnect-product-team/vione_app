@@ -165,7 +165,7 @@ describe("MeetingWorkspaceCard (DTO-only, no fetches)", () => {
 describe("WorkspaceBucketList (consolidated read, semantic list)", () => {
   it("issues exactly ONE list call for N cards (no per-card N+1)", async () => {
     const { WorkspaceBucketList } = await loadComponents();
-    const items = ["a", "b", "c", "d", "e"].map((id) => makeItem(id));
+    const items = ["a", "b", "c", "d", "e"].map((id: any) => makeItem(id));
     listCalls.mockResolvedValueOnce({ items, nextCursor: null });
 
     render(

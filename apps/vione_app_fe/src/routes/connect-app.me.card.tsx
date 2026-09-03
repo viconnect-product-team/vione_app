@@ -93,7 +93,7 @@ function PresentQrPage() {
                   {t("bc.mobile.presentQr.switchPersona")}
                 </legend>
                 <div className="flex gap-2 overflow-x-auto pb-1" role="radiogroup">
-                  {list.map((c) => (
+                  {list.map((c: any) => (
                     <button
                       key={c.id}
                       type="button"

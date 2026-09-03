@@ -52,7 +52,7 @@ export function canonicalJson(value: unknown, excludeTopLevel = false): string {
     if (v === null || typeof v !== "object") return v;
     if (seen.has(v as object)) throw new Error("BC-9.0 canonical json cycle");
     seen.add(v as object);
-    if (Array.isArray(v)) return v.map((x) => walk(x, depth + 1));
+    if (Array.isArray(v)) return v.map((x: any) => walk(x, depth + 1));
     const entries = Object.entries(v as Record<string, unknown>)
       .filter(([k]) => !(depth === 0 && excludeTopLevel && ENVELOPE_HASH_EXCLUDED.has(k)))
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));

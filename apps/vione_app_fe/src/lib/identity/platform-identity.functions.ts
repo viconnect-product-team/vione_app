@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   buildGlobalIdentityContext,
   getAssociationContexts,
@@ -20,7 +20,7 @@ import { fetchNestApiFromServer } from "../api-client";
 
 /** Global identity context for the signed in user (no member required). */
 export const getCurrentUserFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<GlobalIdentityContext> => {
     const { token, userId, user } = context as any;
     const profile = await fetchNestApiFromServer("/connect-app/me/profile", token);
@@ -49,7 +49,7 @@ export const getCurrentUserFn = createServerFn({ method: "GET" })
 
 /** Read the current user's global profile (null if not created yet). */
 export const getProfileFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<UserProfile | null> => {
     const { token } = context as any;
     const profile = await fetchNestApiFromServer("/connect-app/me/profile", token);
@@ -87,7 +87,7 @@ const profileUpdateSchema = z.object({
 
 /** Create or update the current user's global profile (owner-scoped by RLS). */
 export const upsertProfileFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => profileUpdateSchema.parse(d))
   .handler(async ({ data, context }): Promise<UserProfile> => {
     const { token } = context as any;
@@ -127,7 +127,7 @@ export const upsertProfileFn = createServerFn({ method: "POST" })
 
 /** Association contexts for the current user (compatibility layer; [] is valid). */
 export const getAssociationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async (): Promise<AssociationIdentity[]> => {
     return [];
   });
@@ -137,7 +137,7 @@ export const getAssociationsFn = createServerFn({ method: "GET" })
  * Communities are empty at BC-1.0 (reserved for BC-2+).
  */
 export const resolvePlatformIdentityFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<PlatformIdentity> => {
     const { token, userId, user } = context as any;
     const profileRes = await fetchNestApiFromServer("/connect-app/me/profile", token);

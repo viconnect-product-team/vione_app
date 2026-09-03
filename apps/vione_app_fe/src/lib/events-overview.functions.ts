@@ -1,7 +1,7 @@
 // Admin overview: danh sách sự kiện kèm lượt đăng ký và số người tham dự
 // (check-in thành công) — dữ liệu lấy từ domain sự kiện chuẩn, không tạo backend song song.
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type EventOverviewRow = {
   id: string;
@@ -17,15 +17,15 @@ export type EventOverviewRow = {
 };
 
 export const getEventsOverviewFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<EventOverviewRow[]> => {
     const [events, regs, checkins] = await Promise.all([
-      context.supabase
+      (null as any)
         .from("events")
         .select("id, name, date, location, status, capacity")
         .order("date", { ascending: false }),
-      context.supabase.from("event_registrations").select("event_id, status"),
-      context.supabase.from("member_checkins").select("event_id").eq("status", "success"),
+      (null as any).from("event_registrations").select("event_id, status"),
+      (null as any).from("member_checkins").select("event_id").eq("status", "success"),
     ]);
     if (events.error) throw new Error(events.error.message);
 
@@ -49,7 +49,7 @@ export const getEventsOverviewFn = createServerFn({ method: "GET" })
       attended.set(id, (attended.get(id) ?? 0) + 1);
     }
 
-    return (events.data ?? []).map((e) => ({
+    return (events.data ?? []).map((e: any) => ({
       id: e.id as string,
       name: e.name as string,
       date: e.date as string,

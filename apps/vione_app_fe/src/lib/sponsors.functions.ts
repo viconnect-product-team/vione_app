@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type Sponsor = {
   id: string;
@@ -55,9 +55,9 @@ function mapPackage(r: Row): SponsorPackage {
 const TIER_ORDER = ["platinum", "gold", "silver", "bronze"];
 
 export const listSponsorsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("sponsors")
       .select("*")
       .order("amount", { ascending: false });
@@ -66,9 +66,9 @@ export const listSponsorsFn = createServerFn({ method: "GET" })
   });
 
 export const listSponsorPackagesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.from("sponsor_packages").select("*");
+    const { data, error } = await (null as any).from("sponsor_packages").select("*");
     if (error) throw new Error(error.message);
     return (data ?? [])
       .map(mapPackage)
@@ -88,18 +88,18 @@ const sponsorInput = z.object({
 });
 
 export const createSponsorFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => sponsorInput.parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
     const { genCode, logActivity } = await import("./crud.server");
     const id = genCode("SP");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("sponsors")
       .insert({ id, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Tạo nhà tài trợ",
       target: data.name,
       category: "system",
@@ -108,19 +108,19 @@ export const createSponsorFn = createServerFn({ method: "POST" })
   });
 
 export const updateSponsorFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => sponsorInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("sponsors")
       .update(rest)
       .eq("id", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật nhà tài trợ",
       target: data.name,
       category: "system",
@@ -129,18 +129,18 @@ export const updateSponsorFn = createServerFn({ method: "POST" })
   });
 
 export const deleteSponsorFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const found = await context.supabase
+    const found = await (null as any)
       .from("sponsors")
       .select("name")
       .eq("id", data.id)
       .maybeSingle();
-    const { error } = await context.supabase.from("sponsors").delete().eq("id", data.id);
+    const { error } = await (null as any).from("sponsors").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa nhà tài trợ",
       target: (found.data?.name as string) ?? data.id,
       category: "system",
@@ -159,18 +159,18 @@ const packageInput = z.object({
 });
 
 export const createSponsorPackageFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => packageInput.parse(d))
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
     const { genCode, logActivity } = await import("./crud.server");
     const id = genCode("PKG");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("sponsor_packages")
       .insert({ id, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Tạo gói tài trợ",
       target: data.tier,
       category: "system",
@@ -179,19 +179,19 @@ export const createSponsorPackageFn = createServerFn({ method: "POST" })
   });
 
 export const updateSponsorPackageFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => packageInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("sponsor_packages")
       .update(rest)
       .eq("id", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật gói tài trợ",
       target: data.tier,
       category: "system",
@@ -200,13 +200,13 @@ export const updateSponsorPackageFn = createServerFn({ method: "POST" })
   });
 
 export const deleteSponsorPackageFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await context.supabase.from("sponsor_packages").delete().eq("id", data.id);
+    const { error } = await (null as any).from("sponsor_packages").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa gói tài trợ",
       target: data.id,
       category: "system",
@@ -225,13 +225,13 @@ const onboardInput = z.object({
 });
 
 export const onboardSponsorFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => onboardInput.parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
     const { genCode, logActivity } = await import("./crud.server");
 
     // Load selected package for tier + price
-    const { data: pkg, error: pkgErr } = await context.supabase
+    const { data: pkg, error: pkgErr } = await (null as any)
       .from("sponsor_packages")
       .select("*")
       .eq("id", data.packageId)
@@ -244,7 +244,7 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
     // Create sponsor from package
     const id = genCode("SP");
     const today = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("sponsors")
       .insert({
         id,
@@ -263,12 +263,12 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Increment sold count on the package
-    await context.supabase
+    await (null as any)
       .from("sponsor_packages")
       .update({ sold: mappedPkg.sold + 1 })
       .eq("id", data.packageId);
 
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Onboard nhà tài trợ",
       target: data.name,
       category: "system",

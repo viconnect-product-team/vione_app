@@ -148,7 +148,7 @@ export const BusinessCardRepository = {
   async listCardIdsByMember(supabase: SupabaseClient, memberId: string) {
     const { data, error } = await supabase.from(CARD_TABLE).select("id").eq("member_id", memberId);
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r) => r.id as string);
+    return (data ?? []).map((r: any) => r.id as string);
   },
 
   /** Load ordered skills/services/needs for a card. */

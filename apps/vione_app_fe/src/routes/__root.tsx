@@ -387,7 +387,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // while letting desktop visitors access all legacy/PWA pages (like /m or /events).
   useEffect(() => {
     try {
-      const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
+      if (status === "in") return; // Authenticated users can freely access the dashboard and web app!
+
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (!isMobile) return;
 
       const p = window.location.pathname;
@@ -415,7 +417,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
-  }, [pathname, navigate]);
+  }, [pathname, navigate, status]);
 
   useEffect(() => {
     const stopResume = startSessionResume(() => {

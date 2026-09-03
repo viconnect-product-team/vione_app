@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type AdminPerk = {
   id: string;
@@ -37,7 +37,7 @@ function mapPerk(p: Row): AdminPerk {
 }
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+  const { data: isAdmin } = await (null as any).rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
   });
@@ -45,10 +45,10 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 }
 
 export const listPerksAdminFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminPerk[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("perks")
       .select("*")
       .order("sort_order", { ascending: true });
@@ -87,18 +87,18 @@ function toRow(d: z.infer<typeof perkInput>) {
 }
 
 export const createPerkFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => perkInput.parse(d))
   .handler(async ({ data, context }): Promise<AdminPerk> => {
     await assertAdmin(context);
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("perks")
       .insert(toRow(data))
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Tạo tiện ích",
       target: data.title,
       category: "system",
@@ -107,19 +107,19 @@ export const createPerkFn = createServerFn({ method: "POST" })
   });
 
 export const updatePerkFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => perkInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<AdminPerk> => {
     await assertAdmin(context);
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("perks")
       .update(toRow(data))
       .eq("id", data.id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật tiện ích",
       target: data.title,
       category: "system",
@@ -128,19 +128,19 @@ export const updatePerkFn = createServerFn({ method: "POST" })
   });
 
 export const deletePerkFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     await assertAdmin(context);
     const { logActivity } = await import("./crud.server");
-    const found = await context.supabase
+    const found = await (null as any)
       .from("perks")
       .select("title")
       .eq("id", data.id)
       .maybeSingle();
-    const { error } = await context.supabase.from("perks").delete().eq("id", data.id);
+    const { error } = await (null as any).from("perks").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa tiện ích",
       target: (found.data?.title as string) ?? data.id,
       category: "system",

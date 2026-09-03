@@ -261,7 +261,7 @@ function SavedCardsPage() {
             <p className="px-1 text-xs text-muted-foreground">{t("sc.collections.none")}</p>
           ) : (
             <ul className="space-y-0.5" role="list">
-              {customCollections.map((c) => (
+              {customCollections.map((c: any) => (
                 <li key={c.id}>
                   <button
                     type="button"
@@ -359,7 +359,7 @@ function SavedCardsPage() {
                 <button
                   type="button"
                   aria-label={`${t("sc.action.remove")} ${tg}`}
-                  onClick={() => setSearch({ tags: search.tags.filter((x) => x !== tg) })}
+                  onClick={() => setSearch({ tags: search.tags.filter((x: any) => x !== tg) })}
                   className="rounded-full p-0.5 hover:bg-background/60"
                 >
                   <X className="size-3" />

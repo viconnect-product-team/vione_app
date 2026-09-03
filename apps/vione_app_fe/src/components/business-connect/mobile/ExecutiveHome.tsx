@@ -14,16 +14,13 @@
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Briefcase,
   CalendarDays,
   ChevronRight,
   CircleCheck,
   Handshake,
-  IdCard,
   MapPin,
   MessageSquare,
   RefreshCw,
-  ScanLine,
   SlidersHorizontal,
   Sparkles,
   User,
@@ -50,6 +47,8 @@ import {
   isDefaultTodayPreferences,
 } from "@/lib/business-connect/mobile/today-preferences";
 
+import { useQuery } from "@tanstack/react-query";
+import { fetchNestApi } from "@/lib/api-client";
 import { RelationshipSuggestions } from "./RelationshipSuggestions";
 import { ViOneLogo } from "./ViOneLogo";
 import { QuickMeetIcon, QuickScanIcon, QuickCardIcon } from "./NavIcons";
@@ -89,7 +88,7 @@ export function ExecutiveHome() {
       <div aria-hidden="true" style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }} />
 
       <main id="bc-mobile-home" className="contents">
-        {home.isPending ? (
+        {home.isPending || (!data && !home.isError) ? (
           <HomeSkeleton />
         ) : home.isError || !data ? (
           <HomeCoreError onRetry={() => home.refetch()} />
@@ -178,6 +177,9 @@ export function ExecutiveHome() {
 
             <InsightCard />
 
+            {/* Sự kiện sắp tới từ CRM — kéo dữ liệu thật từ /api/events */}
+            <UpcomingEventsCard />
+
             <QuickActions />
 
             {/* BC-Mobile-6A — calm intelligence: own query, never blocks Home. */}
@@ -214,50 +216,38 @@ function QuickActions() {
   const t = useT();
   const items = [
     {
-      to: "/connect-app/moment" as const,
+      to: "/connect-app/moment",
       Icon: QuickMeetIcon,
       label: t("bc.mobile.home.quick.meet"),
     },
     {
-      to: "/connect-app/card-scan" as const,
+      to: "/connect-app/card-scan",
       Icon: QuickScanIcon,
       label: t("bc.mobile.home.quick.scan"),
     },
     {
-      to: "/connect-app/me/card" as const,
+      to: "/connect-app/me/card",
       Icon: QuickCardIcon,
       label: t("bc.mobile.home.quick.card"),
     },
   ];
+
   return (
-    <section
-      aria-labelledby="bc-home-quick"
-      className="mt-6 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4"
-    >
-      <h2
-        id="bc-home-quick"
-        className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-muted)]"
-      >
-        {t("bc.mobile.home.quick.title")}
-      </h2>
-      <ul className="mt-3 grid grid-cols-3 gap-2">
-        {items.map(({ to, Icon, label }) => (
-          <li key={to}>
-            <Link
-              to={to}
-              className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--bc-mobile-surface-2)] px-2 py-4 text-center transition-colors hover:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_8%,var(--bc-mobile-surface-2))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] active:scale-[0.97]"
-              style={{ minHeight: "90px" }}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color-mix(in_oklab,var(--bc-mobile-accent)_14%,transparent)]">
-                <Icon className="h-6 w-6 text-[var(--bc-mobile-accent)]" />
-              </span>
-              <span className="text-[12.5px] font-semibold leading-tight text-[var(--bc-mobile-text)]">
-                {label}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <section aria-label={t("bc.mobile.home.quick.title")} className="mt-5 grid grid-cols-3 gap-2">
+      {items.map(({ to, Icon, label }) => (
+        <Link
+          key={to}
+          to={to as any}
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-3 px-1 text-center transition-colors hover:border-[var(--bc-mobile-accent)]/50 active:scale-[0.98]"
+        >
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[color-mix(in_oklab,var(--bc-mobile-accent)_14%,transparent)] text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]">
+            <Icon className="h-5 w-5" />
+          </span>
+          <span className="text-[12.5px] font-medium text-[var(--bc-mobile-text)] truncate max-w-full">
+            {label}
+          </span>
+        </Link>
+      ))}
     </section>
   );
 }
@@ -695,5 +685,129 @@ function HomeSkeleton() {
         ))}
       </div>
     </div>
+  );
+}
+
+// ── Sự kiện sắp tới từ CRM ────────────────────────────────────────────────────
+// Kéo dữ liệu thật từ /api/events (NestJS backend). Hiển thị tối đa 3 sự kiện
+// sắp xảy ra, theo phong cách "executive minimal luxury" nhất quán với Home.
+
+type CrmEvent = {
+  id: string;
+  title?: string | null;
+  name?: string | null;
+  startDate?: string | null;
+  start_date?: string | null;
+  location?: string | null;
+  venue?: string | null;
+  status?: string | null;
+};
+
+function UpcomingEventsCard() {
+  const { data, isLoading, isError } = useQuery<any>({
+    queryKey: ["crm-events-home"],
+    staleTime: 5 * 60_000,
+    queryFn: () => fetchNestApi("/events?limit=5"),
+  });
+
+  // Chuẩn hoá: backend trả về { data: [...] } hoặc [...]
+  const rawList: CrmEvent[] = Array.isArray(data)
+    ? data
+    : ((data as any)?.data ?? (data as any)?.items ?? []);
+
+  const now = new Date();
+  const upcoming = rawList
+    .filter((ev) => {
+      const d = ev.startDate || ev.start_date;
+      if (!d) return true;
+      return new Date(d) >= now;
+    })
+    .slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div
+        aria-busy="true"
+        className="mt-4 animate-pulse rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 motion-reduce:animate-none"
+      >
+        <div className="h-4 w-32 rounded bg-[var(--bc-mobile-surface-2)]" />
+        <div className="mt-3 space-y-2.5">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-10 rounded-xl bg-[var(--bc-mobile-surface-2)]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || upcoming.length === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="bc-crm-events-heading"
+      className="mt-4 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-[0_18px_40px_-32px_rgba(0,0,0,0.9)]"
+    >
+      <div className="flex items-center justify-between border-b border-[var(--bc-mobile-border)] px-4 py-3">
+        <h2
+          id="bc-crm-events-heading"
+          className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--bc-mobile-muted)]"
+        >
+          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
+          Sự kiện sắp tới
+        </h2>
+        <Link
+          to="/events"
+          className="flex items-center gap-1 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] hover:opacity-80"
+          aria-label="Xem tất cả sự kiện"
+        >
+          Tất cả
+          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+        </Link>
+      </div>
+
+      <ul className="divide-y divide-[var(--bc-mobile-border)]">
+        {upcoming.map((ev) => {
+          const dateStr = ev.startDate || ev.start_date;
+          const formattedDate = dateStr
+            ? new Intl.DateTimeFormat("vi-VN", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(new Date(dateStr))
+            : null;
+          const location = ev.location || ev.venue || null;
+          const title = ev.title || ev.name || "Sự kiện";
+
+          return (
+            <li key={ev.id} className="group relative px-4 py-3">
+              <Link
+                to="/events/$eventId"
+                params={{ eventId: ev.id }}
+                className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+              >
+                <p className="text-[14px] font-semibold leading-snug text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)]">
+                  {title}
+                </p>
+                <div className="mt-1 flex items-center gap-3 text-[12px] text-[var(--bc-mobile-muted)]">
+                  {formattedDate && (
+                    <span className="flex items-center gap-1">
+                      <CalendarDays aria-hidden="true" className="h-3 w-3 shrink-0" strokeWidth={1.8} />
+                      {formattedDate}
+                    </span>
+                  )}
+                  {location && (
+                    <span className="flex min-w-0 items-center gap-1">
+                      <MapPin aria-hidden="true" className="h-3 w-3 shrink-0" strokeWidth={1.8} />
+                      <span className="truncate">{location}</span>
+                    </span>
+                  )}
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

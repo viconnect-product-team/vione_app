@@ -31,7 +31,7 @@ export function useNetworkNotifications() {
 
   const markAllRead = useCallback(async () => {
     // optimistic
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setItems((prev) => prev.map((n: any) => ({ ...n, read: true })));
     try {
       await GlobalNetworkSDK.notifications.markRead();
     } catch {

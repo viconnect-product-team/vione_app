@@ -186,7 +186,7 @@ export const BusinessCardService = {
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const rows = await BusinessCardRepository.listPublishedPublicSlugs(supabase);
-    return rows.map((r) => ({ slug: r.slug, updatedAt: r.updated_at }));
+    return rows.map((r: any) => ({ slug: r.slug, updatedAt: r.updated_at }));
   },
 
   async listMyCardIds(supabase: SupabaseClient, memberId: string): Promise<string[]> {

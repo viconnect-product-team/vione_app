@@ -144,7 +144,7 @@ describe.skipIf(!canRun)("desktop Business Card RLS scoping (live DB)", () => {
       .select("id, member_id")
       .eq("member_id", A.memberId);
     expect(error).toBeNull();
-    expect((data ?? []).map((r) => r.id)).toContain(A.cardId);
+    expect((data ?? []).map((r: any) => r.id)).toContain(A.cardId);
   });
 
   it("member CANNOT read another association's card (cross-tenant denied)", async () => {
@@ -153,7 +153,7 @@ describe.skipIf(!canRun)("desktop Business Card RLS scoping (live DB)", () => {
       .select("id")
       .eq("id", A.cardId);
     expect(error).toBeNull(); // RLS filters rows, not a hard error
-    expect((data ?? []).map((r) => r.id)).not.toContain(A.cardId);
+    expect((data ?? []).map((r: any) => r.id)).not.toContain(A.cardId);
     expect(data ?? []).toHaveLength(0);
   });
 
@@ -163,7 +163,7 @@ describe.skipIf(!canRun)("desktop Business Card RLS scoping (live DB)", () => {
       .select("id, association_id")
       .eq("association_id", A.assocId);
     expect(error).toBeNull();
-    expect((data ?? []).map((r) => r.id)).toContain(A.cardId);
+    expect((data ?? []).map((r: any) => r.id)).toContain(A.cardId);
   });
 
   it("association admin scoped query never returns another association's cards", async () => {
@@ -184,7 +184,7 @@ describe.skipIf(!canRun)("desktop Business Card RLS scoping (live DB)", () => {
       .in("association_id", (scope as { associationIds: string[] }).associationIds);
     expect(error).toBeNull();
     // B sees only its own card, never A's.
-    const ids = (data ?? []).map((r) => r.id);
+    const ids = (data ?? []).map((r: any) => r.id);
     expect(ids).toContain(B.cardId);
     expect(ids).not.toContain(A.cardId);
   });

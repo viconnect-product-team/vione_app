@@ -147,11 +147,11 @@ export function sanitizeMemory(mem: AiSessionMemory): AiSessionMemory {
       MEMORY_CAPS.recentMessages,
     ),
     recentEntities: dedupeById(
-      mem.recentEntities.map((e) => ({ ...e, label: clampText(e.label) })),
+      mem.recentEntities.map((e: any) => ({ ...e, label: clampText(e.label) })),
       MEMORY_CAPS.recentEntities,
     ),
     recentResults: dedupeById(
-      mem.recentResults.map((r) => ({
+      mem.recentResults.map((r: any) => ({
         ...r,
         label: clampText(r.label),
         meta: r.meta ? clampText(r.meta) : undefined,

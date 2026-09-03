@@ -703,7 +703,7 @@ describe("BC-7.9B follow-up service — behavioural contract", () => {
       clientRequestId: "req-1",
     });
     expect(b.id).toBe(a.id);
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_created").length).toBe(1);
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_created").length).toBe(1);
   });
 
   it("rejects empty and oversized titles", async () => {
@@ -760,7 +760,7 @@ describe("BC-7.9B follow-up service — behavioural contract", () => {
     });
     expect(u.version).toBe(2);
     expect(u.priority).toBe("urgent");
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_updated").length).toBe(1);
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_updated").length).toBe(1);
   });
 
   it("stale update → VERSION_CONFLICT (one wins)", async () => {
@@ -829,8 +829,8 @@ describe("BC-7.9B follow-up service — behavioural contract", () => {
     });
     expect(d.status).toBe("completed");
     expect(d.completedAt).not.toBeNull();
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_started").length).toBe(1);
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_completed").length).toBe(
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_started").length).toBe(1);
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_completed").length).toBe(
       1,
     );
   });
@@ -895,7 +895,7 @@ describe("BC-7.9B follow-up service — behavioural contract", () => {
       targetStatus: "completed",
     });
     expect(d2.version).toBe(d.version);
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_completed").length).toBe(
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_completed").length).toBe(
       1,
     );
   });
@@ -915,7 +915,7 @@ describe("BC-7.9B follow-up service — behavioural contract", () => {
       expectedVersion: c1.version,
     });
     expect(c2.version).toBe(c1.version);
-    expect(h.events.filter((e) => e.type === "business_meeting_follow_up_cancelled").length).toBe(
+    expect(h.events.filter((e: any) => e.type === "business_meeting_follow_up_cancelled").length).toBe(
       1,
     );
   });

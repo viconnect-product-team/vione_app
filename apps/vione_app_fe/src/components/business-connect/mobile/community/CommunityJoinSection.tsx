@@ -106,7 +106,7 @@ export function CommunityJoinSection() {
         {t("bc.mobile.community.join.section")}
       </h2>
       <ul className="mt-3 space-y-3">
-        {suggestions.map((c) => (
+        {suggestions.map((c: any) => (
           <li
             key={c.communityId}
             className="flex items-center gap-3.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5"

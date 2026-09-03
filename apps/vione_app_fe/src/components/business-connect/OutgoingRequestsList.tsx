@@ -11,7 +11,7 @@ export function OutgoingRequestsList() {
   const q = useOutgoingRequests();
   const cancel = useCancelRequest();
   const userIds = useMemo(
-    () => (q.data ?? []).map((r) => r.recipient.userId!).filter(Boolean),
+    () => (q.data ?? []).map((r: any) => r.recipient.userId!).filter(Boolean),
     [q.data],
   );
   const counterparts = useCounterparts(userIds);
@@ -46,7 +46,7 @@ export function OutgoingRequestsList() {
   }
   return (
     <ul role="list" className="flex flex-col gap-3" data-testid="bc-outgoing-list">
-      {rows.map((r) => {
+      {rows.map((r: any) => {
         const cp = counterparts.data?.get(r.recipient.userId ?? "");
         return (
           <li

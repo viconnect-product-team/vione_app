@@ -196,7 +196,7 @@ export function MemberActivityFeed({
       });
     }
 
-    const visible = isAdmin ? list : list.filter((e) => !e.adminOnly);
+    const visible = isAdmin ? list : list.filter((e: any) => !e.adminOnly);
     visible.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return visible;
   }, [member, reviews, products, interactions, isAdmin, t, fmt, onSelectInteraction]);
@@ -292,7 +292,7 @@ export function MemberActivityFeed({
           <HighlightChip
             icon={ArrowUpRight}
             label={t("m360.feed.hl.topCategory")}
-            value={t(catLabel[highlights.topCat])}
+            value={t((catLabel as any)[highlights.topCat])}
           />
         )}
         {highlights.recentOpp && (
@@ -318,14 +318,14 @@ export function MemberActivityFeed({
           onClick={() => changeFilter("all")}
           label={`${t("mdetail.activity.filterAll")} (${items.length})`}
         />
-        {presentCategories.map((c) => {
+        {presentCategories.map((c: any) => {
           const n = items.filter((i) => i.category === c).length;
           return (
             <FilterChip
               key={c}
               active={filter === c}
               onClick={() => changeFilter(c)}
-              label={`${t(catLabel[c])} (${n})`}
+              label={`${t((catLabel as any)[c])} (${n})`}
             />
           );
         })}
@@ -338,19 +338,19 @@ export function MemberActivityFeed({
         </p>
       ) : (
         <ol className="relative space-y-4 border-l border-border pl-6">
-          {filtered.map((e) => {
+          {filtered.map((e: any) => {
             const Icon = e.icon;
             return (
               <li key={e.id} className="relative">
                 <span
-                  className={`absolute -left-[31px] grid h-7 w-7 place-items-center rounded-full border ${toneRing[e.tone]}`}
+                  className={`absolute -left-[31px] grid h-7 w-7 place-items-center rounded-full border ${(toneRing as any)[e.tone]}`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                 </span>
                 <div className="rounded-xl border border-border bg-secondary/30 p-3 transition hover:border-primary/40 hover:bg-secondary/50">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                      {t(catLabel[e.category])}
+                      {t((catLabel as any)[e.category])}
                     </span>
                     <span className="text-sm font-semibold text-foreground">{e.title}</span>
                     {e.adminOnly && (

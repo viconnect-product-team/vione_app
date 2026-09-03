@@ -247,7 +247,7 @@ function ActivateIdentityPage() {
             </p>
 
             <div className="mt-5 flex gap-2" aria-hidden="true">
-              {[1, 2].map((n) => (
+              {[1, 2].map((n: any) => (
                 <span
                   key={n}
                   className="h-1.5 flex-1 rounded-full"

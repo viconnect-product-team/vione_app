@@ -503,7 +503,7 @@ describe("bounded mutation invalidation (exact keys, never global)", () => {
       await result.current.register.mutateAsync();
     });
 
-    const invalidated = spy.mock.calls.map((c) => keyOf(c[0]?.queryKey as readonly unknown[]));
+    const invalidated = spy.mock.calls.map((c: any) => keyOf(c[0]?.queryKey as readonly unknown[]));
     expect(new Set(invalidated)).toEqual(
       new Set([
         keyOf(communityActivityKeys.event("user-a", COMMUNITY_A, EVENT_X)),
@@ -535,7 +535,7 @@ describe("bounded mutation invalidation (exact keys, never global)", () => {
       await result.current.interest.mutateAsync("high");
     });
 
-    const invalidated = spy.mock.calls.map((c) => keyOf(c[0]?.queryKey as readonly unknown[]));
+    const invalidated = spy.mock.calls.map((c: any) => keyOf(c[0]?.queryKey as readonly unknown[]));
     expect(new Set(invalidated)).toEqual(
       new Set([
         keyOf(communityActivityKeys.opportunity("user-a", COMMUNITY_A, OPP_Y)),

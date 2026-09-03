@@ -38,7 +38,7 @@ export const getDemoAvailability = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const taken = (rows ?? [])
       .filter((r) => r.preferred_date && r.preferred_slot)
-      .map((r) => `${r.preferred_date}|${String(r.preferred_slot).slice(0, 5)}`);
+      .map((r: any) => `${r.preferred_date}|${String(r.preferred_slot).slice(0, 5)}`);
     return { taken: Array.from(new Set(taken)) };
   });
 

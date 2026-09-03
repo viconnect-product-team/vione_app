@@ -139,17 +139,17 @@ export function ConnectAppSignIn({
 
         {/* Brand & Welcome Header */}
         <div className="mt-6 flex flex-col items-center justify-center text-center">
-          <ViOneLogo className="h-9 w-auto" />
-          <div className="mt-1.5 text-[9px] font-medium tracking-[0.32em]" style={{ color: GOLD }}>
+          <ViOneLogo className="h-11 sm:h-13 w-auto transition-transform hover:scale-105 duration-300" />
+          <div className="mt-2 text-[10px] font-medium tracking-[0.32em]" style={{ color: GOLD }}>
             BUSINESS CONNECT
           </div>
           <h1
-            className="mt-4 font-serif text-[28px] font-bold leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
+            className="mt-4 font-serif text-[28px] sm:text-[32px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
           >
             {t("bc.mobile.auth.welcome")}
           </h1>
           <p
-            className="mx-auto mt-2 max-w-[19rem] text-center text-[14px] leading-snug font-normal tracking-[0.02em]"
+            className="mx-auto mt-2 max-w-[19rem] text-center text-[14px] leading-snug font-light tracking-[0.02em]"
             style={{ color: "#D4C3A3" }}
           >
             {t("bc.mobile.auth.subtitle")}
@@ -363,17 +363,18 @@ export function ConnectAppSignIn({
           <button
             type="submit"
             disabled={busy}
-            className="luxury-btn relative flex h-12 w-full items-center justify-center rounded-xl border text-[17px] font-semibold transition-all backdrop-blur-md hover:shadow-[0_0_15px_rgba(253,230,180,0.15)]"
+            className="relative flex h-12 w-full items-center justify-center rounded-xl text-[17px] font-semibold text-[#1b1206] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50"
             style={{
-              border: "1px solid transparent",
-              backgroundImage: "linear-gradient(rgba(18,17,15,0.45), rgba(18,17,15,0.45)), linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-              backgroundOrigin: "border-box",
-              backgroundClip: "padding-box, border-box",
-              color: "#E2D3B3",
+              background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
+              boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
             }}
           >
-            {loading ? t("bc.mobile.auth.processing") : t("bc.mobile.auth.signIn")}
-            {!loading && <ArrowRight className="luxury-arrow absolute right-6 h-5 w-5" style={{ color: "#E2D3B3" }} aria-hidden="true" />}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("bc.mobile.auth.processing")}
+              </span>
+            ) : t("bc.mobile.auth.signIn")}
+            {!loading && <ArrowRight className="absolute right-6 h-5 w-5 text-[#1b1206]" aria-hidden="true" />}
           </button>
         </form>
 

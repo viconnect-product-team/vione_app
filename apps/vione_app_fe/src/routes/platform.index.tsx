@@ -158,7 +158,7 @@ function PlatformAssociationsPage() {
                 </td>
               </tr>
             ) : (
-              assocs.map((a) => (
+              assocs.map((a: any) => (
                 <tr key={a.id} className="border-b border-border/60 last:border-0">
                   <td className="px-5 py-3 font-medium text-foreground">{a.name}</td>
                   <td className="px-5 py-3 text-muted-foreground">{a.slug ?? "—"}</td>

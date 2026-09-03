@@ -72,7 +72,7 @@ export function RelationshipMemoryExplorer() {
         )
           return false;
         if (filters.sources.length > 0) {
-          const sources = r.citations.map((c) => c.sourceDomain);
+          const sources = r.citations.map((c: any) => c.sourceDomain);
           if (!sources.some((s) => filters.sources.includes(s))) return false;
         }
         if (filters.conflictReview && !r.conflictState.hasConflict) return false;
@@ -172,7 +172,7 @@ export function RelationshipMemoryExplorer() {
             </Card>
           ) : (
             <ul role="list" className="space-y-3" data-testid="memory-search-results">
-              {filtered.map((r) => (
+              {filtered.map((r: any) => (
                 <li key={r.memory.id}>
                   <RelationshipMemorySearchResultCard
                     result={r}

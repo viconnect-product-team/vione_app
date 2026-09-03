@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   type Ctx,
   assertAdmin,
@@ -13,7 +13,7 @@ export type MemberAccountStatus = "none" | "invited" | "active";
 
 // Account status for every member (admin only): none | invited | active.
 export const listMemberAccountStatusesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Record<string, MemberAccountStatus>> => {
     await assertAdmin(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -34,7 +34,7 @@ export const listMemberAccountStatusesFn = createServerFn({ method: "GET" })
 
 // Account status for a single member (admin only).
 export const getMemberAccountStatusFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }): Promise<MemberAccountStatus> => {
     await assertAdmin(context as Ctx);
@@ -69,7 +69,7 @@ export type AccountAuditEntry = {
 
 // List the account-assignment history for a member (admin only).
 export const listMemberAccountAuditFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }): Promise<AccountAuditEntry[]> => {
     await assertAdmin(context as Ctx);
@@ -89,7 +89,7 @@ export const listMemberAccountAuditFn = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as any[]).map((r) => ({
+    return ((rows ?? []) as any[]).map((r: any) => ({
       id: r.id,
       memberId: r.member_id,
       memberName: r.member_name ?? null,

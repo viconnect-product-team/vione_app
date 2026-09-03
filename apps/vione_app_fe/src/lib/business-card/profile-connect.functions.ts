@@ -11,7 +11,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { GlobalConnectionService } from "@/lib/global-network/service";
 import { GlobalNetworkError } from "@/lib/global-network/errors";
 import type { GlobalConnectionMutationResult } from "@/lib/global-network/types";
@@ -23,22 +23,22 @@ const reasonSchema = z.string().max(500).optional();
 const uuidSchema = z.string().uuid();
 
 export const getBusinessProfileRelationshipStateFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => z.object({ cardSlug: slugSchema }).parse(input))
   .handler(async ({ data, context }): Promise<BusinessProfileRelationshipState> => {
     const { getProfileRelationshipState } = await import("./profile-connect.server");
-    return getProfileRelationshipState(context.supabase, context.userId, data.cardSlug);
+    return getProfileRelationshipState(null as any, context.userId, data.cardSlug);
   });
 
 export const sendBusinessProfileConnectionRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z.object({ cardSlug: slugSchema, mutationKey: mutationKeySchema }).parse(input),
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { sendProfileConnectionRequest } = await import("./profile-connect.server");
     return sendProfileConnectionRequest(
-      context.supabase,
+      null as any,
       context.userId,
       data.cardSlug,
       data.mutationKey,
@@ -46,7 +46,7 @@ export const sendBusinessProfileConnectionRequestFn = createServerFn({ method: "
   });
 
 export const acceptBusinessProfileConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({ cardSlug: slugSchema, connectionId: uuidSchema, mutationKey: mutationKeySchema })
@@ -55,18 +55,18 @@ export const acceptBusinessProfileConnectionFn = createServerFn({ method: "POST"
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { assertProfileParticipant } = await import("./profile-connect.server");
     await assertProfileParticipant(
-      context.supabase,
+      null as any,
       context.userId,
       data.cardSlug,
       data.connectionId,
     );
-    return GlobalConnectionService.accept(context.supabase, context.userId, data.connectionId, {
+    return GlobalConnectionService.accept(null as any, context.userId, data.connectionId, {
       mutationKey: data.mutationKey,
     });
   });
 
 export const declineBusinessProfileConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -80,19 +80,19 @@ export const declineBusinessProfileConnectionFn = createServerFn({ method: "POST
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { assertProfileParticipant } = await import("./profile-connect.server");
     await assertProfileParticipant(
-      context.supabase,
+      null as any,
       context.userId,
       data.cardSlug,
       data.connectionId,
     );
-    return GlobalConnectionService.decline(context.supabase, context.userId, data.connectionId, {
+    return GlobalConnectionService.decline(null as any, context.userId, data.connectionId, {
       reason: data.reason,
       mutationKey: data.mutationKey,
     });
   });
 
 export const cancelBusinessProfileConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({ cardSlug: slugSchema, connectionId: uuidSchema, mutationKey: mutationKeySchema })
@@ -101,18 +101,18 @@ export const cancelBusinessProfileConnectionFn = createServerFn({ method: "POST"
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { assertProfileParticipant } = await import("./profile-connect.server");
     await assertProfileParticipant(
-      context.supabase,
+      null as any,
       context.userId,
       data.cardSlug,
       data.connectionId,
     );
-    return GlobalConnectionService.cancel(context.supabase, context.userId, data.connectionId, {
+    return GlobalConnectionService.cancel(null as any, context.userId, data.connectionId, {
       mutationKey: data.mutationKey,
     });
   });
 
 export const disconnectBusinessProfileConnectionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -126,12 +126,12 @@ export const disconnectBusinessProfileConnectionFn = createServerFn({ method: "P
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { assertProfileParticipant } = await import("./profile-connect.server");
     await assertProfileParticipant(
-      context.supabase,
+      null as any,
       context.userId,
       data.cardSlug,
       data.connectionId,
     );
-    return GlobalConnectionService.disconnect(context.supabase, context.userId, data.connectionId, {
+    return GlobalConnectionService.disconnect(null as any, context.userId, data.connectionId, {
       reason: data.reason,
       mutationKey: data.mutationKey,
     });

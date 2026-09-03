@@ -113,7 +113,7 @@ export class RelationshipGraphService {
     const nodes = await this.repo.getNodes(page);
     emitGraphTelemetry({ event: "graph_mutuals_queried", count: nodes.length });
     return {
-      items: nodes.map((n) => ({ node: mapNode(n), viaEdgeKinds: q.edgeKinds ?? [] })),
+      items: nodes.map((n: any) => ({ node: mapNode(n), viaEdgeKinds: q.edgeKinds ?? [] })),
       nextCursor: commonIds.length > limit ? "eof" : null,
     };
   }
@@ -149,7 +149,7 @@ export class RelationshipGraphService {
       count: nodes.length,
     });
     return {
-      items: nodes.map((n) => ({ node: mapNode(n), viaEdgeKinds: edgeKinds })),
+      items: nodes.map((n: any) => ({ node: mapNode(n), viaEdgeKinds: edgeKinds })),
       nextCursor: commonIds.length > limit ? "eof" : null,
     };
   }
@@ -216,9 +216,9 @@ export class RelationshipGraphService {
     }
 
     const nodes = await this.repo.getNodes(pathIds);
-    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const byId = new Map(nodes.map((n: any) => [n.id, n]));
     const orderedNodes = pathIds
-      .map((id) => byId.get(id))
+      .map((id: any) => byId.get(id))
       .filter((n): n is NonNullable<typeof n> => Boolean(n));
     if (orderedNodes.length !== pathIds.length) throw graphErr("PATH_NOT_FOUND");
 

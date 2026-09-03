@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type VotingOpenPref = "same" | "new";
 
@@ -23,7 +23,7 @@ const DEFAULTS: AppSettings = {
 };
 
 export const getVotingOpenPrefFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data, error } = await supabase
@@ -36,7 +36,7 @@ export const getVotingOpenPrefFn = createServerFn({ method: "GET" })
   });
 
 export const setVotingOpenPrefFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input) => z.object({ pref: z.enum(["same", "new"]) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -48,7 +48,7 @@ export const setVotingOpenPrefFn = createServerFn({ method: "POST" })
   });
 
 export const clearVotingOpenPrefFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -59,7 +59,7 @@ export const clearVotingOpenPrefFn = createServerFn({ method: "POST" })
   });
 
 export const getSettingsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AppSettings> => {
     const { supabase, userId } = context;
     const { data, error } = await supabase
@@ -80,7 +80,7 @@ export const getSettingsFn = createServerFn({ method: "GET" })
   });
 
 export const saveSettingsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input) =>
     z
       .object({

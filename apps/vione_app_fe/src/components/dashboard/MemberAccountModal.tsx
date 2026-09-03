@@ -420,7 +420,7 @@ export function MemberAccountModal({ memberId, memberName, memberEmail, onClose 
               <div className="text-xs text-muted-foreground">{t("macct.history.empty")}</div>
             ) : (
               <ol className="space-y-2">
-                {audit.map((a) => (
+                {audit.map((a: any) => (
                   <li key={a.id} className="flex gap-2 text-xs">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                     <div className="min-w-0">

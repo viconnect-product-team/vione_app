@@ -1,36 +1,40 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+/**
+ * current-member.ts
+ * Resolve thông tin member của user hiện tại qua NestJS API.
+ * Không dùng Supabase.
+ */
+import { fetchNestApiFromServer } from "./api-client";
 
 /**
- * Resolve the current authenticated user's member id (text) server-side.
- * Uses the security-definer `current_member_id()` function so identity is
- * derived from the JWT (auth.uid()) — never from client-supplied input.
+ * Resolve member ID của user hiện tại (server-side).
+ * Gọi GET /api/members/me — NestJS trả về member record của user đang login.
+ * Throws nếu user chưa có member profile.
  */
-export async function resolveMemberId(supabase: SupabaseClient): Promise<string> {
-  const { data, error } = await supabase.rpc("current_member_id");
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Tài khoản chưa được liên kết hồ sơ hội viên.");
-  return data as unknown as string;
+export async function resolveMemberId(token: string | any): Promise<string> {
+  const data = await fetchNestApiFromServer("/members/me", token) as any;
+  if (!data?.id) throw new Error("Tài khoản chưa được liên kết hồ sơ hội viên.");
+  return data.id as string;
 }
 
 /**
- * Like {@link resolveMemberId} but returns null when the signed-in user has no
- * linked member profile, instead of throwing. Use for read paths that should
- * degrade gracefully (e.g. showing an empty interaction history).
+ * Giống resolveMemberId nhưng trả null thay vì throw khi chưa có member profile.
  */
-export async function resolveMemberIdOrNull(supabase: SupabaseClient): Promise<string | null> {
-  const { data, error } = await supabase.rpc("current_member_id");
-  if (error) throw new Error(error.message);
-  return (data as unknown as string) ?? null;
+export async function resolveMemberIdOrNull(token: string | any): Promise<string | null> {
+  try {
+    const data = await fetchNestApiFromServer("/members/me", token) as any;
+    return data?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Resolve the current authenticated user's active association id (uuid)
- * server-side via the security-definer `current_association_id()` function.
- * Identity comes from the JWT (auth.uid()) — never client input.
+ * Resolve association ID hiện tại của user (server-side).
+ * Gọi GET /api/members/me và lấy association_id.
  */
-export async function resolveAssociationId(supabase: SupabaseClient): Promise<string> {
-  const { data, error } = await supabase.rpc("current_association_id");
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Tài khoản chưa thuộc hiệp hội nào.");
-  return data as unknown as string;
+export async function resolveAssociationId(token: string | any): Promise<string> {
+  const data = await fetchNestApiFromServer("/members/me", token) as any;
+  const assocId = data?.association_id ?? data?.associationId ?? null;
+  if (!assocId) throw new Error("Tài khoản chưa thuộc hiệp hội nào.");
+  return assocId as string;
 }

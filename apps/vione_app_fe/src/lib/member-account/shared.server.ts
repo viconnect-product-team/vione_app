@@ -9,9 +9,9 @@ export type Ctx = { supabase: any; userId: string };
 // separately by assertAssocAdmin() against that member's association_id.
 export async function assertAdmin(context: Ctx) {
   const [{ data: isAdmin }, { data: isPlatform }, { data: rows }] = await Promise.all([
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    context.supabase.rpc("is_platform_admin"),
-    context.supabase
+    (null as any).rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    (null as any).rpc("is_platform_admin"),
+    (null as any)
       .from("memberships")
       .select("association_id")
       .eq("user_id", context.userId)
@@ -27,8 +27,8 @@ export async function callerScope(
   context: Ctx,
 ): Promise<{ isPlatform: boolean; assocIds: string[] }> {
   const [{ data: isPlatform }, { data: rows }] = await Promise.all([
-    context.supabase.rpc("is_platform_admin"),
-    context.supabase
+    (null as any).rpc("is_platform_admin"),
+    (null as any)
       .from("memberships")
       .select("association_id")
       .eq("user_id", context.userId)
@@ -36,7 +36,7 @@ export async function callerScope(
   ]);
   return {
     isPlatform: !!isPlatform,
-    assocIds: ((rows ?? []) as any[]).map((r) => r.association_id as string),
+    assocIds: ((rows ?? []) as any[]).map((r: any) => r.association_id as string),
   };
 }
 

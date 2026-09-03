@@ -185,8 +185,8 @@ export function buildCandidateFromModel(model: OcrModelOutput, scanId: string): 
   if (!model.isBusinessCard) return { ok: false, code: "unusable" };
 
   const lines: OcrLine[] = model.lines
-    .map((l) => ({ text: normalizeText(l.text), confidence: clamp01(l.confidence) }))
-    .filter((l) => l.text.length > 0);
+    .map((l: any) => ({ text: normalizeText(l.text), confidence: clamp01(l.confidence) }))
+    .filter((l: any) => l.text.length > 0);
   if (lines.length === 0) return { ok: false, code: "unusable" };
 
   const warnings: CandidateWarning[] = [];

@@ -370,7 +370,7 @@ describe("BC-9.1 B2b-iii — safe events", () => {
         events.push(evt);
       },
     });
-    const kinds = events.map((e) => e.kind);
+    const kinds = events.map((e: any) => e.kind);
     expect(kinds).toContain("relationship_memory_extraction_started");
     expect(kinds).toContain("relationship_memory_extraction_completed");
     for (const e of events) {

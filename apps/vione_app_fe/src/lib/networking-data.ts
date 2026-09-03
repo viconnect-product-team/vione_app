@@ -21,7 +21,7 @@ let _messages: ChatMessage[] = [];
 export type Listener = () => void;
 const listeners = new Set<Listener>();
 function emit() {
-  listeners.forEach((l) => l());
+  listeners.forEach((l: any) => l());
 }
 export function subscribe(l: Listener) {
   listeners.add(l);

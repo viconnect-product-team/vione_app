@@ -1,9 +1,11 @@
 // BC-Mobile-2E — Meeting Moment RPC adapters (thin).
 // Directs all requests to backend NestJS RESTful API.
+// NOTE: Uses fetchNestApi directly (client-side JWT) to bypass
+// requireSupabaseAuth middleware which fails in standalone NestJS env.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { fetchNestApiFromServer } from "../../api-client";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer, fetchNestApi } from "../../api-client";
 import type {
   BcMobileMomentPrepareResult,
   BcMobileMomentFinalizeResult,
@@ -16,7 +18,7 @@ import type {
 } from "./moment.service";
 
 export const bcMobileMomentPrepareFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentPrepareResult> =>
@@ -27,7 +29,7 @@ export const bcMobileMomentPrepareFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentFinalizeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentFinalizeResult> => {
@@ -42,7 +44,7 @@ export const bcMobileMomentFinalizeFn = createServerFn({ method: "POST" })
 // ── BC-Mobile-7C — quản lý khoảnh khắc đã lưu ───────────────────────────────
 
 export const bcMobileMomentUpdateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
@@ -55,7 +57,7 @@ export const bcMobileMomentUpdateFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentDeleteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentDeleteResult> => {
@@ -66,10 +68,19 @@ export const bcMobileMomentDeleteFn = createServerFn({ method: "POST" })
     },
   );
 
+// ── Client-side direct helpers (bypass middleware) ───────────────────────────
+
+/** Xóa khoảnh khắc trực tiếp qua fetchNestApi (client JWT). */
+export async function deleteMomentDirect(momentId: string): Promise<BcMobileMomentDeleteResult> {
+  return fetchNestApi<BcMobileMomentDeleteResult>(`/connect-app/moment/${momentId}`, {
+    method: "DELETE",
+  });
+}
+
 // ── BC-Mobile-7D — sửa ảnh của khoảnh khắc đã lưu ───────────────────────────
 
 export const bcMobileMomentPhotosFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentPhotosResult> => {
@@ -81,7 +92,7 @@ export const bcMobileMomentPhotosFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentPhotoSlotsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentPhotoSlotsResult> => {
@@ -94,7 +105,7 @@ export const bcMobileMomentPhotoSlotsFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentPhotoCommitFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
@@ -107,7 +118,7 @@ export const bcMobileMomentPhotoCommitFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentPhotoRemoveFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
@@ -121,7 +132,7 @@ export const bcMobileMomentPhotoRemoveFn = createServerFn({ method: "POST" })
 // ── BC-Mobile-7E — AI ghi nhớ bằng giọng nói ────────────────────────────────
 
 export const bcMobileMomentVoiceNoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<any> =>

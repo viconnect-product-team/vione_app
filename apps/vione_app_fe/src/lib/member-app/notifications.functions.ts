@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { relTime } from "./shared";
 import { resolveMemberId } from "@/lib/current-member";
 
@@ -40,9 +40,9 @@ const leadPriority = (status: LeadWorkflowStatus | null, unread: boolean): Notif
 
 // ---------- Notifications ----------
 export const listMyNotifications = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyNotification[]> => {
-    const { data } = await context.supabase
+    const { data } = await (null as any)
       .from("notifications")
       .select("*")
       .eq("status", "sent")
@@ -55,12 +55,12 @@ export const listMyNotifications = createServerFn({ method: "GET" })
       return "system";
     };
     // Per-user broadcast dismissals (synced across devices via backend).
-    const { data: dismissedRows } = await context.supabase
+    const { data: dismissedRows } = await (null as any)
       .from("broadcast_notification_dismissals")
       .select("notification_id");
-    const dismissedIds = new Set((dismissedRows ?? []).map((r) => r.notification_id));
+    const dismissedIds = new Set((dismissedRows ?? []).map((r: any) => r.notification_id));
 
-    const broadcast: MyNotification[] = (data ?? []).map((n) => ({
+    const broadcast: MyNotification[] = (data ?? []).map((n: any) => ({
       id: n.id,
       title: n.title,
       body: n.body,
@@ -75,7 +75,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
 
     // Personal (per-member) notifications, e.g. connection accept/decline, leads.
     // Include dismissed rows so the client can render the "Hidden" filter tab.
-    const { data: personal } = await context.supabase
+    const { data: personal } = await (null as any)
       .from("member_notifications")
       .select("*")
       .order("created_at", { ascending: false });
@@ -86,12 +86,12 @@ export const listMyNotifications = createServerFn({ method: "GET" })
       new Set(
         (personal ?? [])
           .filter((n) => n.ref_type === "business_card_lead" && n.ref_id)
-          .map((n) => n.ref_id as string),
+          .map((n: any) => n.ref_id as string),
       ),
     );
     const leadStatusMap = new Map<string, LeadWorkflowStatus>();
     if (leadIds.length > 0) {
-      const { data: leads } = await context.supabase
+      const { data: leads } = await (null as any)
         .from("business_card_leads")
         .select("id, status")
         .in("id", leadIds);
@@ -100,7 +100,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
       }
     }
 
-    const personalMapped: MyNotification[] = (personal ?? []).map((n) => {
+    const personalMapped: MyNotification[] = (personal ?? []).map((n: any) => {
       const isLead = n.type === "business_card_lead" && !!n.ref_id;
       const isRenewalFailure = n.type === "renewal_failure";
       const leadStatus = isLead ? (leadStatusMap.get(n.ref_id as string) ?? "new") : null;
@@ -139,25 +139,25 @@ export const listMyNotifications = createServerFn({ method: "GET" })
 const bulkIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
 
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data, error } = await (null as any)
       .from("member_notifications")
       .update({ read: true })
       .eq("recipient_id", memberId)
       .eq("read", false)
       .select("id");
     if (error) throw new Error(error.message);
-    return { marked: (data ?? []).length, ids: (data ?? []).map((r) => r.id) };
+    return { marked: (data ?? []).length, ids: (data ?? []).map((r: any) => r.id) };
   });
 
 export const unmarkAllNotificationsReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => bulkIdsSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ read: false })
       .eq("recipient_id", memberId)
@@ -170,11 +170,11 @@ export const unmarkAllNotificationsReadFn = createServerFn({ method: "POST" })
 const markReadSchema = z.object({ id: z.string().uuid() });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ read: true })
       .eq("id", data.id)
@@ -186,11 +186,11 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
   });
 
 export const dismissNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ dismissed: true, read: true })
       .eq("id", data.id)
@@ -201,25 +201,25 @@ export const dismissNotificationFn = createServerFn({ method: "POST" })
   });
 
 export const dismissAllNotificationsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ dismissed: true, read: true })
       .eq("recipient_id", memberId)
       .eq("dismissed", false)
       .select("id");
     if (error) throw new Error(error.message);
-    return { dismissed: (rows ?? []).length, ids: (rows ?? []).map((r) => r.id) };
+    return { dismissed: (rows ?? []).length, ids: (rows ?? []).map((r: any) => r.id) };
   });
 
 export const restoreAllPersonalNotificationsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => bulkIdsSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ dismissed: false })
       .eq("recipient_id", memberId)
@@ -238,12 +238,12 @@ const dismissBroadcastSchema = z.object({ ids: z.array(z.string().uuid()).min(1)
  * JWT (auth.uid()) via RLS — client cannot dismiss on behalf of others.
  */
 export const dismissBroadcastNotificationsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => dismissBroadcastSchema.parse(data))
   .handler(async ({ context, data }) => {
     const userId = context.userId;
     const rows = data.ids.map((notification_id) => ({ user_id: userId, notification_id }));
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("broadcast_notification_dismissals")
       .upsert(rows, { onConflict: "user_id,notification_id", ignoreDuplicates: true });
     if (error) throw new Error(error.message);
@@ -252,11 +252,11 @@ export const dismissBroadcastNotificationsFn = createServerFn({ method: "POST" }
 
 // ---------- Undo dismissal ----------
 export const restoreNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: rows, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: rows, error } = await (null as any)
       .from("member_notifications")
       .update({ dismissed: false })
       .eq("id", data.id)
@@ -267,11 +267,11 @@ export const restoreNotificationFn = createServerFn({ method: "POST" })
   });
 
 export const restoreBroadcastNotificationsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => dismissBroadcastSchema.parse(data))
   .handler(async ({ context, data }) => {
     const userId = context.userId;
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("broadcast_notification_dismissals")
       .delete()
       .eq("user_id", userId)

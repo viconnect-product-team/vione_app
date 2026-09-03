@@ -129,8 +129,8 @@ export function orderRelationshipActions(
   preferredAction: "call" | "email" | null,
 ): RelationshipActionItem[] {
   if (actions.length < 2) return [...actions];
-  const contacts = actions.filter((a) => a.kind === "call" || a.kind === "email");
-  const moment = actions.filter((a) => a.kind === "save_meeting_moment");
+  const contacts = actions.filter((a: any) => a.kind === "call" || a.kind === "email");
+  const moment = actions.filter((a: any) => a.kind === "save_meeting_moment");
   const others = actions.filter(
     (a) => a.kind !== "call" && a.kind !== "email" && a.kind !== "save_meeting_moment",
   );

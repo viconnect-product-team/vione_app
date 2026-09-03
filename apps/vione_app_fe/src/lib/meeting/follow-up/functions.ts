@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { MeetingFollowUpService } from "./service.server";
 import { MeetingFollowUpError } from "./errors";
 import {
@@ -81,7 +81,7 @@ async function loadCtx(
 }
 
 export const listMeetingFollowUpsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -90,7 +90,7 @@ export const listMeetingFollowUpsFn = createServerFn({ method: "POST" })
   });
 
 export const createMeetingFollowUpFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -118,7 +118,7 @@ async function loadCtxByFollowUp(sb: any, followUpId: string, userId: string) {
 }
 
 export const updateMeetingFollowUpFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -137,7 +137,7 @@ export const updateMeetingFollowUpFn = createServerFn({ method: "POST" })
   });
 
 export const setMeetingFollowUpStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => setStatusSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;
@@ -150,7 +150,7 @@ export const setMeetingFollowUpStatusFn = createServerFn({ method: "POST" })
   });
 
 export const cancelMeetingFollowUpFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => cancelSchema.parse(d))
   .handler(async ({ context, data }) => {
     const c = context as unknown as Ctx;

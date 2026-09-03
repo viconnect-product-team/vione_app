@@ -44,7 +44,7 @@ function ConnectionsPage() {
         card.targetCardId,
         !card.favorite,
       );
-      patch(list.map((c) => (c.id === card.id ? { ...c, favorite: updated.favorite } : c)));
+      patch(list.map((c: any) => (c.id === card.id ? { ...c, favorite: updated.favorite } : c)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error");
     } finally {
@@ -67,7 +67,7 @@ function ConnectionsPage() {
   async function saveNote(card: SavedCard, notes: string) {
     try {
       const updated = await BusinessCardSDK.relationships.setNote(card.targetCardId, notes || null);
-      patch(list.map((c) => (c.id === card.id ? { ...c, notes: updated.notes } : c)));
+      patch(list.map((c: any) => (c.id === card.id ? { ...c, notes: updated.notes } : c)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error");
     }

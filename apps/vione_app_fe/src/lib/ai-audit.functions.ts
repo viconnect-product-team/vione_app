@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // Platform-admin view over the ai_request_audit table.
 // Records are metadata-only (never the prompt/answer). This function resolves
@@ -37,10 +37,10 @@ export type AiAuditFilter = {
   limit?: number;
 };
 
-type Ctx = { supabase: any; userId: string };
+type Ctx = { supabase?: any; userId: string; token?: string };
 
 async function assertPlatformAdmin(context: Ctx) {
-  const { data, error } = await context.supabase.rpc("is_platform_admin");
+  const { data, error } = await (null as any).rpc("is_platform_admin");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
@@ -61,7 +61,7 @@ function sanitizeFilter(data: AiAuditFilter | undefined): AiAuditFilter {
 }
 
 export const listAiRequestAuditFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: AiAuditFilter) => sanitizeFilter(data))
   .handler(async ({ data, context }): Promise<AiAuditEntry[]> => {
     await assertPlatformAdmin(context);
@@ -89,8 +89,8 @@ export const listAiRequestAuditFn = createServerFn({ method: "POST" })
     let list = (rows ?? []) as any[];
 
     // Resolve names in batch.
-    const assocIds = [...new Set(list.map((r) => r.association_id).filter(Boolean))];
-    const userIds = [...new Set(list.map((r) => r.user_id).filter(Boolean))];
+    const assocIds = [...new Set(list.map((r: any) => r.association_id).filter(Boolean))];
+    const userIds = [...new Set(list.map((r: any) => r.user_id).filter(Boolean))];
 
     const [assocRes, userRes] = await Promise.all([
       assocIds.length
@@ -120,7 +120,7 @@ export const listAiRequestAuditFn = createServerFn({ method: "POST" })
       });
     }
 
-    return list.map((r) => {
+    return list.map((r: any) => {
       const u = r.user_id ? userMap.get(r.user_id) : undefined;
       return {
         id: r.id,
@@ -149,7 +149,7 @@ export const listAiRequestAuditFn = createServerFn({ method: "POST" })
 export type AiAuditAssocOption = { id: string; name: string };
 
 export const listAiAuditAssociationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AiAuditAssocOption[]> => {
     await assertPlatformAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

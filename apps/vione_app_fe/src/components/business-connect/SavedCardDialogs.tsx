@@ -146,7 +146,7 @@ export function SavedCardTagsDialog({
   }
 
   function remove(tg: string) {
-    setTags((prev) => prev.filter((x) => x !== tg));
+    setTags((prev) => prev.filter((x: any) => x !== tg));
   }
 
   const chips = (suggestions ?? []).filter((s) => !normalizedSet.has(normalizeTagName(s)));
@@ -269,7 +269,7 @@ export function SavedCardMoveDialog({
           >
             {t("sc.collections.uncategorized")}
           </button>
-          {collections.map((c) => (
+          {collections.map((c: any) => (
             <button
               key={c.id}
               type="button"

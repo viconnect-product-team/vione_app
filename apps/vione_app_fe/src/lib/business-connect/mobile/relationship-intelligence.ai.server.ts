@@ -98,7 +98,7 @@ export function buildWordingPrompt(input: RelationshipWordingInput): Record<stri
 const FORBIDDEN_TEXT = /(https?:|www\.|<[^>]*>|[`*#|[\]]|!\[)/;
 
 export function extractNumbers(text: string): number[] {
-  return (text.match(/\d+/g) ?? []).map((n) => Number.parseInt(n, 10));
+  return (text.match(/\d+/g) ?? []).map((n: any) => Number.parseInt(n, 10));
 }
 
 /** Grounding: every number must equal the supplied value; no structure chars. */

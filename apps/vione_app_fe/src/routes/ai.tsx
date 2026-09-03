@@ -350,7 +350,7 @@ function AiAssistantPage() {
             recentSources: allowed
               ? [
                   ...prev.recentSources,
-                  ...structured.evidence.map((e) => ({
+                  ...structured.evidence.map((e: any) => ({
                     id: e.id,
                     title: e.title,
                     capability: capId,
@@ -763,7 +763,7 @@ function AiAssistantPage() {
                       Kết quả gần đây
                     </p>
                     <ul className="space-y-0.5">
-                      {memory.recentResults.slice(-5).map((r) => (
+                      {memory.recentResults.slice(-5).map((r: any) => (
                         <li key={r.id} className="truncate text-[12px] text-foreground">
                           • {r.label}
                           {r.meta ? (
@@ -1056,7 +1056,7 @@ function MessageBubble({
                     </p>
                   ) : (
                     <ul className="space-y-1.5">
-                      {s.evidence.map((e) => (
+                      {s.evidence.map((e: any) => (
                         <li
                           key={e.id}
                           className="rounded-lg border border-border/70 bg-card px-3 py-2"
@@ -1123,7 +1123,7 @@ function MessageBubble({
                 {s.actions.length > 0 && (
                   <Section icon={ArrowRight} title="Hành động gợi ý">
                     <div className="flex flex-wrap gap-2">
-                      {s.actions.map((a) => {
+                      {s.actions.map((a: any) => {
                         if (a.route) {
                           return (
                             <Link
@@ -1204,7 +1204,7 @@ function MessageBubble({
                 {s.relatedModules.length > 0 && (
                   <Section icon={Layers} title="Mô-đun liên quan">
                     <div className="flex flex-wrap gap-2">
-                      {s.relatedModules.map((r) => (
+                      {s.relatedModules.map((r: any) => (
                         <Link
                           key={r.to + r.label}
                           to={r.to}

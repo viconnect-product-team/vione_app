@@ -584,7 +584,7 @@ function DocsPage() {
               aria-label={t("doc.col.cat")}
               className={selectClass}
             >
-              {cats.map((c) => (
+              {cats.map((c: any) => (
                 <option key={c} value={c}>
                   {c === "all" ? t("common.allCategories") : c}
                 </option>
@@ -596,7 +596,7 @@ function DocsPage() {
               aria-label={t("doc.filter.type")}
               className={selectClass}
             >
-              {types.map((c) => (
+              {types.map((c: any) => (
                 <option key={c} value={c}>
                   {c === "all" ? t("doc.filter.allTypes") : c.toUpperCase()}
                 </option>
@@ -609,7 +609,7 @@ function DocsPage() {
                 aria-label={t("doc.filter.owner")}
                 className={selectClass}
               >
-                {owners.map((c) => (
+                {owners.map((c: any) => (
                   <option key={c} value={c}>
                     {c === "all" ? t("doc.filter.allOwners") : c}
                   </option>

@@ -373,7 +373,7 @@ function BusinessCardsScreen() {
                       {t("bc.filter.empty")}
                     </div>
                   ) : (
-                    filtered.map((c) => (
+                    filtered.map((c: any) => (
                       <CardRow
                         key={c.id}
                         card={c}
@@ -1273,7 +1273,7 @@ function LeadReplyBlock({
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {(["email", "phone", "note"] as ReplyChannel[]).map((c) => (
+            {(["email", "phone", "note"] as ReplyChannel[]).map((c: any) => (
               <button
                 key={c}
                 onClick={() => setChannel(c)}

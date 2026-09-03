@@ -40,7 +40,7 @@ export const SavedCardTagService = {
       SavedCardTagRepository.listByOwner(supabase, userId),
       SavedCardTagRepository.tagCounts(supabase, userId),
     ]);
-    return rows.map((r) => mapRowToTag(r, counts[r.id as string] ?? 0));
+    return rows.map((r: any) => mapRowToTag(r, counts[r.id as string] ?? 0));
   },
 
   /** Create (or return existing) a tag by name. Idempotent on normalized name. */
@@ -96,7 +96,7 @@ export const SavedCardTagService = {
     const set = new Set(ids);
     return all
       .filter((r) => set.has(r.id as string))
-      .map((r) => mapRowToTag(r, counts[r.id as string] ?? 0));
+      .map((r: any) => mapRowToTag(r, counts[r.id as string] ?? 0));
   },
 
   /**
@@ -114,7 +114,7 @@ export const SavedCardTagService = {
     const wanted = Array.from(
       new Map(
         names
-          .map((n) => normalizeTagName(n))
+          .map((n: any) => normalizeTagName(n))
           .filter(Boolean)
           .map((norm, i) => [norm, names[i].trim().slice(0, 60)]),
       ),

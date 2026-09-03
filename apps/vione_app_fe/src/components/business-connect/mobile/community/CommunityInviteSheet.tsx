@@ -333,7 +333,7 @@ function CommunityInviteEmailPanel({
           {t("bc.mobile.community.invite.email.roleLabel")}
         </legend>
         <div className="mt-1.5 flex gap-2">
-          {(canAssignAdmin ? (["member", "admin"] as const) : (["member"] as const)).map((r) => (
+          {(canAssignAdmin ? (["member", "admin"] as const) : (["member"] as const)).map((r: any) => (
             <button
               key={r}
               type="button"
@@ -459,7 +459,7 @@ function CommunityInviteEmailPanel({
                     {t("bc.mobile.community.invite.list.roleTitle")}
                   </span>
                   <div className="flex flex-1 gap-1.5">
-                    {(["member", "admin"] as const).map((r) => (
+                    {(["member", "admin"] as const).map((r: any) => (
                       <button
                         key={r}
                         type="button"
@@ -770,7 +770,7 @@ function InviteRoleHistory({ inviteRef }: { inviteRef: string }) {
           </p>
         ) : (
           <ul className="mt-2 space-y-1.5 border-l border-[var(--bc-mobile-border)] pl-3">
-            {entries.map((entry) => (
+            {entries.map((entry: any) => (
               <li key={entry.eventRef} className="text-[12px] text-[var(--bc-mobile-muted)]">
                 <span className="text-[var(--bc-mobile-text)]">
                   {t(`bc.mobile.community.role.${entry.oldRole}` as never)} →{" "}

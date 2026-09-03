@@ -203,7 +203,7 @@ function MyPermissionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(myAssocs ?? []).map((a) => (
+                {(myAssocs ?? []).map((a: any) => (
                   <tr
                     key={a.associationId}
                     className="border-b border-border last:border-0 hover:bg-secondary/30"

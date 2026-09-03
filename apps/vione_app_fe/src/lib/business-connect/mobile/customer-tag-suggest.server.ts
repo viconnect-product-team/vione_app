@@ -80,8 +80,8 @@ export async function suggestCustomerTags(input: {
     `Công ty: ${input.companyName || "(không rõ)"}`,
     `Giai đoạn: ${input.stageLabel}`,
     `Ghi chú: ${input.note || "(trống)"}`,
-    `Lịch sử chăm sóc:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join("\n") : "(trống)"}`,
-    `Điểm đau & nhu cầu:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join("\n") : "(trống)"}`,
+    `Lịch sử chăm sóc:\n${input.logs.length ? input.logs.map((l: any) => `- ${l}`).join("\n") : "(trống)"}`,
+    `Điểm đau & nhu cầu:\n${input.needs.length ? input.needs.map((n: any) => `- ${n}`).join("\n") : "(trống)"}`,
     `Nhãn đã gắn: ${input.currentTagNames.join(", ") || "(chưa có)"}`,
     `Danh mục nhãn hiện có: ${input.existingTagNames.join(", ") || "(chưa có)"}`,
     `Nhãn người dùng đánh giá ĐÚNG trước đây: ${(input.approvedTagNames ?? []).join(", ") || "(chưa có)"}`,
@@ -121,8 +121,8 @@ export async function suggestCustomerTags(input: {
     const parsed = parseSuggestions(content);
     if (parsed.length === 0) return { ok: false, error: "unavailable" };
 
-    const existing = new Set(input.existingTagNames.map((n) => n.toLowerCase()));
-    const already = new Set(input.currentTagNames.map((n) => n.toLowerCase()));
+    const existing = new Set(input.existingTagNames.map((n: any) => n.toLowerCase()));
+    const already = new Set(input.currentTagNames.map((n: any) => n.toLowerCase()));
     const seen = new Set<string>();
     const suggestions: TagSuggestion[] = [];
     for (const s of parsed) {

@@ -33,11 +33,11 @@ function projectPage(
   let out = rows.map(toRelationshipTimelineDTO);
   if (categories && categories.length > 0) {
     const set = new Set(categories);
-    out = out.filter((e) => set.has(e.eventCategory));
+    out = out.filter((e: any) => set.has(e.eventCategory));
   }
   if (sources && sources.length > 0) {
     const set = new Set(sources);
-    out = out.filter((e) => set.has(e.sourceDomain));
+    out = out.filter((e: any) => set.has(e.sourceDomain));
   }
   return out;
 }

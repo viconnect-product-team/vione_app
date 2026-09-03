@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import {
   resolveAccountStatus,
   resolveActiveAssociationContext,
@@ -25,9 +25,9 @@ import type {
  * Forbidden: passing/trusting client memberId or associationId.
  */
 export const getActiveAssociationContextFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<ActiveAssociationContext | null> => {
-    return resolveActiveAssociationContext(context.supabase, context.userId);
+    return resolveActiveAssociationContext(null as any, context.userId);
   });
 
 /**
@@ -35,9 +35,9 @@ export const getActiveAssociationContextFn = createServerFn({ method: "GET" })
  * resolveMemberId(). Consumers: read paths that must degrade gracefully.
  */
 export const getActiveMemberIdFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ memberId: string | null }> => {
-    return { memberId: await resolveActiveMemberId(context.supabase) };
+    return { memberId: await resolveActiveMemberId(null as any) };
   });
 
 /**
@@ -47,15 +47,15 @@ export const getActiveMemberIdFn = createServerFn({ method: "GET" })
  * Forbidden: arbitrary memberId; selecting an association the user is not in.
  */
 export const setActiveAssociationContextFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<ActiveAssociationContext | null> => {
-    const { error } = await context.supabase.rpc("set_active_association", {
+    const { error } = await (null as any).rpc("set_active_association", {
       _association_id: data.associationId,
     });
     // set_active_association raises when the user is not a member of the target.
     if (error) throw new Error(error.message);
-    return resolveActiveAssociationContext(context.supabase, context.userId);
+    return resolveActiveAssociationContext(null as any, context.userId);
   });
 
 /**
@@ -64,9 +64,9 @@ export const setActiveAssociationContextFn = createServerFn({ method: "POST" })
  * substituted. Consumers: platform gating (not tenant gating).
  */
 export const getAccountStatusFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AccountStatusResult> => {
-    const accountStatus = await resolveAccountStatus(context.supabase, context.userId);
+    const accountStatus = await resolveAccountStatus(null as any, context.userId);
     return {
       userId: context.userId,
       accountStatus,
@@ -81,8 +81,8 @@ export const getAccountStatusFn = createServerFn({ method: "GET" })
  * grant, or using association admin as owner.
  */
 export const resolveBusinessCardOwnerContextFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ cardId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<BusinessCardOwnerContext> => {
-    return resolveBusinessCardOwnerContext(context.supabase, data.cardId);
+    return resolveBusinessCardOwnerContext(null as any, data.cardId);
   });

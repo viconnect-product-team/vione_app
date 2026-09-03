@@ -75,7 +75,7 @@ export function extractMeetingOutcomeCommitments(
   const lines = dto.summary
     .split(/\n+/)
     .map(normalizeWhitespace)
-    .filter((l) => l.length > 0);
+    .filter((l: any) => l.length > 0);
   const out: RelationshipMemoryCandidate[] = [];
   for (const line of lines) {
     const m = COMMITMENT_LINE.exec(line);

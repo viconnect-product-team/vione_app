@@ -136,11 +136,11 @@ export class RelationshipGraphRepository {
     // Resolve counterpart nodes
     const counterpartIds = Array.from(
       new Set(
-        page.map((e) => (e.source_node_id === input.nodeId ? e.target_node_id : e.source_node_id)),
+        page.map((e: any) => (e.source_node_id === input.nodeId ? e.target_node_id : e.source_node_id)),
       ),
     );
     const nodes = await this.getNodes(counterpartIds);
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const nodeMap = new Map(nodes.map((n: any) => [n.id, n]));
 
     const rows = page
       .map((edge) => {
@@ -178,7 +178,7 @@ export class RelationshipGraphRepository {
     }
     if (!opts.nodeKinds?.length) return [...ids];
     const nodes = await this.getNodes([...ids]);
-    return nodes.filter((n) => opts.nodeKinds!.includes(n.node_kind)).map((n) => n.id);
+    return nodes.filter((n) => opts.nodeKinds!.includes(n.node_kind)).map((n: any) => n.id);
   }
 
   /**
@@ -223,12 +223,12 @@ export class RelationshipGraphRepository {
       for (const s of perNode.values()) for (const x of s) allIds.add(x);
       const nodes = await this.getNodes([...allIds]);
       const allowed = new Set(
-        nodes.filter((n) => opts.nodeKinds!.includes(n.node_kind)).map((n) => n.id),
+        nodes.filter((n) => opts.nodeKinds!.includes(n.node_kind)).map((n: any) => n.id),
       );
       for (const [k, s] of perNode) {
         out.set(
           k,
-          [...s].filter((x) => allowed.has(x)),
+          [...s].filter((x: any) => allowed.has(x)),
         );
       }
     } else {

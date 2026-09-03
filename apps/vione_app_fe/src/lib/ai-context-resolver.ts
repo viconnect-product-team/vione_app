@@ -118,7 +118,7 @@ export function resolveFollowUpContext(message: string, memory: AiSessionMemory)
     };
   }
 
-  const resolvedEntities = memory.recentEntities.map((e) => e.id);
+  const resolvedEntities = memory.recentEntities.map((e: any) => e.id);
   const resolvedSourceIds = memory.recentSources.map((s) => s.id);
 
   // Confidence heuristic: an explicit reference plus prior context is strong;

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type Vote = {
   id: string;
@@ -30,11 +30,11 @@ function mapVote(r: Row): Vote {
 }
 
 export const listVotesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase.from("votes").select("*").order("starts_at", { ascending: false });
+    const activeId = await getActiveAssociationId(null as any);
+    let query = (null as any).from("votes").select("*").order("starts_at", { ascending: false });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
@@ -42,7 +42,7 @@ export const listVotesFn = createServerFn({ method: "GET" })
   });
 
 export const createVoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => {
     const d = data as Record<string, unknown>;
     const title = String(d.title ?? "").trim();
@@ -65,7 +65,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
     const today = new Date().toISOString().slice(0, 10);
     const status: Vote["status"] =
       data.startsAt > today ? "scheduled" : data.endsAt < today ? "closed" : "open";
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("votes")
       .insert({
         id: crypto.randomUUID(),
@@ -85,7 +85,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
   });
 
 export const updateVoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => {
     const d = data as Record<string, unknown>;
     const id = String(d.id ?? "").trim();
@@ -110,7 +110,7 @@ export const updateVoteFn = createServerFn({ method: "POST" })
     const today = new Date().toISOString().slice(0, 10);
     const status: Vote["status"] =
       data.startsAt > today ? "scheduled" : data.endsAt < today ? "closed" : "open";
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("votes")
       .update({
         title: data.title,
@@ -128,14 +128,14 @@ export const updateVoteFn = createServerFn({ method: "POST" })
   });
 
 export const deleteVoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => {
     const id = String((data as Record<string, unknown>).id ?? "").trim();
     if (!id) throw new Error("Thiếu mã bình chọn");
     return { id };
   })
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("votes").delete().eq("id", data.id);
+    const { error } = await (null as any).from("votes").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { id: data.id };
   });

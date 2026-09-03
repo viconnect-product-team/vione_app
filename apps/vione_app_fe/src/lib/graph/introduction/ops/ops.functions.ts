@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 const ScopeInput = z.object({
   scope: z.enum(["platform", "association"]).default("platform"),
@@ -145,10 +145,10 @@ export type OpsAccess = {
 // Access — used by the UI to decide which scopes to expose in the selector.
 // -------------------------------------------------------------------------
 export const getIntroOpsAccessFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<OpsAccess> => {
-    const { data: platform } = await context.supabase.rpc("is_platform_admin");
-    const { data: memberships } = await context.supabase
+    const { data: platform } = await (null as any).rpc("is_platform_admin");
+    const { data: memberships } = await (null as any)
       .from("memberships")
       .select("association_id, role, associations(name)")
       .eq("role", "admin");
@@ -165,10 +165,10 @@ export const getIntroOpsAccessFn = createServerFn({ method: "GET" })
 // Reads (all scoped, all permission-checked inside the RPC).
 // -------------------------------------------------------------------------
 export const getIntroOpsHealthFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsHealthSummary> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_health_summary", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_health_summary", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
     });
@@ -177,10 +177,10 @@ export const getIntroOpsHealthFn = createServerFn({ method: "GET" })
   });
 
 export const getIntroOpsRequestsStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsStatsByStatus> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_requests_stats", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_requests_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -190,10 +190,10 @@ export const getIntroOpsRequestsStatsFn = createServerFn({ method: "GET" })
   });
 
 export const getIntroOpsDeliveriesStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsStatsByStatus> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_deliveries_stats", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_deliveries_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -203,10 +203,10 @@ export const getIntroOpsDeliveriesStatsFn = createServerFn({ method: "GET" })
   });
 
 export const getIntroOpsOutcomesStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsOutcomeStats> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_outcomes_stats", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_outcomes_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -216,10 +216,10 @@ export const getIntroOpsOutcomesStatsFn = createServerFn({ method: "GET" })
   });
 
 export const getIntroOpsOutboxStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsOutboxStats> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_outbox_stats", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_outbox_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
     });
@@ -228,10 +228,10 @@ export const getIntroOpsOutboxStatsFn = createServerFn({ method: "GET" })
   });
 
 export const getIntroOpsAdapterStatsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsAdapterStats> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_adapter_stats", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_adapter_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -241,10 +241,10 @@ export const getIntroOpsAdapterStatsFn = createServerFn({ method: "GET" })
   });
 
 export const listIntroOpsSchedulerRunsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeLimit.parse(d))
   .handler(async ({ context, data }): Promise<OpsJobRun[]> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_scheduler_runs", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_scheduler_runs", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _limit: data.limit,
@@ -254,10 +254,10 @@ export const listIntroOpsSchedulerRunsFn = createServerFn({ method: "GET" })
   });
 
 export const listIntroOpsConsumerRunsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => ScopeLimit.parse(d))
   .handler(async ({ context, data }): Promise<OpsConsumerRun[]> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_consumer_runs", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_consumer_runs", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _limit: data.limit,
@@ -267,10 +267,10 @@ export const listIntroOpsConsumerRunsFn = createServerFn({ method: "GET" })
   });
 
 export const listIntroOpsAlertsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => AlertsInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert[]> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_alerts_list", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_alerts_list", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _state: data.state ?? undefined,
@@ -284,10 +284,10 @@ export const listIntroOpsAlertsFn = createServerFn({ method: "GET" })
 // Mutations — acknowledge / resolve alerts (scope re-checked by the RPC).
 // -------------------------------------------------------------------------
 export const acknowledgeIntroOpsAlertFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ alertId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_alert_acknowledge", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_alert_acknowledge", {
       _alert_id: data.alertId,
     });
     if (error) throw new Error(error.message);
@@ -295,10 +295,10 @@ export const acknowledgeIntroOpsAlertFn = createServerFn({ method: "POST" })
   });
 
 export const resolveIntroOpsAlertFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ alertId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert> => {
-    const { data: res, error } = await context.supabase.rpc("intro_ops_alert_resolve", {
+    const { data: res, error } = await (null as any).rpc("intro_ops_alert_resolve", {
       _alert_id: data.alertId,
     });
     if (error) throw new Error(error.message);

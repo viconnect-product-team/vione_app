@@ -136,7 +136,7 @@ function NewsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {NEWS.map((n) => (
+        {NEWS.map((n: any) => (
           <Card key={n.id} className="overflow-hidden transition hover:shadow-[var(--shadow-glow)]">
             <div className="h-32" style={{ background: "var(--gradient-primary)" }} />
             <div className="p-5">

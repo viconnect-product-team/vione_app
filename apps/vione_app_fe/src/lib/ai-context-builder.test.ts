@@ -36,7 +36,7 @@ describe("ai-context-providers redaction & permissions", () => {
       [{ id: "m1", name: "Nguyễn A", company: "ABC", industry: "Logistics" }],
       "member",
     );
-    expect(res.limitations.some((l) => l.includes("liên hệ riêng tư"))).toBe(true);
+    expect(res.limitations.some((l: any) => l.includes("liên hệ riêng tư"))).toBe(true);
     // Only safe display fields are surfaced.
     expect(JSON.stringify(res)).not.toMatch(/phone|email|tax/i);
   });
@@ -55,7 +55,7 @@ describe("ai-context-providers redaction & permissions", () => {
 
   it("document provider does not hallucinate full text", () => {
     const res = documentProvider([{ id: "d1", title: "Quy chế", hasFullText: false }]);
-    expect(res.limitations.some((l) => l.includes("metadata"))).toBe(true);
+    expect(res.limitations.some((l: any) => l.includes("metadata"))).toBe(true);
   });
 });
 
@@ -74,7 +74,7 @@ describe("ai-context-builder", () => {
       capability: "executive_report",
       permissionLevel: "member",
     });
-    expect(bundle.limitations.some((l) => l.includes("chưa có quyền"))).toBe(true);
+    expect(bundle.limitations.some((l: any) => l.includes("chưa có quyền"))).toBe(true);
     expect(bundle.sources.length).toBe(0);
   });
 

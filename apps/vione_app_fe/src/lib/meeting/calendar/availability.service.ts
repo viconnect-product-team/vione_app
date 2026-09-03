@@ -78,7 +78,7 @@ export async function findCommonAvailability(
   }
 
   return computeCommonAvailability({
-    participants: ids.map((id) => prefsByUser.get(id)!),
+    participants: ids.map((id: any) => prefsByUser.get(id)!),
     fromAt,
     toAt,
     durationMinutes: input.durationMinutes,

@@ -1,18 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ActivityLog } from "@/lib/extra-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export const listActivityLogFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<ActivityLog[]> => {
-    const { data, error } = await context.supabase
-      .from("activity_log")
-      .select("*")
-      .order("at", { ascending: false });
-    if (error) throw error;
-    return (data ?? []).map((l) => ({
-      id: l.code,
+    const data = await fetchNestApiFromServer("/ai/activity-log", context.token) as any[];
+    return (data ?? []).map((l: any) => ({
+      id: l.code ?? l.id,
       user: l.user,
       action: l.action,
       target: l.target,
@@ -24,18 +21,16 @@ export const listActivityLogFn = createServerFn({ method: "GET" })
 
 // Audit log is system-written; only deletion (cleanup) is allowed.
 export const deleteActivityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await context.supabase.from("activity_log").delete().eq("code", data.id);
-    if (error) throw new Error(error.message);
+    await fetchNestApiFromServer(`/ai/activity-log/${data.id}`, context.token, { method: "DELETE" });
     return { ok: true };
   });
 
 export const clearActivityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ ok: boolean }> => {
-    const { error } = await context.supabase.from("activity_log").delete().neq("code", "");
-    if (error) throw new Error(error.message);
+    await fetchNestApiFromServer("/ai/activity-log/clear", context.token, { method: "POST", body: "{}" });
     return { ok: true };
   });

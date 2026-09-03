@@ -116,7 +116,7 @@ export function scorePath(input: EnginePathInput): number {
   let s = weakest * w.relationshipTrust;
   if (depth > 2) s -= w.pathLengthPenaltyPerExtraHop * (depth - 2);
 
-  const distinctContextKinds = new Set(input.sharedContexts.map((c) => c.kind));
+  const distinctContextKinds = new Set(input.sharedContexts.map((c: any) => c.kind));
   if (distinctContextKinds.size > 0) s += w.sharedContext;
   if (input.hopRecent.some(Boolean)) s += w.recency;
   if (input.priorIntroductionSuccess) s += w.introductionHistory;
@@ -171,14 +171,14 @@ export function rankAndBuildPaths(args: RankArgs): SmartIntroductionPathDTO[] {
   const scored: Array<{
     dto: SmartIntroductionPathDTO;
     dominantContextKey?: string;
-  }> = capped.map((c) => {
+  }> = capped.map((c: any) => {
     const depth = (c.nodeChain.length - 1) as 2 | 3;
     const score = scorePath(c);
     const confidence = confidenceFromScore(score, depth);
     const reasons = reasonsFor(c);
     const chain = c.nodeChain;
     const target = chain[chain.length - 1]!;
-    const intermediaries = chain.slice(1, -1).map((id, i) => ({
+    const intermediaries = chain.slice(1, -1).map((id: any, i: any) => ({
       personNodeId: id,
       hop: i + 1,
     }));

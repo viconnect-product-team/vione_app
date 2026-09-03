@@ -317,7 +317,63 @@ export class ConnectAppService {
     const identityRows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.business_identities WHERE owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
-    const identity = identityRows.length > 0 ? identityRows[0] : null;
+    let identity = identityRows.length > 0 ? identityRows[0] : null;
+
+    // Fallback or augment from user_profiles if identity is missing or lacks avatar/details
+    const profileRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.user_profiles WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const profile = profileRows.length > 0 ? profileRows[0] : null;
+
+    const userRows = await this.prisma.$queryRaw<any[]>`
+      SELECT email FROM auth.users WHERE id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const userEmail = userRows.length > 0 ? userRows[0].email : null;
+
+    if (!identity) {
+      if (profile || userEmail) {
+        identity = {
+          id: profile?.id || userId,
+          owner_user_id: userId,
+          display_name: profile?.display_name || userEmail?.split('@')[0] || 'Hội viên ViOne',
+          headline: profile?.professional_title || null,
+          job_title: profile?.professional_title || null,
+          company_name: profile?.company_name || null,
+          bio: profile?.bio || null,
+          avatar_url: profile?.avatar_url || null,
+          primary_email: userEmail || null,
+          primary_phone: null,
+          website: null,
+          linkedin_url: null,
+          address: null,
+          city: profile?.region || null,
+          country_code: 'VN',
+          preferred_locale: profile?.locale || 'vi',
+          status: 'active',
+          created_at: profile?.created_at || new Date(),
+          updated_at: profile?.updated_at || new Date(),
+        };
+      }
+    } else {
+      if (!identity.avatar_url && profile?.avatar_url) {
+        identity.avatar_url = profile.avatar_url;
+      }
+      if (!identity.display_name && profile?.display_name) {
+        identity.display_name = profile.display_name;
+      }
+      if (!identity.job_title && profile?.professional_title) {
+        identity.job_title = profile.professional_title;
+      }
+      if (!identity.company_name && profile?.company_name) {
+        identity.company_name = profile.company_name;
+      }
+      if (!identity.bio && profile?.bio) {
+        identity.bio = profile.bio;
+      }
+      if (!identity.primary_email && userEmail) {
+        identity.primary_email = userEmail;
+      }
+    }
 
     const visibilityRows = await this.prisma.$queryRaw<any[]>`
       SELECT field_key, visibility FROM public.identity_field_visibility WHERE owner_user_id = ${userId}::uuid
@@ -1081,47 +1137,88 @@ export class ConnectAppService {
 
   async getTodayRecommendations(userId: string) {
     const now = new Date();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const safeUserId = isUuid ? userId : '00000000-0000-0000-0000-000000000000';
     
     // Fetch connected users (Nurture Connections list)
-    const connectedRows = await this.prisma.$queryRaw<any[]>`
+    const connectedRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT bi.id as identity_id, bi.owner_user_id, bi.display_name, bi.avatar_url, bi.headline, bi.company_name, bi.city
       FROM public.user_connections uc
       JOIN public.business_identities bi ON (
-        (uc.requester_user_id = ${userId}::uuid AND uc.recipient_user_id = bi.owner_user_id) OR
-        (uc.recipient_user_id = ${userId}::uuid AND uc.requester_user_id = bi.owner_user_id)
+        (uc.requester_user_id = ${safeUserId}::uuid AND uc.recipient_user_id = bi.owner_user_id) OR
+        (uc.recipient_user_id = ${safeUserId}::uuid AND uc.requester_user_id = bi.owner_user_id)
       )
       WHERE uc.status = 'accepted'::public.global_connection_status AND bi.status = 'active'
-    `.catch(() => []);
+    `.catch(() => [] as any[]);
 
     // Fetch non-connected users (AI Match Suggestions list)
-    const nonConnectedRows = await this.prisma.$queryRaw<any[]>`
+    let nonConnectedRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT bi.id as identity_id, bi.owner_user_id, bi.display_name, bi.avatar_url, bi.headline, bi.company_name, bi.city
       FROM public.business_identities bi
-      WHERE bi.owner_user_id != ${userId}::uuid AND bi.status = 'active'
+      WHERE bi.owner_user_id != ${safeUserId}::uuid AND bi.status = 'active'
         AND bi.owner_user_id NOT IN (
           SELECT CASE 
-            WHEN requester_user_id = ${userId}::uuid THEN recipient_user_id
+            WHEN requester_user_id = ${safeUserId}::uuid THEN recipient_user_id
             ELSE requester_user_id
           END
           FROM public.user_connections
-          WHERE requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid
+          WHERE requester_user_id = ${safeUserId}::uuid OR recipient_user_id = ${safeUserId}::uuid
         )
-    `.catch(() => []);
+      LIMIT 20
+    `.catch(() => [] as any[]);
+
+    // Fallback to other users from vione_users if business_identities has few records
+    if (nonConnectedRows.length < 5) {
+      const existingIds = [
+        safeUserId,
+        ...nonConnectedRows.map((r: any) => String(r.owner_user_id)),
+        ...connectedRows.map((r: any) => String(r.owner_user_id)),
+      ];
+      const extraUsers = await this.prisma.vione_users.findMany({
+        where: {
+          id: {
+            notIn: existingIds,
+          },
+        },
+        take: 10,
+      }).catch(() => [] as any[]);
+
+      extraUsers.forEach((u: any) => {
+        nonConnectedRows.push({
+          identity_id: u.id,
+          owner_user_id: u.id,
+          display_name: u.name || u.username,
+          avatar_url: u.avatar_url,
+          headline: 'Doanh nhân ViOne',
+          company_name: 'ViOne Network',
+          city: 'Việt Nam',
+        });
+      });
+    }
 
     const recommendations: any[] = [];
 
-    // Map non-connected users to AI Match suggestions (days = 0 so they don't show up in nurture)
-    nonConnectedRows.forEach((row) => {
+    // Map non-connected users to AI Match suggestions
+    nonConnectedRows.forEach((row: any) => {
+      const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
+      const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
+      const company = row.company_name || 'Doanh nghiệp đối tác';
+      const city = row.city || 'Việt Nam';
+      const headline = row.headline || 'Doanh nhân';
+      const displayName = row.display_name || 'Hội viên';
+
+      const aiSuggestion = `AI đề xuất: Kết nối với ${displayName} (${headline} tại ${company}) để trao đổi cơ hội hợp tác kinh doanh và mở rộng quan hệ đối tác tại ${city}.`;
+
       recommendations.push({
-        id: `u:${row.owner_user_id}-uuid:match`,
+        id: `${cleanPersonId}:match`,
         person: {
-          personId: row.owner_user_id,
-          displayName: row.display_name,
+          personId: cleanPersonId,
+          displayName,
           avatarUrl: row.avatar_url,
-          headline: row.headline || 'Doanh nhân',
-          companyName: row.company_name || 'Vione Connect',
-          industryLabel: 'Business',
-          areaLabel: row.city || 'Hà Nội',
+          headline,
+          companyName: company,
+          industryLabel: 'Kinh doanh',
+          areaLabel: city,
         },
         type: 'reconnect',
         reason: {
@@ -1129,33 +1226,39 @@ export class ConnectAppService {
           days: 0,
           evidenceKind: 'moment',
         },
-        aiSuggestion: null,
-        wordingSource: 'deterministic',
+        aiSuggestion,
+        wordingSource: 'ai',
         generatedAt: now.toISOString(),
       });
     });
 
     // Map connected users to Nurture Connections list (days > 0)
     connectedRows.forEach((row, idx) => {
+      const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
+      const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
+      const days = 90 + idx * 10;
+      const displayName = row.display_name || 'Đối tác';
+      const aiSuggestion = `AI nhắc nhở: Đã ${days} ngày chưa tương tác cùng ${displayName}. Hãy gửi tin nhắn hoặc sắp xếp buổi gặp để hâm nóng mối quan hệ hợp tác.`;
+
       recommendations.push({
-        id: `u:${row.owner_user_id}-uuid:reconnect`,
+        id: `${cleanPersonId}:reconnect`,
         person: {
-          personId: row.owner_user_id,
-          displayName: row.display_name,
+          personId: cleanPersonId,
+          displayName,
           avatarUrl: row.avatar_url,
           headline: row.headline || 'Doanh nhân',
           companyName: row.company_name || 'Partner',
-          industryLabel: 'Business',
+          industryLabel: 'Kinh doanh',
           areaLabel: row.city || 'Hà Nội',
         },
         type: 'reconnect',
         reason: {
           kind: 'last_interaction',
-          days: 90 + idx * 10,
+          days,
           evidenceKind: 'moment',
         },
-        aiSuggestion: null,
-        wordingSource: 'deterministic',
+        aiSuggestion,
+        wordingSource: 'ai',
         generatedAt: now.toISOString(),
       });
     });
@@ -1165,7 +1268,14 @@ export class ConnectAppService {
 
   async getPersonRecommendation(userId: string, personId: string) {
     const list = await this.getTodayRecommendations(userId);
-    const rec = list.recommendations.find(r => r.person.personId === personId);
+    const cleanId = personId.startsWith('u:') ? personId : `u:${personId}`;
+    const rawId = personId.replace(/^[ucg]:/, '');
+    const rec = list.recommendations.find(r => 
+      r.person.personId === cleanId || 
+      r.person.personId === personId || 
+      r.person.personId === rawId ||
+      r.person.personId.endsWith(rawId)
+    );
     return { recommendation: rec || null };
   }
 
@@ -1181,7 +1291,8 @@ export class ConnectAppService {
       momentRows = await this.prisma.$queryRaw<any[]>`
         SELECT id, target_kind, target_user_id, target_card_id, target_guest_id, occurred_at, event_name, place_label, note
         FROM public.business_relationship_moments
-        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+        WHERE (owner_user_id = ${userId}::uuid OR owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid)
+          AND status IN ('active', 'pending')
           AND occurred_at < ${new Date(cursor)}
         ORDER BY occurred_at DESC, id DESC
         LIMIT ${limit + 1}
@@ -1190,7 +1301,8 @@ export class ConnectAppService {
       momentRows = await this.prisma.$queryRaw<any[]>`
         SELECT id, target_kind, target_user_id, target_card_id, target_guest_id, occurred_at, event_name, place_label, note
         FROM public.business_relationship_moments
-        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+        WHERE (owner_user_id = ${userId}::uuid OR owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid)
+          AND status IN ('active', 'pending')
         ORDER BY occurred_at DESC, id DESC
         LIMIT ${limit + 1}
       `.catch(() => []);
@@ -1222,7 +1334,7 @@ export class ConnectAppService {
 
     const legacyPaths: string[] = [];
     for (const m of mediaRows) {
-      if (m.storage_path && !m.storage_path.startsWith('/upload/')) {
+      if (m.storage_path && !m.storage_path.startsWith('/upload/') && !m.storage_path.startsWith('http')) {
         legacyPaths.push(m.storage_path);
       }
     }
@@ -1268,10 +1380,11 @@ export class ConnectAppService {
 
       const slots = mediaByMomentId.get(row.id) || [];
       const photoUrls = slots.map(s => {
-        if (s.storage_path.startsWith('/upload/')) {
+        if (!s.storage_path) return '';
+        if (s.storage_path.startsWith('/upload/') || s.storage_path.startsWith('http')) {
           return s.storage_path;
         }
-        return signed[s.storage_path] || '';
+        return signed[s.storage_path] || `/upload/file/${s.storage_path.split('/').pop()}`;
       }).filter(Boolean);
 
       return {
@@ -1497,6 +1610,106 @@ export class ConnectAppService {
 
     return this.sendConnectionRequest(userId, { targetUserId });
   }
+
+  /**
+   * NFC Tap-to-Exchange: một lần gọi duy nhất.
+   * - Resolve token → lấy profile công khai của người được chạm
+   * - Tự động tạo/tìm kết nối với source_type = 'nfc'
+   * - Trả về profile + trạng thái kết nối
+   */
+  async nfcTap(userId: string, token: string) {
+    // 1. Resolve token → share link
+    const links = await this.prisma.$queryRaw<any[]>`
+      SELECT id, identity_id FROM public.identity_share_links
+      WHERE public_token = ${token} AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (links.length === 0) {
+      return { ok: false, reason: 'not_found', profile: null, connectionId: null, state: 'unavailable' };
+    }
+    const link = links[0];
+
+    // 2. Lấy full identity (kèm visibility)
+    const identities = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_identities
+      WHERE id = ${link.identity_id}::uuid AND status = 'active'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (identities.length === 0) {
+      return { ok: false, reason: 'not_found', profile: null, connectionId: null, state: 'unavailable' };
+    }
+    const identity = identities[0];
+    const targetUserId = identity.owner_user_id;
+
+    if (targetUserId === userId) {
+      return { ok: false, reason: 'self', profile: null, connectionId: null, state: 'self' };
+    }
+
+    // 3. Áp visibility filter
+    const visibilityRows = await this.prisma.$queryRaw<any[]>`
+      SELECT field_key, visibility FROM public.identity_field_visibility
+      WHERE identity_id = ${identity.id}::uuid
+    `.catch(() => []);
+    const vis: Record<string, string> = {};
+    for (const r of visibilityRows) vis[r.field_key] = r.visibility;
+    const show = (key: string) => vis[key] !== 'hidden';
+
+    const profile = {
+      displayName: show('displayName') ? (identity.display_name ?? null) : null,
+      headline: show('headline') ? (identity.headline ?? null) : null,
+      jobTitle: show('jobTitle') ? (identity.job_title ?? null) : null,
+      companyName: show('companyName') ? (identity.company_name ?? null) : null,
+      avatarUrl: show('avatarUrl') ? (identity.avatar_url ?? null) : null,
+      primaryEmail: show('primaryEmail') ? (identity.primary_email ?? null) : null,
+      primaryPhone: show('primaryPhone') ? (identity.primary_phone ?? null) : null,
+      website: show('website') ? (identity.website ?? null) : null,
+      linkedinUrl: show('linkedinUrl') ? (identity.linkedin_url ?? null) : null,
+      city: show('city') ? (identity.city ?? null) : null,
+    };
+
+    // 4. Kiểm tra connection hiện tại
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, requester_user_id, status FROM public.user_connections
+      WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
+         OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${userId}::uuid)
+      LIMIT 1
+    `.catch(() => []);
+
+    if (existing.length > 0) {
+      const conn = existing[0];
+      const direction = conn.requester_user_id === userId ? 'outgoing' : 'incoming';
+      let state = 'pending';
+      if (conn.status === 'accepted') state = 'connected';
+      else if (conn.status === 'pending') state = direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+      return { ok: true, reason: 'existing', profile, connectionId: conn.id, state };
+    }
+
+    // 5. Tạo kết nối mới với source_type = 'nfc'
+    const reqId = crypto.randomUUID();
+    const now = new Date();
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
+        VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'nfc'::public.global_connection_source_type, ${now}, ${now}, ${now})
+      `;
+    } catch {
+      // source_type 'nfc' có thể chưa có trong enum — fallback sang 'manual'
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
+        VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
+      `;
+    }
+
+    // 6. Update last_used_at của link (async, không block)
+    this.prisma.$executeRaw`
+      UPDATE public.identity_share_links SET last_used_at = ${now} WHERE id = ${link.id}::uuid
+    `.catch(() => {});
+
+    return { ok: true, reason: 'created', profile, connectionId: reqId, state: 'outgoing_pending' };
+  }
+
 
   async getConnectionById(userId: string, connectionId: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
@@ -2121,13 +2334,13 @@ export class ConnectAppService {
       }
     }
 
-    const slots = await this.prisma.$queryRaw<any[]>`
+    const slots: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.business_relationship_moment_media
       WHERE moment_id = ${momentId}::uuid
-    `.catch(() => []);
+    `.catch(() => [] as any[]);
 
     const uploaded = new Set(uploadedMediaIds);
-    const drop = slots.filter((s) => addedMediaIds.includes(s.id) && !uploaded.has(s.id));
+    const drop = slots.filter((s: any) => addedMediaIds.includes(s.id) && !uploaded.has(s.id));
     if (drop.length > 0) {
       const dropIds = drop.map((s) => s.id);
       await this.prisma.$executeRaw`

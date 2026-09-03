@@ -106,6 +106,18 @@ export class NetworkController {
     return this.connectAppService.sendConnectionRequestByToken(req.user.id, token, mutationKey);
   }
 
+  /**
+   * NFC Tap-to-Exchange — single-shot endpoint.
+   * Resolves the share token, fetches the target profile (visibility-filtered),
+   * creates or finds an existing connection, and returns both profile + state.
+   * Frontend calls this immediately after reading an NFC tag — no extra steps.
+   */
+  @Post('nfc-tap')
+  async nfcTap(@Request() req, @Body('token') token: string) {
+    return this.connectAppService.nfcTap(req.user.id, token);
+  }
+
+
   @Get('connection/:connectionId')
   async getConnectionById(@Request() req, @Param('connectionId') connectionId: string) {
     return this.connectAppService.getConnectionById(req.user.id, connectionId);

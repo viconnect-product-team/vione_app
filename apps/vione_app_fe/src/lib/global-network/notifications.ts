@@ -53,7 +53,7 @@ export const NotificationService = {
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw toGlobalNetworkError(error);
-    return (data ?? []).map((r) => mapNotification(r as Row));
+    return (data ?? []).map((r: any) => mapNotification(r as Row));
   },
 
   async unreadCount(supabase: DB, userId: string | null | undefined): Promise<number> {

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { relTime } from "./shared";
 
 export type MyOpportunity = {
@@ -17,7 +17,7 @@ const OPP_COLORS = ["#7c6cff", "#3fbf7f", "#4a9eff", "#e8a04c"];
 
 // ---------- Opportunities ----------
 export const listMyOpportunities = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyOpportunity[]> => {
     const { supabase, userId } = context;
     const { data } = await supabase
@@ -42,7 +42,7 @@ export const listMyOpportunities = createServerFn({ method: "GET" })
   });
 
 export const expressInterest = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({

@@ -52,7 +52,7 @@ import {
   bcMobileMomentFinalizeFn,
   bcMobileMomentPrepareFn,
 } from "@/lib/business-connect/mobile/moment.functions";
-import { uploadFileToNest } from "@/lib/api-client";
+import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import {
   MOMENT_IMAGE_ACCEPT,
   processMomentImage,
@@ -470,19 +470,28 @@ export function MomentComposer({ personId }: { personId: string }) {
 
     setSaving(true);
     try {
-      const prep = await bcMobileMomentPrepareFn({
-        data: {
-          personId,
-          occurredAt: occurredDate.toISOString(),
-          eventName: eventName.trim() || null,
-          placeLabel: placeLabel.trim() || null,
-          note: note.trim() || null,
-          photoCount: validPhotos.length,
-          clientToken: clientTokenRef.current,
-        },
-      });
-      if (!prep.ok) {
-        setErrorKey(ERROR_KEY_BY_CODE[prep.error] ?? "bc.mobile.moment.error.generic");
+      const payload = {
+        personId,
+        occurredAt: occurredDate.toISOString(),
+        eventName: eventName.trim() || null,
+        placeLabel: placeLabel.trim() || null,
+        note: note.trim() || null,
+        photoCount: validPhotos.length,
+        clientToken: clientTokenRef.current,
+      };
+
+      let prep: any;
+      try {
+        prep = await fetchNestApi<any>("/connect-app/moment/", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        prep = await bcMobileMomentPrepareFn({ data: payload });
+      }
+
+      if (!prep || !prep.ok) {
+        setErrorKey(ERROR_KEY_BY_CODE[prep?.error] ?? "bc.mobile.moment.error.generic");
         setSaving(false);
         return;
       }
@@ -494,8 +503,8 @@ export function MomentComposer({ personId }: { personId: string }) {
 
       // Upload to MinIO instead of Supabase
       const mediaPaths: Record<string, string> = {};
-      if (prep.photos.length > 0) setUploading({ done: 0, total: prep.photos.length });
-      await mapWithConcurrency(prep.photos, 2, async (slot, i) => {
+      if (prep.photos && prep.photos.length > 0) setUploading({ done: 0, total: prep.photos.length });
+      await mapWithConcurrency(prep.photos || [], 2, async (slot: any, i: number) => {
         const blob = validPhotos[i]!.blob!;
         const minioPath = await uploadFileToNest(blob, `${slot.mediaId}.jpg`);
         mediaPaths[slot.mediaId] = minioPath;
@@ -505,18 +514,30 @@ export function MomentComposer({ personId }: { personId: string }) {
       });
       setUploading(null);
 
-      const fin = await bcMobileMomentFinalizeFn({
-        data: {
-          momentId: prep.momentId,
-          uploadedMediaIds: prep.photos.map((s) => s.mediaId),
-          mediaPaths,
-        },
-      });
-      if (!fin.ok) {
+      const finalizeData = {
+        momentId: prep.momentId,
+        uploadedMediaIds: (prep.photos || []).map((s: any) => s.mediaId),
+        mediaPaths,
+      };
+
+      let fin: any;
+      try {
+        fin = await fetchNestApi<any>(`/connect-app/moment/${prep.momentId}/finalize`, {
+          method: "POST",
+          body: JSON.stringify({
+            uploadedMediaIds: finalizeData.uploadedMediaIds,
+            mediaPaths: finalizeData.mediaPaths,
+          }),
+        });
+      } catch {
+        fin = await bcMobileMomentFinalizeFn({ data: finalizeData });
+      }
+
+      if (!fin || !fin.ok) {
         setErrorKey(
-          fin.error === "unavailable"
+          fin?.error === "unavailable"
             ? "bc.mobile.moment.error.upload"
-            : (ERROR_KEY_BY_CODE[fin.error] ?? "bc.mobile.moment.error.generic"),
+            : (ERROR_KEY_BY_CODE[fin?.error] ?? "bc.mobile.moment.error.generic"),
         );
         setSaving(false);
         return;

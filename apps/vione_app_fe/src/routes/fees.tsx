@@ -40,7 +40,7 @@ import {
   deleteInvoiceFn,
   addReminderFn,
 } from "@/lib/fees.functions";
-import { listMembersFn } from "@/lib/members.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import type { Member } from "@/lib/members-data";
 
 export const Route = createFileRoute("/fees")({
@@ -54,7 +54,10 @@ export const Route = createFileRoute("/fees")({
     ],
   }),
   loader: async () => {
-    const [invoices, members] = await Promise.all([listInvoicesFn(), listMembersFn()]);
+    const [invoices, members] = await Promise.all([
+      listInvoicesFn(),
+      fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []),
+    ]);
     return { invoices, members };
   },
   component: FeesPage,
@@ -161,7 +164,7 @@ function FeesPage() {
   const [remindingId, setRemindingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const YEARS = useMemo(() => {
-    const ys = Array.from(new Set(allRecords.map((r) => r.year)));
+    const ys = Array.from(new Set(allRecords.map((r: any) => r.year)));
     if (!ys.includes(new Date().getFullYear())) ys.push(new Date().getFullYear());
     return ys.sort((a, b) => b - a);
   }, [allRecords]);
@@ -443,7 +446,7 @@ function FeesPage() {
             </p>
           ) : (
             <ul className="space-y-2.5">
-              {recentPayments.map((r) => (
+              {recentPayments.map((r: any) => (
                 <li key={r.id} className="flex items-center justify-between gap-2 text-xs">
                   <div className="min-w-0">
                     <div className="truncate font-semibold text-foreground">{r.member.name}</div>
@@ -662,7 +665,7 @@ function FeesPage() {
       ) : view === "card" ? (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tc.pageRows.map((r) => (
+            {tc.pageRows.map((r: any) => (
               <FeeCard key={r.id} r={r} onDelete={handleDelete} canManage={isAdmin} />
             ))}
           </div>
@@ -732,7 +735,7 @@ function FeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {tc.pageRows.map((r) => (
+                {tc.pageRows.map((r: any) => (
                   <FeeRow key={r.id} r={r} onDelete={handleDelete} canManage={isAdmin} />
                 ))}
               </tbody>
@@ -837,7 +840,7 @@ function QueueColumn({
         </div>
       ) : (
         <ul className="space-y-2">
-          {shown.map((r) => {
+          {shown.map((r: any) => {
             const d = daysUntil(r.dueDate);
             const isSel = selected.has(r.id);
             return (

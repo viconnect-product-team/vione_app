@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 const recordSchema = z.object({
   clientId: z.string().min(1).max(80),
@@ -29,7 +29,7 @@ export type SyncCheckinInput = z.infer<typeof payloadSchema>;
  * check-in, cross tenants, invent an event, or force status = success.
  */
 export const syncMemberCheckins = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => payloadSchema.parse(data))
   .handler(async ({ data, context }) => {
     if (data.records.length === 0) return { syncedIds: [] as string[] };
@@ -67,7 +67,7 @@ export const syncMemberCheckins = createServerFn({ method: "POST" })
     // Validate referenced events exist within the member's association and take
     // the trusted title from the DB — the client-supplied title is ignored.
     const eventIds = [
-      ...new Set(data.records.map((r) => r.eventId).filter((id): id is string => !!id)),
+      ...new Set(data.records.map((r: any) => r.eventId).filter((id): id is string => !!id)),
     ];
     const eventById = new Map<string, string>();
     if (eventIds.length > 0) {
@@ -86,10 +86,10 @@ export const syncMemberCheckins = createServerFn({ method: "POST" })
       .select("event_id")
       .eq("member_code", memberCode)
       .eq("status", "success");
-    const doneEventIds = new Set((existing ?? []).map((r) => r.event_id as string));
+    const doneEventIds = new Set((existing ?? []).map((r: any) => r.event_id as string));
 
     const rows = data.records
-      .map((r) => {
+      .map((r: any) => {
         // Reject records without a valid event in the member's association.
         if (!r.eventId || !eventById.has(r.eventId)) return null;
         const trustedTitle = eventById.get(r.eventId)!;
@@ -116,5 +116,5 @@ export const syncMemberCheckins = createServerFn({ method: "POST" })
       .upsert(rows, { onConflict: "client_id", ignoreDuplicates: false });
 
     if (error) throw new Error(error.message);
-    return { syncedIds: rows.map((r) => r.client_id) };
+    return { syncedIds: rows.map((r: any) => r.client_id) };
   });

@@ -75,7 +75,7 @@ function RenewalHistoryScreen() {
             {t("m.rhist.empty")}
           </div>
         ) : (
-          data.map((e) => (
+          data.map((e: any) => (
             <div key={e.id} className="vba-card overflow-hidden p-0">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--vba-border)] px-4 py-3">
                 <div className="flex items-center gap-2.5">

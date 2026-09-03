@@ -107,7 +107,7 @@ function AiAuditPage() {
     });
 
   const list = rows ?? [];
-  const providers = [...new Set(list.map((r) => r.provider).filter(Boolean))] as string[];
+  const providers = [...new Set(list.map((r: any) => r.provider).filter(Boolean))] as string[];
 
   const inputCls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -127,7 +127,7 @@ function AiAuditPage() {
               onChange={(e) => setAssocId(e.target.value)}
             >
               <option value="">{t("aiaudit.filter.allAssoc")}</option>
-              {(assocs ?? []).map((a) => (
+              {(assocs ?? []).map((a: any) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
                 </option>
@@ -248,7 +248,7 @@ function AiAuditPage() {
                   </td>
                 </tr>
               )}
-              {list.map((r) => (
+              {list.map((r: any) => (
                 <tr
                   key={r.id}
                   className="border-b border-border last:border-0 hover:bg-secondary/30"

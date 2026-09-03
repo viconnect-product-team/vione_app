@@ -67,7 +67,7 @@ async function hasSavedCardEdge(
     .select("id")
     .eq("owner_user_id", targetUserId);
   if (cardErr) throw new Error(cardErr.message);
-  const ids = (cards ?? []).map((c) => (c as { id: string }).id);
+  const ids = (cards ?? []).map((c: any) => (c as { id: string }).id);
   if (ids.length === 0) return false;
   const { data, error } = await supabase
     .from("saved_business_cards")

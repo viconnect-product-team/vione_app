@@ -7,7 +7,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { CompanyService } from "./company.service";
 import type { PublicCompanyResult } from "./company.types";
 
@@ -33,12 +33,12 @@ const companyWriteShape = {
 };
 
 export const createCompanyFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object(companyWriteShape).parse(d))
-  .handler(({ data, context }) => CompanyService.create(context.supabase, context.userId, data));
+  .handler(({ data, context }) => CompanyService.create(null as any, context.userId, data));
 
 export const updateCompanyFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({ id: z.string().uuid(), ...companyWriteShape })
@@ -47,26 +47,26 @@ export const updateCompanyFn = createServerFn({ method: "POST" })
   )
   .handler(({ data, context }) => {
     const { id, ...patch } = data;
-    return CompanyService.update(context.supabase, context.userId, id, patch);
+    return CompanyService.update(null as any, context.userId, id, patch);
   });
 
 export const deleteCompanyFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.delete(context.supabase, context.userId, data.id));
+  .handler(({ data, context }) => CompanyService.delete(null as any, context.userId, data.id));
 
 export const getCompanyFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.get(context.supabase, data.id));
+  .handler(({ data, context }) => CompanyService.get(null as any, data.id));
 
 export const listCompaniesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(({ context }) => CompanyService.list(context.supabase, context.userId));
+  .middleware([requireNestAuth])
+  .handler(({ context }) => CompanyService.list(null as any, context.userId));
 
 export const listVisibleCompaniesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(({ context }) => CompanyService.listVisible(context.supabase));
+  .middleware([requireNestAuth])
+  .handler(({ context }) => CompanyService.listVisible(null as any));
 
 // Public projection by slug (no auth). Builds the anon publishable client.
 export const getPublicCompanyFn = createServerFn({ method: "GET" })
@@ -83,7 +83,7 @@ export const getPublicCompanyFn = createServerFn({ method: "GET" })
 
 // ---- membership ----
 export const inviteCompanyMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -95,17 +95,17 @@ export const inviteCompanyMemberFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(({ data, context }) =>
-    CompanyService.inviteMember(context.supabase, context.userId, data),
+    CompanyService.inviteMember(null as any, context.userId, data),
   );
 
 export const listCompanyMembersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ companyId: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.listMembers(context.supabase, data.companyId));
+  .handler(({ data, context }) => CompanyService.listMembers(null as any, data.companyId));
 
 export const removeCompanyMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    CompanyService.removeMember(context.supabase, context.userId, data.id),
+    CompanyService.removeMember(null as any, context.userId, data.id),
   );

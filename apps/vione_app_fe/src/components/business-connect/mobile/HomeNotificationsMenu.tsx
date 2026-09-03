@@ -58,7 +58,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
   return (
     <>
       <ul className="max-h-[60vh] overflow-y-auto">
-        {items.map((n) => (
+        {items.map((n: any) => (
           <li
             key={n.id}
             className="flex items-start gap-2 border-b border-[var(--bc-mobile-border)] px-3 py-3 last:border-b-0"

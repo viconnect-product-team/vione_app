@@ -293,7 +293,7 @@ export class IntroductionDeliveryService {
     const { data, error } = await q.order("created_at", { ascending: false }).limit(limit);
     if (error) throw toIntroductionDeliveryError(error);
     return {
-      items: (data ?? []).map((r) => toDTO(r, uid)),
+      items: (data ?? []).map((r: any) => toDTO(r, uid)),
       nextCursor: null,
     };
   }
@@ -348,7 +348,7 @@ export class IntroductionDeliveryService {
     if (error) throw toIntroductionDeliveryError(error);
     if (!reqs || reqs.length === 0) return [];
 
-    const ids = reqs.map((r) => r.id);
+    const ids = reqs.map((r: any) => r.id);
     const { data: active } = await (
       this.sb as unknown as {
         from: (t: string) => {
@@ -373,10 +373,10 @@ export class IntroductionDeliveryService {
       .select("introduction_request_id")
       .eq("status", "delivered")
       .in("introduction_request_id", ids);
-    const activeSet = new Set((active ?? []).map((r) => r.introduction_request_id));
+    const activeSet = new Set((active ?? []).map((r: any) => r.introduction_request_id));
     return reqs
       .filter((r) => !activeSet.has(r.id))
-      .map((r) => ({
+      .map((r: any) => ({
         introductionRequestId: r.id,
         requester: { personNodeId: r.requester_person_node_id },
         intermediary: { personNodeId: r.intermediary_person_node_id },

@@ -65,12 +65,12 @@ const BASE: MyNotification[] = [
 
 // Mutable dataset the mocked list fn reads from, so a "refresh" (reload) can
 // return a different snapshot (e.g. all-read after mark-all-read).
-let dataset: MyNotification[] = BASE.map((n) => ({ ...n }));
+let dataset: MyNotification[] = BASE.map((n: any) => ({ ...n }));
 
-const listMyNotifications = vi.fn(async () => dataset.map((n) => ({ ...n })));
+const listMyNotifications = vi.fn(async () => dataset.map((n: any) => ({ ...n })));
 const markAllNotificationsReadFn = vi.fn(async () => {
-  dataset = dataset.map((n) => ({ ...n, unread: false }));
-  return { ids: BASE.filter((n) => n.unread).map((n) => n.id) };
+  dataset = dataset.map((n: any) => ({ ...n, unread: false }));
+  return { ids: BASE.filter((n) => n.unread).map((n: any) => n.id) };
 });
 
 vi.mock("@/lib/member-app.functions", () => ({
@@ -144,7 +144,7 @@ async function getList(): Promise<HTMLElement> {
 }
 
 beforeEach(() => {
-  dataset = BASE.map((n) => ({ ...n }));
+  dataset = BASE.map((n: any) => ({ ...n }));
   window.localStorage.clear();
   window.localStorage.setItem("vba.lang", "en");
 });
@@ -341,7 +341,7 @@ describe("notifications screen — aria-busy during reload", () => {
     await waitFor(() => expect(list.getAttribute("aria-busy")).toBe("true"));
 
     // Resolve the fetch with the refreshed (all-read) snapshot.
-    pending.resolve(dataset.map((n) => ({ ...n })));
+    pending.resolve(dataset.map((n: any) => ({ ...n })));
 
     // Once settled, aria-busy returns to "false" and unread indicators are gone.
     await waitFor(() => expect(list.getAttribute("aria-busy")).toBe("false"));

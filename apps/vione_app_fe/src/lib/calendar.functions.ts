@@ -4,7 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { CalendarError } from "@/lib/meeting/calendar/errors";
 import type {
   AvailabilityPreferencesDTO,
@@ -25,7 +25,7 @@ const tz = z.string().min(1).max(64);
 // ── Preferences ─────────────────────────────────────────────────────────────
 
 export const getMyAvailabilityPreferencesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AvailabilityPreferencesDTO | null> => {
     const c = context as unknown as Ctx;
 
@@ -53,7 +53,7 @@ const updatePrefsInput = z.object({
 });
 
 export const updateAvailabilityPreferencesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updatePrefsInput.parse(d))
   .handler(async ({ data, context }): Promise<AvailabilityPreferencesDTO> => {
     const c = context as unknown as Ctx;
@@ -98,7 +98,7 @@ const findAvailabilityInput = z.object({
 });
 
 export const findCommonAvailabilityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => findAvailabilityInput.parse(d))
   .handler(async ({ data, context }): Promise<AvailabilitySlotDTO[]> => {
     const c = context as unknown as Ctx;
@@ -118,7 +118,7 @@ const createProposalsInput = z.object({
 });
 
 export const createTimeProposalsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createProposalsInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingTimeProposalDTO[]> => {
     const c = context as unknown as Ctx;
@@ -142,7 +142,7 @@ export const createTimeProposalsFn = createServerFn({ method: "POST" })
 const listProposalsInput = z.object({ meetingId: uuid });
 
 export const listMeetingTimeProposalsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listProposalsInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingTimeProposalDTO[]> => {
     const c = context as unknown as Ctx;
@@ -152,7 +152,7 @@ export const listMeetingTimeProposalsFn = createServerFn({ method: "GET" })
   });
 
 export const listMeetingProjectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => listProposalsInput.parse(d))
   .handler(async ({ data, context }) => {
     const c = context as unknown as Ctx;
@@ -167,7 +167,7 @@ const respondInput = z.object({
 });
 
 export const respondToTimeProposalFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => respondInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingTimeProposalResponseDTO> => {
     const c = context as unknown as Ctx;
@@ -193,7 +193,7 @@ const selectInput = z.object({
 });
 
 export const selectTimeProposalFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => selectInput.parse(d))
   .handler(async ({ data, context }): Promise<MeetingTimeProposalDTO> => {
     const c = context as unknown as Ctx;

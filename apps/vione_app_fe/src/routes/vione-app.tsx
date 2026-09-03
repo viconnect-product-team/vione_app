@@ -213,7 +213,7 @@ function VioneAppPage() {
             {tx({ vi: "Bạn có thể làm gì", en: "What you can do" })}
           </h2>
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {capabilities.map((c) => (
+            {capabilities.map((c: any) => (
               <div
                 key={c.label.en}
                 className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-3 py-5 text-center"

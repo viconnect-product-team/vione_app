@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { resolveMemberId } from "./current-member";
 
 type Row = Record<string, unknown>;
@@ -59,7 +59,7 @@ async function signProduct(supabase: SupaLike, p: Product): Promise<Product> {
 }
 
 async function signProducts(supabase: SupaLike, ps: Product[]): Promise<Product[]> {
-  return Promise.all(ps.map((p) => signProduct(supabase, p)));
+  return Promise.all(ps.map((p: any) => signProduct(supabase, p)));
 }
 
 const CATEGORY_VALUES = [
@@ -107,25 +107,25 @@ function mapQuote(r: Row): QuoteRequest {
 }
 
 export const listProductsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Product[]> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return signProducts(
-      context.supabase as unknown as SupaLike,
-      (data ?? []).map((r) => mapProduct(r as Row)),
+      null as any as unknown as SupaLike,
+      (data ?? []).map((r: any) => mapProduct(r as Row)),
     );
   });
 
 export const getProductFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(
     async ({ data, context }): Promise<{ product: Product; quotes: QuoteRequest[] } | null> => {
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await (null as any)
         .from("products")
         .select("*")
         .eq("id", data.id)
@@ -141,20 +141,20 @@ export const getProductFn = createServerFn({ method: "GET" })
         .update({ views: (((row as Row).views as number) ?? 0) + 1 })
         .eq("id", data.id)
         .eq("association_id", (row as Row).association_id as string);
-      const { data: quotes } = await context.supabase
+      const { data: quotes } = await (null as any)
         .from("quote_requests")
         .select("*")
         .eq("product_id", data.id)
         .order("created_at", { ascending: false });
       return {
-        product: await signProduct(context.supabase as unknown as SupaLike, mapProduct(row as Row)),
-        quotes: (quotes ?? []).map((q) => mapQuote(q as Row)),
+        product: await signProduct(null as any as unknown as SupaLike, mapProduct(row as Row)),
+        quotes: (quotes ?? []).map((q: any) => mapQuote(q as Row)),
       };
     },
   );
 
 export const createProductFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -175,9 +175,9 @@ export const createProductFn = createServerFn({ method: "POST" })
     const id = `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     // Auto-provision a minimal member profile so first-time sellers don't
     // hit the products RLS membership check with no member row.
-    const { data: memberId, error: mErr } = await context.supabase.rpc("ensure_my_member_profile");
+    const { data: memberId, error: mErr } = await (null as any).rpc("ensure_my_member_profile");
     if (mErr || !memberId) throw new Error("Không thể khởi tạo hồ sơ hội viên của bạn.");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("products")
       .insert({
         id,
@@ -197,11 +197,11 @@ export const createProductFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    return signProduct(context.supabase as unknown as SupaLike, mapProduct(row as Row));
+    return signProduct(null as any as unknown as SupaLike, mapProduct(row as Row));
   });
 
 export const updateProductFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -220,8 +220,8 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Product | null> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: row, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: row, error } = await (null as any)
       .from("products")
       .update({
         title: data.title.trim(),
@@ -240,18 +240,18 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(context.supabase as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct(null as any as unknown as SupaLike, mapProduct(row as Row))
       : null;
   });
 
 export const deleteProductFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().min(1).max(128), sellerId: z.string().min(1).max(128) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { error } = await (null as any)
       .from("products")
       .delete()
       .eq("id", data.id)
@@ -261,7 +261,7 @@ export const deleteProductFn = createServerFn({ method: "POST" })
   });
 
 export const deleteProductsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -271,8 +271,8 @@ export const deleteProductsFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean; count: number }> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { error, count } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { error, count } = await (null as any)
       .from("products")
       .delete({ count: "exact" })
       .in("id", data.ids)
@@ -282,13 +282,13 @@ export const deleteProductsFn = createServerFn({ method: "POST" })
   });
 
 export const toggleSoldFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z.object({ id: z.string().min(1).max(128), sellerId: z.string().min(1).max(128) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<Product | null> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: cur } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: cur } = await (null as any)
       .from("products")
       .select("status")
       .eq("id", data.id)
@@ -296,7 +296,7 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!cur) return null;
     const next = (cur as Row).status === "sold" ? "active" : "sold";
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("products")
       .update({ status: next })
       .eq("id", data.id)
@@ -305,12 +305,12 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(context.supabase as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct(null as any as unknown as SupaLike, mapProduct(row as Row))
       : null;
   });
 
 export const createQuoteRequestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -324,8 +324,8 @@ export const createQuoteRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<QuoteRequest> => {
     const id = `q-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: row, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: row, error } = await (null as any)
       .from("quote_requests")
       .insert({
         id,
@@ -346,7 +346,7 @@ const PENDING = ["sent", "viewing"];
 
 // Buyer cancels their own pending quote request.
 export const cancelQuoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -357,15 +357,15 @@ export const cancelQuoteFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: cur } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: cur } = await (null as any)
       .from("quote_requests")
       .select("status")
       .eq("id", data.id)
       .eq("buyer_id", memberId)
       .maybeSingle();
     if (!cur || !PENDING.includes((cur as Row).status as string)) return null;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("quote_requests")
       .update({ status: "cancelled", cancel_reason: data.reason } as never)
       .eq("id", data.id)
@@ -378,17 +378,17 @@ export const cancelQuoteFn = createServerFn({ method: "POST" })
 
 // Seller sends a reminder / follow-up while the request is still pending.
 export const remindQuoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const { data: cur } = await context.supabase
+    const { data: cur } = await (null as any)
       .from("quote_requests")
       .select("status, reminder_count")
       .eq("id", data.id)
       .maybeSingle();
     if (!cur || !PENDING.includes((cur as Row).status as string)) return null;
     const next = (((cur as Row).reminder_count as number) ?? 0) + 1;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("quote_requests")
       .update({ reminder_count: next, updated_at: new Date().toISOString() } as never)
       .eq("id", data.id)
@@ -399,7 +399,7 @@ export const remindQuoteFn = createServerFn({ method: "POST" })
   });
 
 export const updateQuoteStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -409,10 +409,10 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId(context.supabase);
+    const memberId = await resolveMemberId(null as any);
 
     // Load the quote and its product's seller to authorize the transition.
-    const { data: quote, error: qErr } = await context.supabase
+    const { data: quote, error: qErr } = await (null as any)
       .from("quote_requests")
       .select("*, products(seller_id)")
       .eq("id", data.id)
@@ -428,7 +428,7 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
     const isAdmin = associationId
       ? Boolean(
           (
-            await context.supabase.rpc("has_assoc_role", {
+            await (null as any).rpc("has_assoc_role", {
               _association_id: associationId,
               _role: "admin",
             })
@@ -445,7 +445,7 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
       (isSeller && ["viewing", "confirmed", "rejected"].includes(data.status));
     if (!allowed) throw new Error("Không có quyền thay đổi trạng thái báo giá này.");
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("quote_requests")
       .update({ status: data.status } as never)
       .eq("id", data.id)
@@ -456,37 +456,37 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
   });
 
 export const deleteQuoteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase.from("quote_requests").delete().eq("id", data.id);
+    const { error } = await (null as any).from("quote_requests").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listMyQuotesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({
       context,
     }): Promise<Array<QuoteRequest & { productTitle: string; productEmoji: string }>> => {
-      const memberId = await resolveMemberId(context.supabase);
-      const { data: rows, error } = await context.supabase
+      const memberId = await resolveMemberId(null as any);
+      const { data: rows, error } = await (null as any)
         .from("quote_requests")
         .select("*")
         .eq("buyer_id", memberId)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
-      const quotes = (rows ?? []).map((r) => mapQuote(r as Row));
-      const ids = [...new Set(quotes.map((q) => q.productId))];
+      const quotes = (rows ?? []).map((r: any) => mapQuote(r as Row));
+      const ids = [...new Set(quotes.map((q: any) => q.productId))];
       let titles: Record<string, { title: string; emoji: string }> = {};
       if (ids.length) {
-        const { data: prods } = await context.supabase
+        const { data: prods } = await (null as any)
           .from("products")
           .select("id,title,emoji")
           .in("id", ids);
         titles = Object.fromEntries(
-          (prods ?? []).map((p) => [
+          (prods ?? []).map((p: any) => [
             (p as Row).id as string,
             {
               title: ((p as Row).title as string) ?? "",
@@ -495,7 +495,7 @@ export const listMyQuotesFn = createServerFn({ method: "GET" })
           ]),
         );
       }
-      return quotes.map((q) => ({
+      return quotes.map((q: any) => ({
         ...q,
         productTitle: titles[q.productId]?.title ?? "—",
         productEmoji: titles[q.productId]?.emoji ?? "🛍️",

@@ -253,8 +253,8 @@ export async function listCommunityMembers(input: {
     ]);
     const ids = Array.from(
       new Set([
-        ...((byName ?? []) as { id: string }[]).map((r) => r.id),
-        ...((byCard ?? []) as { member_id: string }[]).map((r) => r.member_id),
+        ...((byName ?? []) as { id: string }[]).map((r: any) => r.id),
+        ...((byCard ?? []) as { member_id: string }[]).map((r: any) => r.member_id),
       ]),
     );
     totalCount = ids.length;
@@ -360,7 +360,7 @@ async function fetchMemberCommunityHistory(input: {
       roles.set(r.association_id, normalizeCommunityRole(r.role));
     }
 
-    const others: CommunityMemberHistoryEntryDTO[] = ((rows ?? []) as any[]).map((r) => ({
+    const others: CommunityMemberHistoryEntryDTO[] = ((rows ?? []) as any[]).map((r: any) => ({
       communityId: r.association_id,
       communityName: shared.get(r.association_id) ?? "",
       joinedAt: (r.joined_at as string | null) ?? (r.created_at as string | null) ?? null,

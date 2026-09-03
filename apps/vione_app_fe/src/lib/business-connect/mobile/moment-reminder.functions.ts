@@ -2,7 +2,7 @@
 // Directs all requests to backend NestJS RESTful API.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
   BcMobileMomentReminder,
@@ -10,7 +10,7 @@ import type {
 } from "./moment-reminder.types";
 
 export const bcMobileMomentRemindersFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentReminderResult<{ reminders: BcMobileMomentReminder[] }>> => {
@@ -31,7 +31,7 @@ export const bcMobileMomentRemindersFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentReminderCreateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentReminderResult<{ reminder: BcMobileMomentReminder }>> => {
@@ -44,7 +44,7 @@ export const bcMobileMomentReminderCreateFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileMomentReminderSetStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentReminderResult<{ reminder: BcMobileMomentReminder }>> => {
@@ -57,7 +57,7 @@ export const bcMobileMomentReminderSetStatusFn = createServerFn({ method: "POST"
   );
 
 export const bcMobileMomentReminderDeleteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentReminderResult<{ reminderId: string }>> => {

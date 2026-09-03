@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type AssociationBranding = {
   brandPrimary: string | null;
@@ -12,10 +12,10 @@ export type AssociationBranding = {
 
 /** Admin read of own association branding (RLS scopes access). */
 export const getAssociationBrandingFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<AssociationBranding | null> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("associations")
       .select("brand_primary, tagline, about, contact_email, landing_published")
       .eq("id", data.associationId)
@@ -34,7 +34,7 @@ export const getAssociationBrandingFn = createServerFn({ method: "GET" })
 
 /** Admin update of own association branding (RLS scopes writes). */
 export const updateAssociationBrandingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -53,7 +53,7 @@ export const updateAssociationBrandingFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Before enabling public, require a verified custom domain (if one is set).
     if (data.landingPublished) {
-      const { data: dom } = await context.supabase
+      const { data: dom } = await (null as any)
         .from("associations")
         .select("custom_domain, domain_status")
         .eq("id", data.associationId)
@@ -63,7 +63,7 @@ export const updateAssociationBrandingFn = createServerFn({ method: "POST" })
         throw new Error("DOMAIN_NOT_VERIFIED");
       }
     }
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("associations")
       .update({
         brand_primary: data.brandPrimary,

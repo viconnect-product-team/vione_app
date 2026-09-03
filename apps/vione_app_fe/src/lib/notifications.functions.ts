@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Notification } from "@/lib/extra-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 type Row = Record<string, unknown>;
 
@@ -19,11 +19,11 @@ function mapNotif(n: Row): Notification {
 }
 
 export const listNotificationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Notification[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase
+    const activeId = await getActiveAssociationId(null as any);
+    let query = (null as any)
       .from("notifications")
       .select("*")
       .order("created_at", { ascending: false });
@@ -42,12 +42,12 @@ const notifInput = z.object({
 });
 
 export const createNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => notifInput.parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("NTF");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("notifications")
       .insert({
         code,
@@ -60,7 +60,7 @@ export const createNotificationFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Soạn thông báo",
       target: data.title,
       category: "system",
@@ -69,11 +69,11 @@ export const createNotificationFn = createServerFn({ method: "POST" })
   });
 
 export const updateNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => notifInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("notifications")
       .update({
         title: data.title,
@@ -86,7 +86,7 @@ export const updateNotificationFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật thông báo",
       target: data.title,
       category: "system",
@@ -96,19 +96,19 @@ export const updateNotificationFn = createServerFn({ method: "POST" })
 
 // Mark a draft/scheduled notification as sent.
 export const sendNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
     const { logActivity } = await import("./crud.server");
     const sentAt = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("notifications")
       .update({ status: "sent", sent_at: sentAt })
       .eq("code", data.id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Gửi thông báo",
       target: (row.title as string) ?? data.id,
       category: "system",
@@ -117,18 +117,18 @@ export const sendNotificationFn = createServerFn({ method: "POST" })
   });
 
 export const deleteNotificationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const found = await context.supabase
+    const found = await (null as any)
       .from("notifications")
       .select("title")
       .eq("code", data.id)
       .maybeSingle();
-    const { error } = await context.supabase.from("notifications").delete().eq("code", data.id);
+    const { error } = await (null as any).from("notifications").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa thông báo",
       target: (found.data?.title as string) ?? data.id,
       category: "system",

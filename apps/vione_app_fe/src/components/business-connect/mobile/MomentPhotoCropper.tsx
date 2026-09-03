@@ -266,7 +266,7 @@ export function MomentPhotoCropper({
 
       <div className="px-4 pb-6">
         <div className="flex flex-wrap justify-center gap-2">
-          {ASPECTS.map((a) => (
+          {ASPECTS.map((a: any) => (
             <button
               key={a.key}
               type="button"

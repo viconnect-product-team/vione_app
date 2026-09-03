@@ -119,7 +119,7 @@ function MyCardPage() {
         <EmptyState title={t("bc.myCard.empty")} description={t("bc.myCard.emptyDesc")} />
       ) : (
         <ul role="list" className="grid gap-3 sm:grid-cols-2">
-          {cards.data.map((c) => (
+          {cards.data.map((c: any) => (
             <li key={c.id}>
               <button
                 type="button"

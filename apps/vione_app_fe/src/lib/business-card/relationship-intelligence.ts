@@ -129,11 +129,11 @@ export function buildSmartCollections(
   // Recent (saved within the window).
   const recent = cards
     .filter((c) => relationshipAgeDays(c.savedAt, now) <= RECENT_WINDOW_DAYS)
-    .map((c) => c.id);
+    .map((c: any) => c.id);
   collections.push(make("recent", "recent", "recent", recent));
 
   // Favorites.
-  const favorites = cards.filter((c) => c.favorite).map((c) => c.id);
+  const favorites = cards.filter((c) => c.favorite).map((c: any) => c.id);
   collections.push(make("favorites", "favorites", "favorites", favorites));
 
   // By industry (private metadata first, else target unavailable → skip).

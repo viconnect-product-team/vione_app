@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type { DeviceSessionInfo } from "./device-session.types";
 
@@ -25,7 +25,7 @@ const revokeSchema = z.object({
 });
 
 export const bcDeviceSessionsListFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => listSchema.parse(data))
   .handler(async ({ data, context }): Promise<DeviceSessionInfo[]> => {
     const queryParams = new URLSearchParams();
@@ -38,7 +38,7 @@ export const bcDeviceSessionsListFn = createServerFn({ method: "GET" })
   });
 
 export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => heartbeatSchema.parse(data))
   .handler(
     ({ data, context }): Promise<{ revoked: boolean }> =>
@@ -49,7 +49,7 @@ export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
   );
 
 export const bcDeviceSessionRevokeFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data: unknown) => revokeSchema.parse(data))
   .handler(async ({ data, context }): Promise<DeviceSessionInfo> => {
     const queryParams = new URLSearchParams();

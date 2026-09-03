@@ -13,6 +13,7 @@ import {
   Activity,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 
@@ -119,6 +120,7 @@ function ShellSidebar({
 
 export function PlatformShell({ children }: { children: ReactNode }) {
   const t = useT();
+  const { logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -149,7 +151,14 @@ export function PlatformShell({ children }: { children: ReactNode }) {
           <ShieldCheck className="h-5 w-5 text-primary" />
           <span className="text-sm font-semibold text-foreground">{t("platform.title")}</span>
           <button
-            onClick={() => supabase.auth.signOut()}
+            onClick={async () => {
+              try {
+                await logout();
+              } catch {
+                /* ignore */
+              }
+              window.location.href = "/auth";
+            }}
             className="ml-auto rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent"
           >
             {t("platform.signOut")}

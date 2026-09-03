@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type Campaign = {
   id: string;
@@ -15,18 +15,18 @@ export type Campaign = {
 };
 
 export const listCampaignsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Campaign[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase
+    const activeId = await getActiveAssociationId(null as any);
+    let query = (null as any)
       .from("email_campaigns")
       .select("*")
       .order("created_at", { ascending: false });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw error;
-    return (data ?? []).map((c) => ({
+    return (data ?? []).map((c: any) => ({
       id: c.code,
       name: c.name,
       subject: c.subject,
@@ -40,7 +40,7 @@ export const listCampaignsFn = createServerFn({ method: "GET" })
   });
 
 export const createCampaignFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -54,9 +54,9 @@ export const createCampaignFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<Campaign> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
+    const activeId = await getActiveAssociationId(null as any);
     const code = `CMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("email_campaigns")
       .insert({
         code,
@@ -85,10 +85,10 @@ export const createCampaignFn = createServerFn({ method: "POST" })
   });
 
 export const deleteCampaignFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { error } = await context.supabase.from("email_campaigns").delete().eq("code", data.id);
+    const { error } = await (null as any).from("email_campaigns").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

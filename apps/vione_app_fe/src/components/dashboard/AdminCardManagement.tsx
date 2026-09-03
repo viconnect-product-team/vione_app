@@ -221,7 +221,7 @@ export function AdminCardManagement({ memberId }: { memberId: string }) {
               <p className="text-sm text-muted-foreground">Chưa có sự kiện.</p>
             ) : (
               <ul className="space-y-1.5">
-                {events.map((e) => (
+                {events.map((e: any) => (
                   <li
                     key={e.id}
                     className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs"

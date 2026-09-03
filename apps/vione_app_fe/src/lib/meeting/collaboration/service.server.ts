@@ -46,7 +46,7 @@ export const MeetingAgendaService = {
   ): Promise<MeetingAgendaItemDTO[]> {
     assertUuid(meetingId);
     const rows = await MeetingAgendaRepository.listByMeetingId(sb, meetingId);
-    return rows.map((r) => toAgendaItemDTO(r, viewerUserId));
+    return rows.map((r: any) => toAgendaItemDTO(r, viewerUserId));
   },
 
   async createItem(

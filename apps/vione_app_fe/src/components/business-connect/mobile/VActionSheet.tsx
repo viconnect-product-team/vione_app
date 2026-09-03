@@ -7,7 +7,6 @@
 
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import {
   ChevronRight,
   Contact,
@@ -27,10 +26,10 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/compone
 import { useMyIdentity } from "@/hooks/use-my-identity";
 import { useT, type TKey } from "@/lib/i18n";
 import {
-  bcIdentityGetOrCreateShareLinkFn,
-  bcIdentityRotateShareLinkFn,
+  getOrCreateShareLinkDirect,
+  rotateShareLinkDirect,
 } from "@/lib/business-connect/mobile/identity.functions";
-import { bcIdentityNfcTagRegisterFn } from "@/lib/business-connect/mobile/nfc-tags.functions";
+import { registerNfcTagDirect } from "@/lib/business-connect/mobile/nfc-tags.functions";
 import { webDisplay } from "@/lib/business-connect/mobile/public-actions";
 import { IdentityQrSheet } from "@/components/business-connect/mobile/me/IdentityQrSheet";
 import { NfcActionSheet } from "@/components/business-connect/mobile/me/NfcActionSheet";
@@ -110,8 +109,8 @@ export function VActionSheet({
   };
 
   // "Đưa QR" mở thẳng mã QR ngay tại chỗ (không điều hướng sang màn khác).
-  const getOrCreateLink = useServerFn(bcIdentityGetOrCreateShareLinkFn);
-  const rotateLink = useServerFn(bcIdentityRotateShareLinkFn);
+  // Dùng direct helpers để bypass requireSupabaseAuth middleware.
+  const [nfcSheet, setNfcSheet] = useState<null | "choose" | "write" | "tap-connect">(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
@@ -125,7 +124,7 @@ export function VActionSheet({
     if (shareLink) return;
     setQrLoading(true);
     try {
-      setShareLink(await getOrCreateLink());
+      setShareLink(await getOrCreateShareLinkDirect());
     } catch (e) {
       setQrError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -136,7 +135,7 @@ export function VActionSheet({
   const handleRotate = async () => {
     setRotating(true);
     try {
-      setShareLink(await rotateLink());
+      setShareLink(await rotateShareLinkDirect());
     } catch (e) {
       setQrError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -145,16 +144,13 @@ export function VActionSheet({
   };
 
   // NFC + Quét QR: mở đúng luồng đã có (5B ghi thẻ / 5E chạm để kết nối).
-  const registerNfcTag = useServerFn(bcIdentityNfcTagRegisterFn);
-  const [nfcSheet, setNfcSheet] = useState<null | "choose" | "write" | "tap-connect">(null);
-
   const openNfcWriter = async () => {
     setQrError(null);
     setNfcSheet("write");
     if (shareLink) return;
     setQrLoading(true);
     try {
-      setShareLink(await getOrCreateLink());
+      setShareLink(await getOrCreateShareLinkDirect());
     } catch (e) {
       setQrError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -230,6 +226,7 @@ export function VActionSheet({
               icon={Wallet}
               titleKey="bc.mobile.sheet.tile.wallet"
               descKey="bc.mobile.sheet.tile.wallet.desc"
+              onClick={() => go("/connect-app/me")}
             />
             <QuickTile
               icon={ShieldCheck}
@@ -296,7 +293,7 @@ export function VActionSheet({
         <NfcSheet
           shareLink={shareLink}
           onClose={() => setNfcSheet(null)}
-          registerTag={() => registerNfcTag({ data: { shareToken: shareLink.token } })}
+          registerTag={() => registerNfcTagDirect(shareLink.token)}
         />
       ) : null}
 

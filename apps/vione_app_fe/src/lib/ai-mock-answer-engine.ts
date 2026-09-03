@@ -29,7 +29,7 @@ function noData(bundle: ContextBundle): boolean {
 
 function composeAnswer(capability: AiCapability, bundle: ContextBundle): string {
   // Permission-denied bundles carry only a limitation and no data.
-  if (bundle.limitations.some((l) => l.includes("chưa có quyền")) && noData(bundle)) {
+  if (bundle.limitations.some((l: any) => l.includes("chưa có quyền")) && noData(bundle)) {
     return "Anh/chị chưa có quyền truy cập dữ liệu này.";
   }
 

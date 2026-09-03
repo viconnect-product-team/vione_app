@@ -69,7 +69,7 @@ export function draftFromCandidate(candidate: BusinessCardCandidate): ScanReview
           0,
           phones.findIndex((p) => p.label === "mobile"),
         );
-  const emails = fields.emails.slice(0, SCAN_REVIEW_MAX_EMAILS).map((e) => e.value);
+  const emails = fields.emails.slice(0, SCAN_REVIEW_MAX_EMAILS).map((e: any) => e.value);
   return {
     displayName: fields.displayName?.value ?? "",
     title: fields.title?.value ?? "",

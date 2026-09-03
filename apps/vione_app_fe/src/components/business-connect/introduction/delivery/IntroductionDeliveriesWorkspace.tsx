@@ -55,7 +55,7 @@ export function IntroductionDeliveriesWorkspace() {
           )}
           {pending.data && pending.data.length > 0 && (
             <ul className="space-y-3" role="list">
-              {pending.data.map((r) => (
+              {pending.data.map((r: any) => (
                 <li
                   key={r.introductionRequestId}
                   className="rounded-lg border border-border bg-card p-4"

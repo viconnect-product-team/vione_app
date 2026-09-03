@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type ReviewType = "service" | "event" | "networking";
 
@@ -31,10 +31,10 @@ function mapRow(r: Row): ReviewRow {
 }
 
 export const listReviewsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ sellerId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await (null as any)
       .from("reviews")
       .select("*")
       .eq("seller_id", data.sellerId)
@@ -47,7 +47,7 @@ export const listReviewsFn = createServerFn({ method: "GET" })
   });
 
 export const addReviewFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -60,13 +60,13 @@ export const addReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: reviewer, error: e1 } = await context.supabase
+    const { data: reviewer, error: e1 } = await (null as any)
       .from("members")
       .select("name")
       .eq("id", data.reviewerId)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("reviews")
       .insert({
         seller_id: data.sellerId,
@@ -83,7 +83,7 @@ export const addReviewFn = createServerFn({ method: "POST" })
   });
 
 export const updateReviewFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -96,7 +96,7 @@ export const updateReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<ReviewRow | null> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("reviews")
       .update({
         rating: data.rating,
@@ -112,7 +112,7 @@ export const updateReviewFn = createServerFn({ method: "POST" })
   });
 
 export const deleteReviewFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -122,7 +122,7 @@ export const deleteReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("reviews")
       .delete()
       .eq("id", data.id)

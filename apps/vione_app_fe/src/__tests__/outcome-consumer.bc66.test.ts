@@ -65,7 +65,7 @@ function makeFakeSb(rows: Row[]) {
       case "outcome_consumer_claim_batch": {
         const batch = Math.min(Number(args._batch ?? 100), CONSUMER_BATCH_MAX);
         const pick = rows.filter((r) => !claimed.has(r.id) && !processed.has(r.id)).slice(0, batch);
-        pick.forEach((r) => {
+        pick.forEach((r: any) => {
           claimed.add(r.id);
           r.attempt_count += 1;
         });
@@ -223,7 +223,7 @@ describe("BC-6.6 · registry", () => {
   it("built-in adapters are present with required flags", () => {
     const names = defaultRegistry
       .all()
-      .map((a) => a.name)
+      .map((a: any) => a.name)
       .sort();
     expect(names).toEqual(["analytics", "audit", "notification"]);
     expect(defaultRegistry.requiredNames().sort()).toEqual(["analytics", "audit"]);
@@ -236,7 +236,7 @@ describe("BC-6.6 · registry", () => {
   });
 
   it("subscription filter honours per-adapter kinds", () => {
-    const subs = defaultRegistry.subscribed("introduction_outcome_created").map((a) => a.name);
+    const subs = defaultRegistry.subscribed("introduction_outcome_created").map((a: any) => a.name);
     expect(subs).toContain("analytics");
     expect(subs).toContain("audit");
     expect(subs).not.toContain("notification");

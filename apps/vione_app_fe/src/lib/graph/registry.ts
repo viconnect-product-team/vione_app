@@ -504,8 +504,8 @@ class Registry {
 
   private computeHash(nodes: NodeKindRegistration[], edges: EdgeKindRegistration[]): string {
     const src = JSON.stringify({
-      n: nodes.map((n) => [n.kind, n.version]),
-      e: edges.map((e) => [e.kind, e.version, e.inverse ?? null]),
+      n: nodes.map((n: any) => [n.kind, n.version]),
+      e: edges.map((e: any) => [e.kind, e.version, e.inverse ?? null]),
     });
     // Small non-crypto hash — deterministic for manifest tracking.
     let h = 5381;

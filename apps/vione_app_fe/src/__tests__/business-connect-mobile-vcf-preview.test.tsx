@@ -113,7 +113,7 @@ describe("vcf-preview — parseVCardPreview", () => {
   });
 
   it("skips envelope properties and the machine-only N fallback", () => {
-    const fields = parseVCardPreview(scanVcf()).map((r) => r.field);
+    const fields = parseVCardPreview(scanVcf()).map((r: any) => r.field);
     expect(fields).not.toContain("N" as never);
     expect(fields.filter((f) => f === "name")).toHaveLength(1);
     expect(scanVcf()).toContain("N;CHARSET=UTF-8");

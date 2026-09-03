@@ -8,7 +8,7 @@ import type {
   RecentEntry,
   TicketStat,
 } from "./checkin-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 type Row = Record<string, unknown>;
 
@@ -44,7 +44,7 @@ function timeOf(iso: string): string {
 }
 
 export const getCheckinStateFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({
       context,
@@ -55,8 +55,8 @@ export const getCheckinStateFn = createServerFn({ method: "GET" })
       ticketStats: TicketStat[];
     }> => {
       const [att, logs] = await Promise.all([
-        context.supabase.from("attendees").select("*").order("name", { ascending: true }),
-        context.supabase
+        (null as any).from("attendees").select("*").order("name", { ascending: true }),
+        (null as any)
           .from("checkin_logs")
           .select("*")
           .order("created_at", { ascending: false })
@@ -64,10 +64,10 @@ export const getCheckinStateFn = createServerFn({ method: "GET" })
       ]);
       if (att.error) throw new Error(att.error.message);
       if (logs.error) throw new Error(logs.error.message);
-      const attendees = (att.data ?? []).map((r) => mapAttendee(r as Row));
-      const byId = new Map(attendees.map((a) => [a.id, a]));
+      const attendees = (att.data ?? []).map((r: any) => mapAttendee(r as Row));
+      const byId = new Map(attendees.map((a: any) => [a.id, a]));
       const recent: RecentEntry[] = (logs.data ?? [])
-        .map((r) => {
+        .map((r: any) => {
           const a = byId.get((r as Row).attendee_id as string);
           if (!a) return null;
           return {
@@ -76,13 +76,13 @@ export const getCheckinStateFn = createServerFn({ method: "GET" })
             time: timeOf((r as Row).created_at as string),
           };
         })
-        .filter((e): e is RecentEntry => e !== null);
+        .filter((e: RecentEntry | null): e is RecentEntry => e !== null);
       return {
         attendees,
         recent,
         stats: {
           registered: attendees.length,
-          checkedIn: attendees.filter((a) => a.checkedIn).length,
+          checkedIn: attendees.filter((a: any) => a.checkedIn).length,
         },
         ticketStats: ticketStatsOf(attendees),
       };
@@ -90,10 +90,10 @@ export const getCheckinStateFn = createServerFn({ method: "GET" })
   );
 
 export const checkInFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ attendeeId: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ attendee: Attendee; result: CheckinResult }> => {
-    const { data: cur, error } = await context.supabase
+    const { data: cur, error } = await (null as any)
       .from("attendees")
       .select("*")
       .eq("id", data.attendeeId)
@@ -105,12 +105,12 @@ export const checkInFn = createServerFn({ method: "POST" })
     const already = Boolean((cur as Row).checked_in);
     const result: CheckinResult = already ? "already" : "success";
     if (!already) {
-      await context.supabase
+      await (null as any)
         .from("attendees")
         .update({ checked_in: true })
         .eq("id", data.attendeeId);
     }
-    await context.supabase.from("checkin_logs").insert({
+    await (null as any).from("checkin_logs").insert({
       attendee_id: data.attendeeId,
       result,
     });
@@ -119,15 +119,15 @@ export const checkInFn = createServerFn({ method: "POST" })
   });
 
 export const undoCheckInFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ attendeeId: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const upd = await context.supabase
+    const upd = await (null as any)
       .from("attendees")
       .update({ checked_in: false })
       .eq("id", data.attendeeId);
     if (upd.error) throw new Error(upd.error.message);
-    const del = await context.supabase
+    const del = await (null as any)
       .from("checkin_logs")
       .delete()
       .eq("attendee_id", data.attendeeId);

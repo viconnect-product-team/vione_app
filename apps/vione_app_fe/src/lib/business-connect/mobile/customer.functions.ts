@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import {
   CUSTOMER_MAX_NAME_LEN,
@@ -30,7 +30,7 @@ const isoSchema = z.string().min(4).max(40);
 
 // ── List ────────────────────────────────────────────────----------------────
 export const bcMobileCustomersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<BcCustomerResult<{ customers: BcCustomer[] }>> => {
     return fetchNestApiFromServer("/connect-app/customer", context.token);
   });
@@ -49,7 +49,7 @@ const createInput = z.object({
 });
 
 export const bcMobileCustomerCreateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => createInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ customer: BcCustomer }>> => {
     return fetchNestApiFromServer("/connect-app/customer", context.token, {
@@ -70,7 +70,7 @@ const updateInput = z.object({
 });
 
 export const bcMobileCustomerUpdateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => updateInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ customer: BcCustomer }>> => {
     const { customerId, ...rest } = data;
@@ -82,7 +82,7 @@ export const bcMobileCustomerUpdateFn = createServerFn({ method: "POST" })
 
 // ── Delete ──────────────────────────────────────────────────────────────────
 export const bcMobileCustomerDeleteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
     return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}`, context.token, {
@@ -92,7 +92,7 @@ export const bcMobileCustomerDeleteFn = createServerFn({ method: "POST" })
 
 // ── Care log ────────────────────────────────────────────────────────────────
 export const bcMobileCustomerLogsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ logs: BcCustomerLog[] }>> => {
     return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/logs`, context.token);
@@ -106,7 +106,7 @@ const logInput = z.object({
 });
 
 export const bcMobileCustomerLogAddFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => logInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ log: BcCustomerLog }>> => {
     const { customerId, ...rest } = data;
@@ -118,7 +118,7 @@ export const bcMobileCustomerLogAddFn = createServerFn({ method: "POST" })
 
 // ── Nhãn / phân nhóm khách hàng ─────────────────────────────────────────────
 export const bcMobileCustomerTagsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<BcCustomerResult<{ tags: BcCustomerTag[] }>> => {
     return fetchNestApiFromServer("/connect-app/customer/tags", context.token);
   });
@@ -126,7 +126,7 @@ export const bcMobileCustomerTagsFn = createServerFn({ method: "GET" })
 const tagNameSchema = z.string().min(1).max(CUSTOMER_MAX_TAG_NAME_LEN + 40);
 
 export const bcMobileCustomerTagCreateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ name: tagNameSchema }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ tag: BcCustomerTag }>> => {
     return fetchNestApiFromServer("/connect-app/customer/tags", context.token, {
@@ -136,7 +136,7 @@ export const bcMobileCustomerTagCreateFn = createServerFn({ method: "POST" })
   });
 
 export const bcMobileCustomerTagRenameFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z.object({ tagId: z.string().uuid(), name: tagNameSchema }).parse(data),
   )
@@ -149,7 +149,7 @@ export const bcMobileCustomerTagRenameFn = createServerFn({ method: "POST" })
   });
 
 export const bcMobileCustomerTagDeleteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ tagId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
     return fetchNestApiFromServer(`/connect-app/customer/tags/${data.tagId}`, context.token, {
@@ -158,7 +158,7 @@ export const bcMobileCustomerTagDeleteFn = createServerFn({ method: "POST" })
   });
 
 export const bcMobileCustomerSetTagsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -177,14 +177,14 @@ export const bcMobileCustomerSetTagsFn = createServerFn({ method: "POST" })
 
 // ── Điểm đau & nhu cầu ──────────────────────────────────────────────────────
 export const bcMobileCustomerNeedsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ needs: BcCustomerNeed[] }>> => {
     return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/needs`, context.token);
   });
 
 export const bcMobileCustomerNeedAddFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -204,7 +204,7 @@ export const bcMobileCustomerNeedAddFn = createServerFn({ method: "POST" })
   });
 
 export const bcMobileCustomerNeedUpdateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -224,7 +224,7 @@ export const bcMobileCustomerNeedUpdateFn = createServerFn({ method: "POST" })
   });
 
 export const bcMobileCustomerNeedDeleteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ needId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
     return fetchNestApiFromServer(`/connect-app/customer/needs/${data.needId}`, context.token, {
@@ -234,7 +234,7 @@ export const bcMobileCustomerNeedDeleteFn = createServerFn({ method: "POST" })
 
 // ── AI Tag Suggestion ──
 export const bcMobileCustomerTagSuggestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -265,7 +265,7 @@ export const bcMobileCustomerTagSuggestFn = createServerFn({ method: "POST" })
   );
 
 export const bcMobileCustomerTagSuggestHistoryFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(
     async ({ data, context }): Promise<BcCustomerResult<{ runs: BcCustomerTagSuggestionRun[] }>> => {
@@ -274,7 +274,7 @@ export const bcMobileCustomerTagSuggestHistoryFn = createServerFn({ method: "GET
   );
 
 export const bcMobileCustomerTagSuggestFeedbackFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -294,7 +294,7 @@ export const bcMobileCustomerTagSuggestFeedbackFn = createServerFn({ method: "PO
   });
 
 export const bcMobileCustomerTagSuggestFeedbackListFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(
     async ({

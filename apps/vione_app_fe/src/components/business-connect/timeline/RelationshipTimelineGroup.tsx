@@ -25,7 +25,7 @@ export function RelationshipTimelineGroup({
         {t(bucket.labelKey)}
       </h2>
       <ul role="list" className="space-y-2">
-        {bucket.items.map((e) => (
+        {bucket.items.map((e: any) => (
           <li key={e.id}>
             <RelationshipTimelineItem event={e} onOpenDetail={onOpenDetail} />
           </li>

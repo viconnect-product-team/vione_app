@@ -129,7 +129,7 @@ function EditOpportunityPage() {
                 onChange={(e) => setType(e.target.value as OpportunityTypeKey)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               >
-                {OPPORTUNITY_TYPES.map((c) => (
+                {OPPORTUNITY_TYPES.map((c: any) => (
                   <option key={c} value={c}>
                     {t(c)}
                   </option>

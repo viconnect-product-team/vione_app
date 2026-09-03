@@ -90,7 +90,7 @@ export function buildPersonVCard(person: BcMobilePersonDetail, origin?: string):
   if (source) lines.push(`SOURCE:${escapeVCardValue(source)}`);
 
   lines.push("END:VCARD");
-  return lines.map((l) => foldVCardLine(l)).join("\r\n") + "\r\n";
+  return lines.map((l: any) => foldVCardLine(l)).join("\r\n") + "\r\n";
 }
 
 /** Shared blob → anchor download trigger. Client-only. */

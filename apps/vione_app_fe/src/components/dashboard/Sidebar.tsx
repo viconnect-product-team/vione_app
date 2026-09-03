@@ -304,7 +304,7 @@ export function Sidebar({
         )}
         {!isCollapsed && (
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-[13px] font-semibold text-sidebar-primary-foreground">
+            <div className="truncate text-[13px] font-semibold text-sidebar-foreground">
               {brandName}
             </div>
             <div className="truncate text-[11px] text-sidebar-foreground/60">

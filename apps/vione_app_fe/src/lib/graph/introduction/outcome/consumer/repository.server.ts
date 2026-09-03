@@ -38,7 +38,7 @@ export class OutcomeEventConsumerRepository {
     const { data, error } = await this.sb.rpc("outcome_consumer_claim_batch", { _batch: n });
     if (error) throw new Error(`claimBatch failed: ${error.message}`);
     const rows = (data ?? []) as ClaimedRow[];
-    return rows.map((r) => this.toEnvelope(r)).filter((e): e is OutcomeEventEnvelope => e !== null);
+    return rows.map((r: any) => this.toEnvelope(r)).filter((e): e is OutcomeEventEnvelope => e !== null);
   }
 
   private toEnvelope(r: ClaimedRow): OutcomeEventEnvelope | null {

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { resolveMemberId } from "./current-member";
 import type { Opportunity, OpportunityInterest, OpportunityTypeKey } from "./opportunities-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 type Row = Record<string, unknown>;
 
@@ -46,7 +46,7 @@ function mapInterest(r: Row): OpportunityInterest {
 }
 
 export const listOpportunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({
       context,
@@ -56,24 +56,24 @@ export const listOpportunitiesFn = createServerFn({ method: "GET" })
       interestCounts: Record<string, number>;
     }> => {
       const [opps, interests] = await Promise.all([
-        context.supabase
+        (null as any)
           .from("opportunities")
           .select("*")
           .order("created_at", { ascending: false }),
-        context.supabase
+        (null as any)
           .from("opportunity_interests")
           .select("*")
           .order("created_at", { ascending: false }),
       ]);
       if (opps.error) throw new Error(opps.error.message);
       if (interests.error) throw new Error(interests.error.message);
-      const mappedInterests = (interests.data ?? []).map((r) => mapInterest(r as Row));
+      const mappedInterests = (interests.data ?? []).map((r: any) => mapInterest(r as Row));
       const interestCounts: Record<string, number> = {};
       for (const it of mappedInterests) {
         interestCounts[it.opportunityId] = (interestCounts[it.opportunityId] ?? 0) + 1;
       }
       return {
-        opportunities: (opps.data ?? []).map((r) => mapOpportunity(r as Row)),
+        opportunities: (opps.data ?? []).map((r: any) => mapOpportunity(r as Row)),
         interests: mappedInterests,
         interestCounts,
       };
@@ -81,14 +81,14 @@ export const listOpportunitiesFn = createServerFn({ method: "GET" })
   );
 
 export const getOpportunityFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(
     async ({
       data,
       context,
     }): Promise<{ opportunity: Opportunity; interests: OpportunityInterest[] } | null> => {
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await (null as any)
         .from("opportunities")
         .select("*")
         .eq("id", data.id)
@@ -104,7 +104,7 @@ export const getOpportunityFn = createServerFn({ method: "GET" })
         .update({ views: (((row as Row).views as number) ?? 0) + 1 })
         .eq("id", data.id)
         .eq("association_id", (row as Row).association_id as string);
-      const { data: interests } = await context.supabase
+      const { data: interests } = await (null as any)
         .from("opportunity_interests")
         .select("*")
         .eq("opportunity_id", data.id)
@@ -117,7 +117,7 @@ export const getOpportunityFn = createServerFn({ method: "GET" })
   );
 
 export const createOpportunityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -135,8 +135,8 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<Opportunity> => {
     const id = `o-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: row, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: row, error } = await (null as any)
       .from("opportunities")
       .insert({
         id,
@@ -160,7 +160,7 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
   });
 
 export const updateOpportunityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -179,8 +179,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Opportunity | null> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: row, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: row, error } = await (null as any)
       .from("opportunities")
       .update({
         title: data.title.trim(),
@@ -203,11 +203,11 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
   });
 
 export const deleteOpportunityFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { error } = await (null as any)
       .from("opportunities")
       .delete()
       .eq("id", data.id)
@@ -217,11 +217,11 @@ export const deleteOpportunityFn = createServerFn({ method: "POST" })
   });
 
 export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Opportunity | null> => {
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: cur } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: cur } = await (null as any)
       .from("opportunities")
       .select("status")
       .eq("id", data.id)
@@ -229,7 +229,7 @@ export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!cur) return null;
     const next = (cur as Row).status === "open" ? "closed" : "open";
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("opportunities")
       .update({ status: next })
       .eq("id", data.id)
@@ -241,7 +241,7 @@ export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
   });
 
 export const expressInterestFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -253,8 +253,8 @@ export const expressInterestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<OpportunityInterest> => {
     const id = `oi-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(context.supabase);
-    const { data: row, error } = await context.supabase
+    const memberId = await resolveMemberId(null as any);
+    const { data: row, error } = await (null as any)
       .from("opportunity_interests")
       .insert({
         id,

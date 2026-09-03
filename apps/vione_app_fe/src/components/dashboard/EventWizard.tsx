@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import {
-  createEventWithConfigFn,
   QR_FIELDS,
   type EventItem,
   type QrField,
 } from "@/lib/events.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { useT } from "@/lib/i18n";
 
@@ -45,7 +44,6 @@ export function EventWizard({
   onCreated: (event: EventItem) => void;
 }) {
   const t = useT();
-  const createFn = useServerFn(createEventWithConfigFn);
 
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [submitting, setSubmitting] = useState(false);
@@ -112,7 +110,7 @@ export function EventWizard({
   const back = () => setStep((s) => (s - 1) as 0 | 1 | 2);
 
   const toggleQr = (f: QrField) => {
-    setQrFields((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+    setQrFields((prev) => (prev.includes(f) ? prev.filter((x: any) => x !== f) : [...prev, f]));
   };
 
   const submit = async () => {
@@ -123,8 +121,9 @@ export function EventWizard({
     }
     setSubmitting(true);
     try {
-      const { event } = await createFn({
-        data: {
+      const res = await fetchNestApi<{ event: EventItem }>("/events", {
+        method: "POST",
+        body: JSON.stringify({
           name: info.name.trim(),
           date: info.date,
           location: info.location.trim(),
@@ -138,13 +137,14 @@ export function EventWizard({
             quantity: Number(tk.quantity) || 0,
             description: tk.description.trim(),
           })),
-        },
+        }),
       });
       toast.success(t("ewz.created"));
       reset();
-      onCreated(event);
-    } catch {
-      toast.error(t("ewz.error"));
+      onCreated(res?.event || (res as unknown as EventItem));
+    } catch (err: any) {
+      console.error("[EventWizard] Create error:", err);
+      toast.error(err?.message || t("ewz.error"));
     } finally {
       setSubmitting(false);
     }

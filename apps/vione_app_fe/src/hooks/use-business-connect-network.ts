@@ -209,10 +209,10 @@ export function useBusinessConnectNetwork(searchTerm: string) {
         limit: BC_MOBILE_NETWORK_PAGE_SIZE,
         offset: pageParam,
       });
-      const ids = Array.from(new Set(list.map((c) => c.counterpartUserId)));
+      const ids = Array.from(new Set(list.map((c: any) => c.counterpartUserId)));
       const summaries = ids.length ? await GlobalNetworkSDK.counterparts.resolvePublic(ids) : [];
       const byId = new Map(summaries.map((s) => [s.userId, s]));
-      return list.map((c) => connectionToPerson(c, byId.get(c.counterpartUserId) ?? null));
+      return list.map((c: any) => connectionToPerson(c, byId.get(c.counterpartUserId) ?? null));
     },
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === BC_MOBILE_NETWORK_PAGE_SIZE

@@ -129,7 +129,7 @@ function RegPage() {
           className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
         >
           <option value="all">{t("reg.allEvents")}</option>
-          {EVENTS.map((e) => (
+          {EVENTS.map((e: any) => (
             <option key={e.id} value={e.id}>
               {e.name}
             </option>
@@ -170,8 +170,8 @@ function RegPage() {
           />
         }
       >
-        {tc.pageRows.map((r) => {
-          const ev = EVENTS.find((e) => e.id === r.eventId);
+        {tc.pageRows.map((r: any) => {
+          const ev = EVENTS.find((e: any) => e.id === r.eventId);
           return (
             <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
               <td className="px-4 py-3 font-mono text-[12px] font-semibold text-primary">{r.id}</td>

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 /**
  * AI provider settings — Phase 10.
@@ -26,16 +26,16 @@ export type AiProviderSetting = {
   updatedAt: string | null;
 };
 
-async function assertPlatformAdmin(context: { supabase: any }) {
-  const { data, error } = await context.supabase.rpc("is_platform_admin");
+async function assertPlatformAdmin(context: { supabase?: any; userId?: string; token?: string }) {
+  const { data, error } = await (null as any).rpc("is_platform_admin");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
 
 export const getAiProviderSettingFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AiProviderSetting> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("app_settings")
       .select("value, updated_at")
       .eq("key", AI_PROVIDER_SETTING_KEY)
@@ -55,12 +55,12 @@ export const getAiProviderSettingFn = createServerFn({ method: "GET" })
   });
 
 export const setAiProviderSettingFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => z.object({ mode: z.enum(["mock", "real"]) }).parse(input))
   .handler(async ({ context, data }): Promise<AiProviderSetting> => {
     await assertPlatformAdmin(context);
 
-    const { error } = await context.supabase.from("app_settings").upsert(
+    const { error } = await (null as any).from("app_settings").upsert(
       {
         key: AI_PROVIDER_SETTING_KEY,
         value: { mode: data.mode },

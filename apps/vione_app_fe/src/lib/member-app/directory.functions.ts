@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // ---------- Member directory ----------
 export type DirectoryMember = {
@@ -11,20 +11,10 @@ export type DirectoryMember = {
   verified: boolean;
 };
 
+import { fetchNestApiFromServer } from "@/lib/api-client";
+
 export const listMembers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<DirectoryMember[]> => {
-    const { data } = await context.supabase
-      .from("members")
-      .select("code, name, industry, region, type, status")
-      .eq("status", "active")
-      .order("name", { ascending: true });
-    return (data ?? []).map((m) => ({
-      code: m.code,
-      name: m.name,
-      industry: m.industry ?? "",
-      region: m.region ?? "",
-      type: m.type === "individual" ? "individual" : "company",
-      verified: m.status === "active",
-    }));
+    return fetchNestApiFromServer("/members/directory", context.token);
   });

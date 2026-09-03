@@ -107,9 +107,9 @@ export function AnalyticsFilters({ value, onChange, isAdmin }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CONFIDENCE_BUCKETS.map((c) => (
+            {CONFIDENCE_BUCKETS.map((c: any) => (
               <SelectItem key={c} value={c}>
-                {t(`bc.introAnalytics.confidence.${c}` as const)}
+                {t(`bc.introAnalytics.confidence.${c}` as never)}
               </SelectItem>
             ))}
           </SelectContent>

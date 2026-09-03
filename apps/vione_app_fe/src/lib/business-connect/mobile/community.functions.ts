@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   CommunityDetailDTO,
   CommunityMemberPageDTO,
@@ -12,14 +12,14 @@ import { fetchNestApiFromServer } from "../../api-client";
 const communityIdSchema = z.string().uuid();
 
 export const listMyCommunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CommunitySummaryDTO[]> => {
     const { token } = context as any;
     return fetchNestApiFromServer("/connect-app/community", token);
   });
 
 export const getCommunityDetailFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ communityId: communityIdSchema }).parse(i))
   .handler(async ({ data, context }): Promise<CommunityDetailDTO | null> => {
     const { token } = context as any;
@@ -34,7 +34,7 @@ const membersInput = z.object({
 });
 
 export const listCommunityMembersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => membersInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityMemberPageDTO | null> => {
     const { token } = context as any;
@@ -53,7 +53,7 @@ const profileInput = z.object({
 });
 
 export const getCommunityMemberProfileFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => profileInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityMemberProfileDTO | null> => {
     const { token } = context as any;
@@ -67,7 +67,7 @@ const connectInput = z.object({
 });
 
 export const connectCommunityMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => connectInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { token } = context as any;
@@ -84,7 +84,7 @@ const roleUpdateInput = z.object({
 });
 
 export const updateCommunityMemberRoleFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => roleUpdateInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { token } = context as any;

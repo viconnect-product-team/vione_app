@@ -1,7 +1,44 @@
+/**
+ * members.functions.ts
+ * Server functions cho quản lý hội viên — chỉ dùng NestJS REST API, không dùng Supabase.
+ */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Member } from "./members-data";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer } from "./api-client";
+
+// ── Schemas ────────────────────────────────────────────────────────────────────
+
+const MemberWriteSchema = z.object({
+  name: z.string().min(1).max(255),
+  contact: z.string().max(255).optional(),
+  email: z.string().max(255).optional(),
+  phone: z.string().max(64).optional(),
+  type: z.enum(["company", "individual"]).default("company"),
+  level: z
+    .enum([
+      "memberLevel.large",
+      "memberLevel.medium",
+      "memberLevel.small",
+      "memberLevel.individual",
+    ])
+    .default("memberLevel.medium"),
+  industry: z
+    .enum(["ind.trade", "ind.it", "ind.manufacturing", "ind.realestate", "ind.finance"])
+    .default("ind.trade"),
+  region: z.enum(["region.north", "region.central", "region.south"]).default("region.north"),
+  status: z.enum(["active", "pending", "expired"]).default("pending"),
+  address: z.string().max(500).optional(),
+  website: z.string().max(255).optional(),
+  taxCode: z.string().max(64).optional(),
+  employees: z.coerce.number().int().nonnegative().optional(),
+  about: z.string().max(2000).optional(),
+});
+
+const IdSchema = z.object({ id: z.string().min(1).max(64) });
+
+// ── Row mapper ─────────────────────────────────────────────────────────────────
 
 type Row = Record<string, unknown>;
 
@@ -34,196 +71,89 @@ function mapRow(r: Row): Member {
   };
 }
 
+// ── Server functions ───────────────────────────────────────────────────────────
+
+/** GET /api/members — Danh sách hội viên */
 export const listMembersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(context.supabase);
-    let query = context.supabase.from("members").select("*").order("code", { ascending: true });
-    if (activeId) query = query.eq("association_id", activeId);
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    return (data ?? []).map(mapRow);
+    return fetchNestApiFromServer("/members", context.token);
   });
 
-// Role-aware peer list for Networking. Returns only non-sensitive fields,
-// scoped to the caller's active association. Works for regular members too
-// (the base members table stays admin-only / self-only via RLS).
-function mapPeerRow(r: Row): Member {
-  return {
-    id: r.id as string,
-    code: (r.code as string) ?? "",
-    name: r.name as string,
-    contact: "",
-    email: "",
-    phone: "",
-    type: (r.type as Member["type"]) ?? "company",
-    level: (r.level as Member["level"]) ?? "memberLevel.medium",
-    industry: (r.industry as Member["industry"]) ?? "ind.trade",
-    region: (r.region as Member["region"]) ?? "region.north",
-    status: (r.status as Member["status"]) ?? "active",
-    joinedAt: "",
-    feeYear: new Date().getFullYear(),
-    feePaid: false,
-    address: "",
-    about: "",
-  };
-}
-
+/**
+ * Danh sách đồng nghiệp (peer list) — gọi endpoint directory
+ * không cần thông tin nhạy cảm.
+ */
 export const listPeersFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Member[]> => {
-    const { data, error } = await context.supabase.rpc("list_peers");
-    if (error) throw new Error(error.message);
-    return ((data ?? []) as Row[]).map(mapPeerRow);
+    const data = await fetchNestApiFromServer("/members/directory", context.token);
+    return Array.isArray(data) ? data.map((r: Row) => ({
+      id: r.id as string,
+      code: (r.code as string) ?? "",
+      name: r.name as string,
+      contact: "",
+      email: "",
+      phone: "",
+      type: (r.type as Member["type"]) ?? "company",
+      level: (r.level as Member["level"]) ?? "memberLevel.medium",
+      industry: (r.industry as Member["industry"]) ?? "ind.trade",
+      region: (r.region as Member["region"]) ?? "region.north",
+      status: (r.status as Member["status"]) ?? "active",
+      joinedAt: "",
+      feeYear: new Date().getFullYear(),
+      feePaid: false,
+      address: "",
+      about: "",
+    })) : [];
   });
 
+/** POST /api/members — Tạo hội viên mới */
 export const createMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        name: z.string().min(1).max(255),
-        contact: z.string().max(255).optional(),
-        email: z.string().max(255).optional(),
-        phone: z.string().max(64).optional(),
-        type: z.enum(["company", "individual"]).default("company"),
-        level: z
-          .enum([
-            "memberLevel.large",
-            "memberLevel.medium",
-            "memberLevel.small",
-            "memberLevel.individual",
-          ])
-          .default("memberLevel.medium"),
-        industry: z
-          .enum(["ind.trade", "ind.it", "ind.manufacturing", "ind.realestate", "ind.finance"])
-          .default("ind.trade"),
-        region: z.enum(["region.north", "region.central", "region.south"]).default("region.north"),
-        status: z.enum(["active", "pending", "expired"]).default("pending"),
-        address: z.string().max(500).optional(),
-        website: z.string().max(255).optional(),
-        taxCode: z.string().max(64).optional(),
-        employees: z.coerce.number().int().nonnegative().optional(),
-        about: z.string().max(2000).optional(),
-      })
-      .parse(d),
-  )
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => MemberWriteSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const now = new Date();
-    const id = `MB${now.getTime().toString(36).toUpperCase()}`;
-    // code is generated by the DB trigger (PREFIX-00000x per association)
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .insert({
-        id,
-        code: "",
-        name: data.name,
-        contact: data.contact ?? "",
-        email: data.email ?? "",
-        phone: data.phone ?? "",
-        type: data.type,
-        level: data.level,
-        industry: data.industry,
-        region: data.region,
-        status: data.status,
-        joined_at: now.toISOString().slice(0, 10),
-        fee_year: now.getFullYear(),
-        fee_paid: false,
-        address: data.address ?? "",
-        website: data.website,
-        tax_code: data.taxCode,
-        employees: data.employees,
-        about: data.about ?? "",
-      })
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    return fetchNestApiFromServer("/members", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   });
 
+/** GET /api/members/:id — Chi tiết hội viên */
 export const getMemberFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => IdSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}`, context.token);
   });
 
+/** PUT /api/members/:id — Cập nhật hội viên */
 export const updateMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
-    z
-      .object({
-        id: z.string().min(1).max(64),
-        name: z.string().min(1).max(255),
-        contact: z.string().max(255).optional(),
-        email: z.string().max(255).optional(),
-        phone: z.string().max(64).optional(),
-        type: z.enum(["company", "individual"]).default("company"),
-        level: z
-          .enum([
-            "memberLevel.large",
-            "memberLevel.medium",
-            "memberLevel.small",
-            "memberLevel.individual",
-          ])
-          .default("memberLevel.medium"),
-        industry: z
-          .enum(["ind.trade", "ind.it", "ind.manufacturing", "ind.realestate", "ind.finance"])
-          .default("ind.trade"),
-        region: z.enum(["region.north", "region.central", "region.south"]).default("region.north"),
-        status: z.enum(["active", "pending", "expired"]).default("pending"),
-        address: z.string().max(500).optional(),
-        website: z.string().max(255).optional(),
-        taxCode: z.string().max(64).optional(),
-        employees: z.coerce.number().int().nonnegative().optional(),
-        about: z.string().max(2000).optional(),
-      })
-      .parse(d),
+    z.object({ id: z.string().min(1).max(64) }).merge(MemberWriteSchema.partial()).parse(d)
   )
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .update({
-        name: data.name,
-        contact: data.contact ?? "",
-        email: data.email ?? "",
-        phone: data.phone ?? "",
-        type: data.type,
-        level: data.level,
-        industry: data.industry,
-        region: data.region,
-        status: data.status,
-        address: data.address ?? "",
-        website: data.website,
-        tax_code: data.taxCode,
-        employees: data.employees,
-        about: data.about ?? "",
-      })
-      .eq("id", data.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    const { id, ...rest } = data;
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(id)}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
+    });
   });
 
+/** DELETE /api/members/:id — Xóa hội viên */
 export const deleteMemberFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => IdSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("members").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}`, context.token, {
+      method: "DELETE",
+    });
   });
 
+/** PATCH /api/members/:id/contact — Cập nhật thông tin liên hệ */
 export const updateMemberContactFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -232,73 +162,32 @@ export const updateMemberContactFn = createServerFn({ method: "POST" })
         phone: z.string().max(64).optional(),
         address: z.string().max(500).optional(),
       })
-      .parse(d),
+      .parse(d)
   )
   .handler(async ({ data, context }) => {
-    const patch: { email?: string; phone?: string; address?: string } = {};
-    if (data.email !== undefined) patch.email = data.email;
-    if (data.phone !== undefined) patch.phone = data.phone;
-    if (data.address !== undefined) patch.address = data.address;
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .update(patch)
-      .eq("id", data.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    const { id, ...patch } = data;
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(id)}/contact`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    });
   });
 
+/** PATCH /api/members/:id/renew — Gia hạn hội viên thêm 1 năm */
 export const renewMembershipFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => IdSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: cur, error: e1 } = await context.supabase
-      .from("members")
-      .select("term_end")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (e1) throw new Error(e1.message);
-    if (!cur) return null;
-    const base = cur.term_end ? new Date(cur.term_end as string) : new Date();
-    const newEnd = new Date(base);
-    newEnd.setFullYear(newEnd.getFullYear() + 1);
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .update({
-        fee_paid: true,
-        renewed_at: today,
-        new_term_end: newEnd.toISOString().slice(0, 10),
-      })
-      .eq("id", data.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}/renew`, context.token, {
+      method: "PATCH",
+    });
   });
 
+/** PATCH /api/members/:id/remind — Gửi nhắc nhở gia hạn */
 export const sendRenewalReminderFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => IdSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: cur, error: e1 } = await context.supabase
-      .from("members")
-      .select("reminder_count")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (e1) throw new Error(e1.message);
-    if (!cur) return null;
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await context.supabase
-      .from("members")
-      .update({
-        reminder_count: ((cur.reminder_count as number) ?? 0) + 1,
-        last_reminder: today,
-      })
-      .eq("id", data.id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    return fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}/remind`, context.token, {
+      method: "PATCH",
+    });
   });

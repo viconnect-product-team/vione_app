@@ -2,7 +2,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type { RecommendationPageDTO } from "./types";
 
 const input = z.object({
@@ -14,10 +14,10 @@ const input = z.object({
 });
 
 export const graphRecommendConnectionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => input.parse(i))
   .handler(async ({ data, context }): Promise<RecommendationPageDTO> => {
     const { RecommendationService } = await import("./recommendation.service.server");
-    const svc = new RecommendationService(context.supabase as never, context.userId);
+    const svc = new RecommendationService(null as any as never, context.userId);
     return svc.recommendConnections(data);
   });

@@ -215,8 +215,8 @@ describe("meeting_outcome.commitments.v1", () => {
   it("returns stable ordering for identical input", () => {
     const a = extractMeetingOutcomeCommitments(outcomeDTO());
     const b = extractMeetingOutcomeCommitments(outcomeDTO());
-    expect(a.map((c) => c.canonicalText + c.subjectRef)).toEqual(
-      b.map((c) => c.canonicalText + c.subjectRef),
+    expect(a.map((c: any) => c.canonicalText + c.subjectRef)).toEqual(
+      b.map((c: any) => c.canonicalText + c.subjectRef),
     );
   });
   it("respects per-source candidate cap", () => {
@@ -270,7 +270,7 @@ describe("follow_up.commitments.v1", () => {
 describe("agenda.topics.v1", () => {
   it("dedupes topics and drops dropped/proposed items", () => {
     const out = extractAgendaTopics(agendaDTO());
-    const topics = new Set(out.map((c) => c.canonicalText));
+    const topics = new Set(out.map((c: any) => c.canonicalText));
     expect(topics.has("pricing discussion")).toBe(true);
     expect(topics.has("roadmap review")).toBe(true);
     expect(topics.has("dropped item")).toBe(false);
@@ -309,7 +309,7 @@ describe("person_profile.role.v1", () => {
 describe("business_card.services.v1", () => {
   it("normalizes service labels and dedupes", () => {
     const out = extractBusinessCardServices(cardDTO());
-    const labels = out.map((c) => c.canonicalText);
+    const labels = out.map((c: any) => c.canonicalText);
     expect(labels).toContain("growth consulting");
     expect(labels).toContain("fractional cmo");
     expect(new Set(labels).size).toBe(labels.length);
@@ -325,7 +325,7 @@ describe("business_card.services.v1", () => {
 describe("introduction.context.v1", () => {
   it("emits shared_history for both requester and target", () => {
     const out = extractIntroductionContext(introDTO());
-    const refs = new Set(out.map((c) => c.subjectRef));
+    const refs = new Set(out.map((c: any) => c.subjectRef));
     expect(refs.has(P1)).toBe(true);
     expect(refs.has(P2)).toBe(true);
     expect(out.every((c) => c.canonicalPredicate === "introduction_purpose")).toBe(true);

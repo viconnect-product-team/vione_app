@@ -22,7 +22,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { MemberAccountModal } from "@/components/dashboard/MemberAccountModal";
@@ -40,14 +39,8 @@ import {
   type MemberType,
   type RegionKey,
 } from "@/lib/members-data";
+import { fetchNestApi } from "@/lib/api-client";
 import {
-  createMemberFn,
-  deleteMemberFn,
-  listMembersFn,
-  updateMemberFn,
-} from "@/lib/members.functions";
-import {
-  listMemberAccountStatusesFn,
   type MemberAccountStatus,
 } from "@/lib/member-account.functions";
 import {
@@ -242,20 +235,24 @@ function MembersPage() {
   const t = useT();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const listFn = useServerFn(listMembersFn);
   const {
     data: members = [],
     refetch,
     isLoading,
   } = useQuery({
     queryKey: ["members"],
-    queryFn: () => listFn(),
+    queryFn: async () => {
+      const res = await fetchNestApi<Member[]>("/members");
+      return Array.isArray(res) ? res : [];
+    },
   });
   const { isAdmin, loading: roleLoading } = useRole();
-  const statusesFn = useServerFn(listMemberAccountStatusesFn);
   const { data: acctStatuses = {} } = useQuery({
     queryKey: ["member-account-statuses"],
-    queryFn: () => statusesFn(),
+    queryFn: async () => {
+      const res = await fetchNestApi<Record<string, string>>("/members/account-statuses");
+      return res || {};
+    },
     enabled: isAdmin,
   });
   const denyPermission = () =>
@@ -273,9 +270,6 @@ function MembersPage() {
   const [sort, setSort] = useState<"name" | "newest" | "code" | "renewal">("name");
   const [sel, setSel] = useState<Set<string>>(new Set());
 
-  const createFn = useServerFn(createMemberFn);
-  const updateFn = useServerFn(updateMemberFn);
-  const deleteFn = useServerFn(deleteMemberFn);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [deleting, setDeleting] = useState<Member | null>(null);
@@ -349,18 +343,42 @@ function MembersPage() {
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
     try {
+      const payload = {
+        name: String(v.name || "").trim(),
+        contact: v.contact ? String(v.contact).trim() : undefined,
+        email: v.email ? String(v.email).trim() : undefined,
+        phone: v.phone ? String(v.phone).trim() : undefined,
+        type: (v.type as any) || "individual",
+        level: (v.level as any) || "memberLevel.medium",
+        industry: (v.industry as any) || "ind.trade",
+        region: (v.region as any) || "region.north",
+        status: (v.status as any) || "pending",
+        address: v.address ? String(v.address).trim() : undefined,
+        website: v.website ? String(v.website).trim() : undefined,
+        taxCode: v.taxCode ? String(v.taxCode).trim() : undefined,
+        employees: v.employees ? Number(v.employees) || 0 : undefined,
+        about: v.about ? String(v.about).trim() : undefined,
+      };
+
       if (editing) {
-        await updateFn({ data: { ...v, id: editing.id } as never });
+        await fetchNestApi(`/members/${editing.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
         toast.success(t("members.updated"));
         setEditing(null);
       } else {
-        await createFn({ data: v as never });
+        await fetchNestApi("/members", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
         toast.success(t("members.created"));
         setOpen(false);
       }
       await refetch();
-    } catch {
-      toast.error(t("common.saveError"));
+    } catch (err: any) {
+      console.error("[Members] Submit error:", err);
+      toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -370,12 +388,12 @@ function MembersPage() {
     if (!deleting) return;
     setSubmitting(true);
     try {
-      await deleteFn({ data: { id: deleting.id } });
+      await fetchNestApi(`/members/${deleting.id}`, { method: "DELETE" });
       toast.success(t("members.deleted"));
       setDeleting(null);
       await refetch();
-    } catch {
-      toast.error(t("common.deleteError"));
+    } catch (err: any) {
+      toast.error(err?.message || t("common.deleteError"));
     } finally {
       setSubmitting(false);
     }
@@ -534,10 +552,10 @@ function MembersPage() {
   };
 
   const pinnedMembers = pinned
-    .map((id) => members.find((m) => m.id === id))
+    .map((id: any) => members.find((m) => m.id === id))
     .filter((m): m is Member => !!m);
   const recentMembers = recent
-    .map((id) => members.find((m) => m.id === id))
+    .map((id: any) => members.find((m) => m.id === id))
     .filter((m): m is Member => !!m)
     .slice(0, 8);
 

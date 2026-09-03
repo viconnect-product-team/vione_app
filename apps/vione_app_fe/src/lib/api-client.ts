@@ -1,4 +1,7 @@
-export const NEST_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const NEST_API_URL =
+  (typeof process !== 'undefined' && (process.env?.NEST_API_URL || process.env?.VITE_API_URL)) ||
+  import.meta.env?.VITE_API_URL ||
+  'http://localhost:4000';
 
 function mapEndpoint(endpoint: string): string {
   let mapped = endpoint;
@@ -138,7 +141,7 @@ async function handleResponse(response: Response) {
   }
 }
 
-export async function fetchNestApi(endpoint: string, options: RequestInit = {}) {
+export async function fetchNestApi<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');

@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import {
   DM_MAX_BODY_LEN,
@@ -14,7 +14,7 @@ import {
 } from "./dm.types";
 
 export const bcDmThreadsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     async ({ context }): Promise<BcDmResult<{ threads: BcDmThreadSummary[] }>> => {
       return fetchNestApiFromServer("/connect-app/dm/threads", context.token);
@@ -24,7 +24,7 @@ export const bcDmThreadsFn = createServerFn({ method: "GET" })
 const openInput = z.object({ personId: z.string().regex(/^u:[0-9a-fA-F-]{36}$/) });
 
 export const bcDmOpenThreadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => openInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ threadId: string }>> => {
@@ -41,7 +41,7 @@ const threadInput = z.object({
 });
 
 export const bcDmThreadFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => threadInput.parse(data))
   .handler(
     async ({
@@ -59,7 +59,7 @@ const sendInput = z.object({
 });
 
 export const bcDmSendFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => sendInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ message: BcDmMessage }>> => {
@@ -74,7 +74,7 @@ export const bcDmSendFn = createServerFn({ method: "POST" })
 const markReadInput = z.object({ threadId: z.string().uuid() });
 
 export const bcDmMarkReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => markReadInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ updated: number }>> => {
@@ -87,7 +87,7 @@ export const bcDmMarkReadFn = createServerFn({ method: "POST" })
 const retractInput = z.object({ messageId: z.string().uuid() });
 
 export const bcDmRetractFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((data) => retractInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ message: BcDmMessage }>> => {

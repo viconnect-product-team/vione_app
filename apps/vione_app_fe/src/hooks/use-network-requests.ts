@@ -62,10 +62,10 @@ export function useIncomingConnectionRequests(enabled = true) {
       const list = await GlobalNetworkSDK.connections.listIncoming({
         limit: BC_MOBILE_REQUESTS_PAGE_SIZE,
       });
-      const ids = Array.from(new Set(list.map((c) => c.counterpartUserId)));
+      const ids = Array.from(new Set(list.map((c: any) => c.counterpartUserId)));
       const summaries = ids.length ? await GlobalNetworkSDK.counterparts.resolvePublic(ids) : [];
       const byId = new Map(summaries.map((s) => [s.userId, s]));
-      return list.map((c) => toConnectionRequest(c, byId.get(c.counterpartUserId) ?? null));
+      return list.map((c: any) => toConnectionRequest(c, byId.get(c.counterpartUserId) ?? null));
     },
   });
 

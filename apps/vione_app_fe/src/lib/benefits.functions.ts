@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type AdminBenefit = {
   id: string;
@@ -24,18 +24,18 @@ function mapBenefit(r: Row): AdminBenefit {
   };
 }
 
-async function activeAssociationId(context: { supabase: any }): Promise<string> {
-  const { data } = await context.supabase.rpc("current_association_id");
+async function activeAssociationId(context: any): Promise<string> {
+  const { data } = await (null as any).rpc("current_association_id");
   const id = (data as string | null) ?? null;
   if (!id) throw new Error("No active association");
   return id;
 }
 
 export const listBenefitsAdminFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminBenefit[]> => {
     const associationId = await activeAssociationId(context);
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("association_benefits")
       .select("*")
       .eq("association_id", associationId)
@@ -63,11 +63,11 @@ function toRow(d: z.infer<typeof benefitInput>) {
 }
 
 export const createBenefitFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => benefitInput.parse(d))
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
     const associationId = await activeAssociationId(context);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("association_benefits")
       .insert({ ...toRow(data), association_id: associationId })
       .select("*")
@@ -77,11 +77,11 @@ export const createBenefitFn = createServerFn({ method: "POST" })
   });
 
 export const updateBenefitFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => benefitInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
     const associationId = await activeAssociationId(context);
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("association_benefits")
       .update(toRow(data))
       .eq("id", data.id)
@@ -93,11 +93,11 @@ export const updateBenefitFn = createServerFn({ method: "POST" })
   });
 
 export const deleteBenefitFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const associationId = await activeAssociationId(context);
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("association_benefits")
       .delete()
       .eq("id", data.id)

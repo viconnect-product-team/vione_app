@@ -9,7 +9,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { BusinessCardService } from "@/lib/business-card/business-card.service";
 import type { BusinessCard, BusinessCardSummary } from "@/lib/business-card/business-card.types";
 
@@ -25,11 +25,11 @@ export type GlobalBuilderEligibility = {
  * Never creates a member or profile row as a side effect.
  */
 export const getGlobalBuilderEligibilityFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<GlobalBuilderEligibility> => {
     const { requirePlatformUser } = await import("@/lib/identity/platform-identity.server");
     try {
-      const profile = await requirePlatformUser(context.supabase, context.userId);
+      const profile = await requirePlatformUser(null as any, context.userId);
       return { eligible: true, hasProfile: profile !== null, reason: "ok" };
     } catch {
       return { eligible: false, hasProfile: false, reason: "account_inactive" };
@@ -38,19 +38,19 @@ export const getGlobalBuilderEligibilityFn = createServerFn({ method: "GET" })
 
 /** List the authenticated user's owner-scoped (global) cards. */
 export const listMyGlobalCardsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<BusinessCardSummary[]> =>
-      BusinessCardService.listMyGlobalCards(context.supabase, context.userId),
+      BusinessCardService.listMyGlobalCards(null as any, context.userId),
   );
 
 /** Get one global card owned by the authenticated user (works on drafts). */
 export const getMyGlobalCardFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<BusinessCard> =>
-      BusinessCardService.getMyGlobalCard(context.supabase, context.userId, data.id),
+      BusinessCardService.getMyGlobalCard(null as any, context.userId, data.id),
   );
 
 /**
@@ -58,8 +58,8 @@ export const getMyGlobalCardFn = createServerFn({ method: "GET" })
  * from the user's global profile; never auto-publishes; never creates a member.
  */
 export const createGlobalCardDraftFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<{ id: string }> =>
-      BusinessCardService.createGlobalDraft(context.supabase, context.userId),
+      BusinessCardService.createGlobalDraft(null as any, context.userId),
   );

@@ -63,7 +63,7 @@ export const BusinessCardCandidatePreview = forwardRef<
         {fields.phones.map((p) => (
           <CandidateFieldDisplay key={`p:${p.value}`} field={p} />
         ))}
-        {fields.emails.map((e) => (
+        {fields.emails.map((e: any) => (
           <CandidateFieldDisplay key={`e:${e.value}`} field={e} />
         ))}
         {fields.website ? <CandidateFieldDisplay field={fields.website} /> : null}

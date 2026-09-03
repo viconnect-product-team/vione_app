@@ -138,7 +138,7 @@ export function EventAttendees({
           )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {shown.map((r) => (
+            {shown.map((r: any) => (
               <AttendeeCard key={r.id} reg={r} />
             ))}
           </div>

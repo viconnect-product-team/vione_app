@@ -50,7 +50,7 @@ export function CommunityOpportunitiesSection({
       </div>
 
       <div className="mt-3 space-y-2.5">
-        {list.map((c) => (
+        {list.map((c: any) => (
           <CommunityOpportunityGroup
             key={c.communityId}
             community={c}

@@ -187,7 +187,7 @@ export async function composeTodayRecommendations(
   const momentsByPerson = latestMomentByPerson(moments);
 
   const summaries = await deps.resolveConnectionSummaries(
-    connections.map((c) => c.counterpartUserId),
+    connections.map((c: any) => c.counterpartUserId),
   );
   const summaryById = new Map(summaries.map((s) => [s.userId, s]));
 

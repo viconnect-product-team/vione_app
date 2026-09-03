@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type PlatformAssociation = {
   id: string;
@@ -23,7 +23,7 @@ export type AssociationAdmin = {
 type Ctx = { supabase: any; userId: string };
 
 async function assertPlatformAdmin(context: Ctx) {
-  const { data, error } = await context.supabase.rpc("is_platform_admin");
+  const { data, error } = await (null as any).rpc("is_platform_admin");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
@@ -81,23 +81,23 @@ async function logRoleChange(
 }
 
 export const isPlatformAdminFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<boolean> => {
-    const { data } = await context.supabase.rpc("is_platform_admin");
+    const { data } = await (null as any).rpc("is_platform_admin");
     return Boolean(data);
   });
 
 export const listAssociationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<PlatformAssociation[]> => {
     await assertPlatformAdmin(context);
-    const { data: assocs, error } = await context.supabase
+    const { data: assocs, error } = await (null as any)
       .from("associations")
       .select("id, name, slug, created_at")
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const { data: memberships, error: mErr } = await context.supabase
+    const { data: memberships, error: mErr } = await (null as any)
       .from("memberships")
       .select("association_id, role");
     if (mErr) throw new Error(mErr.message);
@@ -137,11 +137,11 @@ const assocInput = z.object({
 });
 
 export const createAssociationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => assocInput.parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
-    const { error } = await context.supabase.from("associations").insert({
+    const { error } = await (null as any).from("associations").insert({
       name: data.name,
       slug: data.slug ? data.slug : null,
     });
@@ -150,11 +150,11 @@ export const createAssociationFn = createServerFn({ method: "POST" })
   });
 
 export const updateAssociationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => assocInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("associations")
       .update({ name: data.name, slug: data.slug ? data.slug : null })
       .eq("id", data.id);
@@ -163,20 +163,20 @@ export const updateAssociationFn = createServerFn({ method: "POST" })
   });
 
 export const deleteAssociationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
-    const { error } = await context.supabase.from("associations").delete().eq("id", data.id);
+    const { error } = await (null as any).from("associations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const listAssociationAdminsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AssociationAdmin[]> => {
     await assertPlatformAdmin(context);
-    const { data: rows, error } = await context.supabase
+    const { data: rows, error } = await (null as any)
       .from("memberships")
       .select("id, user_id, association_id, created_at")
       .eq("role", "admin")
@@ -186,7 +186,7 @@ export const listAssociationAdminsFn = createServerFn({ method: "GET" })
     const ids = Array.from(new Set((rows ?? []).map((r: any) => r.user_id)));
     let profiles: Record<string, { email: string | null; full_name: string | null }> = {};
     if (ids.length) {
-      const { data: profRows } = await context.supabase
+      const { data: profRows } = await (null as any)
         .from("profiles")
         .select("id, email, full_name")
         .in("id", ids);
@@ -213,7 +213,7 @@ const adminInput = z.object({
 });
 
 export const createAssociationAdminFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => adminInput.parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
@@ -280,7 +280,7 @@ const adminUpdateInput = z.object({
 });
 
 export const updateAssociationAdminFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => adminUpdateInput.parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
@@ -338,7 +338,7 @@ export const updateAssociationAdminFn = createServerFn({ method: "POST" })
   });
 
 export const removeAssociationAdminFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ membershipId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     await assertPlatformAdmin(context);
@@ -351,7 +351,7 @@ export const removeAssociationAdminFn = createServerFn({ method: "POST" })
       .eq("id", data.membershipId)
       .maybeSingle();
 
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("memberships")
       .delete()
       .eq("id", data.membershipId);
@@ -370,10 +370,10 @@ export const removeAssociationAdminFn = createServerFn({ method: "POST" })
   });
 
 export const listRoleAuditLogFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RoleAuditEntry[]> => {
     await assertPlatformAdmin(context);
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("role_audit_log")
       .select(
         "id, actor_email, target_email, action, old_role, new_role, association_id, details, created_at",

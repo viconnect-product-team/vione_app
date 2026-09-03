@@ -41,21 +41,21 @@ export function getRecent(): string[] {
 
 export function toggleFavorite(id: string): string[] {
   const cur = read(FAV_KEY);
-  const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+  const next = cur.includes(id) ? cur.filter((x: any) => x !== id) : [...cur, id];
   write(FAV_KEY, next);
   return next;
 }
 
 export function togglePinned(id: string): string[] {
   const cur = read(PIN_KEY);
-  const next = cur.includes(id) ? cur.filter((x) => x !== id) : [id, ...cur].slice(0, 12);
+  const next = cur.includes(id) ? cur.filter((x: any) => x !== id) : [id, ...cur].slice(0, 12);
   write(PIN_KEY, next);
   return next;
 }
 
 /** Record a viewed member — most-recent-first, capped at 12. */
 export function pushRecent(id: string) {
-  const cur = read(RECENT_KEY).filter((x) => x !== id);
+  const cur = read(RECENT_KEY).filter((x: any) => x !== id);
   write(RECENT_KEY, [id, ...cur].slice(0, 12));
 }
 
@@ -80,7 +80,7 @@ export function getSavedFilters(): SavedFilter[] {
 }
 
 export function saveFilter(f: SavedFilter): SavedFilter[] {
-  const cur = getSavedFilters().filter((x) => x.id !== f.id);
+  const cur = getSavedFilters().filter((x: any) => x.id !== f.id);
   const next = [...cur, f].slice(-12);
   try {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(next));
@@ -92,7 +92,7 @@ export function saveFilter(f: SavedFilter): SavedFilter[] {
 }
 
 export function deleteSavedFilter(id: string): SavedFilter[] {
-  const next = getSavedFilters().filter((x) => x.id !== id);
+  const next = getSavedFilters().filter((x: any) => x.id !== id);
   try {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event("member-prefs-changed"));

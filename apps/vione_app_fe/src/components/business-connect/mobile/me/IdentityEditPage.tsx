@@ -5,15 +5,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { Check, Loader2 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
-import {
-  bcIdentityGetMineFn,
-  bcIdentityUpsertFn,
-} from "@/lib/business-connect/mobile/identity.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { useInvalidateMyIdentity } from "@/hooks/use-my-identity";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
 import { identityUpdateSchema } from "@/lib/business-connect/mobile/identity.validation";
@@ -88,8 +84,6 @@ const inputClass =
 export function IdentityEditPage() {
   const t = useT();
   const navigate = useNavigate();
-  const getMine = useServerFn(bcIdentityGetMineFn);
-  const upsert = useServerFn(bcIdentityUpsertFn);
   const invalidateIdentity = useInvalidateMyIdentity();
 
   const [values, setValues] = useState<Record<FieldKey, string>>(EMPTY);
@@ -108,7 +102,13 @@ export function IdentityEditPage() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      const payload = await getMine();
+      // Try direct API call first (bypass serverFn middleware)
+      let payload: any = null;
+      try {
+        payload = await fetchNestApi<any>("/connect-app/me/identity");
+      } catch {
+        // ignore — loadFailed set below
+      }
       const identity = payload?.identity ?? null;
       setValues({
         displayName: identity?.displayName ?? "",
@@ -134,7 +134,7 @@ export function IdentityEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [getMine]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -170,7 +170,11 @@ export function IdentityEditPage() {
     setSaving(true);
     setSaveFailed(false);
     try {
-      await upsert({ data: parsed.data });
+      // Direct API call bypasses requireSupabaseAuth middleware
+      await fetchNestApi("/connect-app/me/identity", {
+        method: "PUT",
+        body: JSON.stringify(parsed.data),
+      });
       // Đồng bộ ảnh đại diện/hồ sơ ở mọi màn (Trang chủ, V-Sheet, Tôi, thẻ).
       await invalidateIdentity();
       setSaved(true);

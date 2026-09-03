@@ -61,7 +61,7 @@ export function stableStructuredValue<T extends Record<string, unknown>>(v: T): 
       out[k] = stableStructuredValue(val as Record<string, unknown>);
     } else if (Array.isArray(val)) {
       out[k] = val
-        .map((x) =>
+        .map((x: any) =>
           x && typeof x === "object" && !Array.isArray(x)
             ? stableStructuredValue(x as Record<string, unknown>)
             : x,

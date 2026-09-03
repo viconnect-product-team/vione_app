@@ -167,7 +167,7 @@ function AdminBusinessCardsPage() {
   useEffect(() => {
     setSelected((prev) => {
       if (prev.size === 0) return prev;
-      const visibleIds = new Set(filtered.map((c) => c.id));
+      const visibleIds = new Set(filtered.map((c: any) => c.id));
       const next = new Set<string>();
       prev.forEach((id) => {
         if (visibleIds.has(id)) next.add(id);
@@ -176,7 +176,7 @@ function AdminBusinessCardsPage() {
     });
   }, [filtered]);
 
-  const pageIds = useMemo(() => paged.map((c) => c.id), [paged]);
+  const pageIds = useMemo(() => paged.map((c: any) => c.id), [paged]);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const somePageSelected = pageIds.some((id) => selected.has(id));
 
@@ -252,7 +252,7 @@ function AdminBusinessCardsPage() {
       "visibility",
       "updated_at",
     ];
-    const rows = filtered.map((c) => [
+    const rows = filtered.map((c: any) => [
       c.slug,
       c.displayName ?? "",
       c.companyName ?? "",
@@ -264,7 +264,7 @@ function AdminBusinessCardsPage() {
       c.updatedAt,
     ]);
     const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .map((r: any) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -504,7 +504,7 @@ function AdminBusinessCardsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((c) => {
+                {paged.map((c: any) => {
                   const busy = busyId === c.id;
                   const checked = selected.has(c.id);
                   return (

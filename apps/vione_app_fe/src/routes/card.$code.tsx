@@ -248,7 +248,7 @@ function PublicCard() {
             <Row icon={CalendarClock} label={t("joined")} value={member.joinedAt ?? "—"} />
             {rows
               .filter((r) => r.value)
-              .map((r) => (
+              .map((r: any) => (
                 <Row key={r.label} icon={r.icon} label={r.label} value={r.value!} />
               ))}
           </dl>

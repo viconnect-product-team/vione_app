@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { AbuseService } from "./global-network/abuse";
 import { NotificationService } from "./global-network/notifications";
 import { GN_REPORT_CATEGORIES } from "./global-network/abuse.types";
@@ -14,7 +14,7 @@ import type { GnNotificationDTO, GnNotificationPrefs } from "./global-network/ab
 const uuid = z.string().uuid();
 
 export const reportUserFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -26,11 +26,11 @@ export const reportUserFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ reportId: string }> => {
-    return AbuseService.reportUser(context.supabase, context.userId, data);
+    return AbuseService.reportUser(null as any, context.userId, data);
   });
 
 export const listNetworkNotificationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator(
     (input: unknown) =>
       z
@@ -39,18 +39,18 @@ export const listNetworkNotificationsFn = createServerFn({ method: "GET" })
         .parse(input) ?? {},
   )
   .handler(async ({ data, context }): Promise<GnNotificationDTO[]> => {
-    return NotificationService.list(context.supabase, context.userId, data);
+    return NotificationService.list(null as any, context.userId, data);
   });
 
 export const countUnreadNotificationsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
-    const count = await NotificationService.unreadCount(context.supabase, context.userId);
+    const count = await NotificationService.unreadCount(null as any, context.userId);
     return { count };
   });
 
 export const markNotificationsReadFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator(
     (input: unknown) =>
       z
@@ -59,18 +59,18 @@ export const markNotificationsReadFn = createServerFn({ method: "POST" })
         .parse(input) ?? {},
   )
   .handler(async ({ data, context }): Promise<{ updated: number }> => {
-    const updated = await NotificationService.markRead(context.supabase, context.userId, data.ids);
+    const updated = await NotificationService.markRead(null as any, context.userId, data.ids);
     return { updated };
   });
 
 export const getNotificationPrefsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<GnNotificationPrefs> => {
-    return NotificationService.getPrefs(context.supabase, context.userId);
+    return NotificationService.getPrefs(null as any, context.userId);
   });
 
 export const setNotificationPrefsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -81,5 +81,5 @@ export const setNotificationPrefsFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<GnNotificationPrefs> => {
-    return NotificationService.setPrefs(context.supabase, context.userId, data);
+    return NotificationService.setPrefs(null as any, context.userId, data);
   });

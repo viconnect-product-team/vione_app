@@ -251,7 +251,7 @@ function IntroductionOperationsPage() {
               { h: 1, label: t("bc.introOps.range.1h") },
               { h: 24, label: t("bc.introOps.range.24h") },
               { h: 24 * 7, label: t("bc.introOps.range.7d") },
-            ].map((r) => (
+            ].map((r: any) => (
               <button
                 key={r.h}
                 type="button"

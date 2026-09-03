@@ -54,8 +54,8 @@ describe("BC-4.4 deterministic ranking", () => {
   it("produces same output for identical input (referentially independent)", () => {
     const r1 = rankCandidates({ candidates: build() });
     const r2 = rankCandidates({ candidates: build() });
-    expect(r2.map((x) => x.candidateNodeId)).toEqual(r1.map((x) => x.candidateNodeId));
-    expect(r2.map((x) => x.score)).toEqual(r1.map((x) => x.score));
+    expect(r2.map((x: any) => x.candidateNodeId)).toEqual(r1.map((x: any) => x.candidateNodeId));
+    expect(r2.map((x: any) => x.score)).toEqual(r1.map((x: any) => x.score));
   });
 
   it("breaks ties on candidateNodeId ASC", () => {
@@ -195,7 +195,7 @@ describe("BC-4.4 diversity rerank", () => {
       ],
     });
     const out = diversityRerank(ranked);
-    expect(out.map((x) => x.candidateNodeId)).toEqual(ranked.map((x) => x.candidateNodeId));
+    expect(out.map((x: any) => x.candidateNodeId)).toEqual(ranked.map((x: any) => x.candidateNodeId));
   });
 });
 

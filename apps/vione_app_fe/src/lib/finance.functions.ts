@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type Transaction = {
   id: string;
@@ -29,9 +29,9 @@ function mapTx(tx: Row): Transaction {
 }
 
 export const listTransactionsFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Transaction[]> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (null as any)
       .from("transactions")
       .select("*")
       .order("date", { ascending: false });
@@ -50,35 +50,35 @@ const txInput = z.object({
 });
 
 export const createTransactionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => txInput.parse(d))
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("TX");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("transactions")
       .insert({ code, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, { action: "Tạo giao dịch", target: code, category: "fee" });
+    await logActivity(null as any, { action: "Tạo giao dịch", target: code, category: "fee" });
     return mapTx(row);
   });
 
 export const updateTransactionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => txInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("transactions")
       .update(rest)
       .eq("code", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Cập nhật giao dịch",
       target: id,
       category: "fee",
@@ -87,13 +87,13 @@ export const updateTransactionFn = createServerFn({ method: "POST" })
   });
 
 export const deleteTransactionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await context.supabase.from("transactions").delete().eq("code", data.id);
+    const { error } = await (null as any).from("transactions").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, {
+    await logActivity(null as any, {
       action: "Xóa giao dịch",
       target: data.id,
       category: "fee",

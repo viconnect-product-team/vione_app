@@ -155,7 +155,7 @@ export class SmartIntroductionService {
 
     const nodes = await this.repo.getNodes(allIntermediaryIds);
     const activeIds = new Set(
-      nodes.filter((n) => n.status === "active" && n.node_kind === "person").map((n) => n.id),
+      nodes.filter((n) => n.status === "active" && n.node_kind === "person").map((n: any) => n.id),
     );
 
     // ---- BC-6.1 — batched hydration ----

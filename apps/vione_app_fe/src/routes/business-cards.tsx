@@ -286,7 +286,7 @@ function CardsTab() {
               {t("bc.empty.steps")}
             </p>
             <ol className="grid gap-3 text-left sm:grid-cols-3">
-              {([1, 2, 3] as const).map((n) => (
+              {([1, 2, 3] as const).map((n: any) => (
                 <li
                   key={n}
                   className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4"
@@ -418,7 +418,7 @@ function CardsTab() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => (
+          {filtered.map((c: any) => (
             <CardTile key={c.id} card={c} onEdit={() => void openEdit(c.id)} onChanged={refresh} />
           ))}
         </div>

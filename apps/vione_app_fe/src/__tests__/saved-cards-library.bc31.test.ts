@@ -113,22 +113,22 @@ describe("refineSavedCards", () => {
 
   it("sorts recentlySaved newest first", () => {
     const out = refineSavedCards(cards, { ...base, sort: "recentlySaved" });
-    expect(out.map((c) => c.id)).toEqual(["2", "3", "1"]);
+    expect(out.map((c: any) => c.id)).toEqual(["2", "3", "1"]);
   });
 
   it("applies multi-tag AND refinement beyond the server tag", () => {
     const out = refineSavedCards(cards, { ...base, tags: ["vip", "lead"] });
-    expect(out.map((c) => c.id)).toEqual(["2"]);
+    expect(out.map((c: any) => c.id)).toEqual(["2"]);
   });
 
   it("filters by availability", () => {
     const out = refineSavedCards(cards, { ...base, availability: "unavailable" });
-    expect(out.map((c) => c.id)).toEqual(["3"]);
+    expect(out.map((c: any) => c.id)).toEqual(["3"]);
   });
 
   it("does not mutate the input array", () => {
-    const snapshot = cards.map((c) => c.id);
+    const snapshot = cards.map((c: any) => c.id);
     refineSavedCards(cards, { ...base, sort: "name" });
-    expect(cards.map((c) => c.id)).toEqual(snapshot);
+    expect(cards.map((c: any) => c.id)).toEqual(snapshot);
   });
 });

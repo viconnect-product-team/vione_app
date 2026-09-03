@@ -33,7 +33,7 @@ export function CommunityUpcomingEvents({
         {t("bc.mobile.community.upcoming")}
       </h2>
       <div className="mt-3 space-y-2.5">
-        {list.map((c) => (
+        {list.map((c: any) => (
           <CommunityUpcomingGroup
             key={c.communityId}
             community={c}

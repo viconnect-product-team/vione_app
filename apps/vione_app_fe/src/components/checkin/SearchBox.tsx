@@ -13,7 +13,7 @@ export function SearchBox({
   const t = useT();
   const [q, setQ] = useState("");
   const results = q.trim()
-    ? attendees.filter((a) =>
+    ? attendees.filter((a: any) =>
         [a.name, a.company, a.phone].some((f) => f.toLowerCase().includes(q.toLowerCase())),
       )
     : [];
@@ -33,7 +33,7 @@ export function SearchBox({
 
       {results.length > 0 && (
         <div className="mt-3 max-h-56 space-y-1.5 overflow-y-auto">
-          {results.map((a) => (
+          {results.map((a: any) => (
             <button
               key={a.id}
               onClick={() => {

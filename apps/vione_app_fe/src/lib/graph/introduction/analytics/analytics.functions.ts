@@ -1,7 +1,7 @@
 // BC-6.7 — Introduction Analytics server-fn boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type {
   AnalyticsFilters,
   ConfidencePerformanceDTO,
@@ -26,21 +26,21 @@ const filtersSchema = z.object({
 });
 
 export const getIntroductionAnalyticsOverviewFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => filtersSchema.parse(i))
   .handler(async ({ data, context }): Promise<OverviewDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
-    return new IntroductionAnalyticsService(context.supabase as never, context.userId).getOverview(
+    return new IntroductionAnalyticsService(null as any as never, context.userId).getOverview(
       data as AnalyticsFilters,
     );
   });
 
 export const getIntroductionAnalyticsTrendFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => filtersSchema.parse(i))
   .handler(async ({ data, context }): Promise<TrendDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
-    return new IntroductionAnalyticsService(context.supabase as never, context.userId).getTrend(
+    return new IntroductionAnalyticsService(null as any as never, context.userId).getTrend(
       data as AnalyticsFilters,
     );
   });
@@ -48,12 +48,12 @@ export const getIntroductionAnalyticsTrendFn = createServerFn({ method: "GET" })
 export const getIntroductionAnalyticsTimeToOutcomeFn = createServerFn({
   method: "GET",
 })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => filtersSchema.parse(i))
   .handler(async ({ data, context }): Promise<TimeToOutcomeDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
     return new IntroductionAnalyticsService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).getTimeToOutcome(data as AnalyticsFilters);
   });
@@ -61,12 +61,12 @@ export const getIntroductionAnalyticsTimeToOutcomeFn = createServerFn({
 export const getIntroductionAnalyticsPathPerformanceFn = createServerFn({
   method: "GET",
 })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => filtersSchema.parse(i))
   .handler(async ({ data, context }): Promise<PathPerformanceDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
     return new IntroductionAnalyticsService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).getPathPerformance(data as AnalyticsFilters);
   });
@@ -74,12 +74,12 @@ export const getIntroductionAnalyticsPathPerformanceFn = createServerFn({
 export const getIntroductionAnalyticsConfidencePerformanceFn = createServerFn({
   method: "GET",
 })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => filtersSchema.parse(i))
   .handler(async ({ data, context }): Promise<ConfidencePerformanceDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
     return new IntroductionAnalyticsService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).getConfidencePerformance(data as AnalyticsFilters);
   });
@@ -87,12 +87,12 @@ export const getIntroductionAnalyticsConfidencePerformanceFn = createServerFn({
 export const getIntroductionAnalyticsIntermediaryImpactFn = createServerFn({
   method: "GET",
 })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((i: unknown) => z.object({ fromDate: isoDate, toDate: isoDate }).parse(i))
   .handler(async ({ data, context }): Promise<IntermediaryImpactDTO> => {
     const { IntroductionAnalyticsService } = await import("./analytics.service.server");
     return new IntroductionAnalyticsService(
-      context.supabase as never,
+      null as any as never,
       context.userId,
     ).getIntermediaryImpact(data.fromDate, data.toDate);
   });

@@ -247,8 +247,8 @@ describe("BC-Mobile-1A — Today selection policy", () => {
 
   it("caps the list at 3 by default", () => {
     const overview = overviewWith({
-      overdue: [1, 2].map((n) => workHubItem({ id: `od-${n}`, category: "overdue" })),
-      needs_action: [1, 2].map((n) => workHubItem({ id: `na-${n}`, category: "needs_action" })),
+      overdue: [1, 2].map((n: any) => workHubItem({ id: `od-${n}`, category: "overdue" })),
+      needs_action: [1, 2].map((n: any) => workHubItem({ id: `na-${n}`, category: "needs_action" })),
     });
     const items = selectTodayItems(overview);
     expect(items).toHaveLength(BC_MOBILE_HOME_MAX_TODAY_ITEMS);
@@ -272,7 +272,7 @@ describe("BC-Mobile-1A — Today selection policy", () => {
 
   it("fills from waiting/recent only after primary categories", () => {
     const overview = overviewWith({
-      recent: [1, 2, 3].map((n) => workHubItem({ id: `r-${n}`, category: "recent" })),
+      recent: [1, 2, 3].map((n: any) => workHubItem({ id: `r-${n}`, category: "recent" })),
       due_soon: [workHubItem({ id: "ds-1", category: "due_soon" })],
     });
     const items = selectTodayItems(overview);

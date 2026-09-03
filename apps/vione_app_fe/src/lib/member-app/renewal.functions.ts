@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // ---------- Membership / Renewal ----------
 export type MyMembershipInvoice = {
@@ -32,7 +32,7 @@ export type MyMembership = {
 
 /** Returns the signed-in member's membership status, renewal schedule and dues. */
 export const getMyMembership = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyMembership> => {
     const { supabase, userId } = context;
     const { data: me } = await supabase
@@ -133,7 +133,7 @@ export type RenewalHistoryEntry = {
 
 /** Returns the signed-in member's detailed renewal history (paid & pending). */
 export const getMyRenewalHistory = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalHistoryEntry[]> => {
     const { supabase, userId } = context;
     const { data: me } = await supabase
@@ -190,7 +190,7 @@ export type RenewalReminderResult = {
  * notification. De-duplicates so at most one reminder is created per 7 days.
  */
 export const checkRenewalReminder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalReminderResult> => {
     const { supabase, userId } = context;
     const { data: me } = await supabase
@@ -303,7 +303,7 @@ async function loadRenewalContext(supabase: any, userId: string) {
 
 /** Computes the amount due to renew and the resulting term end. */
 export const getRenewalQuote = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalQuote> => {
     const { supabase, userId } = context;
     const ctx = await loadRenewalContext(supabase, userId);
@@ -350,7 +350,7 @@ const renewMethodSchema = z.enum(["bank", "card", "ewallet"]);
  * writes after verifying the caller owns the member record.
  */
 export const payMyRenewal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
@@ -574,7 +574,7 @@ export type RenewalAuditEntry = {
 
 /** Returns the signed-in member's renewal audit log (payments + no-ops + failures). */
 export const getMyRenewalAuditLog = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalAuditEntry[]> => {
     const { supabase, userId } = context;
     const { data: me } = await supabase

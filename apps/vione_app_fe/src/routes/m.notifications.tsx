@@ -406,7 +406,7 @@ function NotificationsScreen() {
     try {
       const result = await dismissAll();
       // Also persist dismissal of broadcast notifications so it syncs across devices.
-      const broadcastIds = visible.filter((n) => !n.personal).map((n) => n.id);
+      const broadcastIds = visible.filter((n) => !n.personal).map((n: any) => n.id);
       if (broadcastIds.length > 0) {
         await dismissBroadcast({ data: { ids: broadcastIds } });
       }
@@ -589,7 +589,7 @@ function NotificationsScreen() {
             {t("m.notifications.empty")}
           </p>
         )}
-        {visible.map((n) => {
+        {visible.map((n: any) => {
           const Icon = iconFor(n.type);
           const isLead = n.type === "lead" && !!n.refId;
           return (

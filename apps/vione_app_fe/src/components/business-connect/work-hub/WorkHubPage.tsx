@@ -42,7 +42,7 @@ export function WorkHubPage() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("bc.workHub.loading")}</p>
       ) : data ? (
-        WORK_HUB_CATEGORY_ORDER.every((c) => (data.previews[c]?.length ?? 0) === 0) ? (
+        WORK_HUB_CATEGORY_ORDER.every((c) => ((data.previews as any)[c]?.length ?? 0) === 0) ? (
           <div className="rounded-xl border bg-card p-8 text-center">
             <h3 className="text-base font-semibold text-foreground">
               {t("bc.workHub.empty.title")}
@@ -51,8 +51,8 @@ export function WorkHubPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {WORK_HUB_CATEGORY_ORDER.map((c) => (
-              <WorkHubCategorySection key={c} category={c} items={data.previews[c] ?? []} />
+            {WORK_HUB_CATEGORY_ORDER.map((c: any) => (
+              <WorkHubCategorySection key={c} category={c} items={(data.previews as any)[c] ?? []} />
             ))}
           </div>
         )

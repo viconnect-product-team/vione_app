@@ -119,7 +119,7 @@ describe("BC-6.0 SmartIntroduction — reasons contract", () => {
       candidates: [base("A", { hopStrengths: [0.9, 0.9] })],
       options: opts,
     })[0]!;
-    const codes = strong.reasons.map((r) => r.code);
+    const codes = strong.reasons.map((r: any) => r.code);
     expect(codes).toContain("STRONG_DIRECT_INTERMEDIARY");
     expect(codes).toContain("STRONG_TARGET_RELATIONSHIP");
 
@@ -127,7 +127,7 @@ describe("BC-6.0 SmartIntroduction — reasons contract", () => {
       candidates: [base("A", { hopStrengths: [0.1, 0.1] })],
       options: opts,
     })[0]!;
-    expect(fallback.reasons.map((r) => r.code)).toContain("SHORTEST_TRUSTED_PATH");
+    expect(fallback.reasons.map((r: any) => r.code)).toContain("SHORTEST_TRUSTED_PATH");
   });
 });
 

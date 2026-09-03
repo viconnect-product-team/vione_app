@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
   BcMobileGetPersonalizationResult,
@@ -37,13 +37,13 @@ const recordSchema = z.object({
 });
 
 export const bcRelPersonalizationGetFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<BcMobileGetPersonalizationResult> => {
     return fetchNestApiFromServer("/connect-app/network/personalization/get", context.token);
   });
 
 export const bcRelPersonalizationUpdateFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => updateSchema.parse(input))
   .handler(async ({ data, context }): Promise<BcMobileUpdateRelationshipIntelPreferencesResult> => {
     return fetchNestApiFromServer("/connect-app/network/personalization/update", context.token, {
@@ -53,7 +53,7 @@ export const bcRelPersonalizationUpdateFn = createServerFn({ method: "POST" })
   });
 
 export const bcRelPersonalizationRecordInteractionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((input: unknown) => recordSchema.parse(input))
   .handler(async ({ data, context }): Promise<BcMobileRecordInteractionResult> => {
     return fetchNestApiFromServer(
@@ -67,7 +67,7 @@ export const bcRelPersonalizationRecordInteractionFn = createServerFn({ method: 
   });
 
 export const bcRelPersonalizationResetFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<BcMobileResetPersonalizationResult> => {
     return fetchNestApiFromServer("/connect-app/network/personalization/reset", context.token, {
       method: "POST",

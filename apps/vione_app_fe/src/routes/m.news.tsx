@@ -33,7 +33,7 @@ function NewsScreen() {
             {t("m.news.empty")}
           </p>
         )}
-        {news.map((n) => (
+        {news.map((n: any) => (
           <article key={n.id} className="vba-card p-4">
             {n.category && (
               <span className="inline-block rounded-md bg-[var(--vba-gold-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--vba-gold)]">

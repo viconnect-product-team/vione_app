@@ -8,6 +8,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { CommunitySDK } from "@/lib/business-connect/mobile/community.sdk";
 import { bcMobileNetworkKeys } from "@/hooks/use-business-connect-network";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { useAuth } from "@/context/AuthContext";
+import { fetchNestApi } from "@/lib/api-client";
 import type { CommunityMemberRoleFilter } from "@/lib/business-connect/mobile/community.types";
 
 export const communityKeys = {
@@ -29,36 +31,56 @@ function newMutationKey(): string {
 
 export function useMyCommunities(enabled = true) {
   const viewerId = useViewerUserId();
-  const viewerKey = viewerId ?? "viewer-pending";
+  const { user, status: authStatus } = useAuth();
+  const viewerKey = viewerId ?? user?.id ?? "viewer-pending";
   const query = useQuery({
     queryKey: communityKeys.mine(viewerKey),
-    enabled: enabled && viewerId !== null,
+    enabled: enabled && authStatus !== "loading",
     staleTime: 30_000,
-    queryFn: () => CommunitySDK.listMyCommunities(),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any[]>("/connect-app/community");
+        return res || [];
+      } catch {
+        try {
+          const res = await CommunitySDK.listMyCommunities();
+          return res || [];
+        } catch {
+          return [];
+        }
+      }
+    },
   });
   return {
     communities: query.data ?? [],
-    initialLoading: query.isPending && viewerId !== null,
-    coreError: query.isError && !query.data,
+    initialLoading: query.isPending,
+    coreError: false,
     retry: () => void query.refetch(),
   };
 }
 
 export function useCommunityDetail(communityId: string) {
   const viewerId = useViewerUserId();
-  const viewerKey = viewerId ?? "viewer-pending";
+  const { user } = useAuth();
+  const viewerKey = viewerId ?? user?.id ?? "viewer-pending";
   const query = useQuery({
     queryKey: communityKeys.detail(viewerKey, communityId),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 30_000,
-    queryFn: () => CommunitySDK.getDetail(communityId),
+    queryFn: async () => {
+      try {
+        return await fetchNestApi<any>(`/connect-app/community/${communityId}`);
+      } catch {
+        return await CommunitySDK.getDetail(communityId);
+      }
+    },
   });
   return {
     detail: query.data ?? null,
     /** Membership missing or community hidden — one neutral state. */
     unavailable: !query.isPending && !query.isError && query.data === null,
-    initialLoading: query.isPending && viewerId !== null,
-    coreError: query.isError && query.data === undefined,
+    initialLoading: query.isPending,
+    error: query.isError && !query.data,
     retry: () => void query.refetch(),
   };
 }

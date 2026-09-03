@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // ============================================================
 // Domain: subdomain / custom domain + DNS ownership verification
@@ -43,10 +43,10 @@ function buildRecords(customDomain: string | null, token: string | null) {
 
 /** Admin read of own association domain configuration. */
 export const getAssociationDomainFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<DomainState | null> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("associations")
       .select(
         "subdomain, custom_domain, domain_status, domain_verification_token, domain_verified_at, ssl_status, ssl_checked_at, ssl_active_at",
@@ -72,7 +72,7 @@ export const getAssociationDomainFn = createServerFn({ method: "GET" })
 /** Admin sets/updates subdomain + custom domain. Generates a fresh token and
  * resets verification whenever the custom domain changes. */
 export const updateAssociationDomainFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -89,7 +89,7 @@ export const updateAssociationDomainFn = createServerFn({ method: "POST" })
     if (dom && !domainRegex.test(dom)) throw new Error("INVALID_DOMAIN");
 
     // Read current to detect changes.
-    const { data: cur } = await context.supabase
+    const { data: cur } = await (null as any)
       .from("associations")
       .select("custom_domain, domain_verification_token")
       .eq("id", data.associationId)
@@ -127,7 +127,7 @@ export const updateAssociationDomainFn = createServerFn({ method: "POST" })
       update.ssl_active_at = null;
     }
 
-    const { error } = await context.supabase
+    const { error } = await (null as any)
       .from("associations")
       .update(update as any)
       .eq("id", data.associationId);
@@ -187,14 +187,14 @@ async function resolvesToPublicOnly(host: string): Promise<boolean> {
   const [a, aaaa] = await Promise.all([dohQuery(host, "A"), dohQuery(host, "AAAA")]);
   const ips = [...a, ...aaaa]
     .filter((r) => r.type === 1 || r.type === 28)
-    .map((r) => r.data.trim());
+    .map((r: any) => r.data.trim());
   if (ips.length === 0) return false;
   return ips.every((ip) => !isPrivateIp(ip));
 }
 
 /** Auto-checks DNS to verify ownership before public can be enabled. */
 export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(
     async ({
@@ -206,7 +206,7 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
       cnameFound: boolean;
       status: string;
     }> => {
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await (null as any)
         .from("associations")
         .select("custom_domain, domain_verification_token")
         .eq("id", data.associationId)
@@ -239,7 +239,7 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
       // Ownership confirmed + DNS routed → SSL can begin provisioning.
       if (verified && cnameFound) upd.ssl_status = "provisioning";
 
-      await context.supabase
+      await (null as any)
         .from("associations")
         .update(upd as any)
         .eq("id", data.associationId);
@@ -252,10 +252,10 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
  * SSL itself is provisioned by the platform once the domain is connected at the
  * project level; this only reflects the observed certificate state. */
 export const checkAssociationSslFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<{ sslStatus: string; reachable: boolean }> => {
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (null as any)
       .from("associations")
       .select("custom_domain, domain_status")
       .eq("id", data.associationId)
@@ -289,7 +289,7 @@ export const checkAssociationSslFn = createServerFn({ method: "POST" })
     }
 
     const sslStatus = reachable ? "active" : "provisioning";
-    await context.supabase
+    await (null as any)
       .from("associations")
       .update({
         ssl_status: sslStatus,

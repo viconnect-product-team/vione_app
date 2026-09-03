@@ -18,8 +18,8 @@ const read = (f: string) => {
   if (stub.trim().split("\n").length <= 3 && m) {
     const dir = join(LIB, m[1]);
     return readdirSync(dir)
-      .filter((x) => x.endsWith(".ts"))
-      .map((x) => readFileSync(join(dir, x), "utf8"))
+      .filter((x: any) => x.endsWith(".ts"))
+      .map((x: any) => readFileSync(join(dir, x), "utf8"))
       .join("\n");
   }
   return stub;

@@ -41,7 +41,7 @@ describe("ai-output-schema guards", () => {
       },
       { allowedSourceIds: [], allowedRoutes: ["/documents"] },
     );
-    expect(out.suggestedActions.map((a) => a.label)).toEqual(["ok", "intent-only"]);
+    expect(out.suggestedActions.map((a: any) => a.label)).toEqual(["ok", "intent-only"]);
   });
 
   it("strips raw HTML but keeps markdown", () => {

@@ -22,7 +22,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 export type CheckinStatus = "success" | "already" | "invalid";
 
@@ -121,7 +121,7 @@ async function recordRejection(params: {
 }
 
 export const getMyCheckinState = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyCheckinRecord[]> => {
     const { supabase, userId } = context;
     const mine = await resolveMembers(supabase, userId);
@@ -153,7 +153,7 @@ const checkinInput = z
   .strict();
 
 export const checkInMyself = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireNestAuth])
   .inputValidator((raw: unknown) => {
     const parsed = checkinInput.safeParse(raw);
     if (!parsed.success) throw new CheckinError("invalid_payload");
