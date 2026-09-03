@@ -19,24 +19,24 @@ function mapEndpoint(endpoint: string): string {
     mapped = mapped.replace('/connect-app/me/showcase', '/me/showcase');
   } else if (mapped === '/connect-app/abuse/report') {
     mapped = '/network/abuse/report';
-  } else if (mapped.startsWith('/connect-app/community/')) {
-    mapped = mapped.replace('/connect-app/community/', '/community/');
+  } else if (mapped === '/connect-app/community' || mapped.startsWith('/connect-app/community/')) {
+    mapped = mapped.replace('/connect-app/community', '/communities');
   } else if (mapped.startsWith('/connect-app/network/')) {
     mapped = mapped.replace('/connect-app/network/', '/network/');
   } else if (mapped.startsWith('/connect-app/me/')) {
     mapped = mapped.replace('/connect-app/me/', '/me/');
   } else if (mapped.startsWith('/connect-app/dm/')) {
     mapped = mapped.replace('/connect-app/dm/', '/dm/');
-  } else if (mapped.startsWith('/connect-app/customer/')) {
-    mapped = mapped.replace('/connect-app/customer/', '/customer/');
-  } else if (mapped.startsWith('/connect-app/card-scan/')) {
-    mapped = mapped.replace('/connect-app/card-scan/', '/card-scan/');
+  } else if (mapped === '/connect-app/customer' || mapped.startsWith('/connect-app/customer/')) {
+    mapped = mapped.replace('/connect-app/customer', '/customers');
+  } else if (mapped === '/connect-app/card-scan' || mapped.startsWith('/connect-app/card-scan/')) {
+    mapped = mapped.replace('/connect-app/card-scan', '/card-scans');
   } else if (mapped.startsWith('/connect-app/public/identity/')) {
     mapped = mapped.replace('/connect-app/public/identity/', '/public/identity/');
   } else if (mapped.startsWith('/connect-app/notifications')) {
     mapped = mapped.replace('/connect-app/notifications', '/me/notifications');
   } else if (mapped.startsWith('/connect-app/moment/')) {
-    mapped = mapped.replace('/connect-app/moment/', '/moment/');
+    mapped = mapped.replace('/connect-app/moment/', '/moments/');
   }
 
   const clean = mapped.startsWith('/') ? mapped : `/${mapped}`;

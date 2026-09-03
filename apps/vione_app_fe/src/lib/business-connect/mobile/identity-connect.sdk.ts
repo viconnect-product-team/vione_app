@@ -16,7 +16,7 @@ export const IdentityConnectSDK = {
     fetchNestApi(`/connect-app/network/token-state/${token}`),
 
   send: (token: string, mutationKey?: string): Promise<GlobalConnectionMutationResult> =>
-    fetchNestApi("/connect-app/network/token-connect", {
+    fetchNestApi("/connect-app/network/connections/token", {
       method: "POST",
       body: JSON.stringify({ token, mutationKey }),
     }),

@@ -2666,6 +2666,58 @@ export class ConnectAppService {
     };
   }
 
+  async getMyDmThreadDetail(userId: string, threadId: string) {
+    const threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+      FROM public.bc_dm_threads
+      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const thread = threads[0];
+    if (!thread) throw new NotFoundException('thread_not_found');
+
+    const counterpartId = thread.pair_user_low === userId ? thread.pair_user_high : thread.pair_user_low;
+
+    const cards = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name, headline, professional_title, company_name, avatar_url, card_kind
+      FROM public.member_business_cards
+      WHERE owner_user_id = ${counterpartId}::uuid
+        AND status = 'published'
+        AND public_mode = 'public'
+    `.catch(() => [] as any[]);
+
+    const card = cards.find(c => c.card_kind === 'primary') || cards[0] || {
+      display_name: 'Thành viên Vione',
+      avatar_url: null,
+      headline: null,
+      company_name: null,
+    };
+
+    const threadSummary = {
+      id: thread.id,
+      counterpartId,
+      counterpart: {
+        displayName: card.display_name ?? 'Thành viên Vione',
+        avatarUrl: card.avatar_url ?? null,
+        headline: card.headline ?? card.professional_title ?? null,
+        companyName: card.company_name ?? null,
+      },
+      lastMessageAt: thread.last_message_at ? new Date(thread.last_message_at).toISOString() : null,
+      lastMessagePreview: thread.last_message_preview,
+      lastMessageSenderId: thread.last_message_sender_id,
+      unreadCount: 0,
+      updatedAt: thread.updated_at ? new Date(thread.updated_at).toISOString() : null,
+    };
+
+    const messages = await this.listMyDmThreadMessages(userId, threadId);
+
+    return {
+      thread: threadSummary,
+      messages,
+    };
+  }
+
   async listMyDmThreadMessages(userId: string, threadId: string) {
     const threads = await this.prisma.$queryRaw<any[]>`
       SELECT id, pair_user_low, pair_user_high FROM public.bc_dm_threads

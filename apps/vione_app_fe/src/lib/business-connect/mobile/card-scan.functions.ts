@@ -22,7 +22,7 @@ export const bcMobileCardScanFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => scanInput.parse(data))
   .handler(async ({ data, context }): Promise<CardScanResponse> => {
-    return fetchNestApiFromServer("/connect-app/card-scan/ocr", context.token, {
+    return fetchNestApiFromServer("/connect-app/card-scan", context.token, {
       method: "POST",
       body: JSON.stringify(data),
     });

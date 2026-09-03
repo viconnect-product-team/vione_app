@@ -29,12 +29,10 @@ const stageSchema = z.enum(CUSTOMER_STAGES);
 const isoSchema = z.string().min(4).max(40);
 
 // ── List ────────────────────────────────────────────────----------------────
-export const bcMobileCustomersFn = createServerFn({ method: "POST" })
+export const bcMobileCustomersFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BcCustomerResult<{ customers: BcCustomer[] }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/list", context.token, {
-      method: "POST",
-    });
+    return fetchNestApiFromServer("/connect-app/customer", context.token);
   });
 
 // ── Create ──────────────────────────────────────────────────────────────────
@@ -54,7 +52,7 @@ export const bcMobileCustomerCreateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => createInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ customer: BcCustomer }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/create", context.token, {
+    return fetchNestApiFromServer("/connect-app/customer", context.token, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -75,9 +73,10 @@ export const bcMobileCustomerUpdateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => updateInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ customer: BcCustomer }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/update", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { customerId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/${customerId}`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify(rest),
     });
   });
 
@@ -86,21 +85,17 @@ export const bcMobileCustomerDeleteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
-    return fetchNestApiFromServer("/connect-app/customer/delete", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}`, context.token, {
+      method: "DELETE",
     });
   });
 
 // ── Care log ────────────────────────────────────────────────────────────────
-export const bcMobileCustomerLogsFn = createServerFn({ method: "POST" })
+export const bcMobileCustomerLogsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ logs: BcCustomerLog[] }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/logs", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/logs`, context.token);
   });
 
 const logInput = z.object({
@@ -114,19 +109,18 @@ export const bcMobileCustomerLogAddFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => logInput.parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ log: BcCustomerLog }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/log-add", context.token, {
+    const { customerId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/${customerId}/logs`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
   });
 
 // ── Nhãn / phân nhóm khách hàng ─────────────────────────────────────────────
-export const bcMobileCustomerTagsFn = createServerFn({ method: "POST" })
+export const bcMobileCustomerTagsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BcCustomerResult<{ tags: BcCustomerTag[] }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/tags", context.token, {
-      method: "POST",
-    });
+    return fetchNestApiFromServer("/connect-app/customer/tags", context.token);
   });
 
 const tagNameSchema = z.string().min(1).max(CUSTOMER_MAX_TAG_NAME_LEN + 40);
@@ -135,7 +129,7 @@ export const bcMobileCustomerTagCreateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ name: tagNameSchema }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ tag: BcCustomerTag }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/tag-create", context.token, {
+    return fetchNestApiFromServer("/connect-app/customer/tags", context.token, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -147,9 +141,10 @@ export const bcMobileCustomerTagRenameFn = createServerFn({ method: "POST" })
     z.object({ tagId: z.string().uuid(), name: tagNameSchema }).parse(data),
   )
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ tag: BcCustomerTag }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/tag-rename", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { tagId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/tags/${tagId}`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify(rest),
     });
   });
 
@@ -157,9 +152,8 @@ export const bcMobileCustomerTagDeleteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ tagId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
-    return fetchNestApiFromServer("/connect-app/customer/tag-delete", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    return fetchNestApiFromServer(`/connect-app/customer/tags/${data.tagId}`, context.token, {
+      method: "DELETE",
     });
   });
 
@@ -174,21 +168,19 @@ export const bcMobileCustomerSetTagsFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ tagIds: string[] }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/set-tags", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { customerId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/${customerId}/tags`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
     });
   });
 
 // ── Điểm đau & nhu cầu ──────────────────────────────────────────────────────
-export const bcMobileCustomerNeedsFn = createServerFn({ method: "POST" })
+export const bcMobileCustomerNeedsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ needs: BcCustomerNeed[] }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/needs", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/needs`, context.token);
   });
 
 export const bcMobileCustomerNeedAddFn = createServerFn({ method: "POST" })
@@ -204,9 +196,10 @@ export const bcMobileCustomerNeedAddFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ need: BcCustomerNeed }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/need-add", context.token, {
+    const { customerId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/${customerId}/needs`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
   });
 
@@ -223,9 +216,10 @@ export const bcMobileCustomerNeedUpdateFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }): Promise<BcCustomerResult<{ need: BcCustomerNeed }>> => {
-    return fetchNestApiFromServer("/connect-app/customer/need-update", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { needId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/needs/${needId}`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify(rest),
     });
   });
 
@@ -233,9 +227,8 @@ export const bcMobileCustomerNeedDeleteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ needId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
-    return fetchNestApiFromServer("/connect-app/customer/need-delete", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    return fetchNestApiFromServer(`/connect-app/customer/needs/${data.needId}`, context.token, {
+      method: "DELETE",
     });
   });
 
@@ -263,9 +256,10 @@ export const bcMobileCustomerTagSuggestFn = createServerFn({ method: "POST" })
         suggestions: { name: string; reason: string; existing: boolean; confidence: number }[];
       }>
     > => {
-      return fetchNestApiFromServer("/connect-app/customer/tag-suggest", context.token, {
+      const { customerId, ...rest } = data;
+      return fetchNestApiFromServer(`/connect-app/customer/${customerId}/tag-suggestions`, context.token, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(rest),
       });
     },
   );
@@ -275,9 +269,7 @@ export const bcMobileCustomerTagSuggestHistoryFn = createServerFn({ method: "GET
   .inputValidator((data) => z.object({ customerId: z.string().uuid() }).parse(data))
   .handler(
     async ({ data, context }): Promise<BcCustomerResult<{ runs: BcCustomerTagSuggestionRun[] }>> => {
-      const queryParams = new URLSearchParams();
-      queryParams.set("customerId", data.customerId);
-      return fetchNestApiFromServer(`/connect-app/customer/tag-suggest-history?${queryParams.toString()}`, context.token);
+      return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/tag-suggestions/history`, context.token);
     },
   );
 
@@ -294,9 +286,10 @@ export const bcMobileCustomerTagSuggestFeedbackFn = createServerFn({ method: "PO
       .parse(data),
   )
   .handler(async ({ data, context }): Promise<BcCustomerResult<Record<string, never>>> => {
-    return fetchNestApiFromServer("/connect-app/customer/tag-suggest-feedback", context.token, {
+    const { customerId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/customer/${customerId}/tag-suggestions/feedback`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
   });
 
@@ -308,8 +301,6 @@ export const bcMobileCustomerTagSuggestFeedbackListFn = createServerFn({ method:
       data,
       context,
     }): Promise<BcCustomerResult<{ feedback: BcCustomerTagSuggestionFeedback[] }>> => {
-      const queryParams = new URLSearchParams();
-      queryParams.set("customerId", data.customerId);
-      return fetchNestApiFromServer(`/connect-app/customer/tag-suggest-feedback-list?${queryParams.toString()}`, context.token);
+      return fetchNestApiFromServer(`/connect-app/customer/${data.customerId}/tag-suggestions/feedback`, context.token);
     },
   );

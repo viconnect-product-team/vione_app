@@ -36,7 +36,7 @@ export const bcIdentityUpsertFn = createServerFn({ method: "POST" })
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
       fetchNestApiFromServer("/connect-app/me/identity", context.token, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify(data),
       }),
   );
@@ -47,7 +47,7 @@ export const bcIdentityUpdateVisibilityFn = createServerFn({ method: "POST" })
   .handler(
     ({ data, context }): Promise<MyIdentityPayload> =>
       fetchNestApiFromServer("/connect-app/me/identity/visibility", context.token, {
-        method: "POST",
+        method: "PATCH",
         body: JSON.stringify(data),
       }),
   );

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, Patch, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -12,7 +12,7 @@ export class NetworkController {
     return this.connectAppService.listConnections(req.user.id);
   }
 
-  @Post('resolve-counterparts')
+  @Post('connections/resolve')
   async resolvePublicCounterparts(@Body('userIds') userIds: string[]) {
     return this.connectAppService.resolvePublicCounterparts(userIds);
   }
@@ -32,7 +32,7 @@ export class NetworkController {
     return this.connectAppService.getGuestContact(req.user.id, id);
   }
 
-  @Post('guest-contacts/:id/owner-fields')
+  @Patch('guest-contacts/:id/owner-fields')
   async updateGuestContactOwnerFields(
     @Request() req,
     @Param('id') id: string,
@@ -56,8 +56,8 @@ export class NetworkController {
     return this.connectAppService.getPersonRecommendation(req.user.id, personId);
   }
 
-  @Post('recommendations/dismiss')
-  async dismissRecommendation(@Request() req, @Body('personId') personId: string) {
+  @Delete('recommendations/person/:personId')
+  async dismissRecommendation(@Request() req, @Param('personId') personId: string) {
     return this.connectAppService.dismissRecommendation(req.user.id, personId);
   }
 
@@ -66,32 +66,27 @@ export class NetworkController {
     return this.connectAppService.getNetworkFeed(req.user.id, cursor || null);
   }
 
-  @Post('requests/send')
+  @Post('requests')
   async sendConnectionRequest(@Request() req, @Body() body: any) {
     return this.connectAppService.sendConnectionRequest(req.user.id, body);
   }
 
-  @Post('requests/accept')
-  async acceptConnection(@Request() req, @Body() body: any) {
-    return this.connectAppService.acceptConnection(req.user.id, body);
+  @Patch('connections/:id')
+  async updateConnection(@Request() req, @Param('id') id: string, @Body() body: { status: string }) {
+    if (body.status === 'accepted') {
+      return this.connectAppService.acceptConnection(req.user.id, { connectionId: id });
+    } else if (body.status === 'declined') {
+      return this.connectAppService.declineConnection(req.user.id, { connectionId: id });
+    }
+    throw new BadRequestException('invalid_status');
   }
 
-  @Post('requests/decline')
-  async declineConnection(@Request() req, @Body() body: any) {
-    return this.connectAppService.declineConnection(req.user.id, body);
+  @Delete('connections/:id')
+  async deleteConnection(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.disconnectConnection(req.user.id, { connectionId: id });
   }
 
-  @Post('requests/cancel')
-  async cancelConnection(@Request() req, @Body() body: any) {
-    return this.connectAppService.cancelConnection(req.user.id, body);
-  }
-
-  @Post('requests/disconnect')
-  async disconnectConnection(@Request() req, @Body() body: any) {
-    return this.connectAppService.disconnectConnection(req.user.id, body);
-  }
-
-  @Post('block')
+  @Post('blocks')
   async blockUser(@Request() req, @Body() body: any) {
     return this.connectAppService.blockUser(req.user.id, body);
   }
@@ -106,7 +101,7 @@ export class NetworkController {
     return this.connectAppService.getConnectionStateByToken(req.user.id, token);
   }
 
-  @Post('token-connect')
+  @Post('connections/token')
   async sendConnectionRequestByToken(@Request() req, @Body('token') token: string, @Body('mutationKey') mutationKey?: string) {
     return this.connectAppService.sendConnectionRequestByToken(req.user.id, token, mutationKey);
   }
@@ -131,24 +126,33 @@ export class NetworkController {
     return this.connectAppService.countConnectionsByStatus(req.user.id);
   }
 
-  @Post('abuse/report')
+  @Post('abuse/reports')
   async reportUser(@Request() req, @Body() data: any) {
     return this.connectAppService.reportUser(req.user.id, data);
   }
 
   // --- Person Plan ---
-  @Post('person-plan/create')
+  @Post('person-plans')
   async createPersonPlan(@Request() req, @Body() data: any) {
     return this.connectAppService.createPersonPlan(req.user.id, data);
   }
 
-  @Post('person-plan/list')
-  async listPersonPlans(@Request() req, @Body() data: any) {
-    return this.connectAppService.listPersonPlans(req.user.id, data);
+  @Get('person-plans')
+  async listPersonPlans(
+    @Request() req,
+    @Query('personId') personId?: string,
+    @Query('includeClosed') includeClosed?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.connectAppService.listPersonPlans(req.user.id, {
+      personId: personId || null,
+      includeClosed: includeClosed === 'true',
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
-  @Post('person-plan/set-status')
-  async setPersonPlanStatus(@Request() req, @Body() data: any) {
-    return this.connectAppService.setPersonPlanStatus(req.user.id, data);
+  @Patch('person-plans/:planId/status')
+  async setPersonPlanStatus(@Request() req, @Param('planId') planId: string, @Body() body: { status: string }) {
+    return this.connectAppService.setPersonPlanStatus(req.user.id, { planId, status: body.status });
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -12,7 +12,7 @@ export class MeController {
     return this.connectAppService.getMyProfile(req.user.id);
   }
 
-  @Post('profile')
+  @Put('profile')
   async updateMyProfile(@Request() req, @Body() data: any) {
     return this.connectAppService.updateMyProfile(req.user.id, data);
   }
@@ -22,12 +22,12 @@ export class MeController {
     return this.connectAppService.getMyIdentity(req.user.id);
   }
 
-  @Post('identity')
+  @Put('identity')
   async upsertMyIdentity(@Request() req, @Body() data: any) {
     return this.connectAppService.upsertMyIdentity(req.user.id, data);
   }
 
-  @Post('identity/visibility')
+  @Patch('identity/visibility')
   async updateMyVisibility(@Request() req, @Body() updates: any[]) {
     return this.connectAppService.updateMyVisibility(req.user.id, updates);
   }
@@ -58,7 +58,7 @@ export class MeController {
     return this.connectAppService.getUnreadNotificationCount(req.user.id);
   }
 
-  @Post('notifications/mark-read')
+  @Patch('notifications/read')
   async markNotificationsRead(@Request() req, @Body('ids') ids?: string[]) {
     return this.connectAppService.markNotificationsRead(req.user.id, ids);
   }
@@ -68,7 +68,7 @@ export class MeController {
     return this.connectAppService.getNotificationPrefs(req.user.id);
   }
 
-  @Post('notifications/prefs')
+  @Put('notifications/prefs')
   async setNotificationPrefs(@Request() req, @Body() prefs: any) {
     return this.connectAppService.setNotificationPrefs(req.user.id, prefs);
   }

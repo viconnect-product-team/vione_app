@@ -2,12 +2,12 @@ import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('connect-app/card-scan')
+@Controller('card-scans')
 @UseGuards(JwtAuthGuard)
 export class CardScanController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  @Post('ocr')
+  @Post()
   async cardScanOcr(@Request() req, @Body() body: { imageDataUrl: string; clientToken: string }) {
     return this.connectAppService.cardScanOcr(req.user.id, body.imageDataUrl, body.clientToken);
   }

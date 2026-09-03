@@ -1,39 +1,54 @@
-import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Request, UseGuards, Param, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('connect-app/dm')
+@Controller('dm')
 @UseGuards(JwtAuthGuard)
 export class DmController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  @Post('threads')
+  @Get('threads')
   async listMyDmThreads(@Request() req) {
     return this.connectAppService.listMyDmThreads(req.user.id);
   }
 
-  @Post('thread/open')
-  async openMyDmThread(@Request() req, @Body('counterpartUserId') counterpartUserId: string) {
-    return this.connectAppService.openMyDmThread(req.user.id, counterpartUserId);
+  @Post('threads')
+  async openMyDmThread(
+    @Request() req,
+    @Body('counterpartUserId') counterpartUserId?: string,
+    @Body('personId') personId?: string,
+  ) {
+    let cleanId = counterpartUserId;
+    if (personId && personId.startsWith('u:')) {
+      cleanId = personId.substring(2);
+    }
+    if (!cleanId) {
+      throw new BadRequestException('counterpart_user_id_required');
+    }
+    return this.connectAppService.openMyDmThread(req.user.id, cleanId);
   }
 
-  @Post('thread/messages')
-  async listMyDmThreadMessages(@Request() req, @Body('threadId') threadId: string) {
-    return this.connectAppService.listMyDmThreadMessages(req.user.id, threadId);
+  @Get('threads/:threadId')
+  async getMyDmThreadDetail(@Request() req, @Param('threadId') threadId: string) {
+    return this.connectAppService.getMyDmThreadDetail(req.user.id, threadId);
   }
 
-  @Post('message/send')
-  async sendMyDmMessage(@Request() req, @Body() data: { threadId: string; body: string; clientToken: string }) {
-    return this.connectAppService.sendMyDmMessage(req.user.id, data.threadId, data);
+  @Post('threads/:threadId/messages')
+  async sendMyDmMessage(
+    @Request() req,
+    @Param('threadId') threadId: string,
+    @Body() data: { body: string; clientToken: string },
+  ) {
+    return this.connectAppService.sendMyDmMessage(req.user.id, threadId, data);
   }
 
-  @Post('thread/mark-read')
-  async markMyDmThreadRead(@Request() req, @Body('threadId') threadId: string) {
+  @Post('threads/:threadId/read')
+  async markMyDmThreadRead(@Request() req, @Param('threadId') threadId: string) {
     return this.connectAppService.markMyDmThreadRead(req.user.id, threadId);
   }
 
-  @Post('message/retract')
-  async retractMyDmMessage(@Request() req, @Body('messageId') messageId: string) {
+  @Delete('messages/:messageId')
+  async retractMyDmMessage(@Request() req, @Param('messageId') messageId: string) {
     return this.connectAppService.retractMyDmMessage(req.user.id, messageId);
   }
 }

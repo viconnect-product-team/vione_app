@@ -1,105 +1,142 @@
-import { Controller, Post, Body, Request, UseGuards, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('connect-app/customer')
+@Controller('customers')
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  @Post('list')
+  @Get()
   async listBcCustomers(@Request() req) {
     return this.connectAppService.listBcCustomers(req.user.id);
   }
 
-  @Post('create')
+  @Post()
   async createBcCustomer(@Request() req, @Body() data: any) {
     return this.connectAppService.createBcCustomer(req.user.id, data);
   }
 
-  @Post('update')
-  async updateBcCustomer(@Request() req, @Body() data: any) {
-    return this.connectAppService.updateBcCustomer(req.user.id, data);
+  @Patch(':customerId')
+  async updateBcCustomer(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.updateBcCustomer(req.user.id, { ...data, customerId });
   }
 
-  @Post('delete')
-  async deleteBcCustomer(@Request() req, @Body('customerId') customerId: string) {
+  @Delete(':customerId')
+  async deleteBcCustomer(@Request() req, @Param('customerId') customerId: string) {
     return this.connectAppService.deleteBcCustomer(req.user.id, customerId);
   }
 
-  @Post('logs')
-  async listBcCustomerLogs(@Request() req, @Body('customerId') customerId: string) {
+  @Get(':customerId/logs')
+  async listBcCustomerLogs(@Request() req, @Param('customerId') customerId: string) {
     return this.connectAppService.listBcCustomerLogs(req.user.id, customerId);
   }
 
-  @Post('log-add')
-  async addBcCustomerLog(@Request() req, @Body() data: any) {
-    return this.connectAppService.addBcCustomerLog(req.user.id, data);
+  @Post(':customerId/logs')
+  async addBcCustomerLog(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.addBcCustomerLog(req.user.id, { ...data, customerId });
   }
 
-  @Post('tags')
+  @Get('tags')
   async listBcCustomerTags(@Request() req) {
     return this.connectAppService.listBcCustomerTags(req.user.id);
   }
 
-  @Post('tag-create')
+  @Post('tags')
   async createBcCustomerTag(@Request() req, @Body('name') name: string) {
     return this.connectAppService.createBcCustomerTag(req.user.id, name);
   }
 
-  @Post('tag-rename')
-  async renameBcCustomerTag(@Request() req, @Body() data: { tagId: string; name: string }) {
-    return this.connectAppService.renameBcCustomerTag(req.user.id, data.tagId, data.name);
+  @Patch('tags/:tagId')
+  async renameBcCustomerTag(
+    @Request() req,
+    @Param('tagId') tagId: string,
+    @Body('name') name: string,
+  ) {
+    return this.connectAppService.renameBcCustomerTag(req.user.id, tagId, name);
   }
 
-  @Post('tag-delete')
-  async deleteBcCustomerTag(@Request() req, @Body('tagId') tagId: string) {
+  @Delete('tags/:tagId')
+  async deleteBcCustomerTag(@Request() req, @Param('tagId') tagId: string) {
     return this.connectAppService.deleteBcCustomerTag(req.user.id, tagId);
   }
 
-  @Post('set-tags')
-  async setBcCustomerTags(@Request() req, @Body() data: { customerId: string; names: string[] }) {
-    return this.connectAppService.setBcCustomerTags(req.user.id, data.customerId, data.names);
+  @Put(':customerId/tags')
+  async setBcCustomerTags(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body('names') names: string[],
+  ) {
+    return this.connectAppService.setBcCustomerTags(req.user.id, customerId, names);
   }
 
-  @Post('needs')
-  async listBcCustomerNeeds(@Request() req, @Body('customerId') customerId: string) {
+  @Get(':customerId/needs')
+  async listBcCustomerNeeds(@Request() req, @Param('customerId') customerId: string) {
     return this.connectAppService.listBcCustomerNeeds(req.user.id, customerId);
   }
 
-  @Post('need-add')
-  async addBcCustomerNeed(@Request() req, @Body() data: any) {
-    return this.connectAppService.addBcCustomerNeed(req.user.id, data);
+  @Post(':customerId/needs')
+  async addBcCustomerNeed(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.addBcCustomerNeed(req.user.id, { ...data, customerId });
   }
 
-  @Post('need-update')
-  async updateBcCustomerNeed(@Request() req, @Body() data: any) {
-    return this.connectAppService.updateBcCustomerNeed(req.user.id, data);
+  @Patch('needs/:needId')
+  async updateBcCustomerNeed(
+    @Request() req,
+    @Param('needId') needId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.updateBcCustomerNeed(req.user.id, { ...data, needId });
   }
 
-  @Post('need-delete')
-  async deleteBcCustomerNeed(@Request() req, @Body('needId') needId: string) {
+  @Delete('needs/:needId')
+  async deleteBcCustomerNeed(@Request() req, @Param('needId') needId: string) {
     return this.connectAppService.deleteBcCustomerNeed(req.user.id, needId);
   }
 
   // --- AI Tag Suggestions ---
-  @Post('tag-suggest')
-  async suggestCustomerTags(@Request() req, @Body('customerId') customerId: string) {
+  @Post(':customerId/tag-suggestions')
+  async suggestCustomerTags(
+    @Request() req,
+    @Param('customerId') customerId: string,
+  ) {
     return this.connectAppService.suggestCustomerTags(req.user.id, customerId);
   }
 
-  @Get('tag-suggest-history')
-  async listCustomerTagSuggestHistory(@Request() req, @Query('customerId') customerId: string) {
+  @Get(':customerId/tag-suggestions/history')
+  async listCustomerTagSuggestHistory(
+    @Request() req,
+    @Param('customerId') customerId: string,
+  ) {
     return this.connectAppService.listCustomerTagSuggestHistory(req.user.id, customerId);
   }
 
-  @Post('tag-suggest-feedback')
-  async saveCustomerTagSuggestFeedback(@Request() req, @Body() data: any) {
-    return this.connectAppService.saveCustomerTagSuggestFeedback(req.user.id, data);
+  @Post(':customerId/tag-suggestions/feedback')
+  async saveCustomerTagSuggestFeedback(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.saveCustomerTagSuggestFeedback(req.user.id, { ...data, customerId });
   }
 
-  @Get('tag-suggest-feedback-list')
-  async listCustomerTagSuggestFeedback(@Request() req, @Query('customerId') customerId: string) {
+  @Get(':customerId/tag-suggestions/feedback')
+  async listCustomerTagSuggestFeedback(
+    @Request() req,
+    @Param('customerId') customerId: string,
+  ) {
     return this.connectAppService.listCustomerTagSuggestFeedback(req.user.id, customerId);
   }
 }

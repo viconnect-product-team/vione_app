@@ -104,8 +104,8 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
     try {
       const { token } = context as any;
       const { fetchNestApiFromServer } = await import("../../api-client");
-      await fetchNestApiFromServer("/me/notifications/mark-read", token, {
-        method: "POST",
+      await fetchNestApiFromServer("/me/notifications/read", token, {
+        method: "PATCH",
         body: JSON.stringify({ ids: [data.id] }),
       });
       return { id: data.id } as any;

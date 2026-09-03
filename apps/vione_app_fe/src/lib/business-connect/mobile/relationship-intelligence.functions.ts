@@ -49,9 +49,8 @@ export const bcRelationshipDismissRecommendationFn = createServerFn({ method: "P
   )
   .handler(async ({ data, context }): Promise<BcMobileDismissRecommendationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/recommendations/dismiss", token, {
-      method: "POST",
-      body: JSON.stringify({ personId: data.personId }),
+    return fetchNestApiFromServer(`/connect-app/network/recommendations/person/${data.personId}`, token, {
+      method: "DELETE",
     });
   });
 

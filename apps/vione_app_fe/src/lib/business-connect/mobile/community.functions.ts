@@ -15,7 +15,7 @@ export const listMyCommunitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CommunitySummaryDTO[]> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/community/list", token);
+    return fetchNestApiFromServer("/connect-app/community", token);
   });
 
 export const getCommunityDetailFn = createServerFn({ method: "GET" })
@@ -57,7 +57,7 @@ export const getCommunityMemberProfileFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => profileInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityMemberProfileDTO | null> => {
     const { token } = context as any;
-    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/member/${data.memberRef}`, token);
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/members/${data.memberRef}`, token);
   });
 
 const connectInput = z.object({
@@ -71,7 +71,7 @@ export const connectCommunityMemberFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => connectInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { token } = context as any;
-    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/member/${data.memberRef}/connect`, token, {
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/members/${data.memberRef}/connect`, token, {
       method: "POST",
       body: JSON.stringify({ mutationKey: data.mutationKey }),
     });
@@ -88,8 +88,8 @@ export const updateCommunityMemberRoleFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => roleUpdateInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { token } = context as any;
-    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/member/${data.memberRef}/role`, token, {
-      method: "POST",
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/members/${data.memberRef}/role`, token, {
+      method: "PATCH",
       body: JSON.stringify({ role: data.role }),
     });
   });

@@ -20,7 +20,7 @@ export const bcMobileMomentPrepareFn = createServerFn({ method: "POST" })
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<BcMobileMomentPrepareResult> =>
-      fetchNestApiFromServer("/connect-app/moment/prepare", context.token, {
+      fetchNestApiFromServer("/connect-app/moment/", context.token, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -30,11 +30,13 @@ export const bcMobileMomentFinalizeFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentFinalizeResult> =>
-      fetchNestApiFromServer("/connect-app/moment/finalize", context.token, {
+    ({ data, context }): Promise<BcMobileMomentFinalizeResult> => {
+      const { momentId, ...rest } = data;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}/finalize`, context.token, {
         method: "POST",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(rest),
+      });
+    },
   );
 
 // ── BC-Mobile-7C — quản lý khoảnh khắc đã lưu ───────────────────────────────
@@ -43,22 +45,25 @@ export const bcMobileMomentUpdateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentUpdateResult> =>
-      fetchNestApiFromServer("/connect-app/moment/update", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
+      const { momentId, ...rest } = data;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}`, context.token, {
+        method: "PATCH",
+        body: JSON.stringify(rest),
+      });
+    },
   );
 
 export const bcMobileMomentDeleteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentDeleteResult> =>
-      fetchNestApiFromServer("/connect-app/moment/delete", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    ({ data, context }): Promise<BcMobileMomentDeleteResult> => {
+      const momentId = typeof data === "string" ? data : data.momentId;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}`, context.token, {
+        method: "DELETE",
+      });
+    },
   );
 
 // ── BC-Mobile-7D — sửa ảnh của khoảnh khắc đã lưu ───────────────────────────
@@ -67,44 +72,50 @@ export const bcMobileMomentPhotosFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentPhotosResult> =>
-      fetchNestApiFromServer("/connect-app/moment/photos", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    ({ data, context }): Promise<BcMobileMomentPhotosResult> => {
+      const momentId = typeof data === "string" ? data : data.momentId;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}/photos`, context.token, {
+        method: "GET",
+      });
+    },
   );
 
 export const bcMobileMomentPhotoSlotsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentPhotoSlotsResult> =>
-      fetchNestApiFromServer("/connect-app/moment/photo-slots", context.token, {
+    ({ data, context }): Promise<BcMobileMomentPhotoSlotsResult> => {
+      const { momentId, count } = data;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}/photo-slots`, context.token, {
         method: "POST",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify({ count }),
+      });
+    },
   );
 
 export const bcMobileMomentPhotoCommitFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentUpdateResult> =>
-      fetchNestApiFromServer("/connect-app/moment/photo-commit", context.token, {
+    ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
+      const { momentId, ...rest } = data;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}/photos/commit`, context.token, {
         method: "POST",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(rest),
+      });
+    },
   );
 
 export const bcMobileMomentPhotoRemoveFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => data)
   .handler(
-    ({ data, context }): Promise<BcMobileMomentUpdateResult> =>
-      fetchNestApiFromServer("/connect-app/moment/photo-remove", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+    ({ data, context }): Promise<BcMobileMomentUpdateResult> => {
+      const { momentId, mediaId } = data;
+      return fetchNestApiFromServer(`/connect-app/moment/${momentId}/photos/${mediaId}`, context.token, {
+        method: "DELETE",
+      });
+    },
   );
 
 // ── BC-Mobile-7E — AI ghi nhớ bằng giọng nói ────────────────────────────────
@@ -114,7 +125,7 @@ export const bcMobileMomentVoiceNoteFn = createServerFn({ method: "POST" })
   .inputValidator((data: any) => data)
   .handler(
     ({ data, context }): Promise<any> =>
-      fetchNestApiFromServer("/connect-app/moment/voice-note", context.token, {
+      fetchNestApiFromServer("/connect-app/moment/voice-transcribe", context.token, {
         method: "POST",
         body: JSON.stringify(data),
       }),

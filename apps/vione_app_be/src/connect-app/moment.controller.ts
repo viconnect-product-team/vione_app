@@ -1,81 +1,89 @@
-import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get, Patch, Delete, Param, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('moment')
+@Controller('moments')
 @UseGuards(JwtAuthGuard)
 export class MomentController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  @Post('prepare')
+  @Post()
   async prepareMoment(@Request() req, @Body() data: any) {
     return this.connectAppService.prepareMoment(req.user.id, data);
   }
 
-  @Post('finalize')
-  async finalizeMoment(@Request() req, @Body() data: any) {
-    return this.connectAppService.finalizeMoment(req.user.id, data);
+  @Post(':id/finalize')
+  async finalizeMoment(@Request() req, @Param('id') id: string, @Body() data: any) {
+    const input = { ...data, momentId: id };
+    return this.connectAppService.finalizeMoment(req.user.id, input);
   }
 
-  @Post('update')
-  async updateMoment(@Request() req, @Body() data: any) {
-    return this.connectAppService.updateMoment(req.user.id, data);
+  @Patch(':id')
+  async updateMoment(@Request() req, @Param('id') id: string, @Body() data: any) {
+    const input = { ...data, momentId: id };
+    return this.connectAppService.updateMoment(req.user.id, input);
   }
 
-  @Post('delete')
-  async deleteMoment(@Request() req, @Body('momentId') momentId: string) {
-    return this.connectAppService.deleteMoment(req.user.id, momentId);
+  @Delete(':id')
+  async deleteMoment(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.deleteMoment(req.user.id, id);
   }
 
-  @Post('photos')
-  async listMomentPhotos(@Request() req, @Body('momentId') momentId: string) {
-    return this.connectAppService.listMomentPhotos(req.user.id, momentId);
+  @Get(':id/photos')
+  async listMomentPhotos(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.listMomentPhotos(req.user.id, id);
   }
 
-  @Post('photo-slots')
-  async addMomentPhotoSlots(@Request() req, @Body() body: { momentId: string; count: number }) {
-    return this.connectAppService.addMomentPhotoSlots(req.user.id, body.momentId, body.count);
+  @Post(':id/photo-slots')
+  async addMomentPhotoSlots(@Request() req, @Param('id') id: string, @Body() body: { count: number }) {
+    return this.connectAppService.addMomentPhotoSlots(req.user.id, id, body.count);
   }
 
-  @Post('photo-commit')
-  async commitMomentPhotos(@Request() req, @Body() data: any) {
-    return this.connectAppService.commitMomentPhotos(req.user.id, data);
+  @Post(':id/photos/commit')
+  async commitMomentPhotos(@Request() req, @Param('id') id: string, @Body() data: any) {
+    const input = { ...data, momentId: id };
+    return this.connectAppService.commitMomentPhotos(req.user.id, input);
   }
 
-  @Post('photo-remove')
-  async removeMomentPhoto(@Request() req, @Body() body: { momentId: string; mediaId: string }) {
-    return this.connectAppService.removeMomentPhoto(req.user.id, body.momentId, body.mediaId);
+  @Delete(':id/photos/:mediaId')
+  async removeMomentPhoto(@Request() req, @Param('id') id: string, @Param('mediaId') mediaId: string) {
+    return this.connectAppService.removeMomentPhoto(req.user.id, id, mediaId);
   }
 
-  @Post('voice-note')
+  @Post('voice-transcribe')
   async transcribeMomentVoice(@Request() req, @Body() body: { audioBase64: string; mimeType: string }) {
     return this.transcribeAudio(body.audioBase64, body.mimeType);
   }
 
   // --- Reminders ---
 
-  @Post('reminders/list')
-  async listReminders(@Request() req, @Body() body: { momentId?: string | null; includeDone?: boolean; limit?: number }) {
+  @Get('reminders')
+  async listReminders(
+    @Request() req,
+    @Query('momentId') momentId?: string,
+    @Query('includeDone') includeDone?: string,
+    @Query('limit') limit?: string,
+  ) {
     return this.connectAppService.listMomentReminders(
       req.user.id,
-      body.momentId || null,
-      body.includeDone || false,
-      body.limit || 20,
+      momentId || null,
+      includeDone === 'true',
+      limit ? parseInt(limit, 10) : 20,
     );
   }
 
-  @Post('reminders/create')
-  async createReminder(@Request() req, @Body() body: { momentId: string; remindAt: string; label?: string | null }) {
-    return this.connectAppService.createMomentReminder(req.user.id, body.momentId, body.remindAt, body.label || null);
+  @Post(':id/reminders')
+  async createReminder(@Request() req, @Param('id') id: string, @Body() body: { remindAt: string; label?: string | null }) {
+    return this.connectAppService.createMomentReminder(req.user.id, id, body.remindAt, body.label || null);
   }
 
-  @Post('reminders/status')
-  async setReminderStatus(@Request() req, @Body() body: { reminderId: string; status: string }) {
-    return this.connectAppService.setMomentReminderStatus(req.user.id, body.reminderId, body.status);
+  @Patch('reminders/:reminderId/status')
+  async setReminderStatus(@Request() req, @Param('reminderId') reminderId: string, @Body() body: { status: string }) {
+    return this.connectAppService.setMomentReminderStatus(req.user.id, reminderId, body.status);
   }
 
-  @Post('reminders/delete')
-  async deleteReminder(@Request() req, @Body('reminderId') reminderId: string) {
+  @Delete('reminders/:reminderId')
+  async deleteReminder(@Request() req, @Param('reminderId') reminderId: string) {
     return this.connectAppService.deleteMomentReminder(req.user.id, reminderId);
   }
 

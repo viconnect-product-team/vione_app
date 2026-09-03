@@ -21,7 +21,7 @@ export const GuestContactSDK = {
     patch: { ownerLabel?: string | null; ownerNote?: string | null },
   ): Promise<GuestContact | null> {
     return fetchNestApi(`/connect-app/network/guest-contacts/${id}/owner-fields`, {
-      method: "POST",
+      method: "PATCH",
       body: JSON.stringify(patch),
     });
   },

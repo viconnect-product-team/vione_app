@@ -15,7 +15,7 @@ import type {
 export const listJoinableCommunitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CommunityJoinCandidateDTO[]> => {
-    return fetchNestApiFromServer("/connect-app/community/join/list", context.token);
+    return fetchNestApiFromServer("/connect-app/community/joinable", context.token);
   });
 
 export const requestCommunityJoinFn = createServerFn({ method: "POST" })
@@ -29,9 +29,10 @@ export const requestCommunityJoinFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<{ status: CommunityJoinStatus }> => {
-    return fetchNestApiFromServer("/connect-app/community/join/request", context.token, {
+    const { communityId, note } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/join-requests`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ note }),
     });
   });
 
@@ -46,16 +47,17 @@ export const cancelCommunityJoinFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<{ status: CommunityJoinStatus }> => {
-    return fetchNestApiFromServer("/connect-app/community/join/cancel", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { communityId, cancelReason } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/join-requests`, context.token, {
+      method: "DELETE",
+      body: JSON.stringify({ cancelReason }),
     });
   });
 
 export const listCommunityJoinHistoryFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CommunityJoinHistoryItemDTO[]> => {
-    return fetchNestApiFromServer("/connect-app/community/join/history", context.token);
+    return fetchNestApiFromServer("/connect-app/community/join-requests/history", context.token);
   });
 
 export const syncCommunityJoinDecisionsFn = createServerFn({ method: "POST" })
@@ -64,7 +66,7 @@ export const syncCommunityJoinDecisionsFn = createServerFn({ method: "POST" })
     async ({
       context,
     }): Promise<Array<{ communityId: string; name: string; status: "approved" | "rejected" }>> => {
-      return fetchNestApiFromServer("/connect-app/community/join/sync-decisions", context.token, {
+      return fetchNestApiFromServer("/connect-app/community/join-requests/sync", context.token, {
         method: "POST",
       });
     },
@@ -73,5 +75,5 @@ export const syncCommunityJoinDecisionsFn = createServerFn({ method: "POST" })
 export const listCommunityJoinAdminRequestsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CommunityJoinAdminRequestDTO[]> => {
-    return fetchNestApiFromServer("/connect-app/community/join/admin-requests", context.token);
+    return fetchNestApiFromServer("/connect-app/community/join-requests/admin", context.token);
   });

@@ -38,7 +38,7 @@ export const bcMobilePersonPlanCreateFn = createServerFn({ method: "POST" })
   .inputValidator((data) => createInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plan: BcMobilePersonPlan }>> => {
-      return fetchNestApiFromServer("/connect-app/network/person-plan/create", context.token, {
+      return fetchNestApiFromServer("/connect-app/network/person-plans", context.token, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -56,10 +56,19 @@ export const bcMobilePersonPlansFn = createServerFn({ method: "POST" })
   .inputValidator((data) => listInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plans: BcMobilePersonPlan[] }>> => {
-      return fetchNestApiFromServer("/connect-app/network/person-plan/list", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const { personId, includeClosed, limit } = data;
+      const params = new URLSearchParams();
+      if (personId) params.append("personId", personId);
+      if (includeClosed !== undefined) params.append("includeClosed", String(includeClosed));
+      if (limit !== undefined) params.append("limit", String(limit));
+      const queryStr = params.toString();
+      return fetchNestApiFromServer(
+        `/connect-app/network/person-plans${queryStr ? `?${queryStr}` : ""}`,
+        context.token,
+        {
+          method: "GET",
+        },
+      );
     },
   );
 
@@ -73,9 +82,10 @@ export const bcMobilePersonPlanSetStatusFn = createServerFn({ method: "POST" })
   .inputValidator((data) => statusInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcMobilePersonPlanResult<{ plan: BcMobilePersonPlan }>> => {
-      return fetchNestApiFromServer("/connect-app/network/person-plan/set-status", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
+      const { planId, status } = data;
+      return fetchNestApiFromServer(`/connect-app/network/person-plans/${planId}/status`, context.token, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
       });
     },
   );

@@ -56,35 +56,33 @@ export const GlobalNetworkSDK = {
 
   mutations: {
     sendRequest: (input: SendRequestInput): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/requests/send", {
+      fetchNestApi("/connect-app/network/requests", {
         method: "POST",
         body: JSON.stringify(input),
       }),
     accept: (connectionId: string, mutationKey?: string): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/requests/accept", {
-        method: "POST",
-        body: JSON.stringify({ connectionId, mutationKey }),
+      fetchNestApi(`/connect-app/network/connections/${connectionId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "accepted", mutationKey }),
       }),
     decline: (connectionId: string, input?: ReasonInput): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/requests/decline", {
-        method: "POST",
-        body: JSON.stringify({ connectionId, reason: input?.reason, mutationKey: input?.mutationKey }),
+      fetchNestApi(`/connect-app/network/connections/${connectionId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "declined", reason: input?.reason, mutationKey: input?.mutationKey }),
       }),
     cancel: (connectionId: string, mutationKey?: string): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/requests/cancel", {
-        method: "POST",
-        body: JSON.stringify({ connectionId, mutationKey }),
+      fetchNestApi(`/connect-app/network/connections/${connectionId}`, {
+        method: "DELETE",
       }),
     disconnect: (
       connectionId: string,
       input?: ReasonInput,
     ): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/requests/disconnect", {
-        method: "POST",
-        body: JSON.stringify({ connectionId, reason: input?.reason, mutationKey: input?.mutationKey }),
+      fetchNestApi(`/connect-app/network/connections/${connectionId}`, {
+        method: "DELETE",
       }),
     block: (targetUserId: string, input?: ReasonInput): Promise<GlobalConnectionMutationResult> =>
-      fetchNestApi("/connect-app/network/block", {
+      fetchNestApi("/connect-app/network/blocks", {
         method: "POST",
         body: JSON.stringify({ targetUserId, reason: input?.reason, mutationKey: input?.mutationKey }),
       }),
@@ -93,7 +91,7 @@ export const GlobalNetworkSDK = {
   counterparts: {
     /** Privacy-safe PUBLIC summaries for a batch of counterpart user ids. */
     resolvePublic: (userIds: string[]): Promise<CounterpartSummary[]> =>
-      fetchNestApi("/connect-app/network/resolve-counterparts", {
+      fetchNestApi("/connect-app/network/connections/resolve", {
         method: "POST",
         body: JSON.stringify({ userIds }),
       }),
@@ -103,7 +101,7 @@ export const GlobalNetworkSDK = {
   abuse: {
     /** Report a user for review (rate limited server-side). */
     report: (input: ReportUserInput): Promise<{ reportId: string }> =>
-      fetchNestApi("/connect-app/abuse/report", {
+      fetchNestApi("/connect-app/network/abuse/reports", {
         method: "POST",
         body: JSON.stringify(input),
       }),

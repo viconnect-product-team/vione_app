@@ -43,7 +43,7 @@ export const sendConnectionRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/requests/send", token, {
+    return fetchNestApiFromServer("/connect-app/network/requests", token, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -56,9 +56,10 @@ export const acceptConnectionFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/requests/accept", token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { connectionId, mutationKey } = data;
+    return fetchNestApiFromServer(`/connect-app/network/connections/${connectionId}`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "accepted", mutationKey }),
     });
   });
 
@@ -75,9 +76,10 @@ export const declineConnectionFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/requests/decline", token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { connectionId, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/network/connections/${connectionId}`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "declined", ...rest }),
     });
   });
 
@@ -88,9 +90,9 @@ export const cancelConnectionFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/requests/cancel", token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { connectionId } = data;
+    return fetchNestApiFromServer(`/connect-app/network/connections/${connectionId}`, token, {
+      method: "DELETE",
     });
   });
 
@@ -107,9 +109,9 @@ export const disconnectConnectionFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/requests/disconnect", token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { connectionId } = data;
+    return fetchNestApiFromServer(`/connect-app/network/connections/${connectionId}`, token, {
+      method: "DELETE",
     });
   });
 
@@ -126,7 +128,7 @@ export const blockUserFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<GlobalConnectionMutationResult> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/block", token, {
+    return fetchNestApiFromServer("/connect-app/network/blocks", token, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -204,7 +206,7 @@ export const resolvePublicCounterpartsFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<CounterpartSummary[]> => {
     const { token } = context as any;
-    return fetchNestApiFromServer("/connect-app/network/resolve-counterparts", token, {
+    return fetchNestApiFromServer("/connect-app/network/connections/resolve", token, {
       method: "POST",
       body: JSON.stringify({ userIds: data.userIds }),
     });

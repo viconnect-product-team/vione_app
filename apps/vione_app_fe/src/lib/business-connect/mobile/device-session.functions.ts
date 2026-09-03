@@ -24,23 +24,25 @@ const revokeSchema = z.object({
   deviceKey: deviceKeySchema.nullable().optional(),
 });
 
-export const bcDeviceSessionsListFn = createServerFn({ method: "POST" })
+export const bcDeviceSessionsListFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => listSchema.parse(data))
-  .handler(
-    ({ data, context }): Promise<DeviceSessionInfo[]> =>
-      fetchNestApiFromServer("/connect-app/me/device-session/list", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-  );
+  .handler(async ({ data, context }): Promise<DeviceSessionInfo[]> => {
+    const queryParams = new URLSearchParams();
+    if (data.deviceKey) queryParams.set("deviceKey", data.deviceKey);
+    const queryString = queryParams.toString();
+    return fetchNestApiFromServer(
+      `/connect-app/me/device-sessions${queryString ? `?${queryString}` : ""}`,
+      context.token,
+    );
+  });
 
 export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => heartbeatSchema.parse(data))
   .handler(
     ({ data, context }): Promise<{ revoked: boolean }> =>
-      fetchNestApiFromServer("/connect-app/me/device-session/touch", context.token, {
+      fetchNestApiFromServer("/connect-app/me/device-sessions/touch", context.token, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -49,10 +51,15 @@ export const bcDeviceSessionTouchFn = createServerFn({ method: "POST" })
 export const bcDeviceSessionRevokeFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => revokeSchema.parse(data))
-  .handler(
-    ({ data, context }): Promise<DeviceSessionInfo> =>
-      fetchNestApiFromServer("/connect-app/me/device-session/revoke", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-  );
+  .handler(async ({ data, context }): Promise<DeviceSessionInfo> => {
+    const queryParams = new URLSearchParams();
+    if (data.deviceKey) queryParams.set("deviceKey", data.deviceKey);
+    const queryString = queryParams.toString();
+    return fetchNestApiFromServer(
+      `/connect-app/me/device-sessions/${data.sessionId}${queryString ? `?${queryString}` : ""}`,
+      context.token,
+      {
+        method: "DELETE",
+      },
+    );
+  });

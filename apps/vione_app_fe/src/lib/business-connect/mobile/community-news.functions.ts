@@ -17,9 +17,12 @@ export const listCommunityNewsFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => listInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsPageDTO | null> => {
     const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
     if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
-    return fetchNestApiFromServer(`/connect-app/community/news/list?${queryParams.toString()}`, context.token);
+    const queryString = queryParams.toString();
+    return fetchNestApiFromServer(
+      `/connect-app/community/${data.communityId}/news${queryString ? `?${queryString}` : ""}`,
+      context.token,
+    );
   });
 
 const detailInput = z.object({
@@ -31,8 +34,5 @@ export const getCommunityNewsDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => detailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityNewsDetailDTO | null> => {
-    const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
-    queryParams.set("newsRef", data.newsRef);
-    return fetchNestApiFromServer(`/connect-app/community/news/detail?${queryParams.toString()}`, context.token);
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/news/${data.newsRef}`, context.token);
   });

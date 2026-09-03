@@ -104,7 +104,7 @@ export const upsertProfileFn = createServerFn({ method: "POST" })
     if (data.onboardingStatus !== undefined) payload.onboarding_status = data.onboardingStatus;
 
     const profile = await fetchNestApiFromServer("/connect-app/me/profile", token, {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(payload),
     });
     return {

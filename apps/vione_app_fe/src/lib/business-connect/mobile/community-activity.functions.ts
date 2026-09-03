@@ -27,10 +27,13 @@ export const listCommunityEventsFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => eventsInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventPageDTO | null> => {
     const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
     queryParams.set("tab", data.tab);
     if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
-    return fetchNestApiFromServer(`/connect-app/community/activity/events/list?${queryParams.toString()}`, context.token);
+    const queryString = queryParams.toString();
+    return fetchNestApiFromServer(
+      `/connect-app/community/${data.communityId}/events${queryString ? `?${queryString}` : ""}`,
+      context.token,
+    );
   });
 
 const eventDetailInput = z.object({
@@ -42,19 +45,15 @@ export const getCommunityEventDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityEventDetailDTO | null> => {
-    const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
-    queryParams.set("eventRef", data.eventRef);
-    return fetchNestApiFromServer(`/connect-app/community/activity/events/detail?${queryParams.toString()}`, context.token);
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}`, context.token);
   });
 
 export const registerCommunityEventFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/events/register", context.token, {
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}/registrations`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
     });
   });
 
@@ -62,9 +61,8 @@ export const cancelCommunityEventRegistrationFn = createServerFn({ method: "POST
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => eventDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/events/cancel-registration", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/events/${data.eventRef}/registrations`, context.token, {
+      method: "DELETE",
     });
   });
 
@@ -79,10 +77,13 @@ export const listCommunityOpportunitiesFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => opportunitiesInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityPageDTO | null> => {
     const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
     if (data.query) queryParams.set("query", data.query);
     if (data.offset !== undefined) queryParams.set("offset", String(data.offset));
-    return fetchNestApiFromServer(`/connect-app/community/activity/opportunities/list?${queryParams.toString()}`, context.token);
+    const queryString = queryParams.toString();
+    return fetchNestApiFromServer(
+      `/connect-app/community/${data.communityId}/opportunities${queryString ? `?${queryString}` : ""}`,
+      context.token,
+    );
   });
 
 const opportunityDetailInput = z.object({
@@ -94,10 +95,7 @@ export const getCommunityOpportunityDetailFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<CommunityOpportunityDetailDTO | null> => {
-    const queryParams = new URLSearchParams();
-    queryParams.set("communityId", data.communityId);
-    queryParams.set("opportunityRef", data.opportunityRef);
-    return fetchNestApiFromServer(`/connect-app/community/activity/opportunities/detail?${queryParams.toString()}`, context.token);
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/opportunities/${data.opportunityRef}`, context.token);
   });
 
 const opportunityInterestInput = opportunityDetailInput.extend({
@@ -108,9 +106,10 @@ export const expressCommunityOpportunityInterestFn = createServerFn({ method: "P
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityInterestInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/express-interest", context.token, {
+    const { communityId, opportunityRef, interestLevel } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/interests`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ interestLevel }),
     });
   });
 
@@ -118,9 +117,9 @@ export const withdrawCommunityOpportunityInterestFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => opportunityDetailInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/withdraw-interest", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { communityId, opportunityRef } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/interests`, context.token, {
+      method: "DELETE",
     });
   });
 
@@ -132,9 +131,10 @@ export const scheduleCommunityOpportunityFollowUpFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => followUpScheduleInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/schedule-followup", context.token, {
+    const { communityId, opportunityRef, inDays } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/followups`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ inDays }),
     });
   });
 
@@ -146,9 +146,10 @@ export const updateCommunityOpportunityFollowUpFn = createServerFn({ method: "PO
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => followUpUpdateInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/update-followup", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    const { communityId, opportunityRef, action } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/followups`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify({ action }),
     });
   });
 
@@ -161,9 +162,10 @@ export const saveCommunityOpportunityProgressFn = createServerFn({ method: "POST
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => progressInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/save-progress", context.token, {
+    const { communityId, opportunityRef, progress, note } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/progress`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ progress, note }),
     });
   });
 
@@ -180,9 +182,10 @@ export const addCommunityOpportunityAttachmentFn = createServerFn({ method: "POS
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => attachmentAddInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/add-attachment", context.token, {
+    const { communityId, opportunityRef, ...rest } = data;
+    return fetchNestApiFromServer(`/connect-app/community/${communityId}/opportunities/${opportunityRef}/attachments`, context.token, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
   });
 
@@ -192,9 +195,8 @@ export const removeCommunityOpportunityAttachmentFn = createServerFn({ method: "
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => attachmentRemoveInput.parse(i))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    return fetchNestApiFromServer("/connect-app/community/activity/opportunities/remove-attachment", context.token, {
-      method: "POST",
-      body: JSON.stringify(data),
+    return fetchNestApiFromServer(`/connect-app/community/opportunities/attachments/${data.attachmentId}`, context.token, {
+      method: "DELETE",
     });
   });
 
