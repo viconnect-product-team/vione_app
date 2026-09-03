@@ -52,15 +52,6 @@ function SuggestionRow({
 
   return (
     <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3">
-      <button
-        type="button"
-        aria-label={t("bc.mobile.intel.dismiss")}
-        disabled={dismissPending}
-        onClick={onDismiss}
-        className={`absolute right-1 top-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] disabled:opacity-50 ${FOCUS}`}
-      >
-        <X aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.8} />
-      </button>
 
       {/* Avatar + tên + meta */}
       <Link
@@ -125,18 +116,25 @@ function SuggestionRow({
       </Link>
 
       {/* CTA buttons — bằng nhau, dùng grid */}
-      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
         <Link
           to="/connect-app/network/$personId"
           params={{ personId: rec.person.personId }}
-          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border-gold)] px-2 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_10%,transparent)] ${FOCUS}`}
+          className={`flex h-9 items-center justify-center rounded-full px-2 text-[12.5px] font-semibold text-[#1b1206] shadow-sm transition-all hover:brightness-105 active:scale-[0.98] ${FOCUS}`}
+          style={{
+            background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
+            boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 4px 12px -2px rgba(201, 163, 91, 0.4)",
+          }}
         >
           {t("bc.mobile.intel.card.message")}
         </Link>
         <button
           type="button"
-          onClick={() => setHidden(true)}
-          className={`flex min-h-[36px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-2 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] ${FOCUS}`}
+          onClick={() => {
+            setHidden(true);
+            onDismiss();
+          }}
+          className={`flex h-9 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]/50 px-2 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] active:scale-[0.98] ${FOCUS}`}
         >
           Ẩn hồ sơ
         </button>
@@ -158,7 +156,7 @@ function normalizeArea(value: string | null): string {
 type DistanceFilter = "all" | "near" | "far";
 
 const CHIP_BASE =
-  "inline-flex min-h-[36px] items-center rounded-full border px-3 text-[13px] font-medium transition-colors";
+  "inline-flex h-7 items-center justify-center rounded-full border px-3 text-xs font-medium transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap";
 
 function FilterChip({
   active,
@@ -176,10 +174,9 @@ function FilterChip({
       onClick={onClick}
       className={`${CHIP_BASE} ${FOCUS} ${
         active
-          ? "border-transparent text-[#2c1600] font-semibold"
-          : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+          ? "border-[#DFB260]/60 bg-[#DFB260]/20 text-[#DFB260] font-semibold shadow-[0_2px_8px_rgba(223,178,96,0.15)]"
+          : "border-[#ea9a4126] bg-[#0c1522] text-[#D4C3A3] hover:border-[#DFB260]/40 hover:text-[#f5f7fa]"
       }`}
-      style={active ? { background: "linear-gradient(270deg, #ab6d3c 0%, #fde6b4 100%)" } : undefined}
     >
       {label}
     </button>
@@ -323,16 +320,16 @@ export function RelationshipSuggestions() {
     <div className="flex items-center justify-between gap-3">
       <h2
         id="bc-rel-intel-title"
-        className="text-[13px] font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]"
+        className="text-xs font-semibold uppercase tracking-wide text-[#D4C3A3]"
       >
         {t("bc.mobile.intel.home.title")}
       </h2>
       <Link
         to="/connect-app/network"
-        className={`inline-flex min-h-[36px] shrink-0 items-center gap-1 rounded-lg px-1.5 text-[13px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] ${FOCUS}`}
+        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
       >
         {t("bc.mobile.intel.home.viewAll")}
-        <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+        <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" strokeWidth={2} />
       </Link>
     </div>
   );
@@ -358,10 +355,10 @@ export function RelationshipSuggestions() {
     <section aria-labelledby="bc-rel-intel-title" className="mt-6">
       {header}
       {showFilters ? (
-        <div role="group" aria-label={t("bc.mobile.intel.filter.label")} className="mt-2 space-y-2">
+        <div role="group" aria-label={t("bc.mobile.intel.filter.label")} className="mt-2.5 space-y-2">
           {industries.length > 0 ? (
-            <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-              <span className="shrink-0 text-[12px] uppercase tracking-wide text-[var(--bc-mobile-muted)]">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <span className="shrink-0 min-w-[78px] text-[10.5px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
                 {t("bc.mobile.intel.filter.industry")}
               </span>
               <FilterChip
@@ -380,8 +377,8 @@ export function RelationshipSuggestions() {
             </div>
           ) : null}
           {viewerArea ? (
-            <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-              <span className="shrink-0 text-[12px] uppercase tracking-wide text-[var(--bc-mobile-muted)]">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <span className="shrink-0 min-w-[78px] text-[10.5px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
                 {t("bc.mobile.intel.filter.distance")}
               </span>
               {(["all", "near", "far"] as const).map((value) => (

@@ -226,7 +226,7 @@ export const analyzeCardImage = createServerFn({ method: "POST" })
       : null;
     const industryHint = pickStr(parsed.industryHint, 80);
     const styleKeywords = Array.isArray(parsed.styleKeywords)
-      ? (parsed.styleKeywords.map((s) => pickStr(s, 40)).filter(Boolean) as string[]).slice(0, 8)
+      ? (parsed.styleKeywords.map((s: any) => pickStr(s, 40)).filter(Boolean) as string[]).slice(0, 8)
       : [];
     const qrBgRaw = pickStr(parsed.qrBackground, 20);
     const qrBackground: CardAiSuggestion["qrBackground"] =
@@ -303,7 +303,7 @@ const OptimalInput = z.object({
 
 function buildTemplateCatalogText(): string {
   return Object.values(CARD_TEMPLATES)
-    .map((t) => {
+    .map((t: any) => {
       const surface = firstHex(t.surface) ?? t.surface.slice(0, 24);
       return `- id="${t.id}" · label="${t.label}" · layout=${t.layout} · surface=${surface} · accent=${t.accent} · industries=[${t.industries.join(",")}]`;
     })

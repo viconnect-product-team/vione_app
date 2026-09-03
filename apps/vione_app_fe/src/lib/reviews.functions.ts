@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type ReviewType = "service" | "event" | "networking";
 
@@ -34,15 +37,15 @@ export const listReviewsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ sellerId: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await (null as any)
+    const { data: rows, error } = await getDb(context)
       .from("reviews")
       .select("*")
       .eq("seller_id", data.sellerId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const reviews = (rows ?? []).map(mapRow);
+    const reviews: ReviewRow[] = (rows ?? []).map((r: any) => mapRow(r as Row));
     const count = reviews.length;
-    const avg = count ? reviews.reduce((s, r) => s + r.rating, 0) / count : 0;
+    const avg = count ? reviews.reduce((s: number, r: ReviewRow) => s + r.rating, 0) / count : 0;
     return { reviews, stats: { count, avg } };
   });
 
@@ -60,13 +63,13 @@ export const addReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: reviewer, error: e1 } = await (null as any)
+    const { data: reviewer, error: e1 } = await getDb(context)
       .from("members")
       .select("name")
       .eq("id", data.reviewerId)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("reviews")
       .insert({
         seller_id: data.sellerId,
@@ -96,7 +99,7 @@ export const updateReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<ReviewRow | null> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("reviews")
       .update({
         rating: data.rating,
@@ -122,7 +125,7 @@ export const deleteReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("reviews")
       .delete()
       .eq("id", data.id)

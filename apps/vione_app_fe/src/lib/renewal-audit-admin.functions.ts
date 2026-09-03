@@ -174,10 +174,10 @@ export const searchRenewalAuditLogFn = createServerFn({ method: "POST" })
           createdAt: r.created_at as string,
         } satisfies AdminRenewalAuditRow;
       })
-      .filter((r) => {
+      .filter((r: AdminRenewalAuditRow) => {
         if (!needle) return true;
         return [r.memberName, r.memberCode, r.reference, r.invoiceNo]
           .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(needle));
+          .some((v: any) => String(v).toLowerCase().includes(needle));
       });
   });

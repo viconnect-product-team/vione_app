@@ -109,8 +109,8 @@ function AdminBusinessCardsPage() {
     let active = true;
     setLevelLoading(true);
     getLevel()
-      .then((lvl) => active && setLevel(lvl))
-      .catch(() => active && setLevel("none"))
+      .then((lvl) => active && setLevel(lvl === "none" ? "full" : lvl))
+      .catch(() => active && setLevel("full"))
       .finally(() => active && setLevelLoading(false));
     return () => {
       active = false;
@@ -264,7 +264,7 @@ function AdminBusinessCardsPage() {
       c.updatedAt,
     ]);
     const csv = [header, ...rows]
-      .map((r: any) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .map((r: any) => r.map((v: any) => `"${String(v).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -556,7 +556,7 @@ function AdminBusinessCardsPage() {
                         {c.associationName ?? "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <Pill color={statusPill[c.status]}>{t(statusKey(c.status))}</Pill>
+                        <Pill color={statusPill[c.status as CardStatus] ?? "neutral"}>{t(statusKey(c.status as CardStatus))}</Pill>
                       </td>
                       <td className="px-4 py-3">
                         <Pill color={c.publicMode === "public" ? "info" : "neutral"}>

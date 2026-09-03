@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type Sponsor = {
   id: string;
@@ -57,22 +60,22 @@ const TIER_ORDER = ["platinum", "gold", "silver", "bronze"];
 export const listSponsorsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("sponsors")
       .select("*")
       .order("amount", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapSponsor);
+    return (data ?? []).map((r: any) => mapSponsor(r as Row));
   });
 
 export const listSponsorPackagesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (null as any).from("sponsor_packages").select("*");
+    const { data, error } = await getDb(context).from("sponsor_packages").select("*");
     if (error) throw new Error(error.message);
     return (data ?? [])
-      .map(mapPackage)
-      .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+      .map((r: any) => mapPackage(r as Row))
+      .sort((a: SponsorPackage, b: SponsorPackage) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
   });
 
 const sponsorInput = z.object({
@@ -93,13 +96,13 @@ export const createSponsorFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Sponsor> => {
     const { genCode, logActivity } = await import("./crud.server");
     const id = genCode("SP");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("sponsors")
       .insert({ id, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Tạo nhà tài trợ",
       target: data.name,
       category: "system",
@@ -113,14 +116,14 @@ export const updateSponsorFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Sponsor> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("sponsors")
       .update(rest)
       .eq("id", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Cập nhật nhà tài trợ",
       target: data.name,
       category: "system",
@@ -133,14 +136,14 @@ export const deleteSponsorFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const found = await (null as any)
+    const found = await getDb(context)
       .from("sponsors")
       .select("name")
       .eq("id", data.id)
       .maybeSingle();
-    const { error } = await (null as any).from("sponsors").delete().eq("id", data.id);
+    const { error } = await getDb(context).from("sponsors").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Xóa nhà tài trợ",
       target: (found.data?.name as string) ?? data.id,
       category: "system",
@@ -164,13 +167,13 @@ export const createSponsorPackageFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
     const { genCode, logActivity } = await import("./crud.server");
     const id = genCode("PKG");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("sponsor_packages")
       .insert({ id, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Tạo gói tài trợ",
       target: data.tier,
       category: "system",
@@ -184,14 +187,14 @@ export const updateSponsorPackageFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("sponsor_packages")
       .update(rest)
       .eq("id", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Cập nhật gói tài trợ",
       target: data.tier,
       category: "system",
@@ -204,9 +207,9 @@ export const deleteSponsorPackageFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await (null as any).from("sponsor_packages").delete().eq("id", data.id);
+    const { error } = await getDb(context).from("sponsor_packages").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Xóa gói tài trợ",
       target: data.id,
       category: "system",
@@ -231,7 +234,7 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
     const { genCode, logActivity } = await import("./crud.server");
 
     // Load selected package for tier + price
-    const { data: pkg, error: pkgErr } = await (null as any)
+    const { data: pkg, error: pkgErr } = await getDb(context)
       .from("sponsor_packages")
       .select("*")
       .eq("id", data.packageId)
@@ -244,7 +247,7 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
     // Create sponsor from package
     const id = genCode("SP");
     const today = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("sponsors")
       .insert({
         id,
@@ -263,12 +266,12 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Increment sold count on the package
-    await (null as any)
+    await getDb(context)
       .from("sponsor_packages")
       .update({ sold: mappedPkg.sold + 1 })
       .eq("id", data.packageId);
 
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Onboard nhà tài trợ",
       target: data.name,
       category: "system",

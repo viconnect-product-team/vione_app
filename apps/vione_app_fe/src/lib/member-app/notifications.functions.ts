@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { relTime } from "./shared";
 import { resolveMemberId } from "@/lib/current-member";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type LeadWorkflowStatus =
   | "new"
@@ -42,7 +45,7 @@ const leadPriority = (status: LeadWorkflowStatus | null, unread: boolean): Notif
 export const listMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyNotification[]> => {
-    const { data } = await (null as any)
+    const { data } = await getDb(context)
       .from("notifications")
       .select("*")
       .eq("status", "sent")
@@ -55,7 +58,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
       return "system";
     };
     // Per-user broadcast dismissals (synced across devices via backend).
-    const { data: dismissedRows } = await (null as any)
+    const { data: dismissedRows } = await getDb(context)
       .from("broadcast_notification_dismissals")
       .select("notification_id");
     const dismissedIds = new Set((dismissedRows ?? []).map((r: any) => r.notification_id));
@@ -75,7 +78,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
 
     // Personal (per-member) notifications, e.g. connection accept/decline, leads.
     // Include dismissed rows so the client can render the "Hidden" filter tab.
-    const { data: personal } = await (null as any)
+    const { data: personal } = await getDb(context)
       .from("member_notifications")
       .select("*")
       .order("created_at", { ascending: false });
@@ -85,13 +88,13 @@ export const listMyNotifications = createServerFn({ method: "GET" })
     const leadIds = Array.from(
       new Set(
         (personal ?? [])
-          .filter((n) => n.ref_type === "business_card_lead" && n.ref_id)
+          .filter((n: any) => n.ref_type === "business_card_lead" && n.ref_id)
           .map((n: any) => n.ref_id as string),
       ),
     );
     const leadStatusMap = new Map<string, LeadWorkflowStatus>();
     if (leadIds.length > 0) {
-      const { data: leads } = await (null as any)
+      const { data: leads } = await getDb(context)
         .from("business_card_leads")
         .select("id, status")
         .in("id", leadIds);
@@ -141,8 +144,8 @@ const bulkIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1) });
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data, error } = await getDb(context)
       .from("member_notifications")
       .update({ read: true })
       .eq("recipient_id", memberId)
@@ -156,8 +159,8 @@ export const unmarkAllNotificationsReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data) => bulkIdsSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ read: false })
       .eq("recipient_id", memberId)
@@ -173,8 +176,8 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ read: true })
       .eq("id", data.id)
@@ -189,8 +192,8 @@ export const dismissNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ dismissed: true, read: true })
       .eq("id", data.id)
@@ -203,8 +206,8 @@ export const dismissNotificationFn = createServerFn({ method: "POST" })
 export const dismissAllNotificationsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ dismissed: true, read: true })
       .eq("recipient_id", memberId)
@@ -218,8 +221,8 @@ export const restoreAllPersonalNotificationsFn = createServerFn({ method: "POST"
   .middleware([requireNestAuth])
   .inputValidator((data) => bulkIdsSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ dismissed: false })
       .eq("recipient_id", memberId)
@@ -243,7 +246,7 @@ export const dismissBroadcastNotificationsFn = createServerFn({ method: "POST" }
   .handler(async ({ context, data }) => {
     const userId = context.userId;
     const rows = data.ids.map((notification_id) => ({ user_id: userId, notification_id }));
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("broadcast_notification_dismissals")
       .upsert(rows, { onConflict: "user_id,notification_id", ignoreDuplicates: true });
     if (error) throw new Error(error.message);
@@ -255,8 +258,8 @@ export const restoreNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data) => markReadSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: rows, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: rows, error } = await getDb(context)
       .from("member_notifications")
       .update({ dismissed: false })
       .eq("id", data.id)
@@ -271,7 +274,7 @@ export const restoreBroadcastNotificationsFn = createServerFn({ method: "POST" }
   .inputValidator((data) => dismissBroadcastSchema.parse(data))
   .handler(async ({ context, data }) => {
     const userId = context.userId;
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("broadcast_notification_dismissals")
       .delete()
       .eq("user_id", userId)

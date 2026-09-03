@@ -70,10 +70,10 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-t border-solid border-[#ffffff14] bg-[#1e1c18f2] backdrop-blur-md px-5 py-3 -mx-4">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#ea9a4126] bg-[#050c15f2] backdrop-blur-md px-5 py-3 -mx-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
-          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
+          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
             {getVNTimeGreeting()}
           </p>
         </div>
@@ -132,17 +132,17 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                     key={item.id}
                     type="button"
                     onClick={() => setTab(item.id as any)}
-                    className={`relative pb-2.5 text-[15px] transition-colors whitespace-nowrap focus-visible:outline-none ${
+                    className={`relative pb-2.5 text-sm transition-colors whitespace-nowrap focus-visible:outline-none cursor-pointer ${
                       isActive
-                        ? "font-semibold text-[#ffb971]"
-                        : "text-[#d8c3b180]"
+                        ? "font-semibold text-[#DFB260]"
+                        : "text-[#d8c3b180] hover:text-[#D4C3A3]"
                     }`}
                   >
                     {item.label}
                     {isActive ? (
                       <span
                         aria-hidden="true"
-                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#ffb971]"
+                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#DFB260] shadow-[0_0_8px_rgba(223,178,96,0.5)]"
                       />
                     ) : null}
                   </button>
@@ -282,7 +282,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
   const oppCount = preview?.openOpportunities.length ?? null;
 
   return (
-    <li className="overflow-hidden rounded-2xl border border-solid border-[#ea9a4126] bg-[#251e18]/60 p-3.5 flex flex-col gap-3">
+    <li className="overflow-hidden rounded-2xl border border-solid border-[#ea9a4126] bg-[#0c1522]/90 p-3.5 flex flex-col gap-3 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
       <Link
         to="/connect-app/community/$communityId"
         params={{ communityId: community.communityId }}
@@ -302,10 +302,10 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
               />
             </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className="rounded-md border border-solid border-[#ea9a414c] bg-[#ea9a4110] px-2 py-0.5 text-[11px] font-medium text-[#ffb971]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#DFB260]/30 bg-[#DFB260]/10 px-2 text-[10.5px] font-medium text-[#DFB260]">
                 {community.viewerRole === "admin" ? "Quản trị viên" : "Thành viên"}
               </span>
-              <span className="rounded-md border border-solid border-[#ea9a414c] bg-[#ea9a4110] px-2 py-0.5 text-[11px] font-medium text-[#ffb971]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#DFB260]/30 bg-[#DFB260]/10 px-2 text-[10.5px] font-medium text-[#DFB260]">
                 Đã tham gia
               </span>
             </div>
@@ -331,25 +331,25 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
         <Link
           to="/connect-app/community/$communityId/members"
           params={{ communityId: community.communityId }}
-          className="flex min-h-[40px] items-center justify-center gap-1.5 text-[13px] font-light text-[#d8c3b1] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
         >
-          <Users aria-hidden="true" className="h-4 w-4 text-[#d8c3b1]" strokeWidth={1.8} />
+          <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
           Thành viên
         </Link>
         <Link
           to="/connect-app/community/$communityId/events"
           params={{ communityId: community.communityId }}
-          className="flex min-h-[40px] items-center justify-center gap-1.5 text-[13px] font-light text-[#d8c3b1] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
         >
-          <CalendarDays aria-hidden="true" className="h-4 w-4 text-[#d8c3b1]" strokeWidth={1.8} />
+          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
           Sự kiện
         </Link>
         <Link
           to="/connect-app/community/$communityId/opportunities"
           params={{ communityId: community.communityId }}
-          className="flex min-h-[40px] items-center justify-center gap-1.5 text-[13px] font-light text-[#d8c3b1] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
         >
-          <Briefcase aria-hidden="true" className="h-4 w-4 text-[#d8c3b1]" strokeWidth={1.8} />
+          <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
           Cơ hội
         </Link>
       </div>
@@ -371,7 +371,7 @@ export function CommunityAvatar({ name, logoUrl }: { name: string; logoUrl: stri
   return (
     <div
       aria-hidden="true"
-      className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-solid border-[#ea9a4126] bg-[#251e18] text-[16px] font-semibold text-[#ffb971]"
+      className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-solid border-[#DFB260]/30 bg-[#0c1522] text-[16px] font-semibold text-[#DFB260]"
     >
       {name.trim().charAt(0).toUpperCase() || "·"}
     </div>
@@ -384,7 +384,7 @@ export function CommunityListSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-2xl border border-solid border-[#ea9a4126] bg-[#251e18]/60 p-3.5"
+          className="rounded-2xl border border-solid border-[#ea9a4126] bg-[#0c1522]/80 p-3.5"
         >
           <div className="flex items-center gap-3.5">
             <div className="h-12 w-12 animate-pulse rounded-full bg-[#ea9a4115]" />

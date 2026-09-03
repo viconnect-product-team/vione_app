@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type Campaign = {
   id: string;
@@ -18,8 +21,8 @@ export const listCampaignsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Campaign[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(null as any);
-    let query = (null as any)
+    const activeId = await getActiveAssociationId(getDb(context));
+    let query = getDb(context)
       .from("email_campaigns")
       .select("*")
       .order("created_at", { ascending: false });
@@ -54,9 +57,9 @@ export const createCampaignFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<Campaign> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(null as any);
+    const activeId = await getActiveAssociationId(getDb(context));
     const code = `CMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("email_campaigns")
       .insert({
         code,
@@ -88,7 +91,7 @@ export const deleteCampaignFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { error } = await (null as any).from("email_campaigns").delete().eq("code", data.id);
+    const { error } = await getDb(context).from("email_campaigns").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

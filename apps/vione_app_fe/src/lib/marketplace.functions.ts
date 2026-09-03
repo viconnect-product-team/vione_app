@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveMemberId } from "./current-member";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 type Row = Record<string, unknown>;
 
@@ -109,13 +112,13 @@ function mapQuote(r: Row): QuoteRequest {
 export const listProductsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Product[]> => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return signProducts(
-      null as any as unknown as SupaLike,
+      getDb(context) as unknown as SupaLike,
       (data ?? []).map((r: any) => mapProduct(r as Row)),
     );
   });
@@ -125,7 +128,7 @@ export const getProductFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(
     async ({ data, context }): Promise<{ product: Product; quotes: QuoteRequest[] } | null> => {
-      const { data: row, error } = await (null as any)
+      const { data: row, error } = await getDb(context)
         .from("products")
         .select("*")
         .eq("id", data.id)
@@ -141,13 +144,13 @@ export const getProductFn = createServerFn({ method: "GET" })
         .update({ views: (((row as Row).views as number) ?? 0) + 1 })
         .eq("id", data.id)
         .eq("association_id", (row as Row).association_id as string);
-      const { data: quotes } = await (null as any)
+      const { data: quotes } = await getDb(context)
         .from("quote_requests")
         .select("*")
         .eq("product_id", data.id)
         .order("created_at", { ascending: false });
       return {
-        product: await signProduct(null as any as unknown as SupaLike, mapProduct(row as Row)),
+        product: await signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row)),
         quotes: (quotes ?? []).map((q: any) => mapQuote(q as Row)),
       };
     },
@@ -175,9 +178,9 @@ export const createProductFn = createServerFn({ method: "POST" })
     const id = `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     // Auto-provision a minimal member profile so first-time sellers don't
     // hit the products RLS membership check with no member row.
-    const { data: memberId, error: mErr } = await (null as any).rpc("ensure_my_member_profile");
+    const { data: memberId, error: mErr } = await getDb(context).rpc("ensure_my_member_profile");
     if (mErr || !memberId) throw new Error("Không thể khởi tạo hồ sơ hội viên của bạn.");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("products")
       .insert({
         id,
@@ -197,7 +200,7 @@ export const createProductFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    return signProduct(null as any as unknown as SupaLike, mapProduct(row as Row));
+    return signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row));
   });
 
 export const updateProductFn = createServerFn({ method: "POST" })
@@ -220,8 +223,8 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Product | null> => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: row, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: row, error } = await getDb(context)
       .from("products")
       .update({
         title: data.title.trim(),
@@ -240,7 +243,7 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(null as any as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row))
       : null;
   });
 
@@ -250,8 +253,8 @@ export const deleteProductFn = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1).max(128), sellerId: z.string().min(1).max(128) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const memberId = await resolveMemberId(null as any);
-    const { error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { error } = await getDb(context)
       .from("products")
       .delete()
       .eq("id", data.id)
@@ -271,8 +274,8 @@ export const deleteProductsFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean; count: number }> => {
-    const memberId = await resolveMemberId(null as any);
-    const { error, count } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { error, count } = await getDb(context)
       .from("products")
       .delete({ count: "exact" })
       .in("id", data.ids)
@@ -287,8 +290,8 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1).max(128), sellerId: z.string().min(1).max(128) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<Product | null> => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: cur } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: cur } = await getDb(context)
       .from("products")
       .select("status")
       .eq("id", data.id)
@@ -296,7 +299,7 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!cur) return null;
     const next = (cur as Row).status === "sold" ? "active" : "sold";
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("products")
       .update({ status: next })
       .eq("id", data.id)
@@ -305,7 +308,7 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(null as any as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row))
       : null;
   });
 
@@ -324,8 +327,8 @@ export const createQuoteRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<QuoteRequest> => {
     const id = `q-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(null as any);
-    const { data: row, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: row, error } = await getDb(context)
       .from("quote_requests")
       .insert({
         id,
@@ -357,15 +360,15 @@ export const cancelQuoteFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: cur } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: cur } = await getDb(context)
       .from("quote_requests")
       .select("status")
       .eq("id", data.id)
       .eq("buyer_id", memberId)
       .maybeSingle();
     if (!cur || !PENDING.includes((cur as Row).status as string)) return null;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("quote_requests")
       .update({ status: "cancelled", cancel_reason: data.reason } as never)
       .eq("id", data.id)
@@ -381,14 +384,14 @@ export const remindQuoteFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const { data: cur } = await (null as any)
+    const { data: cur } = await getDb(context)
       .from("quote_requests")
       .select("status, reminder_count")
       .eq("id", data.id)
       .maybeSingle();
     if (!cur || !PENDING.includes((cur as Row).status as string)) return null;
     const next = (((cur as Row).reminder_count as number) ?? 0) + 1;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("quote_requests")
       .update({ reminder_count: next, updated_at: new Date().toISOString() } as never)
       .eq("id", data.id)
@@ -409,10 +412,10 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId(null as any);
+    const memberId = await resolveMemberId((context as any)?.token);
 
     // Load the quote and its product's seller to authorize the transition.
-    const { data: quote, error: qErr } = await (null as any)
+    const { data: quote, error: qErr } = await getDb(context)
       .from("quote_requests")
       .select("*, products(seller_id)")
       .eq("id", data.id)
@@ -428,7 +431,7 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
     const isAdmin = associationId
       ? Boolean(
           (
-            await (null as any).rpc("has_assoc_role", {
+            await getDb(context).rpc("has_assoc_role", {
               _association_id: associationId,
               _role: "admin",
             })
@@ -445,7 +448,7 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
       (isSeller && ["viewing", "confirmed", "rejected"].includes(data.status));
     if (!allowed) throw new Error("Không có quyền thay đổi trạng thái báo giá này.");
 
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("quote_requests")
       .update({ status: data.status } as never)
       .eq("id", data.id)
@@ -459,7 +462,7 @@ export const deleteQuoteFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { error } = await (null as any).from("quote_requests").delete().eq("id", data.id);
+    const { error } = await getDb(context).from("quote_requests").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -470,8 +473,8 @@ export const listMyQuotesFn = createServerFn({ method: "GET" })
     async ({
       context,
     }): Promise<Array<QuoteRequest & { productTitle: string; productEmoji: string }>> => {
-      const memberId = await resolveMemberId(null as any);
-      const { data: rows, error } = await (null as any)
+      const memberId = await resolveMemberId((context as any)?.token);
+      const { data: rows, error } = await getDb(context)
         .from("quote_requests")
         .select("*")
         .eq("buyer_id", memberId)
@@ -481,7 +484,7 @@ export const listMyQuotesFn = createServerFn({ method: "GET" })
       const ids = [...new Set(quotes.map((q: any) => q.productId))];
       let titles: Record<string, { title: string; emoji: string }> = {};
       if (ids.length) {
-        const { data: prods } = await (null as any)
+        const { data: prods } = await getDb(context)
           .from("products")
           .select("id,title,emoji")
           .in("id", ids);

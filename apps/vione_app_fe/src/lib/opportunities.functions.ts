@@ -3,6 +3,9 @@ import { z } from "zod";
 import { resolveMemberId } from "./current-member";
 import type { Opportunity, OpportunityInterest, OpportunityTypeKey } from "./opportunities-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 type Row = Record<string, unknown>;
 
@@ -56,11 +59,11 @@ export const listOpportunitiesFn = createServerFn({ method: "GET" })
       interestCounts: Record<string, number>;
     }> => {
       const [opps, interests] = await Promise.all([
-        (null as any)
+        getDb(context)
           .from("opportunities")
           .select("*")
           .order("created_at", { ascending: false }),
-        (null as any)
+        getDb(context)
           .from("opportunity_interests")
           .select("*")
           .order("created_at", { ascending: false }),
@@ -88,7 +91,7 @@ export const getOpportunityFn = createServerFn({ method: "GET" })
       data,
       context,
     }): Promise<{ opportunity: Opportunity; interests: OpportunityInterest[] } | null> => {
-      const { data: row, error } = await (null as any)
+      const { data: row, error } = await getDb(context)
         .from("opportunities")
         .select("*")
         .eq("id", data.id)
@@ -98,20 +101,19 @@ export const getOpportunityFn = createServerFn({ method: "GET" })
       // GUARD: service role only bumps the view counter on a row the caller could
       // already read under RLS; scope by the RLS-visible row's association_id so a
       // stale/colliding id can never touch a cross-tenant resource.
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin
+      await getDb(context)
         .from("opportunities")
         .update({ views: (((row as Row).views as number) ?? 0) + 1 })
         .eq("id", data.id)
         .eq("association_id", (row as Row).association_id as string);
-      const { data: interests } = await (null as any)
+      const { data: interests } = await getDb(context)
         .from("opportunity_interests")
         .select("*")
         .eq("opportunity_id", data.id)
         .order("created_at", { ascending: false });
       return {
         opportunity: mapOpportunity(row as Row),
-        interests: (interests ?? []).map((i) => mapInterest(i as Row)),
+        interests: (interests ?? []).map((i: any) => mapInterest(i as Row)),
       };
     },
   );
@@ -135,8 +137,8 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<Opportunity> => {
     const id = `o-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(null as any);
-    const { data: row, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: row, error } = await getDb(context)
       .from("opportunities")
       .insert({
         id,
@@ -179,8 +181,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Opportunity | null> => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: row, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: row, error } = await getDb(context)
       .from("opportunities")
       .update({
         title: data.title.trim(),
@@ -206,8 +208,8 @@ export const deleteOpportunityFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const memberId = await resolveMemberId(null as any);
-    const { error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { error } = await getDb(context)
       .from("opportunities")
       .delete()
       .eq("id", data.id)
@@ -220,8 +222,8 @@ export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Opportunity | null> => {
-    const memberId = await resolveMemberId(null as any);
-    const { data: cur } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: cur } = await getDb(context)
       .from("opportunities")
       .select("status")
       .eq("id", data.id)
@@ -229,7 +231,7 @@ export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!cur) return null;
     const next = (cur as Row).status === "open" ? "closed" : "open";
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("opportunities")
       .update({ status: next })
       .eq("id", data.id)
@@ -253,8 +255,8 @@ export const expressInterestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<OpportunityInterest> => {
     const id = `oi-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId(null as any);
-    const { data: row, error } = await (null as any)
+    const memberId = await resolveMemberId((context as any)?.token);
+    const { data: row, error } = await getDb(context)
       .from("opportunity_interests")
       .insert({
         id,

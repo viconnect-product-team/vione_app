@@ -1205,7 +1205,7 @@ function MemberDetailPage() {
                       ? r.reviewerName
                           .split(" ")
                           .slice(-2)
-                          .map((p) => p[0])
+                          .map((p: string) => p[0])
                           .join("")
                           .toUpperCase()
                       : "?";

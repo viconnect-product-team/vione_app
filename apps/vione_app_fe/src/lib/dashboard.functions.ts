@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type DashboardStats = {
   totalMembers: number;
@@ -26,7 +29,7 @@ export type DashboardStats = {
 export const getDashboardStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<DashboardStats> => {
-    const db = null as any;
+    const db = getDb(context);
     const nowIso = new Date().toISOString();
     const days30 = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 

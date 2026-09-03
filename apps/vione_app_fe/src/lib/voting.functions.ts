@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type Vote = {
   id: string;
@@ -33,12 +36,12 @@ export const listVotesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(null as any);
-    let query = (null as any).from("votes").select("*").order("starts_at", { ascending: false });
+    const activeId = await getActiveAssociationId(getDb(context));
+    let query = getDb(context).from("votes").select("*").order("starts_at", { ascending: false });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapVote);
+    return (data ?? []).map((r: any) => mapVote(r as Row));
   });
 
 export const createVoteFn = createServerFn({ method: "POST" })
@@ -50,7 +53,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
     const startsAt = String(d.startsAt ?? "").trim();
     const endsAt = String(d.endsAt ?? "").trim();
     const options = Array.isArray(d.options)
-      ? (d.options as unknown[]).map((o) => String(o).trim()).filter(Boolean)
+      ? (d.options as unknown[]).map((o: any) => String(o).trim()).filter(Boolean)
       : [];
     if (!title) throw new Error("Vui lòng nhập câu hỏi bình chọn");
     if (title.length > 300) throw new Error("Câu hỏi quá dài");
@@ -65,7 +68,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
     const today = new Date().toISOString().slice(0, 10);
     const status: Vote["status"] =
       data.startsAt > today ? "scheduled" : data.endsAt < today ? "closed" : "open";
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("votes")
       .insert({
         id: crypto.randomUUID(),
@@ -94,7 +97,7 @@ export const updateVoteFn = createServerFn({ method: "POST" })
     const startsAt = String(d.startsAt ?? "").trim();
     const endsAt = String(d.endsAt ?? "").trim();
     const options = Array.isArray(d.options)
-      ? (d.options as unknown[]).map((o) => String(o).trim()).filter(Boolean)
+      ? (d.options as unknown[]).map((o: any) => String(o).trim()).filter(Boolean)
       : [];
     if (!id) throw new Error("Thiếu mã bình chọn");
     if (!title) throw new Error("Vui lòng nhập câu hỏi bình chọn");
@@ -110,7 +113,7 @@ export const updateVoteFn = createServerFn({ method: "POST" })
     const today = new Date().toISOString().slice(0, 10);
     const status: Vote["status"] =
       data.startsAt > today ? "scheduled" : data.endsAt < today ? "closed" : "open";
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("votes")
       .update({
         title: data.title,
@@ -135,7 +138,7 @@ export const deleteVoteFn = createServerFn({ method: "POST" })
     return { id };
   })
   .handler(async ({ data, context }) => {
-    const { error } = await (null as any).from("votes").delete().eq("id", data.id);
+    const { error } = await getDb(context).from("votes").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { id: data.id };
   });

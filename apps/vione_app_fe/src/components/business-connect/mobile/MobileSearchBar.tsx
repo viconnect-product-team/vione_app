@@ -19,14 +19,14 @@ export function MobileSearchBar({
       <label htmlFor={searchId} className="sr-only">
         {placeholder}
       </label>
-      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ffb971]">
+      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#0c1522] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ea9a41] focus-within:ring-1 focus-within:ring-[#ea9a4133]">
         <input
           id={searchId}
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:!outline-none focus:!ring-0 focus:!border-none focus-visible:ring-0 focus-visible:outline-none focus-visible:!ring-0 focus-visible:!outline-none focus-visible:!border-none focus:bg-transparent text-sm text-[#f2efe9] placeholder:text-[#d8c3b180] py-0 px-0"
+          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:!outline-none focus:!ring-0 focus:!border-none focus-visible:ring-0 focus-visible:outline-none focus-visible:!ring-0 focus-visible:!outline-none focus-visible:!border-none focus:bg-transparent text-sm text-[#f5f7fa] placeholder:text-[#D4C3A3]/50 py-0 px-0"
           style={{
             background: "transparent",
             border: "none",

@@ -105,7 +105,7 @@ function ConnectCardsPage() {
                     )}
                   </div>
                   <div className="mt-3">
-                    <Badge variant="secondary">{t(STATUS_KEY[c.status] as never)}</Badge>
+                    <Badge variant="secondary">{t((STATUS_KEY[c.status as CardStatus] ?? "connect.status.draft") as never)}</Badge>
                   </div>
                 </Link>
               </li>

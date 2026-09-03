@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // ============================================================
 // Domain: subdomain / custom domain + DNS ownership verification
@@ -46,7 +49,7 @@ export const getAssociationDomainFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<DomainState | null> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("associations")
       .select(
         "subdomain, custom_domain, domain_status, domain_verification_token, domain_verified_at, ssl_status, ssl_checked_at, ssl_active_at",
@@ -89,7 +92,7 @@ export const updateAssociationDomainFn = createServerFn({ method: "POST" })
     if (dom && !domainRegex.test(dom)) throw new Error("INVALID_DOMAIN");
 
     // Read current to detect changes.
-    const { data: cur } = await (null as any)
+    const { data: cur } = await getDb(context)
       .from("associations")
       .select("custom_domain, domain_verification_token")
       .eq("id", data.associationId)
@@ -127,7 +130,7 @@ export const updateAssociationDomainFn = createServerFn({ method: "POST" })
       update.ssl_active_at = null;
     }
 
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("associations")
       .update(update as any)
       .eq("id", data.associationId);
@@ -206,7 +209,7 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
       cnameFound: boolean;
       status: string;
     }> => {
-      const { data: row, error } = await (null as any)
+      const { data: row, error } = await getDb(context)
         .from("associations")
         .select("custom_domain, domain_verification_token")
         .eq("id", data.associationId)
@@ -239,7 +242,7 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
       // Ownership confirmed + DNS routed → SSL can begin provisioning.
       if (verified && cnameFound) upd.ssl_status = "provisioning";
 
-      await (null as any)
+      await getDb(context)
         .from("associations")
         .update(upd as any)
         .eq("id", data.associationId);
@@ -255,7 +258,7 @@ export const checkAssociationSslFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<{ sslStatus: string; reachable: boolean }> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("associations")
       .select("custom_domain, domain_status")
       .eq("id", data.associationId)
@@ -289,7 +292,7 @@ export const checkAssociationSslFn = createServerFn({ method: "POST" })
     }
 
     const sslStatus = reachable ? "active" : "provisioning";
-    await (null as any)
+    await getDb(context)
       .from("associations")
       .update({
         ssl_status: sslStatus,

@@ -73,10 +73,10 @@ export function ExecutiveHome() {
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-t border-solid border-[#ffffff14] bg-[#1e1c18f2] backdrop-blur-md px-5 py-3 -mx-4">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#ea9a4126] bg-[#050c15f2] backdrop-blur-md px-5 py-3 -mx-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
-          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
+          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
             {getVNTimeGreeting()}
           </p>
         </div>
@@ -104,7 +104,7 @@ export function ExecutiveHome() {
                 <div className="flex items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-solid border-[#ffffff14] bg-[#3c332c] text-[var(--bc-mobile-accent)]"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-solid border-[#ea9a4133] bg-[#0f1826] text-[var(--bc-mobile-accent)] shadow-[0_2px_8px_rgba(201,158,74,0.15)]"
                   >
                     <CalendarDays className="h-4.5 w-4.5" strokeWidth={2} />
                   </span>
@@ -545,7 +545,7 @@ function Greeting({
             <Link
               to="/connect-app/inbox"
               aria-label={t("bc.mobile.inbox.title")}
-              className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#251e18]"
+              className="grid h-10 w-10 place-items-center rounded-full text-[#D4C3A3] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#0c1522] hover:border-[#ea9a4170]"
             >
               <MessageSquare aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
             </Link>
@@ -747,21 +747,21 @@ function UpcomingEventsCard() {
       aria-labelledby="bc-crm-events-heading"
       className="mt-4 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-[0_18px_40px_-32px_rgba(0,0,0,0.9)]"
     >
-      <div className="flex items-center justify-between border-b border-[var(--bc-mobile-border)] px-4 py-3">
+      <div className="flex items-center justify-between border-b border-[var(--bc-mobile-border)] px-4 py-2.5">
         <h2
           id="bc-crm-events-heading"
-          className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--bc-mobile-muted)]"
+          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#D4C3A3]"
         >
-          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
+          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={2} />
           Sự kiện sắp tới
         </h2>
         <Link
-          to="/events"
-          className="flex items-center gap-1 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] hover:opacity-80"
+          to="/connect-app/community"
+          className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer"
           aria-label="Xem tất cả sự kiện"
         >
           Tất cả
-          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+          <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" strokeWidth={2} />
         </Link>
       </div>
 

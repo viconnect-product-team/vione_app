@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type Transaction = {
   id: string;
@@ -31,12 +34,12 @@ function mapTx(tx: Row): Transaction {
 export const listTransactionsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Transaction[]> => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("transactions")
       .select("*")
       .order("date", { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(mapTx);
+    return (data ?? []).map((r: any) => mapTx(r as Row));
   });
 
 const txInput = z.object({
@@ -55,13 +58,13 @@ export const createTransactionFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("TX");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("transactions")
       .insert({ code, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, { action: "Tạo giao dịch", target: code, category: "fee" });
+    await logActivity(getDb(context), { action: "Tạo giao dịch", target: code, category: "fee" });
     return mapTx(row);
   });
 
@@ -71,14 +74,14 @@ export const updateTransactionFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("transactions")
       .update(rest)
       .eq("code", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Cập nhật giao dịch",
       target: id,
       category: "fee",
@@ -91,9 +94,9 @@ export const deleteTransactionFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await (null as any).from("transactions").delete().eq("code", data.id);
+    const { error } = await getDb(context).from("transactions").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Xóa giao dịch",
       target: data.id,
       category: "fee",

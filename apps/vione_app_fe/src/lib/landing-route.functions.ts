@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 /**
  * Resolve where a user should land after sign-in.
@@ -13,7 +16,8 @@ import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 export const getPostLoginRouteFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<"/" | "/m"> => {
-    const { userId } = context; const supabase: any = null as any;
+    const { userId } = context;
+    const supabase = getDb(context);
     const t0 = Date.now();
 
     const { data: isPlatform, error: platformErr } = await supabase.rpc("is_platform_admin");
@@ -45,8 +49,8 @@ export const getPostLoginRouteFn = createServerFn({ method: "GET" })
       return "/m";
     }
 
-    const roles = (memberships ?? []).map((m: { role: string }) => m.role);
-    const isAdmin = roles.some((r) => r === "admin" || r === "association_admin");
+    const roles = (memberships ?? []).map((m: any) => m.role);
+    const isAdmin = roles.some((r: any) => r === "admin" || r === "association_admin");
     const to = isAdmin ? "/" : "/m";
 
     console.info(

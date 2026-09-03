@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { NewsArticle } from "@/lib/extra-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 type Row = Record<string, unknown>;
 
@@ -22,12 +25,12 @@ export const listNewsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<NewsArticle[]> => {
     const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(null as any);
-    let query = (null as any).from("news").select("*").order("created_at", { ascending: true });
+    const activeId = await getActiveAssociationId(getDb(context));
+    let query = getDb(context).from("news").select("*").order("created_at", { ascending: true });
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw error;
-    return (data ?? []).map(mapNews);
+    return (data ?? []).map((r: any) => mapNews(r as Row));
   });
 
 const newsInput = z.object({
@@ -45,7 +48,7 @@ export const createNewsFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("NEWS");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("news")
       .insert({
         code,
@@ -60,7 +63,7 @@ export const createNewsFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Tạo tin tức",
       target: data.title,
       category: "system",
@@ -73,7 +76,7 @@ export const updateNewsFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => newsInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("news")
       .update({
         title: data.title,
@@ -87,7 +90,7 @@ export const updateNewsFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Cập nhật tin tức",
       target: data.title,
       category: "system",
@@ -100,14 +103,14 @@ export const deleteNewsFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const found = await (null as any)
+    const found = await getDb(context)
       .from("news")
       .select("title")
       .eq("code", data.id)
       .maybeSingle();
-    const { error } = await (null as any).from("news").delete().eq("code", data.id);
+    const { error } = await getDb(context).from("news").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Xóa tin tức",
       target: (found.data?.title as string) ?? data.id,
       category: "system",

@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type LinkableMember = {
   id: string;
@@ -16,7 +19,7 @@ export type LinkableMember = {
 export const listLinkableMembersFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<LinkableMember[]> => {
-    const supabase: any = null as any;
+    const supabase = getDb(context);
     const { data, error } = await supabase.rpc("list_my_linkable_members");
     if (error) throw new Error(error.message);
     return (data ?? []).map((r: Record<string, unknown>) => ({
@@ -35,7 +38,7 @@ export const linkMyMemberProfileFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ memberId: string }> => {
-    const supabase: any = null as any;
+    const supabase = getDb(context);
     const { data: res, error } = await supabase.rpc("link_my_member_profile", {
       _member_id: data.memberId,
     });
@@ -48,7 +51,7 @@ export const unlinkMyMemberProfileFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<void> => {
-    const supabase: any = null as any;
+    const supabase = getDb(context);
     const { error } = await supabase.rpc("unlink_my_member_profile", {
       _member_id: data.memberId,
     });

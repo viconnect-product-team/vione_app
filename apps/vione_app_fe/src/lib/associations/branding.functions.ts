@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type AssociationBranding = {
   brandPrimary: string | null;
@@ -15,7 +18,7 @@ export const getAssociationBrandingFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<AssociationBranding | null> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("associations")
       .select("brand_primary, tagline, about, contact_email, landing_published")
       .eq("id", data.associationId)
@@ -53,7 +56,7 @@ export const updateAssociationBrandingFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Before enabling public, require a verified custom domain (if one is set).
     if (data.landingPublished) {
-      const { data: dom } = await (null as any)
+      const { data: dom } = await getDb(context)
         .from("associations")
         .select("custom_domain, domain_status")
         .eq("id", data.associationId)
@@ -63,7 +66,7 @@ export const updateAssociationBrandingFn = createServerFn({ method: "POST" })
         throw new Error("DOMAIN_NOT_VERIFIED");
       }
     }
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("associations")
       .update({
         brand_primary: data.brandPrimary,

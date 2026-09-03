@@ -55,8 +55,10 @@ function RegisterPage() {
   useEffect(() => {
     const card = takeScannedCard();
     if (card) {
-      if (card.ownerEmail) setEmail(card.ownerEmail);
-      if (card.ownerName) setFullName(card.ownerName);
+      const email = card.email || (card as any).ownerEmail;
+      const name = card.fullName || (card as any).ownerName;
+      if (email) setEmail(email);
+      if (name) setFullName(name);
     }
   }, []);
 

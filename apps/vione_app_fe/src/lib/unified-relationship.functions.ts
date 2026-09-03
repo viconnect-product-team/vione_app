@@ -8,7 +8,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { UnifiedRelationshipView } from "./global-network/unified-relationship.types";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 const slugSchema = z.string().min(1).max(200);
 
@@ -18,5 +21,5 @@ export const getUnifiedRelationshipBySlugFn = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<UnifiedRelationshipView> => {
     const { getUnifiedRelationshipBySlug } =
       await import("./global-network/unified-relationship.server");
-    return getUnifiedRelationshipBySlug(null as any, context.userId, data.cardSlug);
+    return getUnifiedRelationshipBySlug(getDb(context), context.userId, data.cardSlug);
   });

@@ -48,7 +48,7 @@ export const listAssignableUsersFn = createServerFn({ method: "GET" })
       if (m.user_id) byUser.set(m.user_id, { id: m.id, name: m.name });
     }
 
-    return ((profiles ?? []) as any[]).map((p) => ({
+    return ((profiles ?? []) as any[]).map((p: any) => ({
       userId: p.id,
       email: p.email ?? null,
       fullName: p.full_name ?? null,

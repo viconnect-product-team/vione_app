@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type Meeting = {
   id: string;
@@ -31,12 +34,12 @@ function mapMeeting(m: Row): Meeting {
 export const listMeetingsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Meeting[]> => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("meetings")
       .select("*")
       .order("date", { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(mapMeeting);
+    return (data ?? []).map((r: any) => mapMeeting(r as Row));
   });
 
 const meetingInput = z.object({
@@ -55,13 +58,13 @@ export const createMeetingFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Meeting> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("MT");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("meetings")
       .insert({ code, ...data })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Tạo cuộc họp",
       target: data.title,
       category: "system",
@@ -75,14 +78,14 @@ export const updateMeetingFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Meeting> => {
     const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("meetings")
       .update(rest)
       .eq("code", id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Cập nhật cuộc họp",
       target: data.title,
       category: "system",
@@ -96,14 +99,14 @@ export const deleteMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("meetings")
       .update({ status: "cancelled" })
       .eq("code", data.id)
       .select("title")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    await logActivity(null as any, {
+    await logActivity(getDb(context), {
       action: "Hủy cuộc họp",
       target: (row?.title as string) ?? data.id,
       category: "system",

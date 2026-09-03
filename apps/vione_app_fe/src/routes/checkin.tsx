@@ -68,14 +68,25 @@ function CheckinPage() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => void router.invalidate(), 400);
     };
-    const channel = supabase
-      .channel("checkin-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendees" }, invalidate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "checkin_logs" }, invalidate)
-      .subscribe();
+    try {
+      if (supabase && typeof supabase.channel === "function") {
+        const channel = supabase
+          .channel("checkin-live")
+          .on("postgres_changes", { event: "*", schema: "public", table: "attendees" }, invalidate)
+          .on("postgres_changes", { event: "*", schema: "public", table: "checkin_logs" }, invalidate)
+          .subscribe();
+        return () => {
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          try {
+            supabase.removeChannel(channel);
+          } catch {}
+        };
+      }
+    } catch (e) {
+      console.warn("Realtime subscription fallback:", e);
+    }
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      supabase.removeChannel(channel);
     };
   }, [router]);
 

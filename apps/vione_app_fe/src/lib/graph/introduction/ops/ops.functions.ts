@@ -7,6 +7,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 const ScopeInput = z.object({
   scope: z.enum(["platform", "association"]).default("platform"),
@@ -147,14 +150,14 @@ export type OpsAccess = {
 export const getIntroOpsAccessFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<OpsAccess> => {
-    const { data: platform } = await (null as any).rpc("is_platform_admin");
-    const { data: memberships } = await (null as any)
+    const { data: platform } = await getDb(context).rpc("is_platform_admin");
+    const { data: memberships } = await getDb(context)
       .from("memberships")
       .select("association_id, role, associations(name)")
       .eq("role", "admin");
     return {
       isPlatformAdmin: Boolean(platform),
-      associationAdminOf: ((memberships ?? []) as any[]).map((m) => ({
+      associationAdminOf: ((memberships ?? []) as any[]).map((m: any) => ({
         associationId: m.association_id,
         name: m.associations?.name ?? null,
       })),
@@ -168,7 +171,7 @@ export const getIntroOpsHealthFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsHealthSummary> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_health_summary", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_health_summary", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
     });
@@ -180,7 +183,7 @@ export const getIntroOpsRequestsStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsStatsByStatus> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_requests_stats", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_requests_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -193,7 +196,7 @@ export const getIntroOpsDeliveriesStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsStatsByStatus> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_deliveries_stats", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_deliveries_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -206,7 +209,7 @@ export const getIntroOpsOutcomesStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsOutcomeStats> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_outcomes_stats", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_outcomes_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -219,7 +222,7 @@ export const getIntroOpsOutboxStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsOutboxStats> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_outbox_stats", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_outbox_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
     });
@@ -231,7 +234,7 @@ export const getIntroOpsAdapterStatsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeRange.parse(d))
   .handler(async ({ context, data }): Promise<OpsAdapterStats> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_adapter_stats", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_adapter_stats", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _range_hours: data.rangeHours,
@@ -244,7 +247,7 @@ export const listIntroOpsSchedulerRunsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeLimit.parse(d))
   .handler(async ({ context, data }): Promise<OpsJobRun[]> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_scheduler_runs", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_scheduler_runs", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _limit: data.limit,
@@ -257,7 +260,7 @@ export const listIntroOpsConsumerRunsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => ScopeLimit.parse(d))
   .handler(async ({ context, data }): Promise<OpsConsumerRun[]> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_consumer_runs", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_consumer_runs", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _limit: data.limit,
@@ -270,7 +273,7 @@ export const listIntroOpsAlertsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => AlertsInput.parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert[]> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_alerts_list", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_alerts_list", {
       _scope: data.scope,
       _association_id: data.associationId ?? undefined,
       _state: data.state ?? undefined,
@@ -287,7 +290,7 @@ export const acknowledgeIntroOpsAlertFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ alertId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_alert_acknowledge", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_alert_acknowledge", {
       _alert_id: data.alertId,
     });
     if (error) throw new Error(error.message);
@@ -298,7 +301,7 @@ export const resolveIntroOpsAlertFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ alertId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<OpsAlert> => {
-    const { data: res, error } = await (null as any).rpc("intro_ops_alert_resolve", {
+    const { data: res, error } = await getDb(context).rpc("intro_ops_alert_resolve", {
       _alert_id: data.alertId,
     });
     if (error) throw new Error(error.message);

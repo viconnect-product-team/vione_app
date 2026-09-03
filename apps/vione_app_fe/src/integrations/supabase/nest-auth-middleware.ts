@@ -10,6 +10,7 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import crypto from "crypto";
+import { supabaseAdmin } from "./client.server";
 
 function extractToken(request: Request): string | null {
   // 1. Authorization header
@@ -87,6 +88,6 @@ export const requireNestAuth = createMiddleware({ type: "function" }).server(
       avatar_url: decoded.avatar_url ?? "",
     };
 
-    return next({ context: { userId, token, user } });
+    return next({ context: { userId, token, user, supabase: supabaseAdmin } });
   }
 );

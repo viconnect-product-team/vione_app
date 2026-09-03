@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type AdminBenefit = {
   id: string;
@@ -25,7 +28,7 @@ function mapBenefit(r: Row): AdminBenefit {
 }
 
 async function activeAssociationId(context: any): Promise<string> {
-  const { data } = await (null as any).rpc("current_association_id");
+  const { data } = await getDb(context).rpc("current_association_id");
   const id = (data as string | null) ?? null;
   if (!id) throw new Error("No active association");
   return id;
@@ -35,13 +38,13 @@ export const listBenefitsAdminFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminBenefit[]> => {
     const associationId = await activeAssociationId(context);
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("association_benefits")
       .select("*")
       .eq("association_id", associationId)
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map(mapBenefit);
+    return (data ?? []).map((r: any) => mapBenefit(r as Row));
   });
 
 const benefitInput = z.object({
@@ -67,7 +70,7 @@ export const createBenefitFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => benefitInput.parse(d))
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
     const associationId = await activeAssociationId(context);
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("association_benefits")
       .insert({ ...toRow(data), association_id: associationId })
       .select("*")
@@ -81,7 +84,7 @@ export const updateBenefitFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => benefitInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
     const associationId = await activeAssociationId(context);
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("association_benefits")
       .update(toRow(data))
       .eq("id", data.id)
@@ -97,7 +100,7 @@ export const deleteBenefitFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const associationId = await activeAssociationId(context);
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("association_benefits")
       .delete()
       .eq("id", data.id)

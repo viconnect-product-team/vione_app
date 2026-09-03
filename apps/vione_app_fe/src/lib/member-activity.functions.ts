@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveMemberIdOrNull } from "./current-member";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type InteractionType = "connect" | "message" | "quote" | "meeting" | "event";
 
@@ -47,7 +50,7 @@ export const listInteractionsWithFn = createServerFn({ method: "GET" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<InteractionPage> => {
-    const me = await resolveMemberIdOrNull(null as any);
+    const me = await resolveMemberIdOrNull((context as any)?.token);
     const peer = data.peerId;
     const emptyStats: InteractionStats = {
       all: 0,
@@ -64,14 +67,14 @@ export const listInteractionsWithFn = createServerFn({ method: "GET" })
     // cuts total latency to the slowest single query instead of their sum.
     const [connRes, msgRes, quoteRes] = await Promise.all([
       // 1) Connection state (single row owned by me toward the peer).
-      (null as any)
+      getDb(context)
         .from("connections")
         .select("status, updated_at, created_at")
         .eq("owner_id", me)
         .eq("peer_id", peer)
         .maybeSingle(),
       // 2) Direct messages exchanged either direction (only needed fields).
-      (null as any)
+      getDb(context)
         .from("messages")
         .select("id, from_id, to_id, text, created_at")
         .or(`and(from_id.eq.${me},to_id.eq.${peer}),and(from_id.eq.${peer},to_id.eq.${me})`)
@@ -81,7 +84,7 @@ export const listInteractionsWithFn = createServerFn({ method: "GET" })
       // Narrow at the DB: only rows where me or peer is the buyer. The seller
       // side is checked in JS via the joined product (PostgREST can't filter on
       // an embedded column cheaply). This avoids scanning every quote globally.
-      (null as any)
+      getDb(context)
         .from("quote_requests")
         .select("id, buyer_id, status, created_at, products(seller_id, title)")
         .in("buyer_id", [me, peer])

@@ -126,7 +126,7 @@ export const createTimeProposalsFn = createServerFn({ method: "POST" })
     const supabase = c.supabase as any;
     const { data: rows, error } = await supabase.rpc("business_meeting_time_proposals_create", {
       _meeting_id: data.meetingId,
-      _proposals: data.proposals.map((p) => ({
+      _proposals: data.proposals.map((p: any) => ({
         start_at: p.startAt,
         end_at: p.endAt,
         timezone: p.timezone,
@@ -134,7 +134,7 @@ export const createTimeProposalsFn = createServerFn({ method: "POST" })
       _client_request_id: data.clientRequestId ?? null,
     });
     if (error) throw new CalendarError("MEETING_TIME_PROPOSAL_INVALID", error.message);
-    return (rows ?? []).map(mapProposalRow);
+    return (rows ?? []).map((r: any) => mapProposalRow(r));
   });
 
 // ── List proposals / projections (UI read helpers) ─────────────────────────

@@ -5,15 +5,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { MeetingFollowUpService } from "./service.server";
-import { MeetingFollowUpError } from "./errors";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 import {
   MEETING_FOLLOW_UP_PRIORITIES,
   MEETING_FOLLOW_UP_TITLE_MAX,
   MEETING_FOLLOW_UP_DESCRIPTION_MAX,
 } from "./types";
-
-type Ctx = { supabase: any; userId: string };
 
 const uuid = z.string().uuid();
 const priority = z.enum(MEETING_FOLLOW_UP_PRIORITIES);
@@ -53,86 +50,38 @@ const cancelSchema = z.object({
   expectedVersion: z.number().int().min(1),
 });
 
-// Server-side helper: resolve DTO context (organizer + participant flag) for
-// the caller against a meeting id. Uses RLS-scoped reads.
-async function loadCtx(
-  sb: any,
-  meetingId: string,
-  userId: string,
-): Promise<{ viewerUserId: string; organizerUserId: string; isMeetingParticipant: boolean }> {
-  const { data: m, error: mErr } = await sb
-    .from("business_meetings")
-    .select("organizer_user_id")
-    .eq("id", meetingId)
-    .maybeSingle();
-  if (mErr || !m) throw new MeetingFollowUpError("MEETING_FOLLOW_UP_NOT_FOUND");
-  const { data: p } = await sb
-    .from("business_meeting_participants")
-    .select("user_id")
-    .eq("meeting_id", meetingId)
-    .eq("user_id", userId)
-    .is("left_at", null)
-    .maybeSingle();
-  return {
-    viewerUserId: userId,
-    organizerUserId: m.organizer_user_id as string,
-    isMeetingParticipant: !!p,
-  };
-}
-
 export const listMeetingFollowUpsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    const ctx = await loadCtx(c.supabase, data.meetingId, c.userId);
-    return MeetingFollowUpService.listFollowUps(c.supabase, ctx, data.meetingId);
+    const { token } = context as any;
+    try {
+      return await fetchNestApiFromServer(`/meetings/${data.meetingId}/follow-ups`, token);
+    } catch (err) {
+      console.error("listMeetingFollowUpsFn error:", err);
+      return [];
+    }
   });
 
 export const createMeetingFollowUpFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    const ctx = await loadCtx(c.supabase, data.meetingId, c.userId);
-    return MeetingFollowUpService.createFollowUp(c.supabase, ctx, {
-      meetingId: data.meetingId,
-      title: data.title,
-      ownerUserId: data.ownerUserId,
-      description: data.description ?? null,
-      priority: data.priority ?? undefined,
-      dueAt: data.dueAt ?? null,
-      outcomeId: data.outcomeId ?? null,
-      clientRequestId: data.clientRequestId ?? null,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/${data.meetingId}/follow-ups`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
-
-async function loadCtxByFollowUp(sb: any, followUpId: string, userId: string) {
-  const { data: fu, error } = await sb
-    .from("business_meeting_follow_ups")
-    .select("meeting_id")
-    .eq("id", followUpId)
-    .maybeSingle();
-  if (error || !fu) throw new MeetingFollowUpError("MEETING_FOLLOW_UP_NOT_FOUND");
-  return loadCtx(sb, fu.meeting_id as string, userId);
-}
 
 export const updateMeetingFollowUpFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    const ctx = await loadCtxByFollowUp(c.supabase, data.followUpId, c.userId);
-    return MeetingFollowUpService.updateFollowUp(c.supabase, ctx, {
-      followUpId: data.followUpId,
-      expectedVersion: data.expectedVersion,
-      title: data.title,
-      description: data.description ?? undefined,
-      clearDescription: data.clearDescription ?? false,
-      priority: data.priority,
-      dueAt: data.dueAt ?? undefined,
-      clearDueAt: data.clearDueAt ?? false,
-      ownerUserId: data.ownerUserId,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/follow-ups/${data.followUpId}/status`, token, {
+      method: "PATCH",
+      body: JSON.stringify(data),
     });
   });
 
@@ -140,12 +89,10 @@ export const setMeetingFollowUpStatusFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => setStatusSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    const ctx = await loadCtxByFollowUp(c.supabase, data.followUpId, c.userId);
-    return MeetingFollowUpService.setFollowUpStatus(c.supabase, ctx, {
-      followUpId: data.followUpId,
-      expectedVersion: data.expectedVersion,
-      targetStatus: data.targetStatus,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/follow-ups/${data.followUpId}/status`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ status: data.targetStatus }),
     });
   });
 
@@ -153,10 +100,9 @@ export const cancelMeetingFollowUpFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => cancelSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    const ctx = await loadCtxByFollowUp(c.supabase, data.followUpId, c.userId);
-    return MeetingFollowUpService.cancelFollowUp(c.supabase, ctx, {
-      followUpId: data.followUpId,
-      expectedVersion: data.expectedVersion,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/follow-ups/${data.followUpId}/status`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "cancelled" }),
     });
   });

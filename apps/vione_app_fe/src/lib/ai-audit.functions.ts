@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // Platform-admin view over the ai_request_audit table.
 // Records are metadata-only (never the prompt/answer). This function resolves
@@ -40,7 +43,7 @@ export type AiAuditFilter = {
 type Ctx = { supabase?: any; userId: string; token?: string };
 
 async function assertPlatformAdmin(context: Ctx) {
-  const { data, error } = await (null as any).rpc("is_platform_admin");
+  const { data, error } = await getDb(context).rpc("is_platform_admin");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }

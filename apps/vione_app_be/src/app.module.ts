@@ -13,6 +13,8 @@ import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
 import { MembersModule } from './members/members.module';
 import { AiModule } from './ai/ai.module';
+import { MeetingsModule } from './meetings/meetings.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { AiModule } from './ai/ai.module';
     EventsModule,
     MembersModule,
     AiModule,
+    MeetingsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,17 +1,20 @@
 // Shared server-only helpers for member-account server functions.
 // Uses the service-role client (passed in) and sends activation emails, so
 // this is server-only logic and carries the .server suffix by convention.
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export type Ctx = { supabase: any; userId: string };
+export type Ctx = { supabase?: any; userId: string };
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // Authentication gate: caller must hold an admin role somewhere (association
 // admin or platform admin). Authorization to a SPECIFIC member is enforced
 // separately by assertAssocAdmin() against that member's association_id.
 export async function assertAdmin(context: Ctx) {
   const [{ data: isAdmin }, { data: isPlatform }, { data: rows }] = await Promise.all([
-    (null as any).rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    (null as any).rpc("is_platform_admin"),
-    (null as any)
+    getDb(context).rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    getDb(context).rpc("is_platform_admin"),
+    getDb(context)
       .from("memberships")
       .select("association_id")
       .eq("user_id", context.userId)
@@ -27,8 +30,8 @@ export async function callerScope(
   context: Ctx,
 ): Promise<{ isPlatform: boolean; assocIds: string[] }> {
   const [{ data: isPlatform }, { data: rows }] = await Promise.all([
-    (null as any).rpc("is_platform_admin"),
-    (null as any)
+    getDb(context).rpc("is_platform_admin"),
+    getDb(context)
       .from("memberships")
       .select("association_id")
       .eq("user_id", context.userId)

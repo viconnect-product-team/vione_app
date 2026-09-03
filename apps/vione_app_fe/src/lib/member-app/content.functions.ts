@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { relTime, fmtDate } from "./shared";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // ---------- News ----------
 export type NewsItem = {
@@ -17,7 +20,7 @@ export type NewsItem = {
 export const listNews = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<NewsItem[]> => {
-    const { data } = await (null as any)
+    const { data } = await getDb(context)
       .from("news")
       .select("*")
       .eq("status", "published")
@@ -46,11 +49,11 @@ export type LibraryDoc = {
 export const listDocuments = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<LibraryDoc[]> => {
-    const { data } = await (null as any)
+    const { data } = await getDb(context)
       .from("documents")
       .select("*")
       .order("uploaded_at", { ascending: false, nullsFirst: false });
-    return (data ?? []).map((d) => ({
+    return (data ?? []).map((d: any) => ({
       id: d.id,
       name: d.name,
       category: d.category ?? "",
@@ -92,19 +95,19 @@ function mapPerk(p: any): Perk {
 export const listPerks = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Perk[]> => {
-    const { data } = await (null as any)
+    const { data } = await getDb(context)
       .from("perks")
       .select("*")
       .eq("status", "active")
       .order("sort_order", { ascending: true });
-    return (data ?? []).map(mapPerk);
+    return (data ?? []).map((r: any) => mapPerk(r));
   });
 
 export const getPerk = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(64) }).parse(d))
   .handler(async ({ data, context }): Promise<Perk | null> => {
-    const { data: row } = await (null as any)
+    const { data: row } = await getDb(context)
       .from("perks")
       .select("*")
       .eq("id", data.id)

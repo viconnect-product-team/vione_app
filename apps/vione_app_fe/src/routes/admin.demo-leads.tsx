@@ -95,7 +95,7 @@ function AdminDemoLeadsPage() {
       "status",
       "created_at",
     ];
-    const rows = leads.map((l) =>
+    const rows = leads.map((l: any) =>
       [
         l.name,
         l.email,
@@ -107,7 +107,7 @@ function AdminDemoLeadsPage() {
         l.status,
         l.createdAt,
       ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .map((v: any) => `"${String(v).replace(/"/g, '""')}"`)
         .join(","),
     );
     const blob = new Blob([[head.join(","), ...rows].join("\n")], {
@@ -280,7 +280,7 @@ function AdminDemoLeadsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {leads.map((l) => (
+                    {leads.map((l: any) => (
                       <tr
                         key={l.id}
                         tabIndex={0}
@@ -312,7 +312,7 @@ function AdminDemoLeadsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <Pill color={STATUS_TONE[l.status]}>{t(statusKey(l.status))}</Pill>
+                          <Pill color={STATUS_TONE[l.status as keyof typeof STATUS_TONE]}>{t(statusKey(l.status as any))}</Pill>
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           {new Date(l.createdAt).toLocaleString()}

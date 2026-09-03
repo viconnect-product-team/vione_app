@@ -1,8 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 import { BusinessCardService } from "@/lib/business-card/business-card.service";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // ── Domain type + constant re-exports ──────────────────────────────────────
 // Canonical home is @/lib/business-card/business-card.types. Re-exported here so
@@ -116,7 +119,7 @@ export const listMyBusinessCardsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(
     ({ context }): Promise<BusinessCardSummary[]> =>
-      BusinessCardService.listMyCards(null as any),
+      BusinessCardService.listMyCards(getDb(context)),
   );
 
 export const getMyBusinessCardFn = createServerFn({ method: "GET" })
@@ -124,7 +127,7 @@ export const getMyBusinessCardFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<BusinessCard> =>
-      BusinessCardService.getMyCard(null as any, data.id),
+      BusinessCardService.getMyCard(getDb(context), data.id),
   );
 
 // Preview by slug (owner / manager, works on drafts). RLS restricts reads to the
@@ -134,7 +137,7 @@ export const getBusinessCardPreviewFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(60) }).parse(d))
   .handler(
     ({ data, context }): Promise<BusinessCard | null> =>
-      BusinessCardService.getPreviewBySlug(null as any, data.slug),
+      BusinessCardService.getPreviewBySlug(getDb(context), data.slug),
   );
 
 // Public profile by slug (no auth; respects public_mode). ownerUserId is never
@@ -157,7 +160,7 @@ export const saveBusinessCardFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => cardInput.parse(d))
   .handler(
     ({ data, context }): Promise<{ id: string }> =>
-      BusinessCardService.saveCard(null as any, context.userId, data),
+      BusinessCardService.saveCard(getDb(context), context.userId, data),
   );
 
 // Set status (publish / unpublish / archive).
@@ -173,7 +176,7 @@ export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
   )
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setStatus(null as any, context.userId, data.id, data.status),
+      BusinessCardService.setStatus(getDb(context), context.userId, data.id, data.status),
   );
 
 // Set Primary (demote current primary, promote target).
@@ -182,7 +185,7 @@ export const setPrimaryBusinessCardFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setPrimary(null as any, context.userId, data.id),
+      BusinessCardService.setPrimary(getDb(context), context.userId, data.id),
   );
 
 // Delete.
@@ -191,7 +194,7 @@ export const deleteBusinessCardFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(
     ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.deleteCard(null as any, context.userId, data.id),
+      BusinessCardService.deleteCard(getDb(context), context.userId, data.id),
   );
 
 // ── Leads + analytics (thin adapters over LeadService) ─────────────────────

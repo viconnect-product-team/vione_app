@@ -442,7 +442,7 @@ function RenewalPage() {
                         {r.member.name
                           .split(" ")
                           .slice(-2)
-                          .map((p) => p[0])
+                          .map((p: string) => p[0])
                           .join("")
                           .toUpperCase()}
                       </div>

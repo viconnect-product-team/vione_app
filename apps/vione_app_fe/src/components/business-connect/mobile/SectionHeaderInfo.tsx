@@ -65,7 +65,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
 
   return (
     <section
-      className="flex flex-col items-start gap-4 relative w-full bg-[#140e0a] text-[#f2efe9e6] p-4 rounded-3xl"
+      className="flex flex-col items-start gap-4 relative w-full bg-[#08101b] text-[#f2efe9e6] p-4 rounded-3xl border border-[#ea9a4126] shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
       aria-labelledby="network-heading"
     >
       {/* ── HEADER ── */}
@@ -88,7 +88,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
           >
             •
           </span>
-          <span className="mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#ffb971] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
+          <span className="mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-[#DFB260] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
             3 cần chăm sóc
           </span>
         </p>
@@ -108,15 +108,15 @@ export const SectionHeaderInfo = (): React.ReactElement => {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               aria-pressed={isActive}
-              className={`all-unset box-border inline-flex flex-col px-4 py-1.5 flex-[0_0_auto] rounded-full border items-center justify-center relative border-solid transition-colors duration-200 ${
+              className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                 isActive
-                  ? "bg-[#ffb97133] border-[#ffb9714c]"
-                  : "bg-[#251e18] border-[#ea9a4126]"
+                  ? "bg-[#DFB260]/15 border-[#DFB260]/40 shadow-[0_2px_8px_rgba(223,178,96,0.12)]"
+                  : "bg-[#0c1522] border-[#ea9a4126] hover:border-[#ea9a4166]"
               }`}
             >
               <span
-                className={`justify-center [font-family:'Inter-Medium',Helvetica] font-medium text-sm text-center leading-5 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
-                  isActive ? "text-[#ffb971]" : "text-[#d8c3b1]"
+                className={`[font-family:'Inter-Medium',Helvetica] text-xs text-center leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
+                  isActive ? "text-[#DFB260] font-semibold" : "text-[#D4C3A3] font-normal"
                 }`}
               >
                 {tab.label}
@@ -142,24 +142,27 @@ export const SectionHeaderInfo = (): React.ReactElement => {
           onClick={() => setIsFilterOpen((currentValue) => !currentValue)}
           aria-label="Mở bộ lọc"
           aria-pressed={isFilterOpen}
-          className="flex w-[42px] h-[42px] bg-[#251e18] rounded-lg border-[#ea9a4126] items-center justify-center relative border border-solid hover:border-[#ffb971] transition-colors"
+          className="flex w-[42px] h-[42px] bg-[#0c1522] rounded-lg border-[#ea9a4126] items-center justify-center relative border border-solid hover:border-[#DFB260] transition-colors"
         >
-          <SlidersHorizontal className="w-[15px] h-[15px] text-[#d8c3b1]" aria-hidden="true" />
+          <SlidersHorizontal className="w-[15px] h-[15px] text-[#D4C3A3]" aria-hidden="true" />
         </button>
       </form>
 
       {/* ── SECTION 1: AI MATCH – NÊN KẾT NỐI HÔM NAY (ẢNH 2) ── */}
       <section className="flex flex-col items-start gap-3 w-full mt-2">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-1.5 text-[#ffb971]">
+          <div className="flex items-center gap-1.5 text-[#DFB260]">
             <Sparkles className="w-[15px] h-[15px] fill-current" />
-            <h2 className="[font-family:'Inter-Medium',Helvetica] font-medium text-[15px] leading-5 tracking-tight text-[#ffb971]">
+            <h2 className="[font-family:'Inter-Medium',Helvetica] font-medium text-[15px] leading-5 tracking-tight text-[#f5f7fa]">
               AI Match – Nên kết nối hôm nay
             </h2>
           </div>
-          <button type="button" className="text-xs text-[#d8c3b180] flex items-center gap-0.5 hover:text-[#ffb971] transition-colors">
+          <button
+            type="button"
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+          >
             Xem tất cả
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3 text-[#DFB260]" />
           </button>
         </div>
 
@@ -168,7 +171,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
           {aiMatches.map((match) => (
             <div
               key={match.id}
-              className="flex items-center gap-3 w-[260px] shrink-0 bg-[#251e18] rounded-2xl p-3 border border-solid border-[#ea9a4126] hover:border-[#ea9a4166] transition-colors"
+              className="flex items-center gap-3 w-[260px] shrink-0 bg-[#0c1522] rounded-2xl p-3 border border-solid border-[#ea9a4126] hover:border-[#DFB260]/50 transition-colors"
             >
               <img
                 className="w-12 h-12 rounded-full object-cover border border-solid border-[#ea9a4126]"
@@ -182,7 +185,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
                 <span className="[font-family:'Inter-Light',Helvetica] font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
                   {match.title}
                 </span>
-                <span className="[font-family:'Inter-Medium',Helvetica] font-medium text-xs text-[#ffb971] mt-1.5">
+                <span className="[font-family:'Inter-Medium',Helvetica] font-medium text-xs text-[#DFB260] mt-1.5">
                   {match.days}
                 </span>
               </div>
@@ -195,23 +198,26 @@ export const SectionHeaderInfo = (): React.ReactElement => {
       <section className="flex flex-col items-start gap-3 w-full mt-2">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-1.5 text-[#f2efe9e6]">
-            <Bell className="w-[15px] h-[15px]" />
+            <Bell className="w-[15px] h-[15px] text-[#DFB260]" />
             <h2 className="[font-family:'Inter-Medium',Helvetica] font-medium text-[15px] leading-5 tracking-tight text-[#f2efe9e6]">
               Cần giữ kết nối (3)
             </h2>
           </div>
-          <button type="button" className="text-xs text-[#d8c3b180] flex items-center gap-0.5 hover:text-[#ffb971] transition-colors">
+          <button
+            type="button"
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+          >
             Xem tất cả
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3 text-[#DFB260]" />
           </button>
         </div>
 
         {/* Danh sách dọc */}
-        <div className="flex flex-col w-full bg-[#251e18]/60 rounded-2xl border border-solid border-[#ea9a4126] overflow-hidden">
+        <div className="flex flex-col w-full bg-[#0c1522]/80 rounded-2xl border border-solid border-[#ea9a4126] overflow-hidden">
           {nurtureConnections.map((item, index) => (
             <div
               key={item.id}
-              className={`flex items-center gap-3 p-3.5 hover:bg-[#251e18] transition-colors cursor-pointer ${
+              className={`flex items-center gap-3 p-3.5 hover:bg-[#0f1826] transition-colors cursor-pointer ${
                 index !== nurtureConnections.length - 1 ? "border-b border-solid border-[#ea9a4115]" : ""
               }`}
             >
@@ -227,7 +233,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
                 <span className="[font-family:'Inter-Light',Helvetica] font-light text-xs text-[#d8c3b1b2] truncate mt-0.5">
                   {item.title}
                 </span>
-                <span className="[font-family:'Inter-Light',Helvetica] font-light text-xs text-[#ffb971] mt-1">
+                <span className="[font-family:'Inter-Light',Helvetica] font-light text-xs text-[#DFB260] mt-1">
                   {item.days}
                 </span>
               </div>

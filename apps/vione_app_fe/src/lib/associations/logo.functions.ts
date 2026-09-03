@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export const updateAssociationLogoFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
@@ -14,7 +17,7 @@ export const updateAssociationLogoFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     // Read previous logo to record in history.
-    const { data: prev } = await (null as any)
+    const { data: prev } = await getDb(context)
       .from("associations")
       .select("logo_url")
       .eq("id", data.associationId)
@@ -22,14 +25,14 @@ export const updateAssociationLogoFn = createServerFn({ method: "POST" })
     const oldUrl = (prev as any)?.logo_url ?? null;
 
     // RLS (associations_admin_update) ensures only association admins can update.
-    const { error } = await (null as any)
+    const { error } = await getDb(context)
       .from("associations")
       .update({ logo_url: data.logoUrl })
       .eq("id", data.associationId);
     if (error) throw new Error(error.message);
 
     // Resolve actor name for transparency.
-    const { data: profile } = await (null as any)
+    const { data: profile } = await getDb(context)
       .from("profiles")
       .select("full_name, email")
       .eq("id", context.userId)
@@ -38,7 +41,7 @@ export const updateAssociationLogoFn = createServerFn({ method: "POST" })
 
     const action = !data.logoUrl ? "remove" : !oldUrl ? "set" : "change";
 
-    await (null as any).from("association_logo_history").insert({
+    await getDb(context).from("association_logo_history").insert({
       association_id: data.associationId,
       changed_by: context.userId,
       changed_by_name: actorName,
@@ -118,12 +121,12 @@ export const uploadAssociationLogoFn = createServerFn({ method: "POST" })
       ext === "svg" ? "image/svg+xml" : ext === "jpg" ? "image/jpeg" : `image/${ext}`;
 
     // RLS on storage.objects scopes writes to admins of this association folder.
-    const { error } = await (null as any).storage
+    const { error } = await getDb(context).storage
       .from("association-logos")
       .upload(path, buf, { cacheControl: "31536000", upsert: false, contentType });
     if (error) throw new Error(error.message);
 
-    const { data: signed, error: signErr } = await (null as any).storage
+    const { data: signed, error: signErr } = await getDb(context).storage
       .from("association-logos")
       .createSignedUrl(path, SIGNED_TTL);
     if (signErr || !signed?.signedUrl) throw new Error(signErr?.message ?? "SIGN_FAILED");
@@ -144,7 +147,7 @@ export const listLogoHistoryFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<LogoHistoryEntry[]> => {
-    const { data: rows, error } = await (null as any)
+    const { data: rows, error } = await getDb(context)
       .from("association_logo_history")
       .select("id, action, changed_by_name, old_logo_url, new_logo_url, created_at")
       .eq("association_id", data.associationId)

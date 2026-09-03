@@ -802,7 +802,7 @@ function MembersPage() {
               selected={sel.has(m.id)}
               favorite={favorites.includes(m.id)}
               pinned={pinned.includes(m.id)}
-              accountStatus={isAdmin ? (acctStatuses[m.id] ?? "none") : undefined}
+              accountStatus={isAdmin ? ((acctStatuses[m.id] as MemberAccountStatus) ?? "none") : undefined}
               onOpen={() => openMember(m)}
               onToggleSel={() => toggleSel(m.id)}
               onToggleFav={() => setFavoriteAndSync(m.id)}
@@ -927,7 +927,7 @@ function MembersPage() {
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-3">
-                        <AccountStatusBadge status={acctStatuses[m.id] ?? "none"} />
+                        <AccountStatusBadge status={(acctStatuses[m.id] as MemberAccountStatus) ?? "none"} />
                       </td>
                     )}
                     <td className="px-4 py-3 text-right">

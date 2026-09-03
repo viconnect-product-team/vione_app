@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { relTime } from "./shared";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type MyOpportunity = {
   id: string;
@@ -19,18 +22,19 @@ const OPP_COLORS = ["#7c6cff", "#3fbf7f", "#4a9eff", "#e8a04c"];
 export const listMyOpportunities = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyOpportunity[]> => {
-    const { supabase, userId } = context;
-    const { data } = await supabase
+    const db = getDb(context);
+    const userId = (context as any).userId;
+    const { data } = await db
       .from("opportunities")
       .select("*")
       .eq("status", "open")
       .order("created_at", { ascending: false });
-    const { data: ints } = await supabase
+    const { data: ints } = await db
       .from("opportunity_interests")
       .select("opportunity_id")
       .eq("member_id", userId);
-    const mine = new Set((ints ?? []).map((i) => i.opportunity_id));
-    return (data ?? []).map((o, i) => ({
+    const mine = new Set((ints ?? []).map((i: any) => i.opportunity_id));
+    return (data ?? []).map((o: any, i: number) => ({
       id: o.id,
       tag: o.type,
       title: o.title,
@@ -52,13 +56,14 @@ export const expressInterest = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { supabase, userId } = context;
-    const { data: me } = await supabase
+    const db = getDb(context);
+    const userId = (context as any).userId;
+    const { data: me } = await db
       .from("members")
       .select("contact, phone")
       .eq("user_id", userId)
       .maybeSingle();
-    const { error } = await supabase.from("opportunity_interests").insert({
+    const { error } = await db.from("opportunity_interests").insert({
       id: crypto.randomUUID(),
       opportunity_id: data.opportunityId,
       member_id: userId,

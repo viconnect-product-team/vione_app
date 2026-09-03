@@ -8,8 +8,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { CompanyService } from "./company.service";
 import type { PublicCompanyResult } from "./company.types";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 const visibilitySchema = z.enum(["public", "members_only", "private"]);
 const statusSchema = z.enum(["draft", "active", "suspended", "archived"]);
@@ -35,7 +38,7 @@ const companyWriteShape = {
 export const createCompanyFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object(companyWriteShape).parse(d))
-  .handler(({ data, context }) => CompanyService.create(null as any, context.userId, data));
+  .handler(({ data, context }) => CompanyService.create(getDb(context), context.userId, data));
 
 export const updateCompanyFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
@@ -47,26 +50,26 @@ export const updateCompanyFn = createServerFn({ method: "POST" })
   )
   .handler(({ data, context }) => {
     const { id, ...patch } = data;
-    return CompanyService.update(null as any, context.userId, id, patch);
+    return CompanyService.update(getDb(context), context.userId, id, patch);
   });
 
 export const deleteCompanyFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.delete(null as any, context.userId, data.id));
+  .handler(({ data, context }) => CompanyService.delete(getDb(context), context.userId, data.id));
 
 export const getCompanyFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.get(null as any, data.id));
+  .handler(({ data, context }) => CompanyService.get(getDb(context), data.id));
 
 export const listCompaniesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(({ context }) => CompanyService.list(null as any, context.userId));
+  .handler(({ context }) => CompanyService.list(getDb(context), context.userId));
 
 export const listVisibleCompaniesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(({ context }) => CompanyService.listVisible(null as any));
+  .handler(({ context }) => CompanyService.listVisible(getDb(context)));
 
 // Public projection by slug (no auth). Builds the anon publishable client.
 export const getPublicCompanyFn = createServerFn({ method: "GET" })
@@ -95,17 +98,17 @@ export const inviteCompanyMemberFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(({ data, context }) =>
-    CompanyService.inviteMember(null as any, context.userId, data),
+    CompanyService.inviteMember(getDb(context), context.userId, data),
   );
 
 export const listCompanyMembersFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ companyId: z.string().uuid() }).parse(d))
-  .handler(({ data, context }) => CompanyService.listMembers(null as any, data.companyId));
+  .handler(({ data, context }) => CompanyService.listMembers(getDb(context), data.companyId));
 
 export const removeCompanyMemberFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(({ data, context }) =>
-    CompanyService.removeMember(null as any, context.userId, data.id),
+    CompanyService.removeMember(getDb(context), context.userId, data.id),
   );

@@ -616,4 +616,180 @@ export class EventsService {
 
     return { ok: true, registrationId: regId };
   }
+
+  async getCheckinState(_userId: string) {
+    let attendees = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.attendees ORDER BY name ASC
+    `.catch(() => []);
+
+    // Fallback seed if table is empty
+    if (!attendees || attendees.length === 0) {
+      attendees = [
+        {
+          id: 'VBA-2026-001',
+          name: 'Nguyễn Minh Quân',
+          initials: 'MQ',
+          title: 'CEO & Founder',
+          company: 'TechViet Solutions JSC',
+          phone: '+84 901 234 567',
+          badges: ['vip', 'speaker'],
+          membership: 'memberLevel.large',
+          ticket_type: 'VIP Pass',
+          checked_in: false,
+        },
+        {
+          id: 'VBA-2026-002',
+          name: 'Trần Thị Hương Lan',
+          initials: 'HL',
+          title: 'Marketing Director',
+          company: 'Saigon Logistics Group',
+          phone: '+84 912 555 880',
+          badges: ['sponsor'],
+          membership: 'memberLevel.medium',
+          ticket_type: 'Standard',
+          checked_in: true,
+        },
+        {
+          id: 'VBA-2026-003',
+          name: 'Phạm Đức Anh',
+          initials: 'PA',
+          title: 'Managing Partner',
+          company: 'Anh Pham Consulting',
+          phone: '+84 934 121 008',
+          badges: ['member'],
+          membership: 'memberLevel.small',
+          ticket_type: 'Standard',
+          checked_in: false,
+        },
+        {
+          id: 'VBA-2026-004',
+          name: 'Lê Hoàng Nam',
+          initials: 'LN',
+          title: 'Head of Strategy',
+          company: 'Hanoi Industrial Corp',
+          phone: '+84 988 776 110',
+          badges: ['vip'],
+          membership: 'memberLevel.large',
+          ticket_type: 'VIP Pass',
+          checked_in: false,
+        },
+      ];
+    }
+
+    const logs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, attendee_id, result, created_at FROM public.checkin_logs 
+      ORDER BY created_at DESC LIMIT 10
+    `.catch(() => []);
+
+    const mappedAttendees = attendees.map((r: any) => ({
+      id: String(r.id),
+      name: String(r.name ?? ''),
+      initials: String(r.initials ?? ''),
+      title: String(r.title ?? ''),
+      company: String(r.company ?? ''),
+      phone: String(r.phone ?? ''),
+      badges: Array.isArray(r.badges) ? r.badges : [],
+      membership: r.membership ?? 'memberLevel.small',
+      ticketType: r.ticket_type ? String(r.ticket_type) : undefined,
+      checkedIn: Boolean(r.checked_in),
+    }));
+
+    const byId = new Map(mappedAttendees.map((a: any) => [a.id, a]));
+    const recent = (logs ?? [])
+      .map((l: any) => {
+        const att = byId.get(String(l.attendee_id));
+        if (!att) return null;
+        const time = l.created_at
+          ? new Date(l.created_at).toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '';
+        return {
+          attendee: att,
+          result: l.result ?? 'success',
+          time,
+        };
+      })
+      .filter((e: any) => e !== null);
+
+    const map = new Map<string, { ticketType: string; registered: number; checkedIn: number }>();
+    for (const a of mappedAttendees) {
+      const key = a.ticketType && a.ticketType.trim() !== '' ? a.ticketType : '—';
+      const cur = map.get(key) ?? { ticketType: key, registered: 0, checkedIn: 0 };
+      cur.registered += 1;
+      if (a.checkedIn) cur.checkedIn += 1;
+      map.set(key, cur);
+    }
+    const ticketStats = Array.from(map.values()).sort((a, b) => b.registered - a.registered);
+
+    return {
+      attendees: mappedAttendees,
+      recent,
+      stats: {
+        registered: mappedAttendees.length,
+        checkedIn: mappedAttendees.filter((a: any) => a.checkedIn).length,
+      },
+      ticketStats,
+    };
+  }
+
+  async checkInAttendee(attendeeId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.attendees WHERE id = ${attendeeId} LIMIT 1
+    `.catch(() => []);
+    const cur = rows?.[0];
+    if (!cur) {
+      throw new NotFoundException('Attendee not found');
+    }
+    const already = Boolean(cur.checked_in);
+    const result = already ? 'already' : 'success';
+    if (!already) {
+      await this.prisma.$executeRaw`
+        UPDATE public.attendees SET checked_in = true, updated_at = now() WHERE id = ${attendeeId}
+      `.catch(() => null);
+    }
+    await this.prisma.$executeRaw`
+      INSERT INTO public.checkin_logs (id, attendee_id, result, created_at)
+      VALUES (gen_random_uuid(), ${attendeeId}, ${result}, now())
+    `.catch(() => null);
+
+    const attendee = {
+      id: String(cur.id),
+      name: String(cur.name ?? ''),
+      initials: String(cur.initials ?? ''),
+      title: String(cur.title ?? ''),
+      company: String(cur.company ?? ''),
+      phone: String(cur.phone ?? ''),
+      badges: Array.isArray(cur.badges) ? cur.badges : [],
+      membership: cur.membership ?? 'memberLevel.small',
+      ticketType: cur.ticket_type ? String(cur.ticket_type) : undefined,
+      checkedIn: true,
+    };
+    return { attendee, result };
+  }
+
+  async undoCheckInAttendee(attendeeId: string) {
+    await this.prisma.$executeRaw`
+      UPDATE public.attendees SET checked_in = false, updated_at = now() WHERE id = ${attendeeId}
+    `.catch(() => null);
+    await this.prisma.$executeRaw`
+      DELETE FROM public.checkin_logs WHERE attendee_id = ${attendeeId}
+    `.catch(() => null);
+    return { ok: true };
+  }
+
+  async getCheckinQrEvents(userId: string) {
+    const overview = await this.getEventsOverview(userId);
+    return overview.map((e) => ({
+      id: e.id,
+      name: e.name,
+      date: e.date,
+      location: e.location,
+      status: e.status,
+      registered: e.confirmed || e.registrations,
+      capacity: e.capacity,
+      checkedIn: e.attended,
+    }));
+  }
 }

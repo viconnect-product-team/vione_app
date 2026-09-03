@@ -6,6 +6,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 import {
   resolveAccountStatus,
   resolveActiveAssociationContext,
@@ -27,7 +30,7 @@ import type {
 export const getActiveAssociationContextFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<ActiveAssociationContext | null> => {
-    return resolveActiveAssociationContext(null as any, context.userId);
+    return resolveActiveAssociationContext(getDb(context), context.userId);
   });
 
 /**
@@ -37,7 +40,7 @@ export const getActiveAssociationContextFn = createServerFn({ method: "GET" })
 export const getActiveMemberIdFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ memberId: string | null }> => {
-    return { memberId: await resolveActiveMemberId(null as any) };
+    return { memberId: await resolveActiveMemberId(getDb(context)) };
   });
 
 /**
@@ -50,12 +53,12 @@ export const setActiveAssociationContextFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ associationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<ActiveAssociationContext | null> => {
-    const { error } = await (null as any).rpc("set_active_association", {
+    const { error } = await (getDb(context)).rpc("set_active_association", {
       _association_id: data.associationId,
     });
     // set_active_association raises when the user is not a member of the target.
     if (error) throw new Error(error.message);
-    return resolveActiveAssociationContext(null as any, context.userId);
+    return resolveActiveAssociationContext(getDb(context), context.userId);
   });
 
 /**
@@ -66,7 +69,7 @@ export const setActiveAssociationContextFn = createServerFn({ method: "POST" })
 export const getAccountStatusFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AccountStatusResult> => {
-    const accountStatus = await resolveAccountStatus(null as any, context.userId);
+    const accountStatus = await resolveAccountStatus(getDb(context), context.userId);
     return {
       userId: context.userId,
       accountStatus,
@@ -84,5 +87,5 @@ export const resolveBusinessCardOwnerContextFn = createServerFn({ method: "GET" 
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ cardId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }): Promise<BusinessCardOwnerContext> => {
-    return resolveBusinessCardOwnerContext(null as any, data.cardId);
+    return resolveBusinessCardOwnerContext(getDb(context), data.cardId);
   });

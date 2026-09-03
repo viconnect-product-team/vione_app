@@ -1,14 +1,8 @@
-// BC-7.9 Turn A — Authenticated server-function adapters for outcome domain.
-// Every function runs under requireSupabaseAuth (RLS as caller). No admin
-// client, no client-supplied recorded_by_user_id.
-
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { MeetingOutcomeService } from "./service.server";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 import { MEETING_OUTCOME_TYPES } from "./types";
-
-type Ctx = { supabase: unknown; userId: string };
 
 const uuid = z.string().uuid();
 const outcomeType = z.enum(MEETING_OUTCOME_TYPES);
@@ -37,21 +31,18 @@ export const getMeetingOutcomeFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ meetingId: uuid }).parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-
-    return MeetingOutcomeService.getOutcome(c.supabase as any, c.userId, data.meetingId);
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/${data.meetingId}/outcome`, token);
   });
 
 export const createMeetingOutcomeFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    return MeetingOutcomeService.createOutcome(c.supabase as any, c.userId, {
-      meetingId: data.meetingId,
-      outcomeType: data.outcomeType,
-      summary: data.summary ?? null,
-      clientRequestId: data.clientRequestId ?? null,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/${data.meetingId}/outcome`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -59,13 +50,10 @@ export const updateMeetingOutcomeFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => updateSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    return MeetingOutcomeService.updateOutcome(c.supabase as any, c.userId, {
-      meetingId: data.meetingId,
-      expectedVersion: data.expectedVersion,
-      outcomeType: data.outcomeType ?? undefined,
-      summary: data.summary ?? undefined,
-      clearSummary: data.clearSummary ?? false,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/${data.meetingId}/outcome`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   });
 
@@ -73,9 +61,10 @@ export const finalizeMeetingOutcomeFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => finalizeSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const c = context as unknown as Ctx;
-    return MeetingOutcomeService.finalizeOutcome(c.supabase as any, c.userId, {
-      meetingId: data.meetingId,
-      expectedVersion: data.expectedVersion,
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/meetings/${data.meetingId}/outcome`, token, {
+      method: "POST",
+      body: JSON.stringify({ ...data, outcomeStatus: "finalized" }),
     });
   });
+

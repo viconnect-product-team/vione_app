@@ -2,12 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { FeeRecord, ReminderEntry } from "./fees-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { mapInvoice, mapReminder, type Row } from "./fees-calc";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export const listInvoicesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<FeeRecord[]> => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("invoices")
       .select("*, member:members(*)")
       .order("invoice_no", { ascending: true });
@@ -23,14 +26,14 @@ export const getInvoiceFn = createServerFn({ method: "GET" })
       data,
       context,
     }): Promise<{ invoice: FeeRecord; reminders: ReminderEntry[] } | null> => {
-      const { data: row, error } = await (null as any)
+      const { data: row, error } = await getDb(context)
         .from("invoices")
         .select("*, member:members(*)")
         .eq("id", data.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
       if (!row) return null;
-      const { data: rem, error: rErr } = await (null as any)
+      const { data: rem, error: rErr } = await getDb(context)
         .from("invoice_reminders")
         .select("*")
         .eq("invoice_id", data.id)
@@ -51,7 +54,7 @@ export const markInvoicePaidFn = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1).max(128), method: methodSchema }).parse(d),
   )
   .handler(async ({ data, context }): Promise<FeeRecord | null> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("invoices")
       .update({
         status: "paid",
@@ -63,7 +66,7 @@ export const markInvoicePaidFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
-    await (null as any)
+    await getDb(context)
       .from("members")
       .update({ fee_paid: true })
       .eq("id", (row as Row).member_id as string);
@@ -76,7 +79,7 @@ export const updateInvoiceMethodFn = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1).max(128), method: methodSchema }).parse(d),
   )
   .handler(async ({ data, context }): Promise<FeeRecord | null> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("invoices")
       .update({ method: data.method })
       .eq("id", data.id)
@@ -98,7 +101,7 @@ export const addReminderFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<ReminderEntry> => {
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("invoice_reminders")
       .insert({
         invoice_id: data.invoiceId,
@@ -127,7 +130,7 @@ export const createInvoiceFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<FeeRecord> => {
     const id = `INV-${Date.now().toString(36).toUpperCase()}`;
     const invoiceNo = `HD-${data.year}-${Date.now().toString(36).toUpperCase().slice(-5)}`;
-    const { data: row, error } = await (null as any)
+    const { data: row, error } = await getDb(context)
       .from("invoices")
       .insert({
         id,
@@ -148,7 +151,7 @@ export const deleteInvoiceFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await (null as any).from("invoices").delete().eq("id", data.id);
+    const { error } = await getDb(context).from("invoices").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

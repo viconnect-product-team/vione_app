@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CardKind, CardStatus, PublicMode } from "@/lib/business-card.functions";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // Business-card admin permission tiers.
 //  - full: platform/association admins → all actions incl. archive.
@@ -13,11 +16,48 @@ export type BcAdminLevel = "full" | "moderator" | "viewer" | "none";
 // Statuses a moderator may set (archive is destructive → full only).
 const MODERATOR_STATUSES: CardStatus[] = ["draft", "published", "hidden", "suspended", "rejected"];
 
-async function resolveLevel(supabase: {
-  rpc: (fn: "my_bc_admin_level") => PromiseLike<{ data: unknown }>;
-}): Promise<BcAdminLevel> {
-  const { data } = await supabase.rpc("my_bc_admin_level");
-  return (data as BcAdminLevel) ?? "none";
+async function resolveLevel(supabase: any, userId?: string): Promise<BcAdminLevel> {
+  if (!userId) {
+    try {
+      const { data } = await supabase.rpc("my_bc_admin_level");
+      return (data as BcAdminLevel) ?? "none";
+    } catch {
+      return "none";
+    }
+  }
+
+  try {
+    // 1. Check if user is platform admin or association admin
+    const [{ data: globalRoles }, { data: adminMemberships }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase
+        .from("memberships")
+        .select("association_id")
+        .eq("user_id", userId)
+        .eq("role", "admin"),
+    ]);
+
+    const roles = (globalRoles ?? []).map((r: any) => r.role);
+    if (roles.includes("platform_admin") || (adminMemberships ?? []).length > 0) {
+      return "full";
+    }
+
+    // 2. Check rpc bc_admin_level with _uid
+    const { data: rpcLevel } = await supabase.rpc("bc_admin_level", { _uid: userId });
+    if (rpcLevel && rpcLevel !== "none") return rpcLevel as BcAdminLevel;
+
+    // 3. Check bc_admin_grants
+    const { data: grant } = await supabase
+      .from("bc_admin_grants")
+      .select("level")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (grant?.level) return grant.level as BcAdminLevel;
+  } catch (err) {
+    console.error("[resolveLevel] error checking level:", err);
+  }
+
+  return "none";
 }
 
 function assertCanSetStatus(level: BcAdminLevel, status: CardStatus): void {
@@ -72,7 +112,8 @@ export type AdminBusinessCard = {
 export const listAllBusinessCardsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminBusinessCard[]> => {
-    const { userId } = context; const supabase: any = null as any;
+    const { userId } = context;
+    const supabase = getDb(context);
 
     // Authorize server-side: only platform admins or association admins may use
     // this admin listing. Without this, RLS still hides private rows, but the
@@ -168,8 +209,8 @@ export const adminSetCardStatusFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<void> => {
-    const supabase: any = null as any;
-    assertCanSetStatus(await resolveLevel(supabase), data.status as CardStatus);
+    const supabase = getDb(context);
+    assertCanSetStatus(await resolveLevel(supabase, context.userId), data.status as CardStatus);
     const patch: { status: string; published_at?: string } = { status: data.status };
     if (data.status === "published") patch.published_at = new Date().toISOString();
     const { error } = await supabase.from("member_business_cards").update(patch).eq("id", data.id);
@@ -189,8 +230,8 @@ export const adminSetCardsStatusFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<number> => {
-    const supabase: any = null as any;
-    assertCanSetStatus(await resolveLevel(supabase), data.status as CardStatus);
+    const supabase = getDb(context);
+    assertCanSetStatus(await resolveLevel(supabase, context.userId), data.status as CardStatus);
     const patch: { status: string; published_at?: string } = { status: data.status };
     if (data.status === "published") patch.published_at = new Date().toISOString();
     const { data: updated, error } = await supabase
@@ -206,7 +247,7 @@ export const adminSetCardsStatusFn = createServerFn({ method: "POST" })
 export const getMyBcAdminLevelFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<BcAdminLevel> => {
-    return resolveLevel(null as any);
+    return resolveLevel(getDb(context), context.userId);
   });
 
 // Change history for a single card, read from the moderation audit trail.
@@ -225,7 +266,7 @@ export const listCardAuditFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ cardId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<CardAuditEntry[]> => {
-    const supabase: any = null as any;
+    const supabase = getDb(context);
     const { data: rows, error } = await supabase
       .from("business_card_audit")
       .select("id, event_type, reason, metadata, actor_user_id, created_at")
@@ -296,7 +337,8 @@ export const listBusinessCardAuditLogFn = createServerFn({ method: "GET" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<AuditLogEntry[]> => {
-    const { userId } = context; const supabase: any = null as any;
+    const { userId } = context;
+    const supabase = getDb(context);
 
     // Authorize + scope server-side (mirrors listAllBusinessCardsFn).
     const [{ data: isPlatformAdmin }, { data: adminMemberships }] = await Promise.all([

@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 /**
  * AI provider settings — Phase 10.
@@ -27,7 +30,7 @@ export type AiProviderSetting = {
 };
 
 async function assertPlatformAdmin(context: { supabase?: any; userId?: string; token?: string }) {
-  const { data, error } = await (null as any).rpc("is_platform_admin");
+  const { data, error } = await getDb(context).rpc("is_platform_admin");
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
@@ -35,7 +38,7 @@ async function assertPlatformAdmin(context: { supabase?: any; userId?: string; t
 export const getAiProviderSettingFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AiProviderSetting> => {
-    const { data, error } = await (null as any)
+    const { data, error } = await getDb(context)
       .from("app_settings")
       .select("value, updated_at")
       .eq("key", AI_PROVIDER_SETTING_KEY)
@@ -60,7 +63,7 @@ export const setAiProviderSettingFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<AiProviderSetting> => {
     await assertPlatformAdmin(context);
 
-    const { error } = await (null as any).from("app_settings").upsert(
+    const { error } = await getDb(context).from("app_settings").upsert(
       {
         key: AI_PROVIDER_SETTING_KEY,
         value: { mode: data.mode },

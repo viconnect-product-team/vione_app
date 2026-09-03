@@ -95,7 +95,7 @@ export function NetworkFeedCard({
   const place = item.placeLabel ?? item.eventName;
 
   return (
-    <li className="rounded-xl border border-solid border-[#ea9a4126] bg-[#251e18] p-3 transition-colors duration-150 ease-out hover:border-[#ea9a4166] motion-reduce:transition-none">
+    <li className="rounded-xl border border-solid border-[#ea9a4126] bg-[#0c1522] p-3 transition-colors duration-150 ease-out hover:border-[#ea9a4166] motion-reduce:transition-none shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
       <Link
         to="/connect-app/network/$personId"
         params={{ personId: item.personId }}
@@ -114,7 +114,7 @@ export function NetworkFeedCard({
           ) : (
             <span
               aria-hidden="true"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#251e18] text-sm font-medium text-[#f2efe9] border border-solid border-[#ea9a4126]"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#08101b] text-sm font-medium text-[#f2efe9] border border-solid border-[#ea9a4126]"
             >
               {initialsOf(person?.displayName ?? null)}
             </span>
@@ -129,7 +129,7 @@ export function NetworkFeedCard({
                 <span
                   title={t("bc.mobile.network.feed.verified")}
                   aria-label={t("bc.mobile.network.feed.verified")}
-                  className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[#ffb971] text-[10px] font-bold leading-none text-[#ffb971]"
+                  className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[#DFB260] text-[10px] font-bold leading-none text-[#DFB260]"
                 >
                   V
                 </span>

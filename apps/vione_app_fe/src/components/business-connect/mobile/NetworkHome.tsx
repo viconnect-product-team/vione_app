@@ -124,10 +124,10 @@ export function NetworkHome() {
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-t border-solid border-[#ffffff14] bg-[#1e1c18f2] backdrop-blur-md px-5 py-3 -mx-4">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#ea9a4126] bg-[#050c15f2] backdrop-blur-md px-5 py-3 -mx-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
-          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#d8c3b1]">
+          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
             {getVNTimeGreeting()}
           </p>
         </div>
@@ -151,9 +151,9 @@ export function NetworkHome() {
             <Link
               to="/connect-app/card-scan"
               aria-label={t("bc.mobile.network.addPerson")}
-              className="grid h-10 w-10 place-items-center rounded-full text-[#d8c3b1] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#251e18]"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#D4C3A3] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#0c1522] hover:border-[#ea9a4170]"
             >
-              <UserPlus className="h-5 w-5" strokeWidth={1.8} />
+              <UserPlus className="h-4.5 w-4.5" strokeWidth={1.8} />
             </Link>
           </div>
           <p className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] mt-[-0.5px]">
@@ -166,13 +166,13 @@ export function NetworkHome() {
             >
               •
             </span>
-            <span className="mt-[-1.00px] [font-family:'Inter-Light',Helvetica] font-light text-[#ffb971] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
+            <span className="mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-[#DFB260] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
               {recommendations.length} cần chăm sóc
             </span>
           </p>
         </header>
 
-        {/* A2 — Tab categories cuộn ngang xuất từ Figma */}
+        {/* A2 — Tab categories cuộn ngang */}
         <nav
           className="mt-4 flex items-start gap-2 px-0 py-1 relative self-stretch w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Network categories"
@@ -186,15 +186,15 @@ export function NetworkHome() {
                 type="button"
                 onClick={() => setTab(tabItem.id as any)}
                 aria-pressed={isActive}
-                className={`all-unset box-border inline-flex flex-col px-4 py-1.5 flex-[0_0_auto] rounded-full border items-center justify-center relative border-solid transition-colors duration-200 ${
+                className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-[#ffb97133] border-[#ffb9714c]"
-                    : "bg-[#251e18] border-[#ea9a4126]"
+                    ? "bg-[#DFB260]/15 border-[#DFB260]/40 shadow-[0_2px_8px_rgba(223,178,96,0.12)]"
+                    : "bg-[#0c1522] border-[#ea9a4126] hover:border-[#ea9a4166]"
                 }`}
               >
                 <span
-                  className={`justify-center [font-family:'Inter-Medium',Helvetica] font-medium text-sm text-center leading-5 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
-                    isActive ? "text-[#ffb971]" : "text-[#d8c3b1]"
+                  className={`[font-family:'Inter-Medium',Helvetica] text-xs text-center leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
+                    isActive ? "text-[#DFB260] font-semibold" : "text-[#D4C3A3] font-normal"
                   }`}
                 >
                   {tabItem.label}
@@ -209,7 +209,7 @@ export function NetworkHome() {
         ) : (
         <>
 
-        {/* B — Ô tìm kiếm + bộ lọc xuất từ Figma */}
+        {/* B — Ô tìm kiếm + bộ lọc */}
         <form
           className="mt-4 flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]"
           role="search"
@@ -222,7 +222,7 @@ export function NetworkHome() {
             />
           <div className="relative shrink-0">
             <button
-              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#251e18] rounded-lg border border-solid border-[#ea9a4126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea9a41] hover:border-[#ffb971] transition-colors"
+              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#0c1522] rounded-lg border border-solid border-[#ea9a4126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea9a41] hover:border-[#DFB260] transition-colors"
               type="button"
               aria-label="Mở bộ lọc tìm kiếm"
               aria-pressed={sortOpen}
@@ -304,15 +304,30 @@ export function NetworkHome() {
             {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network hoặc suggestions */}
             {(tab === "network" || tab === "suggestions") && (
               <>
-                <NetworkAiMatchStrip peopleById={peopleById} allowedIds={allowedIds} />
-                <NetworkNurtureList allowedIds={allowedIds} />
+                <NetworkAiMatchStrip
+                  peopleById={peopleById}
+                  allowedIds={allowedIds}
+                  onViewAll={() => setTab("suggestions")}
+                />
+                <NetworkNurtureList
+                  allowedIds={allowedIds}
+                  onViewAll={() => setTab("suggestions")}
+                />
               </>
             )}
 
             {/* Gặp gần đây và Feed cuộc gặp - Chỉ hiển thị khi tab là network */}
             {tab === "network" && (
               <>
-                {!narrowed && recent.length > 0 ? <NetworkRecentStrip people={recent} /> : null}
+                {!narrowed && recent.length > 0 ? (
+                  <NetworkRecentStrip
+                    people={recent}
+                    onViewAll={() => {
+                      setTab("network");
+                      setFilter("all");
+                    }}
+                  />
+                ) : null}
 
                 {/* Ghi khoảnh khắc nhanh */}
                 {!narrowed ? (
@@ -338,10 +353,10 @@ export function NetworkHome() {
                     </Link>
                     <Link
                       to="/connect-app/card-scan"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] transition-colors hover:text-[var(--bc-mobile-accent)]"
                       aria-label={t("bc.mobile.network.compose.scan")}
-                      className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
                     >
-                      <Camera className="h-[21px] w-[21px]" strokeWidth={1.7} />
+                      <Camera className="h-5 w-5" strokeWidth={1.8} />
                     </Link>
                   </div>
                 ) : null}
@@ -434,20 +449,17 @@ export function NetworkHome() {
   );
 }
 
-/**
- * "AI Match – Nên kết nối hôm nay" — dải ngang gợi ý quan hệ (6A).
- * Chỉ hiển thị dữ liệu xác định: số ngày từ lần gặp gần nhất + gợi ý của V.
- */
-/**
- * "AI Match – Nên kết nối hôm nay" — dải ngang gợi ý quan hệ (6A).
- * Chỉ hiển thị dữ liệu xác định: số ngày từ lần gặp gần nhất + gợi ý của V.
- */
+// ── Subcomponents ────────────────────────────────────────────────────────────
+
+/** Dải ngang gợi ý quan hệ 6A ("AI Match"). */
 function NetworkAiMatchStrip({
   peopleById,
   allowedIds,
+  onViewAll,
 }: {
   peopleById: Map<string, BcMobileNetworkPerson>;
   allowedIds: Set<string> | null;
+  onViewAll?: () => void;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -455,8 +467,10 @@ function NetworkAiMatchStrip({
   const recommendations = allowedIds
     ? all.filter((r) => allowedIds.has(r.person.personId))
     : all;
+
   const [openId, setOpenId] = useState<string | null>(null);
   const active = recommendations.find((r) => r.id === openId) ?? null;
+
   const targetFor = (personId: string) => {
     const person = peopleById.get(personId);
     return {
@@ -469,20 +483,23 @@ function NetworkAiMatchStrip({
   return (
     <section aria-label={t("bc.mobile.network.aimatch.title")} className="mt-5">
       <div className="flex items-center justify-between w-full gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#ffb971e6]">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#DFB260]">
           <Sparkles
             aria-hidden="true"
-            className="h-[12.83px] w-[12.83px] shrink-0 text-[#ffb971e6] fill-current"
+            className="h-[13px] w-[13px] shrink-0 text-[#DFB260] fill-current"
           />
-          <span className="truncate leading-5">{t("bc.mobile.network.aimatch.title")}</span>
+          <span className="truncate leading-5 text-[#f5f7fa]">{t("bc.mobile.network.aimatch.title")}</span>
         </h2>
-        <Link
-          to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
-        >
-          {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" />
-        </Link>
+        {onViewAll ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+          >
+            {t("bc.mobile.network.recent.viewAll")}
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+          </button>
+        ) : null}
       </div>
 
       <ul className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -500,7 +517,7 @@ function NetworkAiMatchStrip({
               <button
                 type="button"
                 onClick={() => setOpenId(rec.id)}
-                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#251e18] rounded-xl p-3 border border-solid border-[#ea9a4126] hover:border-[#ea9a4166] text-left transition-colors box-border"
+                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#0c1522] rounded-xl p-3 border border-solid border-[#ea9a4126] hover:border-[#DFB260]/50 text-left transition-colors box-border"
               >
                 <div className="flex items-center gap-3 w-full">
                   <img
@@ -519,7 +536,7 @@ function NetworkAiMatchStrip({
                   </div>
                 </div>
                 <div className="pt-1 w-full">
-                  <span className="font-light text-[10px] text-[#ffb971] leading-[15px] block truncate">
+                  <span className="font-light text-[10px] text-[#DFB260] leading-[15px] block truncate">
                     {daysText}
                   </span>
                 </div>
@@ -541,7 +558,13 @@ function NetworkAiMatchStrip({
 
 
 /** "Cần giữ kết nối" — danh sách quan hệ đã lâu chưa liên hệ (6A). */
-function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) {
+function NetworkNurtureList({
+  allowedIds,
+  onViewAll,
+}: {
+  allowedIds: Set<string> | null;
+  onViewAll?: () => void;
+}) {
   const t = useT();
   const { lang } = useLang();
   const all = useTodayRelationshipRecommendations(lang).recommendations;
@@ -564,22 +587,25 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
   return (
     <section aria-label={t("bc.mobile.network.nurture.title")} className="mt-5">
       <div className="flex items-center justify-between w-full gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#d8c3b1cc]">
-          <Bell aria-hidden="true" className="h-[11.67px] w-[9.33px] shrink-0 text-[#d8c3b1cc]" />
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#f5f7fa]">
+          <Bell aria-hidden="true" className="h-[12px] w-[10px] shrink-0 text-[#DFB260]" />
           <span className="truncate leading-5">
             {t("bc.mobile.network.nurture.title")} ({recommendations.length})
           </span>
         </h2>
-        <Link
-          to="/connect-app"
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
-        >
-          {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" />
-        </Link>
+        {onViewAll ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+          >
+            {t("bc.mobile.network.recent.viewAll")}
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+          </button>
+        ) : null}
       </div>
 
-      <div className="mt-3 flex flex-col w-full bg-[#251e18] rounded-xl border border-solid border-[#ea9a4126] overflow-hidden box-border">
+      <div className="mt-3 flex flex-col w-full bg-[#0c1522] rounded-xl border border-solid border-[#ea9a4126] overflow-hidden box-border">
         {items.map((rec, index) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]
@@ -594,8 +620,8 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
               key={rec.id}
               to="/connect-app/network/$personId"
               params={{ personId: rec.person.personId }}
-              className={`flex items-center justify-between gap-3 p-3 hover:bg-[#251e18] transition-colors ${
-                index !== items.length - 1 ? "border-b border-solid border-[#ea9a4180]" : ""
+              className={`flex items-center justify-between gap-3 p-3 hover:bg-[#0f1826] transition-colors ${
+                index !== items.length - 1 ? "border-b border-solid border-[#ea9a4120]" : ""
               }`}
             >
               <img
@@ -611,11 +637,11 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
                 <span className="font-light text-[11px] text-[#d8c3b1] truncate">
                   {roleLine}
                 </span>
-                <span className="font-light text-[10px] text-[#ffb971] mt-0.5 block truncate">
+                <span className="font-light text-[10px] text-[#DFB260] mt-0.5 block truncate">
                   {daysText}
                 </span>
               </div>
-              <ChevronRight className="w-[5.5px] h-[9px] text-[#d8c3b1] shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-[#d8c3b1] shrink-0" />
             </Link>
           );
         })}
@@ -628,7 +654,13 @@ function NetworkNurtureList({ allowedIds }: { allowedIds: Set<string> | null }) 
  * "GẶP GẦN ĐÂY" — dải ngang ảnh tròn theo thứ tự thời gian gặp gần nhất.
  * Cùng nguồn dữ liệu chuẩn, không có nguồn song song, không suy đoán hiện diện.
  */
-function NetworkRecentStrip({ people }: { people: BcMobileNetworkPerson[] }) {
+function NetworkRecentStrip({
+  people,
+  onViewAll,
+}: {
+  people: BcMobileNetworkPerson[];
+  onViewAll?: () => void;
+}) {
   const t = useT();
   const fmt = useFmt();
   return (
@@ -637,13 +669,16 @@ function NetworkRecentStrip({ people }: { people: BcMobileNetworkPerson[] }) {
         <h2 className="text-[10px] font-medium tracking-[1px] uppercase text-[#d8c3b1cc]">
           {t("bc.mobile.network.recent.title")}
         </h2>
-        <Link
-          to="/connect-app"
-          className="inline-flex items-center gap-1 text-xs font-medium text-[#d8c3b1] hover:text-[#ffb971] transition-colors leading-4"
-        >
-          {t("bc.mobile.network.recent.viewAll")}
-          <ChevronRight aria-hidden="true" className="h-4 w-4 text-[#d8c3b1]" />
-        </Link>
+        {onViewAll ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+          >
+            {t("bc.mobile.network.recent.viewAll")}
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+          </button>
+        ) : null}
       </div>
       <ul className="mt-3 flex snap-x gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {people.map((person, index) => {
@@ -660,7 +695,7 @@ function NetworkRecentStrip({ people }: { people: BcMobileNetworkPerson[] }) {
                 <div
                   className={`w-12 h-12 rounded-full p-[2px] flex items-center justify-center box-border ${
                     isFirst
-                      ? "border-2 border-solid border-[#ffb971]"
+                      ? "border-2 border-solid border-[#DFB260]"
                       : "border border-solid border-[#ea9a4126]"
                   }`}
                 >
