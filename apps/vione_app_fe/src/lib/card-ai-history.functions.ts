@@ -1,10 +1,10 @@
 // AI card import history — persist each generated suggestion so users can
-// revisit and compare them later. Thumbnails are downscaled data URLs sent
-// from the client; the full suggestion JSON is stored as-is.
+// revisit and compare them later.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 
 const MAX_THUMB_BYTES = 400 * 1024; // ~400KB thumbnail cap
 
@@ -23,7 +23,6 @@ const SaveInput = z.object({
 export type CardAiHistoryEntry = {
   id: string;
   thumbnail: string;
-
   suggestion: Record<string, any>;
   templateId: string | null;
   qrBackground: string | null;
@@ -32,62 +31,40 @@ export type CardAiHistoryEntry = {
   createdAt: string;
 };
 
-function mapRow(r: Record<string, any>): CardAiHistoryEntry {
-  return {
-    id: r.id as string,
-    thumbnail: r.thumbnail as string,
-    suggestion: (r.suggestion ?? {}) as Record<string, unknown>,
-    templateId: (r.template_id as string | null) ?? null,
-    qrBackground: (r.qr_background as string | null) ?? null,
-    appliedAt: (r.applied_at as string | null) ?? null,
-    note: (r.note as string | null) ?? null,
-    createdAt: r.created_at as string,
-  };
-}
-
 export const saveCardAiHistory = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => SaveInput.parse(d))
   .handler(async ({ data, context }): Promise<CardAiHistoryEntry> => {
-    const { userId } = context; const supabase: any = null as any;
-    const row = {
-      user_id: userId,
-      thumbnail: data.thumbnail,
-
-      suggestion: data.suggestion as any,
-      template_id: data.templateId ?? null,
-      qr_background: data.qrBackground ?? null,
-      applied_at: data.applied ? new Date().toISOString() : null,
-      note: data.note ?? null,
-    };
-    const { data: inserted, error } = await supabase
-      .from("card_ai_import_history")
-      .insert(row)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    return mapRow(inserted as unknown as Record<string, unknown>);
+    return await fetchNestApiFromServer<CardAiHistoryEntry>(
+      "/business-cards/ai-history",
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
   });
 
 export const listCardAiHistory = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<CardAiHistoryEntry[]> => {
-    const supabase: any = null as any;
-    const { data, error } = await supabase
-      .from("card_ai_import_history")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r: any) => mapRow(r as unknown as Record<string, unknown>));
+    try {
+      const res = await fetchNestApiFromServer<CardAiHistoryEntry[]>(
+        "/business-cards/ai-history",
+        context.token,
+      );
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   });
 
 export const deleteCardAiHistory = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const supabase: any = null as any;
-    const { error } = await supabase.from("card_ai_import_history").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await fetchNestApiFromServer(`/business-cards/ai-history/${data.id}`, context.token, {
+      method: "DELETE",
+    });
     return { ok: true as const };
   });

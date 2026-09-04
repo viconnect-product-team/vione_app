@@ -56,7 +56,6 @@ import {
 } from "@/lib/marketplace.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/marketplace/$productId")({
   validateSearch: (search: Record<string, unknown>): { quote?: boolean } =>
@@ -577,18 +576,12 @@ function ProductDetailContent({
     }
   };
 
-  // Realtime: refresh quote requests when they change in the database
+  // Polling: refresh quote requests every 15 s (replaces Supabase realtime channel)
   useEffect(() => {
-    const channel = supabase
-      .channel(`quotes-${product.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "quote_requests" }, () =>
-        reload(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [reload, product.id]);
+    const id = setInterval(() => reload(), 15_000);
+    return () => clearInterval(id);
+  }, [reload]);
+
 
   const seller = getSeller(product.sellerId);
   const isMine = product.sellerId === CURRENT_USER_ID;

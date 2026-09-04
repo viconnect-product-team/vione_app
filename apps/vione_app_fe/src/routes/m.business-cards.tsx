@@ -1235,7 +1235,7 @@ function LeadReplyBlock({
             <li key={i} className="rounded-lg bg-card/5 p-3">
               <div className="mb-1 flex items-center gap-2 text-[11px] text-[var(--vba-text-dim)]">
                 <span className="rounded-full bg-[var(--vba-gold)]/15 px-2 py-0.5 font-semibold text-[var(--vba-gold)]">
-                  {t(REPLY_CHANNEL_KEY[r.channel])}
+                  {t(REPLY_CHANNEL_KEY[r.channel as ReplyChannel])}
                 </span>
                 {r.subject ? (
                   <span className="truncate font-semibold text-[var(--vba-text)]">{r.subject}</span>
@@ -1283,7 +1283,7 @@ function LeadReplyBlock({
                     : "bg-card/5 text-[var(--vba-text-dim)] hover:bg-card/10"
                 }`}
               >
-                {t(REPLY_CHANNEL_KEY[c])}
+                {t(REPLY_CHANNEL_KEY[c as ReplyChannel])}
               </button>
             ))}
           </div>

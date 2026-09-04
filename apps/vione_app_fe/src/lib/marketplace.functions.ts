@@ -2,17 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchNestApiFromServer, NEST_API_URL } from "./api-client";
 import { resolveMemberId } from "./current-member";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
-
 type Row = Record<string, unknown>;
 
 const MEDIA_BUCKET = "product-media";
-// Short-lived signed URLs for display; re-issued on every read so access
-// always reflects current membership/RLS instead of a near-permanent token.
-const VIEW_TTL = 60 * 60; // 1 hour
 
 /** Normalizes a stored value (bucket path or legacy signed URL) to a bucket path. */
 function toStoragePath(v: string | null | undefined): string | null {
@@ -22,47 +19,45 @@ function toStoragePath(v: string | null | undefined): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-type SupaLike = {
-  storage: {
-    from: (b: string) => {
-      createSignedUrl: (p: string, ttl: number) => Promise<{ data: { signedUrl: string } | null }>;
-    };
-  };
-};
-
-async function signMediaValues(supabase: SupaLike, values: string[]): Promise<string[]> {
-  const out: string[] = [];
-  for (const v of values) {
-    if (v && (v.startsWith('/upload/') || (v.startsWith('http') && !v.includes('supabase.co/storage')))) {
-      out.push(v);
-      continue;
-    }
-    const path = toStoragePath(v);
-    if (!path) {
-      out.push(v);
-      continue;
-    }
-    try {
-      const { data } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, VIEW_TTL);
-      out.push(data?.signedUrl ?? "");
-    } catch {
-      out.push(v);
-    }
+/** Get signed URL for one media path via NestJS (server-to-server). */
+async function getSignedUrl(token: string | null | undefined, path: string): Promise<string | null> {
+  if (!path) return null;
+  // Non-Supabase URLs (NestJS upload, external) pass through as-is
+  if (path.startsWith('/upload/') || path.startsWith('/uploads/') || (path.startsWith('http') && !path.includes('supabase.co/storage'))) {
+    return path.startsWith('/upload/') || path.startsWith('/uploads/')
+      ? `${NEST_API_URL}/api${path}`
+      : path;
   }
-  return out.filter(Boolean);
+  const storagePath = toStoragePath(path);
+  if (!storagePath) return path;
+  try {
+    const res = await fetchNestApiFromServer<{ signedUrl: string | null }>(
+      "/connect-app/me/media/signed-url",
+      token,
+      { method: "POST", body: JSON.stringify({ path: storagePath }) },
+    );
+    return res?.signedUrl ?? path;
+  } catch {
+    return path;
+  }
+}
+
+async function signMediaValues(token: string | null | undefined, values: string[]): Promise<string[]> {
+  const results = await Promise.all(values.map((v) => getSignedUrl(token, v)));
+  return results.filter((u): u is string => !!u);
 }
 
 /** Applies short-lived signed URLs to a product's image/pdf paths for display. */
-async function signProduct(supabase: SupaLike, p: Product): Promise<Product> {
+async function signProduct(token: string | null | undefined, p: Product): Promise<Product> {
   const [imageUrls, pdfSigned] = await Promise.all([
-    signMediaValues(supabase, p.imageUrls ?? []),
-    p.pdfUrl ? signMediaValues(supabase, [p.pdfUrl]) : Promise.resolve([]),
+    signMediaValues(token, p.imageUrls ?? []),
+    p.pdfUrl ? signMediaValues(token, [p.pdfUrl]) : Promise.resolve([]),
   ]);
   return { ...p, imageUrls, pdfUrl: pdfSigned[0] ?? "" };
 }
 
-async function signProducts(supabase: SupaLike, ps: Product[]): Promise<Product[]> {
-  return Promise.all(ps.map((p: any) => signProduct(supabase, p)));
+async function signProducts(token: string | null | undefined, ps: Product[]): Promise<Product[]> {
+  return Promise.all(ps.map((p: any) => signProduct(token, p)));
 }
 
 const CATEGORY_VALUES = [
@@ -118,7 +113,7 @@ export const listProductsFn = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return signProducts(
-      getDb(context) as unknown as SupaLike,
+      (context as any).token,
       (data ?? []).map((r: any) => mapProduct(r as Row)),
     );
   });
@@ -150,7 +145,7 @@ export const getProductFn = createServerFn({ method: "GET" })
         .eq("product_id", data.id)
         .order("created_at", { ascending: false });
       return {
-        product: await signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row)),
+        product: await signProduct((context as any).token, mapProduct(row as Row)),
         quotes: (quotes ?? []).map((q: any) => mapQuote(q as Row)),
       };
     },
@@ -200,7 +195,7 @@ export const createProductFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    return signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row));
+    return signProduct((context as any).token, mapProduct(row as Row));
   });
 
 export const updateProductFn = createServerFn({ method: "POST" })
@@ -243,7 +238,7 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct((context as any).token, mapProduct(row as Row))
       : null;
   });
 
@@ -308,7 +303,7 @@ export const toggleSoldFn = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row
-      ? signProduct(getDb(context) as unknown as SupaLike, mapProduct(row as Row))
+      ? signProduct((context as any).token, mapProduct(row as Row))
       : null;
   });
 

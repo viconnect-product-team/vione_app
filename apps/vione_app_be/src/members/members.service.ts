@@ -324,7 +324,7 @@ export class MembersService {
 
   async getMemberById(userId: string, id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} LIMIT 1
+      SELECT * FROM public.members WHERE id::text = ${id} OR code = ${id} LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) {
@@ -1000,6 +1000,61 @@ export class MembersService {
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       metadata: r.metadata || {},
     }));
+  }
+
+  async listLinkableMembers(userId: string) {
+    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    if (!user || !user.email) return [];
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT m.id, m.code, m.name, m.email, m.association_id, a.name as association_name,
+             (m.user_id = ${userId}::uuid) as already_linked
+      FROM public.members m
+      LEFT JOIN public.associations a ON m.association_id = a.id
+      WHERE LOWER(m.email) = LOWER(${user.email})
+      ORDER BY m.created_at DESC
+    `.catch(() => []);
+
+    return rows.map((r) => ({
+      id: r.id,
+      code: r.code ?? '',
+      name: r.name,
+      email: r.email,
+      associationId: r.association_id ?? '',
+      associationName: r.association_name ?? '',
+      alreadyLinked: Boolean(r.already_linked),
+    }));
+  }
+
+  async linkMyMemberProfile(userId: string, memberId: string) {
+    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+
+    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
+    if (member.email?.toLowerCase() !== user.email?.toLowerCase()) {
+      throw new BadRequestException('Email tài khoản không khớp với email hồ sơ hội viên');
+    }
+
+    await this.prisma.members.update({
+      where: { id: memberId },
+      data: { user_id: userId },
+    });
+    return { memberId };
+  }
+
+  async unlinkMyMemberProfile(userId: string, memberId: string) {
+    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
+    if (member.user_id !== userId) {
+      throw new ForbiddenException('Bạn không sở hữu liên kết này');
+    }
+
+    await this.prisma.members.update({
+      where: { id: memberId },
+      data: { user_id: null },
+    });
+    return { success: true };
   }
 }
 

@@ -1,6 +1,10 @@
+// BC-Mobile — User settings server functions.
+// Migrated from Supabase client to NestJS REST API.
+
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { fetchNestApiFromServer } from "./api-client";
 
 export type VotingOpenPref = "same" | "new";
 
@@ -24,59 +28,56 @@ const DEFAULTS: AppSettings = {
 
 export const getVotingOpenPrefFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data, error } = await supabase
-      .from("user_settings")
-      .select("voting_open_pref")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error) throw error;
-    return { pref: (data?.voting_open_pref ?? null) as VotingOpenPref | null };
+  .handler(async ({ context }): Promise<{ pref: VotingOpenPref | null }> => {
+    const { token } = context as any;
+    try {
+      return await fetchNestApiFromServer<{ pref: VotingOpenPref | null }>(
+        "/connect-app/me/voting-pref",
+        token,
+      );
+    } catch {
+      return { pref: null };
+    }
   });
 
 export const setVotingOpenPrefFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((input) => z.object({ pref: z.enum(["same", "new"]) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("user_settings")
-      .upsert({ user_id: userId, voting_open_pref: data.pref }, { onConflict: "user_id" });
-    if (error) throw error;
-    return { ok: true };
+    const { token } = context as any;
+    return fetchNestApiFromServer<{ ok: true }>("/connect-app/me/voting-pref", token, {
+      method: "POST",
+      body: JSON.stringify({ pref: data.pref }),
+    });
   });
 
 export const clearVotingOpenPrefFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("user_settings")
-      .upsert({ user_id: userId, voting_open_pref: null }, { onConflict: "user_id" });
-    if (error) throw error;
-    return { ok: true };
+    const { token } = context as any;
+    return fetchNestApiFromServer<{ ok: true }>("/connect-app/me/voting-pref", token, {
+      method: "POST",
+      body: JSON.stringify({ pref: null }),
+    });
   });
 
 export const getSettingsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AppSettings> => {
-    const { supabase, userId } = context;
-    const { data, error } = await supabase
-      .from("user_settings")
-      .select("org_name, org_email, lang, email_notif, sms_notif, two_fa")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (error) throw error;
-    const r = data as Record<string, unknown> | null;
-    return {
-      orgName: (r?.org_name as string) ?? DEFAULTS.orgName,
-      orgEmail: (r?.org_email as string) ?? DEFAULTS.orgEmail,
-      lang: ((r?.lang as string) ?? DEFAULTS.lang) as "vi" | "en",
-      emailNotif: r?.email_notif == null ? DEFAULTS.emailNotif : Boolean(r.email_notif),
-      smsNotif: r?.sms_notif == null ? DEFAULTS.smsNotif : Boolean(r.sms_notif),
-      twoFa: r?.two_fa == null ? DEFAULTS.twoFa : Boolean(r.two_fa),
-    };
+    const { token } = context as any;
+    try {
+      const data = await fetchNestApiFromServer<AppSettings>("/connect-app/me/settings", token);
+      return {
+        orgName: data?.orgName ?? DEFAULTS.orgName,
+        orgEmail: data?.orgEmail ?? DEFAULTS.orgEmail,
+        lang: (data?.lang ?? DEFAULTS.lang) as "vi" | "en",
+        emailNotif: data?.emailNotif ?? DEFAULTS.emailNotif,
+        smsNotif: data?.smsNotif ?? DEFAULTS.smsNotif,
+        twoFa: data?.twoFa ?? DEFAULTS.twoFa,
+      };
+    } catch {
+      return DEFAULTS;
+    }
   });
 
 export const saveSettingsFn = createServerFn({ method: "POST" })
@@ -94,19 +95,9 @@ export const saveSettingsFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase.from("user_settings").upsert(
-      {
-        user_id: userId,
-        org_name: data.orgName,
-        org_email: data.orgEmail,
-        lang: data.lang,
-        email_notif: data.emailNotif,
-        sms_notif: data.smsNotif,
-        two_fa: data.twoFa,
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) throw error;
-    return { ok: true };
+    const { token } = context as any;
+    return fetchNestApiFromServer<{ ok: true }>("/connect-app/me/settings", token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   });

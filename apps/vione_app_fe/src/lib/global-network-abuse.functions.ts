@@ -1,16 +1,10 @@
 // BC-3.1F — Global networking abuse & notification server-function adapters.
-// Thin authenticated RPC boundary: requireSupabaseAuth then delegate to the
-// AbuseService / NotificationService bound to the request-scoped client + userId.
-// No business logic, no direct state machine, no service-role usage.
+// Routed through NestJS API.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { AbuseService } from "./global-network/abuse";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
-import { NotificationService } from "./global-network/notifications";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 import { GN_REPORT_CATEGORIES } from "./global-network/abuse.types";
 import type { GnNotificationDTO, GnNotificationPrefs } from "./global-network/abuse.types";
 
@@ -29,7 +23,14 @@ export const reportUserFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ reportId: string }> => {
-    return AbuseService.reportUser(getDb(context), context.userId, data);
+    return await fetchNestApiFromServer<{ reportId: string }>(
+      "/connect-app/network/abuse/reports",
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
   });
 
 export const listNetworkNotificationsFn = createServerFn({ method: "GET" })
@@ -42,14 +43,26 @@ export const listNetworkNotificationsFn = createServerFn({ method: "GET" })
         .parse(input) ?? {},
   )
   .handler(async ({ data, context }): Promise<GnNotificationDTO[]> => {
-    return NotificationService.list(getDb(context), context.userId, data);
+    try {
+      const url = data.limit ? `/connect-app/me/notifications?limit=${data.limit}` : "/connect-app/me/notifications";
+      const res = await fetchNestApiFromServer<GnNotificationDTO[]>(url, context.token);
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   });
 
 export const countUnreadNotificationsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<{ count: number }> => {
-    const count = await NotificationService.unreadCount(getDb(context), context.userId);
-    return { count };
+    try {
+      return await fetchNestApiFromServer<{ count: number }>(
+        "/connect-app/me/notifications/unread-count",
+        context.token,
+      );
+    } catch {
+      return { count: 0 };
+    }
   });
 
 export const markNotificationsReadFn = createServerFn({ method: "POST" })
@@ -62,14 +75,31 @@ export const markNotificationsReadFn = createServerFn({ method: "POST" })
         .parse(input) ?? {},
   )
   .handler(async ({ data, context }): Promise<{ updated: number }> => {
-    const updated = await NotificationService.markRead(getDb(context), context.userId, data.ids);
-    return { updated };
+    return await fetchNestApiFromServer<{ updated: number }>(
+      "/connect-app/me/notifications/read",
+      context.token,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ ids: data.ids }),
+      },
+    );
   });
 
 export const getNotificationPrefsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<GnNotificationPrefs> => {
-    return NotificationService.getPrefs(getDb(context), context.userId);
+    try {
+      return await fetchNestApiFromServer<GnNotificationPrefs>(
+        "/connect-app/me/notifications/prefs",
+        context.token,
+      );
+    } catch {
+      return {
+        connectionRequest: true,
+        connectionAccepted: true,
+        connectionStatusUpdate: true,
+      };
+    }
   });
 
 export const setNotificationPrefsFn = createServerFn({ method: "POST" })
@@ -84,5 +114,13 @@ export const setNotificationPrefsFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<GnNotificationPrefs> => {
-    return NotificationService.setPrefs(getDb(context), context.userId, data);
+    return await fetchNestApiFromServer<GnNotificationPrefs>(
+      "/connect-app/me/notifications/prefs",
+      context.token,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
   });
+

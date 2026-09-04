@@ -76,30 +76,40 @@ export const Route = createFileRoute("/api/public/card/$slug/contact")({
         const d = validated.data;
 
         try {
-          const { createClient } = await import("@supabase/supabase-js");
-          const supabase = createClient(
-            process.env.SUPABASE_URL!,
-            process.env.SUPABASE_PUBLISHABLE_KEY!,
-            { auth: { persistSession: false, autoRefreshToken: false } },
+          const nestApiUrl =
+            (typeof process !== "undefined" &&
+              (process.env?.NEST_API_URL || process.env?.VITE_API_URL)) ||
+            "http://localhost:4000";
+
+          const res = await fetch(
+            `${nestApiUrl}/api/public/card/${encodeURIComponent(slug)}/contact`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                displayName: d.displayName,
+                phone: d.phone,
+                email: d.email,
+                companyName: d.companyName,
+                title: d.title,
+                consentVersion: GUEST_CONSENT_VERSION,
+                clientToken: d.clientToken,
+              }),
+            },
           );
-          const { data, error } = await supabase.rpc("share_guest_contact", {
-            p_slug: slug,
-            p_display_name: d.displayName,
-            p_phone: d.phone,
-            p_email: d.email,
-            p_company_name: d.companyName,
-            p_title: d.title,
-            p_consent_version: GUEST_CONSENT_VERSION,
-            p_client_token: d.clientToken,
-          });
-          if (error) {
-            console.error("[guest-contact] rpc failed:", error.message);
+
+          if (!res.ok) {
+            console.error("[guest-contact] nestapi failed:", res.status);
             return json(guestShareError("submission_failed"), 500);
           }
 
           // Rebuild the response from scratch — the RPC payload is never
           // passed through verbatim (future-proof leak guard).
-          const rpc = data as { ok?: boolean; result?: string; error?: string } | null;
+          const rpc = (await res.json()) as {
+            ok?: boolean;
+            result?: string;
+            error?: string;
+          } | null;
           if (
             rpc?.ok === true &&
             (rpc.result === "created" || rpc.result === "replay" || rpc.result === "merged")
@@ -112,7 +122,7 @@ export const Route = createFileRoute("/api/public/card/$slug/contact")({
             return json(guestShareError("exchange_disabled"), 403);
           if (rpc?.error === "invalid_payload")
             return json(guestShareError("invalid_payload"), 400);
-          console.error("[guest-contact] unexpected rpc payload");
+          console.error("[guest-contact] unexpected nestapi payload");
           return json(guestShareError("submission_failed"), 500);
         } catch (e) {
           console.error("[guest-contact] unexpected failure:", e);

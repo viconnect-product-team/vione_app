@@ -164,16 +164,26 @@ export class UsersService {
       throw new NotFoundException('Không tìm thấy thông tin tài khoản');
     }
 
-    const [profile, roles] = await Promise.all([
+    const [profile, roles, memberships] = await Promise.all([
       this.prisma.user_profiles.findUnique({
         where: { user_id: userId },
       }).catch(() => null),
       this.prisma.user_roles.findMany({
         where: { user_id: userId },
       }).catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
+      `.catch(() => [] as any[]),
     ]);
 
     const roleList = roles.map((r) => r.role);
+    const isAssocAdmin = (memberships ?? []).some(
+      (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
+    );
+    if (isAssocAdmin && !roleList.includes('admin')) {
+      roleList.push('admin');
+    }
+
     if (
       (userId === '00000000-0000-0000-0000-000000000000' || user.username === 'admin@connect.vn') &&
       !roleList.includes('platform_admin')

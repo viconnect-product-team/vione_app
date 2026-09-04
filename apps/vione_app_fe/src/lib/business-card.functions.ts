@@ -1,11 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-import { BusinessCardService } from "@/lib/business-card/business-card.service";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // ── Domain type + constant re-exports ──────────────────────────────────────
 // Canonical home is @/lib/business-card/business-card.types. Re-exported here so
@@ -111,57 +106,125 @@ const cardInput = z.object({
     .max(30),
 });
 
-// ── Server functions (thin adapters over BusinessCardService) ──────────────
-// All Business Card domain logic lives in BusinessCardService / Repository.
-// These functions only bind auth context + input validation to the service.
+import { fetchNestApiFromServer } from "@/lib/api-client";
+import { mapRowToBusinessCard, mapRowToSummary } from "@/lib/business-card/business-card.mappers";
+
+// ── Server functions (thin adapters over NestJS REST API) ──────────────────
 
 export const listMyBusinessCardsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(
-    ({ context }): Promise<BusinessCardSummary[]> =>
-      BusinessCardService.listMyCards(getDb(context)),
-  );
+  .handler(async ({ context }): Promise<BusinessCardSummary[]> => {
+    try {
+      const rows = await fetchNestApiFromServer<any[]>("/business-cards", context.token);
+      return (rows || []).map(mapRowToSummary);
+    } catch {
+      return [];
+    }
+  });
+
+import {
+  BC_ERR,
+} from "@/lib/business-card/business-card.types";
+import { toPublicBusinessCard } from "@/lib/business-card/public-card";
 
 export const getMyBusinessCardFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(
-    ({ data, context }): Promise<BusinessCard> =>
-      BusinessCardService.getMyCard(getDb(context), data.id),
-  );
+  .handler(async ({ data, context }): Promise<BusinessCard> => {
+    const raw = await fetchNestApiFromServer<any>(`/business-cards/${data.id}`, context.token);
+    if (!raw) throw new Error(BC_ERR.NOT_FOUND);
+    return mapRowToBusinessCard(
+      raw,
+      { skills: raw.skills, services: raw.services, needs: raw.needs },
+      {
+        status: "draft",
+        publicMode: "members_only",
+        exposeOwner: true,
+      },
+    );
+  });
 
-// Preview by slug (owner / manager, works on drafts). RLS restricts reads to the
-// owner (or an association manager), so drafts are only visible to their owner.
+// Preview by slug (owner / manager, works on drafts).
 export const getBusinessCardPreviewFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(60) }).parse(d))
-  .handler(
-    ({ data, context }): Promise<BusinessCard | null> =>
-      BusinessCardService.getPreviewBySlug(getDb(context), data.slug),
-  );
+  .handler(async ({ data, context }): Promise<BusinessCard | null> => {
+    try {
+      const raw = await fetchNestApiFromServer<any>(
+        `/business-cards/preview/${encodeURIComponent(data.slug)}`,
+        context.token,
+      );
+      if (!raw) return null;
+      return mapRowToBusinessCard(
+        raw,
+        { skills: raw.skills, services: raw.services, needs: raw.needs },
+        {
+          status: "draft",
+          publicMode: "members_only",
+          exposeOwner: true,
+        },
+      );
+    } catch {
+      return null;
+    }
+  });
 
-// Public profile by slug (no auth; respects public_mode). ownerUserId is never
-// exposed on the public projection (BC-2.1A rule).
+// Public profile by slug (no auth; respects public_mode).
 export const getPublicBusinessCardFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(60) }).parse(d))
-  .handler(
-    ({ data }): Promise<PublicBusinessCardResult> => BusinessCardService.getPublicBySlug(data.slug),
-  );
+  .handler(async ({ data }): Promise<PublicBusinessCardResult> => {
+    try {
+      const raw = await fetchNestApiFromServer<any>(
+        `/business-cards/public/${encodeURIComponent(data.slug)}`,
+      );
+      if (!raw) return { state: "not_found" };
+      if (raw.public_mode === "members_only" || raw.publicMode === "members_only") {
+        return { state: "members_only" };
+      }
+      const card = mapRowToBusinessCard(
+        raw,
+        { skills: raw.skills, services: raw.services, needs: raw.needs },
+        {
+          status: "published",
+          publicMode: "public",
+          exposeOwner: false,
+        },
+      );
+      return { state: "public", card: toPublicBusinessCard(card) };
+    } catch {
+      return { state: "not_found" };
+    }
+  });
 
 // Public: published + fully-public profile slugs for the sitemap (BC-2.3 SEO).
 export const listPublicProfileSlugsFn = createServerFn({ method: "GET" }).handler(
-  (): Promise<{ slug: string; updatedAt: string | null }[]> =>
-    BusinessCardService.listPublicProfileSlugs(),
+  async (): Promise<{ slug: string; updatedAt: string | null }[]> => {
+    try {
+      const res = await fetchNestApiFromServer<{ slug: string; updatedAt: string | null }[]>(
+        "/business-cards/public-slugs",
+      );
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
 );
 
 // Create / update (with child replace).
 export const saveBusinessCardFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => cardInput.parse(d))
-  .handler(
-    ({ data, context }): Promise<{ id: string }> =>
-      BusinessCardService.saveCard(getDb(context), context.userId, data),
-  );
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    const res = await fetchNestApiFromServer<{ id: string }>(
+      "/business-cards",
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
+    return res;
+  });
 
 // Set status (publish / unpublish / archive).
 export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
@@ -174,28 +237,42 @@ export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(
-    ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setStatus(getDb(context), context.userId, data.id, data.status),
-  );
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    await fetchNestApiFromServer(
+      `/business-cards/${data.id}/status`,
+      context.token,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status: data.status }),
+      },
+    );
+    return { ok: true };
+  });
 
 // Set Primary (demote current primary, promote target).
 export const setPrimaryBusinessCardFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(
-    ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.setPrimary(getDb(context), context.userId, data.id),
-  );
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    return await fetchNestApiFromServer<{ ok: boolean }>(
+      `/business-cards/${data.id}/primary`,
+      context.token,
+      {
+        method: "POST",
+      },
+    );
+  });
 
 // Delete.
 export const deleteBusinessCardFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(
-    ({ data, context }): Promise<{ ok: boolean }> =>
-      BusinessCardService.deleteCard(getDb(context), context.userId, data.id),
-  );
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    await fetchNestApiFromServer(`/business-cards/${data.id}`, context.token, {
+      method: "DELETE",
+    });
+    return { ok: true };
+  });
 
 // ── Leads + analytics (thin adapters over LeadService) ─────────────────────
 // All lead/stats domain logic lives in LeadService / LeadRepository. Types and

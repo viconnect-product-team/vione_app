@@ -40,6 +40,9 @@ function mapEndpoint(endpoint: string): string {
     mapped = mapped.replace('/connect-app/notifications', '/me/notifications');
   } else if (mapped === '/connect-app/moment' || mapped.startsWith('/connect-app/moment/') || mapped.startsWith('/connect-app/moment?')) {
     mapped = mapped.replace('/connect-app/moment', '/moments');
+  } else if (mapped.startsWith('/public/')) {
+    // Public endpoints pass through as-is
+    mapped = mapped;
   }
 
   const clean = mapped.startsWith('/') ? mapped : `/${mapped}`;

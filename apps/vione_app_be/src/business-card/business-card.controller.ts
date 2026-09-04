@@ -21,10 +21,87 @@ export class BusinessCardController {
     return this.businessCardService.getPublicBySlug(slug);
   }
 
+  @Get('public-card/:code')
+  getPublicCardByCode(@Param('code') code: string) {
+    return this.businessCardService.getPublicCardByCode(code);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('settings/me')
+  getCardSettings(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.getCardSettings(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('settings/me')
+  saveCardSettings(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.saveCardSettings(userId, data);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('ai-history')
+  saveCardAiHistory(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.saveCardAiHistory(userId, data);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('ai-history')
+  listCardAiHistory(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.listCardAiHistory(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('ai-history/:id')
+  deleteCardAiHistory(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.deleteCardAiHistory(userId, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('admin/level')
+  getBcAdminLevel(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.getBcAdminLevel(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('admin/all')
+  listAllAdminCards(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.listAllAdminCards(userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('admin/status')
+  adminSetCardStatus(
+    @Request() req: any,
+    @Body('id') id: string,
+    @Body('status') status: string,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.adminSetCardStatus(userId, id, status);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('admin/bulk-status')
+  adminSetCardsStatus(
+    @Request() req: any,
+    @Body('ids') ids: string[],
+    @Body('status') status: string,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.adminSetCardsStatus(userId, ids, status);
+  }
+
   @UseGuards(AuthGuard)
   @Get()
   listMyCards(@Request() req: any) {
-    return this.businessCardService.listMyCards(req.user.sub);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.listMyCards(userId);
   }
 
   @UseGuards(AuthGuard)

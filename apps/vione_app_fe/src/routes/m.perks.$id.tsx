@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { getPerk, type Perk } from "@/lib/member-app.functions";
-import { PERK_ICONS } from "./m.perks";
+import { PERK_ICONS } from "./m.perks.index";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/m/perks/$id")({

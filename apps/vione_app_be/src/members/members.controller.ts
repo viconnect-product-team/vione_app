@@ -69,6 +69,21 @@ export class MembersController {
     return this.membersService.getMyRenewalAuditLog(req.user.id);
   }
 
+  @Get('me/linkable')
+  async listLinkableMembers(@Request() req: any) {
+    return this.membersService.listLinkableMembers(req.user.id);
+  }
+
+  @Post('me/link')
+  async linkMyMemberProfile(@Request() req: any, @Body('memberId') memberId: string) {
+    return this.membersService.linkMyMemberProfile(req.user.id, memberId);
+  }
+
+  @Post('me/unlink')
+  async unlinkMyMemberProfile(@Request() req: any, @Body('memberId') memberId: string) {
+    return this.membersService.unlinkMyMemberProfile(req.user.id, memberId);
+  }
+
   @Get('brand')
   async getMyAssociationBrand(@Request() req: any) {
     return this.membersService.getMyAssociationBrand(req.user.id);

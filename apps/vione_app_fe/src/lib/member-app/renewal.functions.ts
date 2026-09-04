@@ -210,12 +210,20 @@ export const payMyRenewal = createServerFn({ method: "POST" })
 export type RenewalAuditEntry = {
   id: string;
   action: string;
-  eventType: string;
+  eventType: "payment" | "idempotent_noop" | "failure";
   status: "success" | "failure" | "idempotent_noop";
+  reference: string;
+  method: string | null;
+  amountPaid: number;
+  invoiceNo: string | null;
+  previousTermEnd: string | null;
+  newTermEnd: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
   errorReason: string | null;
   correlationId: string | null;
   createdAt: string;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
 };
 
 export const getMyRenewalAuditLog = createServerFn({ method: "GET" })
@@ -223,7 +231,7 @@ export const getMyRenewalAuditLog = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<RenewalAuditEntry[]> => {
     try {
       const res = await fetchNestApiFromServer<RenewalAuditEntry[]>("/members/me/renewal-audit", context.token);
-      return res || [];
+      return Array.isArray(res) ? res : [];
     } catch {
       return [];
     }

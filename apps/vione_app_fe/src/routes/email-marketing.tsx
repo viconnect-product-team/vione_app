@@ -147,7 +147,7 @@ function EmailPage() {
             </td>
             <td className="px-4 py-3 text-muted-foreground">{fmt.date(c.sentAt)}</td>
             <td className="px-4 py-3">
-              <Pill color={STATUS_COLOR[c.status]}>{t(STATUS_KEY[c.status])}</Pill>
+              <Pill color={STATUS_COLOR[c.status as Campaign["status"]]}>{t(STATUS_KEY[c.status as Campaign["status"]])}</Pill>
             </td>
             <td className="px-4 py-3">
               <button

@@ -144,7 +144,7 @@ function NewsPage() {
                 <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                   {n.category}
                 </span>
-                <Pill color={STATUS_COLOR[n.status]}>{t(STATUS_KEY[n.status])}</Pill>
+                <Pill color={STATUS_COLOR[n.status as NewsArticle["status"]]}>{t(STATUS_KEY[n.status as NewsArticle["status"]])}</Pill>
               </div>
               <h3 className="mb-2 line-clamp-2 text-base font-semibold text-foreground">
                 {n.title}

@@ -25,7 +25,8 @@ export const bcAiAcceptResult = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { acceptResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    await acceptResult(null as any, data.resultId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await acceptResult(supabaseAdmin, data.resultId);
     return { resultId: data.resultId, status: "accepted" as const };
   });
 
@@ -35,7 +36,8 @@ export const bcAiRejectResult = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { rejectResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    await rejectResult(null as any, data.resultId, data.reason ?? null);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await rejectResult(supabaseAdmin, data.resultId, data.reason ?? null);
     return { resultId: data.resultId, status: "rejected" as const };
   });
 
@@ -45,7 +47,8 @@ export const bcAiGetResult = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { getOwnedResult } =
       await import("@/lib/business-connect/intelligence/runtime/persistence.server");
-    const row = await getOwnedResult(null as any, data.resultId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const row = await getOwnedResult(supabaseAdmin, data.resultId);
     if (!row) throw new Error("BUSINESS_CONNECT_AI_FORBIDDEN");
     return row;
   });
@@ -91,9 +94,10 @@ export const bcAiGenerate = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { executeBusinessConnectAI } =
       await import("@/lib/business-connect/intelligence/runtime/execution-service.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const viewer = deriveViewer(context.userId, data.locale ?? "vi");
     const result = await executeBusinessConnectAI({
-      supabase: null as any,
+      supabase: supabaseAdmin,
       viewer,
       capability: data.capability as BusinessConnectAICapability,
       scope: data.scope,

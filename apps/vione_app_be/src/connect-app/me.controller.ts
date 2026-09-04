@@ -112,4 +112,38 @@ export class MeController {
   async deleteShowcaseItem(@Request() req, @Param('id') id: string) {
     return this.connectAppService.deleteShowcaseItem(req.user.id, id);
   }
+
+  // --- Settings ---
+  @Get('settings')
+  async getSettings(@Request() req) {
+    return this.connectAppService.getSettings(req.user.id);
+  }
+
+  @Post('settings')
+  async saveSettings(@Request() req, @Body() body: any) {
+    return this.connectAppService.saveSettings(req.user.id, body);
+  }
+
+  // --- Voting preference ---
+  @Get('voting-pref')
+  async getVotingPref(@Request() req) {
+    return this.connectAppService.getVotingPref(req.user.id);
+  }
+
+  @Post('voting-pref')
+  async setVotingPref(@Request() req, @Body('pref') pref: string | null) {
+    return this.connectAppService.setVotingPref(req.user.id, pref ?? null);
+  }
+
+  // --- Post-login route resolution ---
+  @Get('post-login-route')
+  async getPostLoginRoute(@Request() req) {
+    return this.connectAppService.getPostLoginRoute(req.user.id);
+  }
+
+  // --- Media signed URL (product-media bucket) ---
+  @Post('media/signed-url')
+  async getMediaSignedUrl(@Request() req, @Body('path') path: string) {
+    return this.connectAppService.getMediaSignedUrl(req.user.id, path);
+  }
 }

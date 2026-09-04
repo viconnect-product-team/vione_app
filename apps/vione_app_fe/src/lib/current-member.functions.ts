@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export type LinkableMember = {
   id: string;
@@ -19,18 +17,12 @@ export type LinkableMember = {
 export const listLinkableMembersFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<LinkableMember[]> => {
-    const supabase = getDb(context);
-    const { data, error } = await supabase.rpc("list_my_linkable_members");
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r: Record<string, unknown>) => ({
-      id: r.id as string,
-      code: r.code as string,
-      name: r.name as string,
-      email: r.email as string,
-      associationId: r.association_id as string,
-      associationName: r.association_name as string,
-      alreadyLinked: Boolean(r.already_linked),
-    }));
+    try {
+      const res = await fetchNestApiFromServer<LinkableMember[]>("/members/me/linkable", context.token);
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
   });
 
 /** Link the current account to a member profile (email must match). */
@@ -38,12 +30,10 @@ export const linkMyMemberProfileFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ memberId: string }> => {
-    const supabase = getDb(context);
-    const { data: res, error } = await supabase.rpc("link_my_member_profile", {
-      _member_id: data.memberId,
+    return await fetchNestApiFromServer<{ memberId: string }>("/members/me/link", context.token, {
+      method: "POST",
+      body: JSON.stringify({ memberId: data.memberId }),
     });
-    if (error) throw new Error(error.message);
-    return { memberId: res as unknown as string };
   });
 
 /** Unlink a member profile from the current account. */
@@ -51,9 +41,8 @@ export const unlinkMyMemberProfileFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ memberId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<void> => {
-    const supabase = getDb(context);
-    const { error } = await supabase.rpc("unlink_my_member_profile", {
-      _member_id: data.memberId,
+    await fetchNestApiFromServer<{ success: boolean }>("/members/me/unlink", context.token, {
+      method: "POST",
+      body: JSON.stringify({ memberId: data.memberId }),
     });
-    if (error) throw new Error(error.message);
   });

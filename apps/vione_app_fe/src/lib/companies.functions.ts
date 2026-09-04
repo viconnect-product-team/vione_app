@@ -78,7 +78,8 @@ export const getCompanyHistoryFn = createServerFn({ method: "GET" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<CompanyHistory> => {
-    const supabase = null as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabase = supabaseAdmin;
 
     // --- Activities: activity_log rows targeting this company (by code or name) ---
     const targets = [data.code, data.name].filter(Boolean);

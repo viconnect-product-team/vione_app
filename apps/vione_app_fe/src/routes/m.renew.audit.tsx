@@ -13,7 +13,7 @@ import {
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { exportRenewalAuditPDF } from "@/lib/renewal-audit-export";
-import { getMyRenewalAuditLog, type RenewalAuditEntry } from "@/lib/member-app.functions";
+import { getMyRenewalAuditLog, type RenewalAuditEntry } from "@/lib/member-app/renewal.functions";
 
 export const Route = createFileRoute("/m/renew/audit")({
   validateSearch: (search: Record<string, unknown>) => ({

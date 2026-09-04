@@ -8,7 +8,7 @@ import { OutgoingRequestsList } from "./OutgoingRequestsList";
 import { ConnectedPeopleList } from "./ConnectedPeopleList";
 import type { ConnectionTab } from "@/lib/connection/route-search";
 
-const routeApi = getRouteApi("/business-connect/connections");
+const routeApi = getRouteApi("/business-connect/connections/");
 
 const TABS: ConnectionTab[] = ["discover", "incoming", "sent", "connected"];
 

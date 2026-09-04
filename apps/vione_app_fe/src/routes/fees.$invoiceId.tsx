@@ -532,7 +532,7 @@ function InvoiceDetailPage() {
               isAdmin && !isPaid ? (
                 <div className="flex items-center gap-1">
                   {(["email", "sms", "zalo", "call"] as ReminderChannel[]).map((c: any) => {
-                    const Icon = channelIcon[c];
+                    const Icon = channelIcon[c as ReminderChannel];
                     return (
                       <button
                         key={c}
@@ -556,7 +556,7 @@ function InvoiceDetailPage() {
             ) : (
               <ol className="relative space-y-4 border-l border-border pl-5">
                 {reminders.map((r: any) => {
-                  const Icon = channelIcon[r.channel];
+                  const Icon = channelIcon[r.channel as ReminderChannel];
                   return (
                     <li key={r.id} className="relative">
                       <span className="absolute -left-[26px] flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary ring-4 ring-card">

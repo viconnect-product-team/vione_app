@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 import { z } from 'zod';
@@ -170,8 +170,8 @@ export class ConnectAppService {
         priority: 'high' as const,
         urgency: isToday ? ('high' as const) : ('medium' as const),
         titleKey: e.title,
-        descriptionKey: e.location || 'Sự kiện cộng đồng',
-        counterpartDisplayName: e.association_name || 'Cộng đồng',
+        descriptionKey: e.location || 'Sá»± kiá»‡n cá»™ng Ä‘á»“ng',
+        counterpartDisplayName: e.association_name || 'Cá»™ng Ä‘á»“ng',
         startsAt: eventDate.toISOString(),
         dueAt: null,
         status: String(e.status || 'confirmed'),
@@ -185,7 +185,7 @@ export class ConnectAppService {
         secondaryAction: null,
         context: {},
         viewerPermissions: { canRoute: true, canInlineMutate: false },
-        safeDisplayData: { counterpartDisplayName: e.association_name || 'Cộng đồng' },
+        safeDisplayData: { counterpartDisplayName: e.association_name || 'Cá»™ng Ä‘á»“ng' },
         dedupeKey: `event:${e.id}`,
         registryVersion: 1,
       };
@@ -394,7 +394,7 @@ export class ConnectAppService {
         const member = members[0];
         const profile = profiles[0];
 
-        const displayName = card?.display_name || member?.name || profile?.display_name || 'Hội viên ViOne';
+        const displayName = card?.display_name || member?.name || profile?.display_name || 'Há»™i viĂªn ViOne';
         const avatarUrl = card?.avatar_url || member?.avatar_url || profile?.avatar_url || null;
         const headline = card?.headline || card?.professional_title || member?.job_title || profile?.headline || null;
         const companyName = card?.company_name || member?.company_name || profile?.company_name || null;
@@ -411,7 +411,7 @@ export class ConnectAppService {
       } catch (err) {
         summaries.push({
           userId: uid,
-          displayName: 'Hội viên ViOne',
+          displayName: 'Há»™i viĂªn ViOne',
           avatarUrl: null,
           headline: null,
           companyName: null,
@@ -499,7 +499,7 @@ export class ConnectAppService {
         identity = {
           id: profile?.id || userId,
           owner_user_id: userId,
-          display_name: profile?.display_name || userEmail?.split('@')[0] || 'Hội viên ViOne',
+          display_name: profile?.display_name || userEmail?.split('@')[0] || 'Há»™i viĂªn ViOne',
           headline: profile?.professional_title || null,
           job_title: profile?.professional_title || null,
           company_name: profile?.company_name || null,
@@ -1356,9 +1356,9 @@ export class ConnectAppService {
           owner_user_id: u.id,
           display_name: u.name || u.username,
           avatar_url: u.avatar_url,
-          headline: 'Doanh nhân ViOne',
+          headline: 'Doanh nhĂ¢n ViOne',
           company_name: 'ViOne Network',
-          city: 'Việt Nam',
+          city: 'Viá»‡t Nam',
         });
       });
     }
@@ -1369,12 +1369,12 @@ export class ConnectAppService {
     nonConnectedRows.forEach((row: any) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
       const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
-      const company = row.company_name || 'Doanh nghiệp đối tác';
-      const city = row.city || 'Việt Nam';
-      const headline = row.headline || 'Doanh nhân';
-      const displayName = row.display_name || 'Hội viên';
+      const company = row.company_name || 'Doanh nghiá»‡p Ä‘á»‘i tĂ¡c';
+      const city = row.city || 'Viá»‡t Nam';
+      const headline = row.headline || 'Doanh nhĂ¢n';
+      const displayName = row.display_name || 'Há»™i viĂªn';
 
-      const aiSuggestion = `AI đề xuất: Kết nối với ${displayName} (${headline} tại ${company}) để trao đổi cơ hội hợp tác kinh doanh và mở rộng quan hệ đối tác tại ${city}.`;
+      const aiSuggestion = `AI Ä‘á» xuáº¥t: Káº¿t ná»‘i vá»›i ${displayName} (${headline} táº¡i ${company}) Ä‘á»ƒ trao Ä‘á»•i cÆ¡ há»™i há»£p tĂ¡c kinh doanh vĂ  má»Ÿ rá»™ng quan há»‡ Ä‘á»‘i tĂ¡c táº¡i ${city}.`;
 
       recommendations.push({
         id: `${cleanPersonId}:match`,
@@ -1404,8 +1404,8 @@ export class ConnectAppService {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
       const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
       const days = 90 + idx * 10;
-      const displayName = row.display_name || 'Đối tác';
-      const aiSuggestion = `AI nhắc nhở: Đã ${days} ngày chưa tương tác cùng ${displayName}. Hãy gửi tin nhắn hoặc sắp xếp buổi gặp để hâm nóng mối quan hệ hợp tác.`;
+      const displayName = row.display_name || 'Äá»‘i tĂ¡c';
+      const aiSuggestion = `AI nháº¯c nhá»Ÿ: ÄĂ£ ${days} ngĂ y chÆ°a tÆ°Æ¡ng tĂ¡c cĂ¹ng ${displayName}. HĂ£y gá»­i tin nháº¯n hoáº·c sáº¯p xáº¿p buá»•i gáº·p Ä‘á»ƒ hĂ¢m nĂ³ng má»‘i quan há»‡ há»£p tĂ¡c.`;
 
       recommendations.push({
         id: `${cleanPersonId}:reconnect`,
@@ -1413,10 +1413,10 @@ export class ConnectAppService {
           personId: cleanPersonId,
           displayName,
           avatarUrl: row.avatar_url,
-          headline: row.headline || 'Doanh nhân',
+          headline: row.headline || 'Doanh nhĂ¢n',
           companyName: row.company_name || 'Partner',
           industryLabel: 'Kinh doanh',
-          areaLabel: row.city || 'Hà Nội',
+          areaLabel: row.city || 'HĂ  Ná»™i',
         },
         type: 'reconnect',
         reason: {
@@ -1859,13 +1859,13 @@ export class ConnectAppService {
   }
 
   /**
-   * NFC Tap-to-Exchange: một lần gọi duy nhất.
-   * - Resolve token → lấy profile công khai của người được chạm
-   * - Tự động tạo/tìm kết nối với source_type = 'nfc'
-   * - Trả về profile + trạng thái kết nối
+   * NFC Tap-to-Exchange: má»™t láº§n gá»i duy nháº¥t.
+   * - Resolve token â†’ láº¥y profile cĂ´ng khai cá»§a ngÆ°á»i Ä‘Æ°á»£c cháº¡m
+   * - Tá»± Ä‘á»™ng táº¡o/tĂ¬m káº¿t ná»‘i vá»›i source_type = 'nfc'
+   * - Tráº£ vá» profile + tráº¡ng thĂ¡i káº¿t ná»‘i
    */
   async nfcTap(userId: string, token: string) {
-    // 1. Resolve token → share link
+    // 1. Resolve token â†’ share link
     const links = await this.prisma.$queryRaw<any[]>`
       SELECT id, identity_id FROM public.identity_share_links
       WHERE public_token = ${token} AND status = 'active'
@@ -1877,7 +1877,7 @@ export class ConnectAppService {
     }
     const link = links[0];
 
-    // 2. Lấy full identity (kèm visibility)
+    // 2. Láº¥y full identity (kĂ¨m visibility)
     const identities = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.business_identities
       WHERE id = ${link.identity_id}::uuid AND status = 'active'
@@ -1894,7 +1894,7 @@ export class ConnectAppService {
       return { ok: false, reason: 'self', profile: null, connectionId: null, state: 'self' };
     }
 
-    // 3. Áp visibility filter
+    // 3. Ăp visibility filter
     const visibilityRows = await this.prisma.$queryRaw<any[]>`
       SELECT field_key, visibility FROM public.identity_field_visibility
       WHERE identity_id = ${identity.id}::uuid
@@ -1916,7 +1916,7 @@ export class ConnectAppService {
       city: show('city') ? (identity.city ?? null) : null,
     };
 
-    // 4. Kiểm tra connection hiện tại
+    // 4. Kiá»ƒm tra connection hiá»‡n táº¡i
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id, requester_user_id, status FROM public.user_connections
       WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
@@ -1950,7 +1950,7 @@ export class ConnectAppService {
       return { ok: true, reason: 'existing', profile, connectionId: conn.id, state };
     }
 
-    // 5. Tạo kết nối mới với source_type = 'nfc'
+    // 5. Táº¡o káº¿t ná»‘i má»›i vá»›i source_type = 'nfc'
     const reqId = crypto.randomUUID();
     const now = new Date();
     try {
@@ -1959,14 +1959,14 @@ export class ConnectAppService {
         VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'nfc'::public.global_connection_source_type, ${now}, ${now}, ${now})
       `;
     } catch {
-      // source_type 'nfc' có thể chưa có trong enum — fallback sang 'manual'
+      // source_type 'nfc' cĂ³ thá»ƒ chÆ°a cĂ³ trong enum â€” fallback sang 'manual'
       await this.prisma.$executeRaw`
         INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
         VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
       `;
     }
 
-    // 6. Update last_used_at của link (async, không block)
+    // 6. Update last_used_at cá»§a link (async, khĂ´ng block)
     this.prisma.$executeRaw`
       UPDATE public.identity_share_links SET last_used_at = ${now} WHERE id = ${link.id}::uuid
     `.catch(() => {});
@@ -2186,9 +2186,9 @@ export class ConnectAppService {
 
     const typeMap = (audience: string | null) => {
       const a = (audience ?? '').toLowerCase();
-      if (a.includes('event') || a.includes('sự kiện')) return 'event';
-      if (a.includes('fee') || a.includes('phí')) return 'fee';
-      if (a.includes('opp') || a.includes('cơ hội')) return 'opportunity';
+      if (a.includes('event') || a.includes('sá»± kiá»‡n')) return 'event';
+      if (a.includes('fee') || a.includes('phĂ­')) return 'fee';
+      if (a.includes('opp') || a.includes('cÆ¡ há»™i')) return 'opportunity';
       return 'system';
     };
 
@@ -2887,7 +2887,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-5C — NFC Device Sessions & Tags
+  // BC-Mobile-5C â€” NFC Device Sessions & Tags
   // ==========================================
 
   async listMyDeviceSessions(userId: string, currentKey: string | null) {
@@ -2901,7 +2901,7 @@ export class ConnectAppService {
     return rows.map(r => ({
       id: r.id,
       deviceKey: r.device_key,
-      label: r.device_label ?? "Thiết bị",
+      label: r.device_label ?? "Thiáº¿t bá»‹",
       platform: r.platform,
       browser: r.browser,
       isStandalone: r.is_standalone,
@@ -2964,7 +2964,7 @@ export class ConnectAppService {
     return {
       id: r.id,
       deviceKey: r.device_key,
-      label: r.device_label ?? "Thiết bị",
+      label: r.device_label ?? "Thiáº¿t bá»‹",
       platform: r.platform,
       browser: r.browser,
       isStandalone: r.is_standalone,
@@ -3116,7 +3116,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-8A — Inbox Direct Messaging (DM)
+  // BC-Mobile-8A â€” Inbox Direct Messaging (DM)
   // ==========================================
 
   async listMyDmThreads(userId: string) {
@@ -3170,7 +3170,7 @@ export class ConnectAppService {
     const resultThreads = threads.map(t => {
       const counterpartId = t.pair_user_low === userId ? t.pair_user_high : t.pair_user_low;
       const card = cardMap.get(counterpartId) ?? {
-        displayName: 'Thành viên Vione',
+        displayName: 'ThĂ nh viĂªn Vione',
         avatarUrl: null,
         headline: null,
         companyName: null,
@@ -3179,7 +3179,7 @@ export class ConnectAppService {
       return {
         threadId: t.id,
         personId: `u:${counterpartId}`,
-        displayName: card.displayName ?? 'Thành viên Vione',
+        displayName: card.displayName ?? 'ThĂ nh viĂªn Vione',
         avatarUrl: card.avatarUrl ?? null,
         headline: card.headline ?? null,
         companyName: card.companyName ?? null,
@@ -3275,7 +3275,7 @@ export class ConnectAppService {
     `.catch(() => [] as any[]);
 
     const card = cards.find(c => c.card_kind === 'primary') || cards[0] || {
-      display_name: 'Thành viên Vione',
+      display_name: 'ThĂ nh viĂªn Vione',
       avatar_url: null,
       headline: null,
       company_name: null,
@@ -3284,7 +3284,7 @@ export class ConnectAppService {
     const threadSummary = {
       threadId: thread.id,
       personId: `u:${counterpartId}`,
-      displayName: card.display_name ?? 'Thành viên Vione',
+      displayName: card.display_name ?? 'ThĂ nh viĂªn Vione',
       avatarUrl: card.avatar_url ?? null,
       headline: card.headline ?? card.professional_title ?? null,
       companyName: card.company_name ?? null,
@@ -3422,7 +3422,7 @@ export class ConnectAppService {
 
     if (lastMsg.length > 0) {
       const lm = lastMsg[0];
-      const preview = lm.retracted_at ? "Tin nhắn đã bị thu hồi" : lm.body.substring(0, 160);
+      const preview = lm.retracted_at ? "Tin nháº¯n Ä‘Ă£ bá»‹ thu há»“i" : lm.body.substring(0, 160);
       await this.prisma.$executeRaw`
         UPDATE public.bc_dm_threads
         SET last_message_preview = ${preview}
@@ -3445,7 +3445,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-8A — Customer Relationship CRM
+  // BC-Mobile-8A â€” Customer Relationship CRM
   // ==========================================
 
   async listBcCustomers(userId: string) {
@@ -4096,7 +4096,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-4A/4B — Business Card Scanning
+  // BC-Mobile-4A/4B â€” Business Card Scanning
   // ==========================================
 
   async cardScanOcr(userId: string, imageDataUrl: string, clientToken: string) {
@@ -4109,8 +4109,8 @@ export class ConnectAppService {
         isBusinessCard: true,
         unusableReason: null,
         lines: [
-          { text: "Thông tin danh thiếp", confidence: 0.95 },
-          { text: "Đối tác liên hệ", confidence: 0.9 },
+          { text: "ThĂ´ng tin danh thiáº¿p", confidence: 0.95 },
+          { text: "Äá»‘i tĂ¡c liĂªn há»‡", confidence: 0.9 },
           { text: "0900000000", confidence: 0.85 },
         ],
         displayNameLine: 0,
@@ -4413,7 +4413,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-6C — Personalization settings
+  // BC-Mobile-6C â€” Personalization settings
   // ==========================================
 
   async getPersonalization(userId: string) {
@@ -4530,7 +4530,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-6D — Person Plans
+  // BC-Mobile-6D â€” Person Plans
   // ==========================================
 
   async createPersonPlan(userId: string, input: any) {
@@ -4659,7 +4659,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-2D/2E — Person Journey
+  // BC-Mobile-2D/2E â€” Person Journey
   // ==========================================
 
   async getPersonJourney(userId: string, input: any) {
@@ -4825,7 +4825,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-7B+ — Community News
+  // BC-Mobile-7B+ â€” Community News
   // ==========================================
 
   async listCommunityNews(userId: string, communityId: string, offset: number) {
@@ -4914,7 +4914,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-7B+ — Community Join Requests
+  // BC-Mobile-7B+ â€” Community Join Requests
   // ==========================================
 
   async listJoinableCommunities(userId: string) {
@@ -4979,7 +4979,7 @@ export class ConnectAppService {
 
     const now = new Date();
 
-    // Tự động duyệt và tạo membership
+    // Tá»± Ä‘á»™ng duyá»‡t vĂ  táº¡o membership
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.memberships (id, user_id, association_id, role, is_default, created_at, updated_at)
@@ -5065,7 +5065,7 @@ export class ConnectAppService {
     const assocMap = new Map(assocs.map(a => [a.id, a]));
 
     return requests.map(r => {
-      const assoc: any = assocMap.get(r.association_id) ?? { name: "—", logo_url: null };
+      const assoc: any = assocMap.get(r.association_id) ?? { name: "â€”", logo_url: null };
       return {
         requestId: r.id,
         communityId: r.association_id,
@@ -5113,7 +5113,7 @@ export class ConnectAppService {
 
     const output: any[] = [];
     for (const r of pendingRequests) {
-      const name = nameMap.get(r.association_id) || "—";
+      const name = nameMap.get(r.association_id) || "â€”";
       const approved = r.status === 'approved';
       const notifId = crypto.randomUUID();
 
@@ -5180,7 +5180,7 @@ export class ConnectAppService {
     return requests.map(r => ({
       requestId: r.id,
       communityId: r.association_id,
-      communityName: assocMap.get(r.association_id) || "—",
+      communityName: assocMap.get(r.association_id) || "â€”",
       requesterName: profileMap.get(r.user_id) || null,
       status: r.status,
       note: r.message || null,
@@ -5190,7 +5190,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-7B+ — Community Invites
+  // BC-Mobile-7B+ â€” Community Invites
   // ==========================================
 
   async listCommunityInvites(userId: string, communityId: string) {
@@ -5253,7 +5253,7 @@ export class ConnectAppService {
 
     return {
       templates: mapping.length > 0 ? mapping : [
-        { locale: "vi", subject: "Lời mời tham gia cộng đồng", body: "Xin chào, bạn đã được mời." },
+        { locale: "vi", subject: "Lá»i má»i tham gia cá»™ng Ä‘á»“ng", body: "Xin chĂ o, báº¡n Ä‘Ă£ Ä‘Æ°á»£c má»i." },
         { locale: "en", subject: "Community Invitation", body: "Hello, you have been invited." }
       ],
       canEdit: true,
@@ -5487,7 +5487,7 @@ export class ConnectAppService {
   }
 
   // ==========================================
-  // BC-Mobile-7B — Community Activity & Opportunities
+  // BC-Mobile-7B â€” Community Activity & Opportunities
   // ==========================================
 
   async listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) {
@@ -5674,7 +5674,7 @@ export class ConnectAppService {
     const userRows = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
 
     const memberCode = memberRows[0]?.code ?? `MB-${Date.now().toString(36).toUpperCase()}`;
-    const memberName = memberRows[0]?.name ?? userRows?.name ?? 'Hội viên';
+    const memberName = memberRows[0]?.name ?? userRows?.name ?? 'Há»™i viĂªn';
     const email = memberRows[0]?.email ?? userRows?.email ?? '';
 
     const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
@@ -5821,7 +5821,7 @@ export class ConnectAppService {
       INSERT INTO public.opportunity_interests (
         id, opportunity_id, member_id, message, contact, created_at
       ) VALUES (
-        ${intId}, ${opportunityRef}, ${userId}, ${interestLevel || 'Tôi quan tâm cơ hội này.'}, ${contact}, ${now}
+        ${intId}, ${opportunityRef}, ${userId}, ${interestLevel || 'TĂ´i quan tĂ¢m cÆ¡ há»™i nĂ y.'}, ${contact}, ${now}
       )
       ON CONFLICT (id) DO NOTHING
     `.catch(() => null);
@@ -5926,7 +5926,7 @@ export class ConnectAppService {
 
     return opportunities.map((o, i) => ({
       id: o.id,
-      tag: o.type || 'Cơ hội',
+      tag: o.type || 'CÆ¡ há»™i',
       title: o.title,
       company: o.region || o.industry || '',
       time: o.created_at ? new Date(o.created_at).toLocaleDateString('vi-VN') : '',
@@ -5948,7 +5948,7 @@ export class ConnectAppService {
       INSERT INTO public.opportunity_interests (
         id, opportunity_id, member_id, message, contact, created_at
       ) VALUES (
-        ${intId}, ${opportunityId}, ${userId}, ${message || 'Tôi quan tâm cơ hội này.'}, ${contact}, ${now}
+        ${intId}, ${opportunityId}, ${userId}, ${message || 'TĂ´i quan tĂ¢m cÆ¡ há»™i nĂ y.'}, ${contact}, ${now}
       )
       ON CONFLICT (id) DO NOTHING
     `.catch(() => null);
@@ -5956,7 +5956,7 @@ export class ConnectAppService {
     return { ok: true };
   }
 
-  // ── Member Messaging (used by member PWA) ─────────────────────────
+  // â”€â”€ Member Messaging (used by member PWA) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async listMemberConversations(userId: string) {
     const mems = await this.prisma.$queryRaw<any[]>`
       SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
@@ -6060,7 +6060,7 @@ export class ConnectAppService {
     return { ok: true };
   }
 
-  // ── Products / Marketplace ───────────────────────────────────────────
+  // â”€â”€ Products / Marketplace â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async listActiveProducts() {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, category, views, created_at
@@ -6090,14 +6090,14 @@ export class ConnectAppService {
       INSERT INTO public.quote_requests (
         id, product_id, buyer_id, quantity, message, contact, status, created_at
       ) VALUES (
-        gen_random_uuid(), ${body.productId}, ${userId}::uuid, ${body.quantity ?? 1}, ${body.message ?? 'Tôi muốn nhận báo giá sản phẩm này.'}, ${phone}, 'pending', now()
+        gen_random_uuid(), ${body.productId}, ${userId}::uuid, ${body.quantity ?? 1}, ${body.message ?? 'TĂ´i muá»‘n nháº­n bĂ¡o giĂ¡ sáº£n pháº©m nĂ y.'}, ${phone}, 'pending', now()
       )
     `.catch(() => null);
 
     return { ok: true };
   }
 
-  // ── Content: News & Perks ─────────────────────────────────────────────
+  // â”€â”€ Content: News & Perks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async listPublishedNews() {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, category, author, excerpt, views, created_at
@@ -6157,6 +6157,278 @@ export class ConnectAppService {
       link: p.link ?? '',
       validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : null,
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Settings
+  // ---------------------------------------------------------------------------
+
+  async getSettings(userId: string) {
+    const row = await this.prisma.$queryRaw<any[]>`
+      SELECT org_name, org_email, lang, email_notif, sms_notif, two_fa
+      FROM public.user_settings WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    const r = row[0] ?? null;
+    return {
+      orgName: r?.org_name ?? 'Hiá»‡p há»™i Doanh nghiá»‡p Viá»‡t Nam',
+      orgEmail: r?.org_email ?? 'contact@vba.vn',
+      lang: r?.lang ?? 'vi',
+      emailNotif: r?.email_notif ?? true,
+      smsNotif: r?.sms_notif ?? false,
+      twoFa: r?.two_fa ?? true,
+    };
+  }
+
+  async saveSettings(userId: string, body: any) {
+    await this.prisma.$executeRaw`
+      INSERT INTO public.user_settings (user_id, org_name, org_email, lang, email_notif, sms_notif, two_fa)
+      VALUES (${userId}::uuid, ${body.orgName ?? ''}, ${body.orgEmail ?? ''}, ${body.lang ?? 'vi'},
+              ${body.emailNotif ?? true}, ${body.smsNotif ?? false}, ${body.twoFa ?? true})
+      ON CONFLICT (user_id) DO UPDATE SET
+        org_name = EXCLUDED.org_name, org_email = EXCLUDED.org_email,
+        lang = EXCLUDED.lang, email_notif = EXCLUDED.email_notif,
+        sms_notif = EXCLUDED.sms_notif, two_fa = EXCLUDED.two_fa
+    `.catch(() => null);
+    return { ok: true };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Voting preference
+  // ---------------------------------------------------------------------------
+
+  async getVotingPref(userId: string) {
+    const row = await this.prisma.$queryRaw<any[]>`
+      SELECT voting_open_pref FROM public.user_settings WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    return { pref: (row[0]?.voting_open_pref ?? null) as 'same' | 'new' | null };
+  }
+
+  async setVotingPref(userId: string, pref: string | null) {
+    await this.prisma.$executeRaw`
+      INSERT INTO public.user_settings (user_id, voting_open_pref)
+      VALUES (${userId}::uuid, ${pref})
+      ON CONFLICT (user_id) DO UPDATE SET voting_open_pref = EXCLUDED.voting_open_pref
+    `.catch(() => null);
+    return { ok: true };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Post-login route
+  // ---------------------------------------------------------------------------
+
+  async getPostLoginRoute(userId: string): Promise<{ to: '/' | '/m' }> {
+    const platformAdmin = await this.prisma.$queryRaw<any[]>`
+      SELECT 1 FROM public.vione_users WHERE id = ${userId}::uuid AND role = 'platform_admin' LIMIT 1
+    `.catch(() => [] as any[]);
+    if (platformAdmin.length > 0) return { to: '/' };
+
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+    const isAdmin = (memberships ?? []).some((m: any) => m.role === 'admin' || m.role === 'association_admin');
+    return { to: isAdmin ? '/' : '/m' };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Media signed URL (Supabase Storage via REST â€” no SDK)
+  // ---------------------------------------------------------------------------
+
+  async getMediaSignedUrl(userId: string, path: string) {
+    const bucket = 'product-media';
+    const ttl = 3600;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey || !path) return { signedUrl: null };
+
+    try {
+      const res = await fetch(`${supabaseUrl}/storage/v1/object/sign/${bucket}/${encodeURIComponent(path)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({ expiresIn: ttl }),
+      });
+      if (!res.ok) return { signedUrl: null };
+      const data: any = await res.json();
+      const signedUrl = data?.signedURL ? `${supabaseUrl}/storage/v1${data.signedURL}` : null;
+      return { signedUrl };
+    } catch {
+      return { signedUrl: null };
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public: share guest contact (via Supabase RPC over REST â€” no SDK)
+  // ---------------------------------------------------------------------------
+
+  async shareGuestContact(slug: string, body: any) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) throw new InternalServerErrorException('service_unavailable');
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/share_guest_contact`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({
+        p_slug: slug,
+        p_display_name: body.displayName ?? '',
+        p_phone: body.phone ?? null,
+        p_email: body.email ?? null,
+        p_company_name: body.companyName ?? null,
+        p_title: body.title ?? null,
+        p_consent_version: body.consentVersion ?? 1,
+        p_client_token: body.clientToken ?? null,
+      }),
+    });
+
+    if (!res.ok) throw new InternalServerErrorException('submission_failed');
+    const data: any = await res.json();
+    return data;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Admin: renewal audit scope
+  // ---------------------------------------------------------------------------
+
+  async getAdminRenewalScope(userId: string) {
+    const platformAdmin = await this.prisma.$queryRaw<any[]>`
+      SELECT 1 FROM public.vione_users WHERE id = ${userId}::uuid AND role = 'platform_admin' LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (platformAdmin.length > 0) {
+      const assocs = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name FROM public.associations ORDER BY name
+      `.catch(() => [] as any[]);
+      return {
+        isPlatformAdmin: true,
+        associations: assocs.map((a: any) => ({ id: a.id, name: a.name })),
+      };
+    }
+
+    const memberships = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id, role FROM public.memberships WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+
+    const adminAssocIds = (memberships ?? [])
+      .filter((m: any) => m.role === 'admin' || m.role === 'association_admin')
+      .map((m: any) => m.association_id)
+      .filter(Boolean);
+
+    if (!adminAssocIds.length) return { isPlatformAdmin: false, associations: [] };
+
+    const assocs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name FROM public.associations WHERE id = ANY(${adminAssocIds}) ORDER BY name
+    `.catch(() => [] as any[]);
+
+    return {
+      isPlatformAdmin: false,
+      associations: assocs.map((a: any) => ({ id: a.id, name: a.name })),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Admin: renewal audit log search
+  // ---------------------------------------------------------------------------
+
+  async searchRenewalAuditLog(userId: string, query: any) {
+    const scope = await this.getAdminRenewalScope(userId);
+    const allowedIds = scope.associations.map((a: any) => a.id);
+    if (!scope.isPlatformAdmin && !allowedIds.length) {
+      throw new ForbiddenException('Not an admin');
+    }
+
+    const limit = Math.min(query.limit ?? 200, 500);
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) return [];
+
+    const params = new URLSearchParams();
+    params.set('select', 'id,event_type,member_id,association_id,reference,method,amount_paid,invoice_no,previous_term_end,new_term_end,error_code,error_message,metadata,created_at');
+    params.set('order', 'created_at.desc');
+    params.set('limit', String(limit));
+
+    if (query.associationId) {
+      if (!scope.isPlatformAdmin && !allowedIds.includes(query.associationId)) {
+        throw new ForbiddenException('Not allowed for this association');
+      }
+      params.set('association_id', `eq.${query.associationId}`);
+    } else if (!scope.isPlatformAdmin) {
+      params.set('association_id', `in.(${allowedIds.join(',')})`);
+    }
+
+    if (query.memberId) params.set('member_id', `eq.${query.memberId}`);
+    if (query.eventType) params.set('event_type', `eq.${query.eventType}`);
+    if (query.from) params.set('created_at', `gte.${new Date(query.from).toISOString()}`);
+    if (query.to) {
+      const end = new Date(query.to);
+      end.setHours(23, 59, 59, 999);
+      params.set('created_at', `lte.${end.toISOString()}`);
+    }
+
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/renewal_audit_log?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+        },
+      });
+      if (!res.ok) return [];
+      const rows: any[] = await res.json();
+
+      const memberIds = [...new Set(rows.map((r: any) => r.member_id).filter(Boolean))];
+      const assocIds = [...new Set(rows.map((r: any) => r.association_id).filter(Boolean))];
+
+      const [members, assocs] = await Promise.all([
+        memberIds.length
+          ? this.prisma.$queryRaw<any[]>`SELECT id, name, code FROM public.members WHERE id = ANY(${memberIds})`
+          : Promise.resolve([] as any[]),
+        assocIds.length
+          ? this.prisma.$queryRaw<any[]>`SELECT id, name FROM public.associations WHERE id = ANY(${assocIds})`
+          : Promise.resolve([] as any[]),
+      ]).catch(() => [[], []] as any[][]);
+
+      const memberMap = new Map((members ?? []).map((m: any) => [m.id, m]));
+      const assocMap = new Map((assocs ?? []).map((a: any) => [a.id, a.name]));
+      const needle = (query.search ?? '').trim().toLowerCase();
+
+      return rows
+        .map((r: any) => {
+          const m: any = memberMap.get(r.member_id);
+          return {
+            id: r.id,
+            eventType: r.event_type,
+            memberId: r.member_id ?? null,
+            memberName: m?.name ?? null,
+            memberCode: m?.code ?? null,
+            associationId: r.association_id ?? null,
+            associationName: assocMap.get(r.association_id) ?? null,
+            reference: r.reference,
+            method: r.method ?? null,
+            amountPaid: Number(r.amount_paid ?? 0),
+            invoiceNo: r.invoice_no ?? null,
+            previousTermEnd: r.previous_term_end ?? null,
+            newTermEnd: r.new_term_end ?? null,
+            errorCode: r.error_code ?? null,
+            errorMessage: r.error_message ?? null,
+            metadata: r.metadata ?? {},
+            createdAt: r.created_at,
+          };
+        })
+        .filter((r: any) => {
+          if (!needle) return true;
+          return [r.memberName, r.memberCode, r.reference, r.invoiceNo]
+            .filter(Boolean)
+            .some((v: any) => String(v).toLowerCase().includes(needle));
+        });
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -6264,14 +6536,14 @@ function detectPhoneLabel(lineText: string): string | undefined {
   const s = lineText.toLowerCase();
   if (s.includes("fax")) return "fax";
   if (s.includes("hotline")) return "hotline";
-  const tokens = s.split(/[^a-z0-9à-ỹ]+/u).filter(Boolean);
+  const tokens = s.split(/[^a-z0-9Ă -á»¹]+/u).filter(Boolean);
   const has = (set: readonly string[]) => tokens.some((tok) => set.includes(tok));
-  if (has(["mobile", "mobi", "cell", "hp"]) || s.includes("di động") || s.includes("di dong")) {
+  if (has(["mobile", "mobi", "cell", "hp"]) || s.includes("di Ä‘á»™ng") || s.includes("di dong")) {
     return "mobile";
   }
   if (
-    has(["office", "tel", "phone", "đt", "dt"]) ||
-    s.includes("văn phòng") ||
+    has(["office", "tel", "phone", "Ä‘t", "dt"]) ||
+    s.includes("vÄƒn phĂ²ng") ||
     s.includes("van phong")
   ) {
     return "office";
@@ -6488,17 +6760,17 @@ async function suggestCustomerTags(input: {
   if (!apiKey) return { ok: false, error: "unavailable" as const };
 
   const context = [
-    `Tên: ${input.displayName || "(không rõ)"}`,
-    `Công ty: ${input.companyName || "(không rõ)"}`,
-    `Giai đoạn: ${input.stageLabel}`,
-    `Ghi chú: ${input.note || "(trống)"}`,
-    `Lịch sử chăm sóc:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join("\n") : "(trống)"}`,
-    `Điểm đau & nhu cầu:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join("\n") : "(trống)"}`,
-    `Nhãn đã gắn: ${input.currentTagNames.join(", ") || "(chưa có)"}`,
-    `Danh mục nhãn hiện có: ${input.existingTagNames.join(", ") || "(chưa có)"}`,
-    `Nhãn người dùng đánh giá ĐÚNG trước đây: ${(input.approvedTagNames ?? []).join(", ") || "(chưa có)"}`,
-    `Nhãn người dùng đánh giá SAI trước đây (tuyệt đối không đề xuất lại): ${
-      (input.rejectedTagNames ?? []).join(", ") || "(chưa có)"
+    `TĂªn: ${input.displayName || "(khĂ´ng rĂµ)"}`,
+    `CĂ´ng ty: ${input.companyName || "(khĂ´ng rĂµ)"}`,
+    `Giai Ä‘oáº¡n: ${input.stageLabel}`,
+    `Ghi chĂº: ${input.note || "(trá»‘ng)"}`,
+    `Lá»‹ch sá»­ chÄƒm sĂ³c:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join("\n") : "(trá»‘ng)"}`,
+    `Äiá»ƒm Ä‘au & nhu cáº§u:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join("\n") : "(trá»‘ng)"}`,
+    `NhĂ£n Ä‘Ă£ gáº¯n: ${input.currentTagNames.join(", ") || "(chÆ°a cĂ³)"}`,
+    `Danh má»¥c nhĂ£n hiá»‡n cĂ³: ${input.existingTagNames.join(", ") || "(chÆ°a cĂ³)"}`,
+    `NhĂ£n ngÆ°á»i dĂ¹ng Ä‘Ă¡nh giĂ¡ ÄĂNG trÆ°á»›c Ä‘Ă¢y: ${(input.approvedTagNames ?? []).join(", ") || "(chÆ°a cĂ³)"}`,
+    `NhĂ£n ngÆ°á»i dĂ¹ng Ä‘Ă¡nh giĂ¡ SAI trÆ°á»›c Ä‘Ă¢y (tuyá»‡t Ä‘á»‘i khĂ´ng Ä‘á» xuáº¥t láº¡i): ${
+      (input.rejectedTagNames ?? []).join(", ") || "(chÆ°a cĂ³)"
     }`,
   ].join("\n");
 
@@ -6514,9 +6786,9 @@ async function suggestCustomerTags(input: {
       messages: [
         {
           role: "system",
-          content: `Bạn là trợ lý phân nhóm khách hàng cho một người bán hàng cá nhân.
-Đề xuất tối đa 5 NHÃN ngắn để phân nhóm khách hàng.
-Trả về DUY NHẤT JSON dạng: {"suggestions":[{"name":"...","reason":"...","confidence":0.8}]}. Không markdown.`
+          content: `Báº¡n lĂ  trá»£ lĂ½ phĂ¢n nhĂ³m khĂ¡ch hĂ ng cho má»™t ngÆ°á»i bĂ¡n hĂ ng cĂ¡ nhĂ¢n.
+Äá» xuáº¥t tá»‘i Ä‘a 5 NHĂƒN ngáº¯n Ä‘á»ƒ phĂ¢n nhĂ³m khĂ¡ch hĂ ng.
+Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","reason":"...","confidence":0.8}]}. KhĂ´ng markdown.`
         },
         { role: "user", content: context }
       ]

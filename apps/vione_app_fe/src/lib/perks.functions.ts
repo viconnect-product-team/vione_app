@@ -39,7 +39,8 @@ function mapPerk(p: Row): AdminPerk {
   };
 }
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
+async function assertAdmin(context: { supabase?: any; userId: string; role?: string }) {
+  if (context.role === "admin") return;
   const { data: isAdmin } = await getDb(context).rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",

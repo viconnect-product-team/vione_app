@@ -190,12 +190,12 @@ function RegPage() {
                         : "neutral"
                   }
                 >
-                  {t(TICKET_KEY[r.ticketType])}
+                  {t(TICKET_KEY[r.ticketType as Registration["ticketType"]])}
                 </Pill>
               </td>
               <td className="px-4 py-3 text-muted-foreground">{fmt.date(r.registeredAt)}</td>
               <td className="px-4 py-3">
-                <Pill color={STATUS_COLOR[r.status]}>{t(STATUS_KEY[r.status])}</Pill>
+                <Pill color={STATUS_COLOR[r.status as Registration["status"]]}>{t(STATUS_KEY[r.status as Registration["status"]])}</Pill>
               </td>
             </tr>
           );

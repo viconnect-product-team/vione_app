@@ -2,7 +2,11 @@
 // (timestamp + mã băm SHA-256 của nội dung) để đối chiếu tính toàn vẹn.
 
 import { jsPDF } from "jspdf";
-import type { RenewalAuditEntry } from "@/lib/member-app.functions";
+import type { AdminRenewalAuditRow } from "@/lib/renewal-audit-admin.functions";
+import type { RenewalAuditEntry as MemberAuditEntry } from "@/lib/member-app/renewal.functions";
+
+// Hỗ trợ cả admin audit row lẫn member self-service audit entry
+type RenewalAuditEntry = AdminRenewalAuditRow | MemberAuditEntry;
 
 export type RenewalAuditExportMeta = {
   memberLabel?: string;
@@ -183,9 +187,6 @@ export async function exportRenewalAuditPDF(
     }
     if (r.previousTermEnd || r.newTermEnd) {
       lines.push(`Hạn hội viên: ${r.previousTermEnd ?? "—"} → ${r.newTermEnd ?? "—"}`);
-    }
-    if (r.previousRenewedAt) {
-      lines.push(`Gia hạn lần trước: ${r.previousRenewedAt}`);
     }
     if (r.eventType === "idempotent_noop" && typeof r.metadata?.reason === "string") {
       lines.push(`Lý do không phát sinh: ${r.metadata.reason}`);

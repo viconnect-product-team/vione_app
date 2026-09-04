@@ -379,7 +379,7 @@ function CheckinScreen() {
         ) : (
           <div className="space-y-2">
             {history.map((r: any) => {
-              const s = statusMap[r.status];
+              const s = statusMap[r.status as CheckinStatus];
               return (
                 <div key={r.id} className="vba-card flex items-center gap-3 p-3">
                   <span

@@ -69,6 +69,7 @@ import { MemberNetworking } from "@/components/dashboard/MemberNetworking";
 import { MemberOpportunities } from "@/components/dashboard/MemberOpportunities";
 import { MemberActivityFeed } from "@/components/dashboard/MemberActivityFeed";
 import { AdminCardManagement } from "@/components/dashboard/AdminCardManagement";
+import { SendEmailModal } from "@/components/dashboard/SendEmailModal";
 
 export const Route = createFileRoute("/members/$memberId")({
   ssr: false,
@@ -298,6 +299,7 @@ function MemberDetailPage() {
   const saveContact = useServerFn(updateMemberContactFn);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [openEmail, setOpenEmail] = useState(false);
   const [form, setForm] = useState({
     email: member.email,
     phone: member.phone,
@@ -582,7 +584,10 @@ function MemberDetailPage() {
                 <MessageSquare className="h-3.5 w-3.5" />
                 {t("detail.message")}
               </button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-card/90">
+              <button
+                onClick={() => setOpenEmail(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-card/90"
+              >
                 <Mail className="h-3.5 w-3.5" />
                 {t("detail.sendEmail")}
               </button>
@@ -1409,6 +1414,13 @@ function MemberDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <SendEmailModal
+        open={openEmail}
+        onClose={() => setOpenEmail(false)}
+        recipientName={member.name}
+        recipientEmail={member.email}
+      />
     </AppShell>
   );
 }

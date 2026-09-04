@@ -19,7 +19,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import type { QuoteStatus } from "@/lib/marketplace-data";
 import { cancelQuoteFn, listMyQuotesFn } from "@/lib/marketplace.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { useSessionStatus } from "@/hooks/use-session-status";
 
 const STATUS_COLOR: Record<QuoteStatus, "primary" | "success" | "neutral" | "warning" | "danger"> =
@@ -77,20 +76,13 @@ function MyQuotesPage() {
     else if (sessionStatus === "anonymous") setQuotes([]);
   }, [sessionStatus, refresh]);
 
-  // Realtime: refresh my quotes when any quote request changes
+  // Polling: refresh my quotes every 15 s (replaces Supabase realtime channel)
   useEffect(() => {
-    const channel = supabase
-      .channel("my-quotes-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "quote_requests" },
-        () => void refresh(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refresh]);
+    if (sessionStatus !== "authenticated") return;
+    const id = setInterval(() => void refresh(), 15_000);
+    return () => clearInterval(id);
+  }, [sessionStatus, refresh]);
+
 
   const cancel = async (id: string) => {
     setBusyId(id);

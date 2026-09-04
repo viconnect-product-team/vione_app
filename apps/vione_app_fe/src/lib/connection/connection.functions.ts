@@ -11,6 +11,10 @@ import type {
   ConnectionSummaryDTO,
 } from "./types";
 
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+
 const uuid = z.string().uuid();
 const mutationKey = z.string().min(8).max(200).optional();
 const listOpts = z
@@ -33,7 +37,7 @@ export const sendConnectionRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.sendRequest(null as any, context.userId, data);
+    return ConnectionService.sendRequest(getDb(context), context.userId, data);
   });
 
 export const acceptConnectionRequestFn = createServerFn({ method: "POST" })
@@ -42,7 +46,7 @@ export const acceptConnectionRequestFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.acceptRequest(
-      null as any,
+      getDb(context),
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -55,7 +59,7 @@ export const declineConnectionRequestFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.declineRequest(
-      null as any,
+      getDb(context),
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -68,7 +72,7 @@ export const cancelConnectionRequestFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.cancelRequest(
-      null as any,
+      getDb(context),
       context.userId,
       data.requestId,
       data.mutationKey,
@@ -81,7 +85,7 @@ export const disconnectPersonFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.disconnect(
-      null as any,
+      getDb(context),
       context.userId,
       data.targetPersonNodeId,
       data.mutationKey,
@@ -94,7 +98,7 @@ export const blockPersonFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.block(
-      null as any,
+      getDb(context),
       context.userId,
       data.targetPersonNodeId,
       data.mutationKey,
@@ -106,7 +110,7 @@ export const unblockPersonFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ targetPersonNodeId: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.unblock(null as any, context.userId, data.targetPersonNodeId);
+    return ConnectionService.unblock(getDb(context), context.userId, data.targetPersonNodeId);
   });
 
 export const resolveConnectionStateFn = createServerFn({ method: "GET" })
@@ -115,7 +119,7 @@ export const resolveConnectionStateFn = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<ConnectionRelationshipStateDTO> => {
     const { ConnectionService } = await import("./service.server");
     return ConnectionService.resolveRelationshipState(
-      null as any,
+      getDb(context),
       context.userId,
       data.targetPersonNodeId,
     );
@@ -126,7 +130,7 @@ export const listIncomingConnectionRequestsFn = createServerFn({ method: "GET" }
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listIncomingRequests(null as any, context.userId, data);
+    return ConnectionService.listIncomingRequests(getDb(context), context.userId, data);
   });
 
 export const listOutgoingConnectionRequestsFn = createServerFn({ method: "GET" })
@@ -134,7 +138,7 @@ export const listOutgoingConnectionRequestsFn = createServerFn({ method: "GET" }
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionRequestDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listOutgoingRequests(null as any, context.userId, data);
+    return ConnectionService.listOutgoingRequests(getDb(context), context.userId, data);
   });
 
 export const listConnectionsFn = createServerFn({ method: "GET" })
@@ -142,5 +146,5 @@ export const listConnectionsFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => listOpts.parse(i) ?? {})
   .handler(async ({ data, context }): Promise<ConnectionSummaryDTO[]> => {
     const { ConnectionService } = await import("./service.server");
-    return ConnectionService.listConnections(null as any, context.userId, data);
+    return ConnectionService.listConnections(getDb(context), context.userId, data);
   });

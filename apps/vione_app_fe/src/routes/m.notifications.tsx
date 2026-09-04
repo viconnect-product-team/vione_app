@@ -614,9 +614,9 @@ function NotificationsScreen() {
                         color: priorityColor(n.priority),
                         background: "var(--vba-gold-soft)",
                       }}
-                      aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority])}`}
+                      aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority as NotificationPriority])}`}
                     >
-                      {t(PRIORITY_KEY[n.priority])}
+                      {t(PRIORITY_KEY[n.priority as NotificationPriority])}
                     </span>
                   )}
                   {n.unread && (

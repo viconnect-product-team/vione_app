@@ -63,7 +63,6 @@ import {
   type ConnectionStatus,
 } from "@/lib/networking-data";
 import { getNetworkStateFn } from "@/lib/networking.functions";
-import { supabase } from "@/integrations/supabase/client";
 
 type NetworkSearch = { peer?: string; product?: string };
 
@@ -637,27 +636,12 @@ function NetworkPage() {
 
   // Realtime: when messages/connections change in the DB, re-sync only the
   // network state (statuses, timestamps, messages) instead of re-running the
-  // whole loader. Products and the peer list don't change per event, so this
-  // avoids redundant queries. Bursts are debounced into a single refresh.
+  // Polling: refresh messages and connections every 20 s (replaces Supabase realtime channel)
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const schedule = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        timer = null;
-        void refreshFromDb();
-      }, 250);
-    };
-    const channel = supabase
-      .channel("network-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, schedule)
-      .on("postgres_changes", { event: "*", schema: "public", table: "connections" }, schedule)
-      .subscribe();
-    return () => {
-      if (timer) clearTimeout(timer);
-      supabase.removeChannel(channel);
-    };
+    const id = setInterval(() => void refreshFromDb(), 20_000);
+    return () => clearInterval(id);
   }, []);
+
 
   const [tab, setTab] = useState<Tab>("connections");
   const [query, setQuery] = useState("");

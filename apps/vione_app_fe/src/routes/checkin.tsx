@@ -15,7 +15,6 @@ import { type Attendee, type CheckinResult } from "@/lib/checkin-data";
 import { checkinErrorKey, isForbiddenError } from "@/lib/checkin-errors";
 import { getCheckinStateFn, checkInFn, undoCheckInFn } from "@/lib/checkin.functions";
 import { resolveAttendeeId } from "@/lib/scan";
-import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -62,33 +61,18 @@ function CheckinPage() {
     return () => clearTimeout(id);
   }, [result]);
 
-  // Realtime: refresh attendance state when any device checks someone in.
+  // Polling: refresh attendance every 10 s (replaces Supabase realtime channel)
   useEffect(() => {
-    const invalidate = () => {
+    const id = setInterval(() => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => void router.invalidate(), 400);
-    };
-    try {
-      if (supabase && typeof supabase.channel === "function") {
-        const channel = supabase
-          .channel("checkin-live")
-          .on("postgres_changes", { event: "*", schema: "public", table: "attendees" }, invalidate)
-          .on("postgres_changes", { event: "*", schema: "public", table: "checkin_logs" }, invalidate)
-          .subscribe();
-        return () => {
-          if (debounceRef.current) clearTimeout(debounceRef.current);
-          try {
-            supabase.removeChannel(channel);
-          } catch {}
-        };
-      }
-    } catch (e) {
-      console.warn("Realtime subscription fallback:", e);
-    }
+    }, 10_000);
     return () => {
+      clearInterval(id);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [router]);
+
 
   async function performCheckIn(id: string) {
     const res = await doCheckIn({ data: { attendeeId: id } });

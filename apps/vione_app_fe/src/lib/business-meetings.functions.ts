@@ -23,18 +23,20 @@ import type {
   MeetingListItemDTO,
 } from "./business-meetings/types";
 
-type Ctx = { supabase: unknown; userId: string };
+type Ctx = { supabase?: unknown; userId: string };
 
 /** Build the server-only resolvers, then bind an SDK to the caller. */
 async function sdkFor(context: Ctx) {
   const { resolveMeetingTargetByCardSlug, projectCounterpartSummaries } =
     await import("./business-meetings/target.server");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const deps: MeetingServiceDeps = {
     resolveTarget: resolveMeetingTargetByCardSlug,
     projectCounterparts: projectCounterpartSummaries,
   };
 
-  return createBusinessMeetingSDK(null as any as any, context.userId, deps);
+  const db = (context.supabase as any) || supabaseAdmin;
+  return createBusinessMeetingSDK(db, context.userId, deps);
 }
 
 const mutationKey = z.string().min(8).max(200).optional();

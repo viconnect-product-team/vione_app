@@ -66,4 +66,48 @@ export class MeetingsController {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.updateFollowUpStatus(userId, followUpId, status);
   }
+
+  @Get('availability/preferences')
+  async getAvailabilityPreferences(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.getAvailabilityPreferences(userId);
+  }
+
+  @Post('availability/preferences')
+  async updateAvailabilityPreferences(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.updateAvailabilityPreferences(userId, data);
+  }
+
+  @Get(':id/time-proposals')
+  async listTimeProposals(@Param('id') id: string) {
+    return this.meetingsService.listTimeProposals(id);
+  }
+
+  @Get(':id/projections')
+  async listProjections(@Param('id') id: string) {
+    return this.meetingsService.listProjections(id);
+  }
+
+  @Post('time-proposals')
+  async createTimeProposals(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.createTimeProposals(userId, data);
+  }
+
+  @Post('time-proposals/:id/respond')
+  async respondToTimeProposal(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('response') response: string,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.respondToTimeProposal(userId, id, response);
+  }
+
+  @Post('time-proposals/:id/select')
+  async selectTimeProposal(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.selectTimeProposal(userId, id);
+  }
 }

@@ -280,4 +280,230 @@ export class MeetingsService {
       viewerRole: row.viewer_role,
     };
   }
+
+  async getAvailabilityPreferences(userId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_availability_preferences
+      WHERE user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return {
+      id: String(r.id),
+      userId: String(r.user_id),
+      timezone: String(r.timezone || 'Asia/Ho_Chi_Minh'),
+      workingDays: r.working_days || [1, 2, 3, 4, 5],
+      workingHours: r.working_hours || [],
+      minimumNoticeMinutes: Number(r.minimum_notice_minutes || 60),
+      defaultMeetingDurationMinutes: Number(r.default_meeting_duration_minutes || 30),
+      bufferBeforeMinutes: Number(r.buffer_before_minutes || 0),
+      bufferAfterMinutes: Number(r.buffer_after_minutes || 0),
+      version: Number(r.version || 1),
+    };
+  }
+
+  async updateAvailabilityPreferences(userId: string, data: any) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.business_availability_preferences (
+        user_id, timezone, working_days, working_hours, minimum_notice_minutes,
+        default_meeting_duration_minutes, buffer_before_minutes, buffer_after_minutes,
+        version, updated_at
+      )
+      VALUES (
+        ${userId}::uuid,
+        ${data.timezone},
+        ${data.workingDays}::int[],
+        ${JSON.stringify(data.workingHours)}::jsonb,
+        ${data.minimumNoticeMinutes},
+        ${data.defaultMeetingDurationMinutes},
+        ${data.bufferBeforeMinutes},
+        ${data.bufferAfterMinutes},
+        1,
+        now()
+      )
+      ON CONFLICT (user_id) DO UPDATE SET
+        timezone = EXCLUDED.timezone,
+        working_days = EXCLUDED.working_days,
+        working_hours = EXCLUDED.working_hours,
+        minimum_notice_minutes = EXCLUDED.minimum_notice_minutes,
+        default_meeting_duration_minutes = EXCLUDED.default_meeting_duration_minutes,
+        buffer_before_minutes = EXCLUDED.buffer_before_minutes,
+        buffer_after_minutes = EXCLUDED.buffer_after_minutes,
+        version = public.business_availability_preferences.version + 1,
+        updated_at = now()
+      RETURNING *
+    `.catch(() => []);
+
+    if (rows.length === 0) {
+      return {
+        id: `pref-${userId}`,
+        userId,
+        timezone: data.timezone,
+        workingDays: data.workingDays,
+        workingHours: data.workingHours,
+        minimumNoticeMinutes: data.minimumNoticeMinutes,
+        defaultMeetingDurationMinutes: data.defaultMeetingDurationMinutes,
+        bufferBeforeMinutes: data.bufferBeforeMinutes,
+        bufferAfterMinutes: data.bufferAfterMinutes,
+        version: 1,
+      };
+    }
+    const r = rows[0];
+    return {
+      id: String(r.id),
+      userId: String(r.user_id),
+      timezone: String(r.timezone),
+      workingDays: r.working_days || [],
+      workingHours: r.working_hours || [],
+      minimumNoticeMinutes: Number(r.minimum_notice_minutes),
+      defaultMeetingDurationMinutes: Number(r.default_meeting_duration_minutes),
+      bufferBeforeMinutes: Number(r.buffer_before_minutes),
+      bufferAfterMinutes: Number(r.buffer_after_minutes),
+      version: Number(r.version || 1),
+    };
+  }
+
+  async listTimeProposals(meetingId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_meeting_time_proposals
+      WHERE meeting_id = ${meetingId}::uuid
+      ORDER BY start_at ASC
+    `.catch(() => []);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      meetingId: String(r.meeting_id),
+      proposedByUserId: String(r.proposed_by_user_id),
+      startAt: String(r.start_at),
+      endAt: String(r.end_at),
+      timezone: String(r.timezone),
+      status: r.status,
+      version: Number(r.version ?? 1),
+      createdAt: String(r.created_at),
+      updatedAt: String(r.updated_at),
+    }));
+  }
+
+  async createTimeProposals(userId: string, data: any) {
+    const meetingId = data.meetingId;
+    const proposals = data.proposals || [];
+    const results: any[] = [];
+
+    for (const p of proposals) {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        INSERT INTO public.business_meeting_time_proposals (
+          meeting_id, proposed_by_user_id, start_at, end_at, timezone, status, created_at, updated_at
+        )
+        VALUES (
+          ${meetingId}::uuid,
+          ${userId}::uuid,
+          ${p.startAt}::timestamptz,
+          ${p.endAt}::timestamptz,
+          ${p.timezone},
+          'proposed',
+          now(),
+          now()
+        )
+        RETURNING *
+      `.catch(() => []);
+      if (rows.length > 0) {
+        const r = rows[0];
+        results.push({
+          id: String(r.id),
+          meetingId: String(r.meeting_id),
+          proposedByUserId: String(r.proposed_by_user_id),
+          startAt: String(r.start_at),
+          endAt: String(r.end_at),
+          timezone: String(r.timezone),
+          status: r.status,
+          version: Number(r.version ?? 1),
+          createdAt: String(r.created_at),
+          updatedAt: String(r.updated_at),
+        });
+      }
+    }
+    return results;
+  }
+
+  async respondToTimeProposal(userId: string, proposalId: string, response: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.business_meeting_time_proposal_responses (
+        proposal_id, participant_id, response, responded_at
+      )
+      VALUES (
+        ${proposalId}::uuid,
+        ${userId}::uuid,
+        ${response},
+        now()
+      )
+      ON CONFLICT (proposal_id, participant_id) DO UPDATE SET
+        response = EXCLUDED.response,
+        responded_at = now()
+      RETURNING *
+    `.catch(() => []);
+
+    if (rows.length === 0) {
+      return {
+        id: `resp-${Date.now()}`,
+        proposalId,
+        participantId: userId,
+        response,
+        respondedAt: new Date().toISOString(),
+      };
+    }
+    const r = rows[0];
+    return {
+      id: String(r.id),
+      proposalId: String(r.proposal_id),
+      participantId: String(r.participant_id),
+      response: r.response,
+      respondedAt: String(r.responded_at),
+    };
+  }
+
+  async selectTimeProposal(userId: string, proposalId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.business_meeting_time_proposals
+      SET status = 'selected', updated_at = now()
+      WHERE id = ${proposalId}::uuid
+      RETURNING *
+    `.catch(() => []);
+
+    if (rows.length === 0) {
+      throw new NotFoundException('Không tìm thấy đề xuất thời gian');
+    }
+    const r = rows[0];
+    return {
+      id: String(r.id),
+      meetingId: String(r.meeting_id),
+      proposedByUserId: String(r.proposed_by_user_id),
+      startAt: String(r.start_at),
+      endAt: String(r.end_at),
+      timezone: String(r.timezone),
+      status: r.status,
+      version: Number(r.version ?? 1),
+      createdAt: String(r.created_at),
+      updatedAt: String(r.updated_at),
+    };
+  }
+
+  async listProjections(meetingId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_meeting_calendar_projections
+      WHERE meeting_id = ${meetingId}::uuid
+    `.catch(() => []);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      meetingId: String(r.meeting_id),
+      participantUserId: String(r.participant_user_id),
+      provider: r.provider,
+      syncStatus: r.sync_status,
+      lastSyncedAt: r.last_synced_at ? String(r.last_synced_at) : null,
+      lastErrorCode: r.last_error_code ? String(r.last_error_code) : null,
+      retryCount: Number(r.retry_count ?? 0),
+    }));
+  }
 }

@@ -57,10 +57,17 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AccountSettingsRouteImport } from './routes/account-settings'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlatformIndexRouteImport } from './routes/platform.index'
+import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.index'
 import { Route as MembersIndexRouteImport } from './routes/members.index'
+import { Route as MarketplaceIndexRouteImport } from './routes/marketplace.index'
 import { Route as MIndexRouteImport } from './routes/m.index'
+import { Route as FeesIndexRouteImport } from './routes/fees.index'
+import { Route as EventsIndexRouteImport } from './routes/events.index'
+import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
 import { Route as ConnectAppIndexRouteImport } from './routes/connect-app.index'
+import { Route as CompaniesIndexRouteImport } from './routes/companies.index'
 import { Route as BusinessConnectIndexRouteImport } from './routes/business-connect.index'
+import { Route as AccountSettingsIndexRouteImport } from './routes/account-settings.index'
 import { Route as PlatformRenewalAuditRouteImport } from './routes/platform.renewal-audit'
 import { Route as PlatformPermissionsRouteImport } from './routes/platform.permissions'
 import { Route as PlatformIntroductionOperationsRouteImport } from './routes/platform.introduction-operations'
@@ -122,6 +129,8 @@ import { Route as AdminDemoLeadsRouteImport } from './routes/admin.demo-leads'
 import { Route as AdminCtaAnalyticsRouteImport } from './routes/admin.cta-analytics'
 import { Route as AdminBusinessCardsRouteImport } from './routes/admin.business-cards'
 import { Route as AccountSettingsNotificationsRouteImport } from './routes/account-settings.notifications'
+import { Route as MRenewIndexRouteImport } from './routes/m.renew.index'
+import { Route as MPerksIndexRouteImport } from './routes/m.perks.index'
 import { Route as ConnectNetworkIndexRouteImport } from './routes/connect.network.index'
 import { Route as ConnectMeetingsIndexRouteImport } from './routes/connect.meetings.index'
 import { Route as ConnectCardsIndexRouteImport } from './routes/connect.cards.index'
@@ -131,6 +140,8 @@ import { Route as ConnectAppMeIndexRouteImport } from './routes/connect-app.me.i
 import { Route as ConnectAppInboxIndexRouteImport } from './routes/connect-app.inbox.index'
 import { Route as ConnectAppCommunityIndexRouteImport } from './routes/connect-app.community.index'
 import { Route as BusinessConnectMeetingsIndexRouteImport } from './routes/business-connect.meetings.index'
+import { Route as BusinessConnectConnectionsIndexRouteImport } from './routes/business-connect.connections.index'
+import { Route as AdminBusinessCardsIndexRouteImport } from './routes/admin.business-cards.index'
 import { Route as OpportunitiesIdEditRouteImport } from './routes/opportunities.$id.edit'
 import { Route as MRenewResultRouteImport } from './routes/m.renew.result'
 import { Route as MRenewPayRouteImport } from './routes/m.renew.pay'
@@ -420,25 +431,60 @@ const PlatformIndexRoute = PlatformIndexRouteImport.update({
   path: '/platform/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpportunitiesIndexRoute = OpportunitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OpportunitiesRoute,
+} as any)
 const MembersIndexRoute = MembersIndexRouteImport.update({
   id: '/members/',
   path: '/members/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceIndexRoute = MarketplaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MarketplaceRoute,
 } as any)
 const MIndexRoute = MIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MRoute,
 } as any)
+const FeesIndexRoute = FeesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FeesRoute,
+} as any)
+const EventsIndexRoute = EventsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EventsRoute,
+} as any)
+const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocumentsRoute,
+} as any)
 const ConnectAppIndexRoute = ConnectAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ConnectAppRoute,
 } as any)
+const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CompaniesRoute,
+} as any)
 const BusinessConnectIndexRoute = BusinessConnectIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BusinessConnectRoute,
+} as any)
+const AccountSettingsIndexRoute = AccountSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountSettingsRoute,
 } as any)
 const PlatformRenewalAuditRoute = PlatformRenewalAuditRouteImport.update({
   id: '/platform/renewal-audit',
@@ -751,6 +797,16 @@ const AccountSettingsNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AccountSettingsRoute,
   } as any)
+const MRenewIndexRoute = MRenewIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MRenewRoute,
+} as any)
+const MPerksIndexRoute = MPerksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MPerksRoute,
+} as any)
 const ConnectNetworkIndexRoute = ConnectNetworkIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -798,6 +854,17 @@ const BusinessConnectMeetingsIndexRoute =
     path: '/',
     getParentRoute: () => BusinessConnectMeetingsRoute,
   } as any)
+const BusinessConnectConnectionsIndexRoute =
+  BusinessConnectConnectionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => BusinessConnectConnectionsRoute,
+  } as any)
+const AdminBusinessCardsIndexRoute = AdminBusinessCardsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminBusinessCardsRoute,
+} as any)
 const OpportunitiesIdEditRoute = OpportunitiesIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -1181,10 +1248,17 @@ export interface FileRoutesByFullPath {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/account-settings/': typeof AccountSettingsIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
+  '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/fees/': typeof FeesIndexRoute
   '/m/': typeof MIndexRoute
+  '/marketplace/': typeof MarketplaceIndexRoute
   '/members/': typeof MembersIndexRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
   '/platform/': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
@@ -1216,6 +1290,8 @@ export interface FileRoutesByFullPath {
   '/m/renew/pay': typeof MRenewPayRoute
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
+  '/admin/business-cards/': typeof AdminBusinessCardsIndexRoute
+  '/business-connect/connections/': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings/': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community/': typeof ConnectAppCommunityIndexRoute
   '/connect-app/inbox/': typeof ConnectAppInboxIndexRoute
@@ -1225,6 +1301,8 @@ export interface FileRoutesByFullPath {
   '/connect/cards/': typeof ConnectCardsIndexRoute
   '/connect/meetings/': typeof ConnectMeetingsIndexRoute
   '/connect/network/': typeof ConnectNetworkIndexRoute
+  '/m/perks/': typeof MPerksIndexRoute
+  '/m/renew/': typeof MRenewIndexRoute
   '/api/public/card/{$slug}.vcf': typeof ApiPublicCardChar123slugChar125DotvcfRoute
   '/api/public/hooks/notification-runtime': typeof ApiPublicHooksNotificationRuntimeRoute
   '/api/public/hooks/outcome-consumer': typeof ApiPublicHooksOutcomeConsumerRoute
@@ -1246,7 +1324,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account-settings': typeof AccountSettingsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
@@ -1254,27 +1331,21 @@ export interface FileRoutesByTo {
   '/business-cards': typeof BusinessCardsRoute
   '/checkin': typeof CheckinRoute
   '/checkin-qr': typeof CheckinQrRoute
-  '/companies': typeof CompaniesRouteWithChildren
   '/connect': typeof ConnectRouteWithChildren
   '/demo': typeof DemoRoute
-  '/documents': typeof DocumentsRouteWithChildren
   '/email-marketing': typeof EmailMarketingRoute
   '/event-registrations': typeof EventRegistrationsRoute
-  '/events': typeof EventsRouteWithChildren
   '/events-overview': typeof EventsOverviewRoute
-  '/fees': typeof FeesRouteWithChildren
   '/finance-report': typeof FinanceReportRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
   '/landing': typeof LandingRoute
-  '/marketplace': typeof MarketplaceRouteWithChildren
   '/meetings': typeof MeetingsRoute
   '/my-permissions': typeof MyPermissionsRoute
   '/network': typeof NetworkRoute
   '/news': typeof NewsRoute
   '/notifications': typeof NotificationsRoute
-  '/opportunities': typeof OpportunitiesRouteWithChildren
   '/perks': typeof PerksRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -1290,11 +1361,9 @@ export interface FileRoutesByTo {
   '/vione-app': typeof VioneAppRoute
   '/voting': typeof VotingRoute
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
-  '/admin/business-cards': typeof AdminBusinessCardsRouteWithChildren
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/b/$slug': typeof BSlugRoute
-  '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
   '/business-connect/memory': typeof BusinessConnectMemoryRoute
   '/business-connect/my-card': typeof BusinessConnectMyCardRoute
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
@@ -1327,10 +1396,8 @@ export interface FileRoutesByTo {
   '/m/news': typeof MNewsRoute
   '/m/notifications': typeof MNotificationsRoute
   '/m/opportunities': typeof MOpportunitiesRoute
-  '/m/perks': typeof MPerksRouteWithChildren
   '/m/products': typeof MProductsRoute
   '/m/profile': typeof MProfileRoute
-  '/m/renew': typeof MRenewRouteWithChildren
   '/marketplace/$productId': typeof MarketplaceProductIdRoute
   '/marketplace/my-quotes': typeof MarketplaceMyQuotesRoute
   '/marketplace/workspace': typeof MarketplaceWorkspaceRoute
@@ -1342,10 +1409,17 @@ export interface FileRoutesByTo {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/account-settings': typeof AccountSettingsIndexRoute
   '/business-connect': typeof BusinessConnectIndexRoute
+  '/companies': typeof CompaniesIndexRoute
   '/connect-app': typeof ConnectAppIndexRoute
+  '/documents': typeof DocumentsIndexRoute
+  '/events': typeof EventsIndexRoute
+  '/fees': typeof FeesIndexRoute
   '/m': typeof MIndexRoute
+  '/marketplace': typeof MarketplaceIndexRoute
   '/members': typeof MembersIndexRoute
+  '/opportunities': typeof OpportunitiesIndexRoute
   '/platform': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
@@ -1377,6 +1451,8 @@ export interface FileRoutesByTo {
   '/m/renew/pay': typeof MRenewPayRoute
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
+  '/admin/business-cards': typeof AdminBusinessCardsIndexRoute
+  '/business-connect/connections': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community': typeof ConnectAppCommunityIndexRoute
   '/connect-app/inbox': typeof ConnectAppInboxIndexRoute
@@ -1386,6 +1462,8 @@ export interface FileRoutesByTo {
   '/connect/cards': typeof ConnectCardsIndexRoute
   '/connect/meetings': typeof ConnectMeetingsIndexRoute
   '/connect/network': typeof ConnectNetworkIndexRoute
+  '/m/perks': typeof MPerksIndexRoute
+  '/m/renew': typeof MRenewIndexRoute
   '/api/public/card/{$slug}.vcf': typeof ApiPublicCardChar123slugChar125DotvcfRoute
   '/api/public/hooks/notification-runtime': typeof ApiPublicHooksNotificationRuntimeRoute
   '/api/public/hooks/outcome-consumer': typeof ApiPublicHooksOutcomeConsumerRoute
@@ -1515,10 +1593,17 @@ export interface FileRoutesById {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/account-settings/': typeof AccountSettingsIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
+  '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/fees/': typeof FeesIndexRoute
   '/m/': typeof MIndexRoute
+  '/marketplace/': typeof MarketplaceIndexRoute
   '/members/': typeof MembersIndexRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
   '/platform/': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
@@ -1550,6 +1635,8 @@ export interface FileRoutesById {
   '/m/renew/pay': typeof MRenewPayRoute
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
+  '/admin/business-cards/': typeof AdminBusinessCardsIndexRoute
+  '/business-connect/connections/': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings/': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community/': typeof ConnectAppCommunityIndexRoute
   '/connect-app/inbox/': typeof ConnectAppInboxIndexRoute
@@ -1559,6 +1646,8 @@ export interface FileRoutesById {
   '/connect/cards/': typeof ConnectCardsIndexRoute
   '/connect/meetings/': typeof ConnectMeetingsIndexRoute
   '/connect/network/': typeof ConnectNetworkIndexRoute
+  '/m/perks/': typeof MPerksIndexRoute
+  '/m/renew/': typeof MRenewIndexRoute
   '/api/public/card/{$slug}.vcf': typeof ApiPublicCardChar123slugChar125DotvcfRoute
   '/api/public/hooks/notification-runtime': typeof ApiPublicHooksNotificationRuntimeRoute
   '/api/public/hooks/outcome-consumer': typeof ApiPublicHooksOutcomeConsumerRoute
@@ -1689,10 +1778,17 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/account-settings/'
     | '/business-connect/'
+    | '/companies/'
     | '/connect-app/'
+    | '/documents/'
+    | '/events/'
+    | '/fees/'
     | '/m/'
+    | '/marketplace/'
     | '/members/'
+    | '/opportunities/'
     | '/platform/'
     | '/admin/business-cards/audit'
     | '/business-connect/connections/$personNodeId'
@@ -1724,6 +1820,8 @@ export interface FileRouteTypes {
     | '/m/renew/pay'
     | '/m/renew/result'
     | '/opportunities/$id/edit'
+    | '/admin/business-cards/'
+    | '/business-connect/connections/'
     | '/business-connect/meetings/'
     | '/connect-app/community/'
     | '/connect-app/inbox/'
@@ -1733,6 +1831,8 @@ export interface FileRouteTypes {
     | '/connect/cards/'
     | '/connect/meetings/'
     | '/connect/network/'
+    | '/m/perks/'
+    | '/m/renew/'
     | '/api/public/card/{$slug}.vcf'
     | '/api/public/hooks/notification-runtime'
     | '/api/public/hooks/outcome-consumer'
@@ -1754,7 +1854,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account-settings'
     | '/activity'
     | '/ai'
     | '/auth'
@@ -1762,27 +1861,21 @@ export interface FileRouteTypes {
     | '/business-cards'
     | '/checkin'
     | '/checkin-qr'
-    | '/companies'
     | '/connect'
     | '/demo'
-    | '/documents'
     | '/email-marketing'
     | '/event-registrations'
-    | '/events'
     | '/events-overview'
-    | '/fees'
     | '/finance-report'
     | '/forgot-password'
     | '/income'
     | '/install'
     | '/landing'
-    | '/marketplace'
     | '/meetings'
     | '/my-permissions'
     | '/network'
     | '/news'
     | '/notifications'
-    | '/opportunities'
     | '/perks'
     | '/profile'
     | '/register'
@@ -1798,11 +1891,9 @@ export interface FileRouteTypes {
     | '/vione-app'
     | '/voting'
     | '/account-settings/notifications'
-    | '/admin/business-cards'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/b/$slug'
-    | '/business-connect/connections'
     | '/business-connect/memory'
     | '/business-connect/my-card'
     | '/business-connect/notifications'
@@ -1835,10 +1926,8 @@ export interface FileRouteTypes {
     | '/m/news'
     | '/m/notifications'
     | '/m/opportunities'
-    | '/m/perks'
     | '/m/products'
     | '/m/profile'
-    | '/m/renew'
     | '/marketplace/$productId'
     | '/marketplace/my-quotes'
     | '/marketplace/workspace'
@@ -1850,10 +1939,17 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/account-settings'
     | '/business-connect'
+    | '/companies'
     | '/connect-app'
+    | '/documents'
+    | '/events'
+    | '/fees'
     | '/m'
+    | '/marketplace'
     | '/members'
+    | '/opportunities'
     | '/platform'
     | '/admin/business-cards/audit'
     | '/business-connect/connections/$personNodeId'
@@ -1885,6 +1981,8 @@ export interface FileRouteTypes {
     | '/m/renew/pay'
     | '/m/renew/result'
     | '/opportunities/$id/edit'
+    | '/admin/business-cards'
+    | '/business-connect/connections'
     | '/business-connect/meetings'
     | '/connect-app/community'
     | '/connect-app/inbox'
@@ -1894,6 +1992,8 @@ export interface FileRouteTypes {
     | '/connect/cards'
     | '/connect/meetings'
     | '/connect/network'
+    | '/m/perks'
+    | '/m/renew'
     | '/api/public/card/{$slug}.vcf'
     | '/api/public/hooks/notification-runtime'
     | '/api/public/hooks/outcome-consumer'
@@ -2022,10 +2122,17 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/account-settings/'
     | '/business-connect/'
+    | '/companies/'
     | '/connect-app/'
+    | '/documents/'
+    | '/events/'
+    | '/fees/'
     | '/m/'
+    | '/marketplace/'
     | '/members/'
+    | '/opportunities/'
     | '/platform/'
     | '/admin/business-cards/audit'
     | '/business-connect/connections/$personNodeId'
@@ -2057,6 +2164,8 @@ export interface FileRouteTypes {
     | '/m/renew/pay'
     | '/m/renew/result'
     | '/opportunities/$id/edit'
+    | '/admin/business-cards/'
+    | '/business-connect/connections/'
     | '/business-connect/meetings/'
     | '/connect-app/community/'
     | '/connect-app/inbox/'
@@ -2066,6 +2175,8 @@ export interface FileRouteTypes {
     | '/connect/cards/'
     | '/connect/meetings/'
     | '/connect/network/'
+    | '/m/perks/'
+    | '/m/renew/'
     | '/api/public/card/{$slug}.vcf'
     | '/api/public/hooks/notification-runtime'
     | '/api/public/hooks/outcome-consumer'
@@ -2498,12 +2609,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/opportunities/': {
+      id: '/opportunities/'
+      path: '/'
+      fullPath: '/opportunities/'
+      preLoaderRoute: typeof OpportunitiesIndexRouteImport
+      parentRoute: typeof OpportunitiesRoute
+    }
     '/members/': {
       id: '/members/'
       path: '/members'
       fullPath: '/members/'
       preLoaderRoute: typeof MembersIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/marketplace/': {
+      id: '/marketplace/'
+      path: '/'
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof MarketplaceIndexRouteImport
+      parentRoute: typeof MarketplaceRoute
     }
     '/m/': {
       id: '/m/'
@@ -2512,6 +2637,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MIndexRouteImport
       parentRoute: typeof MRoute
     }
+    '/fees/': {
+      id: '/fees/'
+      path: '/'
+      fullPath: '/fees/'
+      preLoaderRoute: typeof FeesIndexRouteImport
+      parentRoute: typeof FeesRoute
+    }
+    '/events/': {
+      id: '/events/'
+      path: '/'
+      fullPath: '/events/'
+      preLoaderRoute: typeof EventsIndexRouteImport
+      parentRoute: typeof EventsRoute
+    }
+    '/documents/': {
+      id: '/documents/'
+      path: '/'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof DocumentsIndexRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
     '/connect-app/': {
       id: '/connect-app/'
       path: '/'
@@ -2519,12 +2665,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConnectAppIndexRouteImport
       parentRoute: typeof ConnectAppRoute
     }
+    '/companies/': {
+      id: '/companies/'
+      path: '/'
+      fullPath: '/companies/'
+      preLoaderRoute: typeof CompaniesIndexRouteImport
+      parentRoute: typeof CompaniesRoute
+    }
     '/business-connect/': {
       id: '/business-connect/'
       path: '/'
       fullPath: '/business-connect/'
       preLoaderRoute: typeof BusinessConnectIndexRouteImport
       parentRoute: typeof BusinessConnectRoute
+    }
+    '/account-settings/': {
+      id: '/account-settings/'
+      path: '/'
+      fullPath: '/account-settings/'
+      preLoaderRoute: typeof AccountSettingsIndexRouteImport
+      parentRoute: typeof AccountSettingsRoute
     }
     '/platform/renewal-audit': {
       id: '/platform/renewal-audit'
@@ -2953,6 +3113,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountSettingsNotificationsRouteImport
       parentRoute: typeof AccountSettingsRoute
     }
+    '/m/renew/': {
+      id: '/m/renew/'
+      path: '/'
+      fullPath: '/m/renew/'
+      preLoaderRoute: typeof MRenewIndexRouteImport
+      parentRoute: typeof MRenewRoute
+    }
+    '/m/perks/': {
+      id: '/m/perks/'
+      path: '/'
+      fullPath: '/m/perks/'
+      preLoaderRoute: typeof MPerksIndexRouteImport
+      parentRoute: typeof MPerksRoute
+    }
     '/connect/network/': {
       id: '/connect/network/'
       path: '/'
@@ -3015,6 +3189,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/business-connect/meetings/'
       preLoaderRoute: typeof BusinessConnectMeetingsIndexRouteImport
       parentRoute: typeof BusinessConnectMeetingsRoute
+    }
+    '/business-connect/connections/': {
+      id: '/business-connect/connections/'
+      path: '/'
+      fullPath: '/business-connect/connections/'
+      preLoaderRoute: typeof BusinessConnectConnectionsIndexRouteImport
+      parentRoute: typeof BusinessConnectConnectionsRoute
+    }
+    '/admin/business-cards/': {
+      id: '/admin/business-cards/'
+      path: '/'
+      fullPath: '/admin/business-cards/'
+      preLoaderRoute: typeof AdminBusinessCardsIndexRouteImport
+      parentRoute: typeof AdminBusinessCardsRoute
     }
     '/opportunities/$id/edit': {
       id: '/opportunities/$id/edit'
@@ -3357,10 +3545,12 @@ declare module '@tanstack/react-router' {
 
 interface AccountSettingsRouteChildren {
   AccountSettingsNotificationsRoute: typeof AccountSettingsNotificationsRoute
+  AccountSettingsIndexRoute: typeof AccountSettingsIndexRoute
 }
 
 const AccountSettingsRouteChildren: AccountSettingsRouteChildren = {
   AccountSettingsNotificationsRoute: AccountSettingsNotificationsRoute,
+  AccountSettingsIndexRoute: AccountSettingsIndexRoute,
 }
 
 const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
@@ -3369,12 +3559,14 @@ const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
 
 interface BusinessConnectConnectionsRouteChildren {
   BusinessConnectConnectionsPersonNodeIdRoute: typeof BusinessConnectConnectionsPersonNodeIdRoute
+  BusinessConnectConnectionsIndexRoute: typeof BusinessConnectConnectionsIndexRoute
 }
 
 const BusinessConnectConnectionsRouteChildren: BusinessConnectConnectionsRouteChildren =
   {
     BusinessConnectConnectionsPersonNodeIdRoute:
       BusinessConnectConnectionsPersonNodeIdRoute,
+    BusinessConnectConnectionsIndexRoute: BusinessConnectConnectionsIndexRoute,
   }
 
 const BusinessConnectConnectionsRouteWithChildren =
@@ -3446,10 +3638,12 @@ const BusinessConnectRouteWithChildren = BusinessConnectRoute._addFileChildren(
 
 interface CompaniesRouteChildren {
   CompaniesCompanyIdRoute: typeof CompaniesCompanyIdRoute
+  CompaniesIndexRoute: typeof CompaniesIndexRoute
 }
 
 const CompaniesRouteChildren: CompaniesRouteChildren = {
   CompaniesCompanyIdRoute: CompaniesCompanyIdRoute,
+  CompaniesIndexRoute: CompaniesIndexRoute,
 }
 
 const CompaniesRouteWithChildren = CompaniesRoute._addFileChildren(
@@ -3713,10 +3907,12 @@ const ConnectAppRouteWithChildren = ConnectAppRoute._addFileChildren(
 
 interface DocumentsRouteChildren {
   DocumentsDocIdRoute: typeof DocumentsDocIdRoute
+  DocumentsIndexRoute: typeof DocumentsIndexRoute
 }
 
 const DocumentsRouteChildren: DocumentsRouteChildren = {
   DocumentsDocIdRoute: DocumentsDocIdRoute,
+  DocumentsIndexRoute: DocumentsIndexRoute,
 }
 
 const DocumentsRouteWithChildren = DocumentsRoute._addFileChildren(
@@ -3725,10 +3921,12 @@ const DocumentsRouteWithChildren = DocumentsRoute._addFileChildren(
 
 interface EventsRouteChildren {
   EventsEventIdRoute: typeof EventsEventIdRoute
+  EventsIndexRoute: typeof EventsIndexRoute
 }
 
 const EventsRouteChildren: EventsRouteChildren = {
   EventsEventIdRoute: EventsEventIdRoute,
+  EventsIndexRoute: EventsIndexRoute,
 }
 
 const EventsRouteWithChildren =
@@ -3736,20 +3934,24 @@ const EventsRouteWithChildren =
 
 interface FeesRouteChildren {
   FeesInvoiceIdRoute: typeof FeesInvoiceIdRoute
+  FeesIndexRoute: typeof FeesIndexRoute
 }
 
 const FeesRouteChildren: FeesRouteChildren = {
   FeesInvoiceIdRoute: FeesInvoiceIdRoute,
+  FeesIndexRoute: FeesIndexRoute,
 }
 
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
 interface MPerksRouteChildren {
   MPerksIdRoute: typeof MPerksIdRoute
+  MPerksIndexRoute: typeof MPerksIndexRoute
 }
 
 const MPerksRouteChildren: MPerksRouteChildren = {
   MPerksIdRoute: MPerksIdRoute,
+  MPerksIndexRoute: MPerksIndexRoute,
 }
 
 const MPerksRouteWithChildren =
@@ -3760,6 +3962,7 @@ interface MRenewRouteChildren {
   MRenewHistoryRoute: typeof MRenewHistoryRoute
   MRenewPayRoute: typeof MRenewPayRoute
   MRenewResultRoute: typeof MRenewResultRoute
+  MRenewIndexRoute: typeof MRenewIndexRoute
 }
 
 const MRenewRouteChildren: MRenewRouteChildren = {
@@ -3767,6 +3970,7 @@ const MRenewRouteChildren: MRenewRouteChildren = {
   MRenewHistoryRoute: MRenewHistoryRoute,
   MRenewPayRoute: MRenewPayRoute,
   MRenewResultRoute: MRenewResultRoute,
+  MRenewIndexRoute: MRenewIndexRoute,
 }
 
 const MRenewRouteWithChildren =
@@ -3816,12 +4020,14 @@ interface MarketplaceRouteChildren {
   MarketplaceProductIdRoute: typeof MarketplaceProductIdRoute
   MarketplaceMyQuotesRoute: typeof MarketplaceMyQuotesRoute
   MarketplaceWorkspaceRoute: typeof MarketplaceWorkspaceRoute
+  MarketplaceIndexRoute: typeof MarketplaceIndexRoute
 }
 
 const MarketplaceRouteChildren: MarketplaceRouteChildren = {
   MarketplaceProductIdRoute: MarketplaceProductIdRoute,
   MarketplaceMyQuotesRoute: MarketplaceMyQuotesRoute,
   MarketplaceWorkspaceRoute: MarketplaceWorkspaceRoute,
+  MarketplaceIndexRoute: MarketplaceIndexRoute,
 }
 
 const MarketplaceRouteWithChildren = MarketplaceRoute._addFileChildren(
@@ -3842,10 +4048,12 @@ const OpportunitiesIdRouteWithChildren = OpportunitiesIdRoute._addFileChildren(
 
 interface OpportunitiesRouteChildren {
   OpportunitiesIdRoute: typeof OpportunitiesIdRouteWithChildren
+  OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
 }
 
 const OpportunitiesRouteChildren: OpportunitiesRouteChildren = {
   OpportunitiesIdRoute: OpportunitiesIdRouteWithChildren,
+  OpportunitiesIndexRoute: OpportunitiesIndexRoute,
 }
 
 const OpportunitiesRouteWithChildren = OpportunitiesRoute._addFileChildren(
@@ -3854,10 +4062,12 @@ const OpportunitiesRouteWithChildren = OpportunitiesRoute._addFileChildren(
 
 interface AdminBusinessCardsRouteChildren {
   AdminBusinessCardsAuditRoute: typeof AdminBusinessCardsAuditRoute
+  AdminBusinessCardsIndexRoute: typeof AdminBusinessCardsIndexRoute
 }
 
 const AdminBusinessCardsRouteChildren: AdminBusinessCardsRouteChildren = {
   AdminBusinessCardsAuditRoute: AdminBusinessCardsAuditRoute,
+  AdminBusinessCardsIndexRoute: AdminBusinessCardsIndexRoute,
 }
 
 const AdminBusinessCardsRouteWithChildren =

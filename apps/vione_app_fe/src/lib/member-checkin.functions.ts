@@ -34,10 +34,11 @@ export const syncMemberCheckins = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.records.length === 0) return { syncedIds: [] as string[] };
 
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Trusted member identity from the session — never from client input.
-    const { data: me, error: meErr } = await supabase
+    const { data: me, error: meErr } = await supabaseAdmin
       .from("members")
       .select("code, association_id")
       .eq("user_id", userId)
@@ -54,9 +55,7 @@ export const syncMemberCheckins = createServerFn({ method: "POST" })
       getRequestHeader("x-forwarded-for") ||
       "unknown";
 
-    // GUARD: service role used only after the caller is authenticated and the
-    // member identity is resolved. Rate limit remains a secondary guard.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Rate limit guard
     const { data: allowed, error: rlErr } = await supabaseAdmin.rpc(
       "check_and_increment_sync_rate",
       { _ip: clientIp, _max: 30, _window_seconds: 60 },

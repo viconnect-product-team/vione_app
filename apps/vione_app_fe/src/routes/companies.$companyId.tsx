@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -31,8 +31,10 @@ import {
   Clock,
   ShieldCheck,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { SendEmailModal } from "@/components/dashboard/SendEmailModal";
+import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { useRole } from "@/hooks/use-role";
 import { useT, type TKey } from "@/lib/i18n";
 import { type Member, type MemberStatus } from "@/lib/members-data";
 import { fetchNestApi } from "@/lib/api-client";
@@ -52,11 +54,9 @@ import type { CompanyHistory } from "@/lib/companies.functions";
 export const Route = createFileRoute("/companies/$companyId")({
   ssr: false,
   loader: async ({ params }) => {
-    const [company, history] = await Promise.all([
-      fetchNestApi<Member>(`/members/${params.companyId}`),
-      fetchNestApi<CompanyHistory>(`/members/${params.companyId}/history`),
-    ]);
-    if (!company || company.type !== "company") throw notFound();
+    const company = await fetchNestApi<Member>(`/members/${params.companyId}`).catch(() => null);
+    if (!company) throw notFound();
+    const history = await fetchNestApi<CompanyHistory>(`/members/${params.companyId}/history`).catch(() => null);
     return {
       company,
       history: history || { activities: [], events: [], payments: [] },
@@ -158,19 +158,143 @@ function relativeDate(iso: string) {
 
 function CompanyDetailPage() {
   const t = useT();
-  const { company: loaded, history } = Route.useLoaderData() as {
+  const loaderData = Route.useLoaderData() as {
     company: Member;
-    history: CompanyHistory;
+    history?: CompanyHistory;
   };
+  const loaded = loaderData.company;
+  const history = loaderData.history || { activities: [], events: [], payments: [] };
+  const activities = history.activities || [];
+  const events = history.events || [];
+  const payments = history.payments || [];
+
+  const [companyState, setCompanyState] = useState<Member>(loaded);
+  const [openEmail, setOpenEmail] = useState(false);
+  const [editingCompany, setEditingCompany] = useState(false);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
 
   const [contact, setContact] = useState({
     email: loaded.email,
     phone: loaded.phone,
     address: loaded.address,
   });
-  const company: Member = { ...loaded, ...contact };
+  const company: Member = { ...companyState, ...contact };
 
   const [tab, setTab] = useState<"overview" | "activity" | "events" | "payments">("overview");
+
+  const fields: CrudField[] = [
+    { name: "name", label: t("members.f.name"), type: "text", required: true },
+    { name: "contact", label: t("members.f.contact"), type: "text" },
+    { name: "email", label: t("members.f.email"), type: "text" },
+    { name: "phone", label: t("members.f.phone"), type: "text" },
+    {
+      name: "level",
+      label: t("members.f.level"),
+      type: "select",
+      options: [
+        { value: "memberLevel.large", label: t("memberLevel.large") },
+        { value: "memberLevel.medium", label: t("memberLevel.medium") },
+        { value: "memberLevel.small", label: t("memberLevel.small") },
+      ],
+    },
+    {
+      name: "industry",
+      label: t("members.f.industry"),
+      type: "select",
+      options: [
+        { value: "ind.trade", label: t("ind.trade") },
+        { value: "ind.it", label: t("ind.it") },
+        { value: "ind.manufacturing", label: t("ind.manufacturing") },
+        { value: "ind.realestate", label: t("ind.realestate") },
+        { value: "ind.finance", label: t("ind.finance") },
+      ],
+    },
+    {
+      name: "region",
+      label: t("members.f.region"),
+      type: "select",
+      options: [
+        { value: "region.north", label: t("region.north") },
+        { value: "region.central", label: t("region.central") },
+        { value: "region.south", label: t("region.south") },
+      ],
+    },
+    {
+      name: "status",
+      label: t("members.f.status"),
+      type: "select",
+      options: [
+        { value: "pending", label: t("status.pending") },
+        { value: "active", label: t("status.active") },
+        { value: "expired", label: t("status.expired") },
+      ],
+    },
+    { name: "address", label: t("members.f.address"), type: "text" },
+    { name: "website", label: t("members.f.website"), type: "text" },
+    { name: "taxCode", label: t("members.f.taxCode"), type: "text" },
+    { name: "employees", label: t("members.f.employees"), type: "number" },
+    { name: "about", label: t("members.f.about"), type: "textarea" },
+  ];
+
+  const editInitial = (m: Member): CrudValues => ({
+    name: m.name,
+    contact: m.contact,
+    email: m.email,
+    phone: m.phone,
+    level: m.level,
+    industry: m.industry,
+    region: m.region,
+    status: m.status,
+    address: m.address,
+    website: m.website ?? "",
+    taxCode: m.taxCode ?? "",
+    employees: m.employees ?? 0,
+    about: m.about,
+  });
+
+  const handleSaveCompany = async (values: CrudValues) => {
+    setSubmittingEdit(true);
+    try {
+      const payload = {
+        name: String(values.name || "").trim(),
+        contact: String(values.contact || "").trim(),
+        email: String(values.email || "").trim(),
+        phone: String(values.phone || "").trim(),
+        level: values.level,
+        industry: values.industry,
+        region: values.region,
+        status: values.status,
+        address: String(values.address || "").trim(),
+        website: values.website ? String(values.website).trim() : null,
+        taxCode: values.taxCode ? String(values.taxCode).trim() : null,
+        employees: Number(values.employees) || 0,
+        about: String(values.about || "").trim(),
+      };
+
+      const updated = await fetchNestApi<Member>(`/members/${company.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+
+      if (updated && updated.id) {
+        setCompanyState(updated);
+        setContact({
+          email: updated.email,
+          phone: updated.phone,
+          address: updated.address,
+        });
+      } else {
+        setCompanyState((prev) => ({ ...prev, ...payload } as Member));
+      }
+      toast.success("Đã cập nhật thông tin doanh nghiệp thành công!");
+      setEditingCompany(false);
+    } catch (err) {
+      console.error("[Companies] Failed to update company:", err);
+      toast.error("Không thể cập nhật thông tin doanh nghiệp");
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
 
   const handleSaveContact = (next: typeof contact) => {
     setContact(next);
@@ -179,19 +303,19 @@ function CompanyDetailPage() {
       body: JSON.stringify(next),
     }).catch((err) => {
       console.error("[Companies] Failed to update contact:", err);
-      toast.error(t("common.saveError") || "Không thể cập nhật thông tin liên hệ");
+      toast.error("Không thể cập nhật thông tin liên hệ");
     });
   };
 
   const totalPaid = useMemo(
-    () => history.payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0),
-    [history.payments],
+    () => payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0),
+    [payments],
   );
   const tenure = Math.max(
     0,
-    Math.floor((Date.now() - new Date(company.joinedAt).getTime()) / (365 * 86400000)),
+    Math.floor((Date.now() - new Date(company.joinedAt || Date.now()).getTime()) / (365 * 86400000)),
   );
-  const s = statusStyle[company.status];
+  const s = statusStyle[company.status] || statusStyle.pending;
 
   const tabs: { key: typeof tab; label: TKey; Icon: typeof Activity; count?: number }[] = [
     { key: "overview", label: "cdetail.tab.overview", Icon: Building2 },
@@ -199,19 +323,19 @@ function CompanyDetailPage() {
       key: "activity",
       label: "cdetail.tab.activity",
       Icon: Activity,
-      count: history.activities.length,
+      count: activities.length,
     },
     {
       key: "events",
       label: "cdetail.tab.events",
       Icon: CalendarCheck2,
-      count: history.events.length,
+      count: events.length,
     },
     {
       key: "payments",
       label: "cdetail.tab.payments",
       Icon: Receipt,
-      count: history.payments.length,
+      count: payments.length,
     },
   ];
 
@@ -261,10 +385,18 @@ function CompanyDetailPage() {
               {t(`status.${company.status}` as TKey)}
             </span>
             <div className="flex gap-2">
-              <button className="inline-flex items-center gap-1.5 rounded-lg bg-card/15 px-3 py-1.5 text-xs font-semibold text-primary-foreground backdrop-blur hover:bg-card/25">
+              <button
+                type="button"
+                onClick={() => setOpenEmail(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-card/15 px-3 py-1.5 text-xs font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/25"
+              >
                 <Mail className="h-3.5 w-3.5" /> {t("detail.sendEmail")}
               </button>
-              <button className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary hover:bg-card/90">
+              <button
+                type="button"
+                onClick={() => setEditingCompany(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-card/90"
+              >
                 <Edit3 className="h-3.5 w-3.5" /> {t("detail.edit")}
               </button>
             </div>
@@ -338,6 +470,27 @@ function CompanyDetailPage() {
       {tab === "activity" && <ActivityTab entries={history.activities} />}
       {tab === "events" && <EventsTab entries={history.events} />}
       {tab === "payments" && <PaymentsTab entries={history.payments} />}
+
+      {/* Send Email Modal */}
+      <SendEmailModal
+        open={openEmail}
+        onClose={() => setOpenEmail(false)}
+        recipientName={company.name}
+        recipientEmail={company.email}
+      />
+
+      {/* Edit Company Modal */}
+      <CrudModal
+        open={editingCompany}
+        title="Chỉnh sửa thông tin doanh nghiệp"
+        fields={fields}
+        initial={editInitial(company)}
+        submitting={submittingEdit}
+        submitLabel={t("common.save") || "Lưu thay đổi"}
+        cancelLabel={t("common.cancel") || "Hủy"}
+        onSubmit={handleSaveCompany}
+        onClose={() => setEditingCompany(false)}
+      />
     </AppShell>
   );
 }
@@ -683,7 +836,7 @@ function ActivityTab({ entries }: { entries: CompanyHistory["activities"] }) {
       </h3>
       <ol className="relative space-y-5 border-l-2 border-border pl-6">
         {entries.map((a: any) => {
-          const st = ACT_STYLE[a.type];
+          const st = ACT_STYLE[a.type as ActivityType];
           return (
             <li key={a.id} className="relative">
               <span
@@ -695,7 +848,7 @@ function ActivityTab({ entries }: { entries: CompanyHistory["activities"] }) {
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${st.bg} ${st.text}`}
                 >
-                  {t(ACTIVITY_LABEL[a.type])}
+                  {t(ACTIVITY_LABEL[a.type as ActivityType])}
                 </span>
                 <span className="text-[11px] text-muted-foreground">
                   {fmtDate(a.date, true)} · {relativeDate(a.date)}
@@ -750,9 +903,9 @@ function EventsTab({ entries }: { entries: CompanyHistory["events"] }) {
             </div>
             <div className="flex items-center gap-2">
               <span
-                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${ROLE_STYLE[e.role]}`}
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${ROLE_STYLE[e.role as EventRole]}`}
               >
-                {t(EVENT_ROLE_LABEL[e.role])}
+                {t(EVENT_ROLE_LABEL[e.role as EventRole])}
               </span>
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${

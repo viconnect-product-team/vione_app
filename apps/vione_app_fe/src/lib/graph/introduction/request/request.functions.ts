@@ -4,6 +4,10 @@ import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import type { IntroductionRequestDTO, IntroductionRequestPageDTO } from "./types";
 
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+
 const uuid = z.string().uuid();
 
 export const sendIntroductionRequestFn = createServerFn({ method: "POST" })
@@ -20,7 +24,7 @@ export const sendIntroductionRequestFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    const svc = new IntroductionRequestService(null as any as never, context.userId);
+    const svc = new IntroductionRequestService(getDb(context) as never, context.userId);
     return svc.sendRequest(data);
   });
 
@@ -31,7 +35,7 @@ export const acceptIntroductionRequestFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).acceptRequest(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).acceptRequest(
       data.requestId,
     );
   });
@@ -41,7 +45,7 @@ export const declineIntroductionRequestFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).declineRequest(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).declineRequest(
       data.requestId,
     );
   });
@@ -51,7 +55,7 @@ export const cancelIntroductionRequestFn = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).cancelRequest(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).cancelRequest(
       data.requestId,
     );
   });
@@ -61,7 +65,7 @@ export const getIntroductionRequestFn = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => idOnly.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).getRequest(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).getRequest(
       data.requestId,
     );
   });
@@ -79,7 +83,7 @@ export const listIncomingIntroductionRequestsFn = createServerFn({ method: "GET"
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestPageDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).listIncoming(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).listIncoming(
       data,
     );
   });
@@ -89,7 +93,7 @@ export const listOutgoingIntroductionRequestsFn = createServerFn({ method: "GET"
   .inputValidator((i: unknown) => listOpts.parse(i))
   .handler(async ({ data, context }): Promise<IntroductionRequestPageDTO> => {
     const { IntroductionRequestService } = await import("./request.service.server");
-    return new IntroductionRequestService(null as any as never, context.userId).listOutgoing(
+    return new IntroductionRequestService(getDb(context) as never, context.userId).listOutgoing(
       data,
     );
   });
