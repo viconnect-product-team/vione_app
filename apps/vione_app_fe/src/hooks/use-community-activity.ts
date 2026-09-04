@@ -11,6 +11,7 @@ import type {
 } from "@/lib/business-connect/mobile/community-activity.types";
 import { communityKeys } from "@/hooks/use-community";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const communityActivityKeys = {
   eventsRoot: ["bc-mobile", "community-events"] as const,
@@ -35,7 +36,19 @@ export function useCommunityEvents(communityId: string, tab: CommunityEventsTabD
     enabled: viewerId !== null,
     staleTime: 15_000,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => CommunitySDK.listEvents({ communityId, tab, offset: pageParam }),
+    queryFn: async ({ pageParam }) => {
+      const q = new URLSearchParams();
+      q.set("tab", tab);
+      if (pageParam) q.set("offset", String(pageParam));
+      const qs = q.toString();
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/events${qs ? `?${qs}` : ""}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.listEvents({ communityId, tab, offset: pageParam });
+    },
     getNextPageParam: (last) => last?.nextOffset ?? undefined,
   });
 
@@ -64,11 +77,27 @@ export function useCommunityEventDetail(communityId: string, eventRef: string) {
     queryKey: communityActivityKeys.event(viewerKey, communityId, eventRef),
     enabled: viewerId !== null,
     staleTime: 15_000,
-    queryFn: () => CommunitySDK.getEventDetail({ communityId, eventRef }),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/events/${eventRef}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.getEventDetail({ communityId, eventRef });
+    },
   });
 
   const register = useMutation({
-    mutationFn: () => CommunitySDK.registerForEvent({ communityId, eventRef }),
+    mutationFn: async () => {
+      try {
+        return await fetchNestApi<any>(`/connect-app/community/${communityId}/events/${eventRef}/registrations`, {
+          method: "POST",
+        });
+      } catch {
+        return CommunitySDK.registerForEvent({ communityId, eventRef });
+      }
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: communityActivityKeys.event(viewerKey, communityId, eventRef),
@@ -122,8 +151,19 @@ export function useCommunityOpportunities(communityId: string, rawQuery: string)
     enabled: viewerId !== null,
     staleTime: 15_000,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
-      CommunitySDK.listOpportunities({ communityId, query, offset: pageParam }),
+    queryFn: async ({ pageParam }) => {
+      const q = new URLSearchParams();
+      if (query) q.set("query", query);
+      if (pageParam) q.set("offset", String(pageParam));
+      const qs = q.toString();
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/opportunities${qs ? `?${qs}` : ""}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.listOpportunities({ communityId, query, offset: pageParam });
+    },
     getNextPageParam: (last) => last?.nextOffset ?? undefined,
   });
 
@@ -152,7 +192,15 @@ export function useCommunityOpportunityDetail(communityId: string, opportunityRe
     queryKey: communityActivityKeys.opportunity(viewerKey, communityId, opportunityRef),
     enabled: viewerId !== null,
     staleTime: 15_000,
-    queryFn: () => CommunitySDK.getOpportunityDetail({ communityId, opportunityRef }),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/opportunities/${opportunityRef}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.getOpportunityDetail({ communityId, opportunityRef });
+    },
   });
 
   const invalidateOpportunity = () => {
@@ -250,7 +298,15 @@ export function useCommunityActivityPreview(communityId: string) {
     queryKey: communityActivityKeys.preview(viewerKey, communityId),
     enabled: viewerId !== null,
     staleTime: 30_000,
-    queryFn: () => CommunitySDK.getActivityPreview(communityId),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/activity-preview`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.getActivityPreview(communityId);
+    },
   });
   return {
     preview: query.data ?? null,

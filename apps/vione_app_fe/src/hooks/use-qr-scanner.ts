@@ -43,9 +43,10 @@ export function useQrScanner(opts: {
     let lastValue = "";
     let lastTime = 0;
 
+    let zxingControls: { stop: () => void } | null = null;
+
     async function start() {
-      const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-      if (!Ctor || !navigator.mediaDevices?.getUserMedia) {
+      if (!navigator.mediaDevices?.getUserMedia) {
         setStatus("unsupported");
         return;
       }
@@ -73,33 +74,66 @@ export function useQrScanner(opts: {
           /* autoplay guard */
         }
       }
-      const detector = new Ctor({ formats: ["qr_code"] });
-      setStatus("scanning");
-      const tick = async () => {
-        if (stopped || !videoRef.current) return;
+
+      const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+      if (Ctor) {
+        const detector = new Ctor({ formats: ["qr_code"] });
+        setStatus("scanning");
+        const tick = async () => {
+          if (stopped || !videoRef.current) return;
+          try {
+            const codes = await detector.detect(videoRef.current);
+            if (codes.length) {
+              const value = String(codes[0].rawValue ?? "");
+              const now = Date.now();
+              if (value && (value !== lastValue || now - lastTime > 2500)) {
+                lastValue = value;
+                lastTime = now;
+                onDetectRef.current(value);
+              }
+            }
+          } catch {
+            /* frame not ready yet */
+          }
+          raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+      } else if (video) {
+        // ZXing fallback for iOS Safari and Android browsers without BarcodeDetector
         try {
-          const codes = await detector.detect(videoRef.current);
-          if (codes.length) {
-            const value = String(codes[0].rawValue ?? "");
+          const { BrowserQRCodeReader } = await import("@zxing/browser");
+          const reader = new BrowserQRCodeReader();
+          setStatus("scanning");
+          const controls = await reader.decodeFromVideoElement(video, (res) => {
+            if (stopped || !res) return;
+            const value = res.getText();
             const now = Date.now();
             if (value && (value !== lastValue || now - lastTime > 2500)) {
               lastValue = value;
               lastTime = now;
               onDetectRef.current(value);
             }
-          }
+          });
+          zxingControls = controls;
         } catch {
-          /* frame not ready yet */
+          setStatus("unsupported");
         }
-        raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
+      } else {
+        setStatus("unsupported");
+      }
     }
 
     void start();
     return () => {
       stopped = true;
       cancelAnimationFrame(raf);
+      if (zxingControls) {
+        try {
+          zxingControls.stop();
+        } catch {
+          /* ignore stop error */
+        }
+      }
       if (stream) stream.getTracks().forEach((t) => t.stop());
       trackRef.current = null;
     };

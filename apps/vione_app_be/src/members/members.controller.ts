@@ -34,6 +34,56 @@ export class MembersController {
     return this.membersService.getMyMember(req.user.id);
   }
 
+  @Get('me/context')
+  async getMyMemberContext(@Request() req: any) {
+    return this.membersService.getMyMemberContext(req.user.id);
+  }
+
+  @Get('me/membership')
+  async getMyMembership(@Request() req: any) {
+    return this.membersService.getMyMembership(req.user.id);
+  }
+
+  @Get('me/history')
+  async getMyMemberHistory(@Request() req: any) {
+    return this.membersService.getMyMemberHistory(req.user.id);
+  }
+
+  @Get('me/renewal-history')
+  async getMyRenewalHistory(@Request() req: any) {
+    return this.membersService.getMyRenewalHistory(req.user.id);
+  }
+
+  @Get('me/renewal-quote')
+  async getRenewalQuote(@Request() req: any) {
+    return this.membersService.getRenewalQuote(req.user.id);
+  }
+
+  @Post('me/renewal-payment')
+  async payMyRenewal(@Request() req: any, @Body() body: any) {
+    return this.membersService.payMyRenewal(req.user.id, body);
+  }
+
+  @Get('me/renewal-audit')
+  async getMyRenewalAuditLog(@Request() req: any) {
+    return this.membersService.getMyRenewalAuditLog(req.user.id);
+  }
+
+  @Get('brand')
+  async getMyAssociationBrand(@Request() req: any) {
+    return this.membersService.getMyAssociationBrand(req.user.id);
+  }
+
+  @Get('benefits')
+  async getMyBenefits(@Request() req: any) {
+    return this.membersService.getMyBenefits(req.user.id);
+  }
+
+  @Get('active-association-id')
+  async getActiveAssociationId(@Request() req: any) {
+    return this.membersService.getActiveAssociationId(req.user.id);
+  }
+
   @Get('account-statuses')
   async getAccountStatuses() {
     return this.membersService.getAccountStatuses();

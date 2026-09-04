@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberScreen } from "@/components/member/MemberShell";
-import { supabase } from "@/integrations/supabase/client";
 import { checkRenewalReminder } from "@/lib/member-app.functions";
 import { MEMBER_MANIFEST_HREF } from "@/lib/pwa-manifest";
 import {
@@ -26,9 +25,12 @@ export const Route = createFileRoute("/m")({
     const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
     const isVioneLaunch = isMobile && (hasRememberedVioneAppContext() || isVioneStandaloneContext());
     if (isVioneLaunch) rememberVioneAppContext();
-    const { data, error } = await supabase.auth.getUser();
-    const hasLocal = typeof window !== "undefined" && Boolean(localStorage.getItem("vibe_token"));
-    if ((error || !data.user) && !hasLocal) {
+    const hasLocal = typeof window !== "undefined" && Boolean(
+      localStorage.getItem("vibe_token") || 
+      localStorage.getItem("token") || 
+      localStorage.getItem("access_token")
+    );
+    if (!hasLocal) {
       // Preserve the intended deep-link destination so we can return to it
       // after authentication (handles custom domains + browser refresh).
       throw redirect({

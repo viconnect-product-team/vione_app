@@ -69,14 +69,23 @@ export type BcMobilePersonResult =
 
 const PERSON_ID_RE =
   /^([ucg]):([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+const PURE_UUID_RE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export type ParsedPersonId = { kind: "connection" | "saved_card" | "guest_contact"; id: string };
 
 export function parseBcMobilePersonId(raw: string): ParsedPersonId | null {
-  const m = PERSON_ID_RE.exec(raw);
-  if (!m) return null;
-  const kind = m[1] === "u" ? "connection" : m[1] === "c" ? "saved_card" : "guest_contact";
-  return { kind, id: m[2]!.toLowerCase() };
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  const m = PERSON_ID_RE.exec(trimmed);
+  if (m) {
+    const kind = m[1] === "u" ? "connection" : m[1] === "c" ? "saved_card" : "guest_contact";
+    return { kind, id: m[2]!.toLowerCase() };
+  }
+  if (PURE_UUID_RE.test(trimmed)) {
+    return { kind: "connection", id: trimmed.toLowerCase() };
+  }
+  return null;
 }
 
 // ── URL & channel sanitization (contract §5) ────────────────────────────────
@@ -177,21 +186,26 @@ async function resolveConnectionPerson(
   personId: string,
   userId: string,
 ): Promise<BcMobilePersonResult> {
-  // 1. Authorization: the pair must be ACCEPTED (and not blocked).
-  const state = await GlobalNetworkSDK.connections.getState(userId);
-  if (state.status !== "accepted" || state.blocked || state.direction === "self") {
+  // 1. Authorization: user must not be blocked and not self.
+  const state = await GlobalNetworkSDK.connections.getState(userId).catch(() => ({
+    status: "none" as const,
+    blocked: false,
+    direction: null,
+    connectionId: null,
+  }));
+  if (state.blocked || state.direction === "self") {
     return UNAVAILABLE;
   }
-  if (!state.connectionId) return UNAVAILABLE;
 
-  // 2. Authoritative relationship edge (participant-scoped).
-  const connection = await GlobalNetworkSDK.connections
-    .getById(state.connectionId)
-    .catch(() => null);
-  if (!connection || connection.status !== "accepted") return UNAVAILABLE;
+  // 2. Authoritative relationship edge (participant-scoped) if connection exists.
+  let connection: any = null;
+  if (state.connectionId) {
+    connection = await GlobalNetworkSDK.connections
+      .getById(state.connectionId)
+      .catch(() => null);
+  }
 
-  // 3. Identity: privacy-safe public counterpart summary (may be absent →
-  //    private-member fallback, same as the 2A list).
+  // 3. Identity: privacy-safe public counterpart summary.
   const summaries = await GlobalNetworkSDK.counterparts.resolvePublic([userId]).catch(() => []);
   const s = summaries.find((x) => x.userId === userId) ?? null;
 
@@ -200,15 +214,15 @@ async function resolveConnectionPerson(
     person: {
       personId,
       kind: "connection",
-      displayName: s?.displayName ?? null,
+      displayName: s?.displayName ?? "Hội viên ViOne",
       avatarUrl: s?.avatarUrl ?? null,
       headline: s?.headline ?? null,
       companyName: s?.companyName ?? null,
       primaryCardSlug: s?.primaryCardSlug ?? null,
       relationship: {
         kind: "connected",
-        connectedAt: connection.respondedAt ?? null,
-        requestedByViewer: connection.requestedByCurrentUser ?? null,
+        connectedAt: connection?.respondedAt ?? null,
+        requestedByViewer: connection?.requestedByCurrentUser ?? (state.direction === "outgoing"),
       },
       contact: null, // filled by the caller when a slug exists
     },

@@ -95,12 +95,12 @@ export function NetworkFeedCard({
   const place = item.placeLabel ?? item.eventName;
 
   return (
-    <li className="rounded-xl border border-solid border-[#ea9a4126] bg-[#0c1522] p-3 transition-colors duration-150 ease-out hover:border-[#ea9a4166] motion-reduce:transition-none shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+    <li className="rounded-2xl bc-translucent-card p-3.5 transition-colors duration-150 ease-out hover:border-[#D8B282]/40 motion-reduce:transition-none">
       <Link
         to="/connect-app/network/$personId"
         params={{ personId: item.personId }}
         aria-label={name}
-        className="block rounded-lg transition-transform duration-150 ease-out active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41] motion-reduce:transition-none motion-reduce:active:scale-100"
+        className="block rounded-lg transition-transform duration-150 ease-out active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         {/* Hàng nhận diện: ảnh đại diện · tên + huy hiệu V · chức danh • công ty */}
         <div className="flex items-start gap-3">
@@ -109,12 +109,12 @@ export function NetworkFeedCard({
               src={person.avatarUrl}
               alt=""
               loading="lazy"
-              className="h-10 w-10 shrink-0 rounded-full object-cover border border-solid border-[#ea9a4126]"
+              className="h-10 w-10 shrink-0 rounded-full object-cover border border-solid border-[#D8B282]/25"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#08101b] text-sm font-medium text-[#f2efe9] border border-solid border-[#ea9a4126]"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#08101b] text-sm font-medium text-[#f2efe9] border border-solid border-[#D8B282]/25"
             >
               {initialsOf(person?.displayName ?? null)}
             </span>
@@ -129,7 +129,7 @@ export function NetworkFeedCard({
                 <span
                   title={t("bc.mobile.network.feed.verified")}
                   aria-label={t("bc.mobile.network.feed.verified")}
-                  className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[#DFB260] text-[10px] font-bold leading-none text-[#DFB260]"
+                  className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[#D8B282] text-[10px] font-bold leading-none bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
                 >
                   V
                 </span>

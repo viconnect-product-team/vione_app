@@ -150,6 +150,8 @@ export function LiveCardAutoCapture({
     if (!video || !stream) return undefined;
     let cancelled = false;
     video.srcObject = stream;
+    video.muted = true;
+    video.setAttribute("playsinline", "true");
     void video.play().catch(() => undefined);
     function markReady() {
       if (!cancelled && video && video.videoWidth > 0) setReady(true);

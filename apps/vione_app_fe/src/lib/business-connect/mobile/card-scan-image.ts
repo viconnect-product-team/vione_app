@@ -62,24 +62,61 @@ export async function processCardScanImage(
   const invalid = validateCardScanImageFile(file);
   if (invalid) return { ok: false, error: invalid };
 
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    return { ok: false, error: "decode_failed" };
+  let source: ImageBitmap | HTMLImageElement | null = null;
+  let sourceWidth = 0;
+  let sourceHeight = 0;
+  let cleanup = () => {};
+
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+      source = bitmap;
+      sourceWidth = bitmap.width;
+      sourceHeight = bitmap.height;
+      cleanup = () => bitmap.close?.();
+    } catch {
+      try {
+        const bitmap = await createImageBitmap(file);
+        source = bitmap;
+        sourceWidth = bitmap.width;
+        sourceHeight = bitmap.height;
+        cleanup = () => bitmap.close?.();
+      } catch {
+        source = null;
+      }
+    }
   }
 
-  const { width, height } = cardScanTargetSize(bitmap.width, bitmap.height);
+  if (!source) {
+    try {
+      const url = URL.createObjectURL(file);
+      cleanup = () => URL.revokeObjectURL(url);
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject();
+        img.src = url;
+      });
+      source = img;
+      sourceWidth = img.naturalWidth || img.width;
+      sourceHeight = img.naturalHeight || img.height;
+    } catch {
+      cleanup();
+      return { ok: false, error: "decode_failed" };
+    }
+  }
+
+  const { width, height } = cardScanTargetSize(sourceWidth, sourceHeight);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    bitmap.close();
+    cleanup();
     return { ok: false, error: "decode_failed" };
   }
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
+  ctx.drawImage(source, 0, 0, width, height);
+  cleanup();
 
   for (const quality of [0.85, 0.78, 0.7, 0.62]) {
     const dataUrl = canvas.toDataURL(CARD_SCAN_MIME, quality);

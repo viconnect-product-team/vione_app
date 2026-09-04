@@ -70,7 +70,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#ea9a4126] bg-[#050c15f2] backdrop-blur-md px-5 py-3 -mx-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#D8B282]/20 bg-[#050c15]/90 backdrop-blur-md px-5 py-3 -mx-4">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
@@ -119,7 +119,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
         ) : (
           <>
             {/* D — Tabs nằm ngay dưới Header */}
-            <div className="mt-5 flex items-center gap-5 border-b border-[#ea9a4115] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mt-5 flex items-center gap-5 border-b border-[#D8B282]/15 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {[
                 { id: "all", label: "Tất cả" },
                 ...(hasAdmin ? [{ id: "admin", label: "Đang quản trị" }] : []),
@@ -134,7 +134,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                     onClick={() => setTab(item.id as any)}
                     className={`relative pb-2.5 text-sm transition-colors whitespace-nowrap focus-visible:outline-none cursor-pointer ${
                       isActive
-                        ? "font-semibold text-[#DFB260]"
+                        ? "font-semibold bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
                         : "text-[#d8c3b180] hover:text-[#D4C3A3]"
                     }`}
                   >
@@ -142,7 +142,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                     {isActive ? (
                       <span
                         aria-hidden="true"
-                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#DFB260] shadow-[0_0_8px_rgba(223,178,96,0.5)]"
+                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
                       />
                     ) : null}
                   </button>
@@ -263,11 +263,11 @@ function CommunityNotificationsButton() {
           ? t("bc.mobile.home.notifications.unread", { count: unread })
           : t("bc.mobile.home.notifications")
       }
-      className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41]"
+      className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
     >
       <Bell className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
       {hasUnread ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[#ea9a41] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#2c1600]">
+        <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
           {unread}
         </span>
       ) : null}
@@ -282,7 +282,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
   const oppCount = preview?.openOpportunities.length ?? null;
 
   return (
-    <li className="overflow-hidden rounded-2xl border border-solid border-[#ea9a4126] bg-[#0c1522]/90 p-3.5 flex flex-col gap-3 backdrop-blur-sm shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+    <li className="overflow-hidden rounded-2xl bc-translucent-card p-3.5 flex flex-col gap-3">
       <Link
         to="/connect-app/community/$communityId"
         params={{ communityId: community.communityId }}
@@ -302,10 +302,10 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
               />
             </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#DFB260]/30 bg-[#DFB260]/10 px-2 text-[10.5px] font-medium text-[#DFB260]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/30 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#D8B282]">
                 {community.viewerRole === "admin" ? "Quản trị viên" : "Thành viên"}
               </span>
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#DFB260]/30 bg-[#DFB260]/10 px-2 text-[10.5px] font-medium text-[#DFB260]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/30 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#D8B282]">
                 Đã tham gia
               </span>
             </div>
@@ -325,31 +325,31 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
           .join(" • ") || (community.shortDescription ?? "")}
       </p>
 
-      <div className="w-full h-px bg-[#ea9a411a]" />
+      <div className="w-full h-px bg-[#D8B282]/15" />
 
-      <div className="grid grid-cols-3 divide-x divide-[#ea9a411a] -mx-3.5 -mb-3.5">
+      <div className="grid grid-cols-3 divide-x divide-[#D8B282]/15 -mx-3.5 -mb-3.5">
         <Link
           to="/connect-app/community/$communityId/members"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
         >
-          <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
+          <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Thành viên
         </Link>
         <Link
           to="/connect-app/community/$communityId/events"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
         >
-          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
+          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Sự kiện
         </Link>
         <Link
           to="/connect-app/community/$communityId/opportunities"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#DFB260] hover:bg-[#ea9a410d] transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
         >
-          <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#DFB260]" strokeWidth={1.8} />
+          <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Cơ hội
         </Link>
       </div>
@@ -364,14 +364,14 @@ export function CommunityAvatar({ name, logoUrl }: { name: string; logoUrl: stri
         src={logoUrl}
         alt=""
         loading="lazy"
-        className="h-12 w-12 shrink-0 rounded-full border border-solid border-[#ea9a4126] object-cover"
+        className="h-12 w-12 shrink-0 rounded-full border border-solid border-[#D8B282]/25 object-cover"
       />
     );
   }
   return (
     <div
       aria-hidden="true"
-      className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-solid border-[#DFB260]/30 bg-[#0c1522] text-[16px] font-semibold text-[#DFB260]"
+      className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-solid border-[#D8B282]/30 bg-[#0c1522] text-[16px] font-semibold text-[#D8B282]"
     >
       {name.trim().charAt(0).toUpperCase() || "·"}
     </div>
@@ -384,13 +384,13 @@ export function CommunityListSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-2xl border border-solid border-[#ea9a4126] bg-[#0c1522]/80 p-3.5"
+          className="rounded-2xl border border-solid border-[#D8B282]/20 bg-[#0c1522]/80 p-3.5"
         >
           <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 animate-pulse rounded-full bg-[#ea9a4115]" />
+            <div className="h-12 w-12 animate-pulse rounded-full bg-[#D8B282]/10" />
             <div className="flex-1 space-y-2">
-              <div className="h-3.5 w-2/5 animate-pulse rounded-full bg-[#ea9a4115]" />
-              <div className="h-3 w-3/5 animate-pulse rounded-full bg-[#ea9a4115]" />
+              <div className="h-3.5 w-2/5 animate-pulse rounded-full bg-[#D8B282]/10" />
+              <div className="h-3 w-3/5 animate-pulse rounded-full bg-[#D8B282]/10" />
             </div>
           </div>
         </div>

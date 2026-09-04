@@ -22,7 +22,7 @@ export function MeAboutPanel({
   return (
     <section
       aria-labelledby="me-about-title"
-      className="rounded-[22px] border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 shadow-[var(--bc-mobile-shadow-v)]"
+      className="rounded-2xl bc-translucent-card p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <h2
@@ -31,7 +31,7 @@ export function MeAboutPanel({
         >
           <User
             aria-hidden="true"
-            className="h-4 w-4 text-[var(--bc-mobile-accent)]"
+            className="h-4 w-4 text-[#D8B282]"
             strokeWidth={1.8}
           />
           {t("bc.mobile.me.aboutTitle")}
@@ -40,7 +40,7 @@ export function MeAboutPanel({
           <button
             type="button"
             onClick={onEdit}
-            className="flex min-h-11 items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-text-2)] transition-colors hover:text-[var(--bc-mobile-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+            className="flex min-h-11 items-center gap-0.5 text-[12.5px] font-medium text-[#D4C3A3] transition-colors hover:text-[#D8B282] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
           >
             {t("bc.mobile.me.viewMore")}
             <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
@@ -49,14 +49,14 @@ export function MeAboutPanel({
       </div>
 
       {text ? (
-        <p className="mt-2 line-clamp-4 whitespace-pre-line break-words text-[13.5px] leading-relaxed text-[var(--bc-mobile-text-2)]">
+        <p className="mt-2 line-clamp-4 whitespace-pre-line break-words text-[13.5px] leading-relaxed text-[#D4C3A3]">
           {text}
         </p>
       ) : (
         <button
           type="button"
           onClick={onEdit}
-          className="mt-3 flex min-h-11 w-full items-center justify-between rounded-2xl bg-[var(--bc-mobile-surface-2)] px-4 text-[13.5px] font-medium text-[var(--bc-mobile-text-2)] transition-colors hover:bg-[var(--bc-mobile-border)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+          className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-white/[0.03] border border-[#D8B282]/20 px-4 text-[13.5px] font-medium text-[#D4C3A3] transition-colors hover:border-[#D8B282]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
         >
           {t("bc.mobile.me.aboutEmpty")}
           <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />

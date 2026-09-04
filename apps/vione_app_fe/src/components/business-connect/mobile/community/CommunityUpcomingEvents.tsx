@@ -67,7 +67,7 @@ function CommunityUpcomingGroup({
 
   return (
     <>
-      {events.slice(0, 2).map((ev) => (
+      {events.slice(0, 2).map((ev: any) => (
         <UpcomingEventCard
           key={ev.eventRef}
           communityId={community.communityId}

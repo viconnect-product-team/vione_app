@@ -39,7 +39,6 @@ import type {
   CommunityOpportunityFollowUpEventDTO,
   CommunityOpportunityAttachmentDTO,
 } from "@/lib/business-connect/mobile/community-activity.types";
-import { supabase } from "@/integrations/supabase/client";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { uploadFileToNest, NEST_API_URL } from "@/lib/api-client";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
@@ -378,20 +377,19 @@ function NoteAttachments({
     }
     if (!item.storagePath) return;
 
-    if (item.storagePath.startsWith('/upload/')) {
+    if (item.storagePath.startsWith('/upload/') || item.storagePath.startsWith('/uploads/')) {
       const fullUrl = `${NEST_API_URL}/api${item.storagePath}`;
       window.open(fullUrl, "_blank", "noopener,noreferrer");
       return;
     }
 
-    const { data, error: signErr } = await supabase.storage
-      .from("opportunity-attachments")
-      .createSignedUrl(item.storagePath, 300);
-    if (signErr || !data?.signedUrl) {
-      setError(t("bc.mobile.community.opportunities.attach.openFailed"));
+    if (item.storagePath.startsWith('http://') || item.storagePath.startsWith('https://')) {
+      window.open(item.storagePath, "_blank", "noopener,noreferrer");
       return;
     }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+
+    const fullUrl = `${NEST_API_URL}/api/upload/${item.storagePath}`;
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   }
 
   return (

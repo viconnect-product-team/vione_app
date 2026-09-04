@@ -301,8 +301,15 @@ function Home() {
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="line-clamp-2 text-[13px] font-semibold text-[var(--vba-text)]">
-                {firstEvent.title}
+              <div className="flex items-start justify-between gap-1">
+                <div className="line-clamp-2 text-[13px] font-semibold text-[var(--vba-text)]">
+                  {firstEvent.title}
+                </div>
+                {firstEvent.isToday && (
+                  <span className="shrink-0 rounded bg-[var(--vba-gold)]/20 border border-[var(--vba-gold)]/40 px-1.5 py-0.5 text-[9px] font-bold text-[var(--vba-gold)] animate-pulse">
+                    Hôm nay
+                  </span>
+                )}
               </div>
               <div className="mt-1.5 flex items-center gap-1 text-[11px] text-[var(--vba-text-muted)]">
                 <Clock className="h-3.5 w-3.5 text-[var(--vba-gold)]" /> {firstEvent.time}
@@ -310,6 +317,11 @@ function Home() {
               <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--vba-text-muted)]">
                 <MapPin className="h-3.5 w-3.5 text-[var(--vba-gold)]" /> {firstEvent.place}
               </div>
+              {firstEvent.communityName && (
+                <div className="mt-1 flex items-center gap-1 text-[10px] text-[var(--vba-gold)]">
+                  <Users className="h-3 w-3" /> {firstEvent.communityName}
+                </div>
+              )}
             </div>
             <Bookmark className="h-5 w-5 shrink-0 text-[var(--vba-text-dim)]" />
           </div>

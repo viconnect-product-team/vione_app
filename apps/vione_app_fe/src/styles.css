@@ -577,17 +577,18 @@ input[type="radio"] {
   --bc-bg-deep: #03080f;
   --bc-bg-primary: #050c15;
   --bc-bg-secondary: #08101b;
-  --bc-surface: #0c1522;
-  --bc-surface-elevated: #0f1826;
+  --bc-surface: rgba(12, 21, 34, 0.2);
+  --bc-surface-elevated: rgba(20, 32, 50, 0.3);
 
 
   --bc-mobile-bg: var(--bc-bg-primary);
   --bc-mobile-bg-deep: var(--bc-bg-deep);
-  --bc-mobile-surface: var(--bc-surface);
-  --bc-mobile-surface-2: var(--bc-surface-elevated);
+  --bc-mobile-surface: rgba(12, 21, 34, 0.2);
+  --bc-mobile-surface-2: rgba(20, 32, 50, 0.3);
   --bc-mobile-navy: var(--bc-bg-secondary);
   --bc-mobile-navy-deep: var(--bc-bg-deep);
   --bc-mobile-app-gradient: linear-gradient(180deg, #03080f 0%, #050c15 48%, #08101b 100%);
+  --bc-mobile-card-grad: linear-gradient(150deg, rgba(20, 32, 50, 0.25) 0%, rgba(12, 21, 34, 0.12) 50%, rgba(6, 13, 22, 0.25) 100%);
 
   /* Text - aligned with login screen palette (#f5f7fa, #D4C3A3, #d8c3b1) */
   --bc-text-primary: #f5f7fa;
@@ -601,47 +602,47 @@ input[type="radio"] {
   --bc-mobile-muted: var(--bc-text-secondary);
   --bc-mobile-disabled: var(--bc-text-disabled);
 
-  /* Borders — hairline, almost invisible */
-  --bc-border-subtle: rgb(255 255 255 / 0.12);
-  --bc-border-medium: rgb(255 255 255 / 0.16);
-  --bc-border-gold: rgb(242 180 90 / 0.45);
+  /* Borders — hairline 1px gold tone matching login screen */
+  --bc-border-subtle: rgba(216, 178, 130, 0.12);
+  --bc-border-medium: rgba(216, 178, 130, 0.18);
+  --bc-border-gold: rgba(216, 178, 130, 0.32);
   --bc-mobile-border: var(--bc-border-medium);
   --bc-mobile-border-subtle: var(--bc-border-subtle);
   --bc-mobile-border-gold: var(--bc-border-gold);
   /* Boundary colour for focusable controls: >=3:1 against every surface. */
-  --bc-mobile-border-strong: #7c879a;
+  --bc-mobile-border-strong: rgba(216, 178, 130, 0.45);
 
-  /* Champagne gold */
-  --bc-gold-300: #ffdfa8;
-  --bc-gold-400: #ffc97a;
-  --bc-gold-500: #f2b45a;
-  --bc-gold-600: #d99a3e;
+  /* Champagne gold -> Login page warm luxury gold */
+  --bc-gold-300: #FDE6B4;
+  --bc-gold-400: #D8B282;
+  --bc-gold-500: #D8B282;
+  --bc-gold-600: #AB6D3C;
 
-  --bc-mobile-accent: var(--bc-gold-500);
-  --bc-mobile-accent-strong: var(--bc-gold-400);
-  --bc-mobile-accent-soft: #40320f;
-  --bc-mobile-accent-grad: linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #bc7c49 0%, #ffebd4 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #995c2b 0%, #edd19c 100%);
-  --bc-mobile-accent-on: #101722;
-  --bc-mobile-shadow-cta: 0 8px 28px rgb(242 180 90 / 0.14);
+  --bc-mobile-accent: #D8B282;
+  --bc-mobile-accent-strong: #F6E1C3;
+  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.15);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #faecda 0%, #e2be90 45%, #cea877 70%, #9c7348 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #eed5b5 0%, #cca573 45%, #b58d5b 70%, #7d572e 100%);
+  --bc-mobile-accent-on: #050c15;
+  --bc-mobile-shadow-cta: none;
   --bc-mobile-success: #5ec49d;
   --bc-mobile-danger: #ef7b6a;
 
-  /* Radius */
+  /* Radius — soft rounded */
   --bc-radius-sm: 10px;
   --bc-radius-md: 14px;
   --bc-radius-lg: 18px;
-  --bc-radius-xl: 24px;
-  --bc-radius-sheet: 30px;
+  --bc-radius-xl: 22px;
+  --bc-radius-sheet: 26px;
   --bc-mobile-radius-card: var(--bc-radius-lg);
   --bc-mobile-radius-sheet: var(--bc-radius-sheet);
 
-  /* Elevation — soft, never hard black */
-  --bc-mobile-shadow-surface: 0 12px 36px rgb(0 0 0 / 0.2);
-  --bc-mobile-shadow-gold: 0 8px 30px rgb(242 180 90 / 0.1);
-  --bc-mobile-shadow-nav: 0 -10px 30px rgb(0 0 0 / 0.28);
-  --bc-mobile-shadow-v: 0 10px 30px rgb(242 180 90 / 0.16);
+  /* Flat / Light Glassmorphism — completely removed harsh 3D elevation */
+  --bc-mobile-shadow-surface: none;
+  --bc-mobile-shadow-gold: none;
+  --bc-mobile-shadow-nav: none;
+  --bc-mobile-shadow-v: none;
 
   --bc-mobile-nav-h: 64px;
   --bc-mobile-safe-top: env(safe-area-inset-top, 0px);
@@ -666,29 +667,17 @@ input[type="radio"] {
 }
 
 .bc-app-viewport {
-  background: var(--bc-mobile-bg);
+  background: transparent;
   color: var(--bc-mobile-text);
   min-height: 100dvh;
   position: relative;
   isolation: isolate;
 }
 
-/* iOS Safari repaints `background-attachment: fixed` on every scroll frame,
-   which is the main source of swipe jank. Paint the gradient once on a
-   composited fixed layer behind the content instead. */
 .bc-app-viewport::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='390' height='521' viewBox='0 0 390 521' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg filter='url(%23filter0_f_63_954)'%3E%3Crect x='154' y='-171' width='472' height='472' rx='236' fill='%23EA9A41' fill-opacity='0.12'/%3E%3C/g%3E%3Cdefs%3E%3Cfilter id='filter0_f_63_954' x='-65.3' y='-390.3' width='910.6' height='910.6' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'%3E%3CfeFlood flood-opacity='0' result='BackgroundImageFix'/%3E%3CfeBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/%3E%3CfeGaussianBlur stdDeviation='109.65' result='effect1_foregroundBlur_63_954'/%3E%3C/filter%3E%3C/defs%3E%3C/svg%3E"), var(--bc-mobile-app-gradient);
-  background-repeat: no-repeat;
-  background-position: right top;
-  background-size: 390px 521px;
-  transform: translateZ(0);
-  will-change: transform;
+  display: none;
 }
+
 
 /* Hide native scrollbars inside the connect-app shell; scrolling remains
    gesture-driven (swipe up/down). WebKit + Firefox + IE/Edge covered.
@@ -876,6 +865,26 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 }
 
 
+
+/* Translucent card with subtle gradient & gold hairline border (Login theme parity) */
+@utility bc-translucent-card {
+  background: linear-gradient(150deg, rgba(20, 32, 50, 0.25) 0%, rgba(12, 21, 34, 0.12) 50%, rgba(6, 13, 22, 0.25) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 154, 65, 0.18);
+}
+
+/* Luxury gold text gradient matching Login "Chào mừng" title */
+@utility bc-gold-text {
+  background: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Luxury gold surface gradient matching Login "Chào mừng" palette */
+@utility bc-gold-gradient {
+  background: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+}
 
 /* Warm-gold primary CTA surface (design parity for actions such as
    "Chạm NFC để kết nối"). Hover/active stay on the same gold ramp. */
@@ -1088,18 +1097,18 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
   0%, 100% {
     opacity: 0.2;
     transform: scale(0.8);
-    box-shadow: 0 0 0px #EA9A41;
+    box-shadow: 0 0 0px #D8B282;
   }
   50% {
     opacity: 1;
     transform: scale(1.2);
-    box-shadow: 0 0 10px #EA9A41, 0 0 20px #EA9A41;
+    box-shadow: 0 0 10px #D8B282, 0 0 20px #D8B282;
   }
 }
 
 .data-dot {
   position: absolute;
-  background-color: #EA9A41;
+  background-color: #D8B282;
   border-radius: 50%;
   animation: pulse-dot infinite ease-in-out;
   pointer-events: none;
@@ -1299,4 +1308,25 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
   pointer-events: none;
   z-index: 0;
   animation: ambient-drift-two 28s ease-in-out infinite;
+}
+
+/* ── WARM LUXURY GOLD GRADIENT BUTTON ── */
+.btn-luxury-gold {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+  color: #1b1206 !important;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(216, 178, 130, 0.3);
+  transition: all 0.25s ease;
+}
+
+.btn-luxury-gold:hover {
+  background: linear-gradient(135deg, #faecda 0%, #e2be90 45%, #cea877 70%, #9c7348 100%);
+  box-shadow: 0 4px 14px rgba(216, 178, 130, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-luxury-gold:active {
+  transform: scale(0.98);
 }

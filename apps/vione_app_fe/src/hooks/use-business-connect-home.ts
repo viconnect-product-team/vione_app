@@ -107,12 +107,12 @@ const PRIMARY_CATEGORIES: readonly WorkHubCategory[] = [
 const SECONDARY_CATEGORIES: readonly WorkHubCategory[] = ["waiting", "recent"];
 
 function toTodayKind(item: WorkHubItemDTO): BcMobileTodayKind {
-  const k = item.itemKind;
-  if (k.startsWith("meeting_follow_up")) return "follow_up";
-  if (k.startsWith("meeting_")) return "meeting";
-  if (k.startsWith("connection_")) return "connection";
-  if (k.startsWith("introduction_")) return "introduction";
-  if (k === "calendar_sync_action_required") return "calendar";
+  const str = String(item?.itemKind || (item as any)?.kind || "");
+  if (str.startsWith("meeting_follow_up")) return "follow_up";
+  if (str.startsWith("meeting")) return "meeting";
+  if (str.startsWith("connection_")) return "connection";
+  if (str.startsWith("introduction_")) return "introduction";
+  if (str === "calendar_sync_action_required" || str === "calendar") return "calendar";
   return "relationship";
 }
 
@@ -123,16 +123,16 @@ function toTodayItem(item: WorkHubItemDTO): BcMobileTodayItem {
     category: item.category,
     urgency: item.urgency,
     titleKey: item.titleKey,
-    descriptionKey: item.descriptionKey,
-    counterpartDisplayName: item.safeDisplayData.counterpartDisplayName ?? null,
-    startsAt: item.startsAt,
-    dueAt: item.dueAt,
+    descriptionKey: item.descriptionKey ?? null,
+    counterpartDisplayName: item.safeDisplayData?.counterpartDisplayName ?? (item as any)?.counterpartDisplayName ?? null,
+    startsAt: item.startsAt ?? null,
+    dueAt: item.dueAt ?? null,
     action: {
-      labelKey: item.action.labelKey,
-      targetRoute: item.action.targetRoute,
-      targetParams: item.action.targetParams,
-      targetSearch: item.action.targetSearch,
-      canRoute: item.viewerPermissions.canRoute,
+      labelKey: item.action?.labelKey ?? "bc.workHub.action.view",
+      targetRoute: item.action?.targetRoute ?? null,
+      targetParams: item.action?.targetParams ?? null,
+      targetSearch: item.action?.targetSearch ?? null,
+      canRoute: item.viewerPermissions?.canRoute ?? Boolean(item.action?.targetRoute),
     },
   };
 }
@@ -151,10 +151,11 @@ export function selectTodayItems(
   const out: BcMobileTodayItem[] = [];
   const collect = (categories: readonly WorkHubCategory[]) => {
     for (const category of categories) {
-      for (const item of overview.previews[category] ?? []) {
+      for (const item of overview?.previews?.[category] ?? []) {
         if (out.length >= max) return;
-        if (seen.has(item.dedupeKey)) continue;
-        seen.add(item.dedupeKey);
+        const key = item.dedupeKey || item.id;
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
         out.push(toTodayItem(item));
       }
     }

@@ -99,7 +99,7 @@ type OpenSheet =
   | null;
 
 const rowClass =
-  "flex min-h-[52px] w-full min-w-0 items-center justify-between gap-3 rounded-2xl px-4 text-left text-[14.5px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none";
+  "flex min-h-[52px] w-full min-w-0 items-center justify-between gap-3 rounded-xl px-4 text-left text-[14.5px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[#D8B282]/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none";
 
 /** Circular owner action used in the Me quick-action row. */
 function QuickAction({
@@ -120,9 +120,9 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
-      className="flex flex-col items-center gap-1.5 rounded-2xl py-2 text-[11.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+      className="flex flex-col items-center gap-1.5 rounded-2xl py-2 text-[11.5px] font-medium text-[#D4C3A3] transition-colors hover:text-[#D8B282] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
     >
-      <span className="grid h-12 w-12 place-items-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-text)] shadow-[var(--bc-mobile-shadow-v)]">
+      <span className="grid h-12 w-12 place-items-center rounded-full border border-[#D8B282]/25 bg-[#0c1522]/80 text-[#D8B282] transition-colors hover:border-[#D8B282]/50">
         {busy ? (
           <Loader2
             aria-hidden="true"
@@ -148,12 +148,12 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 shadow-[var(--bc-mobile-shadow-v)]">
+    <section className="rounded-2xl bc-translucent-card p-5">
       <h2 className="text-[15px] font-semibold tracking-tight text-[var(--bc-mobile-text)]">
         {title}
       </h2>
       {desc && (
-        <p className="mt-1 text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">{desc}</p>
+        <p className="mt-1 text-[12.5px] leading-snug text-[#D4C3A3]">{desc}</p>
       )}
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">{children}</div>
     </section>
@@ -457,14 +457,14 @@ function ConnectAppMePage() {
       />
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 pt-4">
         {loadFailed ? (
-          <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6 text-center shadow-[var(--bc-mobile-shadow-v)]">
-            <p role="alert" className="text-[14px] text-[var(--bc-mobile-muted)]">
+          <section className="rounded-2xl bc-translucent-card p-6 text-center">
+            <p role="alert" className="text-[14px] text-[#D4C3A3]">
               {t("bc.mobile.me.loadError")}
             </p>
             <button
               type="button"
               onClick={() => void load()}
-              className="mt-3 min-h-11 rounded-full bg-[var(--bc-mobile-text)] px-6 text-[14px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+              className="mt-3 min-h-11 rounded-full btn-luxury-gold px-6 text-[14px] font-semibold transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
             >
               {t("bc.mobile.me.retry")}
             </button>
@@ -473,11 +473,11 @@ function ConnectAppMePage() {
           <section
             aria-busy="true"
             aria-label={t("bc.mobile.me.identity.title")}
-            className="flex justify-center rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-10 shadow-[var(--bc-mobile-shadow-v)]"
+            className="flex justify-center rounded-2xl bc-translucent-card p-10"
           >
             <Loader2
               aria-hidden="true"
-              className="h-6 w-6 animate-spin text-[var(--bc-mobile-muted)] motion-reduce:animate-none"
+              className="h-6 w-6 animate-spin text-[#D8B282] motion-reduce:animate-none"
               strokeWidth={1.8}
             />
           </section>
@@ -673,7 +673,7 @@ function ConnectAppMePage() {
                     aria-pressed={lang === code}
                     className={`rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition text-center ${
                       lang === code
-                        ? "border-[#ea9a41] bg-[#ea9a4112] text-[#ffb971]"
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent font-bold shadow-sm"
                         : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
                     }`}
                   >

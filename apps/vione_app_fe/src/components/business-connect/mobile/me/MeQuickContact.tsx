@@ -31,8 +31,8 @@ const contactMethodsSpec: ContactSpec[] = [
     icon: icon26,
     iconClassName: "relative w-[13.5px] h-[13.5px]",
     iconContainerClassName:
-      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#DFB26015] rounded-lg border border-[#DFB260]/10",
-    gridClassName: "row-[1_/_2] col-[1_/_2]",
+      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#D8B282]/10 rounded-lg border border-[#D8B282]/20",
+    gridClassName: "w-full",
   },
   {
     key: "email",
@@ -40,8 +40,8 @@ const contactMethodsSpec: ContactSpec[] = [
     icon: icon27,
     iconClassName: "relative w-[15px] h-3",
     iconContainerClassName:
-      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#DFB26015] rounded-lg border border-[#DFB260]/10",
-    gridClassName: "row-[1_/_2] col-[2_/_3]",
+      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#D8B282]/10 rounded-lg border border-[#D8B282]/20",
+    gridClassName: "w-full",
   },
   {
     key: "viber",
@@ -49,8 +49,8 @@ const contactMethodsSpec: ContactSpec[] = [
     icon: icon28,
     iconClassName: "relative w-[15px] h-[15px]",
     iconContainerClassName:
-      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#DFB26015] rounded-lg border border-[#DFB260]/10",
-    gridClassName: "row-[2_/_3] col-[1_/_2]",
+      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#D8B282]/10 rounded-lg border border-[#D8B282]/20",
+    gridClassName: "w-full",
   },
   {
     key: "whatsapp",
@@ -58,8 +58,8 @@ const contactMethodsSpec: ContactSpec[] = [
     icon: icon29,
     iconClassName: "relative w-[15px] h-[15px]",
     iconContainerClassName:
-      "flex w-[27.63px] h-8 shrink-0 items-center justify-center relative bg-[#DFB26015] rounded-lg border border-[#DFB260]/10",
-    gridClassName: "row-[2_/_3] col-[2_/_3]",
+      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#D8B282]/10 rounded-lg border border-[#D8B282]/20",
+    gridClassName: "w-full",
   },
   {
     key: "telegram",
@@ -67,8 +67,8 @@ const contactMethodsSpec: ContactSpec[] = [
     icon: icon31,
     iconClassName: "relative w-[14.25px] h-3",
     iconContainerClassName:
-      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#DFB26015] rounded-lg border border-[#DFB260]/10",
-    gridClassName: "row-[3_/_4] col-[1_/_3]",
+      "flex w-8 h-8 shrink-0 items-center justify-center relative bg-[#D8B282]/10 rounded-lg border border-[#D8B282]/20",
+    gridClassName: "w-full",
   },
 ];
 
@@ -82,7 +82,7 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
 
   return (
     <section
-      className="gap-4 flex flex-col items-start p-6 relative self-stretch w-full flex-[0_0_auto] bg-[#0c1522]/90 rounded-2xl border border-solid border-[#ea9a4126] backdrop-blur-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.35)]"
+      className="gap-4 flex flex-col items-start p-6 relative self-stretch w-full flex-[0_0_auto] bc-translucent-card rounded-2xl"
       aria-labelledby="quick-contact-heading"
     >
       <div className="flex self-stretch w-full flex-col items-start relative flex-[0_0_auto]">
@@ -93,7 +93,7 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
           {t("bc.mobile.me.contact.title")}
         </h2>
       </div>
-      <div className="grid grid-cols-2 grid-rows-[58px_58px_58px] h-fit gap-3 w-full">
+      <div className="grid grid-cols-2 gap-3 w-full">
         {contactMethodsSpec.map((method) => {
           const activeChannel = channels.find((c) => c.key === method.key);
           const isPressed = selectedContact === method.key;
@@ -107,7 +107,7 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                 aria-label={method.label}
                 aria-pressed={isPressed}
                 onClick={() => setSelectedContact(method.key)}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b] rounded-xl border border-solid border-[#ea9a4126] items-center relative text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DFB260] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050c15] hover:bg-[#0f1826] hover:border-[#ea9a4166]`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b] rounded-xl border border-solid border-[#D8B282]/25 items-center relative text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050c15] hover:bg-[#0f1826] hover:border-[#D8B282]/50`}
               >
                 <span className={method.iconContainerClassName} aria-hidden="true">
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
@@ -132,7 +132,7 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                 type="button"
                 disabled
                 aria-label={`${method.label} (chưa thiết lập)`}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b]/50 rounded-xl border border-solid border-[#ea9a410c] items-center relative text-left opacity-35 cursor-not-allowed`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b]/50 rounded-xl border border-solid border-[#D8B282]/10 items-center relative text-left opacity-35 cursor-not-allowed`}
               >
                 <span className={method.iconContainerClassName} aria-hidden="true">
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">

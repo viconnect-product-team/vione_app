@@ -202,21 +202,26 @@ export function useCommunityJoinLiveSync() {
   useEffect(() => {
     if (!viewerId) return;
 
-    const channel = supabase
-      .channel(`community-join-${viewerId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "community_join_requests",
-          filter: `user_id=eq.${viewerId}`,
-        },
-        () => {
-          void sync();
-        },
-      )
-      .subscribe();
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(`community-join-${viewerId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "community_join_requests",
+            filter: `user_id=eq.${viewerId}`,
+          },
+          () => {
+            void sync();
+          },
+        )
+        .subscribe();
+    } catch {
+      /* Supabase realtime không khả dụng; dùng cơ chế thăm dò bên dưới */
+    }
 
     // Dự phòng: nếu realtime không khả dụng, vẫn làm mới định kỳ khi tab hiển thị.
     const timer = window.setInterval(() => {
@@ -231,7 +236,13 @@ export function useCommunityJoinLiveSync() {
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
-      void supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          void supabase.removeChannel(channel);
+        } catch {
+          // ignore
+        }
+      }
     };
   }, [viewerId, sync]);
 }

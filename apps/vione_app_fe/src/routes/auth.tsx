@@ -460,7 +460,7 @@ function AuthPage() {
         {/* Brand Crest & Headers */}
         <div className="mt-6 flex flex-col items-center justify-center text-center">
           <ViOneLogo className="h-11 sm:h-13 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-2 text-[10px] font-medium tracking-[0.32em] uppercase text-[#ea9a41]">
+          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
             BUSINESS CONNECT
           </div>
           <h1 className="mt-4 font-serif text-[28px] sm:text-[32px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
@@ -509,7 +509,7 @@ function AuthPage() {
             background-color: var(--card) !important;
           }
           .auth-field:focus {
-            border-color: #ea9a41 !important;
+            border-color: #D8B282 !important;
             background-color: var(--card) !important;
           }
         `}</style>
@@ -529,7 +529,7 @@ function AuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@connect.vn"
-              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#ea9a41] focus:ring-1 focus:ring-[#ea9a4133] shadow-xs"
+              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
             />
           </div>
 
@@ -540,7 +540,7 @@ function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t("auth.passwordPlaceholder")}
-              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#ea9a41] focus:ring-1 focus:ring-[#ea9a4133] shadow-xs"
+              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
             />
             <button
               type="button"
@@ -560,7 +560,7 @@ function AuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu"
-                className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#ea9a41] focus:ring-1 focus:ring-[#ea9a4133] shadow-xs"
+                className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
               />
             </div>
           )}

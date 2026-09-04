@@ -47,7 +47,7 @@ export function MeShowcasePanel({
   return (
     <section
       aria-labelledby={`${id}-title`}
-      className="rounded-[22px] border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 shadow-[var(--bc-mobile-shadow-v)]"
+      className="rounded-2xl bc-translucent-card p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <h2
@@ -56,7 +56,7 @@ export function MeShowcasePanel({
         >
           <TitleIcon
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 text-[var(--bc-mobile-accent)]"
+            className="h-4 w-4 shrink-0 text-[#D8B282]"
             strokeWidth={1.8}
           />
           <span className="min-w-0 break-words">{title}</span>
@@ -65,7 +65,7 @@ export function MeShowcasePanel({
           <button
             type="button"
             onClick={onViewAll}
-            className="flex min-h-11 shrink-0 items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-text-2)] transition-colors hover:text-[var(--bc-mobile-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+            className="flex min-h-11 shrink-0 items-center gap-0.5 text-[12.5px] font-medium text-[#D4C3A3] transition-colors hover:text-[#D8B282] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
           >
             {t("bc.mobile.me.viewAll")}
             <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
@@ -77,7 +77,7 @@ export function MeShowcasePanel({
         <button
           type="button"
           onClick={onAdd}
-          className="mt-3 flex min-h-11 w-full items-center justify-between rounded-2xl bg-[var(--bc-mobile-surface-2)] px-4 text-[13.5px] font-medium text-[var(--bc-mobile-text-2)] transition-colors hover:bg-[var(--bc-mobile-border)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+          className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-white/[0.03] border border-[#D8B282]/20 px-4 text-[13.5px] font-medium text-[#D4C3A3] transition-colors hover:border-[#D8B282]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
         >
           {emptyLabel}
           <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />

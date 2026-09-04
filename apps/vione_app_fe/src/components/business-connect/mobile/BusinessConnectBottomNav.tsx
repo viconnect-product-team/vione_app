@@ -62,7 +62,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
         {/* Chỉ báo tab đang chọn */}
         <span
           aria-hidden="true"
-          className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[var(--bc-mobile-accent)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
+          className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
         />
         <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_14%,transparent)] motion-reduce:transition-none">
           <Icon className="h-[20px] w-[20px]" />
@@ -80,23 +80,16 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
       className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px]"
     >
       <div
-        className="relative grid grid-cols-5 items-end border-t border-[color-mix(in_oklab,var(--bc-mobile-accent)_18%,var(--bc-mobile-border))] bg-[var(--bc-mobile-surface)]/95 px-2 pt-2.5 backdrop-blur-xl"
+        className="relative grid grid-cols-5 items-center border-t border-[#D8B282]/20 bg-[#050c15]/95 px-2 pt-1.5 backdrop-blur-md"
         style={{
           minHeight: "calc(var(--bc-mobile-nav-h) + var(--bc-mobile-safe-bottom))",
-          paddingBottom: "max(var(--bc-mobile-safe-bottom), 8px)",
-          boxShadow: "var(--bc-mobile-shadow-nav)",
+          paddingBottom: "max(var(--bc-mobile-safe-bottom), 6px)",
         }}
       >
-        {/* Dải sáng vàng mảnh chạy dọc mép trên thanh nav */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--bc-mobile-accent)_55%,transparent),transparent)]"
-        />
         {renderTab(HOME_TAB)}
         {renderTab(NETWORK_TAB)}
-        <div className="relative flex items-start justify-center">
-          {/* Elevated signature control; overlaps the nav bar vertically. */}
-          <VButton onClick={onVPress} className="-mt-[34px]" />
+        <div className="relative flex items-center justify-center">
+          <VButton onClick={onVPress} className="-mt-[20px]" />
         </div>
         {renderTab(COMMUNITY_TAB)}
         {renderTab(ME_TAB)}
@@ -104,4 +97,5 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
     </nav>
   );
 }
+
 

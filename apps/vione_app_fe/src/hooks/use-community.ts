@@ -98,8 +98,20 @@ export function useCommunityMembers(
     enabled: viewerId !== null,
     staleTime: 15_000,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
-      CommunitySDK.listMembers({ communityId, query, offset: pageParam, roleFilter }),
+    queryFn: async ({ pageParam }) => {
+      const q = new URLSearchParams();
+      if (query) q.set("query", query);
+      if (pageParam) q.set("offset", String(pageParam));
+      if (roleFilter && roleFilter !== "all") q.set("roleFilter", roleFilter);
+      const qs = q.toString();
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/members${qs ? `?${qs}` : ""}`);
+        if (res) return res;
+      } catch {
+        // fallback to server fn SDK
+      }
+      return CommunitySDK.listMembers({ communityId, query, offset: pageParam, roleFilter });
+    },
     getNextPageParam: (last) => last?.nextOffset ?? undefined,
   });
 
@@ -125,8 +137,16 @@ export function useCommunityMembers(
 export function useUpdateCommunityMemberRole(communityId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { memberRef: string; role: "admin" | "member" }) =>
-      CommunitySDK.updateMemberRole({ communityId, ...input }),
+    mutationFn: async (input: { memberRef: string; role: "admin" | "member" }) => {
+      try {
+        return await fetchNestApi<any>(`/connect-app/community/${communityId}/members/${input.memberRef}/role`, {
+          method: "PATCH",
+          body: JSON.stringify({ role: input.role }),
+        });
+      } catch {
+        return CommunitySDK.updateMemberRole({ communityId, ...input });
+      }
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: communityKeys.root });
     },
@@ -141,12 +161,27 @@ export function useCommunityMemberProfile(communityId: string, memberRef: string
     queryKey: communityKeys.profile(viewerKey, communityId, memberRef),
     enabled: viewerId !== null,
     staleTime: 15_000,
-    queryFn: () => CommunitySDK.getMemberProfile({ communityId, memberRef }),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/members/${memberRef}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.getMemberProfile({ communityId, memberRef });
+    },
   });
 
   const connect = useMutation({
-    mutationFn: () =>
-      CommunitySDK.connect({ communityId, memberRef, mutationKey: newMutationKey() }),
+    mutationFn: async () => {
+      try {
+        return await fetchNestApi<any>(`/connect-app/community/${communityId}/members/${memberRef}/connect`, {
+          method: "POST",
+        });
+      } catch {
+        return CommunitySDK.connect({ communityId, memberRef, mutationKey: newMutationKey() });
+      }
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: communityKeys.root });
       void queryClient.invalidateQueries({ queryKey: bcMobileNetworkKeys.root });

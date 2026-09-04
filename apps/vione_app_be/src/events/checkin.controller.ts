@@ -33,4 +33,14 @@ export class CheckinController {
   async undoCheckIn(@Body('attendeeId') attendeeId: string) {
     return this.eventsService.undoCheckInAttendee(attendeeId);
   }
+
+  @Post('record')
+  async recordMemberCheckin(@Request() req: any, @Body() body: any) {
+    return this.eventsService.recordMemberCheckin(req.user?.id || req.user?.sub, body);
+  }
+
+  @Get('my-checkins')
+  async listMyMemberCheckins(@Request() req: any) {
+    return this.eventsService.listMyMemberCheckins(req.user?.id || req.user?.sub);
+  }
 }

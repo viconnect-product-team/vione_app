@@ -15,7 +15,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { getMyMember, type MyMember } from "@/lib/member-app.functions";

@@ -124,7 +124,7 @@ export function NetworkHome() {
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#ea9a4126] bg-[#050c15f2] backdrop-blur-md px-5 py-3 -mx-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#D8B282]/20 bg-[#050c15]/90 backdrop-blur-md px-5 py-3 -mx-4">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
@@ -151,7 +151,7 @@ export function NetworkHome() {
             <Link
               to="/connect-app/card-scan"
               aria-label={t("bc.mobile.network.addPerson")}
-              className="grid h-9 w-9 place-items-center rounded-full text-[#D4C3A3] hover:bg-[#ffffff14] transition-colors border border-solid border-[#ea9a4126] bg-[#0c1522] hover:border-[#ea9a4170]"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#D4C3A3] hover:bg-[#ffffff14] transition-colors border border-solid border-[#D8B282]/20 bg-[#0c1522] hover:border-[#D8B282]/60"
             >
               <UserPlus className="h-4.5 w-4.5" strokeWidth={1.8} />
             </Link>
@@ -166,7 +166,7 @@ export function NetworkHome() {
             >
               •
             </span>
-            <span className="mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-[#DFB260] text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
+            <span className="mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-semibold bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent text-xs leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap">
               {recommendations.length} cần chăm sóc
             </span>
           </p>
@@ -188,13 +188,13 @@ export function NetworkHome() {
                 aria-pressed={isActive}
                 className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-[#DFB260]/15 border-[#DFB260]/40 shadow-[0_2px_8px_rgba(223,178,96,0.12)]"
-                    : "bg-[#0c1522] border-[#ea9a4126] hover:border-[#ea9a4166]"
+                    ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
+                    : "bg-[#0c1522]/60 border-[#D8B282]/20 text-[#D4C3A3] hover:border-[#D8B282]/50 hover:text-[#f5f7fa]"
                 }`}
               >
                 <span
-                  className={`[font-family:'Inter-Medium',Helvetica] text-xs text-center leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap ${
-                    isActive ? "text-[#DFB260] font-semibold" : "text-[#D4C3A3] font-normal"
+                  className={`[font-family:'Inter-Medium',Helvetica] text-xs text-center leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap font-medium ${
+                    isActive ? "text-[#050c15] font-semibold" : "text-[#D4C3A3]"
                   }`}
                 >
                   {tabItem.label}
@@ -222,7 +222,7 @@ export function NetworkHome() {
             />
           <div className="relative shrink-0">
             <button
-              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#0c1522] rounded-lg border border-solid border-[#ea9a4126] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea9a41] hover:border-[#DFB260] transition-colors"
+              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#0c1522] rounded-lg border border-solid border-[#D8B282]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D8B282] hover:border-[#D8B282] transition-colors"
               type="button"
               aria-label="Mở bộ lọc tìm kiếm"
               aria-pressed={sortOpen}
@@ -483,10 +483,10 @@ function NetworkAiMatchStrip({
   return (
     <section aria-label={t("bc.mobile.network.aimatch.title")} className="mt-5">
       <div className="flex items-center justify-between w-full gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#DFB260]">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#D8B282]">
           <Sparkles
             aria-hidden="true"
-            className="h-[13px] w-[13px] shrink-0 text-[#DFB260] fill-current"
+            className="h-[13px] w-[13px] shrink-0 text-[#D8B282] fill-current"
           />
           <span className="truncate leading-5 text-[#f5f7fa]">{t("bc.mobile.network.aimatch.title")}</span>
         </h2>
@@ -494,10 +494,10 @@ function NetworkAiMatchStrip({
           <button
             type="button"
             onClick={onViewAll}
-            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
           >
             {t("bc.mobile.network.recent.viewAll")}
-            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" />
           </button>
         ) : null}
       </div>
@@ -517,14 +517,14 @@ function NetworkAiMatchStrip({
               <button
                 type="button"
                 onClick={() => setOpenId(rec.id)}
-                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#0c1522] rounded-xl p-3 border border-solid border-[#ea9a4126] hover:border-[#DFB260]/50 text-left transition-colors box-border"
+                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#0c1522] rounded-xl p-3 border border-solid border-[#D8B282]/20 hover:border-[#D8B282]/50 text-left transition-colors box-border"
               >
                 <div className="flex items-center gap-3 w-full">
                   <img
                     src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
                     alt={name}
                     loading="lazy"
-                    className="w-10 h-10 rounded-full object-cover border border-solid border-[#ea9a4126] shrink-0"
+                    className="w-10 h-10 rounded-full object-cover border border-solid border-[#D8B282]/20 shrink-0"
                   />
                   <div className="flex flex-col min-w-0 flex-1 gap-0">
                     <span className="font-medium text-sm text-[#f2efe9] leading-5 truncate">
@@ -536,7 +536,7 @@ function NetworkAiMatchStrip({
                   </div>
                 </div>
                 <div className="pt-1 w-full">
-                  <span className="font-light text-[10px] text-[#DFB260] leading-[15px] block truncate">
+                  <span className="font-light text-[10px] text-[#D8B282] leading-[15px] block truncate">
                     {daysText}
                   </span>
                 </div>
@@ -588,7 +588,7 @@ function NetworkNurtureList({
     <section aria-label={t("bc.mobile.network.nurture.title")} className="mt-5">
       <div className="flex items-center justify-between w-full gap-2">
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#f5f7fa]">
-          <Bell aria-hidden="true" className="h-[12px] w-[10px] shrink-0 text-[#DFB260]" />
+          <Bell aria-hidden="true" className="h-[12px] w-[10px] shrink-0 text-[#D8B282]" />
           <span className="truncate leading-5">
             {t("bc.mobile.network.nurture.title")} ({recommendations.length})
           </span>
@@ -597,15 +597,15 @@ function NetworkNurtureList({
           <button
             type="button"
             onClick={onViewAll}
-            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
           >
             {t("bc.mobile.network.recent.viewAll")}
-            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" />
           </button>
         ) : null}
       </div>
 
-      <div className="mt-3 flex flex-col w-full bg-[#0c1522] rounded-xl border border-solid border-[#ea9a4126] overflow-hidden box-border">
+      <div className="mt-3 flex flex-col w-full bg-[#0c1522] rounded-xl border border-solid border-[#D8B282]/20 overflow-hidden box-border">
         {items.map((rec, index) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]
@@ -621,14 +621,14 @@ function NetworkNurtureList({
               to="/connect-app/network/$personId"
               params={{ personId: rec.person.personId }}
               className={`flex items-center justify-between gap-3 p-3 hover:bg-[#0f1826] transition-colors ${
-                index !== items.length - 1 ? "border-b border-solid border-[#ea9a4120]" : ""
+                index !== items.length - 1 ? "border-b border-solid border-[#D8B282]/15" : ""
               }`}
             >
               <img
                 src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
                 alt={name}
                 loading="lazy"
-                className="w-9 h-9 rounded-full object-cover border border-solid border-[#ea9a4126] shrink-0"
+                className="w-9 h-9 rounded-full object-cover border border-solid border-[#D8B282]/20 shrink-0"
               />
               <div className="flex flex-col min-w-0 flex-1 gap-0.5">
                 <span className="font-medium text-sm text-[#f2efe9] truncate">
@@ -637,7 +637,7 @@ function NetworkNurtureList({
                 <span className="font-light text-[11px] text-[#d8c3b1] truncate">
                   {roleLine}
                 </span>
-                <span className="font-light text-[10px] text-[#DFB260] mt-0.5 block truncate">
+                <span className="font-light text-[10px] text-[#D8B282] mt-0.5 block truncate">
                   {daysText}
                 </span>
               </div>
@@ -662,7 +662,6 @@ function NetworkRecentStrip({
   onViewAll?: () => void;
 }) {
   const t = useT();
-  const fmt = useFmt();
   return (
     <section aria-label={t("bc.mobile.network.recent.title")} className="mt-5">
       <div className="flex items-center justify-between w-full gap-2">
@@ -673,10 +672,10 @@ function NetworkRecentStrip({
           <button
             type="button"
             onClick={onViewAll}
-            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+            className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
           >
             {t("bc.mobile.network.recent.viewAll")}
-            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" />
+            <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" />
           </button>
         ) : null}
       </div>
@@ -690,30 +689,28 @@ function NetworkRecentStrip({
               <Link
                 to="/connect-app/network/$personId"
                 params={{ personId: person.personId }}
-                className="w-full flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41] rounded-xl"
+                className="w-full flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] rounded-xl"
               >
                 <div
                   className={`w-12 h-12 rounded-full p-[2px] flex items-center justify-center box-border ${
                     isFirst
-                      ? "border-2 border-solid border-[#DFB260]"
-                      : "border border-solid border-[#ea9a4126]"
+                      ? "border border-solid border-[#D8B282]"
+                      : "border border-solid border-[#D8B282]/20"
                   }`}
                 >
                   <img
                     src={avatarOrDemo(person.avatarUrl, person.personId)}
                     alt=""
                     loading="lazy"
-                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                    className="w-full h-full rounded-full object-cover"
                   />
                 </div>
-                <span className="mt-1 block w-full truncate text-[10px] font-medium text-[#f2efe9] text-center leading-[15px]">
+                <span className="font-medium text-xs text-[#f2efe9] mt-2 block truncate max-w-full text-center">
                   {name}
                 </span>
-                {person.context?.at ? (
-                  <span className="block w-full truncate text-[9px] font-light text-[#d8c3b1] text-center leading-none mt-0.5">
-                    {fmt.rel(person.context.at)}
-                  </span>
-                ) : null}
+                <span className="font-light text-[10px] text-[#d8c3b1] block truncate max-w-full text-center">
+                  {person.headline ?? person.companyName ?? ""}
+                </span>
               </Link>
             </li>
           );
@@ -734,14 +731,14 @@ function NetworkNotificationsButton() {
       to="/connect-app/notifications"
       aria-label={
         hasUnread
-          ? t("bc.mobile.home.notifications.unread", { count: unread })
-          : t("bc.mobile.home.notifications")
+          ? t("bc.mobile.network.notif.unreadLabel", { count: String(unread) })
+          : t("bc.mobile.network.notif.label")
       }
-      className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ea9a41]"
+      className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
     >
-      <Bell className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
+      <Bell aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
       {hasUnread ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[#ea9a41] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#2c1600]">
+        <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#2c1600]">
           {unread}
         </span>
       ) : null}

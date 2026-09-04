@@ -14,6 +14,7 @@ import {
   sanitizeDmBody,
   type BcDmErrorCode,
 } from "@/lib/business-connect/mobile/dm.types";
+import { safeRandomUUID } from "@/lib/utils";
 
 export const Route = createFileRoute("/connect-app/inbox/$threadId")({
   head: () => ({
@@ -37,9 +38,7 @@ export const Route = createFileRoute("/connect-app/inbox/$threadId")({
 });
 
 function newToken(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return safeRandomUUID();
 }
 
 function ThreadPage() {

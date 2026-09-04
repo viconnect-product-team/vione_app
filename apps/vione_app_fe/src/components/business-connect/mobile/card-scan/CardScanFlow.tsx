@@ -19,6 +19,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronLeft, Camera, ImagePlus, RefreshCw } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { safeRandomUUID } from "@/lib/utils";
+import { fetchNestApi } from "@/lib/api-client";
 import { bcMobileCardScanFn } from "@/lib/business-connect/mobile/card-scan.functions";
 import {
   bcMobileCardScanResolveFn,
@@ -150,7 +152,14 @@ export function CardScanFlow() {
 
   /** Live camera is only possible in a secure browser context with a device. */
   function canUseLiveCamera(): boolean {
-    return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
+    return (
+      typeof window !== "undefined" &&
+      (window.isSecureContext ||
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1") &&
+      typeof navigator !== "undefined" &&
+      !!navigator.mediaDevices?.getUserMedia
+    );
   }
 
   /** Entry point for every "take photo" action: live auto mode when enabled
@@ -170,7 +179,7 @@ export function CardScanFlow() {
   const resultHeadingRef = useRef<HTMLHeadingElement>(null);
   /** Per-attempt idempotency token: one save logical op = one token, safe to
    * retry. Minted when the review opens; discarded when the attempt ends. */
-  const clientTokenRef = useRef<string>(crypto.randomUUID());
+  const clientTokenRef = useRef<string>(safeRandomUUID());
   /** Wall-clock start of the live recognition session (review opened). */
   const reviewStartedAtRef = useRef<number | null>(null);
   /** Mirror of sessionExpired for guard-closure reads (fire expiry once). */
@@ -260,13 +269,14 @@ export function CardScanFlow() {
       return;
     }
     try {
-      const r = await resolveFn({
-        data: {
+      const r = await fetchNestApi<ScanDuplicateResolution>("/connect-app/card-scan/resolve", {
+        method: "POST",
+        body: JSON.stringify({
           email: payload.email,
           phone: payload.phone,
           displayName: payload.displayName || null,
           companyName: payload.companyName,
-        },
+        }),
       });
       setResolution(r);
     } catch {
@@ -281,7 +291,10 @@ export function CardScanFlow() {
     setScanError(null);
     try {
       const result = await Promise.race([
-        scanFn({ data: { imageDataUrl: image.dataUrl, clientToken: crypto.randomUUID() } }),
+        fetchNestApi<any>("/connect-app/card-scan", {
+          method: "POST",
+          body: JSON.stringify({ imageDataUrl: image.dataUrl, clientToken: safeRandomUUID() }),
+        }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("client-timeout")), CLIENT_TIMEOUT_MS),
         ),
@@ -294,7 +307,7 @@ export function CardScanFlow() {
         setResolution(null);
         setSaveError(null);
         setSaveOutcome(null);
-        clientTokenRef.current = crypto.randomUUID();
+        clientTokenRef.current = safeRandomUUID();
         reviewStartedAtRef.current = Date.now();
         sessionExpiredRef.current = false;
         setSessionExpired(false);
@@ -331,8 +344,9 @@ export function CardScanFlow() {
     setSaveError(null);
     try {
       const payload = toScanSavePayload(draft);
-      const res = await saveFn({
-        data: {
+      const res = await fetchNestApi<any>("/connect-app/card-scan/save", {
+        method: "POST",
+        body: JSON.stringify({
           clientToken: clientTokenRef.current,
           scanId: candidate.scanId,
           displayName: payload.displayName,
@@ -346,7 +360,7 @@ export function CardScanFlow() {
           targetPersonId,
           confirmedNew: opts?.confirmedNew === true,
           fieldChoices: opts?.fieldChoices ?? null,
-        },
+        }),
       });
       if (res.ok) {
         setSaveOutcome({
@@ -627,7 +641,8 @@ export function CardScanFlow() {
         accept={CARD_SCAN_ACCEPT}
         capture="environment"
         aria-label={t("bc.mobile.cardScan.a11y.cameraInput")}
-        className="hidden"
+        className="sr-only absolute pointer-events-none opacity-0 -z-10"
+        tabIndex={-1}
         onChange={(e) => {
           void onFileSelected(e.target.files?.[0] ?? null);
           e.target.value = "";
@@ -638,7 +653,8 @@ export function CardScanFlow() {
         type="file"
         accept={CARD_SCAN_ACCEPT}
         aria-label={t("bc.mobile.cardScan.a11y.libraryInput")}
-        className="hidden"
+        className="sr-only absolute pointer-events-none opacity-0 -z-10"
+        tabIndex={-1}
         onChange={(e) => {
           void onFileSelected(e.target.files?.[0] ?? null);
           e.target.value = "";

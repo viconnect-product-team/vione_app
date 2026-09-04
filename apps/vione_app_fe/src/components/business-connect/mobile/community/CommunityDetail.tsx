@@ -267,7 +267,7 @@ function ActivityPreviews({
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--bc-mobile-border)]">
-            {opportunities.map((o) => {
+            {opportunities.map((o: any) => {
               const meta = [opportunityCategoryLabel(o.categoryKey, t), o.organizationLabel]
                 .filter(Boolean)
                 .join(" · ");

@@ -3,6 +3,7 @@
 // sync, AI suggestions). UI MUST consume this domain through this SDK, never by
 // importing server functions or the service directly.
 
+import { fetchNestApi } from "../api-client";
 import {
   applySavedCardSuggestionFn,
   archiveSavedCardFn,
@@ -76,7 +77,8 @@ export const SavedCardSDK = {
 
   /** Filtered search over the caller's saved cards. */
   search(query: SavedCardSearchQuery = {}): Promise<SavedCard[]> {
-    return searchSavedCardsFn({ data: query });
+    const qs = query.text ? `?term=${encodeURIComponent(query.text)}` : "";
+    return fetchNestApi<SavedCard[]>(`/connect-app/network/saved-cards${qs}`).catch(() => []);
   },
 
   /** Move a saved card into a collection (null = uncategorized). */

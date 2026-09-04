@@ -263,8 +263,11 @@ export function resolveMeetingWorkspaceItem(
     });
   }
 
-  // Upcoming (confirmed + future within window)
-  if (m.bucket === "upcoming" && m.scheduledStartAt && m.scheduledStartAt >= ctx.now) {
+  // Upcoming (confirmed + future within window, or today)
+  const isToday =
+    m.scheduledStartAt &&
+    new Date(m.scheduledStartAt).toDateString() === new Date(ctx.now).toDateString();
+  if (m.bucket === "upcoming" && m.scheduledStartAt && (m.scheduledStartAt >= ctx.now || isToday)) {
     const start = Date.parse(m.scheduledStartAt);
     const now = Date.parse(ctx.now);
     const days = (start - now) / 86_400_000;

@@ -25,41 +25,17 @@ export function VButton({
       aria-label={t("bc.mobile.v.open")}
       aria-disabled={disabled ?? undefined}
       className={cn(
-        "group relative grid h-[72px] w-[72px] min-h-[52px] min-w-[52px] place-items-center rounded-full",
-        "transition-[transform,filter,box-shadow] duration-150 ease-out",
-        "hover:brightness-105",
-        "active:scale-[0.95] active:brightness-95",
-        "disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100 disabled:hover:brightness-100",
-        "motion-reduce:transition-none motion-reduce:active:scale-100",
+        "group relative grid h-[58px] w-[58px] min-h-[52px] min-w-[52px] place-items-center rounded-full",
+        "border border-[#D8B282]/40 transition-all duration-200 ease-out",
+        "hover:brightness-110 active:scale-95",
+        "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       style={{
-        // Champagne brand gradient: #AB6D3C → #FDE6B4
-        background:
-          "linear-gradient(135deg, #AB6D3C 0%, #D7A568 52%, #FDE6B4 100%)",
-        boxShadow:
-          "0 12px 30px -10px rgba(171, 109, 60, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+        background: "var(--bc-mobile-accent-grad)",
       }}
     >
-      {/* Vòng viền champagne giúp nút tách khỏi thanh navigation */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-[5px] rounded-full border-[2.5px] border-[#AB6D3C] bg-[var(--bc-mobile-surface)] transition-opacity duration-150 group-disabled:opacity-40 motion-reduce:transition-none"
-        style={{ zIndex: -1 }}
-      />
-
-      {/* Quầng sáng champagne xung quanh nút */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-[18px] rounded-full opacity-70 blur-[14px] transition-opacity duration-150 group-hover:opacity-90 group-active:opacity-60 group-disabled:opacity-30 motion-reduce:transition-none"
-        style={{
-          zIndex: -2,
-          background:
-            "radial-gradient(circle, rgba(171, 109, 60, 0.32) 0%, rgba(253, 230, 180, 0.12) 40%, transparent 70%)",
-        }}
-      />
-
-      <VIconMark size={44} />
+      <VIconMark size={36} />
     </button>
   );
 }

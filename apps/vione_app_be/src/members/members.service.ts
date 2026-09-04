@@ -95,13 +95,21 @@ export class MembersService {
       const mem = await this.prisma.$queryRaw<any[]>`
         SELECT 1 FROM public.memberships 
         WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid
+        UNION ALL
+        SELECT 1 FROM public.members
+        WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid AND status = 'active'
       `.catch(() => []);
       if (mem.length > 0) return requestedAssocId;
     }
 
     const mems = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid
+      SELECT association_id FROM (
+        SELECT association_id, is_default, created_at FROM public.memberships
+        WHERE user_id = ${userId}::uuid
+        UNION ALL
+        SELECT association_id, false AS is_default, created_at FROM public.members
+        WHERE user_id = ${userId}::uuid AND status = 'active'
+      ) m
       ORDER BY is_default DESC, created_at ASC
       LIMIT 1
     `.catch(() => []);
@@ -435,6 +443,16 @@ export class MembersService {
     };
   }
 
+  async getMyMemberHistory(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (memRows.length === 0) {
+      return { activities: [], events: [], payments: [] };
+    }
+    return this.getMemberHistory(userId, memRows[0].id);
+  }
+
   async createMember(userId: string, data: CreateMemberDto) {
     const assocId = await this.getAssociationIdForUser(userId, data.associationId);
     const isAdmin = await this.checkIsAdmin(userId, assocId ?? undefined);
@@ -661,5 +679,328 @@ export class MembersService {
 
     return this.getMemberById(userId, id);
   }
+
+  async getActiveAssociationId(userId: string): Promise<string | null> {
+    return this.getAssociationIdForUser(userId);
+  }
+
+  async getMyAssociationBrand(userId: string) {
+    const associationId = await this.getAssociationIdForUser(userId);
+    if (!associationId) return null;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT name, logo_url, brand_primary FROM public.associations
+      WHERE id = ${associationId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0) return null;
+    const a = rows[0];
+    return {
+      name: a.name ?? '',
+      logoUrl: a.logo_url ?? null,
+      brandPrimary: a.brand_primary ?? null,
+    };
+  }
+
+  async getMyBenefits(userId: string) {
+    const associationId = await this.getAssociationIdForUser(userId);
+    const defaultBenefits = [
+      {
+        titleVi: 'Tham dự sự kiện',
+        titleEn: 'Event access',
+        descVi: 'miễn phí & ưu đãi',
+        descEn: 'free & discounted',
+      },
+      {
+        titleVi: 'Kết nối hơn',
+        titleEn: 'Networking',
+        descVi: '1000+ doanh nghiệp',
+        descEn: '1000+ businesses',
+      },
+      {
+        titleVi: 'Quảng bá thương hiệu',
+        titleEn: 'Brand promotion',
+        descVi: 'trên kênh Hiệp hội',
+        descEn: 'on association channels',
+      },
+    ];
+
+    if (!associationId) return defaultBenefits;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT title_vi, title_en, desc_vi, desc_en FROM public.association_benefits
+      WHERE association_id = ${associationId}::uuid
+      ORDER BY sort_order ASC
+    `.catch(() => []);
+
+    if (rows.length === 0) return defaultBenefits;
+    return rows.map((r) => ({
+      titleVi: r.title_vi ?? '',
+      titleEn: r.title_en ?? '',
+      descVi: r.desc_vi ?? '',
+      descEn: r.desc_en ?? '',
+    }));
+  }
+
+  async getMyMemberContext(userId: string) {
+    const [memRows, profileRows, assocId] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT code, name, email, avatar, status, association_id
+        FROM public.members
+        WHERE user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT display_name, avatar_url, locale FROM public.user_profiles
+        WHERE user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []),
+      this.getAssociationIdForUser(userId),
+    ]);
+
+    const m = memRows[0];
+    const p = profileRows[0];
+
+    const memberCode = m?.code ?? null;
+    const rawStatus = String(m?.status ?? '').toLowerCase();
+    const membershipStatus = ['active', 'pending', 'suspended', 'expired'].includes(rawStatus)
+      ? rawStatus
+      : 'unknown';
+    const canAct = Boolean(memberCode) && membershipStatus === 'active';
+
+    return {
+      memberCode,
+      associationId: assocId ?? m?.association_id ?? null,
+      displayName: m?.name || p?.display_name || m?.email || '',
+      email: m?.email || '',
+      avatarUrl: m?.avatar || p?.avatar_url || null,
+      membershipStatus,
+      canAct,
+      locale: p?.locale || 'vi',
+    };
+  }
+
+  async getMyMembership(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, name, level, status, joined_at, fee_year, fee_paid, term_end, renewed_at, new_term_end
+      FROM public.members
+      WHERE user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (memRows.length === 0) {
+      return {
+        found: false,
+        code: '',
+        name: '',
+        level: null,
+        status: null,
+        joinedAt: null,
+        termEnd: null,
+        newTermEnd: null,
+        renewedAt: null,
+        feeYear: null,
+        feePaid: false,
+        daysToExpiry: null,
+        outstandingAmount: 0,
+        invoices: [],
+      };
+    }
+
+    const me = memRows[0];
+    const invRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, invoice_no, year, amount, status, due_date, paid_at
+      FROM public.invoices
+      WHERE member_id = ${me.id}
+      ORDER BY year DESC, created_at DESC
+      LIMIT 50
+    `.catch(() => []);
+
+    const today = new Date();
+    const invoices = invRows.map((i, idx) => {
+      const raw = (i.status as string) ?? '';
+      const due = i.due_date ? new Date(i.due_date).toISOString().slice(0, 10) : null;
+      let status: 'paid' | 'pending' | 'overdue' = raw === 'paid' ? 'paid' : 'pending';
+      if (status === 'pending' && due && new Date(due) < today) status = 'overdue';
+
+      return {
+        id: i.id ?? `inv-${idx}`,
+        invoice: i.invoice_no ?? `INV-${idx}`,
+        year: i.year ? Number(i.year) : null,
+        amount: Number(i.amount ?? 0),
+        status,
+        dueDate: due,
+        paidAt: i.paid_at ? new Date(i.paid_at).toISOString().slice(0, 10) : null,
+      };
+    });
+
+    const pending = invoices.filter((i) => i.status !== 'paid');
+    const outstandingAmount = pending.reduce((s, i) => s + i.amount, 0);
+
+    const effectiveEnd = me.new_term_end || me.term_end;
+    const daysToExpiry = effectiveEnd
+      ? Math.ceil((new Date(effectiveEnd).getTime() - Date.now()) / 86400000)
+      : null;
+
+    return {
+      found: true,
+      code: me.code ?? '',
+      name: me.name ?? '',
+      level: me.level ?? null,
+      status: me.status ?? null,
+      joinedAt: me.joined_at ? new Date(me.joined_at).toISOString().slice(0, 10) : null,
+      termEnd: me.term_end ? new Date(me.term_end).toISOString().slice(0, 10) : null,
+      newTermEnd: me.new_term_end ? new Date(me.new_term_end).toISOString().slice(0, 10) : null,
+      renewedAt: me.renewed_at ? new Date(me.renewed_at).toISOString().slice(0, 10) : null,
+      feeYear: me.fee_year ? Number(me.fee_year) : null,
+      feePaid: Boolean(me.fee_paid),
+      daysToExpiry,
+      outstandingAmount,
+      invoices,
+    };
+  }
+
+  async getMyRenewalHistory(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (memRows.length === 0) return [];
+
+    const invRows = await this.prisma.$queryRaw<any[]>`
+      SELECT invoice_no, year, amount, status, due_date, paid_at, method
+      FROM public.invoices
+      WHERE member_id = ${memRows[0].id}
+      ORDER BY year DESC, paid_at DESC
+      LIMIT 50
+    `.catch(() => []);
+
+    const today = new Date();
+    return invRows.map((i, idx) => {
+      const raw = (i.status as string) ?? '';
+      const due = i.due_date ? new Date(i.due_date).toISOString().slice(0, 10) : null;
+      let status: 'paid' | 'pending' | 'overdue' = raw === 'paid' ? 'paid' : 'pending';
+      if (status === 'pending' && due && new Date(due) < today) status = 'overdue';
+      const year = i.year ? Number(i.year) : null;
+
+      return {
+        id: i.invoice_no ?? `inv-${idx}`,
+        invoice: i.invoice_no ?? '—',
+        year,
+        amount: Number(i.amount ?? 0),
+        method: i.method ?? null,
+        status,
+        paidAt: i.paid_at ? new Date(i.paid_at).toISOString().slice(0, 10) : null,
+        dueDate: due,
+        termStart: year ? `${year}-01-01` : null,
+        termEnd: year ? `${year}-12-31` : null,
+        note: i.method ?? null,
+      };
+    });
+  }
+
+  async getRenewalQuote(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, term_end, new_term_end, fee_year
+      FROM public.members
+      WHERE user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+
+    if (memRows.length === 0) {
+      return {
+        found: false,
+        code: '',
+        amount: 0,
+        outstanding: 0,
+        renewalFee: 0,
+        currentTermEnd: null,
+        nextTermEnd: null,
+        pendingInvoices: [],
+      };
+    }
+
+    const me = memRows[0];
+    const invRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, invoice_no, amount, status, due_date, paid_at, year
+      FROM public.invoices
+      WHERE member_id = ${me.id}
+      ORDER BY year DESC
+      LIMIT 50
+    `.catch(() => []);
+
+    const pending = invRows.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
+    const outstanding = pending.reduce((s, i) => s + Number(i.amount ?? 0), 0);
+    const lastAmount = Number(invRows[0]?.amount ?? 0);
+    const renewalFee = lastAmount > 0 ? lastAmount : 2_000_000;
+    const currentTermEnd = me.new_term_end ? new Date(me.new_term_end).toISOString().slice(0, 10) : (me.term_end ? new Date(me.term_end).toISOString().slice(0, 10) : null);
+
+    const fromDate = currentTermEnd && new Date(currentTermEnd).getTime() > Date.now()
+      ? new Date(currentTermEnd)
+      : new Date();
+    fromDate.setFullYear(fromDate.getFullYear() + 1);
+    const nextTermEnd = fromDate.toISOString().slice(0, 10);
+
+    const amount = outstanding > 0 ? outstanding : renewalFee;
+    return {
+      found: true,
+      code: me.code ?? '',
+      amount,
+      outstanding,
+      renewalFee,
+      currentTermEnd,
+      nextTermEnd,
+      pendingInvoices: pending.map((i) => i.invoice_no),
+    };
+  }
+
+  async payMyRenewal(userId: string, body: { method: string; correlationId?: string }) {
+    const quote = await this.getRenewalQuote(userId);
+    if (!quote.found) throw new NotFoundException('Không tìm thấy hội viên');
+
+    const nextEnd = quote.nextTermEnd;
+    const ref = body.correlationId || `RNW-${Date.now().toString(36).toUpperCase()}`;
+
+    await this.prisma.$executeRaw`
+      UPDATE public.members
+      SET new_term_end = ${nextEnd}::date, renewed_at = now(), fee_paid = true, updated_at = now()
+      WHERE user_id = ${userId}::uuid
+    `.catch(() => null);
+
+    return {
+      success: true,
+      reference: ref,
+      amountPaid: quote.amount,
+      method: body.method,
+      newTermEnd: nextEnd,
+    };
+  }
+
+  async getMyRenewalAuditLog(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (memRows.length === 0) return [];
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, action, event_type, status, error_reason, correlation_id, created_at, metadata
+      FROM public.renewal_audit_log
+      WHERE member_id = ${memRows[0].id}
+      ORDER BY created_at DESC
+      LIMIT 50
+    `.catch(() => []);
+
+    return rows.map((r) => ({
+      id: r.id,
+      action: r.action || 'renewal',
+      eventType: r.event_type || 'payment',
+      status: r.status || 'success',
+      errorReason: r.error_reason || null,
+      correlationId: r.correlation_id || null,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      metadata: r.metadata || {},
+    }));
+  }
 }
+
 

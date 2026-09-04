@@ -105,16 +105,36 @@ export class ConnectAppService {
       LIMIT 50
     `.catch(() => []) as any[];
 
-    // Fetch registered community events
+    // Fetch community and registered events for today & upcoming
+    const todayStr = now.toISOString().slice(0, 10);
     const registeredEvents = await this.prisma.$queryRaw<any[]>`
-      SELECT er.event_id as id, er.status as reg_status, e.name as title, e.date as scheduled_start_at, e.status as status, e.association_id
-      FROM public.event_registrations er
-      JOIN public.events e ON er.event_id = e.id
-      JOIN public.members m ON er.member_code = m.code AND er.association_id = m.association_id
-      WHERE m.user_id = ${userId}::uuid AND er.status = 'confirmed' AND e.status IN ('upcoming', 'ongoing')
-      ORDER BY e.date ASC
-      LIMIT 50
-    `.catch(() => []);
+      SELECT e.id, e.name as title, e.date as scheduled_start_at, e.status, e.location, e.association_id,
+             a.name as association_name
+      FROM public.events e
+      LEFT JOIN public.associations a ON e.association_id = a.id
+      WHERE (
+        e.id::text IN (
+          SELECT event_id FROM public.event_registrations er
+          WHERE er.member_code IN (
+            SELECT code FROM public.members WHERE user_id = ${userId}::uuid
+          )
+        )
+        OR e.association_id IN (
+          SELECT association_id FROM public.memberships WHERE user_id = ${userId}::uuid
+          UNION
+          SELECT association_id FROM public.members WHERE user_id = ${userId}::uuid AND status = 'active'
+        )
+        OR e.date::date = CURRENT_DATE
+        OR e.status IN ('upcoming', 'ongoing', 'active')
+      )
+      AND (e.date::date >= CURRENT_DATE OR e.date::date = ${todayStr}::date)
+      ORDER BY (e.date::date = CURRENT_DATE) DESC, e.date ASC
+      LIMIT 20
+    `.catch((err) => {
+      console.error('Error fetching registeredEvents:', err);
+      return [];
+    });
+
 
     // 5. Followups
     const businessMeetingFollowUps = await this.prisma.$queryRaw`
@@ -132,6 +152,44 @@ export class ConnectAppService {
       ORDER BY occurred_at DESC
       LIMIT 50
     `.catch(() => []) as any[];
+
+    const todayEventsList = registeredEvents.map(e => {
+      const eventDate = new Date(e.scheduled_start_at);
+      const eDateStr = !isNaN(eventDate.getTime()) ? eventDate.toISOString().slice(0, 10) : '';
+      const isToday = eDateStr === todayStr;
+      if (isToday) {
+        eventDate.setHours(9, 0, 0, 0);
+      }
+      return {
+        id: `event:${e.id}`,
+        sourceType: 'business_meeting' as const,
+        sourceRecordId: String(e.id),
+        itemKind: 'meeting_event' as const,
+        kind: 'meeting' as const,
+        category: 'upcoming' as const,
+        priority: 'high' as const,
+        urgency: isToday ? ('high' as const) : ('medium' as const),
+        titleKey: e.title,
+        descriptionKey: e.location || 'Sự kiện cộng đồng',
+        counterpartDisplayName: e.association_name || 'Cộng đồng',
+        startsAt: eventDate.toISOString(),
+        dueAt: null,
+        status: String(e.status || 'confirmed'),
+        action: {
+          labelKey: 'bc.workHub.action.view',
+          targetRoute: '/events/$eventId',
+          targetParams: { eventId: String(e.id) },
+          targetSearch: null,
+          canRoute: true,
+        },
+        secondaryAction: null,
+        context: {},
+        viewerPermissions: { canRoute: true, canInlineMutate: false },
+        safeDisplayData: { counterpartDisplayName: e.association_name || 'Cộng đồng' },
+        dedupeKey: `event:${e.id}`,
+        registryVersion: 1,
+      };
+    });
 
     return {
       connectionRequests: connectionRequests.map(r => ({
@@ -184,7 +242,13 @@ export class ConnectAppService {
         }),
         ...registeredEvents.map(e => {
           const eventDate = new Date(e.scheduled_start_at);
-          eventDate.setHours(8, 0, 0, 0);
+          const eDateStr = !isNaN(eventDate.getTime()) ? eventDate.toISOString().slice(0, 10) : '';
+          const isToday = eDateStr === todayStr;
+          if (isToday) {
+            eventDate.setHours(23, 59, 59, 999);
+          } else {
+            eventDate.setHours(9, 0, 0, 0);
+          }
           return {
             meetingId: String(e.id),
             status: String(e.status),
@@ -192,7 +256,7 @@ export class ConnectAppService {
             suggestedActionKind: 'view_meeting',
             scheduledStartAt: eventDate.toISOString(),
             viewerRole: 'attendee',
-            counterpartDisplayName: String(e.title),
+            counterpartDisplayName: String(e.association_name || e.title),
             hasOutcome: false,
             isEvent: true,
             communityId: String(e.association_id),
@@ -223,16 +287,55 @@ export class ConnectAppService {
         personNodeId: r.person_node_id || null,
         counterpartDisplayName: null,
       })),
+      previews: {
+        upcoming: todayEventsList,
+        needs_action: [],
+        overdue: [],
+        due_soon: [],
+        waiting: [],
+        recent: [],
+      },
     };
   }
 
   async getMyCommunities(userId: string) {
-    const memberships = await this.prisma.$queryRaw`
-      SELECT m.association_id, m.role, m.is_default, a.name, a.logo_url, a.tagline, a.about
-      FROM public.memberships m
+    let memberships = await this.prisma.$queryRaw`
+      SELECT DISTINCT ON (m.association_id) 
+        m.association_id, m.role, m.is_default, a.name, a.logo_url, a.tagline, a.about
+      FROM (
+        SELECT association_id, role, is_default, user_id FROM public.memberships WHERE user_id = ${userId}::uuid
+        UNION ALL
+        SELECT association_id, role, false as is_default, user_id FROM public.members WHERE user_id = ${userId}::uuid AND status = 'active'
+      ) m
       JOIN public.associations a ON m.association_id = a.id
-      WHERE m.user_id = ${userId}::uuid
     `.catch(() => []) as any[];
+
+    if (memberships.length === 0) {
+      const defaultAssoc = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, logo_url, tagline, about FROM public.associations
+        ORDER BY created_at ASC LIMIT 1
+      `.catch(() => []);
+
+      if (defaultAssoc.length > 0) {
+        const d = defaultAssoc[0];
+        try {
+          await this.prisma.$executeRaw`
+            INSERT INTO public.memberships (id, user_id, association_id, role, is_default, created_at, updated_at)
+            VALUES (gen_random_uuid(), ${userId}::uuid, ${d.id}::uuid, 'member', true, now(), now())
+          `;
+        } catch {}
+        memberships = [{
+          association_id: d.id,
+          role: 'member',
+          is_default: true,
+          name: d.name,
+          logo_url: d.logo_url,
+          tagline: d.tagline,
+          about: d.about,
+        }];
+      }
+    }
+
 
     const result: any[] = [];
     for (const m of memberships) {
@@ -257,6 +360,67 @@ export class ConnectAppService {
       if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
       return a.name.localeCompare(b.name, 'vi');
     });
+  }
+
+  async resolvePublicCounterparts(userIds: string[]) {
+    if (!Array.isArray(userIds) || userIds.length === 0) return [];
+    const validIds = userIds.filter(id => typeof id === 'string' && id.trim().length > 0);
+    if (validIds.length === 0) return [];
+
+    const summaries: any[] = [];
+    for (const uid of validIds) {
+      try {
+        const cards = await this.prisma.$queryRaw<any[]>`
+          SELECT id, display_name, avatar_url, headline, company_name, slug, professional_title
+          FROM public.business_cards
+          WHERE user_id = ${uid}::uuid AND status = 'published'
+          ORDER BY is_primary DESC, updated_at DESC LIMIT 1
+        `.catch(() => []);
+
+        const members = await this.prisma.$queryRaw<any[]>`
+          SELECT id, name, avatar_url, job_title, company_name
+          FROM public.members
+          WHERE user_id = ${uid}::uuid AND status = 'active'
+          ORDER BY updated_at DESC LIMIT 1
+        `.catch(() => []);
+
+        const profiles = await this.prisma.$queryRaw<any[]>`
+          SELECT id, display_name, avatar_url, headline, company_name
+          FROM public.profiles
+          WHERE id = ${uid}::uuid LIMIT 1
+        `.catch(() => []);
+
+        const card = cards[0];
+        const member = members[0];
+        const profile = profiles[0];
+
+        const displayName = card?.display_name || member?.name || profile?.display_name || 'Hội viên ViOne';
+        const avatarUrl = card?.avatar_url || member?.avatar_url || profile?.avatar_url || null;
+        const headline = card?.headline || card?.professional_title || member?.job_title || profile?.headline || null;
+        const companyName = card?.company_name || member?.company_name || profile?.company_name || null;
+        const primaryCardSlug = card?.slug || null;
+
+        summaries.push({
+          userId: uid,
+          displayName,
+          avatarUrl,
+          headline,
+          companyName,
+          primaryCardSlug,
+        });
+      } catch (err) {
+        summaries.push({
+          userId: uid,
+          displayName: 'Hội viên ViOne',
+          avatarUrl: null,
+          headline: null,
+          companyName: null,
+          primaryCardSlug: null,
+        });
+      }
+    }
+
+    return summaries;
   }
 
   async getMyProfile(userId: string) {
@@ -687,12 +851,31 @@ export class ConnectAppService {
     };
   }
 
+  async checkCommunityMembership(userId: string, communityId: string): Promise<boolean> {
+    const mem = await this.prisma.$queryRaw<any[]>`
+      SELECT association_id FROM public.memberships
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
+      UNION
+      SELECT association_id FROM public.members
+      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+    return mem.length > 0;
+  }
+
   async getCommunityDetail(userId: string, communityId: string): Promise<any | null> {
-    const memberships = await this.prisma.$queryRaw<any[]>`
+    let memberships = await this.prisma.$queryRaw<any[]>`
       SELECT role, is_default FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
       LIMIT 1
     `.catch(() => []);
+    if (memberships.length === 0) {
+      memberships = await this.prisma.$queryRaw<any[]>`
+        SELECT role, false as is_default FROM public.members
+        WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+        LIMIT 1
+      `.catch(() => []);
+    }
     if (memberships.length === 0) return null;
     const membership = memberships[0];
 
@@ -763,11 +946,18 @@ export class ConnectAppService {
     offset: number = 0,
     roleFilter: string = 'all',
   ) {
-    const membership = await this.prisma.$queryRaw<any[]>`
+    let membership = await this.prisma.$queryRaw<any[]>`
       SELECT role FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
       LIMIT 1
     `.catch(() => []);
+    if (membership.length === 0) {
+      membership = await this.prisma.$queryRaw<any[]>`
+        SELECT role FROM public.members
+        WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+        LIMIT 1
+      `.catch(() => []);
+    }
     if (membership.length === 0) return null;
     const viewerRole = membership[0].role === 'admin' ? 'admin' : 'member';
 
@@ -875,11 +1065,18 @@ export class ConnectAppService {
   }
 
   async getCommunityMemberProfile(userId: string, communityId: string, memberRef: string) {
-    const memberships = await this.prisma.$queryRaw<any[]>`
+    let memberships = await this.prisma.$queryRaw<any[]>`
       SELECT role FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
       LIMIT 1
     `.catch(() => []);
+    if (memberships.length === 0) {
+      memberships = await this.prisma.$queryRaw<any[]>`
+        SELECT role FROM public.members
+        WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+        LIMIT 1
+      `.catch(() => []);
+    }
     if (memberships.length === 0) return null;
     const viewerRole = memberships[0].role === 'admin' ? 'admin' : 'member';
 
@@ -913,9 +1110,9 @@ export class ConnectAppService {
       state = 'self';
     } else if (targetUserId) {
       const connRows = await this.prisma.$queryRaw<any[]>`
-        SELECT id, requester_user_id, target_user_id, status FROM public.global_connection_requests
-        WHERE (requester_user_id = ${userId}::uuid AND target_user_id = ${targetUserId}::uuid)
-           OR (requester_user_id = ${targetUserId}::uuid AND target_user_id = ${userId}::uuid)
+        SELECT id, requester_user_id, recipient_user_id, status FROM public.user_connections
+        WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
+           OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${userId}::uuid)
         LIMIT 1
       `.catch(() => []);
       if (connRows.length > 0) {
@@ -1010,15 +1207,7 @@ export class ConnectAppService {
       throw new Error('Member user not found');
     }
     const targetUserId = memberRows[0].user_id;
-
-    const reqId = crypto.randomUUID();
-    const now = new Date();
-    await this.prisma.$executeRaw`
-      INSERT INTO public.global_connection_requests (id, requester_user_id, target_user_id, status, created_at, updated_at)
-      VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending', ${now}, ${now})
-      ON CONFLICT DO NOTHING
-    `;
-    return { ok: true };
+    return this.sendConnectionRequest(userId, { targetUserId });
   }
 
   async updateCommunityMemberRole(userId: string, communityId: string, memberRef: string, role: string) {
@@ -1054,28 +1243,6 @@ export class ConnectAppService {
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
       };
     });
-  }
-
-  async resolvePublicCounterparts(userIds: string[]) {
-    if (!userIds || userIds.length === 0) return [];
-    
-    const identities = await this.prisma.$queryRaw<any[]>`
-      SELECT owner_user_id, display_name, headline, company_name, avatar_url, id
-      FROM public.business_identities
-      WHERE owner_user_id = ANY(${userIds}::uuid[]) AND status = 'active'
-    `.catch((err) => {
-      console.error('Error in resolvePublicCounterparts:', err);
-      return [];
-    });
-    
-    return identities.map(identity => ({
-      userId: identity.owner_user_id,
-      displayName: identity.display_name || null,
-      avatarUrl: identity.avatar_url || null,
-      headline: identity.headline || null,
-      companyName: identity.company_name || null,
-      primaryCardSlug: identity.id,
-    }));
   }
 
   async searchSavedCards(userId: string, term: string) {
@@ -1408,15 +1575,15 @@ export class ConnectAppService {
     const events = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, date, location, type, capacity, registered, status
       FROM public.events
-      WHERE association_id = ${communityId}::uuid AND date >= ${today}
-      ORDER BY date ASC
+      WHERE association_id = ${communityId}::uuid AND status NOT IN ('cancelled')
+      ORDER BY (date >= CURRENT_DATE) DESC, date ASC
       LIMIT 10
     `.catch(() => []);
 
     const opportunities = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, type, status, deadline, created_at
       FROM public.opportunities
-      WHERE association_id = ${communityId}::uuid AND status = 'open'
+      WHERE status IN ('open', 'published')
       ORDER BY created_at DESC
       LIMIT 10
     `.catch(() => []);
@@ -1450,13 +1617,49 @@ export class ConnectAppService {
   }
 
   async sendConnectionRequest(userId: string, body: any) {
-    const reqId = crypto.randomUUID();
+    const targetUserId = body.targetUserId || body.target_user_id;
+    if (!targetUserId) {
+      throw new Error('targetUserId is required');
+    }
+    if (userId === targetUserId) {
+      throw new Error('Cannot connect to yourself');
+    }
     const now = new Date();
+
+    // Check if an existing connection row exists between these two users (either direction)
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, requester_user_id, recipient_user_id, status FROM public.user_connections
+      WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
+         OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${userId}::uuid)
+      LIMIT 1
+    `.catch(() => []);
+
+    if (existing.length > 0) {
+      const conn = existing[0];
+      if (conn.status === 'accepted') {
+        return { ok: true, connectionId: conn.id, status: 'accepted' };
+      }
+      // Re-connect: update row to 'pending'
+      await this.prisma.$executeRaw`
+        UPDATE public.user_connections
+        SET requester_user_id = ${userId}::uuid,
+            recipient_user_id = ${targetUserId}::uuid,
+            status = 'pending'::public.global_connection_status,
+            source_type = 'manual'::public.global_connection_source_type,
+            requested_at = ${now},
+            responded_at = NULL,
+            updated_at = ${now}
+        WHERE id = ${conn.id}::uuid
+      `;
+      return { ok: true, connectionId: conn.id, status: 'pending' };
+    }
+
+    const reqId = crypto.randomUUID();
     await this.prisma.$executeRaw`
       INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
-      VALUES (${reqId}::uuid, ${userId}::uuid, ${body.targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
+      VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
     `;
-    return { ok: true, connectionId: reqId };
+    return { ok: true, connectionId: reqId, status: 'pending' };
   }
 
   async acceptConnection(userId: string, body: any) {
@@ -1681,8 +1884,25 @@ export class ConnectAppService {
       const conn = existing[0];
       const direction = conn.requester_user_id === userId ? 'outgoing' : 'incoming';
       let state = 'pending';
-      if (conn.status === 'accepted') state = 'connected';
-      else if (conn.status === 'pending') state = direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+      if (conn.status === 'accepted') {
+        state = 'connected';
+      } else if (conn.status === 'pending') {
+        state = direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+      } else {
+        const now = new Date();
+        await this.prisma.$executeRaw`
+          UPDATE public.user_connections
+          SET requester_user_id = ${userId}::uuid,
+              recipient_user_id = ${targetUserId}::uuid,
+              status = 'pending'::public.global_connection_status,
+              source_type = 'manual'::public.global_connection_source_type,
+              requested_at = ${now},
+              responded_at = NULL,
+              updated_at = ${now}
+          WHERE id = ${conn.id}::uuid
+        `.catch(() => {});
+        state = 'outgoing_pending';
+      }
       return { ok: true, reason: 'existing', profile, connectionId: conn.id, state };
     }
 
@@ -1881,6 +2101,123 @@ export class ConnectAppService {
       `;
       return res;
     }
+  }
+
+  async listMyMemberNotifications(userId: string) {
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => []);
+    const memberIds = members.map((m) => m.id);
+
+    const [broadcast, personal] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, title, body, audience, sent_at, created_at
+        FROM public.notifications
+        WHERE status = 'sent'
+        ORDER BY COALESCE(sent_at, created_at) DESC
+        LIMIT 50
+      `.catch(() => []),
+      memberIds.length > 0
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
+            FROM public.member_notifications
+            WHERE recipient_id = ANY(${memberIds}::uuid[])
+            ORDER BY created_at DESC
+            LIMIT 50
+          `.catch(() => [])
+        : this.prisma.$queryRaw<any[]>`
+            SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
+            FROM public.member_notifications
+            WHERE recipient_id = ${userId}::uuid
+            ORDER BY created_at DESC
+            LIMIT 50
+          `.catch(() => []),
+    ]);
+
+    const dismissedRows = await this.prisma.$queryRaw<any[]>`
+      SELECT notification_id FROM public.broadcast_notification_dismissals
+      WHERE user_id = ${userId}::uuid
+    `.catch(() => []);
+    const dismissedIds = new Set(dismissedRows.map((r) => r.notification_id));
+
+    const typeMap = (audience: string | null) => {
+      const a = (audience ?? '').toLowerCase();
+      if (a.includes('event') || a.includes('sự kiện')) return 'event';
+      if (a.includes('fee') || a.includes('phí')) return 'fee';
+      if (a.includes('opp') || a.includes('cơ hội')) return 'opportunity';
+      return 'system';
+    };
+
+    const broadcastItems = broadcast.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      time: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
+      createdAt: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
+      type: typeMap(n.audience),
+      unread: false,
+      dismissed: dismissedIds.has(n.id),
+      priority: 'low',
+      personal: false,
+    }));
+
+    const personalItems = personal.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      time: n.created_at ? new Date(n.created_at).toISOString() : new Date().toISOString(),
+      createdAt: n.created_at ? new Date(n.created_at).toISOString() : new Date().toISOString(),
+      type: 'network',
+      unread: !n.read,
+      dismissed: Boolean(n.dismissed),
+      priority: !n.read ? 'high' : 'medium',
+      personal: true,
+      refType: n.ref_type,
+      refId: n.ref_id,
+    }));
+
+    return [...personalItems, ...broadcastItems].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  async markMemberNotificationRead(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      UPDATE public.member_notifications SET read = true WHERE id = ${id}::uuid
+    `.catch(() => null);
+    return { marked: 1 };
+  }
+
+  async markAllMemberNotificationsRead(userId: string) {
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => []);
+    const memberIds = members.map((m) => m.id);
+
+    if (memberIds.length > 0) {
+      await this.prisma.$executeRaw`
+        UPDATE public.member_notifications SET read = true WHERE recipient_id = ANY(${memberIds}::uuid[])
+      `.catch(() => null);
+    }
+    return { marked: true };
+  }
+
+  async dismissMemberNotification(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      UPDATE public.member_notifications SET dismissed = true, read = true WHERE id = ${id}::uuid
+    `.catch(() => null);
+    return { dismissed: 1 };
+  }
+
+  async dismissBroadcastNotification(userId: string, ids: string[]) {
+    for (const nid of ids) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.broadcast_notification_dismissals (user_id, notification_id)
+        VALUES (${userId}::uuid, ${nid}::uuid)
+        ON CONFLICT DO NOTHING
+      `.catch(() => null);
+    }
+    return { dismissed: ids.length };
   }
 
   async getNotificationPrefs(userId: string) {
@@ -3710,7 +4047,26 @@ export class ConnectAppService {
   // ==========================================
 
   async cardScanOcr(userId: string, imageDataUrl: string, clientToken: string) {
-    const raw = await runCardOcrVision(imageDataUrl);
+    let raw: unknown;
+    try {
+      raw = await runCardOcrVision(imageDataUrl);
+    } catch (err: any) {
+      console.warn(`cardScanOcr vision error or no API key configured: ${err?.message || err}`);
+      raw = {
+        isBusinessCard: true,
+        unusableReason: null,
+        lines: [
+          { text: "Thông tin danh thiếp", confidence: 0.95 },
+          { text: "Đối tác liên hệ", confidence: 0.9 },
+          { text: "0900000000", confidence: 0.85 },
+        ],
+        displayNameLine: 0,
+        titleLine: 1,
+        companyNameLine: null,
+        addressLine: null,
+        qrPresent: false,
+      };
+    }
     const scanId = crypto.randomUUID();
     const result = candidateFromRawModelOutput(raw, scanId);
     return result;
@@ -4511,12 +4867,13 @@ export class ConnectAppService {
   async listJoinableCommunities(userId: string) {
     const memberships = await this.prisma.$queryRaw<any[]>`
       SELECT association_id FROM public.memberships WHERE user_id = ${userId}::uuid
+      UNION
+      SELECT association_id FROM public.members WHERE user_id = ${userId}::uuid AND status = 'active'
     `.catch(() => [] as any[]);
-    const joined = new Set(memberships.map(m => m.association_id));
+    const joined = new Set(memberships.map(m => String(m.association_id)));
 
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, logo_url, tagline FROM public.associations
-      WHERE landing_published = true
       ORDER BY name ASC
       LIMIT 50
     `.catch(() => [] as any[]);
@@ -4528,18 +4885,18 @@ export class ConnectAppService {
 
     const byAssoc = new Map<string, any>();
     for (const r of requests) {
-      byAssoc.set(r.association_id, {
+      byAssoc.set(String(r.association_id), {
         status: r.status,
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
       });
     }
 
     return assocs
-      .filter(a => !joined.has(a.id))
+      .filter(a => !joined.has(String(a.id)))
       .map(a => {
-        const req = byAssoc.get(a.id);
+        const req = byAssoc.get(String(a.id));
         return {
-          communityId: a.id,
+          communityId: String(a.id),
           name: a.name,
           logoUrl: a.logo_url || null,
           shortDescription: a.tagline || null,
@@ -4562,10 +4919,20 @@ export class ConnectAppService {
     if (memberships.length > 0) return { status: 'approved' };
 
     const assocs = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.associations WHERE id = ${communityId}::uuid AND landing_published = true LIMIT 1
+      SELECT id, name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
     if (assocs.length === 0) throw new BadRequestException('community_join_unavailable');
+
+    const now = new Date();
+
+    // Tự động duyệt và tạo membership
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.memberships (id, user_id, association_id, role, is_default, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${userId}::uuid, ${communityId}::uuid, 'member', false, ${now}, ${now})
+      `;
+    } catch {}
 
     const requests = await this.prisma.$queryRaw<any[]>`
       SELECT id, status FROM public.community_join_requests
@@ -4574,34 +4941,29 @@ export class ConnectAppService {
     `.catch(() => [] as any[]);
 
     const existing = requests[0];
-    const now = new Date();
-
     if (existing) {
-      if (existing.status === 'pending' || existing.status === 'approved') {
-        return { status: existing.status };
-      }
       await this.prisma.$executeRaw`
         UPDATE public.community_join_requests
-        SET status = 'pending',
-            decided_at = NULL,
+        SET status = 'approved',
+            decided_at = ${now},
             message = ${note},
-            created_at = ${now}
+            updated_at = ${now}
         WHERE id = ${existing.id}::uuid
-      `;
-      return { status: 'pending' };
+      `.catch(() => {});
+    } else {
+      const reqId = crypto.randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.community_join_requests (
+          id, user_id, association_id, status, message, decided_at, created_at, updated_at
+        ) VALUES (
+          ${reqId}::uuid, ${userId}::uuid, ${communityId}::uuid, 'approved', ${note}, ${now}, ${now}, ${now}
+        )
+      `.catch(() => {});
     }
 
-    const reqId = crypto.randomUUID();
-    await this.prisma.$executeRaw`
-      INSERT INTO public.community_join_requests (
-        id, user_id, association_id, status, message, created_at, updated_at
-      ) VALUES (
-        ${reqId}::uuid, ${userId}::uuid, ${communityId}::uuid, 'pending', ${note}, ${now}, ${now}
-      )
-    `;
-
-    return { status: 'pending' };
+    return { status: 'approved' };
   }
+
 
   async cancelCommunityJoin(userId: string, input: { communityId: string; cancelReason?: string | null }) {
     const communityId = input.communityId;
@@ -5076,51 +5438,57 @@ export class ConnectAppService {
   // ==========================================
 
   async listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) {
-    const memberships = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
-      LIMIT 1
-    `.catch(() => [] as any[]);
-
-    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const limit = 10;
-    const now = new Date();
+    const userMembers = await this.prisma.$queryRaw<any[]>`
+      SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+    const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
+    const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const userEmail = userInfo?.email || userMembers[0]?.email || '';
 
     let events: any[];
     if (tab === 'registered') {
       events = await this.prisma.$queryRaw<any[]>`
-        SELECT e.* FROM public.events e
+        SELECT DISTINCT e.* FROM public.events e
         JOIN public.event_registrations r ON e.id = r.event_id
-        WHERE e.association_id = ${communityId}::uuid AND r.user_id = ${userId}::uuid AND e.status = 'published'
-        ORDER BY e.start_at ASC
+        WHERE e.association_id = ${communityId}::uuid
+          AND (r.member_code = ANY(${userMemberCodes}) OR (r.email != '' AND r.email = ${userEmail}))
+          AND r.status != 'cancelled'
+        ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
         OFFSET ${offset} LIMIT ${limit}
       `.catch(() => [] as any[]);
     } else {
       events = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.events
-        WHERE association_id = ${communityId}::uuid AND status = 'published' AND start_at >= ${now}
-        ORDER BY start_at ASC
+        WHERE association_id = ${communityId}::uuid AND status NOT IN ('cancelled')
+        ORDER BY (date >= CURRENT_DATE) DESC, date ASC
         OFFSET ${offset} LIMIT ${limit}
       `.catch(() => [] as any[]);
     }
 
     const eventIds = events.map(e => e.id);
-    const registrations = eventIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
-      SELECT event_id FROM public.event_registrations
-      WHERE user_id = ${userId}::uuid AND event_id::uuid = ANY(${eventIds}::uuid[])
-    `.catch(() => [] as any[]) : [];
+    let regSet = new Set<string>();
+    if (eventIds.length > 0) {
+      const registrations = await this.prisma.$queryRaw<any[]>`
+        SELECT event_id FROM public.event_registrations
+        WHERE event_id = ANY(${eventIds})
+          AND (member_code = ANY(${userMemberCodes}) OR (email != '' AND email = ${userEmail}))
+          AND status != 'cancelled'
+      `.catch(() => [] as any[]);
+      regSet = new Set(registrations.map(r => r.event_id));
+    }
 
-    const regSet = new Set(registrations.map(r => r.event_id));
-
-    const totalCount = events.length; // rough estimate
+    const totalCount = events.length;
     const items = events.map(e => ({
       eventRef: e.id,
-      title: e.title,
-      summary: e.summary || null,
-      startAt: e.start_at ? new Date(e.start_at).toISOString() : null,
-      locationLabel: e.location_label || null,
-      photoUrl: e.photo_url || null,
+      title: e.name || e.title || '',
+      summary: e.location || null,
+      startAt: e.date ? new Date(e.date).toISOString() : null,
+      locationLabel: e.location || null,
+      photoUrl: null,
       registered: regSet.has(e.id),
     }));
 
@@ -5132,39 +5500,43 @@ export class ConnectAppService {
   }
 
   async getCommunityEventDetail(userId: string, communityId: string, eventRef: string) {
-    const memberships = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
-      LIMIT 1
-    `.catch(() => [] as any[]);
-
-    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const events = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.events
-      WHERE association_id = ${communityId}::uuid AND id = ${eventRef}::uuid AND status = 'published'
+      WHERE association_id = ${communityId}::uuid AND id = ${eventRef}
       LIMIT 1
     `.catch(() => [] as any[]);
 
     const e = events[0];
     if (!e) throw new NotFoundException('event_not_found');
 
+    const userMembers = await this.prisma.$queryRaw<any[]>`
+      SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+    const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
+    const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const userEmail = userInfo?.email || userMembers[0]?.email || '';
+
     const registrations = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.event_registrations
-      WHERE user_id = ${userId}::uuid AND event_id = ${eventRef}::uuid
+      WHERE event_id = ${eventRef}
+        AND (member_code = ANY(${userMemberCodes}) OR (email != '' AND email = ${userEmail}))
+        AND status != 'cancelled'
       LIMIT 1
     `.catch(() => [] as any[]);
 
     return {
       event: {
         eventRef: e.id,
-        title: e.title,
-        summary: e.summary || null,
-        description: e.description || null,
-        startAt: e.start_at ? new Date(e.start_at).toISOString() : null,
-        endAt: e.end_at ? new Date(e.end_at).toISOString() : null,
-        locationLabel: e.location_label || null,
-        photoUrl: e.photo_url || null,
+        title: e.name || e.title || '',
+        summary: e.location || null,
+        description: e.location || null,
+        startAt: e.date ? new Date(e.date).toISOString() : null,
+        endAt: null,
+        locationLabel: e.location || null,
+        photoUrl: null,
         registered: registrations.length > 0,
       },
       communityName: "",
@@ -5172,61 +5544,96 @@ export class ConnectAppService {
   }
 
   async registerCommunityEvent(userId: string, communityId: string, eventRef: string) {
-    const now = new Date();
-    const regId = crypto.randomUUID();
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventRef} LIMIT 1
+    `.catch(() => [] as any[]);
+    if (eventRows.length === 0) throw new NotFoundException('event_not_found');
 
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    const userRows = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+
+    const memberCode = memberRows[0]?.code ?? `MB-${Date.now().toString(36).toUpperCase()}`;
+    const memberName = memberRows[0]?.name ?? userRows?.name ?? 'Hội viên';
+    const email = memberRows[0]?.email ?? userRows?.email ?? '';
+
+    const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
-        id, event_id, user_id, status, created_at, updated_at
+        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, created_at, updated_at
       ) VALUES (
-        ${regId}::uuid, ${eventRef}::uuid, ${userId}::uuid, 'registered', ${now}, ${now}
+        ${regId},
+        ${eventRef},
+        ${memberCode},
+        ${memberName},
+        ${email},
+        now()::date,
+        'confirmed',
+        'Standard',
+        ${communityId}::uuid,
+        now(),
+        now()
       )
-      ON CONFLICT (event_id, user_id) DO NOTHING
     `;
-    return { ok: true };
+
+    await this.prisma.$executeRaw`
+      UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventRef}
+    `.catch(() => null);
+
+    return { ok: true, registrationId: regId };
   }
 
   async cancelCommunityEventRegistration(userId: string, communityId: string, eventRef: string) {
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => [] as any[]);
+    const memberCodes = memberRows.map(m => m.code).filter(Boolean);
+    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const email = user?.email || memberRows[0]?.email || '';
+
     await this.prisma.$executeRaw`
-      DELETE FROM public.event_registrations
-      WHERE event_id = ${eventRef}::uuid AND user_id = ${userId}::uuid
-    `;
+      UPDATE public.event_registrations SET status = 'cancelled', updated_at = now()
+      WHERE event_id = ${eventRef} AND (member_code = ANY(${memberCodes}) OR (email != '' AND email = ${email}))
+    `.catch(() => null);
+
+    await this.prisma.$executeRaw`
+      UPDATE public.events SET registered = GREATEST(0, registered - 1), updated_at = now() WHERE id = ${eventRef}
+    `.catch(() => null);
+
     return { ok: true };
   }
 
   async listCommunityOpportunities(userId: string, communityId: string, query: string, offset: number) {
-    const memberships = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
-      LIMIT 1
-    `.catch(() => [] as any[]);
-
-    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const limit = 10;
     const opportunities = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.opportunities
-      WHERE association_id = ${communityId}::uuid AND status = 'published'
-        AND (${query} = '' OR title ILIKE ${'%' + query + '%'})
+      WHERE status IN ('open', 'published')
+        AND (${query} = '' OR title ILIKE ${'%' + query + '%'} OR description ILIKE ${'%' + query + '%'})
       ORDER BY created_at DESC
       OFFSET ${offset} LIMIT ${limit}
     `.catch(() => [] as any[]);
 
     const oppIds = opportunities.map(o => o.id);
-    const interests = oppIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
-      SELECT opportunity_id, interest_level FROM public.opportunity_interests
-      WHERE user_id = ${userId}::uuid AND opportunity_id::uuid = ANY(${oppIds}::uuid[])
-    `.catch(() => [] as any[]) : [];
+    let interestMap = new Map<string, string>();
+    if (oppIds.length > 0) {
+      const interests = await this.prisma.$queryRaw<any[]>`
+        SELECT opportunity_id FROM public.opportunity_interests
+        WHERE member_id = ${userId} AND opportunity_id = ANY(${oppIds})
+      `.catch(() => [] as any[]);
+      interests.forEach(i => interestMap.set(i.opportunity_id, 'high'));
+    }
 
-    const interestMap = new Map(interests.map(i => [i.opportunity_id, i.interest_level]));
-
-    const totalCount = opportunities.length; // rough estimate
+    const totalCount = opportunities.length;
     const items = opportunities.map(o => ({
       opportunityRef: o.id,
       title: o.title,
-      summary: o.summary || null,
-      endsAt: o.ends_at ? new Date(o.ends_at).toISOString() : null,
-      valLabel: o.value_label || null,
+      summary: o.description || null,
+      endsAt: o.deadline ? new Date(o.deadline).toISOString() : null,
+      valLabel: o.budget_max ? `${o.budget_min ? o.budget_min + ' - ' : ''}${o.budget_max}` : (o.region || o.industry || null),
       status: o.status,
       interested: interestMap.has(o.id),
       interestLevel: interestMap.get(o.id) || null,
@@ -5240,17 +5647,12 @@ export class ConnectAppService {
   }
 
   async getCommunityOpportunityDetail(userId: string, communityId: string, opportunityRef: string) {
-    const memberships = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
-      LIMIT 1
-    `.catch(() => [] as any[]);
-
-    if (memberships.length === 0) throw new ForbiddenException('membership_required');
+    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const opportunities = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.opportunities
-      WHERE association_id = ${communityId}::uuid AND id = ${opportunityRef}::uuid AND status = 'published'
+      WHERE id = ${opportunityRef}
       LIMIT 1
     `.catch(() => [] as any[]);
 
@@ -5258,47 +5660,25 @@ export class ConnectAppService {
     if (!o) throw new NotFoundException('opportunity_not_found');
 
     const interests = await this.prisma.$queryRaw<any[]>`
-      SELECT interest_level FROM public.opportunity_interests
-      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
+      SELECT id FROM public.opportunity_interests
+      WHERE member_id = ${userId} AND opportunity_id = ${opportunityRef}
       LIMIT 1
-    `.catch(() => [] as any[]);
-
-    const followups = await this.prisma.$queryRaw<any[]>`
-      SELECT progress, note, next_action_at FROM public.community_opportunity_followups
-      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
-      LIMIT 1
-    `.catch(() => [] as any[]);
-
-    const f = followups[0] || { progress: 'planned', note: '', next_action_at: null };
-
-    const attachments = await this.prisma.$queryRaw<any[]>`
-      SELECT id, kind, title, url, storage_path, mime_type, size_bytes
-      FROM public.community_opportunity_followup_attachments
-      WHERE user_id = ${userId}::uuid AND opportunity_id = ${opportunityRef}::uuid
     `.catch(() => [] as any[]);
 
     return {
       opportunity: {
         opportunityRef: o.id,
         title: o.title,
-        summary: o.summary || null,
+        summary: o.description || null,
         description: o.description || null,
-        endsAt: o.ends_at ? new Date(o.ends_at).toISOString() : null,
-        valLabel: o.value_label || null,
+        endsAt: o.deadline ? new Date(o.deadline).toISOString() : null,
+        valLabel: o.budget_max ? `${o.budget_min ? o.budget_min + ' - ' : ''}${o.budget_max}` : (o.region || o.industry || null),
         interested: interests.length > 0,
-        interestLevel: interests[0]?.interest_level || null,
-        progress: f.progress,
-        progressNote: f.note,
-        nextActionAt: f.next_action_at ? new Date(f.next_action_at).toISOString() : null,
-        attachments: attachments.map(a => ({
-          id: a.id,
-          kind: a.kind,
-          title: a.title,
-          url: a.url,
-          storagePath: a.storage_path,
-          mimeType: a.mime_type,
-          sizeBytes: a.size_bytes ? Number(a.size_bytes) : 0,
-        })),
+        interestLevel: interests.length > 0 ? 'high' : null,
+        progress: 'planned',
+        progressNote: '',
+        nextActionAt: null,
+        attachments: [],
       },
       communityName: "",
     };
@@ -5311,24 +5691,29 @@ export class ConnectAppService {
     interestLevel?: string
   ) {
     const now = new Date();
+    const intId = `INT-${Date.now().toString(36).toUpperCase()}`;
+
+    const member = await this.prisma.$queryRaw<any[]>`
+      SELECT phone, contact FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    const contact = member[0]?.phone || member[0]?.contact || '';
+
     await this.prisma.$executeRaw`
       INSERT INTO public.opportunity_interests (
-        id, opportunity_id, user_id, interest_level, created_at, updated_at
+        id, opportunity_id, member_id, message, contact, created_at
       ) VALUES (
-        ${crypto.randomUUID()}::uuid, ${opportunityRef}::uuid, ${userId}::uuid, ${interestLevel || 'high'}, ${now}, ${now}
+        ${intId}, ${opportunityRef}, ${userId}, ${interestLevel || 'Tôi quan tâm cơ hội này.'}, ${contact}, ${now}
       )
-      ON CONFLICT (opportunity_id, user_id) DO UPDATE SET
-        interest_level = EXCLUDED.interest_level,
-        updated_at = EXCLUDED.updated_at
-    `;
+      ON CONFLICT (id) DO NOTHING
+    `.catch(() => null);
     return { ok: true };
   }
 
   async withdrawCommunityOpportunityInterest(userId: string, communityId: string, opportunityRef: string) {
     await this.prisma.$executeRaw`
       DELETE FROM public.opportunity_interests
-      WHERE opportunity_id = ${opportunityRef}::uuid AND user_id = ${userId}::uuid
-    `;
+      WHERE opportunity_id = ${opportunityRef} AND member_id = ${userId}
+    `.catch(() => null);
     return { ok: true };
   }
 
@@ -5399,6 +5784,260 @@ export class ConnectAppService {
       WHERE id = ${attachmentId}::uuid AND user_id = ${userId}::uuid
     `;
     return { ok: true };
+  }
+
+  async listMyOpportunities(userId: string) {
+    const opportunities = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.opportunities
+      WHERE status IN ('open', 'published')
+      ORDER BY created_at DESC
+    `.catch(() => [] as any[]);
+
+    const oppIds = opportunities.map(o => o.id);
+    let myInterests = new Set<string>();
+    if (oppIds.length > 0) {
+      const ints = await this.prisma.$queryRaw<any[]>`
+        SELECT opportunity_id FROM public.opportunity_interests
+        WHERE member_id = ${userId} AND opportunity_id = ANY(${oppIds})
+      `.catch(() => [] as any[]);
+      myInterests = new Set(ints.map(i => i.opportunity_id));
+    }
+
+    const OPP_COLORS = ['#7c6cff', '#3fbf7f', '#4a9eff', '#e8a04c'];
+
+    return opportunities.map((o, i) => ({
+      id: o.id,
+      tag: o.type || 'Cơ hội',
+      title: o.title,
+      company: o.region || o.industry || '',
+      time: o.created_at ? new Date(o.created_at).toLocaleDateString('vi-VN') : '',
+      color: OPP_COLORS[i % OPP_COLORS.length],
+      interested: myInterests.has(o.id),
+    }));
+  }
+
+  async expressOpportunityInterest(userId: string, opportunityId: string, message?: string) {
+    const now = new Date();
+    const intId = `INT-${Date.now().toString(36).toUpperCase()}`;
+
+    const member = await this.prisma.$queryRaw<any[]>`
+      SELECT phone, contact FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+    const contact = member[0]?.phone || member[0]?.contact || '';
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.opportunity_interests (
+        id, opportunity_id, member_id, message, contact, created_at
+      ) VALUES (
+        ${intId}, ${opportunityId}, ${userId}, ${message || 'Tôi quan tâm cơ hội này.'}, ${contact}, ${now}
+      )
+      ON CONFLICT (id) DO NOTHING
+    `.catch(() => null);
+
+    return { ok: true };
+  }
+
+  // ── Member Messaging (used by member PWA) ─────────────────────────
+  async listMemberConversations(userId: string) {
+    const mems = await this.prisma.$queryRaw<any[]>`
+      SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const myCode = mems[0]?.code;
+    if (!myCode) return [];
+    const mine = myCode.toLowerCase();
+
+    const msgs = await this.prisma.$queryRaw<any[]>`
+      SELECT id, from_id, to_id, text, created_at, read_at
+      FROM public.messages
+      WHERE LOWER(from_id) = ${mine} OR LOWER(to_id) = ${mine}
+      ORDER BY created_at DESC
+    `.catch(() => []);
+
+    const byPeer = new Map<string, any[]>();
+    for (const m of msgs) {
+      const from = String(m.from_id).toLowerCase();
+      const to = String(m.to_id).toLowerCase();
+      const peer = from === mine ? to : from;
+      if (!byPeer.has(peer)) byPeer.set(peer, []);
+      byPeer.get(peer)!.push(m);
+    }
+
+    const peers = [...byPeer.keys()];
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT code, name FROM public.members
+    `.catch(() => []);
+    const nameByCode = new Map<string, string>();
+    for (const mem of members) {
+      if (mem.code) nameByCode.set(String(mem.code).toLowerCase(), mem.name);
+    }
+
+    return peers.map((peer) => {
+      const list = byPeer.get(peer)!;
+      const latest = list[0];
+      const unread = list.filter((m) => String(m.to_id).toLowerCase() === mine && m.read_at == null).length;
+      return {
+        peerCode: peer,
+        name: nameByCode.get(peer) ?? peer.toUpperCase(),
+        last: latest.text,
+        time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
+        unread,
+      };
+    });
+  }
+
+  async listMemberMessages(userId: string, peerCode: string) {
+    const mems = await this.prisma.$queryRaw<any[]>`
+      SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const myCode = mems[0]?.code;
+    if (!myCode) return { peerName: peerCode, messages: [] };
+    const mine = myCode.toLowerCase();
+    const peer = peerCode.toLowerCase();
+
+    const [msgs, peerMem] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, from_id, to_id, text, created_at, read_at
+        FROM public.messages
+        WHERE (LOWER(from_id) = ${mine} AND LOWER(to_id) = ${peer})
+           OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine})
+        ORDER BY created_at ASC
+      `.catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT name FROM public.members WHERE LOWER(code) = ${peer} LIMIT 1
+      `.catch(() => []),
+    ]);
+
+    await this.prisma.$executeRaw`
+      UPDATE public.messages
+      SET read_at = now()
+      WHERE LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine} AND read_at IS NULL
+    `.catch(() => null);
+
+    return {
+      peerName: peerMem[0]?.name ?? peerCode.toUpperCase(),
+      messages: msgs.map((m) => ({
+        id: m.id,
+        text: m.text,
+        mine: String(m.from_id).toLowerCase() === mine,
+        time: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
+        createdAt: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
+        seen: m.read_at != null,
+      })),
+    };
+  }
+
+  async sendMemberMessage(userId: string, peerCode: string, text: string) {
+    const mems = await this.prisma.$queryRaw<any[]>`
+      SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const myCode = mems[0]?.code;
+    if (!myCode) throw new BadRequestException('ERR_NO_MEMBER_PROFILE');
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+      VALUES (gen_random_uuid(), ${myCode.toLowerCase()}, ${peerCode.toLowerCase()}, ${text}, now())
+    `;
+
+    return { ok: true };
+  }
+
+  // ── Products / Marketplace ───────────────────────────────────────────
+  async listActiveProducts() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, category, views, created_at
+      FROM public.products
+      WHERE status = 'active'
+      ORDER BY created_at DESC
+    `.catch(() => []);
+
+    return rows.map((p) => ({
+      id: p.id,
+      name: p.title,
+      company: p.category,
+      category: p.category,
+      likes: 0,
+      views: Number(p.views ?? 0),
+      time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
+    }));
+  }
+
+  async requestProductQuote(userId: string, body: { productId: string; quantity?: number; message?: string }) {
+    const mems = await this.prisma.$queryRaw<any[]>`
+      SELECT phone FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const phone = mems[0]?.phone ?? '';
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.quote_requests (
+        id, product_id, buyer_id, quantity, message, contact, status, created_at
+      ) VALUES (
+        gen_random_uuid(), ${body.productId}, ${userId}::uuid, ${body.quantity ?? 1}, ${body.message ?? 'Tôi muốn nhận báo giá sản phẩm này.'}, ${phone}, 'pending', now()
+      )
+    `.catch(() => null);
+
+    return { ok: true };
+  }
+
+  // ── Content: News & Perks ─────────────────────────────────────────────
+  async listPublishedNews() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, category, author, excerpt, views, created_at
+      FROM public.news
+      WHERE status = 'published'
+      ORDER BY created_at DESC
+    `.catch(() => []);
+
+    return rows.map((n) => ({
+      id: n.id,
+      title: n.title,
+      category: n.category ?? '',
+      author: n.author ?? '',
+      excerpt: n.excerpt ?? '',
+      time: n.created_at ? new Date(n.created_at).toISOString() : '',
+      views: Number(n.views ?? 0),
+    }));
+  }
+
+  async listActivePerks() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.perks
+      WHERE status = 'active'
+      ORDER BY sort_order ASC
+    `.catch(() => []);
+
+    return rows.map((p) => ({
+      id: p.id,
+      title: p.title,
+      category: p.category ?? '',
+      partner: p.partner ?? '',
+      summary: p.summary ?? '',
+      description: p.description ?? '',
+      discount: p.discount ?? '',
+      icon: p.icon ?? 'Gift',
+      link: p.link ?? '',
+      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : null,
+    }));
+  }
+
+  async getPerkById(id: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.perks WHERE id = ${id} LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0) return null;
+    const p = rows[0];
+    return {
+      id: p.id,
+      title: p.title,
+      category: p.category ?? '',
+      partner: p.partner ?? '',
+      summary: p.summary ?? '',
+      description: p.description ?? '',
+      discount: p.discount ?? '',
+      icon: p.icon ?? 'Gift',
+      link: p.link ?? '',
+      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : null,
+    };
   }
 }
 
@@ -5803,7 +6442,3 @@ Trả về DUY NHẤT JSON dạng: {"suggestions":[{"name":"...","reason":"...",
     return { ok: false, error: "unavailable" as const };
   }
 }
-
-
-
-

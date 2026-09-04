@@ -10,6 +10,11 @@ export type MyEvent = {
   time: string;
   place: string;
   registered: boolean;
+  date?: string;
+  isToday?: boolean;
+  communityName?: string | null;
+  associationName?: string | null;
+  associationId?: string | null;
 };
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];

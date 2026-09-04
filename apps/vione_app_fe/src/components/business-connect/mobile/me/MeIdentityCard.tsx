@@ -45,22 +45,22 @@ export function MeIdentityCard({
   return (
     <section
       aria-labelledby="me-identity-card-title"
-      className="relative overflow-hidden rounded-[24px] border border-[var(--bc-mobile-border-gold)] bg-[linear-gradient(150deg,var(--bc-mobile-surface-2)_0%,var(--bc-mobile-surface)_48%,var(--bc-mobile-bg-deep)_100%)] p-5 shadow-[0_18px_40px_-24px_rgba(4,16,29,0.9)]"
+      className="relative overflow-hidden rounded-2xl bc-translucent-card p-5"
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-2 right-4 select-none font-serif text-[80px] font-semibold leading-none text-[var(--bc-mobile-accent)]/15"
+        className="pointer-events-none absolute -bottom-2 right-4 select-none font-serif text-[80px] font-semibold leading-none text-[#D8B282]/10"
       >
         V
       </span>
 
       <div className="relative flex items-start justify-between gap-3">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[var(--bc-mobile-accent)]">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.22em] bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
           {t("bc.mobile.me.showcase.badge")}
         </p>
-        <p className="text-right text-[11px] font-semibold uppercase leading-tight tracking-[0.18em] text-[var(--bc-mobile-accent)]">
+        <p className="text-right text-[11px] font-semibold uppercase leading-tight tracking-[0.18em] bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
           ViOne
-          <span className="block text-[8.5px] tracking-[0.24em] text-[var(--bc-mobile-text-2)]">
+          <span className="block text-[8.5px] tracking-[0.24em] text-[#D4C3A3]">
             BUSINESS CONNECT
           </span>
         </p>
@@ -75,17 +75,17 @@ export function MeIdentityCard({
             {displayName}
           </h1>
           {identity?.jobTitle && (
-            <p className="mt-1 break-words text-[15px] font-medium text-[var(--bc-mobile-accent)]">
+            <p className="mt-1 break-words text-[15px] font-semibold bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
               {identity.jobTitle}
             </p>
           )}
           {identity?.companyName && (
-            <p className="mt-0.5 break-words text-[14.5px] text-[var(--bc-mobile-text-2)]">
+            <p className="mt-0.5 break-words text-[14.5px] text-[#D4C3A3]">
               {identity.companyName}
             </p>
           )}
           {positioning && (
-            <p className="mt-3 line-clamp-3 break-words text-[13.5px] leading-relaxed text-[var(--bc-mobile-text-2)]">
+            <p className="mt-3 line-clamp-3 break-words text-[13.5px] leading-relaxed text-[#D4C3A3]">
               {positioning}
             </p>
           )}
@@ -101,13 +101,13 @@ export function MeIdentityCard({
             }
             alt=""
             onError={() => setAvatarFailed(true)}
-            className="aspect-[4/5] w-[40%] max-w-[164px] shrink-0 rounded-[18px] object-cover ring-1 ring-[var(--bc-mobile-border-gold)]"
+            className="aspect-[4/5] w-[40%] max-w-[164px] shrink-0 rounded-2xl object-cover ring-1 ring-[#D8B282]/30"
             loading="lazy"
           />
         ) : (
           <div
             aria-hidden="true"
-            className="grid aspect-[4/5] w-[40%] max-w-[164px] shrink-0 place-items-center rounded-[18px] bg-[var(--bc-mobile-surface-2)] text-[30px] font-semibold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]"
+            className="grid aspect-[4/5] w-[40%] max-w-[164px] shrink-0 place-items-center rounded-2xl bg-[#08101b] text-[30px] font-semibold text-[#D8B282] ring-1 ring-[#D8B282]/30"
           >
             {initialsOf(identity?.displayName ?? null, email)}
           </div>
@@ -120,7 +120,7 @@ export function MeIdentityCard({
           type="button"
           onClick={onQr}
           disabled={!identity || busy}
-          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-accent-soft)]/40 px-4 text-[13.5px] font-semibold text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-accent-soft)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[#D8B282]/30 bg-white/[0.03] px-4 text-[13.5px] font-semibold text-[#D8B282] transition-colors hover:bg-[#D8B282]/10 hover:border-[#D8B282]/50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
         >
           <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           {t("bc.mobile.me.myQr")}
@@ -129,7 +129,7 @@ export function MeIdentityCard({
           type="button"
           onClick={onNfc}
           disabled={!identity || busy}
-          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border-gold)] px-4 text-[13.5px] font-semibold text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-accent-soft)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[#D8B282]/30 bg-white/[0.03] px-4 text-[13.5px] font-semibold text-[#D8B282] transition-colors hover:bg-[#D8B282]/10 hover:border-[#D8B282]/50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
         >
           <Nfc aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           {t("bc.mobile.me.nfcTapCta")}
@@ -139,7 +139,7 @@ export function MeIdentityCard({
       <button
         type="button"
         onClick={onViewProfile}
-        className="relative mt-2 ml-auto flex min-h-11 items-center gap-1 rounded-full px-3 text-[13.5px] font-medium text-[var(--bc-mobile-text-2)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none"
+        className="relative mt-2 ml-auto flex min-h-11 items-center gap-1 rounded-full px-3 text-[13.5px] font-medium text-[#D4C3A3] transition-colors hover:text-[#D8B282] hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
       >
         {t("bc.mobile.me.viewProfile")}
         <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />

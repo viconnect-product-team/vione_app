@@ -19,7 +19,7 @@ export function MobileSearchBar({
       <label htmlFor={searchId} className="sr-only">
         {placeholder}
       </label>
-      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#0c1522] rounded-lg border border-solid border-[#ea9a4126] transition-colors focus-within:border-[#ea9a41] focus-within:ring-1 focus-within:ring-[#ea9a4133]">
+      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#0c1522] rounded-lg border border-solid border-[#D8B282]/25 transition-colors focus-within:border-[#D8B282] focus-within:ring-1 focus-within:ring-[#D8B282]/30">
         <input
           id={searchId}
           type="text"

@@ -23,6 +23,7 @@ import {
   type GuestShareValidationDetail,
 } from "@/lib/business-card/guest-contact";
 import { reportIdentityMetric } from "@/lib/business-connect/mobile/identity.telemetry";
+import { safeRandomUUID } from "@/lib/utils";
 
 const DETAIL_MESSAGE: Record<GuestShareValidationDetail, TKey> = {
   name_required: "bc.publicCard.exchange.errorName",
@@ -106,7 +107,7 @@ export function IdentityShareContactPanel({
     setForm((f) => ({ ...f, [key]: value }));
 
   const openForm = () => {
-    if (tokenRef.current == null) tokenRef.current = crypto.randomUUID();
+    if (tokenRef.current == null) tokenRef.current = safeRandomUUID();
     reportIdentityMetric("PUBLIC_CARD_SHARE_CONTACT_OPENED");
     setOpen(true);
   };

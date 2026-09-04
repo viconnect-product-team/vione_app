@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Qu
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('me')
+@Controller(['me', 'connect-app/me'])
 @UseGuards(JwtAuthGuard)
 export class MeController {
   constructor(private readonly connectAppService: ConnectAppService) {}
@@ -51,6 +51,31 @@ export class MeController {
   async listNotifications(@Request() req, @Query('limit') limit?: string) {
     const lim = limit ? parseInt(limit, 10) : 30;
     return this.connectAppService.listNotifications(req.user.id, lim);
+  }
+
+  @Get('notifications/member')
+  async listMyMemberNotifications(@Request() req) {
+    return this.connectAppService.listMyMemberNotifications(req.user.id);
+  }
+
+  @Post('notifications/member/read')
+  async markMemberNotificationRead(@Request() req, @Body('id') id: string) {
+    return this.connectAppService.markMemberNotificationRead(req.user.id, id);
+  }
+
+  @Post('notifications/member/read-all')
+  async markAllMemberNotificationsRead(@Request() req) {
+    return this.connectAppService.markAllMemberNotificationsRead(req.user.id);
+  }
+
+  @Post('notifications/member/dismiss')
+  async dismissMemberNotification(@Request() req, @Body('id') id: string) {
+    return this.connectAppService.dismissMemberNotification(req.user.id, id);
+  }
+
+  @Post('notifications/member/dismiss-broadcast')
+  async dismissBroadcastNotification(@Request() req, @Body('ids') ids: string[]) {
+    return this.connectAppService.dismissBroadcastNotification(req.user.id, ids || []);
   }
 
   @Get('notifications/unread-count')

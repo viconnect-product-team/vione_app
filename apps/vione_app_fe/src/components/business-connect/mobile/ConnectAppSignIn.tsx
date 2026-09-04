@@ -41,7 +41,7 @@ type Props = {
 };
 
 const NAVY = "#050c15";
-const GOLD = "#f2b45a";
+const GOLD = "#D8B282";
 
 function GoogleMark() {
   return (
@@ -95,7 +95,7 @@ export function ConnectAppSignIn({
   const busy = loading || oauthPending !== null;
 
   const fieldClass =
-    "h-12 w-full rounded-xl border border-[#ea9a4133] bg-transparent pl-11 pr-11 text-[15px] outline-none transition-colors placeholder:text-[#D4C3A3]/50 focus:border-[#ea9a4170] focus:ring-1 focus:ring-[#ea9a4133]";
+    "h-12 w-full rounded-xl border border-[#D8B282]/25 bg-transparent pl-11 pr-11 text-[15px] outline-none transition-colors placeholder:text-[#D4C3A3]/50 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30";
 
   return (
     <main
@@ -217,7 +217,7 @@ export function ConnectAppSignIn({
             onClick={onGoogle}
             disabled={busy}
             aria-busy={oauthPending === "google"}
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-solid border-[#ea9a4126] bg-white/[0.015] backdrop-blur-sm text-[15px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.06] hover:border-[#ea9a41]"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-solid border-[#D8B282]/20 bg-white/[0.015] backdrop-blur-sm text-[15px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.06] hover:border-[#D8B282]/60"
             style={{ color: "#E2D3B3" }}
           >
             {oauthPending === "google" ? (
@@ -234,7 +234,7 @@ export function ConnectAppSignIn({
             onClick={onApple}
             disabled={busy}
             aria-busy={oauthPending === "apple"}
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-solid border-[#ea9a4126] bg-white/[0.015] backdrop-blur-sm text-[15px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.06] hover:border-[#ea9a41]"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-solid border-[#D8B282]/20 bg-white/[0.015] backdrop-blur-sm text-[15px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.06] hover:border-[#D8B282]/60"
             style={{ color: "#E2D3B3" }}
           >
             {oauthPending === "apple" ? (
@@ -248,9 +248,9 @@ export function ConnectAppSignIn({
 
         {/* Divider */}
         <div className="my-4 flex items-center gap-4 text-[13px]" style={{ color: "#8fa0b1" }}>
-          <span className="h-px flex-1" style={{ background: "#ea9a4126" }} />
+          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
           <span style={{ color: "#D4C3A3" }}>{t("bc.mobile.auth.or")}</span>
-          <span className="h-px flex-1" style={{ background: "#ea9a4126" }} />
+          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
         </div>
 
         {/* Form */}
@@ -332,7 +332,7 @@ export function ConnectAppSignIn({
                 className="flex h-6 w-6 items-center justify-center rounded-[6px] border text-[#050c15]"
                 style={{
                   background: remember ? GOLD : "transparent",
-                  borderColor: remember ? GOLD : "#ea9a4133",
+                  borderColor: remember ? GOLD : "rgba(216, 178, 130, 0.25)",
                 }}
                 aria-hidden="true"
               >
@@ -363,26 +363,26 @@ export function ConnectAppSignIn({
           <button
             type="submit"
             disabled={busy}
-            className="relative flex h-12 w-full items-center justify-center rounded-xl text-[17px] font-semibold text-[#1b1206] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50"
+            className="relative flex h-12 w-full items-center justify-center rounded-xl text-[17px] font-semibold text-[#050c15] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50"
             style={{
-              background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
+              background: "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
               boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
             }}
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("bc.mobile.auth.processing")}
+                <Loader2 className="h-5 w-5 animate-spin text-[#050c15]" /> {t("bc.mobile.auth.processing")}
               </span>
             ) : t("bc.mobile.auth.signIn")}
-            {!loading && <ArrowRight className="absolute right-6 h-5 w-5 text-[#1b1206]" aria-hidden="true" />}
+            {!loading && <ArrowRight className="absolute right-6 h-5 w-5 text-[#050c15]" aria-hidden="true" />}
           </button>
         </form>
 
         {/* Sign up */}
         <div className="my-4 flex items-center gap-4 text-[14px]">
-          <span className="h-px flex-1" style={{ background: "#ea9a4126" }} />
+          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
           <span style={{ color: "#D4C3A3" }}>{t("bc.mobile.auth.noAccount")}</span>
-          <span className="h-px flex-1" style={{ background: "#ea9a4126" }} />
+          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
         </div>
 
         <Link

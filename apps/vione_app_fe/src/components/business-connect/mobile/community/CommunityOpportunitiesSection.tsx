@@ -82,7 +82,7 @@ function CommunityOpportunityGroup({
 
   return (
     <>
-      {items.slice(0, 2).map((op) => (
+      {items.slice(0, 2).map((op: any) => (
         <OpportunityCard
           key={op.opportunityRef}
           communityId={community.communityId}

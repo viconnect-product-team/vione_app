@@ -51,7 +51,7 @@ function SuggestionRow({
   if (hidden) return null;
 
   return (
-    <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3">
+    <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-2.5 sm:p-3 flex flex-col justify-between">
 
       {/* Avatar + tên + meta */}
       <Link
@@ -64,7 +64,7 @@ function SuggestionRow({
         }}
         className={`block rounded-xl ${FOCUS}`}
       >
-        <span className="flex items-center gap-2.5">
+        <span className="flex items-center gap-2 sm:gap-2.5">
           {/* Avatar — luôn hiện: ảnh thật hoặc chữ cái */}
           {rec.person.avatarUrl ? (
             <img
@@ -77,22 +77,22 @@ function SuggestionRow({
                 const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
                 if (sibling) sibling.style.display = "flex";
               }}
-              className="h-12 w-12 shrink-0 rounded-full object-cover"
+              className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-full object-cover"
             />
           ) : null}
           <span
             aria-hidden="true"
             style={{ display: rec.person.avatarUrl ? "none" : "flex" }}
-            className="h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[13px] font-semibold text-[var(--bc-mobile-muted)]"
+            className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[12px] sm:text-[13px] font-semibold text-[var(--bc-mobile-muted)]"
           >
             {initialsOf(rec.person.displayName)}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
+            <span className="block truncate text-[14px] sm:text-[15px] font-semibold text-[var(--bc-mobile-text)]">
               {name}
             </span>
             {meta ? (
-              <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
+              <span className="mt-0.5 block truncate text-[11.5px] sm:text-[12.5px] text-[var(--bc-mobile-muted)]">
                 {meta}
               </span>
             ) : null}
@@ -101,12 +101,12 @@ function SuggestionRow({
 
         {/* AI Gợi ý hoặc Mốc thời gian */}
         {rec.aiSuggestion ? (
-          <span className="mt-2 flex items-start gap-1.5 text-[12px] text-[var(--bc-mobile-accent)]">
+          <span className="mt-2 flex items-start gap-1.5 text-[11.5px] sm:text-[12px] text-[var(--bc-mobile-accent)]">
             <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--bc-mobile-accent)]" />
             <span className="leading-snug line-clamp-2">{rec.aiSuggestion}</span>
           </span>
         ) : (
-          <span className="mt-2 flex items-center gap-1 text-[12px] text-[var(--bc-mobile-muted)]">
+          <span className="mt-2 flex items-center gap-1 text-[11.5px] sm:text-[12px] text-[var(--bc-mobile-muted)]">
             <MilestoneIcon className="h-2.5 w-2.5 shrink-0 text-[var(--bc-mobile-muted)]" />
             {rec.reason.days > 0
               ? t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days })
@@ -115,18 +115,14 @@ function SuggestionRow({
         )}
       </Link>
 
-      {/* CTA buttons — bằng nhau, dùng grid */}
-      <div className="mt-2.5 grid grid-cols-2 gap-2">
+      {/* CTA buttons — cân đối tuyệt đối trên cả mobile và web */}
+      <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:gap-2">
         <Link
           to="/connect-app/network/$personId"
           params={{ personId: rec.person.personId }}
-          className={`flex h-9 items-center justify-center rounded-full px-2 text-[12.5px] font-semibold text-[#1b1206] shadow-sm transition-all hover:brightness-105 active:scale-[0.98] ${FOCUS}`}
-          style={{
-            background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-            boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 4px 12px -2px rgba(201, 163, 91, 0.4)",
-          }}
+          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[#D8B282]/30 bg-white/[0.04] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[#D4C3A3] transition-colors hover:text-white hover:bg-white/[0.08] hover:border-[#D8B282]/60 active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
         >
-          {t("bc.mobile.intel.card.message")}
+          <span className="truncate">{t("bc.mobile.intel.card.message") || "Xem hồ sơ"}</span>
         </Link>
         <button
           type="button"
@@ -134,9 +130,9 @@ function SuggestionRow({
             setHidden(true);
             onDismiss();
           }}
-          className={`flex h-9 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]/50 px-2 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] active:scale-[0.98] ${FOCUS}`}
+          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-white/10 bg-[#0c1522] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[#94A3B8] transition-colors hover:bg-white/5 hover:text-white active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
         >
-          Ẩn hồ sơ
+          <span className="truncate">Ẩn hồ sơ</span>
         </button>
       </div>
     </li>
@@ -156,7 +152,7 @@ function normalizeArea(value: string | null): string {
 type DistanceFilter = "all" | "near" | "far";
 
 const CHIP_BASE =
-  "inline-flex h-7 items-center justify-center rounded-full border px-3 text-xs font-medium transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap";
+  "inline-flex h-8 w-[114px] min-w-[114px] max-w-[114px] items-center justify-center rounded-full border px-2 text-[12px] font-medium transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap text-center leading-none";
 
 function FilterChip({
   active,
@@ -174,11 +170,11 @@ function FilterChip({
       onClick={onClick}
       className={`${CHIP_BASE} ${FOCUS} ${
         active
-          ? "border-[#DFB260]/60 bg-[#DFB260]/20 text-[#DFB260] font-semibold shadow-[0_2px_8px_rgba(223,178,96,0.15)]"
-          : "border-[#ea9a4126] bg-[#0c1522] text-[#D4C3A3] hover:border-[#DFB260]/40 hover:text-[#f5f7fa]"
+          ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-semibold border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
+          : "border-[#D8B282]/25 bg-[#0c1522]/40 text-[#D4C3A3] hover:border-[#D8B282]/50 hover:text-[#f5f7fa]"
       }`}
     >
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 }
@@ -326,10 +322,10 @@ export function RelationshipSuggestions() {
       </h2>
       <Link
         to="/connect-app/network"
-        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#DFB260] bg-[#DFB260]/10 border border-[#DFB260]/20 hover:bg-[#DFB260]/20 hover:border-[#DFB260]/40 transition-all cursor-pointer shrink-0"
+        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
       >
         {t("bc.mobile.intel.home.viewAll")}
-        <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#DFB260]" strokeWidth={2} />
+        <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" strokeWidth={2} />
       </Link>
     </div>
   );
@@ -358,7 +354,7 @@ export function RelationshipSuggestions() {
         <div role="group" aria-label={t("bc.mobile.intel.filter.label")} className="mt-2.5 space-y-2">
           {industries.length > 0 ? (
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <span className="shrink-0 min-w-[78px] text-[10.5px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
+              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
                 {t("bc.mobile.intel.filter.industry")}
               </span>
               <FilterChip
@@ -378,7 +374,7 @@ export function RelationshipSuggestions() {
           ) : null}
           {viewerArea ? (
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <span className="shrink-0 min-w-[78px] text-[10.5px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
+              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
                 {t("bc.mobile.intel.filter.distance")}
               </span>
               {(["all", "near", "far"] as const).map((value) => (
@@ -416,7 +412,7 @@ export function RelationshipSuggestions() {
           </button>
         </div>
       ) : null}
-      <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 grid grid-cols-2 gap-3">
+      <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
         {filtered.map((rec) => (
           <SuggestionRow
             key={rec.id}

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('communities')
+@Controller(['communities', 'connect-app/community'])
 @UseGuards(JwtAuthGuard)
 export class CommunityController {
   constructor(private readonly connectAppService: ConnectAppService) {}

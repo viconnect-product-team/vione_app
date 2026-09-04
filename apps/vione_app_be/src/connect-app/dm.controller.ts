@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Request, UseGuards, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Request, UseGuards, Param, Query, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -6,6 +6,24 @@ import { ConnectAppService } from './connect-app.service';
 @UseGuards(JwtAuthGuard)
 export class DmController {
   constructor(private readonly connectAppService: ConnectAppService) {}
+
+  // ── Member Messaging (PWA) ──
+  @Get('member/conversations')
+  async listMemberConversations(@Request() req) {
+    return this.connectAppService.listMemberConversations(req.user.id);
+  }
+
+  @Get('member/messages')
+  async listMemberMessages(@Request() req, @Query('peerCode') peerCode: string) {
+    if (!peerCode) throw new BadRequestException('peerCode_required');
+    return this.connectAppService.listMemberMessages(req.user.id, peerCode);
+  }
+
+  @Post('member/messages')
+  async sendMemberMessage(@Request() req, @Body() data: { peerCode: string; text: string }) {
+    if (!data?.peerCode || !data?.text) throw new BadRequestException('peerCode_and_text_required');
+    return this.connectAppService.sendMemberMessage(req.user.id, data.peerCode, data.text);
+  }
 
   @Get('threads')
   async listMyDmThreads(@Request() req) {

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 
 import { useLang, useT, type TKey } from "@/lib/i18n";
+import { safeRandomUUID } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clearMomentDraft,
@@ -124,7 +125,7 @@ export function MomentComposer({ personId }: { personId: string }) {
   const queryClient = useQueryClient();
   const person = useBusinessConnectPerson(personId);
 
-  const clientTokenRef = useRef<string>(crypto.randomUUID());
+  const clientTokenRef = useRef<string>(safeRandomUUID());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -314,7 +315,7 @@ export function MomentComposer({ personId }: { personId: string }) {
             return [
               ...prev,
               {
-                id: crypto.randomUUID(),
+                id: safeRandomUUID(),
                 blob: null,
                 previewUrl: null,
                 errorKey:
@@ -329,7 +330,7 @@ export function MomentComposer({ personId }: { personId: string }) {
           return [
             ...prev,
             {
-              id: crypto.randomUUID(),
+              id: safeRandomUUID(),
               blob: result.image.blob,
               previewUrl: URL.createObjectURL(result.image.blob),
               errorKey: null,

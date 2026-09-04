@@ -7,13 +7,14 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { WifiOff } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { VSheetContext } from "@/hooks/use-v-sheet";
+import authBg from "@/assets/connect-auth-bg.jpg";
 import { BusinessConnectBottomNav } from "./BusinessConnectBottomNav";
 import { VActionSheet } from "./VActionSheet";
 
 /**
- * Connect-app is a dark-first surface: the navy/gold design tone must apply
- * even when the OS/site theme is light. Force `dark` on <html> while any
- * /connect-app screen is mounted, then restore the previous state on exit.
+ * Connect-app is a dark-first surface: enforce the "dark" class on <html>
+ * even when the OS/site theme is light, and restore the previous mode when
+ * /connect-app screen is unmounted.
  */
 function useForcedDarkTone() {
   useEffect(() => {
@@ -31,6 +32,8 @@ function useForcedDarkTone() {
   }, []);
 }
 
+const NAVY = "#050c15";
+
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
   useForcedDarkTone();
   const [vOpen, setVOpen] = useState(false);
@@ -38,8 +41,29 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
   const vControls = useMemo(() => ({ openV }), [openV]);
   return (
     <VSheetContext.Provider value={vControls}>
+      {/* Background chấm bi vàng đồng nhạt y hệt trang Đăng nhập */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        style={{ background: NAVY }}
+        aria-hidden="true"
+      >
+        <img
+          src={authBg}
+          alt=""
+          width={1024}
+          height={640}
+          className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-60"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 90%)`,
+          }}
+        />
+      </div>
+
       {/* data-motion="forced" explicitly overrides reduced-motion inside the BC shell */}
-      <div className="bc-app bc-app-viewport" data-motion="forced">
+      <div className="bc-app bc-app-viewport relative z-10" data-motion="forced">
         <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col">
           <BcMobileOfflineBanner />
           {children}
@@ -50,6 +74,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
     </VSheetContext.Provider>
   );
 }
+
 
 /** Thin banner shown when the device loses its network connection. */
 function BcMobileOfflineBanner() {

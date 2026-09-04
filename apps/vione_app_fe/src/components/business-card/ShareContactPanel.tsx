@@ -17,6 +17,7 @@ import {
   type GuestShareResponse,
   type GuestShareValidationDetail,
 } from "@/lib/business-card/guest-contact";
+import { safeRandomUUID } from "@/lib/utils";
 
 const DETAIL_MESSAGE: Record<GuestShareValidationDetail, TKey> = {
   name_required: "bc.publicCard.exchange.errorName",
@@ -90,7 +91,7 @@ export function ShareContactPanel({ slug, ownerName }: { slug: string; ownerName
     setForm((f) => ({ ...f, [key]: value }));
 
   const openForm = () => {
-    if (tokenRef.current == null) tokenRef.current = crypto.randomUUID();
+    if (tokenRef.current == null) tokenRef.current = safeRandomUUID();
     setOpen(true);
   };
 

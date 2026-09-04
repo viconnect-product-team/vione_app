@@ -80,13 +80,21 @@ export class EventsService {
       const mem = await this.prisma.$queryRaw<any[]>`
         SELECT 1 FROM public.memberships 
         WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid
+        UNION ALL
+        SELECT 1 FROM public.members
+        WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid AND status = 'active'
       `.catch(() => []);
       if (mem.length > 0) return requestedAssocId;
     }
 
     const mems = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM public.memberships
-      WHERE user_id = ${userId}::uuid
+      SELECT association_id FROM (
+        SELECT association_id, is_default, created_at FROM public.memberships
+        WHERE user_id = ${userId}::uuid
+        UNION ALL
+        SELECT association_id, false AS is_default, created_at FROM public.members
+        WHERE user_id = ${userId}::uuid AND status = 'active'
+      ) m
       ORDER BY is_default DESC, created_at ASC
       LIMIT 1
     `.catch(() => []);
@@ -124,8 +132,12 @@ export class EventsService {
     return {
       id: r.id,
       name: r.name,
+      title: r.name,
       date: dateStr,
+      startDate: dateStr,
+      start_date: dateStr,
       location: r.location ?? '',
+      venue: r.location ?? '',
       capacity: r.capacity ?? 0,
       registered: r.registered ?? 0,
       status,
@@ -134,6 +146,9 @@ export class EventsService {
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
+      associationName: r.association_name ?? null,
+      communityName: r.association_name ?? null,
+      associationLogo: r.association_logo ?? null,
     };
   }
 
@@ -168,24 +183,37 @@ export class EventsService {
     const assocId = await this.getAssociationIdForUser(userId, associationId);
     const isPlatformAdmin = await this.checkIsPlatformAdmin(userId);
 
-    let rows: any[];
+    let rows: any[] = [];
     if (isPlatformAdmin && !associationId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.events ORDER BY date ASC
+        SELECT e.*, a.name as association_name, a.logo_url as association_logo
+        FROM public.events e
+        LEFT JOIN public.associations a ON e.association_id = a.id
+        ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
       `.catch(() => []);
     } else if (assocId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.events WHERE association_id = ${assocId}::uuid ORDER BY date ASC
+        SELECT e.*, a.name as association_name, a.logo_url as association_logo
+        FROM public.events e
+        LEFT JOIN public.associations a ON e.association_id = a.id
+        WHERE e.association_id = ${assocId}::uuid
+        ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
       `.catch(() => []);
-    } else {
-      // Fallback: không có association → lấy tất cả events
+    }
+
+    if (rows.length === 0) {
+      // Fallback: không có association hoặc assoc không có sự kiện → lấy tất cả events
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.events ORDER BY date ASC
+        SELECT e.*, a.name as association_name, a.logo_url as association_logo
+        FROM public.events e
+        LEFT JOIN public.associations a ON e.association_id = a.id
+        ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
       `.catch(() => []);
     }
 
     return rows.map((r) => this.mapEventRow(r));
   }
+
 
   async getEventsOverview(userId: string, associationId?: string) {
     const assocId = await this.getAssociationIdForUser(userId, associationId);
@@ -526,18 +554,34 @@ export class EventsService {
   async listMyEvents(userId: string) {
     const assocId = await this.getAssociationIdForUser(userId);
 
-    const [events, me] = await Promise.all([
+    let [events, me] = await Promise.all([
       assocId
         ? this.prisma.$queryRaw<any[]>`
-            SELECT * FROM public.events WHERE association_id = ${assocId}::uuid ORDER BY date ASC
+            SELECT e.*, a.name as association_name, a.logo_url as association_logo
+            FROM public.events e
+            LEFT JOIN public.associations a ON e.association_id = a.id
+            WHERE e.association_id = ${assocId}::uuid
+            ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
           `.catch(() => [])
         : this.prisma.$queryRaw<any[]>`
-            SELECT * FROM public.events ORDER BY date ASC
+            SELECT e.*, a.name as association_name, a.logo_url as association_logo
+            FROM public.events e
+            LEFT JOIN public.associations a ON e.association_id = a.id
+            ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
           `.catch(() => []),
       this.prisma.$queryRaw<any[]>`
         SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
       `.catch(() => []),
     ]);
+
+    if (events.length === 0) {
+      events = await this.prisma.$queryRaw<any[]>`
+        SELECT e.*, a.name as association_name, a.logo_url as association_logo
+        FROM public.events e
+        LEFT JOIN public.associations a ON e.association_id = a.id
+        ORDER BY (e.date >= CURRENT_DATE) DESC, e.date ASC
+      `.catch(() => []);
+    }
 
     const myCode = me[0]?.code;
     let regIds = new Set<string>();
@@ -549,21 +593,36 @@ export class EventsService {
     }
 
     const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const vnToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(now);
 
     return events.map((e) => {
       const dt = new Date(e.date);
       const valid = !isNaN(dt.getTime());
+      const dateStr = valid ? dt.toISOString().slice(0, 10) : '';
+      const vnEventDate = valid ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(dt) : '';
+      const isToday = vnEventDate === vnToday || dateStr === todayStr || dateStr === vnToday;
+
       return {
         id: e.id,
         day: valid ? String(dt.getDate()).padStart(2, '0') : '--',
         month: valid ? MONTHS[dt.getMonth()] : '',
         title: e.name,
+        name: e.name,
+        date: dateStr,
+        startDate: dateStr,
+        isToday,
         time: valid ? dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
         place: e.location ?? '',
         registered: regIds.has(e.id),
+        communityName: e.association_name ?? null,
+        associationName: e.association_name ?? null,
+        associationId: e.association_id ?? null,
       };
     });
   }
+
 
   // Mobile API: Register for an event
   async registerForEvent(userId: string, eventId: string) {
@@ -790,6 +849,130 @@ export class EventsService {
       registered: e.confirmed || e.registrations,
       capacity: e.capacity,
       checkedIn: e.attended,
+    }));
+  }
+
+  async recordMemberCheckin(userId: string, body: { payload: string; method?: 'qr' | 'nfc' }) {
+    const method = body.method ?? 'qr';
+    const payload = body.payload ?? '';
+
+    // 1. Resolve member for userId
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT code, association_id, status FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => []);
+
+    if (members.length === 0) {
+      throw new BadRequestException('member_not_found');
+    }
+
+    // Parse payload to get eventId
+    let eventId: string | null = null;
+    try {
+      const parsed = JSON.parse(payload);
+      eventId = parsed.eventId || parsed.id || null;
+    } catch {
+      const match = payload.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (match) {
+        eventId = match[0];
+      } else {
+        eventId = payload.trim();
+      }
+    }
+
+    if (!eventId) {
+      throw new BadRequestException('invalid_payload');
+    }
+
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, association_id FROM public.events WHERE id = ${eventId}::uuid LIMIT 1
+    `.catch(() => []);
+
+    if (eventRows.length === 0) {
+      throw new NotFoundException('event_not_found');
+    }
+
+    const ev = eventRows[0];
+    const matchingMember = members.find((m) => m.association_id === ev.association_id) || members[0];
+    if (matchingMember.status !== 'active') {
+      throw new BadRequestException('membership_inactive');
+    }
+
+    // Check prior checkin (replay)
+    const prior = await this.prisma.$queryRaw<any[]>`
+      SELECT id, event_id, event_title, method, checked_at
+      FROM public.member_checkins
+      WHERE member_code = ${matchingMember.code} AND event_id = ${ev.id}::uuid AND status = 'success'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (prior.length > 0) {
+      const p = prior[0];
+      return {
+        id: p.id,
+        eventId: p.event_id,
+        eventTitle: p.event_title,
+        status: 'already',
+        method: p.method ?? method,
+        at: p.checked_at ? new Date(p.checked_at).toISOString() : new Date().toISOString(),
+      };
+    }
+
+    const clientId = `chk:v2:${matchingMember.association_id}:${matchingMember.code}:${ev.id}`;
+    const inserted = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.member_checkins (
+        id, client_id, member_code, event_id, event_title, status, method, checked_at, association_id
+      ) VALUES (
+        gen_random_uuid(), ${clientId}, ${matchingMember.code}, ${ev.id}::uuid, ${ev.name}, 'success', ${method}, now(), ${matchingMember.association_id}::uuid
+      )
+      ON CONFLICT (client_id) DO UPDATE SET checked_at = member_checkins.checked_at
+      RETURNING id, event_id, event_title, method, checked_at
+    `.catch(() => []);
+
+    if (inserted.length > 0) {
+      const r = inserted[0];
+      return {
+        id: r.id,
+        eventId: r.event_id,
+        eventTitle: r.event_title,
+        status: 'success',
+        method: r.method ?? method,
+        at: r.checked_at ? new Date(r.checked_at).toISOString() : new Date().toISOString(),
+      };
+    }
+
+    return {
+      id: eventId,
+      eventId,
+      eventTitle: ev.name,
+      status: 'success',
+      method,
+      at: new Date().toISOString(),
+    };
+  }
+
+  async listMyMemberCheckins(userId: string, limit: number = 50) {
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT code FROM public.members WHERE user_id = ${userId}::uuid
+    `.catch(() => []);
+
+    const codes = members.map((m) => m.code).filter(Boolean);
+    if (codes.length === 0) return [];
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, event_id, event_title, status, method, checked_at
+      FROM public.member_checkins
+      WHERE member_code = ANY(${codes})
+      ORDER BY checked_at DESC
+      LIMIT ${limit}
+    `.catch(() => []);
+
+    return rows.map((r) => ({
+      id: r.id,
+      eventId: r.event_id,
+      eventTitle: r.event_title || 'Sự kiện',
+      status: r.status || 'success',
+      method: r.method || 'qr',
+      at: r.checked_at ? new Date(r.checked_at).toISOString() : '',
     }));
   }
 }

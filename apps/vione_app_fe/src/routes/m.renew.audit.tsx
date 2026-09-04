@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 import { MemberHeader } from "@/components/member/MemberShell";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerData } from "@/hooks/use-server-data";
 import { exportRenewalAuditPDF } from "@/lib/renewal-audit-export";
 import { getMyRenewalAuditLog, type RenewalAuditEntry } from "@/lib/member-app.functions";
@@ -109,20 +108,10 @@ function RenewalAuditLogScreen() {
   const reloadRef = useRef(reload);
   reloadRef.current = reload;
   useEffect(() => {
-    const channel = supabase
-      .channel("renewal-audit-log")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "renewal_audit_log" },
-        () => {
-          setLiveCount((n) => n + 1);
-          void reloadRef.current();
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const timer = setInterval(() => {
+      void reloadRef.current();
+    }, 10000);
+    return () => clearInterval(timer);
   }, []);
 
   const filtered = useMemo(() => {

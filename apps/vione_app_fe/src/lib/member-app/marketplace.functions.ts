@@ -1,10 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 import { relTime } from "./shared";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type MyProduct = {
   id: string;
@@ -19,21 +17,22 @@ export type MyProduct = {
 // ---------- Products ----------
 export const listMyProducts = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }): Promise<MyProduct[]> => {
-    const { data } = await getDb(context)
-      .from("products")
-      .select("*")
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
-    return (data ?? []).map((p: any) => ({
-      id: p.id,
-      name: p.title,
-      company: p.category,
-      category: p.category,
-      likes: 0,
-      views: p.views ?? 0,
-      time: relTime(p.created_at),
-    }));
+  .handler(async ({ context }: any): Promise<MyProduct[]> => {
+    try {
+      const token = context?.token;
+      const items = await fetchNestApiFromServer<any[]>("/products", token);
+      return (items ?? []).map((p: any) => ({
+        id: p.id,
+        name: p.name || p.title,
+        company: p.company || p.category || "",
+        category: p.category || "",
+        likes: p.likes ?? 0,
+        views: p.views ?? 0,
+        time: relTime(p.time || p.created_at || p.createdAt),
+      }));
+    } catch {
+      return [];
+    }
   });
 
 export const requestQuote = createServerFn({ method: "POST" })
@@ -47,23 +46,10 @@ export const requestQuote = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const db = getDb(context);
-    const userId = (context as any).userId;
-    const { data: me } = await db
-      .from("members")
-      .select("phone")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const { error } = await db.from("quote_requests").insert({
-      id: crypto.randomUUID(),
-      product_id: data.productId,
-      buyer_id: userId,
-      quantity: data.quantity ?? 1,
-      message: data.message ?? "Tôi muốn nhận báo giá sản phẩm này.",
-      contact: me?.phone ?? "",
-      status: "pending",
+  .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<{ ok: boolean }>("/products/quote", token, {
+      method: "POST",
+      body: data,
     });
-    if (error) throw new Error(error.message);
-    return { ok: true };
   });

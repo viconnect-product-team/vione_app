@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   listConversations,
@@ -44,17 +43,9 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
   } = useServerData<MyConversation[]>(() => listConversations(), []);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("messages-list")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () =>
-        reload(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = setInterval(() => reload(), 6000);
+    return () => clearInterval(timer);
+  }, [reload]);
 
   return (
     <div className="vba-animate">
@@ -134,21 +125,9 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const peerLc = peer.peerCode.toLowerCase();
-    const channel = supabase
-      .channel(`messages-thread-${peerLc}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
-        const row = (payload.new ?? payload.old) as { from_id?: string; to_id?: string };
-        const from = String(row.from_id ?? "").toLowerCase();
-        const to = String(row.to_id ?? "").toLowerCase();
-        if (from === peerLc || to === peerLc) reload();
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = setInterval(() => reload(), 4000);
+    return () => clearInterval(timer);
+  }, [reload]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
