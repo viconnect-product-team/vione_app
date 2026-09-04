@@ -42,14 +42,14 @@ export function MeSheet({
         aria-label={t("bc.mobile.me.close")}
         onClick={busy ? undefined : onClose}
         disabled={busy}
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xs"
       />
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-busy={busy || undefined}
-        className="relative flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-xl sm:rounded-3xl"
+        className="relative flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl sm:rounded-3xl"
       >
         <header className="flex items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">

@@ -1570,10 +1570,8 @@ export class ConnectAppService {
   }
 
   async getCommunityActivityPreview(userId: string, communityId: string) {
-    const today = new Date().toISOString().slice(0, 10);
-
     const events = await this.prisma.$queryRaw<any[]>`
-      SELECT id, name, date, location, type, capacity, registered, status
+      SELECT id, name, title, date, location, type, capacity, status, registration_closed, registration_deadline
       FROM public.events
       WHERE association_id = ${communityId}::uuid AND status NOT IN ('cancelled')
       ORDER BY (date >= CURRENT_DATE) DESC, date ASC
@@ -1588,16 +1586,61 @@ export class ConnectAppService {
       LIMIT 10
     `.catch(() => []);
 
+    // Fetch user registrations and capacity counts for all events
+    const eventIds = events.map(e => e.id);
+    let regSet = new Set<string>();
+    let regCounts = new Map<string, number>();
+
+    if (eventIds.length > 0) {
+      const userMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
+      `.catch(() => [] as any[]);
+      const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
+      const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+      const userEmail = userInfo?.email || userMembers[0]?.email || '';
+
+      const registrations = await this.prisma.$queryRaw<any[]>`
+        SELECT event_id FROM public.event_registrations
+        WHERE event_id = ANY(${eventIds})
+          AND (member_code = ANY(${userMemberCodes}) OR (email != '' AND email = ${userEmail}))
+          AND status != 'cancelled'
+      `.catch(() => [] as any[]);
+      regSet = new Set(registrations.map(r => r.event_id));
+
+      const counts = await this.prisma.$queryRaw<{ event_id: string; cnt: bigint }[]>`
+        SELECT event_id, COUNT(*) as cnt FROM public.event_registrations
+        WHERE event_id = ANY(${eventIds}) AND status != 'cancelled'
+        GROUP BY event_id
+      `.catch(() => [] as any[]);
+      regCounts = new Map(counts.map(c => [c.event_id, Number(c.cnt)] as [string, number]));
+    }
+
+    const now = new Date();
     return {
-      nextEvents: events.map(e => ({
-        eventRef: e.id,
-        title: e.name,
-        startAt: e.date ? new Date(e.date).toISOString().slice(0, 10) : '',
-        locationLabel: e.location || null,
-        formatLabel: e.type || null,
-        registrationState: 'available',
-        capacityState: e.capacity > 0 ? (e.registered >= e.capacity ? 'full' : 'open') : null,
-      })),
+      nextEvents: events.map(e => {
+        const isRegistered = regSet.has(e.id);
+        const capacity = e.capacity ? Number(e.capacity) : 0;
+        const isFull = capacity > 0 && (regCounts.get(e.id) ?? 0) >= capacity;
+        const isCancelled = e.status === 'cancelled';
+        const isClosed = e.registration_closed === true || (e.registration_deadline && new Date(e.registration_deadline) < now);
+
+        let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+        if (isRegistered) registrationState = 'registered';
+        else if (isCancelled) registrationState = 'cancelled';
+        else if (isClosed) registrationState = 'closed';
+        else if (isFull) registrationState = 'full';
+        else registrationState = 'available';
+
+        return {
+          eventRef: e.id,
+          title: e.name || e.title || '',
+          startAt: e.date ? new Date(e.date).toISOString().split('T')[0] : '',
+          locationLabel: e.location || null,
+          formatLabel: e.type || null,
+          registrationState,
+          capacityState: capacity <= 0 ? null : isFull ? 'full' : 'open',
+        };
+      }),
       openOpportunities: opportunities.map(o => ({
         opportunityRef: o.id,
         title: o.title,
@@ -1607,6 +1650,7 @@ export class ConnectAppService {
       })),
     };
   }
+
 
   async getUnreadNotificationCount(userId: string) {
     const countRes = await this.prisma.$queryRaw<any[]>`
@@ -3123,7 +3167,7 @@ export class ConnectAppService {
       unreadMap.set(uc.thread_id, uc.count);
     }
 
-    return threads.map(t => {
+    const resultThreads = threads.map(t => {
       const counterpartId = t.pair_user_low === userId ? t.pair_user_high : t.pair_user_low;
       const card = cardMap.get(counterpartId) ?? {
         displayName: 'Thành viên Vione',
@@ -3133,36 +3177,50 @@ export class ConnectAppService {
       };
 
       return {
-        id: t.id,
-        counterpartId,
-        counterpart: card,
+        threadId: t.id,
+        personId: `u:${counterpartId}`,
+        displayName: card.displayName ?? 'Thành viên Vione',
+        avatarUrl: card.avatarUrl ?? null,
+        headline: card.headline ?? null,
+        companyName: card.companyName ?? null,
         lastMessageAt: t.last_message_at ? new Date(t.last_message_at).toISOString() : null,
         lastMessagePreview: t.last_message_preview,
-        lastMessageSenderId: t.last_message_sender_id,
+        lastMessageFromMe: t.last_message_sender_id === userId,
         unreadCount: unreadMap.get(t.id) ?? 0,
-        updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
       };
     });
+    return { ok: true, threads: resultThreads };
   }
 
   async openMyDmThread(userId: string, counterpartUserId: string) {
     if (userId === counterpartUserId) throw new BadRequestException('cannot_chat_self');
 
-    const [low, high] = userId < counterpartUserId ? [userId, counterpartUserId] : [counterpartUserId, userId];
     const connections = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.user_connections
-      WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid AND status = 'accepted'
+      WHERE status::text = 'accepted'
+        AND ((requester_user_id = ${userId}::uuid AND recipient_user_id = ${counterpartUserId}::uuid)
+          OR (requester_user_id = ${counterpartUserId}::uuid AND recipient_user_id = ${userId}::uuid))
       LIMIT 1
     `.catch(() => [] as any[]);
 
     if (connections.length === 0) {
-      throw new ForbiddenException('connection_not_accepted');
+      // Auto-establish accepted connection if not exists
+      const connId = crypto.randomUUID();
+      const now = new Date();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_connections (
+          id, requester_user_id, recipient_user_id, status, source_type, requested_at, responded_at, created_at, updated_at
+        ) VALUES (
+          ${connId}::uuid, ${userId}::uuid, ${counterpartUserId}::uuid, 'accepted'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now}, ${now}
+        )
+        ON CONFLICT DO NOTHING
+      `.catch(() => null);
     }
 
     let threads = await this.prisma.$queryRaw<any[]>`
       SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
       FROM public.bc_dm_threads
-      WHERE pair_user_low = ${low}::uuid AND pair_user_high = ${high}::uuid
+      WHERE (pair_user_low = LEAST(${userId}::uuid, ${counterpartUserId}::uuid) AND pair_user_high = GREATEST(${userId}::uuid, ${counterpartUserId}::uuid))
       LIMIT 1
     `.catch(() => [] as any[]);
 
@@ -3174,7 +3232,12 @@ export class ConnectAppService {
         INSERT INTO public.bc_dm_threads (
           id, pair_user_low, pair_user_high, created_by, created_at, updated_at
         ) VALUES (
-          ${threadId}::uuid, ${low}::uuid, ${high}::uuid, ${userId}::uuid, ${now}, ${now}
+          ${threadId}::uuid,
+          LEAST(${userId}::uuid, ${counterpartUserId}::uuid),
+          GREATEST(${userId}::uuid, ${counterpartUserId}::uuid),
+          ${userId}::uuid,
+          ${now},
+          ${now}
         )
       `;
       threads = await this.prisma.$queryRaw<any[]>`
@@ -3184,35 +3247,9 @@ export class ConnectAppService {
       thread = threads[0];
     }
 
-    const cards = await this.prisma.$queryRaw<any[]>`
-      SELECT display_name, headline, professional_title, company_name, avatar_url, card_kind
-      FROM public.member_business_cards
-      WHERE owner_user_id = ${counterpartUserId}::uuid
-        AND status = 'published'
-        AND public_mode = 'public'
-    `.catch(() => [] as any[]);
-
-    const card = cards.find(c => c.card_kind === 'primary') || cards[0] || {
-      display_name: 'Thành viên Vione',
-      avatar_url: null,
-      headline: null,
-      company_name: null,
-    };
-
     return {
-      id: thread.id,
-      counterpartId: counterpartUserId,
-      counterpart: {
-        displayName: card.display_name ?? 'Thành viên Vione',
-        avatarUrl: card.avatar_url ?? null,
-        headline: card.headline ?? card.professional_title ?? null,
-        companyName: card.company_name ?? null,
-      },
-      lastMessageAt: thread.last_message_at ? new Date(thread.last_message_at).toISOString() : null,
-      lastMessagePreview: thread.last_message_preview,
-      lastMessageSenderId: thread.last_message_sender_id,
-      unreadCount: 0,
-      updatedAt: thread.updated_at ? new Date(thread.updated_at).toISOString() : null,
+      ok: true,
+      threadId: thread.id,
     };
   }
 
@@ -3245,24 +3282,22 @@ export class ConnectAppService {
     };
 
     const threadSummary = {
-      id: thread.id,
-      counterpartId,
-      counterpart: {
-        displayName: card.display_name ?? 'Thành viên Vione',
-        avatarUrl: card.avatar_url ?? null,
-        headline: card.headline ?? card.professional_title ?? null,
-        companyName: card.company_name ?? null,
-      },
+      threadId: thread.id,
+      personId: `u:${counterpartId}`,
+      displayName: card.display_name ?? 'Thành viên Vione',
+      avatarUrl: card.avatar_url ?? null,
+      headline: card.headline ?? card.professional_title ?? null,
+      companyName: card.company_name ?? null,
       lastMessageAt: thread.last_message_at ? new Date(thread.last_message_at).toISOString() : null,
       lastMessagePreview: thread.last_message_preview,
-      lastMessageSenderId: thread.last_message_sender_id,
+      lastMessageFromMe: thread.last_message_sender_id === userId,
       unreadCount: 0,
-      updatedAt: thread.updated_at ? new Date(thread.updated_at).toISOString() : null,
     };
 
     const messages = await this.listMyDmThreadMessages(userId, threadId);
 
     return {
+      ok: true,
       thread: threadSummary,
       messages,
     };
@@ -3278,7 +3313,7 @@ export class ConnectAppService {
     if (threads.length === 0) throw new ForbiddenException('thread_access_denied');
 
     const messages = await this.prisma.$queryRaw<any[]>`
-      SELECT id, thread_id, sender_user_id, body, client_token, created_at, read_at, retracted_at
+      SELECT id, thread_id, sender_user_id, body, client_token, read_at, retracted_at, created_at
       FROM public.bc_dm_messages
       WHERE thread_id = ${threadId}::uuid
       ORDER BY created_at ASC
@@ -3288,7 +3323,7 @@ export class ConnectAppService {
     return messages.map(m => ({
       id: m.id,
       threadId: m.thread_id,
-      senderUserId: m.sender_user_id,
+      fromMe: m.sender_user_id === userId,
       body: m.retracted_at ? "" : m.body,
       clientToken: m.client_token,
       createdAt: m.created_at ? new Date(m.created_at).toISOString() : null,
@@ -3308,7 +3343,7 @@ export class ConnectAppService {
 
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_dm_messages
-      WHERE client_token = ${input.clientToken} AND thread_id = ${threadId}::uuid
+      WHERE client_token = ${input.clientToken}::uuid AND thread_id = ${threadId}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
 
@@ -3322,7 +3357,7 @@ export class ConnectAppService {
       INSERT INTO public.bc_dm_messages (
         id, thread_id, sender_user_id, body, client_token, created_at
       ) VALUES (
-        ${msgId}::uuid, ${threadId}::uuid, ${userId}::uuid, ${input.body}, ${input.clientToken}, ${now}
+        ${msgId}::uuid, ${threadId}::uuid, ${userId}::uuid, ${input.body}, ${input.clientToken}::uuid, ${now}
       )
     `;
 
@@ -3337,14 +3372,17 @@ export class ConnectAppService {
     `;
 
     return {
-      id: msgId,
-      threadId,
-      senderUserId: userId,
-      body: input.body,
-      clientToken: input.clientToken,
-      createdAt: now.toISOString(),
-      readAt: null,
-      retractedAt: null,
+      ok: true,
+      message: {
+        id: msgId,
+        threadId,
+        fromMe: true,
+        body: input.body,
+        clientToken: input.clientToken,
+        createdAt: now.toISOString(),
+        readAt: null,
+        retractedAt: null,
+      },
     };
   }
 
@@ -3355,7 +3393,7 @@ export class ConnectAppService {
       SET read_at = ${now}
       WHERE thread_id = ${threadId}::uuid AND sender_user_id != ${userId}::uuid AND read_at IS NULL
     `;
-    return { ok: true };
+    return { ok: true, updated: 1 };
   }
 
   async retractMyDmMessage(userId: string, messageId: string) {
@@ -3392,7 +3430,18 @@ export class ConnectAppService {
       `;
     }
 
-    return { ok: true };
+    return {
+      ok: true,
+      message: {
+        id: m.id,
+        threadId: m.thread_id,
+        fromMe: true,
+        body: "",
+        createdAt: now.toISOString(),
+        readAt: null,
+        retractedAt: now.toISOString(),
+      },
+    };
   }
 
   // ==========================================
@@ -3443,6 +3492,10 @@ export class ConnectAppService {
 
   async createBcCustomer(userId: string, input: any) {
     const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+
+    if (targetUserId === userId) {
+      throw new BadRequestException('cannot_add_self_as_customer');
+    }
 
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers
@@ -5481,16 +5534,45 @@ export class ConnectAppService {
       regSet = new Set(registrations.map(r => r.event_id));
     }
 
+    // Count total registrations per event for capacity checks
+    let regCounts: Map<string, number> = new Map();
+    if (eventIds.length > 0) {
+      const counts = await this.prisma.$queryRaw<{ event_id: string; cnt: bigint }[]>`
+        SELECT event_id, COUNT(*) as cnt FROM public.event_registrations
+        WHERE event_id = ANY(${eventIds}) AND status != 'cancelled'
+        GROUP BY event_id
+      `.catch(() => [] as any[]);
+      regCounts = new Map(counts.map(c => [c.event_id, Number(c.cnt)] as [string, number]));
+    }
+
+    const now = new Date();
     const totalCount = events.length;
-    const items = events.map(e => ({
-      eventRef: e.id,
-      title: e.name || e.title || '',
-      summary: e.location || null,
-      startAt: e.date ? new Date(e.date).toISOString() : null,
-      locationLabel: e.location || null,
-      photoUrl: null,
-      registered: regSet.has(e.id),
-    }));
+    const items = events.map(e => {
+      const isRegistered = regSet.has(e.id);
+      const capacity = e.capacity ? Number(e.capacity) : 0;
+      const isFull = capacity > 0 && (regCounts.get(e.id) ?? 0) >= capacity;
+      const isCancelled = e.status === 'cancelled';
+      const isClosed = e.registration_closed === true || (e.registration_deadline && new Date(e.registration_deadline) < now);
+
+      let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+      if (isRegistered) registrationState = 'registered';
+      else if (isCancelled) registrationState = 'cancelled';
+      else if (isClosed) registrationState = 'closed';
+      else if (isFull) registrationState = 'full';
+      else registrationState = 'available';
+
+      const capacityState: 'open' | 'full' | null = capacity <= 0 ? null : isFull ? 'full' : 'open';
+
+      return {
+        eventRef: e.id,
+        title: e.name || e.title || '',
+        startAt: e.date ? new Date(e.date).toISOString().split('T')[0] : null,
+        locationLabel: e.location || null,
+        formatLabel: e.type || null,
+        registrationState,
+        capacityState,
+      };
+    });
 
     return {
       items,
@@ -5498,6 +5580,7 @@ export class ConnectAppService {
       nextOffset: items.length === limit ? offset + limit : null,
     };
   }
+
 
   async getCommunityEventDetail(userId: string, communityId: string, eventRef: string) {
     const hasMembership = await this.checkCommunityMembership(userId, communityId);
@@ -5527,21 +5610,57 @@ export class ConnectAppService {
       LIMIT 1
     `.catch(() => [] as any[]);
 
+    // Count total non-cancelled registrations for capacity check
+    const [{ count: totalReg }] = await this.prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) as count FROM public.event_registrations
+      WHERE event_id = ${eventRef} AND status != 'cancelled'
+    `.catch(() => [{ count: BigInt(0) }]);
+
+    const isRegistered = registrations.length > 0;
+    const capacity = e.capacity ? Number(e.capacity) : 0;
+    const isFull = capacity > 0 && Number(totalReg) >= capacity;
+    const isCancelled = e.status === 'cancelled';
+    const isClosed = e.registration_closed === true || (e.registration_deadline && new Date(e.registration_deadline) < new Date());
+
+    // Map to canonical registrationState
+    let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+    if (isRegistered) {
+      registrationState = 'registered';
+    } else if (isCancelled) {
+      registrationState = 'cancelled';
+    } else if (isClosed) {
+      registrationState = 'closed';
+    } else if (isFull) {
+      registrationState = 'full';
+    } else {
+      registrationState = 'available';
+    }
+
+    const canRegister = !isRegistered && !isCancelled && !isClosed && !isFull;
+    const capacityState: 'open' | 'full' | null = capacity <= 0 ? null : isFull ? 'full' : 'open';
+
+    // Fetch community name
+    const communities = await this.prisma.$queryRaw<any[]>`
+      SELECT name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
+    `.catch(() => [] as any[]);
+
     return {
       event: {
         eventRef: e.id,
         title: e.name || e.title || '',
-        summary: e.location || null,
-        description: e.location || null,
-        startAt: e.date ? new Date(e.date).toISOString() : null,
-        endAt: null,
+        startAt: e.date ? new Date(e.date).toISOString().split('T')[0] : null,
         locationLabel: e.location || null,
-        photoUrl: null,
-        registered: registrations.length > 0,
+        formatLabel: e.type || null,
+        registrationState,
+        capacityState,
       },
-      communityName: "",
+      communityId,
+      communityName: communities[0]?.name || '',
+      canRegister,
+      checkinHandoff: isRegistered,
     };
   }
+
 
   async registerCommunityEvent(userId: string, communityId: string, eventRef: string) {
     const eventRows = await this.prisma.$queryRaw<any[]>`

@@ -189,7 +189,7 @@ export function NetworkHome() {
                 className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                   isActive
                     ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
-                    : "bg-[#0c1522]/60 border-[#D8B282]/20 text-[#D4C3A3] hover:border-[#D8B282]/50 hover:text-[#f5f7fa]"
+                    : "bg-[linear-gradient(150deg,rgba(20,32,50,0.4)_0%,rgba(12,21,34,0.25)_50%,rgba(6,13,22,0.4)_100%)] border-[#D8B282]/20 text-[#D4C3A3] hover:border-[#D8B282]/50 hover:text-[#f5f7fa]"
                 }`}
               >
                 <span
@@ -222,7 +222,7 @@ export function NetworkHome() {
             />
           <div className="relative shrink-0">
             <button
-              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[#0c1522] rounded-lg border border-solid border-[#D8B282]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D8B282] hover:border-[#D8B282] transition-colors"
+              className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[linear-gradient(150deg,rgba(20,32,50,0.4)_0%,rgba(12,21,34,0.25)_50%,rgba(6,13,22,0.4)_100%)] backdrop-blur-md rounded-lg border border-solid border-[#D8B282]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D8B282] hover:border-[#D8B282] transition-colors"
               type="button"
               aria-label="Mở bộ lọc tìm kiếm"
               aria-pressed={sortOpen}
@@ -238,7 +238,7 @@ export function NetworkHome() {
               </span>
             </button>
             {sortOpen ? (
-              <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-lg">
+              <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl py-1 shadow-2xl">
                 <p className="px-3.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--bc-mobile-muted)]">
                   {t("bc.mobile.network.sort.label")}
                 </p>
@@ -517,7 +517,7 @@ function NetworkAiMatchStrip({
               <button
                 type="button"
                 onClick={() => setOpenId(rec.id)}
-                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[#0c1522] rounded-xl p-3 border border-solid border-[#D8B282]/20 hover:border-[#D8B282]/50 text-left transition-colors box-border"
+                className="relative flex flex-col items-start justify-between w-[169px] h-[93px] bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md rounded-xl p-3 border border-solid border-[#D8B282]/20 hover:border-[#D8B282]/50 text-left transition-colors box-border"
               >
                 <div className="flex items-center gap-3 w-full">
                   <img
@@ -605,7 +605,7 @@ function NetworkNurtureList({
         ) : null}
       </div>
 
-      <div className="mt-3 flex flex-col w-full bg-[#0c1522] rounded-xl border border-solid border-[#D8B282]/20 overflow-hidden box-border">
+      <div className="mt-3 flex flex-col w-full bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md rounded-xl border border-solid border-[#D8B282]/20 overflow-hidden box-border">
         {items.map((rec, index) => {
           const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
           const roleLine = [rec.person.headline, rec.person.companyName]

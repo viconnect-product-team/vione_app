@@ -142,7 +142,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
           onClick={() => setIsFilterOpen((currentValue) => !currentValue)}
           aria-label="Mở bộ lọc"
           aria-pressed={isFilterOpen}
-          className="flex w-[42px] h-[42px] bg-[#0c1522] rounded-lg border-[#D8B282]/25 items-center justify-center relative border border-solid hover:border-[#D8B282] transition-colors"
+          className="flex w-[42px] h-[42px] bg-[linear-gradient(150deg,rgba(20,32,50,0.4)_0%,rgba(12,21,34,0.25)_50%,rgba(6,13,22,0.4)_100%)] backdrop-blur-md rounded-lg border-[#D8B282]/25 items-center justify-center relative border border-solid hover:border-[#D8B282] transition-colors"
         >
           <SlidersHorizontal className="w-[15px] h-[15px] text-[#D4C3A3]" aria-hidden="true" />
         </button>
@@ -171,7 +171,7 @@ export const SectionHeaderInfo = (): React.ReactElement => {
           {aiMatches.map((match) => (
             <div
               key={match.id}
-              className="flex items-center gap-3 w-[260px] shrink-0 bg-[#0c1522] rounded-2xl p-3 border border-solid border-[#D8B282]/20 hover:border-[#D8B282]/50 transition-colors"
+              className="flex items-center gap-3 w-[260px] shrink-0 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md rounded-2xl p-3 border border-solid border-[#D8B282]/20 hover:border-[#D8B282]/50 transition-colors"
             >
               <img
                 className="w-12 h-12 rounded-full object-cover border border-solid border-[#D8B282]/20"

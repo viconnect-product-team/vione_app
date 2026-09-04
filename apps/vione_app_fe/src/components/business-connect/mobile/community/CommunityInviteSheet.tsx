@@ -114,7 +114,7 @@ function CommunityInviteSheet({
         if (e.target === e.currentTarget && state !== "sending") onClose();
       }}
     >
-      <div className="w-full max-w-[520px] rounded-t-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 pb-8">
+      <div className="w-full max-w-[520px] rounded-t-3xl border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl p-5 pb-8">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2

@@ -7,11 +7,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, RefreshCw, Sparkles, X } from "lucide-react";
+import { ChevronRight, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLang, useT } from "@/lib/i18n";
-import { MilestoneIcon } from "./NavIcons";
 import {
   useDismissRelationshipRecommendation,
   useTodayRelationshipRecommendations,
@@ -51,7 +50,7 @@ function SuggestionRow({
   if (hidden) return null;
 
   return (
-    <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-2.5 sm:p-3 flex flex-col justify-between">
+    <li className="relative min-w-0 rounded-2xl bc-translucent-card p-2.5 sm:p-3 flex flex-col justify-between">
 
       {/* Avatar + tên + meta */}
       <Link
@@ -99,20 +98,6 @@ function SuggestionRow({
           </span>
         </span>
 
-        {/* AI Gợi ý hoặc Mốc thời gian */}
-        {rec.aiSuggestion ? (
-          <span className="mt-2 flex items-start gap-1.5 text-[11.5px] sm:text-[12px] text-[var(--bc-mobile-accent)]">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--bc-mobile-accent)]" />
-            <span className="leading-snug line-clamp-2">{rec.aiSuggestion}</span>
-          </span>
-        ) : (
-          <span className="mt-2 flex items-center gap-1 text-[11.5px] sm:text-[12px] text-[var(--bc-mobile-muted)]">
-            <MilestoneIcon className="h-2.5 w-2.5 shrink-0 text-[var(--bc-mobile-muted)]" />
-            {rec.reason.days > 0
-              ? t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days })
-              : "Gợi ý kết nối mới phù hợp ngành nghề & đối tác"}
-          </span>
-        )}
       </Link>
 
       {/* CTA buttons — cân đối tuyệt đối trên cả mobile và web */}
@@ -130,7 +115,7 @@ function SuggestionRow({
             setHidden(true);
             onDismiss();
           }}
-          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-white/10 bg-[#0c1522] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[#94A3B8] transition-colors hover:bg-white/5 hover:text-white active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
+          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-white/10 bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-white/5 hover:text-[var(--bc-mobile-text)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
         >
           <span className="truncate">Ẩn hồ sơ</span>
         </button>
@@ -171,7 +156,7 @@ function FilterChip({
       className={`${CHIP_BASE} ${FOCUS} ${
         active
           ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-semibold border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
-          : "border-[#D8B282]/25 bg-[#0c1522]/40 text-[#D4C3A3] hover:border-[#D8B282]/50 hover:text-[#f5f7fa]"
+          : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]/60 text-[var(--bc-mobile-muted)] hover:border-[#D8B282]/50 hover:text-[var(--bc-mobile-text)]"
       }`}
     >
       <span className="truncate">{label}</span>

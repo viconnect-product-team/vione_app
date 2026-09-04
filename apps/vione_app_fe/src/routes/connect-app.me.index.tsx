@@ -832,6 +832,7 @@ function ConnectAppMePage() {
           onClose={() => setSheet(null)}
           onRefresh={() => void showcaseQuery.refetch()}
           userId={user?.id ?? ""}
+          canAdd
         />
       )}
 
@@ -842,6 +843,7 @@ function ConnectAppMePage() {
           onClose={() => setSheet(null)}
           onRefresh={() => void showcaseQuery.refetch()}
           userId={user?.id ?? ""}
+          canAdd
         />
       )}
     </MobilePage>
@@ -854,12 +856,14 @@ function ShowcaseManageSheet({
   onClose,
   onRefresh,
   userId,
+  canAdd = false,
 }: {
   kind: "business_area" | "client";
   items: IdentityShowcaseItem[];
   onClose: () => void;
   onRefresh: () => void;
   userId: string;
+  canAdd?: boolean;
 }) {
   const t = useT();
   const addItem = useServerFn(bcIdentityShowcaseAddItemFn);
@@ -1021,9 +1025,9 @@ function ShowcaseManageSheet({
 
           <button
             type="button"
-            disabled={saving || !title.trim()}
+            disabled={!canAdd || saving || !title.trim()}
             onClick={() => void handleAdd()}
-            className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />

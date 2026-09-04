@@ -91,8 +91,15 @@ function UpcomingEventCard({
   const t = useT();
   const fmt = useFmt();
   const parts = eventDateParts(event.startAt);
-  const register = useCommunityEventRegistration(communityId, event.eventRef);
-  const state = register.isSuccess ? "registered" : event.registrationState;
+  // Persist "Đã đăng ký" badge even after useMutation.isSuccess resets on re-render
+  const [registeredLocally, setRegisteredLocally] = useState(false);
+  const register = useCommunityEventRegistration(communityId, event.eventRef, () =>
+    setRegisteredLocally(true),
+  );
+  const state =
+    registeredLocally || register.isSuccess || event.registrationState === "registered"
+      ? "registered"
+      : event.registrationState;
 
   const dateLabel = parts
     ? new Intl.DateTimeFormat(fmt.locale, {
@@ -109,18 +116,21 @@ function UpcomingEventCard({
       : register.error instanceof Error &&
           register.error.message.includes("community_event_registration_closed")
         ? "bc.mobile.community.events.registerClosed"
-        : "bc.mobile.community.events.registerFailed"
+        : register.error instanceof Error &&
+            register.error.message.includes("community_event_register_unavailable")
+          ? "bc.mobile.community.events.registerFailed"
+          : "bc.mobile.community.events.registerFailed"
     : null;
 
   return (
-    <article className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5">
+    <article className="rounded-2xl bc-translucent-card p-3.5">
       <div className="flex items-start gap-3.5">
         <div
           aria-hidden="true"
-          className="flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-2xl border border-[var(--bc-mobile-accent)]/40 text-[var(--bc-mobile-accent)]"
+          className="flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[rgba(216,178,130,0.06)]"
         >
-          <span className="text-[16px] font-semibold leading-none">{parts?.day ?? "--"}</span>
-          <span className="mt-0.5 text-[10px] font-medium uppercase">
+          <span className="text-[16px] font-semibold leading-none text-[var(--bc-mobile-accent)]">{parts?.day ?? "--"}</span>
+          <span className="mt-0.5 text-[10px] font-medium uppercase text-[var(--bc-mobile-muted)]">
             {parts ? monthLabel(fmt.locale, parts.month) : ""}
           </span>
         </div>
@@ -158,7 +168,7 @@ function UpcomingEventCard({
             type="button"
             onClick={() => register.mutate()}
             disabled={register.isPending}
-            className="inline-flex min-h-[40px] items-center rounded-full bg-[var(--bc-mobile-accent)] px-4 text-[13px] font-semibold text-[var(--bc-mobile-navy)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
+            className="inline-flex min-h-[40px] items-center rounded-full bc-cta-gold px-4 text-[13px] font-semibold transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
           >
             {register.isPending
               ? t("bc.mobile.community.events.registering")

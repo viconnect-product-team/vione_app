@@ -81,7 +81,7 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]"
+        className="max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-2xl"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-[17px] font-semibold text-[var(--bc-mobile-text)]">

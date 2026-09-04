@@ -330,7 +330,7 @@ function CommunityJoinHistoryDetailSheet({
       <SheetContent
         side="bottom"
         data-testid="bc-community-join-history-detail"
-        className="max-h-[85vh] overflow-y-auto rounded-t-3xl border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]"
+        className="max-h-[85vh] overflow-y-auto rounded-t-3xl border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl"
       >
         <SheetHeader className="text-left">
           <SheetTitle className="text-[var(--bc-mobile-text)]">{item?.name ?? ""}</SheetTitle>

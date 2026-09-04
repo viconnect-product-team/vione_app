@@ -62,7 +62,7 @@ export function VcfPreviewSheet({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-busy={confirming || undefined}
-        className="relative flex max-h-[86dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-xl sm:rounded-3xl"
+        className="relative flex max-h-[86dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl sm:rounded-3xl"
       >
         <header className="px-5 pt-5">
           <h2

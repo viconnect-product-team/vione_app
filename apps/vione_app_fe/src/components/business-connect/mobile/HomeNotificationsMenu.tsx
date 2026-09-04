@@ -164,7 +164,7 @@ export function HomeNotificationsMenu({ unreadCount }: { unreadCount: number | n
         <div
           role="menu"
           aria-label={t("bc.mobile.home.notifications.panel.title")}
-          className="absolute right-0 z-50 mt-2 w-[min(88vw,340px)] overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)]"
+          className="absolute right-0 z-50 mt-2 w-[min(88vw,340px)] overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.9)]"
         >
           <p className="border-b border-[var(--bc-mobile-border)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-muted)]">
             {t("bc.mobile.home.notifications.panel.title")}

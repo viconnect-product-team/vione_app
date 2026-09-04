@@ -90,11 +90,28 @@ export function useCommunityEventDetail(communityId: string, eventRef: string) {
 
   const register = useMutation({
     mutationFn: async () => {
+      // Primary path: REST API (NestJS). Only fall back to the server-fn
+      // on genuine network / connection failures — not on domain 4xx errors
+      // ("event full", "registration closed"), which must surface to the UI.
       try {
-        return await fetchNestApi<any>(`/connect-app/community/${communityId}/events/${eventRef}/registrations`, {
-          method: "POST",
-        });
-      } catch {
+        const res = await fetchNestApi<any>(
+          `/connect-app/community/${communityId}/events/${eventRef}/registrations`,
+          { method: "POST" },
+        );
+        return res;
+      } catch (apiErr: unknown) {
+        const msg = apiErr instanceof Error ? apiErr.message : String(apiErr);
+        // Domain errors from the NestAPI or server function — re-throw as-is
+        // so the UI error-key resolver can inspect them.
+        if (
+          msg.includes("community_event_full") ||
+          msg.includes("community_event_registration_closed") ||
+          msg.includes("community_event_register_unavailable") ||
+          msg.includes("Unauthorized")
+        ) {
+          throw apiErr;
+        }
+        // Network / unknown error — fall back to the TanStack server function.
         return CommunitySDK.registerForEvent({ communityId, eventRef });
       }
     },
@@ -319,15 +336,42 @@ export function useCommunityActivityPreview(communityId: string) {
 /**
  * Đăng ký sự kiện ngay tại chỗ (dùng cho module "Sắp diễn ra" trong màn Cộng đồng).
  * Chủ thể do máy chủ xác định; chỉ vô hiệu hoá đúng các khoá bị ảnh hưởng.
+ * @param onRegistered - optional callback gọi sau khi đăng ký thành công,
+ *   dùng để persist state trong caller ngay cả khi useMutation.isSuccess reset.
  */
-export function useCommunityEventRegistration(communityId: string, eventRef: string) {
+export function useCommunityEventRegistration(
+  communityId: string,
+  eventRef: string,
+  onRegistered?: () => void,
+) {
   const viewerId = useViewerUserId();
   const viewerKey = viewerId ?? "viewer-pending";
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => CommunitySDK.registerForEvent({ communityId, eventRef }),
+    mutationFn: async () => {
+      // Primary: NestAPI REST. Fallback: TanStack server-fn on network errors only.
+      try {
+        const res = await fetchNestApi<any>(
+          `/connect-app/community/${communityId}/events/${eventRef}/registrations`,
+          { method: "POST" },
+        );
+        return res;
+      } catch (apiErr: unknown) {
+        const msg = apiErr instanceof Error ? apiErr.message : String(apiErr);
+        if (
+          msg.includes("community_event_full") ||
+          msg.includes("community_event_registration_closed") ||
+          msg.includes("community_event_register_unavailable") ||
+          msg.includes("Unauthorized")
+        ) {
+          throw apiErr;
+        }
+        return CommunitySDK.registerForEvent({ communityId, eventRef });
+      }
+    },
     onSuccess: () => {
+      onRegistered?.();
       void queryClient.invalidateQueries({
         queryKey: communityActivityKeys.event(viewerKey, communityId, eventRef),
       });

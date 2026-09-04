@@ -175,7 +175,7 @@ export function VActionSheet({
     <>
       <Drawer open={open} onOpenChange={onOpenChange} shouldScaleBackground={false}>
       {/* bc-app re-scopes the BC tokens inside the drawer portal. */}
-      <DrawerContent className="bc-app mx-auto w-full max-w-[480px] rounded-t-[var(--bc-mobile-radius-sheet)] border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-bg,var(--bc-mobile-surface))] px-0">
+      <DrawerContent className="bc-app mx-auto w-full max-w-[480px] rounded-t-[var(--bc-mobile-radius-sheet)] border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl px-0 shadow-2xl">
         <DrawerTitle className="sr-only">{t("bc.mobile.sheet.title")}</DrawerTitle>
         <DrawerDescription className="sr-only">{t("bc.mobile.sheet.subtitle")}</DrawerDescription>
 

@@ -45,7 +45,7 @@ export function MeIdentityCard({
   return (
     <section
       aria-labelledby="me-identity-card-title"
-      className="relative overflow-hidden rounded-2xl bc-translucent-card p-5"
+      className="relative overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md p-5 transition-all hover:border-[#D8B282]/40"
     >
       <span
         aria-hidden="true"

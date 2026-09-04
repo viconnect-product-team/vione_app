@@ -257,44 +257,44 @@
 .vione-tone {
   color-scheme: dark;
 
-  --background: #04111f;
+  --background: #030810;
   --foreground: #f5f3ee;
-  --card: #071a2e;
+  --card: #090f1a;
   --card-foreground: #f5f3ee;
-  --popover: #0b2238;
+  --popover: #0d1520;
   --popover-foreground: #f5f3ee;
 
   --primary: #f0c56d;
   --primary-foreground: #140d02;
   --primary-glow: #ffd98a;
 
-  --secondary: #0b2238;
+  --secondary: #0d1520;
   --secondary-foreground: #f5f3ee;
-  --muted: #0b2238;
+  --muted: #0d1520;
   --muted-foreground: #9aa7b5;
-  --accent: #14314b;
+  --accent: #111c28;
   --accent-foreground: #ffd98a;
 
   --success: #4caf8b;
-  --success-foreground: #04111f;
+  --success-foreground: #030810;
   --warning: #f0c56d;
   --warning-foreground: #140d02;
   --info: #6fb3e0;
-  --info-foreground: #04111f;
+  --info-foreground: #030810;
   --destructive: #e0604f;
   --destructive-foreground: #f5f3ee;
 
-  --border: #1d3448;
-  --input: #1d3448;
+  --border: #1a2535;
+  --input: #1a2535;
   --ring: #f0c56d;
 
-  --sidebar: #071a2e;
+  --sidebar: #090f1a;
   --sidebar-foreground: #f5f3ee;
   --sidebar-primary: #f0c56d;
   --sidebar-primary-foreground: #140d02;
-  --sidebar-accent: #0b2238;
+  --sidebar-accent: #0d1520;
   --sidebar-accent-foreground: #ffd98a;
-  --sidebar-border: #1d3448;
+  --sidebar-border: #1a2535;
   --sidebar-ring: #f0c56d;
 }
 
@@ -342,9 +342,9 @@
 }
 
 .vba-card {
-  background: var(--card);
+  background: linear-gradient(165deg, rgba(10, 16, 25, 0.97) 0%, rgba(7, 12, 19, 0.97) 50%, rgba(4, 8, 14, 0.98) 100%);
   color: var(--card-foreground);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(216, 178, 130, 0.12);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
@@ -574,21 +574,21 @@ input[type="radio"] {
      Single token namespace: --bc-mobile-*. No parallel design system. */
 
   /* Backgrounds / surfaces */
-  --bc-bg-deep: #03080f;
-  --bc-bg-primary: #050c15;
-  --bc-bg-secondary: #08101b;
-  --bc-surface: rgba(12, 21, 34, 0.2);
-  --bc-surface-elevated: rgba(20, 32, 50, 0.3);
+  --bc-bg-deep: #020509;
+  --bc-bg-primary: #030810;
+  --bc-bg-secondary: #040810;
+  --bc-surface: #070b14;
+  --bc-surface-elevated: #0a0f1a;
 
 
   --bc-mobile-bg: var(--bc-bg-primary);
   --bc-mobile-bg-deep: var(--bc-bg-deep);
-  --bc-mobile-surface: rgba(12, 21, 34, 0.2);
-  --bc-mobile-surface-2: rgba(20, 32, 50, 0.3);
+  --bc-mobile-surface: #070b14;
+  --bc-mobile-surface-2: #0a0f1a;
   --bc-mobile-navy: var(--bc-bg-secondary);
   --bc-mobile-navy-deep: var(--bc-bg-deep);
-  --bc-mobile-app-gradient: linear-gradient(180deg, #03080f 0%, #050c15 48%, #08101b 100%);
-  --bc-mobile-card-grad: linear-gradient(150deg, rgba(20, 32, 50, 0.25) 0%, rgba(12, 21, 34, 0.12) 50%, rgba(6, 13, 22, 0.25) 100%);
+  --bc-mobile-app-gradient: linear-gradient(180deg, #020408 0%, #030810 48%, #040810 100%);
+  --bc-mobile-card-grad: linear-gradient(150deg, rgba(16, 24, 40, 0.22) 0%, rgba(10, 16, 25, 0.10) 50%, rgba(4, 8, 14, 0.22) 100%);
 
   /* Text - aligned with login screen palette (#f5f7fa, #D4C3A3, #d8c3b1) */
   --bc-text-primary: #f5f7fa;
@@ -782,18 +782,23 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 
 
 /* One card background, one border colour, one divider colour for every
-   /connect-app surface — presentation only, no layout opinions. */
+   /connect-app surface — presentation only, no layout opinions.
+   Deep obsidian gradient matching section Hôm nay */
 @utility bc-card {
-  border: 1px solid var(--bc-mobile-border);
+  border: 1px solid rgba(216, 178, 130, 0.2);
   border-radius: var(--bc-mobile-radius-card);
-  background: var(--bc-mobile-surface);
+  background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Slightly raised variant (inputs, chips, nested rows). */
 @utility bc-card-soft {
-  border: 1px solid var(--bc-mobile-border);
+  border: 1px solid rgba(216, 178, 130, 0.25);
   border-radius: var(--bc-mobile-radius-card);
-  background: var(--bc-mobile-surface-2);
+  background: linear-gradient(165deg, rgba(10, 16, 25, 0.97) 0%, rgba(7, 12, 19, 0.97) 50%, rgba(4, 8, 14, 0.98) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Any hairline separator inside the app follows the same border token. */
@@ -820,10 +825,11 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 }
 
 .bc-app input::placeholder,
-.bc-app textarea::placeholder {
-  color: var(--bc-mobile-muted);
-  /* Utility classes such as `placeholder:opacity-50` would drop placeholder
-     text under AA; keep it fully opaque on the dark palette. */
+.bc-app textarea::placeholder,
+.bc-app :is(input, textarea)::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: rgba(212, 195, 163, 0.35) !important;
   opacity: 1 !important;
 }
 
@@ -866,12 +872,34 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 
 
 
-/* Translucent card with subtle gradient & gold hairline border (Login theme parity) */
+/* Translucent card with subtle gradient & gold hairline border matching section Hôm nay */
 @utility bc-translucent-card {
-  background: linear-gradient(150deg, rgba(20, 32, 50, 0.25) 0%, rgba(12, 21, 34, 0.12) 50%, rgba(6, 13, 22, 0.25) 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(234, 154, 65, 0.18);
+  background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(216, 178, 130, 0.2);
+}
+
+/* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus matching section Hôm nay
+   Radix portals mount directly to body — must also target them outside .bc-app */
+[role="dialog"],
+[role="menu"],
+[role="listbox"],
+[data-vaul-drawer],
+[vaul-drawer],
+[data-radix-popper-content-wrapper] > [role="menu"],
+[data-radix-popper-content-wrapper] > div,
+.radix-dialog-content,
+.radix-dropdown-content,
+body > [data-radix-portal] [role="dialog"],
+body > [data-radix-portal] [role="menu"],
+body > [data-radix-portal] [role="listbox"],
+body > div[role="dialog"],
+body > div[role="menu"] {
+  background: linear-gradient(165deg, rgba(10, 16, 25, 0.99) 0%, rgba(7, 12, 19, 0.99) 50%, rgba(4, 8, 14, 1.0) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(216, 178, 130, 0.2) !important;
 }
 
 /* Luxury gold text gradient matching Login "Chào mừng" title */

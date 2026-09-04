@@ -29,6 +29,7 @@ export function MeShowcasePanel({
   metrics = [],
   onViewAll,
   onAdd,
+  disabled = false,
 }: {
   id: string;
   icon: LucideIcon;
@@ -40,6 +41,7 @@ export function MeShowcasePanel({
   metrics?: { id: string; value: string; label: string }[];
   onViewAll?: () => void;
   onAdd: () => void;
+  disabled?: boolean;
 }) {
   const t = useT();
   const hasContent = rows.length > 0 || logos.length > 0 || metrics.length > 0;
@@ -76,11 +78,14 @@ export function MeShowcasePanel({
       {!hasContent ? (
         <button
           type="button"
-          onClick={onAdd}
-          className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-white/[0.03] border border-[#D8B282]/20 px-4 text-[13.5px] font-medium text-[#D4C3A3] transition-colors hover:border-[#D8B282]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
+          onClick={disabled ? undefined : onAdd}
+          disabled={disabled}
+          className={`mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-white/[0.03] border border-[#D8B282]/20 px-4 text-[13.5px] font-medium text-[#D4C3A3] transition-colors ${
+            disabled ? "opacity-40 cursor-not-allowed" : "hover:border-[#D8B282]/40"
+          } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none`}
         >
           {emptyLabel}
-          <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          {!disabled && <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />}
         </button>
       ) : (
         <>

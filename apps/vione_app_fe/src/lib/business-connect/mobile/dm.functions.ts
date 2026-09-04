@@ -17,7 +17,12 @@ export const bcDmThreadsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(
     async ({ context }): Promise<BcDmResult<{ threads: BcDmThreadSummary[] }>> => {
-      return fetchNestApiFromServer("/connect-app/dm/threads", context.token);
+      try {
+        const res = await fetchNestApiFromServer("/connect-app/dm/threads", context.token);
+        return res ?? { ok: true, threads: [] };
+      } catch {
+        return { ok: true, threads: [] };
+      }
     },
   );
 
@@ -28,10 +33,16 @@ export const bcDmOpenThreadFn = createServerFn({ method: "POST" })
   .inputValidator((data) => openInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ threadId: string }>> => {
-      return fetchNestApiFromServer("/connect-app/dm/threads", context.token, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      try {
+        const res = await fetchNestApiFromServer("/connect-app/dm/threads", context.token, {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+        if (res && res.ok && res.threadId) return res;
+        return { ok: false, error: "not_connected" };
+      } catch {
+        return { ok: false, error: "not_connected" };
+      }
     },
   );
 
@@ -48,7 +59,13 @@ export const bcDmThreadFn = createServerFn({ method: "GET" })
       data,
       context,
     }): Promise<BcDmResult<{ thread: BcDmThreadSummary; messages: BcDmMessage[] }>> => {
-      return fetchNestApiFromServer(`/connect-app/dm/threads/${data.threadId}`, context.token);
+      try {
+        const res = await fetchNestApiFromServer(`/connect-app/dm/threads/${data.threadId}`, context.token);
+        if (res && res.ok) return res;
+        return { ok: false, error: "not_found" };
+      } catch {
+        return { ok: false, error: "not_found" };
+      }
     },
   );
 
@@ -63,11 +80,17 @@ export const bcDmSendFn = createServerFn({ method: "POST" })
   .inputValidator((data) => sendInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ message: BcDmMessage }>> => {
-      const { threadId, ...rest } = data;
-      return fetchNestApiFromServer(`/connect-app/dm/threads/${threadId}/messages`, context.token, {
-        method: "POST",
-        body: JSON.stringify(rest),
-      });
+      try {
+        const { threadId, ...rest } = data;
+        const res = await fetchNestApiFromServer(`/connect-app/dm/threads/${threadId}/messages`, context.token, {
+          method: "POST",
+          body: JSON.stringify(rest),
+        });
+        if (res && res.ok) return res;
+        return { ok: false, error: "generic" as any };
+      } catch {
+        return { ok: false, error: "generic" as any };
+      }
     },
   );
 
@@ -78,9 +101,14 @@ export const bcDmMarkReadFn = createServerFn({ method: "POST" })
   .inputValidator((data) => markReadInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ updated: number }>> => {
-      return fetchNestApiFromServer(`/connect-app/dm/threads/${data.threadId}/read`, context.token, {
-        method: "POST",
-      });
+      try {
+        const res = await fetchNestApiFromServer(`/connect-app/dm/threads/${data.threadId}/read`, context.token, {
+          method: "POST",
+        });
+        return res ?? { ok: true, updated: 0 };
+      } catch {
+        return { ok: true, updated: 0 };
+      }
     },
   );
 
@@ -91,8 +119,13 @@ export const bcDmRetractFn = createServerFn({ method: "POST" })
   .inputValidator((data) => retractInput.parse(data))
   .handler(
     async ({ data, context }): Promise<BcDmResult<{ message: BcDmMessage }>> => {
-      return fetchNestApiFromServer(`/connect-app/dm/messages/${data.messageId}`, context.token, {
-        method: "DELETE",
-      });
+      try {
+        const res = await fetchNestApiFromServer(`/connect-app/dm/messages/${data.messageId}`, context.token, {
+          method: "DELETE",
+        });
+        return res ?? { ok: false, error: "not_found" };
+      } catch {
+        return { ok: false, error: "not_found" };
+      }
     },
   );

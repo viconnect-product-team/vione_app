@@ -135,18 +135,22 @@ function PersonMessageButton({ personId }: { personId: string }) {
         disabled={openThread.isPending}
         onClick={async () => {
           setError(null);
-          const res = await openThread.mutateAsync(personId);
-          if (res.ok) {
-            void navigate({
-              to: "/connect-app/inbox/$threadId",
-              params: { threadId: res.threadId },
-            });
-          } else {
-            setError(
-              res.error === "not_connected"
-                ? t("bc.mobile.inbox.error.not_connected")
-                : t("bc.mobile.inbox.error.generic"),
-            );
+          try {
+            const res = await openThread.mutateAsync(personId);
+            if (res.ok) {
+              void navigate({
+                to: "/connect-app/inbox/$threadId",
+                params: { threadId: res.threadId },
+              });
+            } else {
+              setError(
+                res.error === "not_connected"
+                  ? t("bc.mobile.inbox.error.not_connected")
+                  : t("bc.mobile.inbox.error.generic"),
+              );
+            }
+          } catch {
+            setError(t("bc.mobile.inbox.error.generic"));
           }
         }}
         aria-label={t("bc.mobile.inbox.open")}

@@ -9,6 +9,7 @@ import { AlertTriangle, Check, ChevronRight, Plus, RefreshCw, Search, UserRound,
 import { useT } from "@/lib/i18n";
 import { useCustomerTags, useCustomers } from "@/hooks/use-customers";
 import { useBusinessConnectNetwork } from "@/hooks/use-business-connect-network";
+import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import {
   CUSTOMER_MAX_TAGS_PER_CUSTOMER,
   CUSTOMER_STAGES,
@@ -501,9 +502,14 @@ function CustomerPersonPicker({
   onPick: (person: { personId: string; displayName: string | null; companyName: string | null }) => void;
 }) {
   const t = useT();
+  const viewerId = useViewerUserId();
   const [term, setTerm] = useState("");
   const network = useBusinessConnectNetwork(term);
-  const people = network.people.filter((p) => !existingPersonIds.has(p.personId));
+  const people = network.people.filter((p) => {
+    if (existingPersonIds.has(p.personId)) return false;
+    if (viewerId && (p.personId === viewerId || p.personId === `u:${viewerId}`)) return false;
+    return true;
+  });
 
   return (
     <div
@@ -519,7 +525,7 @@ function CustomerPersonPicker({
       }}
     >
       <div
-        className="max-h-[82vh] w-full overflow-y-auto rounded-t-3xl border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5"
+        className="max-h-[82vh] w-full overflow-y-auto rounded-t-3xl border-t border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl p-5 shadow-2xl"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 16px)" }}
         onClick={(e) => e.stopPropagation()}
       >

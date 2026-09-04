@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Qu
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('customers')
+@Controller(['customers', 'connect-app/customer', 'connect-app/customers'])
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(private readonly connectAppService: ConnectAppService) {}

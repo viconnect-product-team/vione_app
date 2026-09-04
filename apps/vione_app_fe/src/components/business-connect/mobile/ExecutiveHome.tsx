@@ -49,7 +49,6 @@ import {
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchNestApi } from "@/lib/api-client";
-import { useMyCommunities } from "@/hooks/use-community";
 import { RelationshipSuggestions } from "./RelationshipSuggestions";
 import { ViOneLogo } from "./ViOneLogo";
 import { QuickMeetIcon, QuickScanIcon, QuickCardIcon } from "./NavIcons";
@@ -255,9 +254,6 @@ export function ExecutiveHome() {
             </section>
 
             <InsightCard />
-
-            {/* Sự kiện sắp tới từ CRM — kéo dữ liệu thật từ /api/events */}
-            <UpcomingEventsCard />
 
             <QuickActions />
 
@@ -755,148 +751,3 @@ function HomeSkeleton() {
   );
 }
 
-// ── Sự kiện hôm nay & sắp tới từ CRM / Cộng đồng ──────────────────────────────────
-// Kéo dữ liệu thật từ /api/events (NestJS backend).
-// Hiển thị sự kiện hôm nay và sắp diễn ra, cùng thông tin cộng đồng.
-
-function UpcomingEventsCard() {
-  const { communities } = useMyCommunities();
-  const activeCommunity = communities[0];
-
-  const { data, isLoading, isError } = useQuery<any>({
-    queryKey: ["crm-events-home"],
-    staleTime: 5 * 60_000,
-    queryFn: () => fetchNestApi("/events?limit=5"),
-  });
-
-  // Chuẩn hoá: backend trả về { data: [...] } hoặc [...]
-  const rawList: CrmEvent[] = Array.isArray(data)
-    ? data
-    : ((data as any)?.data ?? (data as any)?.items ?? []);
-
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  // Sự kiện hôm nay hoặc tương lai
-  const upcoming = rawList.filter((ev) => {
-    const dt = getEventDate(ev);
-    if (!dt) return true;
-    return dt >= todayStart;
-  });
-
-  // Fallback hiển thị sự kiện gần nhất nếu không có sự kiện tương lai (thay vì ẩn thẻ)
-  const displayList = (upcoming.length > 0 ? upcoming : rawList).slice(0, 3);
-  const hasToday = displayList.some(isEventToday);
-
-  if (isLoading) {
-    return (
-      <div
-        aria-busy="true"
-        className="mt-4 animate-pulse rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 motion-reduce:animate-none"
-      >
-        <div className="h-4 w-32 rounded bg-[var(--bc-mobile-surface-2)]" />
-        <div className="mt-3 space-y-2.5">
-          {[0, 1].map((i) => (
-            <div key={i} className="h-10 rounded-xl bg-[var(--bc-mobile-surface-2)]" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || displayList.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="bc-crm-events-heading"
-      className="mt-5 overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md transition-all hover:border-[#D8B282]/40"
-    >
-      <div className="flex items-center justify-between border-b border-[#D8B282]/15 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h2
-            id="bc-crm-events-heading"
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#D4C3A3]"
-          >
-            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={2} />
-            {hasToday ? "Sự kiện hôm nay & sắp tới" : "Sự kiện cộng đồng"}
-          </h2>
-          {hasToday && (
-            <span className="inline-flex items-center rounded-md bg-[#D8B282]/15 px-2 py-0.5 text-[10px] font-semibold text-[#D8B282] border border-[#D8B282]/30">
-              Hôm nay
-            </span>
-          )}
-        </div>
-        <Link
-          to="/connect-app/community"
-          className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer"
-          aria-label="Xem tất cả sự kiện"
-        >
-          Cộng đồng
-          <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" strokeWidth={2} />
-        </Link>
-      </div>
-
-      <ul className="divide-y divide-[#D8B282]/10">
-
-        {displayList.map((ev) => {
-          const dateStr = ev.date || ev.startDate || ev.start_date;
-          const dt = getEventDate(ev);
-          const isToday = isEventToday(ev);
-          const formattedDate = dt
-            ? new Intl.DateTimeFormat("vi-VN", {
-                day: "numeric",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(dt)
-            : dateStr ?? null;
-          const location = ev.location || ev.venue || null;
-          const title = ev.title || ev.name || "Sự kiện";
-          const community = ev.communityName || ev.associationName || activeCommunity?.name || null;
-
-          return (
-            <li key={ev.id} className="group relative px-4 py-3 hover:bg-white/[0.02] transition-colors">
-              <Link
-                to="/events/$eventId"
-                params={{ eventId: ev.id }}
-                className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[14px] font-semibold leading-snug text-[var(--bc-mobile-text)] group-hover:text-[#D8B282] transition-colors">
-                    {title}
-                  </p>
-                  {isToday && (
-                    <span className="shrink-0 rounded-md bg-[#D8B282]/20 border border-[#D8B282]/40 px-1.5 py-0.5 text-[10px] font-bold text-[#D8B282]">
-                      Hôm nay
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--bc-mobile-muted)]">
-                  {formattedDate && (
-                    <span className={`flex items-center gap-1 ${isToday ? 'text-[#D8B282] font-medium' : ''}`}>
-                      <CalendarDays aria-hidden="true" className="h-3 w-3 shrink-0 text-[#D8B282]" strokeWidth={1.8} />
-                      {formattedDate}
-                    </span>
-                  )}
-                  {location && (
-                    <span className="flex min-w-0 items-center gap-1">
-                      <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-[#94A3B8]" strokeWidth={1.8} />
-                      <span className="truncate">{location}</span>
-                    </span>
-                  )}
-                  {community && (
-                    <span className="flex min-w-0 items-center gap-1 rounded bg-white/[0.04] border border-white/10 px-1.5 py-0.5 text-[11px] text-[#CBD5E1]">
-                      <Users aria-hidden="true" className="h-3 w-3 shrink-0 text-[#D8B282]" strokeWidth={1.8} />
-                      <span className="truncate">{community}</span>
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}

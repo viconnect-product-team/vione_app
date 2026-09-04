@@ -67,7 +67,10 @@ export function CommunityEventDetail({
       : register.error instanceof Error &&
           register.error.message.includes("community_event_registration_closed")
         ? "bc.mobile.community.events.registerClosed"
-        : "bc.mobile.community.events.registerFailed"
+        : register.error instanceof Error &&
+            register.error.message.includes("community_event_register_unavailable")
+          ? "bc.mobile.community.events.registerFailed"
+          : "bc.mobile.community.events.registerFailed"
     : null;
 
   return (

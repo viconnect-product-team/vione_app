@@ -322,7 +322,7 @@ function ActivityPreviews({
 
 function StatTile({ value, label }: { value: number | null; label: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-3 text-center">
+    <div className="rounded-2xl bc-translucent-card px-3 py-3 text-center">
       <div className="text-[18px] font-semibold leading-none text-[var(--bc-mobile-text)]">
         {value ?? "—"}
       </div>
