@@ -103,33 +103,33 @@ export function LuxuryLangSwitcher({ className = "" }: { className?: string }) {
         className="flex items-center cursor-pointer select-none group animate-fade-in"
       >
         {/* Glass Globe Sphere with Gold Gradient Border */}
-        <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-[#AB6D3C] to-[#FDE6B4] p-[1px] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(242,180,90,0.25)]">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-[#3a3937] to-[#161514]">
-            <Globe className="h-3.5 w-3.5 text-white/90" strokeWidth={1.5} />
+        <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-[#AB6D3C] to-[#FDE6B4] p-[1px] shadow-[0_4px_12px_rgba(0,0,0,0.2)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(242,180,90,0.35)]">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-gradient-to-b dark:from-[#3a3937] dark:to-[#161514] text-slate-800 dark:text-white">
+            <Globe className="h-3.5 w-3.5 text-amber-700 dark:text-white/90" strokeWidth={1.5} />
           </div>
           {/* Translation overlay bubble */}
           <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gradient-to-r from-[#AB6D3C] to-[#FDE6B4] p-[1px] shadow-sm text-[7px] font-extrabold text-[#f2b45a]">
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-[#121110] text-[6.5px]">
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-[#121110] text-[6.5px] text-amber-700 dark:text-[#f2b45a]">
               A
             </div>
           </div>
         </div>
 
         {/* Pill Trigger with Gold Gradient Border */}
-        <div className="ml-[-8px] flex h-8 items-center bg-gradient-to-r from-[#AB6D3C] to-[#FDE6B4] p-[1px] rounded-r-full shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(242,180,90,0.3)]">
-          <div className="flex h-full items-center gap-1.5 pl-4 pr-3.5 bg-[#0d0c0b] rounded-r-full text-[#ffe8c2] group-hover:text-white transition-colors">
+        <div className="ml-[-8px] flex h-8 items-center bg-gradient-to-r from-[#AB6D3C] to-[#FDE6B4] p-[1px] rounded-r-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(242,180,90,0.35)]">
+          <div className="flex h-full items-center gap-1.5 pl-4 pr-3.5 bg-white dark:bg-[#0d0c0b] rounded-r-full text-slate-800 dark:text-[#ffe8c2] group-hover:text-amber-700 dark:group-hover:text-white transition-colors">
             <span className="flex items-center justify-center">{activeLang.flag}</span>
-            <span className="text-[11px] font-bold tracking-wider uppercase text-[#fcd89a] group-hover:text-white">
+            <span className="text-[11px] font-extrabold tracking-wider uppercase text-amber-800 dark:text-[#fcd89a] group-hover:text-amber-900 dark:group-hover:text-white">
               {activeLang.codeLabel}
             </span>
-            <ChevronDown className="h-3 w-3 text-[#f2b45a] transition-transform duration-300 group-hover:translate-y-0.5" />
+            <ChevronDown className="h-3 w-3 text-amber-600 dark:text-[#f2b45a] transition-transform duration-300 group-hover:translate-y-0.5" />
           </div>
         </div>
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2.5 w-48 p-1.5 bg-white/[0.015] border border-[#AB6D3C]/20 rounded-2xl shadow-lg backdrop-blur-md z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 mt-2.5 w-52 p-1.5 bg-white border border-amber-200/80 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.16)] backdrop-blur-xl z-[9999] animate-in fade-in slide-in-from-top-2 duration-150 dark:bg-[#0d1527] dark:border-[#AB6D3C]/30 dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
           <div className="space-y-1">
             {LANGUAGES.map((l) => {
               const active = lang === l.code;
@@ -143,14 +143,14 @@ export function LuxuryLangSwitcher({ className = "" }: { className?: string }) {
                   }}
                   className={`w-full flex items-center justify-start gap-2.5 px-3 py-2 rounded-xl transition-all ${
                     active
-                      ? "bg-gradient-to-r from-[#AB6D3C]/30 to-[#FDE6B4]/10 border border-[#FDE6B4]/20 text-left"
-                      : "hover:bg-white/5 border border-transparent text-left group"
+                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold shadow-xs text-left"
+                      : "text-slate-700 hover:bg-amber-50 hover:text-amber-800 border border-transparent text-left group dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-amber-200"
                   }`}
                 >
                   {/* Checkmark Indicator */}
                   <div className="flex h-4 w-4 items-center justify-center shrink-0">
                     {active ? (
-                      <Check className="h-3 w-3 text-[#fcd89a]" strokeWidth={2.5} />
+                      <Check className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                     ) : null}
                   </div>
 
@@ -159,7 +159,7 @@ export function LuxuryLangSwitcher({ className = "" }: { className?: string }) {
 
                   {/* Native Language Label */}
                   <span className={`text-[12.5px] font-semibold transition-colors ${
-                    active ? "text-[#ffe8c2]" : "text-[#d1c7b7] group-hover:text-white"
+                    active ? "text-white" : "text-slate-700 group-hover:text-amber-800 dark:text-[#d1c7b7] dark:group-hover:text-white"
                   }`}>
                     {l.label}
                   </span>

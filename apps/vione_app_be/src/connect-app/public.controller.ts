@@ -1,10 +1,20 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ConnectAppService } from './connect-app.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('public')
 export class PublicController {
   constructor(private readonly connectAppService: ConnectAppService) {}
+
+  @Get('association/:slug')
+  async getPublicAssociation(@Param('slug') slug: string) {
+    return this.connectAppService.getPublicAssociationBySlug(slug);
+  }
+
+  @Get('association/resolve-host')
+  async resolveAssociationByHost(@Query('host') host: string) {
+    return this.connectAppService.resolveAssociationByHost(host);
+  }
 
   @Get('identity/:token')
   async getPublicIdentityByToken(@Param('token') token: string) {
@@ -31,3 +41,4 @@ export class PublicController {
     return this.connectAppService.searchRenewalAuditLog(req.user.id, body);
   }
 }
+

@@ -11,55 +11,42 @@ import authBg from "@/assets/connect-auth-bg.jpg";
 import { BusinessConnectBottomNav } from "./BusinessConnectBottomNav";
 import { VActionSheet } from "./VActionSheet";
 
-/**
- * Connect-app is a dark-first surface: enforce the "dark" class on <html>
- * even when the OS/site theme is light, and restore the previous mode when
- * /connect-app screen is unmounted.
- */
-function useForcedDarkTone() {
-  useEffect(() => {
-    const root = document.documentElement;
-    const hadDark = root.classList.contains("dark");
-    const prevScheme = root.style.colorScheme;
-    root.classList.add("dark");
-    root.dataset["bcForcedDark"] = "true";
-    root.style.colorScheme = "dark";
-    return () => {
-      if (!hadDark) root.classList.remove("dark");
-      delete root.dataset["bcForcedDark"];
-      root.style.colorScheme = prevScheme;
-    };
-  }, []);
-}
-
-const NAVY = "#050c15";
+import { useTheme } from "@/lib/theme";
 
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
-  useForcedDarkTone();
+  const { theme } = useTheme();
   const [vOpen, setVOpen] = useState(false);
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
+
+  const isLight = theme === "light";
+  const bgMain = isLight ? "#FDFCF7" : theme === "contrast" ? "#000000" : "#050c15";
+
   return (
     <VSheetContext.Provider value={vControls}>
-      {/* Background chấm bi vàng đồng nhạt y hệt trang Đăng nhập */}
+      {/* Dynamic luxury ambient background for light / dark / contrast */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-        style={{ background: NAVY }}
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden transition-colors duration-300"
+        style={{ background: bgMain }}
         aria-hidden="true"
       >
-        <img
-          src={authBg}
-          alt=""
-          width={1024}
-          height={640}
-          className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-60"
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 90%)`,
-          }}
-        />
+        {!isLight && (
+          <>
+            <img
+              src={authBg}
+              alt=""
+              width={1024}
+              height={640}
+              className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-60"
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${bgMain} 90%)`,
+              }}
+            />
+          </>
+        )}
       </div>
 
       {/* data-motion="forced" explicitly overrides reduced-motion inside the BC shell */}

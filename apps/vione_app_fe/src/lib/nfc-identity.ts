@@ -10,7 +10,10 @@ export type NfcSupport = "supported" | "unsupported" | "insecure";
 export function nfcSupport(): NfcSupport {
   if (typeof window === "undefined") return "unsupported";
   if (!("NDEFReader" in window)) return "unsupported";
-  if (!window.isSecureContext) return "insecure";
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  if (!window.isSecureContext && !isLocal) return "insecure";
   return "supported";
 }
 
@@ -39,13 +42,17 @@ export type NfcWriteResult = { ok: true } | { ok: false; error: string };
 
 export async function writeNfc(pass: MembershipPass): Promise<NfcWriteResult> {
   const support = nfcSupport();
-  if (support === "unsupported") return { ok: false, error: "Thiết bị không hỗ trợ NFC" };
-  if (support === "insecure") return { ok: false, error: "Cần kết nối HTTPS để dùng NFC" };
+  if (support === "unsupported") return { ok: false, error: "Thiết bị hoặc trình duyệt chưa hỗ trợ Web NFC (chỉ hỗ trợ trên Chrome Android)." };
+  if (support === "insecure") return { ok: false, error: "Cần kết nối HTTPS bảo mật để dùng NFC." };
   try {
     const ndef = new (window as any).NDEFReader();
     await ndef.write({ records: buildNdefRecords(pass) });
     return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Ghi NFC thất bại" };
+  } catch (e: any) {
+    if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed")) {
+      return { ok: false, error: "Quyền truy cập NFC bị từ chối trong trình duyệt." };
+    }
+    return { ok: false, error: e instanceof Error ? e.message : "Ghi NFC thất bại. Hãy áp thẻ vào giữa mặt lưng điện thoại." };
   }
 }
+

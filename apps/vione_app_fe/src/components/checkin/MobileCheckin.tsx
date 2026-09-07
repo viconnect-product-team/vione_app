@@ -166,6 +166,7 @@ export function MobileCheckin({
             {/* Live camera feed */}
             <video
               ref={videoRef}
+              autoPlay
               muted
               playsInline
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
@@ -273,12 +274,14 @@ export function MobileCheckin({
                     ? t("checkin.cam.error")
                     : t("checkin.cam.starting")
             : nfcStatus === "scanning"
-              ? t("checkin.nfc.scanning")
+              ? "Sẵn sàng chạm NFC (áp vào giữa lưng máy)"
               : nfcStatus === "denied"
-                ? t("checkin.nfc.denied")
-                : nfcStatus === "unsupported"
-                  ? t("checkin.nfc.unsupported")
-                  : t("checkin.nfc.error")}
+                ? "Quyền NFC bị từ chối"
+                : nfcStatus === "insecure"
+                  ? "Cần kết nối HTTPS để chạm NFC"
+                  : nfcStatus === "unsupported"
+                    ? "Web NFC hỗ trợ trên Chrome (Android)"
+                    : "Không bật được NFC"}
         </button>
 
         {/* Result sheet */}

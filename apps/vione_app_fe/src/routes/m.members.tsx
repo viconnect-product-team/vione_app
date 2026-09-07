@@ -1,6 +1,6 @@
 // ============= Full file contents =============
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { BadgeCheck, Building2, Search, User } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -69,7 +69,13 @@ function MembersScreen() {
           </p>
         )}
         {filtered.map((m) => (
-          <div key={m.code} role="listitem" className="vba-card flex items-center gap-3 p-3">
+          <Link
+            key={m.code}
+            to="/card/$code"
+            params={{ code: m.code }}
+            role="listitem"
+            className="vba-card flex items-center gap-3 p-3 transition hover:border-[var(--vba-gold)]/60"
+          >
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--vba-surface-2)] text-[var(--vba-gold)]">
               {m.type === "individual" ? (
                 <User className="h-5 w-5" />
@@ -93,7 +99,7 @@ function MembersScreen() {
             <span className="shrink-0 rounded-md bg-[var(--vba-gold-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--vba-gold)]">
               {m.code}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

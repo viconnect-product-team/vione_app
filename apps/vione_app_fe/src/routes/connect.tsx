@@ -1,13 +1,13 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { LangSwitcher } from "@/components/LangSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { getAuthToken } from "@/lib/api-client";
 
 export const Route = createFileRoute("/connect")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const token = getAuthToken();
+    if (!token && typeof window !== "undefined") {
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
   },

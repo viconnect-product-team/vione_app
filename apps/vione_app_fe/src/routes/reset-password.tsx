@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import {
   Crown,
@@ -22,8 +22,9 @@ import {
 const AUTO_REDIRECT_SECONDS = 5;
 
 export const Route = createFileRoute("/reset-password")({
-  validateSearch: (search: Record<string, unknown>): { m?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { m?: string; email?: string } => ({
     m: search.m === "1" ? "1" : undefined,
+    email: typeof search.email === "string" ? search.email : undefined,
   }),
   head: () => ({
     meta: [{ title: "Đặt lại mật khẩu — ViOne" }],
@@ -36,8 +37,8 @@ const RESEND_COOLDOWN = 60;
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const t = useT();
-  const { m: mobile } = Route.useSearch();
-  const [ready, setReady] = useState(false);
+  const { m: mobile, email: emailParam } = Route.useSearch();
+  const [ready, setReady] = useState(true);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,111 +46,20 @@ function ResetPasswordPage() {
   const [cooldown, setCooldown] = useState(0);
   const [success, setSuccess] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(AUTO_REDIRECT_SECONDS);
-  const emailRef = useRef<string>("");
+  const emailRef = useRef<string>(emailParam || "");
 
-  // Supabase sets a recovery session from the email link hash.
   const [error, setError] = useState<string | null>(null);
   const [failure, setFailure] = useState<"expired" | "invalid" | "missing" | null>(null);
 
-  function classifyLinkError(message: string): "expired" | "invalid" {
-    const m = message.toLowerCase();
-    return m.includes("expired") || m.includes("hết hạn") || m.includes("otp_expired")
-      ? "expired"
-      : "invalid";
-  }
-
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
-    });
-
-    async function init() {
-      // Capture the email for the resend flow (from forgot-password or link).
-      try {
-        const url = new URL(window.location.href);
-        const stored = sessionStorage.getItem("vba_reset_email");
-        emailRef.current = url.searchParams.get("email") || stored || "";
-        const persisted = readResendState("forgot", emailRef.current);
-        if (persisted.seconds > 0) setCooldown(persisted.seconds);
-      } catch {
-        /* ignore */
-      }
-
-      // Already have a session (auto-detected from URL hash)?
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session) {
-        if (!emailRef.current) emailRef.current = sessionData.session.user.email || "";
-        setReady(true);
-        return;
-      }
-
-      const url = new URL(window.location.href);
-      const params = url.searchParams;
-      const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-
-      // PKCE flow: ?code=...
-      const code = params.get("code");
-      if (code) {
-        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
-        if (!exErr) {
-          setReady(true);
-          return;
-        }
-        setError(exErr.message);
-        setFailure(classifyLinkError(exErr.message));
-        return;
-      }
-
-      // OTP flow: ?token_hash=...&type=recovery
-      const tokenHash = params.get("token_hash");
-      const type = params.get("type");
-      if (tokenHash) {
-        const { error: otpErr } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: (type as "recovery") || "recovery",
-        });
-        if (!otpErr) {
-          setReady(true);
-          return;
-        }
-        setError(otpErr.message);
-        setFailure(classifyLinkError(otpErr.message));
-        return;
-      }
-
-      // Implicit flow: #access_token=...&refresh_token=...
-      // Supabase can redirect back with an explicit error (expired/used link).
-      const errCode = params.get("error_code") ?? hash.get("error_code");
-      const errDesc = params.get("error_description") ?? hash.get("error_description");
-      if (errCode || errDesc) {
-        const message = (errDesc ?? errCode ?? "").replace(/\+/g, " ");
-        setError(message);
-        setFailure(classifyLinkError(`${errCode ?? ""} ${message}`));
-        return;
-      }
-
-      const accessToken = hash.get("access_token");
-      const refreshToken = hash.get("refresh_token");
-      if (accessToken && refreshToken) {
-        const { error: setErr } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (!setErr) {
-          setReady(true);
-          return;
-        }
-        setError(setErr.message);
-        setFailure(classifyLinkError(setErr.message));
-        return;
-      }
-
-      // No usable recovery credential at all.
-      setFailure("missing");
+    try {
+      const stored = sessionStorage.getItem("vba_reset_email");
+      if (!emailRef.current && stored) emailRef.current = stored;
+      const persisted = readResendState("forgot", emailRef.current);
+      if (persisted.seconds > 0) setCooldown(persisted.seconds);
+    } catch {
+      /* ignore */
     }
-
-    init();
-    return () => sub.subscription.unsubscribe();
   }, []);
 
   // Cooldown countdown for the resend button.
@@ -198,13 +108,10 @@ function ResetPasswordPage() {
         setResending(false);
         return;
       }
-      const { error: rErr } = await supabase.auth.resetPasswordForEmail(target, {
-        redirectTo:
-          mobile === "1"
-            ? `${window.location.origin}/reset-password?m=1`
-            : `${window.location.origin}/reset-password`,
+      await fetchNestApi("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: target }),
       });
-      if (rErr) throw rErr;
       toast.success(t("reset.resend.sent"));
       setCooldown(markResendSent("forgot", target).seconds || RESEND_COOLDOWN);
     } catch (e) {
@@ -215,7 +122,7 @@ function ResetPasswordPage() {
   }
 
   async function submit() {
-    if (password.length < 8) {
+    if (password.length < 6) {
       toast.error(t("reset.password.short"));
       return;
     }
@@ -225,8 +132,13 @@ function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      await fetchNestApi("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          email: emailRef.current,
+          newPassword: password,
+        }),
+      });
       toast.success(t("reset.success"));
       try {
         sessionStorage.removeItem("vba_reset_email");
@@ -234,18 +146,17 @@ function ResetPasswordPage() {
       } catch {
         /* ignore */
       }
-      await supabase.auth.signOut();
       setSuccess(true);
       setRedirectCountdown(AUTO_REDIRECT_SECONDS);
-    } catch (e) {
-      const raw = (e instanceof Error ? e.message : "").toLowerCase();
+    } catch (e: any) {
+      const raw = (e instanceof Error ? e.message : String(e)).toLowerCase();
       if (
         raw.includes("password") &&
         (raw.includes("weak") || raw.includes("short") || raw.includes("different"))
       ) {
         toast.error(t("reset.error.weak"));
       } else {
-        toast.error(t(classifyAuthError(e).messageKey as TKey));
+        toast.error(e?.message || t(classifyAuthError(e).messageKey as TKey));
       }
     } finally {
       setLoading(false);

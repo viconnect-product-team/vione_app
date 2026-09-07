@@ -13,6 +13,16 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
+export class ForgotPasswordDto {
+  email!: string;
+}
+
+export class ResetPasswordDto {
+  email?: string;
+  token?: string;
+  newPassword!: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -33,6 +43,18 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: Record<string, any>) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword(body);
   }
 
   @Post('google')

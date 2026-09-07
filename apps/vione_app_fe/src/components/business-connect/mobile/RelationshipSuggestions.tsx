@@ -105,7 +105,7 @@ function SuggestionRow({
         <Link
           to="/connect-app/network/$personId"
           params={{ personId: rec.person.personId }}
-          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[#D8B282]/30 bg-white/[0.04] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[#D4C3A3] transition-colors hover:text-white hover:bg-white/[0.08] hover:border-[#D8B282]/60 active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
+          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-semibold text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface)] hover:border-[var(--bc-mobile-accent)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
         >
           <span className="truncate">{t("bc.mobile.intel.card.message") || "Xem hồ sơ"}</span>
         </Link>
@@ -115,7 +115,7 @@ function SuggestionRow({
             setHidden(true);
             onDismiss();
           }}
-          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-white/10 bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-white/5 hover:text-[var(--bc-mobile-text)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
+          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-text)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
         >
           <span className="truncate">Ẩn hồ sơ</span>
         </button>
@@ -301,21 +301,21 @@ export function RelationshipSuggestions() {
     <div className="flex items-center justify-between gap-3">
       <h2
         id="bc-rel-intel-title"
-        className="text-xs font-semibold uppercase tracking-wide text-[#D4C3A3]"
+        className="text-xs font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]"
       >
         {t("bc.mobile.intel.home.title")}
       </h2>
       <Link
         to="/connect-app/network"
-        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1.5 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
+        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1.5 text-[11px] font-medium text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] transition-all cursor-pointer shrink-0"
       >
         <span>{t("bc.mobile.intel.home.viewAll")}</span>
         {recommendations.length > 0 ? (
-          <span className="rounded-full bg-[#D8B282]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#f6e1c3] leading-none">
+          <span className="rounded-full bg-[var(--bc-mobile-accent-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--bc-mobile-accent)] leading-none">
             {recommendations.length}
           </span>
         ) : null}
-        <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" strokeWidth={2} />
+        <ChevronRight aria-hidden="true" className="h-3 w-3 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
       </Link>
     </div>
   );
@@ -344,7 +344,7 @@ export function RelationshipSuggestions() {
         <div role="group" aria-label={t("bc.mobile.intel.filter.label")} className="mt-2.5 space-y-2">
           {industries.length > 0 ? (
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
+              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.intel.filter.industry")}
               </span>
               <FilterChip

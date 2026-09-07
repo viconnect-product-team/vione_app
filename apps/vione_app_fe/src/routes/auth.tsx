@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Building2,
   Eye,
   EyeOff,
   Loader2,
@@ -18,10 +19,14 @@ import {
   Mail,
   QrCode,
   Shield,
+  Sparkles,
   X,
 } from "lucide-react";
 import { ViOneLogo } from "@/components/business-connect/mobile/ViOneLogo";
-import { ConnectAppSignIn } from "@/components/business-connect/mobile/ConnectAppSignIn";
+import {
+  ConnectAppSignIn,
+  type AppPortalType,
+} from "@/components/business-connect/mobile/ConnectAppSignIn";
 import { AuthCardScanSheet } from "@/components/business-connect/mobile/AuthCardScanSheet";
 import { rememberScannedCard } from "@/lib/business-connect/mobile/auth-scan";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
@@ -43,10 +48,11 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { redirect?: string; m?: "1"; reason?: "expired" } => ({
+  ): { redirect?: string; m?: "1"; reason?: "expired"; portal?: "connect" | "association" } => ({
     ...(typeof search.redirect === "string" ? { redirect: search.redirect } : {}),
     ...(search.m === "1" ? { m: "1" as const } : {}),
     ...(search.reason === "expired" ? { reason: "expired" as const } : {}),
+    ...(search.portal === "association" ? { portal: "association" as const } : {}),
   }),
   head: () => ({
     meta: [{ title: "Đăng nhập — ViOne" }],
@@ -56,7 +62,7 @@ export const Route = createFileRoute("/auth")({
 
 function GoogleMark() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor" aria-hidden="true">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
@@ -67,7 +73,7 @@ function GoogleMark() {
 
 function AppleMark() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor" aria-hidden="true">
       <path d="M16.36 12.72c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.21.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.6-.75 3-.75s1.79.75 3.01.72c1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.54 1.26-2.6-.03-.01-2.42-.93-2.44-3.7ZM14.1 5.1c.64-.78 1.07-1.85.95-2.93-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.78-.97 2.83 1.03.08 2.07-.52 2.71-1.28Z" />
     </svg>
   );
@@ -88,7 +94,7 @@ function safeRedirect(target?: string): string | null {
 function AuthPage() {
   const t = useT();
   const navigate = useNavigate();
-  const { redirect: redirectTo, m: mobileParam, reason } = Route.useSearch();
+  const { redirect: redirectTo, m: mobileParam, reason, portal: searchPortal } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -106,6 +112,13 @@ function AuthPage() {
 
   const destPath = safeRedirect(redirectTo) ?? "";
 
+  const [appPortal, setAppPortal] = useState<AppPortalType>(() => {
+    if (searchPortal === "association" || destPath.startsWith("/m")) {
+      return "association";
+    }
+    return "connect";
+  });
+
   const [isMobileScreen, setIsMobileScreen] = useState(() => {
     if (typeof window === "undefined") return false;
     return (
@@ -118,7 +131,7 @@ function AuthPage() {
     const checkMobile = () => {
       setIsMobileScreen(
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768
+        window.innerWidth <= 768,
       );
     };
     window.addEventListener("resize", checkMobile);
@@ -144,18 +157,24 @@ function AuthPage() {
   }, [destPath, mobileParam, isMobileScreen]);
 
   async function goPostLogin() {
-    if (isMobileAuth) {
-      const dest = resolveVionePostLoginPath(safeRedirect(redirectTo), true);
-      navigate({ to: dest || "/connect-app", replace: true });
-      return;
-    }
     const target = safeRedirect(redirectTo);
-    // If user arrived from an explicit redirect to a specific CRM or web route (e.g. /companies, /account-settings, /members, /events)
+    // If explicit target given other than login pages
     if (target && target !== "/auth" && target !== "/login" && target !== "/m" && target !== "/connect-app") {
       navigate({ to: target, replace: true });
       return;
     }
-    // Navigate directly to the main CRM system (Quản lý doanh nghiệp, hiệp hội)
+
+    if (appPortal === "association" || target === "/m") {
+      navigate({ to: "/m", replace: true });
+      return;
+    }
+
+    if (isMobileAuth || appPortal === "connect") {
+      const dest = resolveVionePostLoginPath(safeRedirect(redirectTo), true);
+      navigate({ to: dest || "/connect-app", replace: true });
+      return;
+    }
+
     navigate({ to: "/", replace: true });
   }
 
@@ -209,7 +228,6 @@ function AuthPage() {
         toast.success(t("auth.signUpSuccess") || "Đăng ký thành công! Hãy đăng nhập");
         setMode("signin");
       } else {
-        // Đăng nhập chỉ qua NestJS backend
         const res = await fetchNestApi("/auth/login", {
           method: "POST",
           body: JSON.stringify({ email: email.trim(), password }),
@@ -221,7 +239,6 @@ function AuthPage() {
         applyRememberPreference(remember, email.trim());
         await goPostLogin();
       }
-
     } catch (e: any) {
       const info = classifyAuthError(e, { provider: "password" });
       setAuthErrorInfo(info);
@@ -231,7 +248,7 @@ function AuthPage() {
     }
   }
 
-  // Google Sign-In helper using GIS (Google Identity Services)
+  // Google Sign-In helper using GIS
   const loginGoogleWeb = (): Promise<string> => {
     return new Promise((resolve, reject) => {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
@@ -276,7 +293,7 @@ function AuthPage() {
     });
   };
 
-  // Sign In with Apple helper using Apple Sign-In JS
+  // Sign In with Apple helper
   const loginAppleWeb = (): Promise<any> => {
     return new Promise((resolve, reject) => {
       const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || "your-apple-client-id";
@@ -362,9 +379,6 @@ function AuthPage() {
 
   const busy = loading || oauthPending !== null;
 
-  const fieldClass =
-    "h-12 w-full rounded-xl border border-input bg-background/85 px-11 text-[15px] text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20";
-
   if (isMobileAuth) {
     return (
       <>
@@ -406,6 +420,8 @@ function AuthPage() {
           onApple={() => void oauth("apple")}
           remember={remember}
           onRememberChange={setRemember}
+          appPortal={appPortal}
+          onAppPortalChange={setAppPortal}
           onScanCard={() => {
             setAuthError(null);
             setScanOpen(true);
@@ -428,6 +444,8 @@ function AuthPage() {
       </>
     );
   }
+
+  const isAssociation = appPortal === "association";
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden flex items-center justify-center p-4 sm:p-6 bg-background text-foreground transition-colors duration-200">
@@ -457,17 +475,57 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* Brand Crest & Headers */}
-        <div className="mt-6 flex flex-col items-center justify-center text-center">
-          <ViOneLogo className="h-11 sm:h-13 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
-            BUSINESS CONNECT
+        {/* App Portal Selector Tabs: ViOne Connect vs Hiệp hội */}
+        <div className="mt-4 flex items-center justify-center">
+          <div className="flex items-center rounded-2xl bg-muted/60 border border-border p-1 backdrop-blur-md w-full">
+            <button
+              type="button"
+              onClick={() => setAppPortal("connect")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                !isAssociation
+                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>ViOne Connect</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppPortal("association")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isAssociation
+                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Building2 className="h-3.5 w-3.5" />
+              <span>Hiệp hội Doanh nghiệp</span>
+            </button>
           </div>
-          <h1 className="mt-4 font-serif text-[28px] sm:text-[32px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
-            {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
+        </div>
+
+        {/* Brand Crest & Headers */}
+        <div className="mt-5 flex flex-col items-center justify-center text-center">
+          <ViOneLogo className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
+          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
+            {isAssociation ? "HIỆP HỘI DOANH NGHIỆP" : "BUSINESS CONNECT"}
+          </div>
+          <h1 className="mt-3 font-serif text-[26px] sm:text-[30px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
+            {isAssociation
+              ? mode === "signin"
+                ? "Cổng Hội viên Hiệp hội"
+                : "Đăng ký Hội viên mới"
+              : mode === "signin"
+                ? t("auth.signInTitle")
+                : t("auth.signUpTitle")}
           </h1>
-          <p className="mt-2 max-w-[20rem] text-center text-[13px] sm:text-[14px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
-            {mode === "signin" ? t("auth.subtitle") : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
+          <p className="mt-1.5 max-w-[20rem] text-center text-[12.5px] sm:text-[13.5px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
+            {isAssociation
+              ? "Thẻ hội viên số, quyền lợi & check-in sự kiện"
+              : mode === "signin"
+                ? t("auth.subtitle")
+                : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
           </p>
         </div>
 
@@ -485,7 +543,7 @@ function AuthPage() {
               <button
                 type="button"
                 onClick={() => setAuthError(null)}
-                className="flex h-5 w-5 items-center justify-center rounded hover:bg-destructive/20"
+                className="flex h-5 w-5 items-center justify-center rounded hover:bg-destructive/20 cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -493,7 +551,7 @@ function AuthPage() {
           </div>
         )}
 
-        {/* Scoped CSS to eliminate browser autofill and hover background shifts */}
+        {/* Scoped CSS */}
         <style>{`
           .auth-field:-webkit-autofill,
           .auth-field:-webkit-autofill:hover, 
@@ -528,7 +586,7 @@ function AuthPage() {
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@connect.vn"
+              placeholder={isAssociation ? "email-hoi-vien@domain.com" : "admin@connect.vn"}
               className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
             />
           </div>
@@ -545,7 +603,7 @@ function AuthPage() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors focus:outline-none"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
               aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -565,11 +623,11 @@ function AuthPage() {
             </div>
           )}
 
-          {/* Primary Submit Button (Solid Luxury Gold matching mobile) */}
+          {/* Primary Submit Button */}
           <button
             type="submit"
             disabled={busy}
-            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold text-[#1b1206] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50"
+            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold text-[#1b1206] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md"
             style={{
               background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
               boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
@@ -580,7 +638,7 @@ function AuthPage() {
                 <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("auth.processing")}
               </span>
             ) : mode === "signin" ? (
-              t("auth.signInButton")
+              isAssociation ? "Đăng nhập Cổng Hội viên" : t("auth.signInButton")
             ) : (
               t("auth.signUpButton")
             )}
@@ -592,7 +650,7 @@ function AuthPage() {
             )}
           </button>
 
-          {/* Quên mật khẩu? (centered link) */}
+          {/* Quên mật khẩu? */}
           {mode === "signin" && (
             <div className="pt-0.5 text-center">
               <Link
@@ -613,21 +671,36 @@ function AuthPage() {
           <span className="h-px flex-1 bg-border/60" />
         </div>
 
-        {/* Google OAuth Button */}
+        {/* Social OAuth Buttons: Google + Apple */}
         {mode === "signin" && (
-          <button
-            type="button"
-            onClick={() => void oauth("google")}
-            disabled={busy}
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card/60 hover:bg-muted/40 text-foreground text-sm sm:text-[15px] font-medium transition-all active:scale-[0.99] disabled:opacity-50 shadow-xs"
-          >
-            {oauthPending === "google" ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <GoogleMark />
-            )}
-            <span>{oauthPending === "google" ? t("auth.processing") : t("auth.googleButton")}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => void oauth("google")}
+              disabled={busy}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs sm:text-[13.5px] font-medium transition-all active:scale-[0.99] disabled:opacity-50 shadow-xs cursor-pointer"
+            >
+              {oauthPending === "google" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <GoogleMark />
+              )}
+              <span>Google</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void oauth("apple")}
+              disabled={busy}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs sm:text-[13.5px] font-medium transition-all active:scale-[0.99] disabled:opacity-50 shadow-xs cursor-pointer"
+            >
+              {oauthPending === "apple" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <AppleMark />
+              )}
+              <span>Apple</span>
+            </button>
+          </div>
         )}
 
         {/* Bottom Toggle Link: Chưa có tài khoản? Đăng ký */}
@@ -638,7 +711,7 @@ function AuthPage() {
               setMode(mode === "signin" ? "signup" : "signin");
               setAuthError(null);
             }}
-            className="text-xs sm:text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+            className="text-xs sm:text-[13px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
           >
             {(() => {
               const fullText = mode === "signin" ? t("auth.switchToSignUp") : t("auth.switchToSignIn");

@@ -19,14 +19,14 @@ export function MobileSearchBar({
       <label htmlFor={searchId} className="sr-only">
         {placeholder}
       </label>
-      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[42px] bg-[#0c1522] rounded-lg border border-solid border-[#D8B282]/25 transition-colors focus-within:border-[#D8B282] focus-within:ring-1 focus-within:ring-[#D8B282]/30">
+      <div className="flex items-center pl-10 pr-4 relative self-stretch w-full h-[40px] bg-[var(--bc-mobile-surface-2,#F1F5F9)] dark:bg-[var(--bc-mobile-surface-2,#0a0f1a)] rounded-full border border-[var(--bc-mobile-border,#e2e8f0)] transition-colors">
         <input
           id={searchId}
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:!outline-none focus:!ring-0 focus:!border-none focus-visible:ring-0 focus-visible:outline-none focus-visible:!ring-0 focus-visible:!outline-none focus-visible:!border-none focus:bg-transparent text-sm text-[#f5f7fa] placeholder:text-[#D4C3A3]/50 py-0 px-0"
+          className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none focus:!outline-none focus:!ring-0 focus:!border-none focus-visible:ring-0 focus-visible:outline-none focus-visible:!ring-0 focus-visible:!outline-none focus-visible:!border-none text-[13px] text-[var(--bc-mobile-text,#0F172A)] dark:text-[var(--bc-mobile-text,#f5f7fa)] placeholder:text-[var(--bc-mobile-muted,#64748B)] py-0 px-0"
           style={{
             background: "transparent",
             border: "none",
@@ -38,10 +38,11 @@ export function MobileSearchBar({
         />
       </div>
       <Search
-        className="absolute top-1/2 -translate-y-1/2 left-3 w-[15px] h-[15px] text-[#d8c3b180] pointer-events-none"
+        className="absolute top-1/2 -translate-y-1/2 left-3.5 w-4 h-4 text-[var(--bc-mobile-muted,#64748B)] pointer-events-none"
         aria-hidden="true"
-        strokeWidth={2}
+        strokeWidth={1.8}
       />
     </div>
   );
 }
+

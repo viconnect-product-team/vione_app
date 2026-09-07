@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound, LogOut, User as UserIcon, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import { fetchNestApi } from "@/lib/api-client";
@@ -21,37 +20,25 @@ function initials(name: string) {
 export function ProfileMenu() {
   const t = useT();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string>("");
-  const [fullName, setFullName] = useState<string>("");
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(user?.id || null);
+  const [email, setEmail] = useState<string>(user?.email || "");
+  const [fullName, setFullName] = useState<string>(user?.name || user?.user_metadata?.full_name || "");
+  const [avatarUrl, setAvatarUrl] = useState<string>(user?.avatar_url || user?.user_metadata?.avatar_url || "");
   const [profileOpen, setProfileOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!active || !data.user) return;
-      setUserId(data.user.id);
-      setEmail(data.user.email ?? "");
-      setAvatarUrl((data.user.user_metadata?.avatar_url as string) ?? "");
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (active) {
-        setFullName(prof?.full_name ?? (data.user.user_metadata?.full_name as string) ?? "");
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (user) {
+      setUserId(user.id);
+      setEmail(user.email || "");
+      setFullName(user.name || user.user_metadata?.full_name || "");
+      setAvatarUrl(user.avatar_url || user.user_metadata?.avatar_url || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -73,11 +60,6 @@ export function ProfileMenu() {
     localStorage.removeItem('vibe_refresh_token');
     document.cookie = `sb-access-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     document.cookie = `sb-refresh-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      /* ignore */
-    }
     toast.success(t("profile.loggedOut"));
     if (typeof window !== "undefined") {
       window.location.href = "/auth";
@@ -213,17 +195,19 @@ function ProfileModal({
   async function save() {
     if (!userId) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ id: userId, email, full_name: name.trim() }, { onConflict: "id" });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await fetchNestApi("/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      onSaved(name.trim());
+      toast.success(t("profile.saved"));
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể lưu thông tin");
+    } finally {
+      setSaving(false);
     }
-    onSaved(name.trim());
-    toast.success(t("profile.saved"));
-    onClose();
   }
 
   return (

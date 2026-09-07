@@ -26,15 +26,15 @@ export function MomentActionBar({
   isLikeBusy = false,
 }: MomentActionBarProps) {
   return (
-    <div className="flex items-center justify-between border-t border-[#2f3542]/60 pt-2.5 mt-2.5">
+    <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border)] pt-2.5 mt-2.5">
       {/* Nút Ghi nhớ */}
       {onOpenRemember ? (
         <button
           type="button"
           onClick={onOpenRemember}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#b0b3b8] hover:text-[#e4e6eb] hover:bg-[#1c2333] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--bc-mobile-accent)]"
         >
-          <NotebookPen className="w-4 h-4 text-[#b0b3b8]" strokeWidth={1.8} />
+          <NotebookPen className="w-4 h-4 text-[var(--bc-mobile-muted)]" strokeWidth={1.8} />
           <span>Ghi nhớ</span>
         </button>
       ) : (
@@ -47,10 +47,10 @@ export function MomentActionBar({
           type="button"
           onClick={onToggleComments}
           aria-expanded={isCommentsOpen}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--bc-mobile-accent)] ${
             isCommentsOpen
-              ? "bg-[#D8B282]/15 text-[#D8B282]"
-              : "text-[#b0b3b8] hover:text-[#e4e6eb] hover:bg-[#1c2333]"
+              ? "bg-[var(--bc-mobile-accent)]/15 text-[var(--bc-mobile-accent)]"
+              : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)]"
           }`}
         >
           <MessageCircle className="w-4 h-4" strokeWidth={1.8} />
@@ -65,10 +65,10 @@ export function MomentActionBar({
           type="button"
           onClick={onToggleLike}
           disabled={isLikeBusy}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--bc-mobile-accent)] ${
             userLiked
               ? "bg-[#e0245e]/15 text-[#e0245e]"
-              : "text-[#b0b3b8] hover:text-[#e4e6eb] hover:bg-[#1c2333]"
+              : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)]"
           }`}
         >
           <Heart

@@ -52,3 +52,40 @@ export async function uploadAssociationLogo(file: File, associationId: string): 
   return getNestApiUrl(data.url);
 }
 
+export async function uploadChatAttachment(file: File): Promise<{
+  url: string;
+  name: string;
+  size: number;
+  isImage: boolean;
+}> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+  const headers = new Headers();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(getNestApiUrl("/upload/file"), {
+    method: "POST",
+    body: formData,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+  const data = await response.json();
+  const rawUrl: string = data.url || "";
+  const fullUrl = rawUrl.startsWith("http") ? rawUrl : getNestApiUrl(rawUrl);
+  const isImage = file.type.startsWith("image/");
+
+  return {
+    url: fullUrl,
+    name: file.name,
+    size: file.size,
+    isImage,
+  };
+}
+

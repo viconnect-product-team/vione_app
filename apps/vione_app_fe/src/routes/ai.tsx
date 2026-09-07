@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/use-role";
 import {
   CAPABILITIES,
@@ -79,7 +80,6 @@ import {
 import { planWorkflow, type WorkflowPlan } from "@/lib/ai-workflow-planner";
 import { askAssociationAiFn } from "@/lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
@@ -133,6 +133,7 @@ const GUARDRAILS = [
 ];
 
 function AiAssistantPage() {
+  const { status } = useAuth();
   const { isAdmin, isModerator, isPlatformAdmin, loading: roleLoading } = useRole();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -175,16 +176,22 @@ function AiAssistantPage() {
       setActiveCapability(DEFAULT_CAPABILITY_ID);
       lastCapabilityRef.current = null;
     };
-    const onAuth = () => reset();
     window.addEventListener("association-changed", reset);
-    const { data: sub } = supabase.auth.onAuthStateChange((event: string) => {
-      if (event === "SIGNED_OUT") onAuth();
-    });
+    window.addEventListener("auth-changed", reset);
     return () => {
       window.removeEventListener("association-changed", reset);
-      sub.subscription.unsubscribe();
+      window.removeEventListener("auth-changed", reset);
     };
   }, []);
+
+  useEffect(() => {
+    if (status === "out") {
+      const fresh = clearMemory();
+      setMemory(fresh);
+      setMessages([]);
+      setUsingContext(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

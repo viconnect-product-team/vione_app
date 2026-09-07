@@ -147,11 +147,11 @@ export function MomentCommentItem({
           <img
             src={author.avatarUrl}
             alt={author.displayName}
-            className="w-8 h-8 shrink-0 rounded-full object-cover border border-[#2f3542]"
+            className="w-8 h-8 shrink-0 rounded-full object-cover border border-[var(--bc-mobile-border)]"
             loading="lazy"
           />
         ) : (
-          <div className="w-8 h-8 shrink-0 rounded-full bg-[#1c2333] border border-[#2f3542] text-[#e4e6eb] flex items-center justify-center font-bold text-[12px]">
+          <div className="w-8 h-8 shrink-0 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] flex items-center justify-center font-bold text-[12px]">
             {author.initials || "HV"}
           </div>
         )}
@@ -159,27 +159,27 @@ export function MomentCommentItem({
         {/* Khối nội dung + Nút hành động */}
         <div className="flex-1 min-w-0">
           <div className="relative inline-flex items-center gap-1.5 max-w-full">
-            <div className="bg-[#1c2333] border border-[#2f3542]/70 px-3.5 py-2 rounded-[16px] max-w-full text-left shadow-sm">
+            <div className="bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] px-3.5 py-2 rounded-[16px] max-w-full text-left shadow-xs">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-semibold text-[13px] text-[#e4e6eb] leading-tight">
+                <span className="font-semibold text-[13px] text-[var(--bc-mobile-text)] leading-tight">
                   {author.displayName}
                 </span>
                 {author.jobTitle && (
-                  <span className="text-[11px] text-[#8a8d91] font-normal">
+                  <span className="text-[11px] text-[var(--bc-mobile-muted)] font-normal">
                     · {author.jobTitle}
                   </span>
                 )}
               </div>
-              <div className="text-[13px] text-[#e4e6eb] leading-snug mt-1 whitespace-pre-wrap break-words">
+              <div className="text-[13px] text-[var(--bc-mobile-text)] leading-snug mt-1 whitespace-pre-wrap break-words">
                 {renderCommentContent(comment.content, comment.mentions)}
               </div>
             </div>
 
             {/* Reaction badge floating on comment bubble if liked */}
             {comment.likesCount > 0 && (
-              <span className="absolute -bottom-2 right-2 flex items-center gap-0.5 rounded-full border border-[#2f3542] bg-[#0c131f] px-1.5 py-0.2 text-[10px] text-[#D8B282] shadow-sm">
+              <span className="absolute -bottom-2 right-2 flex items-center gap-0.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-1.5 py-0.2 text-[10px] text-[var(--bc-mobile-accent)] shadow-sm">
                 <span>{userReactionEmoji || "❤️"}</span>
-                <span className="font-bold text-[10px] text-[#e4e6eb]">{comment.likesCount}</span>
+                <span className="font-bold text-[10px] text-[var(--bc-mobile-text)]">{comment.likesCount}</span>
               </span>
             )}
 
@@ -189,20 +189,20 @@ export function MomentCommentItem({
                 type="button"
                 onClick={() => setShowActionMenu((prev) => !prev)}
                 aria-label="Tuỳ chọn bình luận"
-                className="grid h-6 w-6 place-items-center rounded-full text-[#6c7078] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 hover:text-[#e4e6eb] focus-visible:opacity-100 cursor-pointer"
+                className="grid h-6 w-6 place-items-center rounded-full text-[var(--bc-mobile-muted)] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] focus-visible:opacity-100 cursor-pointer"
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
 
               {/* Action Dropdown Menu */}
               {showActionMenu && (
-                <div className="absolute left-0 top-7 z-40 min-w-[150px] rounded-xl border border-[#2f3542] bg-[#0f172a]/95 py-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute left-0 top-7 z-40 min-w-[150px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
                   <button
                     type="button"
                     onClick={handleCopyText}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer transition-colors"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
                   >
-                    <Copy className="h-3.5 w-3.5 text-[#94a3b8]" />
+                    <Copy className="h-3.5 w-3.5 text-[var(--bc-mobile-muted)]" />
                     <span>Sao chép</span>
                   </button>
 
@@ -212,9 +212,9 @@ export function MomentCommentItem({
                       setShowActionMenu(false);
                       onReply(comment);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer transition-colors"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
                   >
-                    <CornerUpLeft className="h-3.5 w-3.5 text-[#94a3b8]" />
+                    <CornerUpLeft className="h-3.5 w-3.5 text-[var(--bc-mobile-muted)]" />
                     <span>Phản hồi</span>
                   </button>
 

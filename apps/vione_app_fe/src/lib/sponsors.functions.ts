@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { fetchNestApiFromServer } from "./api-client";
 
 export type Sponsor = {
   id: string;
@@ -27,55 +25,32 @@ export type SponsorPackage = {
   sold: number;
 };
 
-type Row = Record<string, unknown>;
-
-function mapSponsor(r: Row): Sponsor {
-  return {
-    id: r.id as string,
-    name: r.name as string,
-    tier: r.tier as Sponsor["tier"],
-    contact: (r.contact as string) ?? "",
-    email: (r.email as string) ?? "",
-    phone: (r.phone as string) ?? "",
-    amount: Number(r.amount ?? 0),
-    events: (r.events as number) ?? 0,
-    since: r.since as string,
-    status: r.status as Sponsor["status"],
-  };
-}
-
-function mapPackage(r: Row): SponsorPackage {
-  return {
-    id: r.id as string,
-    tier: r.tier as SponsorPackage["tier"],
-    price: Number(r.price ?? 0),
-    benefits: (r.benefits as string[]) ?? [],
-    available: (r.available as number) ?? 0,
-    sold: (r.sold as number) ?? 0,
-  };
-}
-
 const TIER_ORDER = ["platinum", "gold", "silver", "bronze"];
 
 export const listSponsorsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await getDb(context)
-      .from("sponsors")
-      .select("*")
-      .order("amount", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r: any) => mapSponsor(r as Row));
+  .handler(async ({ context }): Promise<Sponsor[]> => {
+    try {
+      const res = await fetchNestApiFromServer<Sponsor[]>("/sponsors", context.token);
+      return Array.isArray(res) ? res : [];
+    } catch (err: any) {
+      console.error("[listSponsorsFn] error:", err);
+      return [];
+    }
   });
 
 export const listSponsorPackagesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await getDb(context).from("sponsor_packages").select("*");
-    if (error) throw new Error(error.message);
-    return (data ?? [])
-      .map((r: any) => mapPackage(r as Row))
-      .sort((a: SponsorPackage, b: SponsorPackage) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+  .handler(async ({ context }): Promise<SponsorPackage[]> => {
+    try {
+      const res = await fetchNestApiFromServer<SponsorPackage[]>("/sponsors/packages", context.token);
+      return Array.isArray(res)
+        ? res.sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier))
+        : [];
+    } catch (err: any) {
+      console.error("[listSponsorPackagesFn] error:", err);
+      return [];
+    }
   });
 
 const sponsorInput = z.object({
@@ -94,61 +69,30 @@ export const createSponsorFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => sponsorInput.parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
-    const { genCode, logActivity } = await import("./crud.server");
-    const id = genCode("SP");
-    const { data: row, error } = await getDb(context)
-      .from("sponsors")
-      .insert({ id, ...data })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Tạo nhà tài trợ",
-      target: data.name,
-      category: "system",
+    return fetchNestApiFromServer<Sponsor>("/sponsors", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return mapSponsor(row);
   });
 
 export const updateSponsorFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => sponsorInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
-    const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await getDb(context)
-      .from("sponsors")
-      .update(rest)
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Cập nhật nhà tài trợ",
-      target: data.name,
-      category: "system",
+    return fetchNestApiFromServer<Sponsor>(`/sponsors/${id}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
     });
-    return mapSponsor(row);
   });
 
 export const deleteSponsorFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { logActivity } = await import("./crud.server");
-    const found = await getDb(context)
-      .from("sponsors")
-      .select("name")
-      .eq("id", data.id)
-      .maybeSingle();
-    const { error } = await getDb(context).from("sponsors").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Xóa nhà tài trợ",
-      target: (found.data?.name as string) ?? data.id,
-      category: "system",
+    return fetchNestApiFromServer<{ ok: boolean }>(`/sponsors/${data.id}`, context.token, {
+      method: "DELETE",
     });
-    return { ok: true };
   });
 
 // ---------------- Sponsor packages CRUD ----------------
@@ -165,56 +109,30 @@ export const createSponsorPackageFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => packageInput.parse(d))
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
-    const { genCode, logActivity } = await import("./crud.server");
-    const id = genCode("PKG");
-    const { data: row, error } = await getDb(context)
-      .from("sponsor_packages")
-      .insert({ id, ...data })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Tạo gói tài trợ",
-      target: data.tier,
-      category: "system",
+    return fetchNestApiFromServer<SponsorPackage>("/sponsors/packages", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return mapPackage(row);
   });
 
 export const updateSponsorPackageFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => packageInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<SponsorPackage> => {
-    const { logActivity } = await import("./crud.server");
     const { id, ...rest } = data;
-    const { data: row, error } = await getDb(context)
-      .from("sponsor_packages")
-      .update(rest)
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Cập nhật gói tài trợ",
-      target: data.tier,
-      category: "system",
+    return fetchNestApiFromServer<SponsorPackage>(`/sponsors/packages/${id}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
     });
-    return mapPackage(row);
   });
 
 export const deleteSponsorPackageFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { logActivity } = await import("./crud.server");
-    const { error } = await getDb(context).from("sponsor_packages").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Xóa gói tài trợ",
-      target: data.id,
-      category: "system",
+    return fetchNestApiFromServer<{ ok: boolean }>(`/sponsors/packages/${data.id}`, context.token, {
+      method: "DELETE",
     });
-    return { ok: true };
   });
 
 // ---------------- Sponsor onboarding ----------------
@@ -231,50 +149,8 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => onboardInput.parse(d))
   .handler(async ({ data, context }): Promise<Sponsor> => {
-    const { genCode, logActivity } = await import("./crud.server");
-
-    // Load selected package for tier + price
-    const { data: pkg, error: pkgErr } = await getDb(context)
-      .from("sponsor_packages")
-      .select("*")
-      .eq("id", data.packageId)
-      .maybeSingle();
-    if (pkgErr) throw new Error(pkgErr.message);
-    if (!pkg) throw new Error("PACKAGE_NOT_FOUND");
-    const mappedPkg = mapPackage(pkg);
-    if (mappedPkg.sold >= mappedPkg.available) throw new Error("PACKAGE_SOLD_OUT");
-
-    // Create sponsor from package
-    const id = genCode("SP");
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await getDb(context)
-      .from("sponsors")
-      .insert({
-        id,
-        name: data.name,
-        tier: mappedPkg.tier,
-        contact: data.contact,
-        email: data.email,
-        phone: data.phone,
-        amount: mappedPkg.price,
-        events: 0,
-        since: today,
-        status: "active",
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-
-    // Increment sold count on the package
-    await getDb(context)
-      .from("sponsor_packages")
-      .update({ sold: mappedPkg.sold + 1 })
-      .eq("id", data.packageId);
-
-    await logActivity(getDb(context), {
-      action: "Onboard nhà tài trợ",
-      target: data.name,
-      category: "system",
+    return fetchNestApiFromServer<Sponsor>("/sponsors/onboard", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return mapSponsor(row);
   });

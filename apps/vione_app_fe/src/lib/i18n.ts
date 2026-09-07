@@ -1,34 +1,46 @@
 import { createContext, useContext } from "react";
 import vi from "../../../../packages/shared/locales/vi.json";
 import en from "../../../../packages/shared/locales/en.json";
+import ja from "../../../../packages/shared/locales/ja.json";
+import ko from "../../../../packages/shared/locales/ko.json";
+import zh from "../../../../packages/shared/locales/zh.json";
 import lo from "../../../../packages/shared/locales/lo.json";
 import km from "../../../../packages/shared/locales/km.json";
 import my from "../../../../packages/shared/locales/my.json";
 
 /** Canonical dictionary languages. */
 export type BaseLang = "vi" | "en";
-export type ExtraLang = "my" | "km" | "lo";
-/** All selectable UI languages (extra locales fall back to English). */
+export type ExtraLang = "my" | "km" | "lo" | "ja" | "ko" | "zh";
+/** All selectable UI languages. */
 export type Lang = BaseLang | ExtraLang;
 
-export const SUPPORTED_LANGS: Lang[] = ["vi", "en", "my", "km", "lo"];
+export const SUPPORTED_LANGS: Lang[] = ["vi", "en", "ja", "ko", "zh", "my", "km", "lo"];
 
 export function isLang(v: unknown): v is Lang {
   return typeof v === "string" && (SUPPORTED_LANGS as string[]).includes(v);
 }
 
 export const EXTRA_LANG_LOCALES: Record<ExtraLang, string> = {
+  ja: "ja-JP",
+  ko: "ko-KR",
+  zh: "zh-CN",
   my: "my-MM",
   km: "km-KH",
   lo: "lo-LA",
 };
 
-// Reconstruct translations mapping key -> { vi, en, lo, km, my }
-export const translations: Record<string, { vi: string; en: string; lo?: string; km?: string; my?: string }> = {};
+// Reconstruct translations mapping key -> { vi, en, ja, ko, zh, lo, km, my }
+export const translations: Record<
+  string,
+  { vi: string; en: string; ja?: string; ko?: string; zh?: string; lo?: string; km?: string; my?: string }
+> = {};
 
 const allKeys = new Set<string>([
   ...Object.keys(vi),
   ...Object.keys(en),
+  ...Object.keys(ja),
+  ...Object.keys(ko),
+  ...Object.keys(zh),
   ...Object.keys(lo),
   ...Object.keys(km),
   ...Object.keys(my),
@@ -38,6 +50,9 @@ for (const key of allKeys) {
   translations[key] = {
     vi: (vi as Record<string, string>)[key] || "",
     en: (en as Record<string, string>)[key] || "",
+    ja: (ja as Record<string, string>)[key],
+    ko: (ko as Record<string, string>)[key],
+    zh: (zh as Record<string, string>)[key],
     lo: (lo as Record<string, string>)[key],
     km: (km as Record<string, string>)[key],
     my: (my as Record<string, string>)[key],

@@ -175,6 +175,7 @@ export function AuthCardScanSheet({
           >
             <video
               ref={videoRef}
+              autoPlay
               playsInline
               muted
               className="h-full w-full object-cover"

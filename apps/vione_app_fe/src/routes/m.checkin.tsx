@@ -22,18 +22,12 @@ import {
   type CheckinStatus,
 } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
+import { extractScanCode } from "@/lib/scan";
+import { extractNdefPayload, type NdefReadingEventLike } from "@/hooks/use-nfc-scanner";
 
 export const Route = createFileRoute("/m/checkin")({
   component: CheckinScreen,
 });
-
-// Minimal Web NFC typings (NDEFReader is not in the standard DOM lib yet).
-type NfcRecord = { data: BufferSource };
-type NfcReadingEvent = { message: { records: NfcRecord[] } };
-type NfcReader = {
-  scan: (opts?: { signal?: AbortSignal }) => Promise<void>;
-  onreading: ((ev: NfcReadingEvent) => void) | null;
-};
 
 function fmtTime(iso: string) {
   const d = new Date(iso);
@@ -114,17 +108,17 @@ function CheckinScreen() {
   const lastScan = useRef<{ payload: string; t: number } | null>(null);
   const handlePayload = useCallback(
     async (raw: string) => {
-      const payload = raw.trim();
-      if (!payload) return;
+      const resolved = extractScanCode(raw) || raw.trim();
+      if (!resolved) return;
       const now = Date.now();
       if (
         lastScan.current &&
-        lastScan.current.payload === payload &&
+        lastScan.current.payload === resolved &&
         now - lastScan.current.t < 3000
       ) {
         return;
       }
-      lastScan.current = { payload, t: now };
+      lastScan.current = { payload: resolved, t: now };
 
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         setResult({
@@ -141,7 +135,7 @@ function CheckinScreen() {
       if (submitting) return;
       setSubmitting(true);
       try {
-        const rec = await submitCheckin({ data: { payload, method: mode } });
+        const rec = await submitCheckin({ data: { payload: resolved, method: mode } });
         setResult(rec);
         await refresh();
       } catch {
@@ -169,7 +163,11 @@ function CheckinScreen() {
   const stopScan = useCallback(() => {
     qrControls.current?.stop();
     qrControls.current = null;
-    nfcAbort.current?.abort();
+    try {
+      nfcAbort.current?.abort();
+    } catch {
+      /* ignore */
+    }
     nfcAbort.current = null;
     setScanning(false);
   }, []);
@@ -178,47 +176,119 @@ function CheckinScreen() {
     setError(null);
     setResult(null);
     if (mode === "qr") {
+      // 1. Check camera permission trước
+      try {
+        if (navigator.permissions) {
+          const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
+          if (perm.state === "denied") {
+            setError(t("m.checkin.cameraError") + " — Camera bị chặn, vui lòng cấp quyền trong cài đặt trình duyệt.");
+            setScanning(false);
+            return;
+          }
+        }
+      } catch {
+        /* permissions API không khả dụng — tiếp tục thử */
+      }
+
+      // 2. Thử lấy stream camera sau (environment) trước
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        try {
+          // Fallback: camera bất kỳ
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch {
+          setError(t("m.checkin.cameraError"));
+          setScanning(false);
+          return;
+        }
+      }
+
+      // 3. Attach stream vào video element
+      if (videoRef.current && stream) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("playsinline", "true");
+        try {
+          await videoRef.current.play();
+        } catch {
+          /* Autoplay restriction — user will tap */
+        }
+      }
+
       try {
         const { BrowserQRCodeReader } = await import("@zxing/browser");
         const reader = new BrowserQRCodeReader();
-        const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current!, (res) => {
+        const controls = await reader.decodeFromVideoElement(videoRef.current!, (res, _err) => {
           if (res) void handlePayload(res.getText());
         });
-        qrControls.current = { stop: () => controls.stop() };
+        qrControls.current = {
+          stop: () => {
+            controls.stop();
+            // Stop camera tracks to release camera indicator
+            if (videoRef.current?.srcObject) {
+              const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+              tracks.forEach((t) => t.stop());
+              videoRef.current.srcObject = null;
+            }
+          },
+        };
         setScanning(true);
       } catch {
+        // Stop stream on failure
+        if (stream) stream.getTracks().forEach((t) => t.stop());
         setError(t("m.checkin.cameraError"));
         setScanning(false);
       }
     } else {
-      const NDEFReader = (globalThis as { NDEFReader?: new () => NfcReader }).NDEFReader;
-      if (!NDEFReader) {
+      if (typeof window === "undefined") {
         setError(t("m.checkin.nfcNotSupported"));
         return;
       }
+
+      const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      if (!window.isSecureContext && !isLocal) {
+        setError("Chạm NFC yêu cầu kết nối bảo mật HTTPS.");
+        return;
+      }
+
+      const NDEFReader = (window as unknown as { NDEFReader?: new () => any }).NDEFReader;
+      if (!NDEFReader || typeof NDEFReader !== "function") {
+        setError("Thiết bị hoặc trình duyệt chưa hỗ trợ Web NFC. Vui lòng mở bằng Google Chrome trên Android hoặc chuyển sang quét QR.");
+        return;
+      }
+
       try {
         const reader = new NDEFReader();
         const abort = new AbortController();
         nfcAbort.current = abort;
         await reader.scan({ signal: abort.signal });
-        reader.onreading = (ev) => {
-          const dec = new TextDecoder();
-          for (const rec of ev.message.records) {
-            try {
-              void handlePayload(dec.decode(rec.data));
-              break;
-            } catch {
-              /* skip non-text record */
-            }
+        reader.onreading = (ev: NdefReadingEventLike) => {
+          const payload = extractNdefPayload(ev);
+          if (payload) {
+            void handlePayload(payload);
           }
         };
+        reader.onreadingerror = () => {
+          /* tag moved or partial read — keep listening */
+        };
         setScanning(true);
-      } catch {
-        setError(t("m.checkin.nfcError"));
+      } catch (e: any) {
+        if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed") || e?.message?.includes("permission")) {
+          setError("Quyền NFC bị từ chối. Hãy cho phép quyền NFC trong cài đặt trình duyệt Chrome.");
+        } else {
+          setError("Không thể bật NFC. Hãy kiểm tra xem NFC đã được bật trong Cài đặt của máy và mở khóa màn hình.");
+        }
         setScanning(false);
       }
     }
   }, [mode, handlePayload, t]);
+
 
   function toggleScan() {
     if (scanning) stopScan();
@@ -276,6 +346,7 @@ function CheckinScreen() {
             <>
               <video
                 ref={videoRef}
+                autoPlay
                 className="absolute inset-0 h-full w-full object-cover"
                 style={{ opacity: scanning ? 1 : 0 }}
                 muted
@@ -307,6 +378,11 @@ function CheckinScreen() {
               <span className="vba-gold-grad grid h-24 w-24 place-items-center rounded-full text-[#1a1206]">
                 <Wifi className="h-10 w-10 -rotate-90" />
               </span>
+              {scanning && (
+                <p className="mt-3 text-center text-[12px] font-medium text-[var(--vba-gold)]">
+                  Áp thẻ vào vị trí giữa lưng điện thoại
+                </p>
+              )}
             </div>
           )}
         </div>

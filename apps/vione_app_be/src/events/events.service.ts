@@ -103,9 +103,11 @@ export class EventsService {
       return mems[0].association_id;
     }
 
-    // Fallback: lấy association đầu tiên trong DB thay vì UUID cứng
+    // Fallback: ưu tiên association đang published (CEO1983)
     const firstAssoc = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1
+      SELECT id FROM public.associations 
+      ORDER BY landing_published DESC, created_at DESC 
+      LIMIT 1
     `.catch(() => []);
 
     if (firstAssoc.length > 0 && firstAssoc[0]?.id) {
@@ -125,7 +127,19 @@ export class EventsService {
       }
     }
     const rawStatus = String(r.status ?? 'upcoming').toLowerCase();
-    const status = ['upcoming', 'ongoing', 'completed', 'cancelled'].includes(rawStatus) ? rawStatus : 'upcoming';
+    let status = ['upcoming', 'ongoing', 'completed', 'cancelled'].includes(rawStatus) ? rawStatus : 'upcoming';
+    
+    // Tự động chuyển trạng thái sự kiện đã qua ngày thành completed nếu không bị hủy
+    if (dateStr && status === 'upcoming') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const evtDate = new Date(dateStr);
+      evtDate.setHours(0, 0, 0, 0);
+      if (evtDate.getTime() < today.getTime()) {
+        status = 'completed';
+      }
+    }
+
     const rawType = String(r.type ?? 'forum').toLowerCase();
     const type = ['forum', 'workshop', 'networking', 'training'].includes(rawType) ? rawType : 'forum';
 
@@ -857,9 +871,9 @@ export class EventsService {
     const payload = body.payload ?? '';
 
     // 1. Resolve member for userId
-    const members = await this.prisma.$queryRaw<any[]>`
+    const members: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT code, association_id, status FROM public.members WHERE user_id = ${userId}::uuid
-    `.catch(() => []);
+    `.catch(() => [] as any[]);
 
     if (members.length === 0) {
       throw new BadRequestException('member_not_found');
@@ -883,17 +897,17 @@ export class EventsService {
       throw new BadRequestException('invalid_payload');
     }
 
-    const eventRows = await this.prisma.$queryRaw<any[]>`
+    const eventRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, association_id FROM public.events WHERE id = ${eventId}::uuid LIMIT 1
-    `.catch(() => []);
+    `.catch(() => [] as any[]);
 
     if (eventRows.length === 0) {
       throw new NotFoundException('event_not_found');
     }
 
-    const ev = eventRows[0];
-    const matchingMember = members.find((m) => m.association_id === ev.association_id) || members[0];
-    if (matchingMember.status !== 'active') {
+    const ev: any = eventRows[0];
+    const matchingMember: any = members.find((m: any) => m.association_id === ev.association_id) || members[0];
+    if (matchingMember?.status !== 'active') {
       throw new BadRequestException('membership_inactive');
     }
 

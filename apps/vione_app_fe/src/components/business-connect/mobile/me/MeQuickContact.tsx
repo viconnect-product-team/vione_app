@@ -82,13 +82,13 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
 
   return (
     <section
-      className="gap-4 flex flex-col items-start p-6 relative self-stretch w-full flex-[0_0_auto] bc-translucent-card rounded-2xl"
+      className="gap-4 flex flex-col items-start p-5 relative self-stretch w-full flex-[0_0_auto] bc-translucent-card rounded-2xl"
       aria-labelledby="quick-contact-heading"
     >
       <div className="flex self-stretch w-full flex-col items-start relative flex-[0_0_auto]">
         <h2
           id="quick-contact-heading"
-          className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#d8c3b1] text-sm tracking-[0] leading-5"
+          className="relative flex items-center self-stretch font-bold text-[var(--bc-mobile-muted)] text-[13.5px] uppercase tracking-wider leading-5"
         >
           {t("bc.mobile.me.contact.title")}
         </h2>
@@ -107,9 +107,9 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                 aria-label={method.label}
                 aria-pressed={isPressed}
                 onClick={() => setSelectedContact(method.key)}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b] rounded-xl border border-solid border-[#D8B282]/25 items-center relative text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050c15] hover:bg-[#0f1826] hover:border-[#D8B282]/50`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface)] rounded-xl border border-solid border-[var(--bc-mobile-border)] items-center relative text-left shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface-2)] hover:border-[var(--bc-mobile-accent)]`}
               >
-                <span className={method.iconContainerClassName} aria-hidden="true">
+                <span className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[var(--bc-mobile-surface-2)] rounded-lg border border-[var(--bc-mobile-border)] shadow-xs" aria-hidden="true">
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
                     <img
                       className={method.iconClassName}
@@ -118,8 +118,8 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                     />
                   </span>
                 </span>
-                <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                  <span className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#f2efe9] text-base tracking-[0] leading-6 whitespace-nowrap">
+                <span className="inline-flex flex-col items-start relative flex-[0_0_auto] min-w-0 flex-1">
+                  <span className="relative flex items-center w-full font-semibold text-[var(--bc-mobile-text)] text-[14.5px] tracking-tight truncate leading-tight">
                     {method.label}
                   </span>
                 </span>
@@ -132,9 +132,9 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                 type="button"
                 disabled
                 aria-label={`${method.label} (chưa thiết lập)`}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[#08101b]/50 rounded-xl border border-solid border-[#D8B282]/10 items-center relative text-left opacity-35 cursor-not-allowed`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface-2)]/40 rounded-xl border border-solid border-[var(--bc-mobile-border)]/30 items-center relative text-left opacity-40 cursor-not-allowed`}
               >
-                <span className={method.iconContainerClassName} aria-hidden="true">
+                <span className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[var(--bc-mobile-surface-2)] rounded-lg border border-[var(--bc-mobile-border)]" aria-hidden="true">
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
                     <img
                       className={method.iconClassName}
@@ -144,8 +144,8 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                     />
                   </span>
                 </span>
-                <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                  <span className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-[#d8c3b1] text-base tracking-[0] leading-6 whitespace-nowrap">
+                <span className="inline-flex flex-col items-start relative flex-[0_0_auto] min-w-0 flex-1">
+                  <span className="relative flex items-center w-full font-normal text-[var(--bc-mobile-muted)] text-[14px] truncate leading-tight">
                     {method.label}
                   </span>
                 </span>

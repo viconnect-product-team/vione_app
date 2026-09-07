@@ -45,7 +45,7 @@ export const getMyCheckinState = createServerFn({ method: "GET" })
 
 const checkinInput = z
   .object({
-    payload: z.string().trim().min(1).max(200),
+    payload: z.string().trim().min(1).max(2000),
     method: z.enum(["qr", "nfc"]),
   })
   .strict();

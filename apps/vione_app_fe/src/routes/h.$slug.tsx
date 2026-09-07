@@ -1,13 +1,22 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { AssociationLandingView } from "@/components/landing/AssociationLandingView";
 import { getPublicAssociationFn, type PublicAssociation } from "@/lib/associations.functions";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/h/$slug")({
   ssr: true,
   loader: async ({ params }) => {
-    const assoc = await getPublicAssociationFn({ data: { slug: params.slug } });
-    if (!assoc) throw notFound();
-    return assoc;
+    try {
+      const assoc = await getPublicAssociationFn({ data: { slug: params.slug } });
+      if (assoc) return assoc;
+    } catch {
+      /* fallback below */
+    }
+    const direct = await fetchNestApi<PublicAssociation | null>(
+      `/public/association/${encodeURIComponent(params.slug)}`
+    ).catch(() => null);
+    if (!direct) throw notFound();
+    return direct;
   },
   head: ({ loaderData }) => {
     const a = loaderData as PublicAssociation | undefined;

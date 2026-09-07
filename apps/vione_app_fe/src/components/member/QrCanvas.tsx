@@ -23,6 +23,7 @@ export function QrCanvas({
   logoScale = 0.22,
   logoOffsetX = 0,
   logoOffsetY = 0,
+  className = "",
 }: {
   value: string;
   size?: number;
@@ -44,6 +45,7 @@ export function QrCanvas({
   logoOffsetX?: number;
   /** Vertical logo offset as a fraction of QR size (-0.25 to 0.25). */
   logoOffsetY?: number;
+  className?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -59,16 +61,20 @@ export function QrCanvas({
     if (!ready || !ref.current) return;
     const canvas = ref.current;
     let cancelled = false;
+    const fallbackUrl = typeof window !== "undefined" ? window.location.href : "https://vione.app";
+    const qrValue = value && value.trim() ? value.trim() : fallbackUrl;
 
     (async () => {
-      // High error correction so the center can absorb a logo without breaking
-      // scanability. `qrcode` still scans reliably up to ~30% obstruction.
-      await QRCode.toCanvas(canvas, value, {
-        width: size,
-        margin: 1,
-        color: { light: qrLight, dark },
-        errorCorrectionLevel: logoUrl ? "H" : "M",
-      }).catch(() => {});
+      try {
+        await QRCode.toCanvas(canvas, qrValue, {
+          width: size,
+          margin: 1,
+          color: { light: qrLight, dark: dark || "#000000" },
+          errorCorrectionLevel: logoUrl ? "H" : "M",
+        });
+      } catch (err) {
+        console.warn("QR render warning:", err);
+      }
 
       if (cancelled || !logoUrl) return;
 
@@ -82,7 +88,7 @@ export function QrCanvas({
         const ox = Math.min(0.25, Math.max(-0.25, logoOffsetX));
         const oy = Math.min(0.25, Math.max(-0.25, logoOffsetY));
         const badge = Math.round(size * scale);
-        const pad = Math.round(badge * 0.12);
+        const pad = Math.round(badge * 0.14);
         const cx = canvas.width / 2 + canvas.width * ox;
         const cy = canvas.height / 2 + canvas.height * oy;
         // Badge background circle so QR modules underneath don't bleed.
@@ -114,22 +120,20 @@ export function QrCanvas({
 
   return (
     <div
-      className="grid place-items-center rounded-2xl p-3 shadow-sm ring-1"
+      className={`inline-flex items-center justify-center rounded-2xl p-2 shadow-sm ${className}`}
       style={{
-        width: size + 24,
-        height: size + 24,
         background: frameBg,
-        boxShadow: isTransparent
-          ? `inset 0 0 0 1px ${borderColor}`
-          : `0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 1px ${borderColor}`,
-        ["--tw-ring-color" as string]: borderColor,
+        border: `1px solid ${borderColor}`,
       }}
     >
-      {ready ? (
-        <canvas ref={ref} width={size} height={size} aria-label="Mã QR" className="rounded-lg" />
-      ) : (
-        <div style={{ width: size, height: size }} />
-      )}
+      <canvas
+        ref={ref}
+        width={size}
+        height={size}
+        aria-label="Mã QR"
+        className="block rounded-lg"
+        style={{ width: size, height: size }}
+      />
     </div>
   );
 }

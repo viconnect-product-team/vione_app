@@ -1,17 +1,36 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Body,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminService } from './admin.service';
 
+export class UpdateDemoLeadDto {
+  status?: string;
+  adminNotes?: string | null;
+}
+
+export class CreateInvoiceDto {
+  memberId!: string;
+  year?: number;
+  amount?: number;
+  dueDate?: string;
+}
+
+export class AddInvoiceReminderDto {
+  channel!: string;
+  byName?: string;
+  note?: string;
+}
+
 @Controller('admin')
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -28,8 +47,52 @@ export class AdminController {
   @Patch('demo-leads/:id')
   async updateDemoLead(
     @Param('id') id: string,
-    @Body() data: { status?: string; adminNotes?: string | null },
+    @Body() data: UpdateDemoLeadDto,
   ) {
     return this.adminService.updateDemoLead(id, data);
   }
+
+  // ── INVOICES / FEES ────────────────────────────────────────────────────────
+
+  @Get('invoices')
+  async listInvoices() {
+    return this.adminService.listInvoices();
+  }
+
+  @Get('invoices/:id')
+  async getInvoiceById(@Param('id') id: string) {
+    return this.adminService.getInvoiceById(id);
+  }
+
+  @Post('invoices')
+  async createInvoice(
+    @Body() body: CreateInvoiceDto,
+  ) {
+    return this.adminService.createInvoice(body);
+  }
+
+  @Post('invoices/:id/pay')
+  async markInvoicePaid(
+    @Param('id') id: string,
+    @Body('method') method?: 'bank' | 'card' | 'cash' | 'ewallet',
+  ) {
+    return this.adminService.markInvoicePaid(id, method);
+  }
+
+  @Patch('invoices/:id/method')
+  async updateInvoiceMethod(
+    @Param('id') id: string,
+    @Body('method') method: 'bank' | 'card' | 'cash' | 'ewallet',
+  ) {
+    return this.adminService.updateInvoiceMethod(id, method);
+  }
+
+  @Post('invoices/:id/reminders')
+  async addInvoiceReminder(
+    @Param('id') id: string,
+    @Body() body: AddInvoiceReminderDto,
+  ) {
+    return this.adminService.addInvoiceReminder(id, body);
+  }
 }
+

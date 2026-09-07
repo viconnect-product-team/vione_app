@@ -2,12 +2,40 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Bell, MessageSquare, User, QrCode, ChevronLeft, WifiOff } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
+import authBg from "@/assets/connect-auth-bg.jpg";
+
+const NAVY = "#050c15";
+
+/**
+ * Member app is a dark-first surface: enforce the "dark" class on <html>
+ * to match ViOne luxury styling.
+ */
+function useForcedDarkTone() {
+  // Let the user switch between light, dark, and high contrast naturally
+}
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
   return (
-    <div className="vione-tone vba-app">
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col">
+    <div className="vba-app relative min-h-[100dvh] w-full bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
+      {/* Dynamic Background Mesh Overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <img
+          src={authBg}
+          alt=""
+          width={1024}
+          height={640}
+          className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-20 dark:opacity-45"
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]"
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col border-x border-[var(--vba-border-soft)]/30 bg-[var(--vba-bg)]/60 shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm">
         <OfflineBanner />
         <div className="flex-1 pb-28">{children}</div>
         <MemberTabBar />

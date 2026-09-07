@@ -13,8 +13,11 @@ import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
 import { MembersModule } from './members/members.module';
 import { AiModule } from './ai/ai.module';
-import { MeetingsModule } from './meetings/meetings.module';
 import { AdminModule } from './admin/admin.module';
+import { SponsorsModule } from './sponsors/sponsors.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { VotingModule } from './voting/voting.module';
+import { MeetingsModule } from './meetings/meetings.module';
 
 @Module({
   imports: [
@@ -34,8 +37,12 @@ import { AdminModule } from './admin/admin.module';
     AiModule,
     MeetingsModule,
     AdminModule,
+    SponsorsModule,
+    ReviewsModule,
+    VotingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

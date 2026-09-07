@@ -136,8 +136,8 @@
   --muted-foreground: oklch(0.7 0.03 260);
   --accent: oklch(0.3 0.08 285);
   --accent-foreground: oklch(0.97 0.005 260);
-  --border: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 16%);
+  --border: oklch(1 0 0 / 22%);
+  --input: oklch(1 0 0 / 24%);
   --ring: oklch(0.62 0.22 285);
 
   /* State colours tuned for dark surfaces (AA on --card) */
@@ -257,45 +257,51 @@
 .vione-tone {
   color-scheme: dark;
 
-  --background: #030810;
-  --foreground: #f5f3ee;
-  --card: #090f1a;
-  --card-foreground: #f5f3ee;
-  --popover: #0d1520;
-  --popover-foreground: #f5f3ee;
+  /* ── Base surfaces ── */
+  --background: #08091a;          /* deep slate-navy */
+  --foreground: #eeedf5;
+  --card: #0d0e23;                /* midnight card */
+  --card-foreground: #eeedf5;
+  --popover: #11122a;
+  --popover-foreground: #eeedf5;
 
-  --primary: #f0c56d;
-  --primary-foreground: #140d02;
-  --primary-glow: #ffd98a;
+  /* ── Brand: electric indigo + purple ── */
+  --primary: #7C6FE0;             /* indigo-violet */
+  --primary-foreground: #ffffff;
+  --primary-glow: #a393f5;        /* lighter purple glow */
 
-  --secondary: #0d1520;
-  --secondary-foreground: #f5f3ee;
-  --muted: #0d1520;
-  --muted-foreground: #9aa7b5;
-  --accent: #111c28;
-  --accent-foreground: #ffd98a;
+  /* ── Gradient accents (CSS variables for use in inline styles) ── */
+  --grad-hero: linear-gradient(135deg, #7C6FE0 0%, #a855f7 50%, #6366f1 100%);
+  --grad-cta: linear-gradient(135deg, #7C6FE0, #6366f1);
 
-  --success: #4caf8b;
-  --success-foreground: #030810;
-  --warning: #f0c56d;
-  --warning-foreground: #140d02;
-  --info: #6fb3e0;
-  --info-foreground: #030810;
-  --destructive: #e0604f;
-  --destructive-foreground: #f5f3ee;
+  --secondary: #11132a;
+  --secondary-foreground: #eeedf5;
+  --muted: #11132a;
+  --muted-foreground: #8a8eb5;    /* cool slate muted */
+  --accent: #1a1d40;
+  --accent-foreground: #a393f5;
 
-  --border: #1a2535;
-  --input: #1a2535;
-  --ring: #f0c56d;
+  --success: #34d89b;
+  --success-foreground: #08091a;
+  --warning: #f59e0b;
+  --warning-foreground: #08091a;
+  --info: #60a5fa;
+  --info-foreground: #08091a;
+  --destructive: #f87171;
+  --destructive-foreground: #eeedf5;
 
-  --sidebar: #090f1a;
-  --sidebar-foreground: #f5f3ee;
-  --sidebar-primary: #f0c56d;
-  --sidebar-primary-foreground: #140d02;
-  --sidebar-accent: #0d1520;
-  --sidebar-accent-foreground: #ffd98a;
-  --sidebar-border: #1a2535;
-  --sidebar-ring: #f0c56d;
+  --border: #1e2048;              /* indigo-tinted border */
+  --input: #1e2048;
+  --ring: #7C6FE0;
+
+  --sidebar: #0d0e23;
+  --sidebar-foreground: #eeedf5;
+  --sidebar-primary: #7C6FE0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #11132a;
+  --sidebar-accent-foreground: #a393f5;
+  --sidebar-border: #1e2048;
+  --sidebar-ring: #7C6FE0;
 }
 
 /* ============================================================
@@ -304,20 +310,21 @@
    inherits the same semantic tokens as the dashboard.
    ============================================================ */
 .vba-app {
-  --vba-bg: var(--background);
-  --vba-bg-2: var(--background);
-  --vba-surface: var(--card);
-  --vba-surface-2: var(--card);
-  --vba-border: var(--border);
-  --vba-border-soft: var(--border);
-  --vba-gold: var(--primary);
-  --vba-gold-2: var(--primary-glow);
-  --vba-gold-soft: color-mix(in oklab, var(--primary) 14%, transparent);
-  --vba-gold-glow: 0 8px 24px -12px color-mix(in oklab, var(--primary) 45%, transparent);
-  --vba-text: var(--foreground);
-  --vba-text-muted: var(--muted-foreground);
-  --vba-text-dim: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
-  --vba-danger: var(--destructive);
+  --vba-bg: #050c15;
+  --vba-bg-2: #09111d;
+  --vba-surface: rgba(13, 22, 35, 0.85);
+  --vba-surface-2: rgba(18, 30, 48, 0.9);
+  --vba-border: rgba(216, 178, 130, 0.28);        /* tăng từ 0.18 → 0.28 */
+  --vba-border-soft: rgba(255, 255, 255, 0.13);   /* tăng từ 0.08 → 0.13 */
+  --vba-border-accent: rgba(216, 178, 130, 0.45); /* viền gold rõ cho focus/active */
+  --vba-gold: #D8B282;
+  --vba-gold-2: #F0D5A8;
+  --vba-gold-soft: rgba(216, 178, 130, 0.14);
+  --vba-gold-glow: 0 8px 24px -8px rgba(216, 178, 130, 0.45);
+  --vba-text: #FFFFFF;
+  --vba-text-muted: #B0BEC8;   /* sáng hơn từ #94A3B8 → #B0BEC8 */
+  --vba-text-dim: #7A8FA0;     /* sáng hơn từ #64748B → #7A8FA0 */
+  --vba-danger: #EF4444;
 
   background: transparent;
   color: var(--vba-text);
@@ -329,30 +336,100 @@
 @media (prefers-contrast: more) {
   .vba-app {
     --vba-gold-glow: none;
-    --vba-text-muted: var(--foreground);
-    --vba-border: color-mix(in oklab, var(--primary) 55%, transparent);
+    --vba-text-muted: #CBD5E1;
+    --vba-border: rgba(216, 178, 130, 0.4);
   }
 }
 
+/* Light mode tokens for .vba-app */
+html:not(.dark) .vba-app {
+  --vba-bg: #F8FAFC;
+  --vba-bg-2: #FFFFFF;
+  --vba-surface: rgba(255, 255, 255, 0.94);
+  --vba-surface-2: rgba(241, 245, 249, 0.96);
+  --vba-border: rgba(184, 134, 11, 0.32);        /* tăng độ rõ */
+  --vba-border-soft: rgba(0, 0, 0, 0.14);        /* tăng độ rõ */
+  --vba-border-accent: rgba(184, 134, 11, 0.5);
+  --vba-gold: #B8860B;
+  --vba-gold-2: #8B6508;
+  --vba-gold-soft: rgba(184, 134, 11, 0.12);
+  --vba-gold-glow: 0 4px 16px -4px rgba(184, 134, 11, 0.25);
+  --vba-text: #0F172A;
+  --vba-text-muted: #475569;
+  --vba-text-dim: #64748B;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  color: #0F172A;
+}
+
+html:not(.dark) .vba-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0F172A;
+  border: 1px solid rgba(184, 134, 11, 0.22);
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+html:not(.dark) .vba-gold-text {
+  background: linear-gradient(135deg, #B8860B 0%, #8B6508 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* High-contrast mode tokens for .vba-app */
+html.hc .vba-app {
+  --vba-bg: #000000;
+  --vba-bg-2: #050505;
+  --vba-surface: #0A0A0A;
+  --vba-surface-2: #141414;
+  --vba-border: #FCD34D;
+  --vba-border-soft: #FFFFFF;
+  --vba-gold: #FCD34D;
+  --vba-gold-2: #FEF08A;
+  --vba-gold-soft: rgba(252, 211, 77, 0.25);
+  --vba-text: #FFFFFF;
+  --vba-text-muted: #F3F4F6;
+  --vba-text-dim: #E5E7EB;
+  color: #FFFFFF;
+}
+
+html.hc .vba-card {
+  background: #0D0D0D;
+  color: #FFFFFF;
+  border: 2px solid #FCD34D;
+  box-shadow: none;
+}
+
+html.hc .vba-gold-text {
+  background: none;
+  -webkit-text-fill-color: #FCD34D;
+  color: #FCD34D;
+}
+
 .vba-gold-text {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 100%);
+  background: linear-gradient(135deg, #F5DEB3 0%, #D8B282 50%, #B8860B 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .vba-card {
-  background: linear-gradient(165deg, rgba(10, 16, 25, 0.97) 0%, rgba(7, 12, 19, 0.97) 50%, rgba(4, 8, 14, 0.98) 100%);
-  color: var(--card-foreground);
-  border: 1px solid rgba(216, 178, 130, 0.12);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
+  background: linear-gradient(165deg, rgba(13, 22, 35, 0.88) 0%, rgba(8, 14, 23, 0.92) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #FFFFFF;
+  border: 1px solid rgba(216, 178, 130, 0.15);
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 .vba-gold-grad {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 100%);
-  color: var(--primary-foreground);
-  box-shadow: var(--shadow-glow);
+  background: linear-gradient(135deg, #F0D5A8 0%, #D8B282 50%, #C49B6A 100%);
+  color: #0A111C !important;
+  font-weight: 600;
+  box-shadow: 0 4px 16px -2px rgba(216, 178, 130, 0.35);
 }
 
 /* High-contrast: flatten gradients to solid, remove glows for clarity */
@@ -602,15 +679,15 @@ input[type="radio"] {
   --bc-mobile-muted: var(--bc-text-secondary);
   --bc-mobile-disabled: var(--bc-text-disabled);
 
-  /* Borders — hairline 1px gold tone matching login screen */
-  --bc-border-subtle: rgba(216, 178, 130, 0.12);
-  --bc-border-medium: rgba(216, 178, 130, 0.18);
-  --bc-border-gold: rgba(216, 178, 130, 0.32);
+  /* Borders — luminous gold tone with crisp contrast */
+  --bc-border-subtle: rgba(216, 178, 130, 0.32);
+  --bc-border-medium: rgba(216, 178, 130, 0.48);
+  --bc-border-gold: rgba(216, 178, 130, 0.68);
   --bc-mobile-border: var(--bc-border-medium);
   --bc-mobile-border-subtle: var(--bc-border-subtle);
   --bc-mobile-border-gold: var(--bc-border-gold);
   /* Boundary colour for focusable controls: >=3:1 against every surface. */
-  --bc-mobile-border-strong: rgba(216, 178, 130, 0.45);
+  --bc-mobile-border-strong: rgba(216, 178, 130, 0.85);
 
   /* Champagne gold -> Login page warm luxury gold */
   --bc-gold-300: #FDE6B4;
@@ -620,7 +697,7 @@ input[type="radio"] {
 
   --bc-mobile-accent: #D8B282;
   --bc-mobile-accent-strong: #F6E1C3;
-  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.15);
+  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.18);
   --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
   --bc-mobile-accent-grad-hover: linear-gradient(135deg, #faecda 0%, #e2be90 45%, #cea877 70%, #9c7348 100%);
   --bc-mobile-accent-grad-active: linear-gradient(135deg, #eed5b5 0%, #cca573 45%, #b58d5b 70%, #7d572e 100%);
@@ -661,8 +738,102 @@ input[type="radio"] {
   --bc-mobile-header-gap: 8px;
   --bc-mobile-header-icon: 20px;
 
-
   font-family: var(--font-sans);
+  color-scheme: dark;
+}
+
+/* Light mode tokens for .bc-app (ViOne Connect) — Ultra Luxury Warm Ivory & Champagne Gold */
+html:not(.dark) .bc-app {
+  --bc-bg-deep: #F7F5EE;
+  --bc-bg-primary: #FDFCF7;
+  --bc-bg-secondary: #FFFFFF;
+  --bc-surface: #FFFFFF;
+  --bc-surface-elevated: #FAF8F2;
+
+  --bc-mobile-bg: #FDFCF7;
+  --bc-mobile-bg-deep: #F7F5EE;
+  --bc-mobile-surface: #FFFFFF;
+  --bc-mobile-surface-2: #F5F2E9;
+  --bc-mobile-navy: #FFFFFF;
+  --bc-mobile-navy-deep: #F0EDE4;
+  --bc-mobile-app-gradient: linear-gradient(180deg, #FDFCF7 0%, #F8F5EC 48%, #F2EEE4 100%);
+  --bc-mobile-card-grad: linear-gradient(150deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 250, 246, 0.99) 100%);
+
+  --bc-text-primary: #18181B;
+  --bc-text-secondary: #52525B;
+  --bc-text-tertiary: #71717A;
+  --bc-text-disabled: #A1A1AA;
+
+  --bc-mobile-ivory: #18181B;
+  --bc-mobile-text: #18181B;
+  --bc-mobile-text-2: #52525B;
+  --bc-mobile-muted: #71717A;
+  --bc-mobile-disabled: #A1A1AA;
+
+  --bc-border-subtle: rgba(184, 134, 11, 0.20);
+  --bc-border-medium: rgba(184, 134, 11, 0.35);
+  --bc-border-gold: rgba(184, 134, 11, 0.60);
+  --bc-mobile-border: rgba(184, 134, 11, 0.28);
+  --bc-mobile-border-subtle: rgba(0, 0, 0, 0.08);
+  --bc-mobile-border-gold: rgba(184, 134, 11, 0.60);
+  --bc-mobile-border-strong: rgba(184, 134, 11, 0.85);
+
+  --bc-gold-300: #E6CA85;
+  --bc-gold-400: #B8860B;
+  --bc-gold-500: #C59B27;
+  --bc-gold-600: #8C653B;
+
+  --bc-mobile-accent: #B8860B;
+  --bc-mobile-accent-strong: #8C653B;
+  --bc-mobile-accent-soft: rgba(184, 134, 11, 0.12);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #E6CA85 0%, #C59B27 50%, #9E741A 100%);
+  --bc-mobile-accent-on: #FFFFFF;
+
+  color-scheme: light;
+}
+
+/* High-contrast mode tokens for .bc-app (ViOne Connect) */
+html.hc .bc-app {
+  --bc-bg-deep: #000000;
+  --bc-bg-primary: #000000;
+  --bc-bg-secondary: #050505;
+  --bc-surface: #080808;
+  --bc-surface-elevated: #121212;
+
+  --bc-mobile-bg: #000000;
+  --bc-mobile-bg-deep: #000000;
+  --bc-mobile-surface: #0A0A0A;
+  --bc-mobile-surface-2: #141414;
+  --bc-mobile-navy: #050505;
+  --bc-mobile-navy-deep: #000000;
+  --bc-mobile-app-gradient: #000000;
+  --bc-mobile-card-grad: #0A0A0A;
+
+  --bc-text-primary: #FFFFFF;
+  --bc-text-secondary: #FEF08A;
+  --bc-text-tertiary: #FDE68A;
+  --bc-text-disabled: #A3A3A3;
+
+  --bc-mobile-ivory: #FFFFFF;
+  --bc-mobile-text: #FFFFFF;
+  --bc-mobile-text-2: #FEF08A;
+  --bc-mobile-muted: #FDE68A;
+  --bc-mobile-disabled: #A3A3A3;
+
+  --bc-border-subtle: #FCD34D;
+  --bc-border-medium: #FCD34D;
+  --bc-border-gold: #FCD34D;
+  --bc-mobile-border: #FCD34D;
+  --bc-mobile-border-subtle: #FFFFFF;
+  --bc-mobile-border-gold: #FCD34D;
+  --bc-mobile-border-strong: #FEF08A;
+
+  --bc-mobile-accent: #FCD34D;
+  --bc-mobile-accent-strong: #FEF08A;
+  --bc-mobile-accent-soft: rgba(252, 211, 77, 0.25);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #FEF08A 0%, #FCD34D 100%);
+  --bc-mobile-accent-on: #000000;
+
   color-scheme: dark;
 }
 
@@ -785,7 +956,7 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
    /connect-app surface — presentation only, no layout opinions.
    Deep obsidian gradient matching section Hôm nay */
 @utility bc-card {
-  border: 1px solid rgba(216, 178, 130, 0.2);
+  border: 1px solid rgba(216, 178, 130, 0.38);
   border-radius: var(--bc-mobile-radius-card);
   background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
   backdrop-filter: blur(16px);
@@ -794,7 +965,7 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 
 /* Slightly raised variant (inputs, chips, nested rows). */
 @utility bc-card-soft {
-  border: 1px solid rgba(216, 178, 130, 0.25);
+  border: 1px solid rgba(216, 178, 130, 0.45);
   border-radius: var(--bc-mobile-radius-card);
   background: linear-gradient(165deg, rgba(10, 16, 25, 0.97) 0%, rgba(7, 12, 19, 0.97) 50%, rgba(4, 8, 14, 0.98) 100%);
   backdrop-filter: blur(16px);
@@ -877,29 +1048,63 @@ textarea::placeholder {
   background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(216, 178, 130, 0.2);
+  border: 1px solid rgba(216, 178, 130, 0.35);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
 }
 
-/* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus matching section Hôm nay
-   Radix portals mount directly to body — must also target them outside .bc-app */
-[role="dialog"],
-[role="menu"],
-[role="listbox"],
-[data-vaul-drawer],
-[vaul-drawer],
-[data-radix-popper-content-wrapper] > [role="menu"],
-[data-radix-popper-content-wrapper] > div,
-.radix-dialog-content,
-.radix-dropdown-content,
-body > [data-radix-portal] [role="dialog"],
-body > [data-radix-portal] [role="menu"],
-body > [data-radix-portal] [role="listbox"],
-body > div[role="dialog"],
-body > div[role="menu"] {
+html:not(.dark) .bc-translucent-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(184, 134, 11, 0.25);
+  box-shadow: 0 4px 20px -2px rgba(184, 134, 11, 0.06), 0 2px 8px -1px rgba(0, 0, 0, 0.03);
+}
+
+html.hc .bc-translucent-card {
+  background: #0A0A0A;
+  border: 1px solid #F59E0B;
+  box-shadow: none;
+}
+
+/* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus */
+html.dark [role="dialog"],
+html.dark [role="menu"],
+html.dark [role="listbox"],
+html.dark [data-vaul-drawer],
+html.dark [vaul-drawer],
+html.dark [data-radix-popper-content-wrapper] > [role="menu"],
+html.dark [data-radix-popper-content-wrapper] > div,
+html.dark .radix-dialog-content,
+html.dark .radix-dropdown-content,
+html.dark body > [data-radix-portal] [role="dialog"],
+html.dark body > [data-radix-portal] [role="menu"],
+html.dark body > [data-radix-portal] [role="listbox"],
+html.dark body > div[role="dialog"],
+html.dark body > div[role="menu"] {
   background: linear-gradient(165deg, rgba(10, 16, 25, 0.99) 0%, rgba(7, 12, 19, 0.99) 50%, rgba(4, 8, 14, 1.0) 100%) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(216, 178, 130, 0.2) !important;
+  border-color: rgba(216, 178, 130, 0.35) !important;
+}
+
+html:not(.dark) [role="dialog"],
+html:not(.dark) [role="menu"],
+html:not(.dark) [role="listbox"],
+html:not(.dark) [data-vaul-drawer],
+html:not(.dark) [vaul-drawer],
+html:not(.dark) [data-radix-popper-content-wrapper] > [role="menu"],
+html:not(.dark) [data-radix-popper-content-wrapper] > div,
+html:not(.dark) .radix-dialog-content,
+html:not(.dark) .radix-dropdown-content,
+html:not(.dark) body > [data-radix-portal] [role="dialog"],
+html:not(.dark) body > [data-radix-portal] [role="menu"],
+html:not(.dark) body > [data-radix-portal] [role="listbox"],
+html:not(.dark) body > div[role="dialog"],
+html:not(.dark) body > div[role="menu"] {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(184, 134, 11, 0.35) !important;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Luxury gold text gradient matching Login "Chào mừng" title */
@@ -1060,21 +1265,33 @@ body > div[role="menu"] {
    focus-visible:ring-[var(--bc-mobile-navy)]`, and navy on a navy surface is a
    ~1.2:1 (invisible) focus indicator. Force the gold ring everywhere inside
    the connect-app shell so keyboard focus stays visible at >=9:1. */
-.bc-app :is(a, button, [role="button"], [role="tab"], [role="link"], input, select, textarea, summary, [tabindex]):focus-visible {
+.bc-app :is(a, button, [role="button"], [role="tab"], [role="link"], input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline), summary, [tabindex]):focus-visible {
   outline: 2px solid var(--bc-mobile-accent) !important;
   outline-offset: 2px;
   --tw-ring-color: var(--bc-mobile-accent);
   --tw-ring-offset-color: var(--bc-mobile-bg);
 }
 
-
-
+/* Chat and Seamless Capsule Inputs: completely remove all harsh rectangular outlines */
+.bc-app :is(.chat-input, .no-focus-outline, textarea.chat-input, input.chat-input):focus,
+.bc-app :is(.chat-input, .no-focus-outline, textarea.chat-input, input.chat-input):focus-visible,
+.chat-input:focus,
+.chat-input:focus-visible,
+.no-focus-outline:focus,
+.no-focus-outline:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-offset-width: 0px !important;
+}
 
 /* Form controls: visible hover affordance + high-contrast focus in dark mode. */
-.bc-app :is(input, select, textarea):not(:disabled):hover {
+.bc-app :is(input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline)):not(:disabled):hover {
   border-color: color-mix(in oklab, var(--bc-mobile-accent) 40%, var(--bc-mobile-border));
 }
-.bc-app :is(input, select, textarea):focus-visible {
+.bc-app :is(input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline)):focus-visible {
   border-color: var(--bc-mobile-accent);
 }
 .bc-app :is(input, textarea)::placeholder {

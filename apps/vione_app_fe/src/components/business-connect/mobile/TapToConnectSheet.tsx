@@ -76,10 +76,21 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   }
 
   const nfc = useNfcScanner({ active: !tapResult && !tapping, onDetect: handleDetected });
-  const { videoRef, status: qrStatus } = useQrScanner({
+  const { videoRef, status: qrStatus, scanImageFile } = useQrScanner({
     active: camera && !tapResult && !tapping,
     onDetect: handleDetected,
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const res = await scanImageFile(file);
+    if (!res) {
+      setError("Không tìm thấy mã QR trong ảnh được chọn.");
+    }
+  };
 
   function handleReset() {
     setTapResult(null);
@@ -128,48 +139,91 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                       ? t("bc.mobile.tapConnect.nfcDenied")
                       : nfc.status === "unsupported"
                         ? t("bc.mobile.tapConnect.nfcUnsupported")
-                        : nfc.status === "error"
-                          ? t("bc.mobile.tapConnect.nfcError")
-                          : t("bc.mobile.tapConnect.starting")}
+                        : nfc.status === "insecure"
+                          ? "Yêu cầu kết nối HTTPS bảo mật để dùng NFC"
+                          : nfc.status === "error"
+                            ? t("bc.mobile.tapConnect.nfcError")
+                            : t("bc.mobile.tapConnect.starting")}
                 </p>
-                {nfc.status === "scanning" && (
+                {nfc.status === "scanning" ? (
                   <p className="mt-1 text-[13px] text-[var(--bc-mobile-muted)]">
-                    Chạm thẻ NFC hoặc điện thoại của họ vào đây
+                    Áp thẻ NFC hoặc điện thoại vào giữa mặt lưng máy để kết nối
                   </p>
-                )}
+                ) : nfc.status === "unsupported" ? (
+                  <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
+                    Chạm NFC hỗ trợ trên Google Chrome (Android). Bạn cũng có thể quét mã QR hoặc chọn ảnh QR bên dưới.
+                  </p>
+                ) : nfc.status === "denied" ? (
+                  <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
+                    Vui lòng cấp quyền NFC trong cài đặt trình duyệt Google Chrome để kích hoạt.
+                  </p>
+                ) : null}
               </div>
             </div>
 
             {camera && (
-              <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-[var(--bc-mobile-surface-2)]">
+              <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)]">
                 <video
                   ref={videoRef}
+                  autoPlay
                   playsInline
                   muted
                   aria-hidden="true"
                   className="h-full w-full object-cover"
                 />
+                {qrStatus === "scanning" && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-8 rounded-2xl border-2 border-[var(--bc-mobile-accent)] shadow-[0_0_20px_rgba(216,178,130,0.3)] animate-pulse"
+                  />
+                )}
                 {qrStatus !== "scanning" && (
-                  <p
+                  <div
                     role="status"
-                    className="absolute inset-0 grid place-items-center px-6 text-center text-[13.5px] text-[var(--bc-mobile-muted)]"
+                    className="absolute inset-0 grid place-items-center px-6 text-center text-[13.5px] text-[var(--bc-mobile-muted)] bg-[var(--bc-mobile-surface-2)]/90"
                   >
-                    {qrStatus === "denied"
-                      ? t("bc.mobile.tapConnect.cameraDenied")
-                      : qrStatus === "unsupported"
-                        ? t("bc.mobile.tapConnect.cameraUnsupported")
-                        : qrStatus === "error"
-                          ? t("bc.mobile.tapConnect.cameraError")
-                          : t("bc.mobile.tapConnect.cameraStarting")}
-                  </p>
+                    {qrStatus === "starting" ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-[var(--bc-mobile-accent)]" />
+                        <p>{t("bc.mobile.tapConnect.cameraStarting")}</p>
+                      </div>
+                    ) : (
+                      <p>
+                        {qrStatus === "denied"
+                          ? t("bc.mobile.tapConnect.cameraDenied")
+                          : qrStatus === "unsupported"
+                            ? t("bc.mobile.tapConnect.cameraUnsupported")
+                            : qrStatus === "error"
+                              ? t("bc.mobile.tapConnect.cameraError")
+                              : t("bc.mobile.tapConnect.cameraStarting")}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            <button type="button" onClick={() => setCamera((v) => !v)} className={SECONDARY_BTN}>
-              <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-              {camera ? t("bc.mobile.tapConnect.stopQr") : t("bc.mobile.tapConnect.useQr")}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button type="button" onClick={() => setCamera((v) => !v)} className={SECONDARY_BTN}>
+                <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                {camera ? t("bc.mobile.tapConnect.stopQr") : t("bc.mobile.tapConnect.useQr")}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={SECONDARY_BTN}
+              >
+                <span>Tải ảnh QR từ thư viện</span>
+              </button>
+            </div>
 
             {error && (
               <p role="alert" className="text-center text-[13.5px] text-rose-400">

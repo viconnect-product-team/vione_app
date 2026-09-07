@@ -198,7 +198,7 @@ export function MomentCommentInput({
 
       {/* Ô nhập bình luận */}
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-[#1c2333] border border-[#2f3542] text-[#D8B282] font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)] font-bold text-xs flex items-center justify-center shrink-0">
           HV
         </div>
 
@@ -211,7 +211,7 @@ export function MomentCommentInput({
             onKeyDown={handleKeyDown}
             disabled={disabled || submitting || isSubmitting}
             placeholder={activeReply ? `Phản hồi @${activeReply.author.displayName}…` : "Viết bình luận… (gõ @ để tag tên)"}
-            className="w-full bg-[#1c2333] border border-[#2f3542] rounded-full px-4 py-2 pr-9 text-[13px] text-[#e4e6eb] placeholder:text-[#8a8d91] outline-none transition-colors focus:border-[#D8B282]"
+            className="w-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] rounded-full px-4 py-2 pr-9 text-[13px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] outline-none transition-colors focus:border-[var(--bc-mobile-accent)]"
           />
           <button
             type="button"
@@ -220,7 +220,7 @@ export function MomentCommentInput({
               setMentionQuery("");
               inputRef.current?.focus();
             }}
-            className="absolute right-3 text-[#8a8d91] hover:text-[#D8B282] transition-colors"
+            className="absolute right-3 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] transition-colors"
             title="Gắn thẻ người dùng"
           >
             <AtSign className="h-4 w-4" />
@@ -231,7 +231,7 @@ export function MomentCommentInput({
           type="button"
           onClick={handleSend}
           disabled={!text.trim() || submitting || disabled}
-          className="h-9 w-9 shrink-0 grid place-items-center rounded-full bg-[#D8B282] text-[#0b0f19] font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-9 w-9 shrink-0 grid place-items-center rounded-full bg-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent-on)] font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Gửi bình luận"
         >
           {submitting ? (

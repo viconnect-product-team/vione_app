@@ -11,6 +11,7 @@ import {
   Briefcase,
   ChevronRight,
   Eye,
+  Image as ImageIcon,
   LayoutList,
   Loader2,
   Lock,
@@ -21,8 +22,11 @@ import {
   Sparkles,
   Trash2,
   Trophy,
+  Upload,
+  X,
 } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { fetchNestApi } from "@/lib/api-client";
@@ -120,9 +124,9 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
-      className="flex flex-col items-center gap-1.5 rounded-2xl py-2 text-[11.5px] font-medium text-[#D4C3A3] transition-colors hover:text-[#D8B282] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none"
+      className="flex flex-col items-center gap-1.5 rounded-2xl py-2 text-[11.5px] font-semibold text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
     >
-      <span className="grid h-12 w-12 place-items-center rounded-full border border-[#D8B282]/25 bg-[#0c1522]/80 text-[#D8B282] transition-colors hover:border-[#D8B282]/50">
+      <span className="grid h-12 w-12 place-items-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-accent)] shadow-xs transition-all hover:border-[var(--bc-mobile-accent)] hover:scale-105">
         {busy ? (
           <Loader2
             aria-hidden="true"
@@ -130,10 +134,10 @@ function QuickAction({
             strokeWidth={1.8}
           />
         ) : (
-          <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.7} />
+          <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
         )}
       </span>
-      <span className="w-full truncate text-center">{label}</span>
+      <span className="w-full truncate text-center font-medium leading-tight">{label}</span>
     </button>
   );
 }
@@ -157,6 +161,42 @@ function SectionCard({
       )}
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">{children}</div>
     </section>
+  );
+}
+
+/** Inline theme-picker row — light / dark / high-contrast. */
+function ThemeSettingRow() {
+  const { theme, setTheme } = useTheme();
+  const t = useT();
+
+  const MODES = [
+    { mode: "light" as const, emoji: "☀️", label: t("theme.light") },
+    { mode: "dark" as const, emoji: "🌙", label: t("theme.dark") },
+    { mode: "contrast" as const, emoji: "◑", label: t("theme.contrast") },
+  ];
+
+  return (
+    <div role="group" aria-label={t("theme.label")} className="grid grid-cols-3 gap-2 py-1">
+      {MODES.map(({ mode, emoji, label }) => {
+        const active = theme === mode;
+        return (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setTheme(mode)}
+            aria-pressed={active}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-[12px] font-semibold transition text-center ${
+              active
+                ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent font-bold shadow-sm"
+                : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:border-[#D8B282]/40"
+            }`}
+          >
+            <span className="text-lg leading-none">{emoji}</span>
+            <span>{label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -690,6 +730,11 @@ function ConnectAppMePage() {
               </p>
             </SectionCard>
 
+            {/* Appearance Theme Switcher */}
+            <SectionCard title={t("theme.label")}>
+              <ThemeSettingRow />
+            </SectionCard>
+
             <SectionCard title={t("bc.mobile.me.accountSection.title")}>
               <Link to="/account-settings" className={rowClass}>
                 <span className="flex items-center gap-3">{t("bc.mobile.me.accountSecurity")}</span>
@@ -872,9 +917,67 @@ function ShowcaseManageSheet({
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Vui lòng chọn tệp hình ảnh (PNG, JPG, SVG, WebP)");
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Compress / resize to max 400x400 to keep fast and fit well
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 400;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/png", 0.9);
+          setLogoUrl(dataUrl);
+        } else {
+          setLogoUrl(event.target?.result as string);
+        }
+        setUploading(false);
+      };
+      img.onerror = () => {
+        setLogoUrl(event.target?.result as string);
+        setUploading(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      setError("Lỗi đọc tệp ảnh từ máy");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   async function handleAdd() {
     if (!title.trim()) return;
@@ -915,13 +1018,13 @@ function ShowcaseManageSheet({
     }
   }
 
-  const sheetTitle = kind === "business_area" ? "Lĩnh vực kinh doanh" : "Khách hàng & Đối tác";
-  const emptyMessage = kind === "business_area" ? "Chưa có lĩnh vực kinh doanh nào" : "Chưa có khách hàng nào";
+  const sheetTitle = kind === "business_area" ? "Lĩnh vực kinh doanh" : "Khách hàng & Dấu ấn";
+  const emptyMessage = kind === "business_area" ? "Chưa có lĩnh vực kinh doanh nào" : "Chưa có khách hàng/dấu ấn nào";
 
   return (
     <MeSheet
       title={sheetTitle}
-      subtitle={kind === "business_area" ? "Quản lý danh sách lĩnh vực/sản phẩm kinh doanh của bạn." : "Quản lý danh sách khách hàng và đối tác của bạn."}
+      subtitle={kind === "business_area" ? "Quản lý danh sách lĩnh vực/sản phẩm kinh doanh của bạn." : "Quản lý danh sách đối tác, khách hàng và dấu ấn thương hiệu."}
       onClose={onClose}
     >
       <div className="flex flex-col gap-4 pb-6">
@@ -934,20 +1037,34 @@ function ShowcaseManageSheet({
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex items-center justify-between py-2.5 gap-3">
-                <div className="min-w-0 flex-1">
-                  <span className="block break-words text-[13.5px] font-semibold text-[var(--bc-mobile-text)]">
-                    {item.title}
-                  </span>
-                  {item.subtitle && (
-                    <span className="block break-words text-[12px] text-[var(--bc-mobile-muted)]">
-                      {item.subtitle}
-                    </span>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {item.logoUrl ? (
+                    <div className="h-10 w-10 shrink-0 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)] p-1 grid place-items-center overflow-hidden">
+                      <img
+                        src={item.logoUrl}
+                        alt={item.title}
+                        className="max-h-full max-w-full object-contain"
+                        onError={(e) => {
+                          // Hide broken img
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 shrink-0 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)] grid place-items-center text-[11px] font-bold text-[var(--bc-mobile-accent)]">
+                      {item.title.charAt(0).toUpperCase()}
+                    </div>
                   )}
-                  {item.logoUrl && (
-                    <span className="block break-words text-[11px] text-[var(--bc-mobile-muted)]/70 truncate max-w-[200px]">
-                      Logo: {item.logoUrl}
+                  <div className="min-w-0 flex-1">
+                    <span className="block break-words text-[13.5px] font-semibold text-[var(--bc-mobile-text)]">
+                      {item.title}
                     </span>
-                  )}
+                    {item.subtitle && (
+                      <span className="block break-words text-[12px] text-[var(--bc-mobile-muted)]">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -1002,30 +1119,79 @@ function ShowcaseManageSheet({
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               disabled={saving}
-              placeholder="Ví dụ: Thiết kế hệ thống, lập trình di động..."
+              placeholder="Ví dụ: Thiết kế hệ thống, đối tác chiến lược..."
               className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
             />
           </div>
 
           {kind === "client" && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <label className="text-[12px] font-medium text-[var(--bc-mobile-muted)]">
-                Đường dẫn ảnh Logo (Tùy chọn URL)
+                Logo Khách hàng / Dấu ấn
               </label>
-              <input
-                type="url"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                disabled={saving}
-                placeholder="https://example.com/logo.png"
-                className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
-              />
+
+              {/* Upload button & Direct link */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] px-4 text-[13px] font-medium text-[var(--bc-mobile-accent)] cursor-pointer hover:bg-white/[0.05] transition-colors">
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span>{uploading ? "Đang tải ảnh..." : "Tải ảnh logo từ máy"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading || saving}
+                      className="sr-only"
+                    />
+                  </label>
+                </div>
+
+                <div className="relative flex items-center">
+                  <input
+                    type="url"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    disabled={saving || uploading}
+                    placeholder="Hoặc dán đường dẫn ảnh URL..."
+                    className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 pr-9 text-[13px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+                  />
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setLogoUrl("")}
+                      className="absolute right-2.5 p-1 text-[var(--bc-mobile-muted)] hover:text-rose-400"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {logoUrl && (
+                  <div className="flex items-center gap-3 p-2 rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)]">
+                    <div className="h-10 w-10 rounded-lg bg-[var(--bc-mobile-surface)] grid place-items-center overflow-hidden shrink-0">
+                      <img
+                        src={logoUrl}
+                        alt="Xem trước logo"
+                        className="max-h-full max-w-full object-contain"
+                        onError={() => setError("Đường dẫn ảnh không tải được. Vui lòng thử tải từ tệp trên máy.")}
+                      />
+                    </div>
+                    <span className="text-[12px] text-[var(--bc-mobile-muted)] truncate flex-1">
+                      Đã chọn ảnh logo
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           <button
             type="button"
-            disabled={!canAdd || saving || !title.trim()}
+            disabled={!canAdd || saving || uploading || !title.trim()}
             onClick={() => void handleAdd()}
             className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >

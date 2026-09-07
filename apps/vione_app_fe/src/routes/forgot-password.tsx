@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchNestApi } from "@/lib/api-client";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { ChevronLeft, Crown, Loader2, MailCheck, AlertCircle } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/forgot-password")({
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const t = useT();
   const { m: mobile, email: emailParam } = Route.useSearch();
   const [email, setEmail] = useState(emailParam ?? "");
@@ -32,10 +34,8 @@ function ForgotPasswordPage() {
     : t("forgot.resend.cooldown").replace("{sec}", String(cooldown.seconds));
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
-    });
-  }, [navigate]);
+    if (user) navigate({ to: "/" });
+  }, [user, navigate]);
 
   async function submit() {
     const trimmed = email.trim();
@@ -54,13 +54,10 @@ function ForgotPasswordPage() {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo:
-          mobile === "1"
-            ? `${window.location.origin}/reset-password?m=1`
-            : `${window.location.origin}/reset-password`,
+      await fetchNestApi("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: trimmed }),
       });
-      if (error) throw error;
       try {
         sessionStorage.setItem("vba_reset_email", trimmed);
       } catch {
@@ -68,9 +65,9 @@ function ForgotPasswordPage() {
       }
       cooldown.markSent();
       setStatus("success");
-    } catch (e) {
+    } catch (e: any) {
       const info = classifyAuthError(e, { provider: "password" });
-      const msg = t(info.messageKey as TKey);
+      const msg = t(info.messageKey as TKey) || e?.message || "Không thể gửi yêu cầu";
       setErrorMsg(msg);
       setStatus("error");
       toast.error(msg);

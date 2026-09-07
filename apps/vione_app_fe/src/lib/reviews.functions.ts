@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { fetchNestApiFromServer } from "./api-client";
 
 export type ReviewType = "service" | "event" | "networking";
 
@@ -18,35 +16,11 @@ export type ReviewRow = {
   createdAt: string;
 };
 
-type Row = Record<string, unknown>;
-
-function mapRow(r: Row): ReviewRow {
-  return {
-    id: r.id as string,
-    sellerId: r.seller_id as string,
-    reviewerId: r.reviewer_id as string,
-    reviewerName: (r.reviewer_name as string) ?? "",
-    rating: r.rating as number,
-    comment: (r.comment as string) ?? "",
-    reviewType: ((r.review_type as string) ?? "service") as ReviewType,
-    createdAt: r.created_at as string,
-  };
-}
-
 export const listReviewsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ sellerId: z.string().min(1).max(64) }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: rows, error } = await getDb(context)
-      .from("reviews")
-      .select("*")
-      .eq("seller_id", data.sellerId)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    const reviews: ReviewRow[] = (rows ?? []).map((r: any) => mapRow(r as Row));
-    const count = reviews.length;
-    const avg = count ? reviews.reduce((s: number, r: ReviewRow) => s + r.rating, 0) / count : 0;
-    return { reviews, stats: { count, avg } };
+  .handler(async ({ data, context }): Promise<{ reviews: ReviewRow[]; stats: { count: number; avg: number } }> => {
+    return fetchNestApiFromServer(`/reviews?sellerId=${encodeURIComponent(data.sellerId)}`, context.token);
   });
 
 export const addReviewFn = createServerFn({ method: "POST" })
@@ -62,27 +36,11 @@ export const addReviewFn = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: reviewer, error: e1 } = await getDb(context)
-      .from("members")
-      .select("name")
-      .eq("id", data.reviewerId)
-      .maybeSingle();
-    if (e1) throw new Error(e1.message);
-    const { data: row, error } = await getDb(context)
-      .from("reviews")
-      .insert({
-        seller_id: data.sellerId,
-        reviewer_id: data.reviewerId,
-        reviewer_name: (reviewer?.name as string) ?? "",
-        rating: data.rating,
-        comment: data.comment,
-        review_type: data.reviewType,
-      })
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+  .handler(async ({ data, context }): Promise<ReviewRow | null> => {
+    return fetchNestApiFromServer("/reviews", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   });
 
 export const updateReviewFn = createServerFn({ method: "POST" })
@@ -99,19 +57,11 @@ export const updateReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<ReviewRow | null> => {
-    const { data: row, error } = await getDb(context)
-      .from("reviews")
-      .update({
-        rating: data.rating,
-        comment: data.comment,
-        review_type: data.reviewType,
-      })
-      .eq("id", data.id)
-      .eq("reviewer_id", data.reviewerId)
-      .select("*")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapRow(row) : null;
+    const { id, ...body } = data;
+    return fetchNestApiFromServer(`/reviews/${id}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
   });
 
 export const deleteReviewFn = createServerFn({ method: "POST" })
@@ -125,11 +75,7 @@ export const deleteReviewFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { error } = await getDb(context)
-      .from("reviews")
-      .delete()
-      .eq("id", data.id)
-      .eq("reviewer_id", data.reviewerId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    return fetchNestApiFromServer(`/reviews/${data.id}`, context.token, {
+      method: "DELETE",
+    });
   });

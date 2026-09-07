@@ -7,12 +7,11 @@ async function main() {
   await client.connect();
 
   const cols = await client.query(`
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'users' AND table_schema = 'auth'
+    SELECT conname, pg_get_constraintdef(oid) 
+    FROM pg_constraint 
+    WHERE conrelid = 'public.documents'::regclass
   `);
-  console.log("auth.users columns:");
-  cols.rows.forEach(r => console.log(`  ${r.column_name}: ${r.data_type}`));
+  console.log("documents constraints:", cols.rows);
 
   await client.end();
 }

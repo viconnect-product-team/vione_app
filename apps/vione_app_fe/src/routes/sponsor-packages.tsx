@@ -63,8 +63,9 @@ function PackagesPage() {
       setOpen(false);
       setEditing(null);
       reload();
-    } catch {
-      toast.error(t("common.saveError"));
+    } catch (err: any) {
+      console.error("[SponsorPackages] Save error:", err);
+      toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -77,8 +78,9 @@ function PackagesPage() {
       await deleteFn({ data: { id: p.id } });
       toast.success(t("common.deletedToast"));
       reload();
-    } catch {
-      toast.error(t("common.deleteError"));
+    } catch (err: any) {
+      console.error("[SponsorPackages] Delete error:", err);
+      toast.error(err?.message || t("common.deleteError"));
     } finally {
       setDeletingId(null);
     }

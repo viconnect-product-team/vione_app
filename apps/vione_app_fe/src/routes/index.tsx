@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Building2,
   Calendar,
@@ -220,20 +219,16 @@ async function consumeAuthCallback(): Promise<boolean> {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   let established = false;
   try {
-    const code = search.get("code");
-    const accessToken = hash.get("access_token");
-    const refreshToken = hash.get("refresh_token");
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) established = true;
-      else console.error("[auth-callback] code exchange failed", error.message);
-    } else if (accessToken && refreshToken) {
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-      if (!error) established = true;
-      else console.error("[auth-callback] setSession failed", error.message);
+    const token = search.get("token") || hash.get("access_token") || search.get("access_token");
+    const refreshToken = hash.get("refresh_token") || search.get("refresh_token");
+    if (token) {
+      localStorage.setItem("vibe_token", token);
+      document.cookie = `sb-access-token=${token}; path=/; max-age=604800; SameSite=Lax`;
+      if (refreshToken) {
+        localStorage.setItem("vibe_refresh_token", refreshToken);
+        document.cookie = `sb-refresh-token=${refreshToken}; path=/; max-age=2592000; SameSite=Lax`;
+      }
+      established = true;
     }
   } catch (e) {
     console.error("[auth-callback] failed", e instanceof Error ? e.message : String(e));

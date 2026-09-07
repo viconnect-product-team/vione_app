@@ -1,3 +1,8 @@
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('vibe_token');
+}
+
 export const NEST_API_URL =
   (typeof process !== 'undefined' && (process.env?.NEST_API_URL || process.env?.VITE_API_URL)) ||
   import.meta.env?.VITE_API_URL ||

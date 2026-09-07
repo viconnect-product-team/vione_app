@@ -4,8 +4,9 @@
 // Không có dữ liệu = không bịa dữ liệu: panel chỉ hiển thị gợi ý bổ sung cho
 // CHỦ SỞ HỮU (owner view), không bao giờ render logo/lĩnh vực mẫu.
 
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Building2 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export type ShowcaseRow = {
@@ -17,6 +18,44 @@ export type ShowcaseRow = {
 };
 
 export type ShowcaseLogo = { id: string; name: string; logoUrl: string };
+
+function LogoItem({ logo }: { logo: ShowcaseLogo }) {
+  const [imgError, setImgError] = useState(false);
+  const initials = logo.name
+    .split(/\s+/)
+    .map((w) => w.charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "VIP";
+
+  return (
+    <li className="grid h-16 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)] p-2 text-center overflow-hidden transition-transform hover:scale-105">
+      {!imgError && logo.logoUrl ? (
+        <img
+          src={logo.logoUrl}
+          alt={logo.name}
+          loading="lazy"
+          onError={() => setImgError(true)}
+          className="max-h-10 max-w-full object-contain"
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
+          <div className="w-7 h-7 rounded-lg bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-0.5 shadow-sm">
+            <div className="w-full h-full rounded-[6px] bg-[var(--bc-mobile-surface)] flex items-center justify-center">
+              <span className="text-[10px] font-black tracking-tighter text-[var(--bc-mobile-accent)]">
+                {initials}
+              </span>
+            </div>
+          </div>
+          <span className="text-[9.5px] font-medium text-[var(--bc-mobile-muted)] truncate max-w-[90%] block leading-none">
+            {logo.name}
+          </span>
+        </div>
+      )}
+    </li>
+  );
+}
 
 export function MeShowcasePanel({
   id,
@@ -137,20 +176,10 @@ export function MeShowcasePanel({
           {logos.length > 0 && (
             <ul className="mt-3 grid grid-cols-4 gap-2">
               {logos.map((logo) => (
-                <li
-                  key={logo.id}
-                  className="grid h-16 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] p-2"
-                >
-                  <img
-                    src={logo.logoUrl}
-                    alt={logo.name}
-                    loading="lazy"
-                    className="max-h-10 max-w-full object-contain"
-                  />
-                </li>
+                <LogoItem key={logo.id} logo={logo} />
               ))}
               {extraCount > 0 && (
-                <li className="grid h-16 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] p-2 text-center text-[12px] font-semibold text-[var(--bc-mobile-text-2)]">
+                <li className="grid h-16 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)] p-2 text-center text-[12px] font-semibold text-[var(--bc-mobile-text-2)]">
                   +{extraCount}
                 </li>
               )}

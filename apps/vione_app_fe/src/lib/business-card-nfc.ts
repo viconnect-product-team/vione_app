@@ -1,3 +1,6 @@
+import { decodeNdefRecord, extractNdefPayload } from "@/hooks/use-nfc-scanner";
+import { extractScanCode } from "@/lib/scan";
+
 // Business Card NFC / tap flow. Uses the Web NFC (NDEF) API where available
 // (Chrome on Android over HTTPS). The card's public URL is the identity — NFC
 // tag IDs are never trusted. Writing a badge stores the URL + a vCard so any
@@ -8,7 +11,10 @@ export type NfcSupport = "supported" | "unsupported" | "insecure";
 export function nfcSupport(): NfcSupport {
   if (typeof window === "undefined") return "unsupported";
   if (!("NDEFReader" in window)) return "unsupported";
-  if (!window.isSecureContext) return "insecure";
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  if (!window.isSecureContext && !isLocal) return "insecure";
   return "supported";
 }
 
@@ -63,6 +69,7 @@ export async function writeCardNfc(p: CardTapPayload): Promise<NfcResult> {
   }
 }
 
+
 /**
  * Scan a nearby NFC badge and resolve the first URL record found.
  * Resolves with the URL string, or rejects on error/abort.
@@ -78,16 +85,25 @@ export function scanCardNfc(signal?: AbortSignal): Promise<string> {
       const ndef = new (window as any).NDEFReader();
       ndef
         .scan({ signal })
-
         .then(() => {
           ndef.onreading = (event: any) => {
-            const decoder = new TextDecoder();
-            for (const rec of event.message.records) {
-              if (rec.recordType === "url") {
-                resolve(decoder.decode(rec.data));
-                return;
-              }
+            const raw = extractNdefPayload(event);
+            if (!raw) return;
+
+            // 1. If it's a direct URL
+            if (/^https?:\/\//i.test(raw)) {
+              resolve(raw);
+              return;
             }
+
+            // 2. If it's a vCard, find URL: or NOTE:
+            const codeOrUrl = extractScanCode(raw);
+            if (codeOrUrl) {
+              resolve(codeOrUrl);
+              return;
+            }
+
+            resolve(raw);
           };
 
           ndef.onreadingerror = () => reject(new Error("read_failed"));
@@ -98,3 +114,4 @@ export function scanCardNfc(signal?: AbortSignal): Promise<string> {
     }
   });
 }
+

@@ -118,16 +118,18 @@ export class MembersService {
       return mems[0].association_id;
     }
 
-    // Fallback: lấy association đầu tiên trong DB thay vì UUID cứng
+    // Fallback: ưu tiên association đang published (CEO1983)
     const firstAssoc = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1
+      SELECT id FROM public.associations 
+      ORDER BY landing_published DESC, created_at DESC 
+      LIMIT 1
     `.catch(() => []);
 
     if (firstAssoc.length > 0 && firstAssoc[0]?.id) {
       return firstAssoc[0].id;
     }
 
-    return null; // Không có association nào
+    return null;
   }
 
   private mapMemberRow(r: any) {
@@ -689,7 +691,7 @@ export class MembersService {
     if (!associationId) return null;
 
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT name, logo_url, brand_primary FROM public.associations
+      SELECT name, logo_url, brand_primary, tagline, about FROM public.associations
       WHERE id = ${associationId}::uuid
       LIMIT 1
     `.catch(() => []);
@@ -700,6 +702,8 @@ export class MembersService {
       name: a.name ?? '',
       logoUrl: a.logo_url ?? null,
       brandPrimary: a.brand_primary ?? null,
+      tagline: a.tagline ?? null,
+      about: a.about ?? null,
     };
   }
 

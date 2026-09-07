@@ -176,10 +176,10 @@ export function ExecutiveHome() {
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-solid border-[#D8B282]/20 bg-[#050c15]/90 backdrop-blur-md px-5 py-3 -mx-4">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 py-3 -mx-4">
         <div className="relative inline-flex flex-none flex-col items-start gap-1">
           <ViOneLogo className="h-5 w-[77px]" />
-          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-light leading-4 tracking-[0] text-[#D4C3A3]">
+          <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
           </p>
         </div>
@@ -187,11 +187,11 @@ export function ExecutiveHome() {
           <Link
             to="/connect-app/inbox"
             aria-label="Tin nhắn"
-            className="relative grid place-items-center rounded-full p-1 text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
+            className="relative grid place-items-center rounded-full p-1 text-[var(--bc-mobile-muted)] transition-colors hover:bg-black/5 dark:hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
           >
-            <MessageSquare className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
+            <MessageSquare className="h-5 w-5 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]" strokeWidth={1.8} />
             {unreadDmCount > 0 ? (
-              <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
+              <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[var(--bc-mobile-surface)] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
                 {unreadDmCount}
               </span>
             ) : null}
@@ -213,7 +213,7 @@ export function ExecutiveHome() {
 
             <section
               aria-labelledby="bc-home-today"
-              className="relative mt-6 overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md p-4 transition-all hover:border-[#D8B282]/40"
+              className="relative mt-6 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm transition-all hover:border-[var(--bc-mobile-border-gold)]"
             >
               {/* Header & 2 Tabs Switcher */}
               <div className="relative z-10 flex flex-col gap-3">
@@ -221,18 +221,18 @@ export function ExecutiveHome() {
                   <div className="flex items-center gap-3">
                     <span
                       aria-hidden="true"
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#D8B282]/30 bg-[#0c1522]/60 text-[#D8B282]"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-[#D8B282]"
                     >
                       <CalendarDays className="h-4.5 w-4.5" strokeWidth={1.8} />
                     </span>
 
                     <div className="min-w-0">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#94A3B8] leading-[15px]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--bc-mobile-muted)] leading-[15px]">
                         {scheduleTab === "today" ? t("bc.mobile.home.today.label") : "Lịch trình sắp tới"}
                       </div>
                       <h2
                         id="bc-home-today"
-                        className="mt-0.5 truncate text-[15px] font-bold text-[#f2efe9] leading-6"
+                        className="mt-0.5 truncate text-[15px] font-bold text-[var(--bc-mobile-text)] leading-6"
                       >
                         {scheduleTab === "today" ? <TodayDate /> : "Sự kiện sắp diễn ra"}
                       </h2>
@@ -245,7 +245,7 @@ export function ExecutiveHome() {
                         type="button"
                         onClick={() => setCustomizeOpen(true)}
                         aria-label={t("bc.mobile.home.today.customize.open")}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#94A3B8] transition-colors hover:text-[#f5f7fa] hover:bg-[#ffffff0d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] hover:bg-black/5 dark:hover:bg-[#ffffff0d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                       >
                         <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
                       </button>
@@ -253,7 +253,7 @@ export function ExecutiveHome() {
 
                     <Link
                       to="/connect-app/calendar"
-                      className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[#CBD5E1] transition-colors hover:text-white focus-visible:outline-none"
+                      className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none"
                     >
                       {t("bc.mobile.home.today.viewCalendar")}
                       <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
@@ -262,14 +262,14 @@ export function ExecutiveHome() {
                 </div>
 
                 {/* Segmented Tab Bar */}
-                <div className="flex items-center rounded-xl bg-black/40 p-1 border border-[#D8B282]/15">
+                <div className="flex items-center rounded-xl bg-slate-100 dark:bg-black/40 p-1 border border-[var(--bc-mobile-border)]">
                   <button
                     type="button"
                     onClick={() => setScheduleTab("today")}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center ${
                       scheduleTab === "today"
-                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-sm font-bold"
-                        : "text-[#94A3B8] hover:text-[#f2efe9]"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:text-[#050c15] shadow-xs font-bold"
+                        : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#f2efe9]"
                     }`}
                   >
                     Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
@@ -279,8 +279,8 @@ export function ExecutiveHome() {
                     onClick={() => setScheduleTab("upcoming")}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                       scheduleTab === "upcoming"
-                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-sm font-bold"
-                        : "text-[#94A3B8] hover:text-[#f2efe9]"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:text-[#050c15] shadow-xs font-bold"
+                        : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#f2efe9]"
                     }`}
                   >
                     <span>Sắp tới</span>
@@ -288,8 +288,8 @@ export function ExecutiveHome() {
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                           scheduleTab === "upcoming"
-                            ? "bg-[#050c15]/20 text-[#050c15] font-bold"
-                            : "bg-[#D8B282]/20 text-[#D8B282]"
+                            ? "bg-white/20 text-white dark:bg-[#050c15]/20 dark:text-[#050c15] font-bold"
+                            : "bg-amber-500/10 text-amber-700 dark:bg-[#D8B282]/20 dark:text-[#D8B282]"
                         }`}
                       >
                         {upcomingEvents.length}
@@ -427,12 +427,12 @@ function QuickActions() {
         <Link
           key={to}
           to={to as any}
-          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.25)_0%,rgba(12,21,34,0.12)_100%)] backdrop-blur-md py-3 px-1 text-center transition-all hover:border-[#D8B282]/50 active:scale-[0.98]"
+          className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-3.5 px-1 text-center shadow-xs transition-all hover:border-[var(--bc-mobile-border-gold)] active:scale-[0.98]"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#D8B282]/10 border border-[#D8B282]/20 text-[#D8B282] group-hover:border-[#D8B282] group-hover:scale-105 transition-all">
-            <Icon className="h-5 w-5 text-[#D8B282]" />
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-[#D8B282] group-hover:border-amber-500 group-hover:scale-105 transition-all">
+            <Icon className="h-5 w-5 text-amber-600 dark:text-[#D8B282]" />
           </span>
-          <span className="text-[12.5px] font-medium text-[var(--bc-mobile-text)] truncate max-w-full group-hover:text-[#D8B282] transition-colors">
+          <span className="text-[12.5px] font-semibold text-[var(--bc-mobile-text)] truncate max-w-full group-hover:text-amber-700 dark:group-hover:text-[#D8B282] transition-colors">
             {label}
           </span>
         </Link>
@@ -558,11 +558,11 @@ function InsightCard() {
   return (
     <section
       aria-labelledby="bc-home-insight"
-      className="relative mt-5 overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md p-5 transition-all hover:border-[#D8B282]/40"
+      className="relative mt-5 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 shadow-sm transition-all hover:border-[var(--bc-mobile-border-gold)]"
     >
 
       {/* Concentric circles SVG background at bottom right */}
-      <div className="absolute bottom-0 right-0 pointer-events-none opacity-50 z-0 translate-x-[20px] translate-y-[20px]">
+      <div className="absolute bottom-0 right-0 pointer-events-none opacity-40 z-0 translate-x-[20px] translate-y-[20px]">
         <svg width="161" height="158" viewBox="0 0 161 158" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g opacity="0.5">
             <rect x="0.5" y="0.5" width="232" height="232" rx="116" stroke="#D8B282" strokeOpacity="0.2" />
@@ -606,7 +606,7 @@ function InsightCard() {
         ) : (
           parts.map((part, index) => 
             /^\d+$/.test(part) ? (
-              <span key={index} className="text-[var(--bc-mobile-accent)] font-extrabold">{part}</span>
+              <span key={index} className="text-amber-600 dark:text-[var(--bc-mobile-accent)] font-extrabold">{part}</span>
             ) : (
               part
             )
@@ -618,10 +618,10 @@ function InsightCard() {
       </p>
       <Link
         to="/connect-app/network"
-        className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[var(--bc-mobile-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+        className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-amber-700 dark:text-[var(--bc-mobile-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
         {isEmpty ? t("bc.mobile.home.insight.emptyCta") : t("bc.mobile.home.insight.cta")}
-        <ArrowRight aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
+        <ArrowRight aria-hidden="true" className="h-4 w-4 text-amber-700 dark:text-[var(--bc-mobile-accent)]" strokeWidth={2} />
       </Link>
     </section>
   );
@@ -696,7 +696,7 @@ function Greeting({
           <div className="relative inline-flex flex-[0_0_auto] flex-col items-start justify-center min-w-0 flex-1">
             <div className="relative flex w-full flex-[0_0_auto] flex-col items-start pb-0.5">
               <div className="relative flex w-full flex-[0_0_auto] items-center gap-2">
-                <h2 className="relative flex w-fit items-center whitespace-nowrap text-lg font-semibold leading-7 tracking-[0] text-[#f2efe9]">
+                <h2 className="relative flex w-fit items-center whitespace-nowrap text-lg font-bold leading-7 tracking-tight text-[var(--bc-mobile-text)]">
                   {name}
                 </h2>
                 <span
@@ -710,14 +710,14 @@ function Greeting({
             </div>
             {role ? (
               <div className="relative flex w-full flex-[0_0_auto] flex-col items-start">
-                <p className="relative mt-[-1px] flex w-fit items-center whitespace-nowrap text-xs font-normal leading-4 tracking-[0] text-[#94A3B8]">
+                <p className="relative mt-[-1px] flex w-fit items-center whitespace-nowrap text-xs font-normal leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
                   {role}
                 </p>
               </div>
             ) : null}
             <div className="mt-2 inline-flex items-start">
-              <span className="relative inline-flex flex-[0_0_auto] flex-col items-start self-stretch rounded-full border border-solid border-[#D8B282]/30 bg-[#D8B282]/10 px-3 py-0.5">
-                <span className="relative flex w-fit items-center whitespace-nowrap text-[10px] font-semibold leading-[15px] tracking-[0.5px] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent">
+              <span className="relative inline-flex flex-[0_0_auto] flex-col items-start self-stretch rounded-full border border-solid border-amber-500/30 bg-amber-500/10 px-3 py-0.5">
+                <span className="relative flex w-fit items-center whitespace-nowrap text-[10px] font-semibold leading-[15px] tracking-[0.5px] bg-gradient-to-r from-amber-600 to-amber-800 dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent">
                   EXECUTIVE MEMBER
                 </span>
               </span>
@@ -739,18 +739,18 @@ function VPrimaryAction({ onOpenV }: { onOpenV: () => void }) {
     <button
       type="button"
       onClick={onOpenV}
-      className="mt-5 flex min-h-[48px] w-full items-center justify-between rounded-xl px-4 py-3 border border-[#D8B282]/30 bg-white/[0.03] backdrop-blur-md transition-all hover:bg-white/[0.06] hover:border-[#D8B282]/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] active:scale-98 cursor-pointer"
+      className="mt-5 flex min-h-[48px] w-full items-center justify-between rounded-xl px-4 py-3 border border-[var(--bc-mobile-border)] bg-slate-50 dark:bg-white/[0.03] backdrop-blur-md transition-all hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-[var(--bc-mobile-border-gold)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] active:scale-98 cursor-pointer"
     >
       <span
         aria-hidden="true"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-1 shadow-[0_2px_8px_rgba(201,158,74,0.3)]"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-1 shadow-xs"
       >
         <VIconMark size={18} />
       </span>
-      <span className="font-semibold text-sm bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent text-center">
+      <span className="font-bold text-sm text-amber-700 dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:bg-clip-text dark:text-transparent text-center">
         {t("bc.mobile.home.v.open")}
       </span>
-      <ArrowRight className="h-4 w-4 text-[#D8B282]" strokeWidth={2} />
+      <ArrowRight className="h-4 w-4 text-amber-600 dark:text-[#D8B282]" strokeWidth={2} />
     </button>
   );
 }
@@ -760,7 +760,7 @@ function VMarker() {
   return (
     <span
       aria-hidden="true"
-      className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-0.5 shadow-[0_1px_4px_rgba(201,158,74,0.3)]"
+      className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-0.5 shadow-xs"
     >
       <VIconMark size={14} />
     </span>
@@ -792,43 +792,43 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
     <li className="relative group">
       <span
         aria-hidden="true"
-        className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-[#D8B282]/70 shadow-[0_0_8px_rgba(216,178,130,0.4)] group-hover:scale-125 transition-transform"
+        className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-amber-500 dark:bg-[#D8B282]/70 shadow-xs group-hover:scale-125 transition-transform"
       />
       <Link
         to="/events/$eventId"
         params={{ eventId: String(event.id) }}
-        className="flex flex-col items-start w-full rounded-lg p-1.5 -m-1.5 transition-all hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
+        className="flex flex-col items-start w-full rounded-lg p-1.5 -m-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
       >
         <div className="flex w-full items-center justify-between gap-2">
-          <span className="text-[12px] font-bold capitalize tabular-nums text-[#D8B282]">
+          <span className="text-[12px] font-bold capitalize tabular-nums text-amber-700 dark:text-[#D8B282]">
             {dateFormatted} {timeFormatted ? `· ${timeFormatted}` : ""}
           </span>
-          {event.type && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#D8B282]/15 text-[#F6E1C3] border border-[#D8B282]/30">
-              {event.type === "online" ? "Trực tuyến" : event.type === "offline" ? "Trực tiếp" : event.type}
+          {(event as any).type && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-800 dark:bg-[#D8B282]/15 dark:text-[#F6E1C3] border border-amber-500/30">
+              {(event as any).type === "online" ? "Trực tuyến" : (event as any).type === "offline" ? "Trực tiếp" : (event as any).type}
             </span>
           )}
         </div>
 
-        <span className="mt-1 block text-[14px] font-semibold text-[#f2efe9] group-hover:text-[#D8B282] transition-colors leading-snug line-clamp-2 text-left">
+        <span className="mt-1 block text-[14px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-amber-700 dark:group-hover:text-[#D8B282] transition-colors leading-snug line-clamp-2 text-left">
           {title}
         </span>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#94A3B8]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--bc-mobile-muted)]">
           {organizer && (
-            <span className="font-medium text-[#CBD5E1] truncate max-w-[180px]">
+            <span className="font-medium text-[var(--bc-mobile-text)] truncate max-w-[180px]">
               {organizer}
             </span>
           )}
           {location && (
             <span className="flex items-center gap-1 truncate max-w-[220px]">
-              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-[#D8B282]/70" strokeWidth={1.6} />
+              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-amber-600 dark:text-[#D8B282]/70" strokeWidth={1.6} />
               <span className="truncate">{location}</span>
             </span>
           )}
-          {event.registered !== undefined && event.capacity !== undefined && Number(event.capacity) > 0 && (
-            <span className="text-[11px] text-[#D4C3A3]/80">
-              {event.registered}/{event.capacity} đã đăng ký
+          {(event as any).registered !== undefined && (event as any).capacity !== undefined && Number((event as any).capacity) > 0 && (
+            <span className="text-[11px] text-[var(--bc-mobile-muted)]">
+              {(event as any).registered}/{(event as any).capacity} đã đăng ký
             </span>
           )}
         </div>
@@ -851,14 +851,14 @@ function TodayEmpty({
     <div className="mt-6 flex flex-col items-center px-2 pb-2 text-center">
       <span
         aria-hidden="true"
-        className="grid h-12 w-12 place-items-center rounded-full border border-[#D8B282]/30 bg-[#0c1522] text-[#D8B282]"
+        className="grid h-12 w-12 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-[#D8B282]"
       >
         <CircleCheck className="h-5 w-5" strokeWidth={1.5} />
       </span>
-      <p className="mt-3 text-[15px] font-semibold text-[#f5f7fa]">
+      <p className="mt-3 text-[15px] font-bold text-[var(--bc-mobile-text)]">
         Hôm nay bạn không có lịch trình nào
       </p>
-      <p className="mx-auto mt-1 max-w-[32ch] text-[12.5px] leading-relaxed text-[#D4C3A3]/80">
+      <p className="mx-auto mt-1 max-w-[32ch] text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
         Tất cả lịch họp và sự kiện hôm nay đã hoàn tất hoặc chưa có lịch mới.
       </p>
 
@@ -867,9 +867,9 @@ function TodayEmpty({
           <button
             type="button"
             onClick={onViewUpcoming}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#D8B282]/40 bg-[linear-gradient(135deg,rgba(246,225,195,0.15)_0%,rgba(216,178,130,0.15)_100%)] px-4 text-[13px] font-semibold text-[#F6E1C3] transition-all hover:border-[#D8B282] active:scale-98 cursor-pointer"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 text-[13px] font-bold text-amber-800 dark:text-[#F6E1C3] transition-all hover:bg-amber-500/20 active:scale-98 cursor-pointer shadow-xs"
           >
-            <CalendarDays className="h-4 w-4 text-[#D8B282]" />
+            <CalendarDays className="h-4 w-4 text-amber-600 dark:text-[#D8B282]" />
             <span>Xem sự kiện sắp tới ({upcomingCount})</span>
           </button>
         ) : null}
@@ -877,7 +877,7 @@ function TodayEmpty({
         <button
           type="button"
           onClick={onOpenV}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#D8B282]/30 bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-medium text-[#D8B282] transition-all hover:bg-white/[0.06] hover:border-[#D8B282]/60 focus-visible:outline-none active:scale-98 cursor-pointer"
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-slate-50 dark:bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-semibold text-amber-700 dark:text-[#D8B282] transition-all hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-[var(--bc-mobile-border-gold)] focus-visible:outline-none active:scale-98 cursor-pointer"
         >
           <VMarker />
           <span>{t("bc.mobile.home.empty.cta")}</span>

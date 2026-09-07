@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Link2, Pencil, Plus, Trash2, Vote as VoteIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import {
   listVotesFn,
@@ -13,7 +14,6 @@ import {
   type Vote,
 } from "@/lib/voting.functions";
 import { getVotingOpenPrefFn, setVotingOpenPrefFn } from "@/lib/settings.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
 import {
@@ -123,13 +123,14 @@ function VotingPage() {
   const fmt = useFmt();
   const router = useRouter();
   const navigate = Route.useNavigate();
+  const { user, logout } = useAuth();
+  const userId = user?.id ?? null;
   const { tab: filter, page, size: PAGE_SIZE } = Route.useSearch();
   const VOTES = Route.useLoaderData() as Vote[];
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Vote | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [remotePref, setRemotePref] = useState<OpenMode | null>(null);
   const deleteVote = useServerFn(deleteVoteFn);
   const loadPref = useServerFn(getVotingOpenPrefFn);
@@ -137,28 +138,19 @@ function VotingPage() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!active) return;
-      const uid = data.user?.id ?? null;
-      setUserId(uid);
-      if (uid) {
-        try {
-          const res = await loadPref({});
+    if (userId) {
+      loadPref({})
+        .then((res) => {
           if (active) setRemotePref(res.pref);
-        } catch {
-          /* ignore */
-        }
-      }
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUserId(session?.user?.id ?? null);
-      if (!session?.user) setRemotePref(null);
-    });
+        })
+        .catch(() => {});
+    } else {
+      setRemotePref(null);
+    }
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
     };
-  }, [loadPref]);
+  }, [userId, loadPref]);
 
   const filtered = VOTES.filter(
     (v) => filter === "all" || deriveStatus(v.startsAt, v.endsAt) === filter,
@@ -269,7 +261,7 @@ function VotingPage() {
                 </button>
                 <button
                   onClick={async () => {
-                    await supabase.auth.signOut();
+                    await logout();
                     toast.success("Đã đăng xuất");
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary"

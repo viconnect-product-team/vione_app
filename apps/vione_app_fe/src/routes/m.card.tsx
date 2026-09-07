@@ -297,14 +297,27 @@ function CardScreen() {
 
   async function shareNfc() {
     if (!member) return;
-    if (typeof window === "undefined" || !("NDEFReader" in window)) {
+    if (typeof window === "undefined") {
       toast.error(t("m.card.nfcNotSupported"));
+      return;
+    }
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    if (!window.isSecureContext && !isLocal) {
+      toast.error("Ghi NFC yêu cầu kết nối HTTPS bảo mật.");
+      return;
+    }
+    const NDEFReader = (window as any).NDEFReader;
+    if (!NDEFReader || typeof NDEFReader !== "function") {
+      toast.error("Trình duyệt chưa hỗ trợ Web NFC. Vui lòng mở bằng Google Chrome trên Android.");
       return;
     }
     try {
       setNfcBusy(true);
+      toast.info("Đang chờ chạm thẻ... Hãy áp thẻ NFC vào giữa mặt lưng điện thoại.");
 
-      const ndef = new (window as any).NDEFReader();
+      const ndef = new NDEFReader();
       await ndef.write({
         records: [
           { recordType: "url", data: `${window.location.origin}/card/${member.code}` },
@@ -312,12 +325,16 @@ function CardScreen() {
         ],
       });
       toast.success(t("m.card.nfcWriteSuccess"));
-    } catch (e) {
-      toast.error(
-        e instanceof Error
-          ? t("m.card.nfcWriteError", { msg: e.message })
-          : t("m.card.nfcWriteErrorGeneric"),
-      );
+    } catch (e: any) {
+      if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed")) {
+        toast.error("Quyền ghi NFC bị từ chối trong trình duyệt.");
+      } else {
+        toast.error(
+          e instanceof Error
+            ? t("m.card.nfcWriteError", { msg: e.message })
+            : t("m.card.nfcWriteErrorGeneric"),
+        );
+      }
     } finally {
       setNfcBusy(false);
     }

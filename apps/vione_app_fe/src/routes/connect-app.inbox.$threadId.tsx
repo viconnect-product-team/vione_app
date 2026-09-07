@@ -1,6 +1,6 @@
 // BC-Mobile-8A — Cuộc trò chuyện 1-1 (Messenger Layout).
 // Tin nhắn đối tác bên trái (kèm Avatar thật & chấm xanh Online), tin nhắn của tôi bên phải (Gold accent).
-// Hỗ trợ Menu ..., Thu hồi, Trả lời (Reply quote), Thả cảm xúc (Reactions) và Real-time Sync.
+// Hỗ trợ Menu ..., Thu hồi, Trả lời (Reply quote), Thả cảm xúc (Reactions), Đính kèm file/ảnh MinIO và Real-time Sync.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useParams } from "@tanstack/react-router";
@@ -10,15 +10,20 @@ import {
   ChevronLeft,
   Copy,
   CornerUpLeft,
+  Download,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
   Loader2,
   MoreHorizontal,
+  Paperclip,
+  Plus,
   RotateCcw,
   Send,
   Sparkles,
   X,
 } from "lucide-react";
 import { useLang, useT } from "@/lib/i18n";
-import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import {
   useDmMarkRead,
   useDmReact,
@@ -34,6 +39,7 @@ import {
   type BcDmMessage,
 } from "@/lib/business-connect/mobile/dm.types";
 import { safeRandomUUID } from "@/lib/utils";
+import { uploadChatAttachment } from "@/lib/upload-media";
 
 export const Route = createFileRoute("/connect-app/inbox/$threadId")({
   head: () => ({
@@ -78,6 +84,72 @@ function formatDateSeparator(dateStr: string, locale: string): string {
   return d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function formatFileSize(bytes?: number): string {
+  if (!bytes || isNaN(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileBadgeInfo(fileName: string) {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  if (["pdf"].includes(ext)) {
+    return { label: "PDF", color: "bg-red-500/20 text-red-400 border-red-500/30" };
+  }
+  if (["doc", "docx"].includes(ext)) {
+    return { label: "DOC", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+  }
+  if (["xls", "xlsx", "csv"].includes(ext)) {
+    return { label: "XLS", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
+  }
+  if (["ppt", "pptx"].includes(ext)) {
+    return { label: "PPT", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" };
+  }
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return { label: "ZIP", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" };
+  }
+  return {
+    label: ext.toUpperCase().slice(0, 4) || "FILE",
+    color: "bg-slate-500/20 text-slate-300 border-slate-500/30",
+  };
+}
+
+type ParsedContent =
+  | { type: "image"; url: string; name?: string; caption?: string }
+  | { type: "file"; url: string; name: string; size?: number; caption?: string }
+  | { type: "text"; text: string };
+
+function parseMessageContent(body: string): ParsedContent {
+  // Pattern 1: [image:URL|NAME] or [image:URL]
+  const imageRegex = /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i;
+  const imageMatch = body.match(imageRegex);
+  if (imageMatch) {
+    const url = imageMatch[1];
+    const name = imageMatch[2] || "";
+    const caption = body.replace(imageRegex, "").trim();
+    return { type: "image", url, name, caption: caption || undefined };
+  }
+
+  // Pattern 2: [file:URL|NAME|SIZE] or [file:URL|NAME] or [file:URL]
+  const fileRegex = /\[file:(https?:\/\/[^|\]]+)(?:\|([^|\]]*))?(?:\|(\d+))?\]/i;
+  const fileMatch = body.match(fileRegex);
+  if (fileMatch) {
+    const url = fileMatch[1];
+    const name = fileMatch[2] || "Tài liệu đính kèm";
+    const size = fileMatch[3] ? parseInt(fileMatch[3], 10) : undefined;
+    const caption = body.replace(fileRegex, "").trim();
+    return { type: "file", url, name, size, caption: caption || undefined };
+  }
+
+  // Pattern 3: direct image URL
+  const isRawImageUrl = /^(https?:\/\/[^\s]+?\.(png|jpe?g|gif|webp|svg))(?:\?.*)?$/i.test(body.trim());
+  if (isRawImageUrl) {
+    return { type: "image", url: body.trim() };
+  }
+
+  return { type: "text", text: body };
+}
+
 type ReplyingState = {
   id: string;
   senderName: string;
@@ -103,9 +175,18 @@ function ThreadPage() {
   const [activeReactionPickerMsgId, setActiveReactionPickerMsgId] = useState<string | null>(null);
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<BcDmErrorCode | null>(null);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  // Attachment upload & preview states
+  const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const markedRef = useRef<string | null>(null);
 
   const result = query.data;
@@ -115,6 +196,25 @@ function ThreadPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
+
+  // Visual viewport listener: detect keyboard open/close on mobile
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleResize = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOffset(offset);
+      if (offset > 50) {
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
+      }
+    };
+    vv.addEventListener("resize", handleResize);
+    vv.addEventListener("scroll", handleResize);
+    return () => {
+      vv.removeEventListener("resize", handleResize);
+      vv.removeEventListener("scroll", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!thread) return;
@@ -127,6 +227,7 @@ function ThreadPage() {
     const handleOutsideClick = () => {
       setActiveMenuMsgId(null);
       setActiveReactionPickerMsgId(null);
+      setUploadMenuOpen(false);
     };
     window.addEventListener("click", handleOutsideClick);
     return () => window.removeEventListener("click", handleOutsideClick);
@@ -152,6 +253,54 @@ function ThreadPage() {
     react.mutate({ messageId, emoji });
     setActiveReactionPickerMsgId(null);
     setActiveMenuMsgId(null);
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadProgress(isImage ? `Đang tải ảnh "${file.name}"...` : `Đang tải tệp "${file.name}"...`);
+    setUploadMenuOpen(false);
+
+    try {
+      const uploaded = await uploadChatAttachment(file);
+      let payload = "";
+      if (uploaded.isImage) {
+        payload = draft.trim()
+          ? `${draft.trim()}\n[image:${uploaded.url}|${uploaded.name}]`
+          : `[image:${uploaded.url}|${uploaded.name}]`;
+      } else {
+        payload = draft.trim()
+          ? `${draft.trim()}\n[file:${uploaded.url}|${uploaded.name}|${uploaded.size}]`
+          : `[file:${uploaded.url}|${uploaded.name}|${uploaded.size}]`;
+      }
+
+      const res = await send.mutateAsync({
+        body: payload,
+        clientToken: newToken(),
+        replyTo: replyingTo
+          ? {
+              id: replyingTo.id,
+              senderName: replyingTo.senderName,
+              preview: replyingTo.preview,
+            }
+          : null,
+      });
+
+      if (res.ok) {
+        setDraft("");
+        setReplyingTo(null);
+      } else {
+        setErrorCode(res.error);
+      }
+    } catch (err: any) {
+      setErrorCode("generic");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(null);
+      if (e.target) e.target.value = "";
+    }
   };
 
   const submit = async () => {
@@ -196,14 +345,72 @@ function ThreadPage() {
           : null;
 
   return (
-    <MobilePage>
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#D8B282]/20 bg-[#050c15]/95 px-3 py-2.5 backdrop-blur-md">
+    <div
+      className="bc-app flex h-[100dvh] w-full max-w-[480px] mx-auto flex-col bg-[var(--bc-mobile-bg)] text-[#f5f7fa] overflow-hidden transition-colors"
+      style={{
+        height: keyboardOffset > 0 ? `calc(100dvh - ${keyboardOffset}px)` : "100dvh",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+      }}
+    >
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={imageInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => void handleFileSelected(e, true)}
+      />
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z"
+        className="hidden"
+        onChange={(e) => void handleFileSelected(e, false)}
+      />
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {previewImageUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-fade-in"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div className="absolute top-4 right-4 flex items-center gap-3">
+            <a
+              href={previewImageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              title="Tải ảnh về máy"
+            >
+              <Download className="h-5 w-5" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setPreviewImageUrl(null)}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+              title="Đóng"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <img
+            src={previewImageUrl}
+            alt="Xem ảnh lớn"
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
+
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 px-3 py-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <button
             type="button"
             onClick={() => window.history.back()}
             aria-label={t("bc.mobile.topbar.back")}
-            className="grid h-9 w-9 place-items-center rounded-full text-[#D4C3A3] hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+            className="grid h-9 w-9 place-items-center rounded-full text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] transition-colors shrink-0 cursor-pointer"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -215,26 +422,26 @@ function ThreadPage() {
                   <img
                     src={thread.avatarUrl}
                     alt={thread.displayName}
-                    className="h-9 w-9 rounded-full object-cover ring-1 ring-[#D8B282]/35"
+                    className="h-9 w-9 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
                   />
                 ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1c2433] text-[13px] font-bold text-[#D8B282] ring-1 ring-[#D8B282]/30">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[13px] font-bold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border)]">
                     {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
                   </div>
                 )}
                 {thread.isOnline ? (
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-[#050c15]"
+                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-[var(--bc-mobile-surface)]"
                     title="Đang hoạt động"
                   />
                 ) : null}
               </div>
 
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-[15px] font-bold text-[#f2efe9] leading-tight">
+                <h1 className="truncate text-[15px] font-bold text-[#f5f7fa] leading-tight">
                   {thread.displayName}
                 </h1>
-                <p className="truncate text-[11px] text-[#94a3b8] leading-tight mt-0.5">
+                <p className="truncate text-[11px] text-[var(--bc-mobile-muted)] leading-tight mt-0.5">
                   {thread.isOnline ? (
                     <span className="text-[#22c55e] font-medium flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
@@ -247,26 +454,26 @@ function ThreadPage() {
               </div>
             </div>
           ) : (
-            <h1 className="text-[15px] font-semibold text-[#f2efe9]">{t("bc.mobile.inbox.title")}</h1>
+            <h1 className="text-[15px] font-semibold text-[#f5f7fa]">{t("bc.mobile.inbox.title")}</h1>
           )}
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col h-[calc(100dvh-130px)] max-w-full relative">
+      <div className="flex flex-1 min-h-0 flex-col max-w-full relative overflow-hidden">
         {copyToast ? (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#1e293b]/95 border border-[#D8B282]/40 px-4 py-1.5 text-[12px] font-medium text-[#f1f5f9] shadow-lg backdrop-blur-md animate-fade-in">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-gold)] px-4 py-1.5 text-[12px] font-medium text-[#f5f7fa] shadow-lg backdrop-blur-md animate-fade-in">
             {copyToast}
           </div>
         ) : null}
 
         {query.isLoading ? (
-          <div className="flex flex-1 items-center justify-center gap-2 py-10 text-[13px] text-[#8a8d91]">
-            <Loader2 className="h-5 w-5 animate-spin text-[#D8B282]" aria-hidden="true" />
+          <div className="flex flex-1 items-center justify-center gap-2 py-10 text-[13px] text-[var(--bc-mobile-muted)]">
+            <Loader2 className="h-5 w-5 animate-spin text-[var(--bc-mobile-accent)]" aria-hidden="true" />
             {t("bc.mobile.inbox.thread.loading")}
           </div>
         ) : !thread ? (
           <div className="p-6 text-center">
-            <p className="rounded-2xl border border-[#232d3f] bg-[#121824] p-4 text-[13px] text-[#8a8d91]">
+            <p className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-4 text-[13px] text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.inbox.thread.notFound")}
             </p>
           </div>
@@ -275,13 +482,13 @@ function ThreadPage() {
             <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#162030] text-[#D8B282] mb-3 ring-1 ring-[#D8B282]/20">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)] mb-3 ring-1 ring-[var(--bc-mobile-border-gold)]">
                     <Sparkles className="h-7 w-7" />
                   </div>
-                  <p className="text-[14px] font-semibold text-[#e2e8f0]">
+                  <p className="text-[14px] font-semibold text-[#f5f7fa]">
                     Bắt đầu cuộc trò chuyện với {thread.displayName}
                   </p>
-                  <p className="text-[12px] text-[#8a8d91] max-w-[280px] mt-1">
+                  <p className="text-[12px] text-[var(--bc-mobile-muted)] max-w-[280px] mt-1">
                     Gửi tin nhắn đầu tiên để chào hỏi và trao đổi cơ hội hợp tác kinh doanh.
                   </p>
                 </div>
@@ -306,12 +513,13 @@ function ThreadPage() {
                   );
 
                   const myReaction = (m.reactions || []).find((r) => r.userId === viewerUserId);
+                  const content = parseMessageContent(m.body);
 
                   return (
                     <div key={m.id} className="space-y-1.5">
                       {isNewDay ? (
                         <div className="flex items-center justify-center my-3">
-                          <span className="rounded-full bg-[#17202e] border border-[#2a374a] px-3 py-1 text-[10.5px] font-medium text-[#94a3b8]">
+                          <span className="rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] px-3 py-1 text-[10.5px] font-medium text-[var(--bc-mobile-muted)] shadow-xs">
                             {formatDateSeparator(m.createdAt, locale)}
                           </span>
                         </div>
@@ -328,16 +536,16 @@ function ThreadPage() {
                               <img
                                 src={thread.avatarUrl}
                                 alt=""
-                                className="h-8 w-8 rounded-full object-cover ring-1 ring-[#D8B282]/30 shadow-sm"
+                                className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border-gold)] shadow-xs"
                               />
                             ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1c2433] text-[12px] font-bold text-[#D8B282] ring-1 ring-[#D8B282]/30 shadow-sm">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[12px] font-bold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)] shadow-xs">
                                 {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
                               </div>
                             )}
                             {thread.isOnline ? (
                               <span
-                                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-1.5 ring-[#050c15]"
+                                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-[var(--bc-mobile-surface)]"
                                 title="Đang hoạt động"
                               />
                             ) : null}
@@ -345,7 +553,7 @@ function ThreadPage() {
                         ) : null}
 
                         <div
-                          className={`flex flex-col max-w-[76%] min-w-0 ${
+                          className={`flex flex-col max-w-[82%] min-w-0 ${
                             m.fromMe ? "items-end" : "items-start"
                           }`}
                         >
@@ -363,17 +571,17 @@ function ThreadPage() {
                                     onClick={() =>
                                       setActiveMenuMsgId(activeMenuMsgId === m.id ? null : m.id)
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                   >
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                   </button>
 
                                   {activeMenuMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 min-w-[140px] rounded-xl border border-[#2a364a] bg-[#0f172a]/95 py-1 shadow-2xl backdrop-blur-md">
+                                    <div className="absolute bottom-8 right-0 z-30 min-w-[140px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <CornerUpLeft className="h-3.5 w-3.5" />
                                         <span>Trả lời</span>
@@ -381,7 +589,7 @@ function ThreadPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleCopyText(m.body)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                         <span>Sao chép</span>
@@ -393,7 +601,7 @@ function ThreadPage() {
                                           retract.mutate(m.id);
                                           setActiveMenuMsgId(null);
                                         }}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f87171] hover:bg-[#ef4444]/15 cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-red-500 hover:bg-red-500/15 cursor-pointer"
                                       >
                                         <RotateCcw className="h-3.5 w-3.5" />
                                         <span>Thu hồi tin nhắn</span>
@@ -405,7 +613,7 @@ function ThreadPage() {
                                   type="button"
                                   title="Trả lời"
                                   onClick={() => handleSelectReply(m)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                 >
                                   <CornerUpLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -418,13 +626,13 @@ function ThreadPage() {
                                         activeReactionPickerMsgId === m.id ? null : m.id,
                                       )
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors text-[13px]"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors text-[13px]"
                                   >
                                     {myReaction ? myReaction.emoji : "👍"}
                                   </button>
 
                                   {activeReactionPickerMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 flex items-center gap-1 rounded-full border border-[#D8B282]/30 bg-[#0f172a]/95 p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
+                                    <div className="absolute bottom-8 right-0 z-30 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
                                       {QUICK_REACTIONS.map((emoji) => (
                                         <button
                                           key={emoji}
@@ -432,8 +640,8 @@ function ThreadPage() {
                                           onClick={() => handleToggleReaction(m.id, emoji)}
                                           className={`flex h-7 w-7 items-center justify-center rounded-full text-[15px] hover:scale-125 transition-transform cursor-pointer ${
                                             myReaction?.emoji === emoji
-                                              ? "bg-[#D8B282]/25 ring-1 ring-[#D8B282]"
-                                              : "hover:bg-[#1e293b]"
+                                              ? "bg-[var(--bc-mobile-accent-soft)] ring-1 ring-[var(--bc-mobile-accent)]"
+                                              : "hover:bg-[var(--bc-mobile-surface-2)]"
                                           }`}
                                         >
                                           {emoji}
@@ -446,7 +654,7 @@ function ThreadPage() {
                             ) : null}
 
                             {m.retractedAt ? (
-                              <div className="rounded-2xl border border-dashed border-[#334155] bg-[#0c131f]/60 px-3.5 py-2 text-[12.5px] italic text-[#64748b]">
+                              <div className="rounded-2xl border border-dashed border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 py-2 text-[12.5px] italic text-[var(--bc-mobile-muted)]">
                                 {t("bc.mobile.inbox.thread.retracted")}
                               </div>
                             ) : (
@@ -455,8 +663,8 @@ function ThreadPage() {
                                   <div
                                     className={`mb-1 rounded-xl px-3 py-1.5 text-[11.5px] border-l-2 ${
                                       m.fromMe
-                                        ? "bg-[#0b0f19]/30 border-[#0b0f19] text-[#0b0f19]"
-                                        : "bg-[#0f172a]/70 border-[#D8B282] text-[#94a3b8]"
+                                        ? "bg-black/15 border-black/50 text-[#1a1206]"
+                                        : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-accent)] text-[#D4C3A3]"
                                     }`}
                                   >
                                     <p className="font-semibold text-[10.5px]">
@@ -467,18 +675,113 @@ function ThreadPage() {
                                 ) : null}
 
                                 <div
-                                  className={`relative break-words px-4 py-2.5 text-[14px] leading-relaxed transition-all shadow-sm ${
+                                  className={`relative break-words transition-all shadow-xs overflow-hidden ${
                                     m.fromMe
-                                      ? "rounded-2xl rounded-tr-xs bg-[linear-gradient(135deg,#D8B282_0%,#C29B69_100%)] text-[#0b0f19] font-medium shadow-[#D8B282]/10"
-                                      : "rounded-2xl rounded-tl-xs border border-[#2a364a] bg-[#162030] text-[#f1f5f9]"
+                                      ? "rounded-2xl rounded-tr-xs bg-[var(--bc-mobile-accent-grad)] text-[#1a1206] font-medium shadow-[0_2px_10px_rgba(184,134,11,0.25)]"
+                                      : "rounded-2xl rounded-tl-xs border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[#f5f7fa]"
                                   }`}
                                 >
-                                  {m.body}
+                                  {content.type === "image" ? (
+                                    <div className="space-y-1.5 p-1.5">
+                                      <div
+                                        onClick={() => setPreviewImageUrl(content.url)}
+                                        className="group relative cursor-pointer overflow-hidden rounded-xl border border-black/10 dark:border-white/10"
+                                      >
+                                        <img
+                                          src={content.url}
+                                          alt={content.name || "Hình ảnh"}
+                                          className="max-h-64 max-w-full rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+                                          loading="lazy"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <span className="rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-xs flex items-center gap-1">
+                                            <ExternalLink className="h-3 w-3" />
+                                            Xem ảnh
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {content.caption ? (
+                                        <p
+                                          className={`px-2 pb-1 text-[13.5px] leading-relaxed ${
+                                            m.fromMe ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                                          }`}
+                                        >
+                                          {content.caption}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  ) : content.type === "file" ? (
+                                    <div className="p-2 space-y-1.5">
+                                      {(() => {
+                                        const badge = getFileBadgeInfo(content.name);
+                                        return (
+                                          <a
+                                            href={content.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            download
+                                            className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer ${
+                                              m.fromMe
+                                                ? "bg-black/10 hover:bg-black/15 text-[#1a1206]"
+                                                : "bg-[var(--bc-mobile-surface-2)] hover:bg-[var(--bc-mobile-surface-2)]/80 text-[#f5f7fa] border border-[var(--bc-mobile-border)]"
+                                            }`}
+                                          >
+                                            <div
+                                              className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg border font-bold text-[11px] ${badge.color}`}
+                                            >
+                                              {badge.label}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <p className="truncate text-[13px] font-semibold leading-tight">
+                                                {content.name}
+                                              </p>
+                                              <div className="flex items-center gap-2 mt-0.5">
+                                                {content.size ? (
+                                                  <span
+                                                    className={`text-[11px] ${
+                                                      m.fromMe
+                                                        ? "text-[#1a1206]/70"
+                                                        : "text-[var(--bc-mobile-muted)]"
+                                                    }`}
+                                                  >
+                                                    {formatFileSize(content.size)}
+                                                  </span>
+                                                ) : null}
+                                                <span
+                                                  className={`flex items-center gap-0.5 text-[11px] font-medium underline ${
+                                                    m.fromMe
+                                                      ? "text-[#1a1206]"
+                                                      : "text-[var(--bc-mobile-accent)]"
+                                                  }`}
+                                                >
+                                                  <Download className="h-3 w-3" />
+                                                  Tải về
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </a>
+                                        );
+                                      })()}
+                                      {content.caption ? (
+                                        <p
+                                          className={`px-2 text-[13.5px] leading-relaxed ${
+                                            m.fromMe ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                                          }`}
+                                        >
+                                          {content.caption}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 py-2.5 text-[14px] leading-relaxed break-words">
+                                      {content.text}
+                                    </div>
+                                  )}
                                 </div>
 
                                 {Object.keys(reactionsGrouped).length > 0 ? (
                                   <div
-                                    className={`absolute -bottom-2.5 flex items-center gap-1 rounded-full border border-[#2a364a] bg-[#0f172a] px-1.5 py-0.5 shadow-md ${
+                                    className={`absolute -bottom-2.5 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-1.5 py-0.5 shadow-md ${
                                       m.fromMe ? "right-2" : "left-2"
                                     }`}
                                   >
@@ -489,7 +792,7 @@ function ThreadPage() {
                                       >
                                         <span>{emoji}</span>
                                         {count > 1 ? (
-                                          <span className="font-semibold text-[10px] text-[#cbd5e1]">
+                                          <span className="font-semibold text-[10px] text-[var(--bc-mobile-muted)]">
                                             {count}
                                           </span>
                                         ) : null}
@@ -511,13 +814,13 @@ function ThreadPage() {
                                         activeReactionPickerMsgId === m.id ? null : m.id,
                                       )
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors text-[13px]"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors text-[13px]"
                                   >
                                     {myReaction ? myReaction.emoji : "👍"}
                                   </button>
 
                                   {activeReactionPickerMsgId === m.id ? (
-                                    <div className="absolute bottom-8 left-0 z-30 flex items-center gap-1 rounded-full border border-[#D8B282]/30 bg-[#0f172a]/95 p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
+                                    <div className="absolute bottom-8 left-0 z-30 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
                                       {QUICK_REACTIONS.map((emoji) => (
                                         <button
                                           key={emoji}
@@ -525,8 +828,8 @@ function ThreadPage() {
                                           onClick={() => handleToggleReaction(m.id, emoji)}
                                           className={`flex h-7 w-7 items-center justify-center rounded-full text-[15px] hover:scale-125 transition-transform cursor-pointer ${
                                             myReaction?.emoji === emoji
-                                              ? "bg-[#D8B282]/25 ring-1 ring-[#D8B282]"
-                                              : "hover:bg-[#1e293b]"
+                                              ? "bg-[var(--bc-mobile-accent-soft)] ring-1 ring-[var(--bc-mobile-accent)]"
+                                              : "hover:bg-[var(--bc-mobile-surface-2)]"
                                           }`}
                                         >
                                           {emoji}
@@ -539,7 +842,7 @@ function ThreadPage() {
                                   type="button"
                                   title="Trả lời"
                                   onClick={() => handleSelectReply(m)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                 >
                                   <CornerUpLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -550,17 +853,17 @@ function ThreadPage() {
                                     onClick={() =>
                                       setActiveMenuMsgId(activeMenuMsgId === m.id ? null : m.id)
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162030] text-[#94a3b8] hover:text-[#D8B282] hover:bg-[#1f2c42] border border-[#2a364a] shadow-sm cursor-pointer transition-colors"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                   >
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                   </button>
 
                                   {activeMenuMsgId === m.id ? (
-                                    <div className="absolute bottom-8 left-0 z-30 min-w-[140px] rounded-xl border border-[#2a364a] bg-[#0f172a]/95 py-1 shadow-2xl backdrop-blur-md">
+                                    <div className="absolute bottom-8 left-0 z-30 min-w-[140px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <CornerUpLeft className="h-3.5 w-3.5" />
                                         <span>Trả lời</span>
@@ -568,7 +871,7 @@ function ThreadPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleCopyText(m.body)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#cbd5e1] hover:bg-[#1e293b] hover:text-[#D8B282] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                         <span>Sao chép</span>
@@ -581,19 +884,19 @@ function ThreadPage() {
                           </div>
 
                           <div
-                            className={`mt-1 flex items-center gap-1.5 px-1 text-[10.5px] text-[#64748b] ${
+                            className={`mt-1 flex items-center gap-1.5 px-1 text-[10.5px] text-[var(--bc-mobile-muted)] ${
                               m.fromMe ? "justify-end" : "justify-start"
                             }`}
                           >
                             <span>{timeFormatted}</span>
                             {m.fromMe && !m.retractedAt ? (
                               m.readAt ? (
-                                <span className="flex items-center gap-0.5 text-[#D8B282] font-semibold">
+                                <span className="flex items-center gap-0.5 text-[var(--bc-mobile-accent)] font-semibold">
                                   <CheckCheck className="h-3.5 w-3.5" />
                                   <span>Đã xem</span>
                                 </span>
                               ) : (
-                                <span className="flex items-center gap-0.5 text-[#64748b]">
+                                <span className="flex items-center gap-0.5 text-[var(--bc-mobile-muted)]">
                                   <Check className="h-3.5 w-3.5" />
                                   <span>Đã gửi</span>
                                 </span>
@@ -621,20 +924,20 @@ function ThreadPage() {
             ) : null}
 
             {replyingTo ? (
-              <div className="flex items-center justify-between border-t border-[#D8B282]/20 bg-[#0f172a] px-4 py-2 text-[12px] text-[#e2e8f0] animate-fade-in">
+              <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] px-4 py-2 text-[12px] text-[#f5f7fa] animate-fade-in">
                 <div className="flex items-center gap-2 min-w-0">
-                  <CornerUpLeft className="h-4 w-4 text-[#D8B282] shrink-0" />
+                  <CornerUpLeft className="h-4 w-4 text-[var(--bc-mobile-accent)] shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-semibold text-[#D8B282] truncate">
+                    <p className="font-semibold text-[var(--bc-mobile-accent)] truncate">
                       Đang trả lời {replyingTo.senderName}
                     </p>
-                    <p className="text-[11px] text-[#94a3b8] truncate">{replyingTo.preview}</p>
+                    <p className="text-[11px] text-[var(--bc-mobile-muted)] truncate">{replyingTo.preview}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setReplyingTo(null)}
-                  className="p-1 text-[#94a3b8] hover:text-[#f1f5f9] cursor-pointer"
+                  className="p-1 text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] cursor-pointer"
                   title="Hủy trả lời"
                 >
                   <X className="h-4 w-4" />
@@ -642,14 +945,77 @@ function ThreadPage() {
               </div>
             ) : null}
 
+            {isUploading ? (
+              <div className="flex items-center gap-2 border-t border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] px-4 py-2 text-[12px] text-[var(--bc-mobile-accent)] animate-pulse">
+                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                <span className="truncate">{uploadProgress || "Đang tải tệp lên máy chủ..."}</span>
+              </div>
+            ) : null}
+
             <form
-              className="border-t border-[#D8B282]/15 bg-[#0a1019]/95 p-3 backdrop-blur-md"
+              className="border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 p-3 backdrop-blur-md shrink-0"
+              style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
               onSubmit={(e) => {
                 e.preventDefault();
                 void submit();
               }}
             >
-              <div className="flex items-center gap-2 rounded-full border border-[#D8B282]/30 bg-[#121824] px-4 py-1.5 focus-within:border-[#D8B282] focus-within:ring-1 focus-within:ring-[#D8B282]/30 transition-all shadow-sm">
+              <div className="flex items-end gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-1.5 focus-within:border-[var(--bc-mobile-border-gold)] transition-all shadow-none">
+                {/* Plus (+) Button for attachment menu */}
+                <div className="relative shrink-0 mb-0.5">
+                  <button
+                    type="button"
+                    disabled={isUploading || send.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUploadMenuOpen(!uploadMenuOpen);
+                    }}
+                    aria-label="Đính kèm tệp hoặc ảnh"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
+                  >
+                    <Plus
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        uploadMenuOpen ? "rotate-45" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {uploadMenuOpen ? (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-11 left-0 z-40 w-48 rounded-2xl border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] p-1.5 shadow-2xl backdrop-blur-xl animate-fade-in"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadMenuOpen(false);
+                          imageInputRef.current?.click();
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                      >
+                        <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-400">
+                          <ImageIcon className="h-4 w-4" />
+                        </div>
+                        <span>Gửi hình ảnh</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadMenuOpen(false);
+                          fileInputRef.current?.click();
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                      >
+                        <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/15 text-blue-400">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <span>Gửi tài liệu / tệp</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
                 <label className="sr-only" htmlFor="bc-dm-input">
                   {t("bc.mobile.inbox.thread.placeholder")}
                 </label>
@@ -659,17 +1025,39 @@ function ThreadPage() {
                   rows={1}
                   value={draft}
                   maxLength={DM_MAX_BODY_LEN}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => {
+                    setDraft(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder={t("bc.mobile.inbox.thread.placeholder")}
-                  className="max-h-24 min-h-[36px] flex-1 resize-none bg-transparent py-2 text-[13.5px] text-[#f1f5f9] placeholder-[#64748b] border-none border-0 outline-none focus:outline-none focus:ring-0 shadow-none focus:border-none ring-0 focus-visible:ring-0 focus-visible:outline-none"
+                  className="chat-input no-focus-outline max-h-[120px] min-h-[32px] flex-1 resize-none bg-transparent py-1 text-[13.5px] text-[#f5f7fa] placeholder-[var(--bc-mobile-muted)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
                   style={{ border: "none", outline: "none", boxShadow: "none" }}
                 />
+
+                {draft.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraft("");
+                      if (textareaRef.current) {
+                        textareaRef.current.style.height = "auto";
+                        textareaRef.current.focus();
+                      }
+                    }}
+                    aria-label="Xóa nội dung nhập"
+                    className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] transition-colors cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
                 <button
                   type="submit"
-                  disabled={send.isPending || sanitizeDmBody(draft).length === 0}
+                  disabled={send.isPending || isUploading || sanitizeDmBody(draft).length === 0}
                   aria-label={t("bc.mobile.inbox.thread.send")}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#D8B282_0%,#C29B69_100%)] text-[#0b0f19] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer shadow-md shadow-[#D8B282]/20"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-accent-grad)] text-[#1a1206] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer shadow-md mb-0.5"
                 >
                   {send.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -682,6 +1070,6 @@ function ThreadPage() {
           </>
         )}
       </div>
-    </MobilePage>
+    </div>
   );
 }

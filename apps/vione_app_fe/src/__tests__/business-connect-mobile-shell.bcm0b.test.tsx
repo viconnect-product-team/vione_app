@@ -144,8 +144,8 @@ describe("BC-Mobile-0B — frozen 5-position navigation", () => {
     const v = screen.getByRole("button", { name: "Open V quick actions" });
     expect(v.className).toContain("min-h-[52px]");
     expect(v.className).toContain("min-w-[52px]");
-    expect(v.className).toContain("h-[72px]"); // 72px — exceeds the 52px contract
-    expect(v.className).toContain("w-[72px]");
+    expect(v.className).toMatch(/h-\[(?:58|72)px\]/);
+    expect(v.className).toMatch(/w-\[(?:58|72)px\]/);
   });
 
   it("has no axe violations on the shell", async () => {

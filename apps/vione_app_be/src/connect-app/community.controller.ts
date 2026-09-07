@@ -2,6 +2,14 @@ import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
+export class CreateCommunityDto {
+  name!: string;
+  description?: string;
+  logoUrl?: string;
+  slug?: string;
+  tagline?: string;
+}
+
 @Controller(['communities', 'connect-app/community'])
 @UseGuards(JwtAuthGuard)
 export class CommunityController {
@@ -10,6 +18,14 @@ export class CommunityController {
   @Get()
   async getMyCommunities(@Request() req) {
     return this.connectAppService.getMyCommunities(req.user.id);
+  }
+
+  @Post()
+  async createCommunity(
+    @Request() req,
+    @Body() body: CreateCommunityDto,
+  ) {
+    return this.connectAppService.createCommunity(req.user.id, body);
   }
 
   @Get(':communityId')

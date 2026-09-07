@@ -9,7 +9,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * - Đang bật `server.url` trỏ về IP Dev (14.225.217.232:5000).
  * - Sửa giao diện/logic FE chỉ cần deploy lên server dev là APK tự đổi, không cần build lại.
  *
- * [HƯỚNG A] ĐÓNG GÓI TĨNH STANDALONE / OFFLINE (Ý ANH QUẢN LÝ):
+ * [HƯỚNG A] ĐÓNG GÓI TĨNH STANDALONE / OFFLINE:
  * - Đổi `USE_REMOTE_SERVER = false` bên dưới (hoặc comment khối server).
  * - Chạy: `npm run build:static` (hoặc build FE rồi chạy `npx cap sync android`).
  * - Mở Android Studio build lại file APK. Toàn bộ code sẽ nằm cố định trong APK.
@@ -21,23 +21,21 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * =========================================================================
  */
 
-// BẬT / TẮT CHẾ ĐỘ REMOTE SERVER:
-// - true: App load từ server web (Dev Live / Production Domain)
-// - false: App chạy offline hoàn toàn từ bundle đóng gói trong APK (Hướng A)
+// BẬT CHẾ ĐỘ LIVE DEV SERVER (Tự động cập nhật UI mới nhất khi đẩy code lên server)
 const USE_REMOTE_SERVER = true;
 
-// Cấu hình URL khi dùng Remote Server:
-const REMOTE_URL = 'http://14.225.217.232:5000'; // Server Dev hiện tại
-// const REMOTE_URL = 'https://app.vione.vn';    // Mở dòng này khi dùng domain Production (Hướng B)
+// Cấu hình URL server dev của bạn:
+const REMOTE_URL = 'http://14.225.217.232:5000';
 
-const CLEARTEXT = true; // Đổi thành false nếu dùng HTTPS domain
+// Cho phép kết nối qua giao thức HTTP (cleartext) với IP server dev
+const CLEARTEXT = true;
 
 const config: CapacitorConfig = {
   appId: 'com.vione.app',
-  appName: 'Vione Business Connect',
+  appName: 'ViOne Connect',
 
-  // Khi đóng gói tĩnh (Hướng A), Capacitor sẽ lấy toàn bộ static assets từ thư mục này
-  webDir: USE_REMOTE_SERVER ? 'www' : '../vione_app_fe/.output/public',
+  // Web assets directory fallback
+  webDir: 'www',
 
   ...(USE_REMOTE_SERVER
     ? {

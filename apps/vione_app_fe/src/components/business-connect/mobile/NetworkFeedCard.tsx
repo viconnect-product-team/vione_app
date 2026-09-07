@@ -116,7 +116,7 @@ export function NetworkFeedCard({
   const authorUserId = item.owner?.userId || item.ownerUserId;
 
   // Tagged / Counterpart details (người được tag / cùng tham gia)
-  const targetName = item.target?.displayName || (item.owner?.userId && item.owner.userId !== person?.id ? person?.displayName : null);
+  const targetName = item.target?.displayName || (item.owner?.userId && item.owner.userId !== (person?.personId || (person as any)?.id) ? person?.displayName : null);
   const targetPersonId = item.target?.personId || item.personId;
 
   const place = item.placeLabel ?? item.eventName;
@@ -137,12 +137,12 @@ export function NetworkFeedCard({
               src={authorAvatar}
               alt=""
               loading="lazy"
-              className="h-10 w-10 shrink-0 rounded-full object-cover border border-solid border-[#D8B282]/25"
+              className="h-10 w-10 shrink-0 rounded-full object-cover border border-solid border-[var(--bc-mobile-border)]"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#08101b] text-sm font-medium text-[#f2efe9] border border-solid border-[#D8B282]/25"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-sm font-semibold text-[var(--bc-mobile-text,#0F172A)] border border-solid border-[var(--bc-mobile-border)]"
             >
               {initialsOf(authorName)}
             </span>
@@ -150,22 +150,22 @@ export function NetworkFeedCard({
         </Link>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center flex-wrap gap-1 text-sm font-medium text-[#f2efe9]">
+          <div className="flex items-center flex-wrap gap-1 text-sm font-semibold text-[var(--bc-mobile-text,#0F172A)]">
             <Link
               to="/connect-app/network/$personId"
               params={{ personId: authorUserId ? `u:${authorUserId}` : item.personId }}
-              className="hover:text-[#D8B282] transition-colors"
+              className="hover:text-[var(--bc-mobile-accent)] transition-colors"
             >
               {authorName}
             </Link>
 
             {targetName && targetName !== authorName ? (
-              <span className="inline-flex items-center gap-1 text-[13px] font-normal text-[#94a3b8]">
+              <span className="inline-flex items-center gap-1 text-[13px] font-normal text-[var(--bc-mobile-muted,#64748B)]">
                 <span>cùng với</span>
                 <Link
                   to="/connect-app/network/$personId"
                   params={{ personId: targetPersonId }}
-                  className="font-medium text-[#D8B282] hover:underline"
+                  className="font-medium text-[var(--bc-mobile-accent)] hover:underline"
                 >
                   @{targetName}
                 </Link>
@@ -176,7 +176,7 @@ export function NetworkFeedCard({
               <span
                 title={t("bc.mobile.network.feed.verified")}
                 aria-label={t("bc.mobile.network.feed.verified")}
-                className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[#D8B282] text-[10px] font-bold leading-none bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
+                className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-solid border-[var(--bc-mobile-accent)] text-[10px] font-bold leading-none bg-clip-text text-transparent bg-[linear-gradient(135deg,#DFB876_0%,#B8860B_45%,#966A06_70%,#6E4D00_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
               >
                 V
               </span>
@@ -184,18 +184,18 @@ export function NetworkFeedCard({
           </div>
 
           {authorRoleLine ? (
-            <p className="mt-0.5 truncate text-[10px] font-light text-[#d8c3b1] leading-[15px]">
+            <p className="mt-0.5 truncate text-[10px] font-normal text-[var(--bc-mobile-muted,#64748B)] leading-[15px]">
               {authorRoleLine}
             </p>
           ) : null}
 
-          <p className="mt-1 flex items-center gap-1 text-[10px] font-light text-[#d8c3b1] leading-[15px]">
-            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" strokeWidth={1.7} />
+          <p className="mt-1 flex items-center gap-1 text-[10px] font-normal text-[var(--bc-mobile-muted,#64748B)] leading-[15px]">
+            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-muted)]" strokeWidth={1.7} />
             <span className="truncate">{timeDisplay}</span>
             {place ? (
               <>
                 <span aria-hidden="true">·</span>
-                <MapPin aria-hidden="true" className="h-3.5 w-3.5 text-[#d8c3b1]" strokeWidth={1.7} />
+                <MapPin aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-muted)]" strokeWidth={1.7} />
                 <span className="truncate">{place}</span>
               </>
             ) : null}
@@ -208,7 +208,7 @@ export function NetworkFeedCard({
 
       {/* Câu mô tả cuộc gặp */}
       {item.note ? (
-        <p className="mt-3 line-clamp-3 text-xs font-light leading-4 text-[#d8c3b1cc]">
+        <p className="mt-3 line-clamp-3 text-xs font-normal leading-relaxed text-[var(--bc-mobile-text,#334155)]">
           {item.note}
         </p>
       ) : null}
@@ -242,7 +242,7 @@ function FeedActionRow({
   // Author & Target IDs
   const authorUserId = item.owner?.userId || item.ownerUserId;
   const authorName = item.owner?.displayName || person?.displayName || t("bc.mobile.network.unknownPerson");
-  const targetName = item.target?.displayName || (item.owner?.userId && item.owner.userId !== person?.id ? person?.displayName : null);
+  const targetName = item.target?.displayName || (item.owner?.userId && item.owner.userId !== (person?.personId || (person as any)?.id) ? person?.displayName : null);
   const targetPersonId = item.target?.personId || item.personId;
 
   // Phân quyền: Chỉ tác giả/người đăng mới có quyền chỉnh sửa / xoá khoảnh khắc

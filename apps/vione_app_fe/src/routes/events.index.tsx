@@ -93,6 +93,15 @@ function bucketOf(iso: string): Exclude<Bucket, "all"> {
   return "upcoming";
 }
 
+function getEffectiveStatus(e: { status?: EventItem["status"]; date: string }): EventItem["status"] {
+  if (e.status === "cancelled") return "cancelled";
+  if (e.status === "ongoing") return "ongoing";
+  const today = startOfDay(new Date()).getTime();
+  const d = startOfDay(new Date(e.date)).getTime();
+  if (d < today) return "completed";
+  return e.status || "upcoming";
+}
+
 function EventsPage() {
   const t = useT();
   const fmt = useFmt();
@@ -212,7 +221,11 @@ function EventsPage() {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return events
-      .filter((e: any) => (status === "all" ? true : e.status === status))
+      .filter((e: any) => {
+        if (status === "all") return true;
+        const eff = getEffectiveStatus(e);
+        return eff === status || e.status === status;
+      })
       .filter((e: any) => (type === "all" ? true : e.type === type))
       .filter((e: any) => (bucket === "all" ? true : bucketOf(e.date) === bucket))
       .filter(
@@ -324,7 +337,7 @@ function EventsPage() {
         />
         <StatCard
           label={t("events.kpi.upcoming")}
-          value={events.filter((e: any) => e.status === "upcoming").length}
+          value={events.filter((e: any) => getEffectiveStatus(e) === "upcoming").length}
           tone="info"
           icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
         />
@@ -628,7 +641,7 @@ function EventCard({
           style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
         />
         <div className="absolute left-3 top-3">
-          <StatusPill status={e.status} />
+          <StatusPill status={getEffectiveStatus(e)} />
         </div>
         <span className="absolute right-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground backdrop-blur">
           {t(TYPE_KEY[e.type] ?? "events.type.forum")}

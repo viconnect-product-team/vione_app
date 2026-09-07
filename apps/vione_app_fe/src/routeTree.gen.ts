@@ -61,6 +61,7 @@ import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities.i
 import { Route as MembersIndexRouteImport } from './routes/members.index'
 import { Route as MarketplaceIndexRouteImport } from './routes/marketplace.index'
 import { Route as MIndexRouteImport } from './routes/m.index'
+import { Route as LandingIndexRouteImport } from './routes/landing.index'
 import { Route as FeesIndexRouteImport } from './routes/fees.index'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
@@ -94,6 +95,7 @@ import { Route as MEventsRouteImport } from './routes/m.events'
 import { Route as MCheckinRouteImport } from './routes/m.checkin'
 import { Route as MCardRouteImport } from './routes/m.card'
 import { Route as MBusinessCardsRouteImport } from './routes/m.business-cards'
+import { Route as LandingCeo1983RouteImport } from './routes/landing.ceo1983'
 import { Route as HSlugRouteImport } from './routes/h.$slug'
 import { Route as FeesInvoiceIdRouteImport } from './routes/fees.$invoiceId'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
@@ -451,6 +453,11 @@ const MIndexRoute = MIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MRoute,
 } as any)
+const LandingIndexRoute = LandingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LandingRoute,
+} as any)
 const FeesIndexRoute = FeesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -616,6 +623,11 @@ const MBusinessCardsRoute = MBusinessCardsRouteImport.update({
   id: '/business-cards',
   path: '/business-cards',
   getParentRoute: () => MRoute,
+} as any)
+const LandingCeo1983Route = LandingCeo1983RouteImport.update({
+  id: '/ceo1983',
+  path: '/ceo1983',
+  getParentRoute: () => LandingRoute,
 } as any)
 const HSlugRoute = HSlugRouteImport.update({
   id: '/h/$slug',
@@ -1164,7 +1176,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
-  '/landing': typeof LandingRoute
+  '/landing': typeof LandingRouteWithChildren
   '/m': typeof MRouteWithChildren
   '/marketplace': typeof MarketplaceRouteWithChildren
   '/meetings': typeof MeetingsRoute
@@ -1222,6 +1234,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1255,6 +1268,7 @@ export interface FileRoutesByFullPath {
   '/documents/': typeof DocumentsIndexRoute
   '/events/': typeof EventsIndexRoute
   '/fees/': typeof FeesIndexRoute
+  '/landing/': typeof LandingIndexRoute
   '/m/': typeof MIndexRoute
   '/marketplace/': typeof MarketplaceIndexRoute
   '/members/': typeof MembersIndexRoute
@@ -1340,7 +1354,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
-  '/landing': typeof LandingRoute
   '/meetings': typeof MeetingsRoute
   '/my-permissions': typeof MyPermissionsRoute
   '/network': typeof NetworkRoute
@@ -1385,6 +1398,7 @@ export interface FileRoutesByTo {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1416,6 +1430,7 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsIndexRoute
   '/events': typeof EventsIndexRoute
   '/fees': typeof FeesIndexRoute
+  '/landing': typeof LandingIndexRoute
   '/m': typeof MIndexRoute
   '/marketplace': typeof MarketplaceIndexRoute
   '/members': typeof MembersIndexRoute
@@ -1509,7 +1524,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
-  '/landing': typeof LandingRoute
+  '/landing': typeof LandingRouteWithChildren
   '/m': typeof MRouteWithChildren
   '/marketplace': typeof MarketplaceRouteWithChildren
   '/meetings': typeof MeetingsRoute
@@ -1567,6 +1582,7 @@ export interface FileRoutesById {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1600,6 +1616,7 @@ export interface FileRoutesById {
   '/documents/': typeof DocumentsIndexRoute
   '/events/': typeof EventsIndexRoute
   '/fees/': typeof FeesIndexRoute
+  '/landing/': typeof LandingIndexRoute
   '/m/': typeof MIndexRoute
   '/marketplace/': typeof MarketplaceIndexRoute
   '/members/': typeof MembersIndexRoute
@@ -1752,6 +1769,7 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -1785,6 +1803,7 @@ export interface FileRouteTypes {
     | '/documents/'
     | '/events/'
     | '/fees/'
+    | '/landing/'
     | '/m/'
     | '/marketplace/'
     | '/members/'
@@ -1870,7 +1889,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/income'
     | '/install'
-    | '/landing'
     | '/meetings'
     | '/my-permissions'
     | '/network'
@@ -1915,6 +1933,7 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -1946,6 +1965,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/events'
     | '/fees'
+    | '/landing'
     | '/m'
     | '/marketplace'
     | '/members'
@@ -2096,6 +2116,7 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2129,6 +2150,7 @@ export interface FileRouteTypes {
     | '/documents/'
     | '/events/'
     | '/fees/'
+    | '/landing/'
     | '/m/'
     | '/marketplace/'
     | '/members/'
@@ -2222,7 +2244,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   IncomeRoute: typeof IncomeRoute
   InstallRoute: typeof InstallRoute
-  LandingRoute: typeof LandingRoute
+  LandingRoute: typeof LandingRouteWithChildren
   MRoute: typeof MRouteWithChildren
   MarketplaceRoute: typeof MarketplaceRouteWithChildren
   MeetingsRoute: typeof MeetingsRoute
@@ -2637,6 +2659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MIndexRouteImport
       parentRoute: typeof MRoute
     }
+    '/landing/': {
+      id: '/landing/'
+      path: '/'
+      fullPath: '/landing/'
+      preLoaderRoute: typeof LandingIndexRouteImport
+      parentRoute: typeof LandingRoute
+    }
     '/fees/': {
       id: '/fees/'
       path: '/'
@@ -2867,6 +2896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/m/business-cards'
       preLoaderRoute: typeof MBusinessCardsRouteImport
       parentRoute: typeof MRoute
+    }
+    '/landing/ceo1983': {
+      id: '/landing/ceo1983'
+      path: '/ceo1983'
+      fullPath: '/landing/ceo1983'
+      preLoaderRoute: typeof LandingCeo1983RouteImport
+      parentRoute: typeof LandingRoute
     }
     '/h/$slug': {
       id: '/h/$slug'
@@ -3944,6 +3980,19 @@ const FeesRouteChildren: FeesRouteChildren = {
 
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
+interface LandingRouteChildren {
+  LandingCeo1983Route: typeof LandingCeo1983Route
+  LandingIndexRoute: typeof LandingIndexRoute
+}
+
+const LandingRouteChildren: LandingRouteChildren = {
+  LandingCeo1983Route: LandingCeo1983Route,
+  LandingIndexRoute: LandingIndexRoute,
+}
+
+const LandingRouteWithChildren =
+  LandingRoute._addFileChildren(LandingRouteChildren)
+
 interface MPerksRouteChildren {
   MPerksIdRoute: typeof MPerksIdRoute
   MPerksIndexRoute: typeof MPerksIndexRoute
@@ -4098,7 +4147,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   IncomeRoute: IncomeRoute,
   InstallRoute: InstallRoute,
-  LandingRoute: LandingRoute,
+  LandingRoute: LandingRouteWithChildren,
   MRoute: MRouteWithChildren,
   MarketplaceRoute: MarketplaceRouteWithChildren,
   MeetingsRoute: MeetingsRoute,

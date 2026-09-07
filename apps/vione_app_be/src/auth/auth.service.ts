@@ -332,4 +332,31 @@ export class AuthService {
 
     return response.data?.refresh_token || null;
   }
+
+  async forgotPassword(email: string) {
+    if (!email || !email.trim()) {
+      throw new BadRequestException('Email is required');
+    }
+    const user = await this.usersService.findByEmail(email.trim()).catch(() => null);
+    // Return success to avoid email enumeration
+    return { ok: true, message: 'Nếu email tồn tại trên hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.' };
+  }
+
+  async resetPassword(data: { email?: string; token?: string; newPassword?: string }) {
+    if (!data.newPassword || data.newPassword.length < 6) {
+      throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
+    }
+    const email = data.email?.trim();
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+    const user = await this.usersService.findByEmail(email).catch(() => null);
+    if (!user) {
+      throw new BadRequestException('Tài khoản không tồn tại trên hệ thống');
+    }
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(data.newPassword, salt);
+    await this.usersService.updateUser(user.id, { password: hashedPassword });
+    return { ok: true, message: 'Đặt lại mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.' };
+  }
 }

@@ -61,6 +61,7 @@ export function Scanner({ mode, onScan, onSimulate }: Props) {
           {/* Live camera feed */}
           <video
             ref={videoRef}
+            autoPlay
             muted
             playsInline
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
@@ -120,12 +121,14 @@ export function Scanner({ mode, onScan, onSimulate }: Props) {
         {mode === "qr"
           ? t(qrStatusKey(qrStatus))
           : nfcStatus === "unsupported"
-            ? t("checkin.nfc.unsupported")
-            : nfcStatus === "denied"
-              ? t("checkin.nfc.denied")
-              : nfcStatus === "error"
-                ? t("checkin.nfc.error")
-                : t("checkin.nfc.scanning")}
+            ? "Thiết bị hoặc trình duyệt chưa hỗ trợ Web NFC (hỗ trợ Google Chrome trên Android)"
+            : nfcStatus === "insecure"
+              ? "Chạm NFC yêu cầu kết nối bảo mật HTTPS"
+              : nfcStatus === "denied"
+                ? "Quyền truy cập NFC bị từ chối trong trình duyệt"
+                : nfcStatus === "error"
+                  ? "Không thể bật NFC. Hãy bật NFC trong Cài đặt của máy"
+                  : "Sẵn sàng quét NFC — Áp thẻ vào giữa mặt lưng điện thoại"}
       </p>
 
       {(mode === "nfc" || qrFallback) && (

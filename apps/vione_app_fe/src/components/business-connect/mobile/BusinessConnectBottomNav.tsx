@@ -1,9 +1,5 @@
-// BC-Mobile-0B — frozen bottom navigation contract.
-// Exactly five visual positions: Home · Network · V · Community · Me.
-// V is NOT a route — it triggers the VActionSheet via onVPress.
-// Notifications / Messages / AI / QR / NFC are intentionally NOT tabs.
-
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState, type ComponentType } from "react";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useT, type TKey } from "@/lib/i18n";
 import { VButton } from "./VButton";
 import {
@@ -12,7 +8,6 @@ import {
   NavCommunityIcon,
   NavMeIcon,
 } from "./NavIcons";
-import type { ComponentType } from "react";
 
 type NavTab = {
   to: string;
@@ -45,6 +40,33 @@ const ME_TAB: NavTab = {
 
 export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void }) {
   const t = useT();
+  const location = useLocation();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleResize = () => {
+      // Keyboard is detected if visual viewport shrinks significantly below window height
+      const isKeyboard = window.innerHeight - vv.height > 100;
+      setKeyboardOpen(isKeyboard);
+    };
+    vv.addEventListener("resize", handleResize);
+    return () => vv.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Hide bottom nav on detail / full-screen leaf flows where custom bottom action or chat input exists
+  const pathname = location?.pathname ?? "";
+  const isLeafRoute =
+    pathname.startsWith("/connect-app/inbox/") ||
+    pathname === "/connect-app/card-scan" ||
+    pathname.startsWith("/connect-app/moment/") ||
+    pathname === "/connect-app/activate";
+
+  if (isLeafRoute || keyboardOpen) {
+    return null;
+  }
 
   const renderTab = (tab: NavTab) => {
     const Icon = tab.icon;
@@ -80,7 +102,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
       className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px]"
     >
       <div
-        className="relative grid grid-cols-5 items-center border-t border-[#D8B282]/20 bg-[#050c15]/95 px-2 pt-1.5 backdrop-blur-md"
+        className="relative grid grid-cols-5 items-center border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 px-2 pt-1.5 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
         style={{
           minHeight: "calc(var(--bc-mobile-nav-h) + var(--bc-mobile-safe-bottom))",
           paddingBottom: "max(var(--bc-mobile-safe-bottom), 6px)",

@@ -4,6 +4,10 @@
 import { useAuth } from "@/context/AuthContext";
 
 export function useViewerUserId(): string | null {
-  const { user } = useAuth();
-  return user?.id ?? null;
+  try {
+    const { user } = useAuth();
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
 }
