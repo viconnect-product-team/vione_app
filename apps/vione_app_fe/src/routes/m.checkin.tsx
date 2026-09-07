@@ -251,9 +251,10 @@ function CheckinScreen() {
 
       const isLocal =
         window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1";
+        window.location.hostname === "127.0.0.1" ||
+        Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor);
       if (!window.isSecureContext && !isLocal) {
-        setError("Chạm NFC yêu cầu kết nối bảo mật HTTPS.");
+        setError("Chạm NFC yêu cầu kết nối bảo mật HTTPS hoặc ứng dụng di động ViOne.");
         return;
       }
 

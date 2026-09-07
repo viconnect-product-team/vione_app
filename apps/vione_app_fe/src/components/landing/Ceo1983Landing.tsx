@@ -22,9 +22,41 @@ import {
   Layers,
   Lock,
   Flame,
+  Check,
+  ChevronDown,
+  Clock,
+  ShieldAlert,
+  FileText,
+  PhoneCall,
+  Mail,
+  AlertCircle,
 } from "lucide-react";
 
 type ThemeMode = "dark" | "light" | "contrast";
+
+const INDUSTRY_OPTIONS = [
+  "Công nghệ & Chuyển đổi số",
+  "Sản xuất & Công nghiệp",
+  "Bất động sản & Xây dựng",
+  "Thương mại & Bán lẻ",
+  "Tài chính & Đầu tư",
+  "Y tế & Dược phẩm",
+  "Giáo dục & Đào tạo",
+  "Logistics & Vận tải",
+  "F&B / Nhà hàng & Ẩm thực",
+  "Thời trang & Tiêu dùng",
+  "Nông nghiệp công nghệ cao",
+  "Truyền thông & Sự kiện",
+  "Khác",
+];
+
+const REVENUE_OPTIONS = [
+  { value: "<10", label: "Dưới 10 Tỷ VNĐ / năm", badge: "Khởi nghiệp" },
+  { value: "10-50", label: "10 - 50 Tỷ VNĐ / năm", badge: "SME Tiêu Chuẩn" },
+  { value: "50-200", label: "50 - 200 Tỷ VNĐ / năm", badge: "Doanh Nghiệp Lớn" },
+  { value: "200-500", label: "200 - 500 Tỷ VNĐ / năm", badge: "Vững Mạnh" },
+  { value: ">500", label: "Trên 500 Tỷ VNĐ / năm", badge: "Tập Đoàn" },
+];
 
 export function Ceo1983Landing() {
   const navigate = useNavigate();
@@ -36,9 +68,13 @@ export function Ceo1983Landing() {
     fullName: "",
     phone: "",
     company: "",
+    title: "Chủ Tịch / Tổng Giám Đốc",
     revenue: "10-50",
-    industry: "Công nghệ / Sản xuất / TM-DV",
+    industries: ["Công nghệ & Chuyển đổi số"] as string[],
   });
+  const [isIndustryDropdownOpen, setIsIndustryDropdownOpen] = useState(false);
+  const [isRevenueDropdownOpen, setIsRevenueDropdownOpen] = useState(false);
+  const [submissionCode, setSubmissionCode] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const isDark = themeMode === "dark";
@@ -55,14 +91,30 @@ export function Ceo1983Landing() {
     setModalOpen(true);
   };
 
+  const toggleIndustry = (ind: string) => {
+    setFormData((prev) => {
+      const exists = prev.industries.includes(ind);
+      if (exists) {
+        if (prev.industries.length === 1) return prev; // keep at least 1
+        return { ...prev, industries: prev.industries.filter((i) => i !== ind) };
+      }
+      return { ...prev, industries: [...prev.industries, ind] };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.industries.length === 0) return;
+    const code = `CEO83-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    setSubmissionCode(code);
     setSubmitted(true);
-    setTimeout(() => {
-      setModalOpen(false);
-      setSubmitted(false);
-      navigate({ to: "/m", search: { slug: "ceo1983" } });
-    }, 1800);
+  };
+
+  const handleResetModal = () => {
+    setModalOpen(false);
+    setSubmitted(false);
+    setIsIndustryDropdownOpen(false);
+    setIsRevenueDropdownOpen(false);
   };
 
   // Real leaders of CLB CEO 1983 (Nhiệm kỳ 2025 - 2028)
@@ -104,11 +156,11 @@ export function Ceo1983Landing() {
       className={`transition-colors duration-500 relative overflow-x-hidden selection:bg-[#B18B44] selection:text-white ${
         themeClass("bg-[#131418] text-[#F8F7F3]", "bg-[#FAF9F5] text-[#191A1C]", "bg-black text-white")
       }`}
-      style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
+      style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif" }}
     >
-      {/* 1. GOOGLE FONTS INTER & CINZEL LUXURY TYPOGRAPHY */}
+      {/* 1. GOOGLE FONTS PLUS JAKARTA SANS, INTER & CINZEL LUXURY TYPOGRAPHY */}
       <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap');`}
+        {`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Cinzel:wght@600;700;900&display=swap');`}
       </style>
 
       {/* 2. BACKGROUND ART DECO GEOMETRIC CHEVRONS (Gọn gàng ở Hero, không làm vàng các section bên dưới) */}
@@ -1058,56 +1110,193 @@ export function Ceo1983Landing() {
 
       {/* --- APPLICATION MODAL --- */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
           <div
-            className={`relative w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl text-left border ${
-              themeClass("bg-[#191A1C] border-[#B18B44]/40 text-white", "bg-white border-[#B18B44]/30 text-black", "bg-zinc-950 border-white text-white")
+            className={`relative w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl text-left border my-8 transition-all ${
+              themeClass(
+                "bg-[#15161A] border-[#C5A25D]/40 text-[#F8F7F3] shadow-[0_20px_50px_rgba(0,0,0,0.8)]",
+                "bg-white border-[#C5A25D]/40 text-[#191A1C] shadow-[0_20px_50px_rgba(0,0,0,0.15)]",
+                "bg-zinc-950 border-white/40 text-white"
+              )
             }`}
           >
             <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              onClick={handleResetModal}
+              className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer z-10"
+              aria-label="Đóng"
             >
               <X className="w-5 h-5" />
             </button>
 
             {submitted ? (
-              <div className="py-12 text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-8 h-8" />
+              <div className="py-4 text-left flex flex-col">
+                {/* Header State */}
+                <div className="flex items-center gap-3.5 mb-6 pb-5 border-b border-white/10 dark:border-white/10">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/10">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#B18B44]">
+                      CLB CEO 1983 — THÔNG BÁO XÉT DUYỆT
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-black text-white dark:text-white">
+                      Hồ Sơ Đã Tiếp Nhận Thành Công
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold">Nộp Hồ Sơ Thành Công!</h3>
-                <p className="text-sm mt-2 max-w-xs text-slate-400">
-                  Ban Thư Ký CLB CEO 1983 sẽ liên hệ quý doanh nhân trong vòng 24 giờ làm việc.
-                </p>
+
+                {/* Status Alert Banner */}
+                <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 mb-6 flex items-start gap-3">
+                  <div className="relative mt-0.5">
+                    <Clock className="w-5 h-5 text-amber-400" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  </div>
+                  <div className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-amber-400 uppercase tracking-wider text-[11px]">
+                        Trạng Thái: Đang Thẩm Định Năng Lực Hội Viên
+                      </span>
+                    </div>
+                    <p className="text-zinc-300 mt-1 leading-relaxed">
+                      Mã hồ sơ: <span className="font-mono font-bold text-white bg-black/40 px-2 py-0.5 rounded border border-white/10">{submissionCode}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Candidate Summary Card */}
+                <div className="p-4 rounded-2xl border border-white/10 bg-zinc-900/60 mb-6 space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Doanh nhân / Vị trí:</span>
+                    <span className="font-bold text-white">{formData.fullName} ({formData.title})</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Doanh nghiệp:</span>
+                    <span className="font-bold text-white">{formData.company}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Số điện thoại / Zalo:</span>
+                    <span className="font-mono font-bold text-white">{formData.phone}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Quy mô doanh thu:</span>
+                    <span className="font-bold text-[#E8C986]">
+                      {REVENUE_OPTIONS.find((r) => r.value === formData.revenue)?.label}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-white/5">
+                    <span className="text-zinc-400 block mb-1.5">Lĩnh vực hoạt động:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {formData.industries.map((ind, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-[#B18B44]/20 border border-[#B18B44]/40 text-[#E8C986]"
+                        >
+                          {ind}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3-Step Verification Timeline */}
+                <div className="mb-6">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-3">
+                    Lộ Trình Xét Duyệt Hội Viên Chính Thức
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center text-xs font-bold shrink-0">
+                        ✓
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-white">Bước 1: Tiếp nhận hồ sơ số</p>
+                        <p className="text-zinc-400 text-[11px]">Đã ghi nhận trên hệ thống</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500 text-amber-400 flex items-center justify-center text-xs font-bold shrink-0">
+                        2
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-amber-300">Bước 2: Ban Thư Ký đối chiếu thông tin & năm sinh 1983</p>
+                        <p className="text-zinc-400 text-[11px]">Dự kiến liên hệ trong vòng 24 giờ làm việc</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 opacity-60">
+                      <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 flex items-center justify-center text-xs font-bold shrink-0">
+                        3
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-zinc-300">Bước 3: Phê duyệt & Trao Thẻ VIP NFC Kim Loại</p>
+                        <p className="text-zinc-500 text-[11px]">Kích hoạt tài khoản Hội Viên Chính Thức</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hotline support */}
+                <div className="p-3.5 rounded-xl border border-white/10 bg-white/5 flex items-center justify-between text-xs mb-6">
+                  <div className="flex items-center gap-2.5 text-zinc-300">
+                    <PhoneCall className="w-4 h-4 text-[#B18B44]" />
+                    <span>Hotline Ban Thư Ký CLB:</span>
+                  </div>
+                  <a href="tel:0988881983" className="font-mono font-bold text-[#E8C986] hover:underline">
+                    098.888.1983 (Zalo)
+                  </a>
+                </div>
+
+                {/* Action button */}
+                <button
+                  type="button"
+                  onClick={handleResetModal}
+                  className="w-full bg-[linear-gradient(135deg,#F4D699_0%,#D0A95C_40%,#B18B44_80%,#9A742F_100%)] text-[#191A1C] font-bold py-3.5 rounded-xl shadow-lg shadow-[#B18B44]/25 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer text-center text-sm"
+                >
+                  Hoàn Tất & Đóng
+                </button>
               </div>
             ) : (
               <>
                 <div className="mb-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#B18B44]">
-                    HỒ SƠ HỘI VIÊN
-                  </span>
-                  <h3 className="text-2xl font-black mt-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-widest text-[#B18B44] bg-[#B18B44]/10 border border-[#B18B44]/30 mb-2">
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>HỒ SƠ GIA NHẬP HỘI VIÊN ĐỒNG NIÊN</span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-black mt-1 tracking-tight">
                     Đăng Ký Gia Nhập CLB CEO 1983
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-zinc-400 mt-1">
                     Dành riêng cho Lãnh đạo, Nhà sáng lập & Doanh nhân sinh năm 1983 (Quý Hợi).
                   </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-                  <div>
-                    <label className="block text-xs font-bold mb-1.5">
-                      Họ và Tên Lãnh đạo *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="VD: Lê Hoàng Long"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5">
+                        Họ và Tên Lãnh đạo *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="VD: Lê Hoàng Long"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5">
+                        Chức vụ / Vị trí *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="VD: Chủ Tịch / Tổng Giám Đốc"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none transition-colors"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1121,7 +1310,7 @@ export function Ceo1983Landing() {
                         placeholder="0987654321"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none transition-colors font-mono"
                       />
                     </div>
                     <div>
@@ -1131,49 +1320,145 @@ export function Ceo1983Landing() {
                       <input
                         type="text"
                         required
-                        placeholder="Tên công ty"
+                        placeholder="Tên công ty / doanh nghiệp"
                         value={formData.company}
                         onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold mb-1.5">
-                        Quy mô doanh thu (Tỷ VNĐ)
+                  {/* Custom Luxury Revenue Dropdown */}
+                  <div className="relative">
+                    <label className="block text-xs font-bold mb-1.5">
+                      Quy mô doanh thu hàng năm *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRevenueDropdownOpen(!isRevenueDropdownOpen);
+                        setIsIndustryDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 text-left focus:border-[#B18B44] focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-sm">
+                        {REVENUE_OPTIONS.find((r) => r.value === formData.revenue)?.label}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isRevenueDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {isRevenueDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1.5 z-30 rounded-2xl border border-white/15 bg-zinc-900 shadow-2xl p-2 space-y-1">
+                        {REVENUE_OPTIONS.map((opt) => {
+                          const isSelected = formData.revenue === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, revenue: opt.value });
+                                setIsRevenueDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#B18B44]/20 border border-[#B18B44]/40 text-[#E8C986] font-bold"
+                                  : "hover:bg-white/5 text-zinc-300 font-medium"
+                              }`}
+                            >
+                              <span>{opt.label}</span>
+                              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-black/40 border border-white/10 text-zinc-400">
+                                {opt.badge}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Interactive Multi-Select Industry Categories */}
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold">
+                        Lĩnh vực hoạt động * (Chọn 1 hoặc nhiều)
                       </label>
-                      <select
-                        value={formData.revenue}
-                        onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none"
-                      >
-                        <option value="5-10">&lt; 10 Tỷ</option>
-                        <option value="10-50">10 - 50 Tỷ</option>
-                        <option value="50-200">50 - 200 Tỷ</option>
-                        <option value="200+">&gt; 200 Tỷ</option>
-                      </select>
+                      <span className="text-[11px] text-[#B18B44] font-semibold">
+                        Đã chọn: {formData.industries.length} lĩnh vực
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold mb-1.5">
-                        Lĩnh vực hoạt động
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Công nghệ, Sản xuất..."
-                        value={formData.industry}
-                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 focus:border-[#B18B44] focus:outline-none"
-                      />
+
+                    {/* Selected Badges */}
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {formData.industries.map((ind) => (
+                        <span
+                          key={ind}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#B18B44]/15 border border-[#B18B44]/40 text-[#E8C986] animate-in fade-in"
+                        >
+                          <span>{ind}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleIndustry(ind)}
+                            className="hover:text-white transition-colors"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsIndustryDropdownOpen(!isIndustryDropdownOpen);
+                        setIsRevenueDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl px-4 py-3 text-left focus:border-[#B18B44] focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <span className="text-zinc-400 text-xs">
+                        {isIndustryDropdownOpen ? "Đóng danh sách lựa chọn" : "Bấm để chọn thêm / thay đổi lĩnh vực…"}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isIndustryDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {isIndustryDropdownOpen && (
+                      <div className="mt-2 rounded-2xl border border-white/15 bg-zinc-900 shadow-2xl p-3 max-h-56 overflow-y-auto space-y-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {INDUSTRY_OPTIONS.map((ind) => {
+                            const isChecked = formData.industries.includes(ind);
+                            return (
+                              <button
+                                key={ind}
+                                type="button"
+                                onClick={() => toggleIndustry(ind)}
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                                  isChecked
+                                    ? "bg-[#B18B44]/20 border border-[#B18B44]/40 text-[#E8C986] font-bold"
+                                    : "hover:bg-white/5 text-zinc-300 font-medium border border-transparent"
+                                }`}
+                              >
+                                <div
+                                  className={`w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0 border ${
+                                    isChecked
+                                      ? "bg-[#B18B44] border-[#B18B44] text-black font-black"
+                                      : "border-white/20 bg-black/40"
+                                  }`}
+                                >
+                                  {isChecked && "✓"}
+                                </div>
+                                <span className="truncate">{ind}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full mt-4 bg-[linear-gradient(135deg,#F4D699_0%,#D0A95C_40%,#B18B44_80%,#9A742F_100%)] text-[#191A1C] font-bold py-4 rounded-xl shadow-lg shadow-[#B18B44]/25 transition-all cursor-pointer text-center hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full mt-5 bg-[linear-gradient(135deg,#F4D699_0%,#D0A95C_40%,#B18B44_80%,#9A742F_100%)] text-[#191A1C] font-bold py-4 rounded-xl shadow-lg shadow-[#B18B44]/25 transition-all cursor-pointer text-center hover:scale-[1.01] active:scale-[0.99] text-[15px]"
                   >
-                    Gửi Hồ Sơ Xét Duyệt
+                    Gửi Hồ Sơ Xét Duyệt Hội Viên →
                   </button>
                 </form>
               </>

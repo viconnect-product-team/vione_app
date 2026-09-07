@@ -150,15 +150,11 @@ export function CardScanFlow() {
   const [autoCapture, setAutoCapture] = useState(true);
   const [liveOpen, setLiveOpen] = useState(false);
 
-  /** Live camera is only possible in a secure browser context with a device. */
+  /** Live camera is possible in a secure context, localhost, or native mobile container with mediaDevices. */
   function canUseLiveCamera(): boolean {
     return (
-      typeof window !== "undefined" &&
-      (window.isSecureContext ||
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1") &&
       typeof navigator !== "undefined" &&
-      !!navigator.mediaDevices?.getUserMedia
+      typeof navigator.mediaDevices?.getUserMedia === "function"
     );
   }
 

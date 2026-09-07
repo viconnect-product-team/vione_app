@@ -303,9 +303,10 @@ function CardScreen() {
     }
     const isLocal =
       window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
+      window.location.hostname === "127.0.0.1" ||
+      Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor);
     if (!window.isSecureContext && !isLocal) {
-      toast.error("Ghi NFC yêu cầu kết nối HTTPS bảo mật.");
+      toast.error("Ghi NFC yêu cầu kết nối HTTPS bảo mật hoặc ứng dụng di động ViOne.");
       return;
     }
     const NDEFReader = (window as any).NDEFReader;

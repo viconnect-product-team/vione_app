@@ -11,8 +11,10 @@ import { Link } from "@tanstack/react-router";
 import {
   AtSign,
   Briefcase,
+  Camera,
   CheckCircle2,
   Globe,
+  ImagePlus,
   Loader2,
   MapPin,
   Nfc,
@@ -82,6 +84,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const captureInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,22 +183,40 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                 {qrStatus !== "scanning" && (
                   <div
                     role="status"
-                    className="absolute inset-0 grid place-items-center px-6 text-center text-[13.5px] text-[var(--bc-mobile-muted)] bg-[var(--bc-mobile-surface-2)]/90"
+                    className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-[13.5px] text-[var(--bc-mobile-muted)] bg-[var(--bc-mobile-surface-2)]/95"
                   >
                     {qrStatus === "starting" ? (
                       <div className="flex flex-col items-center gap-2">
                         <Loader2 className="h-6 w-6 animate-spin text-[var(--bc-mobile-accent)]" />
                         <p>{t("bc.mobile.tapConnect.cameraStarting")}</p>
                       </div>
+                    ) : qrStatus === "unsupported" ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--bc-mobile-accent)]/15 text-[var(--bc-mobile-accent)]">
+                          <Camera className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-[var(--bc-mobile-text)]">Mở máy ảnh quét mã QR</p>
+                          <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
+                            Chụp ảnh mã QR bằng camera điện thoại để kết nối ngay
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => captureInputRef.current?.click()}
+                          className="flex items-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] px-5 py-2.5 text-[13.5px] font-semibold text-[#050c15] shadow-md active:scale-95 transition-transform"
+                        >
+                          <Camera className="h-4 w-4" />
+                          <span>Chụp ảnh QR ngay</span>
+                        </button>
+                      </div>
                     ) : (
                       <p>
                         {qrStatus === "denied"
                           ? t("bc.mobile.tapConnect.cameraDenied")
-                          : qrStatus === "unsupported"
-                            ? t("bc.mobile.tapConnect.cameraUnsupported")
-                            : qrStatus === "error"
-                              ? t("bc.mobile.tapConnect.cameraError")
-                              : t("bc.mobile.tapConnect.cameraStarting")}
+                          : qrStatus === "error"
+                            ? t("bc.mobile.tapConnect.cameraError")
+                            : t("bc.mobile.tapConnect.cameraStarting")}
                       </p>
                     )}
                   </div>
@@ -203,25 +224,39 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button type="button" onClick={() => setCamera((v) => !v)} className={SECONDARY_BTN}>
-                <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-                {camera ? t("bc.mobile.tapConnect.stopQr") : t("bc.mobile.tapConnect.useQr")}
+            <input
+              ref={captureInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => captureInputRef.current?.click()}
+                className={SECONDARY_BTN}
+              >
+                <Camera aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                <span>Chụp ảnh QR</span>
               </button>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className={SECONDARY_BTN}
               >
-                <span>Tải ảnh QR từ thư viện</span>
+                <ImagePlus aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                <span>Ảnh từ thư viện</span>
               </button>
             </div>
 

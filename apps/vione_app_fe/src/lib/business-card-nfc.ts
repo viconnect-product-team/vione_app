@@ -13,7 +13,9 @@ export function nfcSupport(): NfcSupport {
   if (!("NDEFReader" in window)) return "unsupported";
   const isLocal =
     typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor));
   if (!window.isSecureContext && !isLocal) return "insecure";
   return "supported";
 }

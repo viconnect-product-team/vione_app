@@ -109,8 +109,10 @@ export function extractNdefPayload(event: NdefReadingEventLike): string {
 }
 
 /**
- * Web NFC reader hook (Google Chrome / Edge on Android).
- * Reads NDEF records (URL, vCard text, MIME) or tag serialNumber upon tap.
+ * Universal NFC reader hook.
+ * Supports:
+ * 1. Native Android WebView via CustomEvent ('vione:nfc_tag') & window message ('VIONE_NFC_TAG')
+ * 2. Web NFC (Google Chrome / Edge on Android with NDEFReader)
  */
 export function useNfcScanner(opts: { active: boolean; onDetect: (value: string) => void }) {
   const { active, onDetect } = opts;
@@ -129,57 +131,107 @@ export function useNfcScanner(opts: { active: boolean; onDetect: (value: string)
       return;
     }
 
-    const isLocal =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-    if (!window.isSecureContext && !isLocal) {
-      setStatus("insecure");
-      return;
-    }
+    let isHandledByNative = false;
 
-    const Ctor = (window as unknown as { NDEFReader?: NDEFReaderCtor }).NDEFReader;
-    if (!Ctor || typeof Ctor !== "function") {
-      setStatus("unsupported");
-      return;
-    }
+    // Check if running in native app (Capacitor / Android WebView)
+    const isCapacitor = Boolean(
+      (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.() ||
+      (window as unknown as { Capacitor?: any }).Capacitor ||
+      (window as unknown as { __VIONE_LAST_NFC__?: any }).__VIONE_LAST_NFC__ !== undefined
+    );
 
-    const aborter = new AbortController();
-    let stopped = false;
+    // Native NFC event handler
+    const handleNativeNfcData = (data: any) => {
+      if (!data) return;
+      const targetPayload = (data.url || data.rawText || data.serialNumber || "").trim();
+      if (targetPayload) {
+        onDetectRef.current(targetPayload);
+      }
+    };
 
-    async function start() {
-      try {
-        const reader = new Ctor!();
-        await reader.scan({ signal: aborter.signal });
-        if (stopped) return;
-        setStatus("scanning");
+    const onCustomEvent = (e: Event) => {
+      const customEvt = e as CustomEvent;
+      if (customEvt.detail) {
+        handleNativeNfcData(customEvt.detail);
+      }
+    };
 
-        reader.onreading = (event: NdefReadingEventLike) => {
-          if (stopped) return;
-          const payload = extractNdefPayload(event);
-          if (payload) {
-            onDetectRef.current(payload);
-          }
-        };
+    const onMessageEvent = (e: MessageEvent) => {
+      if (e.data && (e.data.type === "VIONE_NFC_TAG" || e.data.type === "nfc_tag")) {
+        const payload = e.data.payload || e.data.detail || e.data;
+        handleNativeNfcData(payload);
+      }
+    };
 
-        reader.onreadingerror = () => {
-          // Non-fatal error during tag read (e.g. tag moved too quickly)
-          // Keep scanning so the user can re-tap
-        };
-      } catch (e: any) {
-        if (stopped || aborter.signal.aborted) return;
-        if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed") || e?.message?.includes("permission")) {
-          setStatus("denied");
-        } else if (e?.name === "NotSupportedError") {
-          setStatus("unsupported");
-        } else {
-          setStatus("error");
-        }
+    window.addEventListener("vione:nfc_tag", onCustomEvent);
+    window.addEventListener("message", onMessageEvent);
+
+    if (isCapacitor) {
+      // In native app, native ForegroundDispatch is running in MainActivity.java
+      setStatus("scanning");
+      isHandledByNative = true;
+
+      // Check if tag was tapped immediately before sheet opened
+      const lastNfc = (window as unknown as { __VIONE_LAST_NFC__?: any }).__VIONE_LAST_NFC__;
+      if (lastNfc && typeof lastNfc.timestamp === "number" && Date.now() - lastNfc.timestamp < 3000) {
+        handleNativeNfcData(lastNfc);
       }
     }
 
-    void start();
+    // Also attempt Web NFC (if available in standard browser)
+    const Ctor = (window as unknown as { NDEFReader?: NDEFReaderCtor }).NDEFReader;
+    const aborter = new AbortController();
+    let stopped = false;
+
+    if (Ctor && typeof Ctor === "function") {
+      async function startWebNfc() {
+        try {
+          const reader = new Ctor!();
+          await reader.scan({ signal: aborter.signal });
+          if (stopped) return;
+          setStatus("scanning");
+
+          reader.onreading = (event: NdefReadingEventLike) => {
+            if (stopped) return;
+            const payload = extractNdefPayload(event);
+            if (payload) {
+              onDetectRef.current(payload);
+            }
+          };
+
+          reader.onreadingerror = () => {
+            // Keep scanning
+          };
+        } catch (e: any) {
+          if (stopped || aborter.signal.aborted) return;
+          if (!isHandledByNative) {
+            if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed") || e?.message?.includes("permission")) {
+              setStatus("denied");
+            } else if (e?.name === "NotSupportedError") {
+              setStatus("unsupported");
+            } else {
+              setStatus("error");
+            }
+          }
+        }
+      }
+
+      void startWebNfc();
+    } else if (!isHandledByNative) {
+      const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      if (!window.isSecureContext && !isLocal) {
+        setStatus("insecure");
+      } else {
+        setStatus("unsupported");
+      }
+    }
+
     return () => {
       stopped = true;
+      window.removeEventListener("vione:nfc_tag", onCustomEvent);
+      window.removeEventListener("message", onMessageEvent);
       try {
         aborter.abort();
       } catch {
