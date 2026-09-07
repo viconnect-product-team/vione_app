@@ -4,10 +4,11 @@
 // No CRUD, no settings, no fake social metrics, no feed.
 
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, RefreshCw, Users } from "lucide-react";
+import { ChevronRight, Newspaper, RefreshCw, Users } from "lucide-react";
 import { useFmt, useT } from "@/lib/i18n";
 import { useCommunityDetail, useCommunityMembers } from "@/hooks/use-community";
 import { useCommunityActivityPreview } from "@/hooks/use-community-activity";
+import { useCommunityNews } from "@/hooks/use-community-news";
 import { eventDateParts } from "@/lib/business-connect/mobile/community-activity.service";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityInviteButton } from "./CommunityInviteSheet";
@@ -102,9 +103,6 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
 
             <MembersPreview communityId={communityId} />
 
-
-
-
             <ActivityPreviews
               communityId={communityId}
               preview={activity.preview}
@@ -112,6 +110,8 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
               coreError={activity.coreError}
               retry={activity.retry}
             />
+
+            <NewsPreview communityId={communityId} />
           </>
         )}
       </main>
@@ -236,22 +236,6 @@ function ActivityPreviews({
           className="mt-1 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[var(--bc-mobile-navy)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
         >
           {t("bc.mobile.community.events.viewAll")}
-        </Link>
-      </section>
-
-      <section className="mt-7">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]">
-          {t("bc.mobile.community.news.title")}
-        </h2>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
-          {t("bc.mobile.community.news.subtitle")}
-        </p>
-        <Link
-          to="/connect-app/community/$communityId/news"
-          params={{ communityId }}
-          className="mt-1 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[var(--bc-mobile-navy)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-        >
-          {t("bc.mobile.community.news.open")}
         </Link>
       </section>
 
@@ -409,3 +393,90 @@ function MembersPreview({ communityId }: { communityId: string }) {
     </section>
   );
 }
+
+function NewsPreview({ communityId }: { communityId: string }) {
+  const t = useT();
+  const news = useCommunityNews(communityId);
+  const rows = news.items.slice(0, 3);
+
+  return (
+    <section className="mt-7">
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]">
+        {t("bc.mobile.community.news.title")}
+      </h2>
+      <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
+        {t("bc.mobile.community.news.subtitle")}
+      </p>
+
+      {news.initialLoading ? (
+        <div aria-hidden="true" className="mt-3 space-y-2.5">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-9 w-9 animate-pulse rounded-xl bg-[var(--bc-mobile-surface-2)]" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-2/3 animate-pulse rounded-full bg-[var(--bc-mobile-surface-2)]" />
+                <div className="h-3 w-1/3 animate-pulse rounded-full bg-[var(--bc-mobile-surface-2)]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="mt-2 text-[14px] text-[var(--bc-mobile-muted)]">
+          {t("bc.mobile.community.news.empty")}
+        </p>
+      ) : (
+        <ul className="mt-2 divide-y divide-[var(--bc-mobile-border)]">
+          {rows.map((item) => {
+            const meta = [item.category, item.author, item.publishedLabel].filter(Boolean).join(" · ");
+            return (
+              <li key={item.newsRef}>
+                <Link
+                  to="/connect-app/community/$communityId/news/$newsRef"
+                  params={{ communityId, newsRef: item.newsRef }}
+                  aria-label={`${t("bc.mobile.community.news.open")}: ${item.title}`}
+                  className="flex min-h-[56px] items-start gap-3 py-2.5 transition-colors duration-150 hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)]"
+                  >
+                    <Newspaper className="h-4 w-4" strokeWidth={1.8} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium text-[var(--bc-mobile-text)]">
+                      {item.title}
+                    </span>
+                    {item.excerpt ? (
+                      <span className="mt-0.5 line-clamp-1 block text-[12.5px] text-[var(--bc-mobile-muted)]">
+                        {item.excerpt}
+                      </span>
+                    ) : null}
+                    {meta ? (
+                      <span className="mt-0.5 block truncate text-[11.5px] text-[var(--bc-mobile-muted)]">
+                        {meta}
+                      </span>
+                    ) : null}
+                  </span>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="mt-1 h-4 w-4 shrink-0 text-[var(--bc-mobile-muted)]"
+                    strokeWidth={1.8}
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <Link
+        to="/connect-app/community/$communityId/news"
+        params={{ communityId }}
+        className="mt-1 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[var(--bc-mobile-navy)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+      >
+        {t("bc.mobile.community.news.open")}
+      </Link>
+    </section>
+  );
+}
+

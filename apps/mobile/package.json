@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "sync": "npx cap sync",
+    "sync:android": "npx cap sync android",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "build:static": "npm run build --prefix ../vione_app_fe && npx cap sync android",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

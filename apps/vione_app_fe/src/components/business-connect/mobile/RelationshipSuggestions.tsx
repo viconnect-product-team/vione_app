@@ -307,9 +307,14 @@ export function RelationshipSuggestions() {
       </h2>
       <Link
         to="/connect-app/network"
-        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
+        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1.5 text-[11px] font-medium text-[#D8B282] bg-[#D8B282]/10 border border-[#D8B282]/20 hover:bg-[#D8B282]/20 hover:border-[#D8B282]/40 transition-all cursor-pointer shrink-0"
       >
-        {t("bc.mobile.intel.home.viewAll")}
+        <span>{t("bc.mobile.intel.home.viewAll")}</span>
+        {recommendations.length > 0 ? (
+          <span className="rounded-full bg-[#D8B282]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#f6e1c3] leading-none">
+            {recommendations.length}
+          </span>
+        ) : null}
         <ChevronRight aria-hidden="true" className="h-3 w-3 text-[#D8B282]" strokeWidth={2} />
       </Link>
     </div>
@@ -398,7 +403,7 @@ export function RelationshipSuggestions() {
         </div>
       ) : null}
       <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
-        {filtered.map((rec) => (
+        {filtered.slice(0, 5).map((rec) => (
           <SuggestionRow
             key={rec.id}
             rec={rec}

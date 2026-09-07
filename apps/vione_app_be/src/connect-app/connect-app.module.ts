@@ -12,6 +12,7 @@ import { OpportunityController } from './opportunity.controller';
 import { ProductsController } from './products.controller';
 import { ContentController } from './content.controller';
 import { ConnectAppService } from './connect-app.service';
+import { ConnectAppGateway } from './connect-app.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
@@ -30,7 +31,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     ProductsController,
     ContentController,
   ],
-  providers: [ConnectAppService],
-  exports: [ConnectAppService],
+  providers: [ConnectAppService, ConnectAppGateway],
+  exports: [ConnectAppService, ConnectAppGateway],
 })
 export class ConnectAppModule {}

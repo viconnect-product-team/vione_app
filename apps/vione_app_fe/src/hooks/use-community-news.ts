@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { CommunitySDK } from "@/lib/business-connect/mobile/community.sdk";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const communityNewsKeys = {
   root: ["bc-mobile", "community-news"] as const,
@@ -20,7 +21,18 @@ export function useCommunityNews(communityId: string) {
     enabled: viewerId !== null,
     staleTime: 30_000,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => CommunitySDK.listNews({ communityId, offset: pageParam }),
+    queryFn: async ({ pageParam }) => {
+      const q = new URLSearchParams();
+      if (pageParam) q.set("offset", String(pageParam));
+      const qs = q.toString();
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/news${qs ? `?${qs}` : ""}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.listNews({ communityId, offset: pageParam });
+    },
     getNextPageParam: (last) => last?.nextOffset ?? undefined,
   });
 
@@ -46,7 +58,15 @@ export function useCommunityNewsDetail(communityId: string, newsRef: string) {
     queryKey: communityNewsKeys.detail(viewerKey, communityId, newsRef),
     enabled: viewerId !== null,
     staleTime: 30_000,
-    queryFn: () => CommunitySDK.getNewsDetail({ communityId, newsRef }),
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any>(`/connect-app/community/${communityId}/news/${newsRef}`);
+        if (res) return res;
+      } catch {
+        // fallback
+      }
+      return CommunitySDK.getNewsDetail({ communityId, newsRef });
+    },
   });
   return {
     detail: query.data ?? null,

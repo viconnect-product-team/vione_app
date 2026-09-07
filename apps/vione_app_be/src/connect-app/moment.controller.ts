@@ -2,10 +2,59 @@ import { Controller, Post, Body, Request, UseGuards, Get, Patch, Delete, Param, 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('moments')
+@Controller(['moments', 'connect-app/moments', 'connect-app/moment'])
 @UseGuards(JwtAuthGuard)
 export class MomentController {
   constructor(private readonly connectAppService: ConnectAppService) {}
+
+  // --- Mentionable Users Autocomplete ---
+  @Get('mentionable-users')
+  async searchMentionableUsers(@Request() req, @Query('q') query?: string) {
+    return this.connectAppService.searchMentionableUsers(req.user.id, query || '');
+  }
+
+  // --- Moment Likes & Comments ---
+  @Get(':id/likes')
+  async getMomentLikeStatus(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.getMomentLikeStatus(req.user.id, id);
+  }
+
+  @Post(':id/like')
+  async toggleMomentLike(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.toggleMomentLike(req.user.id, id);
+  }
+
+  @Get(':id/comments')
+  async listMomentComments(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.listMomentComments(id, req.user.id);
+  }
+
+  @Post(':id/comments')
+  async createMomentComment(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { parentId?: string | null; content: string; mentions?: any[] },
+  ) {
+    return this.connectAppService.createMomentComment(req.user.id, id, body);
+  }
+
+  @Delete(':id/comments/:commentId')
+  async deleteMomentComment(
+    @Request() req,
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.connectAppService.deleteMomentComment(req.user.id, id, commentId);
+  }
+
+  @Post(':id/comments/:commentId/like')
+  async toggleMomentCommentLike(
+    @Request() req,
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.connectAppService.toggleMomentCommentLike(req.user.id, id, commentId);
+  }
 
   @Post()
   async prepareMoment(@Request() req, @Body() data: any) {

@@ -69,4 +69,14 @@ export class DmController {
   async retractMyDmMessage(@Request() req, @Param('messageId') messageId: string) {
     return this.connectAppService.retractMyDmMessage(req.user.id, messageId);
   }
+
+  @Post('messages/:messageId/reactions')
+  async reactToDmMessage(
+    @Request() req,
+    @Param('messageId') messageId: string,
+    @Body('emoji') emoji: string,
+  ) {
+    if (!emoji) throw new BadRequestException('emoji_required');
+    return this.connectAppService.reactToDmMessage(req.user.id, messageId, emoji);
+  }
 }

@@ -41,19 +41,26 @@ function timeLabel(iso: string | null, locale: string): string {
 }
 
 function Avatar({ thread }: { thread: BcDmThreadSummary }) {
-  if (thread.avatarUrl) {
-    return (
-      <img
-        src={thread.avatarUrl}
-        alt={thread.displayName}
-        className="h-12 w-12 shrink-0 rounded-full object-cover"
-        loading="lazy"
-      />
-    );
-  }
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-accent)]">
-      {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
+    <div className="relative shrink-0">
+      {thread.avatarUrl ? (
+        <img
+          src={thread.avatarUrl}
+          alt={thread.displayName}
+          className="h-12 w-12 rounded-full object-cover ring-1 ring-[#D8B282]/30"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1c2433] text-[15px] font-semibold text-[#D8B282] ring-1 ring-[#D8B282]/30">
+          {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
+        </div>
+      )}
+      {thread.isOnline ? (
+        <span
+          className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-[#22c55e] ring-2 ring-[#0a1019]"
+          title="Đang hoạt động"
+        />
+      ) : null}
     </div>
   );
 }
@@ -64,7 +71,12 @@ function InboxPage() {
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   const query = useDmThreads();
   const result = query.data;
-  const threads = result?.ok ? result.threads : [];
+  const threads = Array.isArray(result)
+    ? result
+    : result?.ok && Array.isArray(result.threads)
+      ? result.threads
+      : [];
+  const isError = query.isError || (result != null && typeof result === "object" && "ok" in result && !result.ok);
 
   return (
     <MobilePage>
@@ -79,7 +91,7 @@ function InboxPage() {
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             {t("bc.mobile.inbox.loading")}
           </div>
-        ) : result && !result.ok ? (
+        ) : isError ? (
           <p className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 text-[13px] text-[var(--bc-mobile-muted)]">
             {t("bc.mobile.inbox.error")}
           </p>

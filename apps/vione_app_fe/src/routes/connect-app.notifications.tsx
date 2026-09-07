@@ -39,8 +39,23 @@ export const Route = createFileRoute("/connect-app/notifications")({
 
 type Tab = "unread" | "all";
 
+const NOTIFICATION_KIND_TITLES: Record<string, string> = {
+  connection_request_received: "Lời mời kết nối mới",
+  connection_request_accepted: "Lời mời kết nối đã được chấp nhận",
+  meeting_upcoming_reminder: "Lịch hẹn sắp diễn ra",
+  meeting_confirmed: "Cuộc gặp đã được xác nhận",
+  meeting_cancelled: "Cuộc gặp đã bị huỷ",
+  moment_new_comment: "{commenterName} đã bình luận về khoảnh khắc của bạn",
+  moment_reply_comment: "{commenterName} đã phản hồi bình luận của bạn",
+  moment_user_mention: "Bạn được nhắc tên trong khoảnh khắc của {mentionerName}",
+  opportunity_new: "Cơ hội kinh doanh mới",
+  community_post_new: "Bài viết mới trong cộng đồng",
+};
+
 function label(t: ReturnType<typeof useT>, key: string, fallback: string): string {
-  return key && hasTKey(key) ? t(key) : fallback;
+  if (key && hasTKey(key)) return t(key);
+  if (fallback && NOTIFICATION_KIND_TITLES[fallback]) return NOTIFICATION_KIND_TITLES[fallback];
+  return fallback || "Thông báo";
 }
 
 /** Chèn dữ liệu hiển thị an toàn ({communityName}, ...) vào chuỗi đã dịch. */
@@ -86,7 +101,7 @@ function ConnectAppNotificationsPage() {
     <MobilePage>
       <BusinessConnectTopBar title={t("bc.mobile.notifications.page.title")} back />
       <div className="grid gap-4 pt-5">
-        <p className="text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">
+        <p className="text-[12.5px] leading-snug text-[#8a8d91]">
           {t("bc.mobile.notifications.page.desc")}
         </p>
 
@@ -102,10 +117,10 @@ function ConnectAppNotificationsPage() {
               role="tab"
               aria-selected={tab === item.value}
               onClick={() => setTab(item.value)}
-              className={`min-h-9 flex-1 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+              className={`min-h-10 flex-1 rounded-full border px-4 text-[13px] font-semibold transition-all cursor-pointer ${
                 tab === item.value
-                  ? "border-transparent bg-[var(--bc-mobile-text)] text-[var(--bc-mobile-surface)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                  ? "border-[#D8B282] bg-[#D8B282] text-[#0b0f19] shadow-md shadow-[#D8B282]/20"
+                  : "border-[#2f3542] bg-[#1c2333]/60 text-[#8a8d91] hover:text-[#e4e6eb] hover:border-[#D8B282]/40"
               }`}
             >
               {item.text}

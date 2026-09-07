@@ -19,7 +19,9 @@ export const bcDmThreadsFn = createServerFn({ method: "GET" })
     async ({ context }): Promise<BcDmResult<{ threads: BcDmThreadSummary[] }>> => {
       try {
         const res = await fetchNestApiFromServer("/connect-app/dm/threads", context.token);
-        return res ?? { ok: true, threads: [] };
+        if (Array.isArray(res)) return { ok: true, threads: res };
+        if (res && res.ok && Array.isArray(res.threads)) return res;
+        return { ok: true, threads: [] };
       } catch {
         return { ok: true, threads: [] };
       }
@@ -73,6 +75,14 @@ const sendInput = z.object({
   threadId: z.string().uuid(),
   body: z.string().max(DM_MAX_BODY_LEN + 200),
   clientToken: z.string().uuid(),
+  replyTo: z
+    .object({
+      id: z.string(),
+      senderName: z.string().optional(),
+      preview: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const bcDmSendFn = createServerFn({ method: "POST" })
@@ -85,6 +95,29 @@ export const bcDmSendFn = createServerFn({ method: "POST" })
         const res = await fetchNestApiFromServer(`/connect-app/dm/threads/${threadId}/messages`, context.token, {
           method: "POST",
           body: JSON.stringify(rest),
+        });
+        if (res && res.ok) return res;
+        return { ok: false, error: "generic" as any };
+      } catch {
+        return { ok: false, error: "generic" as any };
+      }
+    },
+  );
+
+const reactInput = z.object({
+  messageId: z.string().uuid(),
+  emoji: z.string().min(1).max(10),
+});
+
+export const bcDmReactFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((data) => reactInput.parse(data))
+  .handler(
+    async ({ data, context }): Promise<BcDmResult<{ messageId: string; reactions: any[] }>> => {
+      try {
+        const res = await fetchNestApiFromServer(`/connect-app/dm/messages/${data.messageId}/reactions`, context.token, {
+          method: "POST",
+          body: JSON.stringify({ emoji: data.emoji }),
         });
         if (res && res.ok) return res;
         return { ok: false, error: "generic" as any };

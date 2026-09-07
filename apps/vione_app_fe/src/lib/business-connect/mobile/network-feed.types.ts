@@ -8,9 +8,25 @@ export const BC_NETWORK_FEED_GRID_PHOTOS = 3;
 
 export type BcNetworkFeedItem = {
   momentId: string;
+  ownerUserId?: string | null;
+  owner?: {
+    userId: string;
+    displayName: string;
+    avatarUrl: string | null;
+    headline: string | null;
+    companyName: string | null;
+  } | null;
+  target?: {
+    personId: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    headline: string | null;
+    companyName: string | null;
+  } | null;
   /** Opaque person id shared with 2A (`u:` | `c:` | `g:`). */
   personId: string;
   occurredAt: string;
+  createdAt?: string | null;
   /** Tên sự kiện (dòng "ngày · địa điểm" ghép từ occurredAt + place). */
   eventName: string | null;
   placeLabel: string | null;

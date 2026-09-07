@@ -18,6 +18,7 @@ export type BcDmThreadSummary = {
   avatarUrl: string | null;
   headline: string | null;
   companyName: string | null;
+  isOnline?: boolean;
   lastMessageAt: string | null;
   lastMessagePreview: string | null;
   /** true khi tin cuối do chính người xem gửi. */
@@ -25,11 +26,25 @@ export type BcDmThreadSummary = {
   unreadCount: number;
 };
 
+export type BcDmMessageReaction = {
+  userId: string;
+  emoji: string;
+  createdAt: string;
+};
+
+export type BcDmMessageReply = {
+  id: string;
+  senderName?: string;
+  preview?: string;
+};
+
 export type BcDmMessage = {
   id: string;
   threadId: string;
   fromMe: boolean;
   body: string;
+  reactions?: BcDmMessageReaction[];
+  replyTo?: BcDmMessageReply | null;
   createdAt: string;
   readAt: string | null;
   retractedAt: string | null;

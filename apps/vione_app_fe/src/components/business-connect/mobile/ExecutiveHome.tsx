@@ -42,6 +42,7 @@ import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { useMyIdentity } from "@/hooks/use-my-identity";
 import { useVSheet } from "@/hooks/use-v-sheet";
 import { useTodayPreferences } from "@/hooks/use-today-preferences";
+import { useUnreadDmCount } from "@/hooks/use-bc-dm";
 import {
   applyTodayPreferences,
   isDefaultTodayPreferences,
@@ -97,12 +98,13 @@ export function ExecutiveHome() {
   // Tuỳ chỉnh thẻ HÔM NAY — chỉ lọc/sắp xếp dữ liệu đã được cấp quyền.
   const { prefs, update, reset } = useTodayPreferences();
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [scheduleTab, setScheduleTab] = useState<"today" | "upcoming">("today");
 
-  // Kéo cả CRM events để đảm bảo dual-source cho sự kiện hôm nay
+  // Kéo cả CRM events để đảm bảo dual-source cho sự kiện hôm nay & sắp tới
   const { data: crmEventsData } = useQuery<any>({
     queryKey: ["crm-events-home"],
     staleTime: 5 * 60_000,
-    queryFn: () => fetchNestApi("/events?limit=10"),
+    queryFn: () => fetchNestApi("/events?limit=20"),
   });
 
   const crmList: CrmEvent[] = Array.isArray(crmEventsData)
@@ -134,18 +136,42 @@ export function ExecutiveHome() {
     });
 
   const rawPool = data?.today.pool ?? data?.today.items ?? [];
-  const mergedPool = [...rawPool];
+  // Lọc strictly các mục hôm nay
+  const todayOnlyPool = rawPool.filter((item) => {
+    if (item.startsAt || item.dueAt) {
+      return isEventToday(item);
+    }
+    return true;
+  });
+
+  const mergedTodayPool = [...todayOnlyPool];
   for (const crmItem of crmTodayItems) {
-    if (!mergedPool.some((p) => p.id === crmItem.id || (p.titleKey && p.titleKey === crmItem.titleKey))) {
-      mergedPool.unshift(crmItem);
+    if (!mergedTodayPool.some((p) => p.id === crmItem.id || (p.titleKey && p.titleKey === crmItem.titleKey))) {
+      mergedTodayPool.unshift(crmItem);
     }
   }
 
-  const todayPool = mergedPool;
+  const todayPool = mergedTodayPool;
   const todayItems = applyTodayPreferences(todayPool, prefs);
   const customized = !isDefaultTodayPreferences(prefs);
 
+  // Danh sách sự kiện SẮP TỚI (CRM events có ngày tương lai > hôm nay)
+  const now = new Date();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const upcomingEvents: CrmEvent[] = crmList
+    .filter((ev) => {
+      const dt = getEventDate(ev);
+      if (!dt) return false;
+      return dt > todayEnd;
+    })
+    .sort((a, b) => {
+      const da = getEventDate(a)?.getTime() ?? 0;
+      const db = getEventDate(b)?.getTime() ?? 0;
+      return da - db;
+    });
+
   const unread = data?.unreadNotificationCount ?? null;
+  const unreadDmCount = useUnreadDmCount();
 
   return (
     <>
@@ -158,6 +184,18 @@ export function ExecutiveHome() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            to="/connect-app/inbox"
+            aria-label="Tin nhắn"
+            className="relative grid place-items-center rounded-full p-1 text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
+          >
+            <MessageSquare className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
+            {unreadDmCount > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
+                {unreadDmCount}
+              </span>
+            ) : null}
+          </Link>
           <HomeNotificationsMenu unreadCount={unread} />
         </div>
       </header>
@@ -177,79 +215,155 @@ export function ExecutiveHome() {
               aria-labelledby="bc-home-today"
               className="relative mt-6 overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(150deg,rgba(20,32,50,0.3)_0%,rgba(12,21,34,0.15)_50%,rgba(6,13,22,0.3)_100%)] backdrop-blur-md p-4 transition-all hover:border-[#D8B282]/40"
             >
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#D8B282]/30 bg-[#0c1522]/60 text-[#D8B282]"
-                  >
-                    <CalendarDays className="h-4.5 w-4.5" strokeWidth={1.8} />
-                  </span>
-
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#94A3B8] leading-[15px]">
-                      {t("bc.mobile.home.today.label")}
-                    </div>
-                    <h2
-                      id="bc-home-today"
-                      className="mt-0.5 truncate text-[16px] font-bold text-[#f2efe9] leading-6"
+              {/* Header & 2 Tabs Switcher */}
+              <div className="relative z-10 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#D8B282]/30 bg-[#0c1522]/60 text-[#D8B282]"
                     >
-                      <TodayDate />
-                    </h2>
+                      <CalendarDays className="h-4.5 w-4.5" strokeWidth={1.8} />
+                    </span>
+
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#94A3B8] leading-[15px]">
+                        {scheduleTab === "today" ? t("bc.mobile.home.today.label") : "Lịch trình sắp tới"}
+                      </div>
+                      <h2
+                        id="bc-home-today"
+                        className="mt-0.5 truncate text-[15px] font-bold text-[#f2efe9] leading-6"
+                      >
+                        {scheduleTab === "today" ? <TodayDate /> : "Sự kiện sắp diễn ra"}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {scheduleTab === "today" && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomizeOpen(true)}
+                        aria-label={t("bc.mobile.home.today.customize.open")}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#94A3B8] transition-colors hover:text-[#f5f7fa] hover:bg-[#ffffff0d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+                      </button>
+                    )}
+
+                    <Link
+                      to="/connect-app/calendar"
+                      className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[#CBD5E1] transition-colors hover:text-white focus-visible:outline-none"
+                    >
+                      {t("bc.mobile.home.today.viewCalendar")}
+                      <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
+                    </Link>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* Segmented Tab Bar */}
+                <div className="flex items-center rounded-xl bg-black/40 p-1 border border-[#D8B282]/15">
                   <button
                     type="button"
-                    onClick={() => setCustomizeOpen(true)}
-                    aria-label={t("bc.mobile.home.today.customize.open")}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#94A3B8] transition-colors hover:text-[#f5f7fa] hover:bg-[#ffffff0d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                    onClick={() => setScheduleTab("today")}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center ${
+                      scheduleTab === "today"
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-sm font-bold"
+                        : "text-[#94A3B8] hover:text-[#f2efe9]"
+                    }`}
                   >
-                    <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+                    Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
                   </button>
-
-                  <Link
-                    to="/connect-app/calendar"
-                    className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#CBD5E1] transition-colors hover:text-white focus-visible:outline-none"
+                  <button
+                    type="button"
+                    onClick={() => setScheduleTab("upcoming")}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                      scheduleTab === "upcoming"
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-sm font-bold"
+                        : "text-[#94A3B8] hover:text-[#f2efe9]"
+                    }`}
                   >
-                    {t("bc.mobile.home.today.viewCalendar")}
-                    <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
-                  </Link>
+                    <span>Sắp tới</span>
+                    {upcomingEvents.length > 0 && (
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                          scheduleTab === "upcoming"
+                            ? "bg-[#050c15]/20 text-[#050c15] font-bold"
+                            : "bg-[#D8B282]/20 text-[#D8B282]"
+                        }`}
+                      >
+                        {upcomingEvents.length}
+                      </span>
+                    )}
+                  </button>
                 </div>
               </div>
-              {customized ? (
-                <p className="mt-2 text-[12px] text-[var(--bc-mobile-muted)]">
-                  {t("bc.mobile.home.today.customize.active")}
-                </p>
-              ) : null}
 
-              {data.today.status === "error" ? (
-                <TodayError onRetry={() => home.refetch()} />
-              ) : todayPool.length === 0 ? (
-                <TodayEmpty onOpenV={openV} />
-              ) : todayItems.length === 0 ? (
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <p className="text-[13px] text-[var(--bc-mobile-muted)]">
-                    {t("bc.mobile.home.today.customize.empty")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="inline-flex min-h-[44px] items-center rounded-lg px-2 text-[13px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
-                  >
-                    {t("bc.mobile.home.today.customize.reset")}
-                  </button>
-                </div>
-              ) : (
+              {/* Nội dung Tab HÔM NAY */}
+              {scheduleTab === "today" && (
                 <>
-                  <ul className="mt-5 space-y-5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
-                    {todayItems.map((item) => (
-                      <TodayTimelineRow key={item.id} item={item} />
-                    ))}
-                  </ul>
-                  <TodayPrimaryAction items={todayItems} onOpenV={openV} />
+                  {customized ? (
+                    <p className="mt-2 text-[12px] text-[var(--bc-mobile-muted)]">
+                      {t("bc.mobile.home.today.customize.active")}
+                    </p>
+                  ) : null}
+
+                  {data.today.status === "error" ? (
+                    <TodayError onRetry={() => home.refetch()} />
+                  ) : todayPool.length === 0 || todayItems.length === 0 ? (
+                    <TodayEmpty
+                      onOpenV={openV}
+                      onViewUpcoming={() => setScheduleTab("upcoming")}
+                      upcomingCount={upcomingEvents.length}
+                    />
+                  ) : (
+                    <>
+                      <ul className="mt-5 space-y-5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
+                        {todayItems.map((item) => (
+                          <TodayTimelineRow key={item.id} item={item} />
+                        ))}
+                      </ul>
+                      <TodayPrimaryAction items={todayItems} onOpenV={openV} />
+                    </>
+                  )}
                 </>
+              )}
+
+              {/* Nội dung Tab SẮP TỚI */}
+              {scheduleTab === "upcoming" && (
+                <div className="mt-3">
+                  {upcomingEvents.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <p className="text-sm font-medium text-[#94A3B8]">Chưa có sự kiện hoặc lịch trình sắp tới</p>
+                      <Link
+                        to="/connect-app/calendar"
+                        className="mt-3 inline-flex items-center gap-1 text-xs text-[#D8B282] hover:underline"
+                      >
+                        Xem lịch hoạt động
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <ul className="mt-4 space-y-3.5 border-l border-[#D8B282]/30 pl-4">
+                        {upcomingEvents.slice(0, 5).map((ev) => (
+                          <UpcomingEventTimelineRow key={ev.id} event={ev} />
+                        ))}
+                      </ul>
+
+                      <Link
+                        to="/connect-app/calendar"
+                        className="mt-4 flex min-h-[42px] w-full items-center justify-between rounded-xl px-4 py-2.5 border border-[#D8B282]/25 bg-white/[0.02] backdrop-blur-md transition-all hover:bg-white/[0.05] hover:border-[#D8B282]/50 text-xs font-medium text-[#CBD5E1]"
+                      >
+                        <span className="flex items-center gap-2 text-[#D4C3A3]">
+                          <CalendarDays className="h-4 w-4 text-[#D8B282]" />
+                          <span>Xem tất cả ({upcomingEvents.length}) sự kiện trong lịch</span>
+                        </span>
+                        <ChevronRight className="h-3.5 w-3.5 text-[#D8B282]" />
+                      </Link>
+                    </>
+                  )}
+                </div>
               )}
             </section>
 
@@ -609,15 +723,6 @@ function Greeting({
               </span>
             </div>
           </div>
-          <div className="ml-auto shrink-0 flex items-center">
-            <Link
-              to="/connect-app/inbox"
-              aria-label={t("bc.mobile.inbox.title")}
-              className="grid h-10 w-10 place-items-center rounded-full text-[#D4C3A3] hover:bg-[#ffffff14] transition-colors border border-solid border-[#D8B282]/20 bg-[#0c1522] hover:border-[#D8B282]/60"
-            >
-              <MessageSquare aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
-            </Link>
-          </div>
         </div>
       </section>
     </div>
@@ -662,30 +767,122 @@ function VMarker() {
   );
 }
 
-function TodayEmpty({ onOpenV }: { onOpenV: () => void }) {
+/** Một dòng sự kiện SẮP TỚI — hiển thị ngày tháng chuẩn từ CRM, tên sự kiện, địa điểm, sức chứa và liên kết chi tiết */
+function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
+  const fmt = useFmt();
+  const dt = getEventDate(event);
+  const dateFormatted = dt
+    ? dt.toLocaleDateString(fmt.locale, {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "Sắp diễn ra";
+
+  const timeFormatted = dt && (dt.getHours() !== 0 || dt.getMinutes() !== 0)
+    ? dt.toLocaleTimeString(fmt.locale, { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const title = event.title || event.name || "Sự kiện";
+  const organizer = event.associationName || event.communityName || null;
+  const location = event.location || event.venue || null;
+
+  return (
+    <li className="relative group">
+      <span
+        aria-hidden="true"
+        className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-[#D8B282]/70 shadow-[0_0_8px_rgba(216,178,130,0.4)] group-hover:scale-125 transition-transform"
+      />
+      <Link
+        to="/events/$eventId"
+        params={{ eventId: String(event.id) }}
+        className="flex flex-col items-start w-full rounded-lg p-1.5 -m-1.5 transition-all hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
+      >
+        <div className="flex w-full items-center justify-between gap-2">
+          <span className="text-[12px] font-bold capitalize tabular-nums text-[#D8B282]">
+            {dateFormatted} {timeFormatted ? `· ${timeFormatted}` : ""}
+          </span>
+          {event.type && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#D8B282]/15 text-[#F6E1C3] border border-[#D8B282]/30">
+              {event.type === "online" ? "Trực tuyến" : event.type === "offline" ? "Trực tiếp" : event.type}
+            </span>
+          )}
+        </div>
+
+        <span className="mt-1 block text-[14px] font-semibold text-[#f2efe9] group-hover:text-[#D8B282] transition-colors leading-snug line-clamp-2 text-left">
+          {title}
+        </span>
+
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#94A3B8]">
+          {organizer && (
+            <span className="font-medium text-[#CBD5E1] truncate max-w-[180px]">
+              {organizer}
+            </span>
+          )}
+          {location && (
+            <span className="flex items-center gap-1 truncate max-w-[220px]">
+              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-[#D8B282]/70" strokeWidth={1.6} />
+              <span className="truncate">{location}</span>
+            </span>
+          )}
+          {event.registered !== undefined && event.capacity !== undefined && Number(event.capacity) > 0 && (
+            <span className="text-[11px] text-[#D4C3A3]/80">
+              {event.registered}/{event.capacity} đã đăng ký
+            </span>
+          )}
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+function TodayEmpty({
+  onOpenV,
+  onViewUpcoming,
+  upcomingCount,
+}: {
+  onOpenV: () => void;
+  onViewUpcoming?: () => void;
+  upcomingCount?: number;
+}) {
   const t = useT();
   return (
-    <div className="mt-8 flex flex-col items-center px-2 pb-2 text-center">
+    <div className="mt-6 flex flex-col items-center px-2 pb-2 text-center">
       <span
         aria-hidden="true"
         className="grid h-12 w-12 place-items-center rounded-full border border-[#D8B282]/30 bg-[#0c1522] text-[#D8B282]"
       >
         <CircleCheck className="h-5 w-5" strokeWidth={1.5} />
       </span>
-      <p className="mt-4 text-[16px] font-semibold text-[#f5f7fa]">
-        {t("bc.mobile.home.empty.title")}
+      <p className="mt-3 text-[15px] font-semibold text-[#f5f7fa]">
+        Hôm nay bạn không có lịch trình nào
       </p>
-      <p className="mx-auto mt-1.5 max-w-[32ch] text-[13.5px] leading-relaxed text-[#D4C3A3]/80">
-        {t("bc.mobile.home.empty.body")}
+      <p className="mx-auto mt-1 max-w-[32ch] text-[12.5px] leading-relaxed text-[#D4C3A3]/80">
+        Tất cả lịch họp và sự kiện hôm nay đã hoàn tất hoặc chưa có lịch mới.
       </p>
-      <button
-        type="button"
-        onClick={onOpenV}
-        className="mt-6 inline-flex min-h-[44px] items-center gap-2.5 rounded-xl border border-[#D8B282]/30 bg-white/[0.03] backdrop-blur-sm px-5 text-[14px] font-medium text-[#D8B282] transition-all hover:bg-white/[0.06] hover:border-[#D8B282]/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] active:scale-98 cursor-pointer"
-      >
-        <VMarker />
-        {t("bc.mobile.home.empty.cta")}
-      </button>
+
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 w-full">
+        {onViewUpcoming && upcomingCount && upcomingCount > 0 ? (
+          <button
+            type="button"
+            onClick={onViewUpcoming}
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#D8B282]/40 bg-[linear-gradient(135deg,rgba(246,225,195,0.15)_0%,rgba(216,178,130,0.15)_100%)] px-4 text-[13px] font-semibold text-[#F6E1C3] transition-all hover:border-[#D8B282] active:scale-98 cursor-pointer"
+          >
+            <CalendarDays className="h-4 w-4 text-[#D8B282]" />
+            <span>Xem sự kiện sắp tới ({upcomingCount})</span>
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={onOpenV}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#D8B282]/30 bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-medium text-[#D8B282] transition-all hover:bg-white/[0.06] hover:border-[#D8B282]/60 focus-visible:outline-none active:scale-98 cursor-pointer"
+        >
+          <VMarker />
+          <span>{t("bc.mobile.home.empty.cta")}</span>
+        </button>
+      </div>
     </div>
   );
 }

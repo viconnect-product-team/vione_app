@@ -1,10 +1,10 @@
-﻿// BC-Mobile-5E â€” Tap-to-Connect sheet (NFC + QR).
+// BC-Mobile-5E — Tap-to-Connect sheet (NFC + QR).
 //
-// Luá»“ng má»›i (auto-exchange):
-//   1. Äá»c NFC tag / quĂ©t QR â†’ láº¥y token
-//   2. Gá»i nfcTap() ngay láº­p tá»©c â€” khĂ´ng cáº§n nháº¥n nĂºt
-//   3. Backend: resolve token â†’ táº¡o káº¿t ná»‘i â†’ tráº£ vá» profile ngÆ°á»i Ä‘Æ°á»£c cháº¡m
-//   4. Hiá»ƒn thá»‹: avatar + tĂªn + nghá» + liĂªn láº¡c â€” thĂ´ng tin thá»±c cá»§a há»
+// Luồng tự động (auto-exchange):
+//   1. Đọc NFC tag / quét QR → lấy token
+//   2. Gọi nfcTap() ngay lập tức — không cần bấm nút phụ
+//   3. Backend: resolve token → tạo kết nối → trả về profile người được chạm & phát realtime WebSocket
+//   4. Hiển thị: avatar + tên + chức danh/công ty + thông tin liên hệ chính xác
 
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -30,14 +30,14 @@ import { MeSheet } from "@/components/business-connect/mobile/me/MeSheet";
 import { parseTapConnectValue } from "@/lib/business-connect/mobile/tap-connect";
 import { reportIdentityMetric } from "@/lib/business-connect/mobile/identity.telemetry";
 
-// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
 const PRIMARY_BTN =
   "flex min-h-12 w-full items-center justify-center gap-2 bc-cta-gold rounded-full px-6 text-[15px] font-semibold disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bc-mobile-bg)] motion-reduce:transition-none";
 const SECONDARY_BTN =
   "flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 text-[14px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bc-mobile-bg)] motion-reduce:transition-none";
 
-// â”€â”€â”€ Main sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main sheet ──────────────────────────────────────────────────────────────
 
 export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   const t = useT();
@@ -102,7 +102,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
               strokeWidth={1.6}
             />
             <p className="text-[14px] text-[var(--bc-mobile-muted)]">
-              {"Äang trao Ä‘á»•i thĂ´ng tinâ€¦"}
+              Đang trao đổi thông tin…
             </p>
           </div>
         ) : tapResult ? (
@@ -134,7 +134,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                 </p>
                 {nfc.status === "scanning" && (
                   <p className="mt-1 text-[13px] text-[var(--bc-mobile-muted)]">
-                    {"Cháº¡m tháº» NFC hoáº·c Ä‘iá»‡n thoáº¡i cá»§a há» vĂ o Ä‘Ă¢y"}
+                    Chạm thẻ NFC hoặc điện thoại của họ vào đây
                   </p>
                 )}
               </div>
@@ -172,7 +172,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
             </button>
 
             {error && (
-              <p role="alert" className="text-center text-[13.5px] text-[var(--bc-mobile-muted)]">
+              <p role="alert" className="text-center text-[13.5px] text-rose-400">
                 {error}
               </p>
             )}
@@ -183,7 +183,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-// â”€â”€â”€ Result card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Result card ─────────────────────────────────────────────────────────────
 
 function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => void }) {
   const t = useT();
@@ -224,7 +224,7 @@ function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => v
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[24px] font-semibold text-[var(--bc-mobile-accent)]">
-                {(profile?.displayName ?? "?")[0]?.toUpperCase()}
+                {(profile?.displayName ?? "HV")[0]?.toUpperCase()}
               </div>
             )}
           </div>
@@ -232,7 +232,7 @@ function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => v
           {/* Name + status */}
           <div className="min-w-0 flex-1 pt-1">
             <h2 className="truncate text-[17px] font-semibold leading-tight text-[var(--bc-mobile-text)]">
-              {profile?.displayName ?? "NgÆ°á»i dĂ¹ng"}
+              {profile?.displayName ?? "Hội viên ViOne"}
             </h2>
             {profile?.headline && (
               <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-[var(--bc-mobile-muted)]">
@@ -255,12 +255,12 @@ function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => v
               ) : isNew ? (
                 <>
                   <UserPlus className="h-3 w-3" strokeWidth={2} />
-                  {"ÄĂ£ gá»­i káº¿t ná»‘i"}
+                  Đã gửi kết nối
                 </>
               ) : (
                 <>
                   <UserCheck className="h-3 w-3" strokeWidth={2} />
-                  {"Äang chá» xĂ¡c nháº­n"}
+                  Đang chờ xác nhận
                 </>
               )}
             </div>
@@ -280,10 +280,10 @@ function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => v
         }`}
       >
         {isNew
-          ? "âœ“ ÄĂ£ gá»­i yĂªu cáº§u káº¿t ná»‘i! Há» sáº½ nháº­n Ä‘Æ°á»£c thĂ´ng bĂ¡o vĂ  tháº¥y thĂ´ng tin cá»§a báº¡n khi cháº¥p nháº­n."
+          ? "✓ Đã gửi yêu cầu kết nối! Họ sẽ nhận được thông báo và thấy thông tin của bạn khi chấp nhận."
           : isConnected
-            ? "Báº¡n Ä‘Ă£ káº¿t ná»‘i vá»›i ngÆ°á»i nĂ y rá»“i."
-            : "YĂªu cáº§u káº¿t ná»‘i Ä‘ang chá» há» xĂ¡c nháº­n."}
+            ? "Bạn đã kết nối với người này rồi."
+            : "Yêu cầu kết nối đang chờ họ xác nhận."}
       </div>
 
       {/* Actions */}
@@ -300,7 +300,7 @@ function TapResult({ result, onReset }: { result: NfcTapResult; onReset: () => v
   );
 }
 
-// â”€â”€â”€ Profile contact rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Profile contact rows ────────────────────────────────────────────────────
 
 function ProfileContacts({ profile }: { profile: NfcTapProfile }) {
   const rows: { icon: React.ReactNode; label: string; href?: string }[] = [];
@@ -308,7 +308,7 @@ function ProfileContacts({ profile }: { profile: NfcTapProfile }) {
   if (profile.jobTitle || profile.companyName) {
     rows.push({
       icon: <Briefcase className="h-3.5 w-3.5" strokeWidth={1.8} />,
-      label: [profile.jobTitle, profile.companyName].filter(Boolean).join(" Â· "),
+      label: [profile.jobTitle, profile.companyName].filter(Boolean).join(" · "),
     });
   }
   if (profile.primaryPhone) {
