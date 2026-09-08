@@ -475,57 +475,19 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* App Portal Selector Tabs: ViOne Connect vs Hiệp hội */}
-        <div className="mt-4 flex items-center justify-center">
-          <div className="flex items-center rounded-2xl bg-muted/60 border border-border p-1 backdrop-blur-md w-full">
-            <button
-              type="button"
-              onClick={() => setAppPortal("connect")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                !isAssociation
-                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>ViOne Connect</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAppPortal("association")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                isAssociation
-                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              <span>Hiệp hội Doanh nghiệp</span>
-            </button>
-          </div>
-        </div>
-
         {/* Brand Crest & Headers */}
         <div className="mt-5 flex flex-col items-center justify-center text-center">
           <ViOneLogo className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
           <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
-            {isAssociation ? "HIỆP HỘI DOANH NGHIỆP" : "BUSINESS CONNECT"}
+            BUSINESS CONNECT
           </div>
           <h1 className="mt-3 font-serif text-[26px] sm:text-[30px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
-            {isAssociation
-              ? mode === "signin"
-                ? "Cổng Hội viên Hiệp hội"
-                : "Đăng ký Hội viên mới"
-              : mode === "signin"
-                ? t("auth.signInTitle")
-                : t("auth.signUpTitle")}
+            {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
           </h1>
           <p className="mt-1.5 max-w-[20rem] text-center text-[12.5px] sm:text-[13.5px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
-            {isAssociation
-              ? "Thẻ hội viên số, quyền lợi & check-in sự kiện"
-              : mode === "signin"
-                ? t("auth.subtitle")
-                : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
+            {mode === "signin"
+              ? t("auth.subtitle")
+              : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
           </p>
         </div>
 
@@ -673,7 +635,7 @@ function AuthPage() {
 
         {/* Social OAuth Buttons: Google + Apple */}
         {mode === "signin" && (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={() => void oauth("google")}
@@ -685,7 +647,7 @@ function AuthPage() {
               ) : (
                 <GoogleMark />
               )}
-              <span>Google</span>
+              <span>Đăng nhập với Google</span>
             </button>
             <button
               type="button"
@@ -698,7 +660,7 @@ function AuthPage() {
               ) : (
                 <AppleMark />
               )}
-              <span>Apple</span>
+              <span>Đăng nhập với Apple</span>
             </button>
           </div>
         )}

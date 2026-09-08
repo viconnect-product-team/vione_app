@@ -129,9 +129,8 @@ function Home() {
               </div>
             </div>
 
-            {/* Quick Controls: Lang + Notifications */}
+            {/* Quick Controls: Notifications */}
             <div className="flex items-center gap-2">
-              <LangSwitcher showFullLabel={false} />
               <Link
                 to="/m/notifications"
                 aria-label={t("m.index.notifAria")}

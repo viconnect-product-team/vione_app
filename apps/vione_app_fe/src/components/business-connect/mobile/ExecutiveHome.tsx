@@ -221,7 +221,7 @@ export function ExecutiveHome() {
                   <div className="flex items-center gap-3">
                     <span
                       aria-hidden="true"
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-[#D8B282]"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
                     >
                       <CalendarDays className="h-4.5 w-4.5" strokeWidth={1.8} />
                     </span>
@@ -266,10 +266,10 @@ export function ExecutiveHome() {
                   <button
                     type="button"
                     onClick={() => setScheduleTab("today")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
                       scheduleTab === "today"
-                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:text-[#050c15] shadow-xs font-bold"
-                        : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#f2efe9]"
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-xs font-bold"
+                        : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                     }`}
                   >
                     Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
@@ -277,10 +277,10 @@ export function ExecutiveHome() {
                   <button
                     type="button"
                     onClick={() => setScheduleTab("upcoming")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       scheduleTab === "upcoming"
-                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:text-[#050c15] shadow-xs font-bold"
-                        : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#f2efe9]"
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-xs font-bold"
+                        : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                     }`}
                   >
                     <span>Sắp tới</span>
@@ -288,8 +288,8 @@ export function ExecutiveHome() {
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                           scheduleTab === "upcoming"
-                            ? "bg-white/20 text-white dark:bg-[#050c15]/20 dark:text-[#050c15] font-bold"
-                            : "bg-amber-500/10 text-amber-700 dark:bg-[#D8B282]/20 dark:text-[#D8B282]"
+                            ? "bg-[#050c15]/20 text-[#050c15] font-bold"
+                            : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
                         }`}
                       >
                         {upcomingEvents.length}
@@ -429,10 +429,10 @@ function QuickActions() {
           to={to as any}
           className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-3.5 px-1 text-center shadow-xs transition-all hover:border-[var(--bc-mobile-border-gold)] active:scale-[0.98]"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-[#D8B282] group-hover:border-amber-500 group-hover:scale-105 transition-all">
-            <Icon className="h-5 w-5 text-amber-600 dark:text-[#D8B282]" />
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--bc-mobile-accent-soft)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)] group-hover:border-[var(--bc-mobile-border-gold)] group-hover:scale-105 transition-all">
+            <Icon className="h-5 w-5 text-[var(--bc-mobile-accent)]" />
           </span>
-          <span className="text-[12.5px] font-semibold text-[var(--bc-mobile-text)] truncate max-w-full group-hover:text-amber-700 dark:group-hover:text-[#D8B282] transition-colors">
+          <span className="text-[12.5px] font-semibold text-[var(--bc-mobile-text)] truncate max-w-full group-hover:text-[var(--bc-mobile-accent)] transition-colors">
             {label}
           </span>
         </Link>
@@ -606,7 +606,7 @@ function InsightCard() {
         ) : (
           parts.map((part, index) => 
             /^\d+$/.test(part) ? (
-              <span key={index} className="text-amber-600 dark:text-[var(--bc-mobile-accent)] font-extrabold">{part}</span>
+              <span key={index} className="text-[var(--bc-mobile-accent)] font-extrabold">{part}</span>
             ) : (
               part
             )
@@ -618,10 +618,10 @@ function InsightCard() {
       </p>
       <Link
         to="/connect-app/network"
-        className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-amber-700 dark:text-[var(--bc-mobile-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+        className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[var(--bc-mobile-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
         {isEmpty ? t("bc.mobile.home.insight.emptyCta") : t("bc.mobile.home.insight.cta")}
-        <ArrowRight aria-hidden="true" className="h-4 w-4 text-amber-700 dark:text-[var(--bc-mobile-accent)]" strokeWidth={2} />
+        <ArrowRight aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
       </Link>
     </section>
   );
@@ -716,8 +716,8 @@ function Greeting({
               </div>
             ) : null}
             <div className="mt-2 inline-flex items-start">
-              <span className="relative inline-flex flex-[0_0_auto] flex-col items-start self-stretch rounded-full border border-solid border-amber-500/30 bg-amber-500/10 px-3 py-0.5">
-                <span className="relative flex w-fit items-center whitespace-nowrap text-[10px] font-semibold leading-[15px] tracking-[0.5px] bg-gradient-to-r from-amber-600 to-amber-800 dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent">
+              <span className="relative inline-flex flex-[0_0_auto] flex-col items-start self-stretch rounded-full border border-solid border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] px-3 py-0.5">
+                <span className="relative flex w-fit items-center whitespace-nowrap text-[10px] font-semibold leading-[15px] tracking-[0.5px] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent">
                   EXECUTIVE MEMBER
                 </span>
               </span>
@@ -743,14 +743,14 @@ function VPrimaryAction({ onOpenV }: { onOpenV: () => void }) {
     >
       <span
         aria-hidden="true"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-1 shadow-xs"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-1 shadow-xs"
       >
         <VIconMark size={18} />
       </span>
-      <span className="font-bold text-sm text-amber-700 dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] dark:bg-clip-text dark:text-transparent text-center">
+      <span className="font-bold text-sm bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent text-center">
         {t("bc.mobile.home.v.open")}
       </span>
-      <ArrowRight className="h-4 w-4 text-amber-600 dark:text-[#D8B282]" strokeWidth={2} />
+      <ArrowRight className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
     </button>
   );
 }
@@ -760,7 +760,7 @@ function VMarker() {
   return (
     <span
       aria-hidden="true"
-      className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-0.5 shadow-xs"
+      className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-0.5 shadow-xs"
     >
       <VIconMark size={14} />
     </span>
@@ -792,7 +792,7 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
     <li className="relative group">
       <span
         aria-hidden="true"
-        className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-amber-500 dark:bg-[#D8B282]/70 shadow-xs group-hover:scale-125 transition-transform"
+        className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-[var(--bc-mobile-accent)] shadow-xs group-hover:scale-125 transition-transform"
       />
       <Link
         to="/events/$eventId"
@@ -800,17 +800,17 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
         className="flex flex-col items-start w-full rounded-lg p-1.5 -m-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
       >
         <div className="flex w-full items-center justify-between gap-2">
-          <span className="text-[12px] font-bold capitalize tabular-nums text-amber-700 dark:text-[#D8B282]">
+          <span className="text-[12px] font-bold capitalize tabular-nums text-[var(--bc-mobile-accent)]">
             {dateFormatted} {timeFormatted ? `· ${timeFormatted}` : ""}
           </span>
           {(event as any).type && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-800 dark:bg-[#D8B282]/15 dark:text-[#F6E1C3] border border-amber-500/30">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)]">
               {(event as any).type === "online" ? "Trực tuyến" : (event as any).type === "offline" ? "Trực tiếp" : (event as any).type}
             </span>
           )}
         </div>
 
-        <span className="mt-1 block text-[14px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-amber-700 dark:group-hover:text-[#D8B282] transition-colors leading-snug line-clamp-2 text-left">
+        <span className="mt-1 block text-[14px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors leading-snug line-clamp-2 text-left">
           {title}
         </span>
 
@@ -822,7 +822,7 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
           )}
           {location && (
             <span className="flex items-center gap-1 truncate max-w-[220px]">
-              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-amber-600 dark:text-[#D8B282]/70" strokeWidth={1.6} />
+              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-[var(--bc-mobile-accent)]" strokeWidth={1.6} />
               <span className="truncate">{location}</span>
             </span>
           )}
@@ -851,7 +851,7 @@ function TodayEmpty({
     <div className="mt-6 flex flex-col items-center px-2 pb-2 text-center">
       <span
         aria-hidden="true"
-        className="grid h-12 w-12 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-[#D8B282]"
+        className="grid h-12 w-12 place-items-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
       >
         <CircleCheck className="h-5 w-5" strokeWidth={1.5} />
       </span>
@@ -867,9 +867,9 @@ function TodayEmpty({
           <button
             type="button"
             onClick={onViewUpcoming}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 text-[13px] font-bold text-amber-800 dark:text-[#F6E1C3] transition-all hover:bg-amber-500/20 active:scale-98 cursor-pointer shadow-xs"
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] px-4 text-[13px] font-bold text-[var(--bc-mobile-accent)] transition-all hover:border-[var(--bc-mobile-border-gold)] active:scale-98 cursor-pointer shadow-xs"
           >
-            <CalendarDays className="h-4 w-4 text-amber-600 dark:text-[#D8B282]" />
+            <CalendarDays className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
             <span>Xem sự kiện sắp tới ({upcomingCount})</span>
           </button>
         ) : null}
@@ -877,7 +877,7 @@ function TodayEmpty({
         <button
           type="button"
           onClick={onOpenV}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-slate-50 dark:bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-semibold text-amber-700 dark:text-[#D8B282] transition-all hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-[var(--bc-mobile-border-gold)] focus-visible:outline-none active:scale-98 cursor-pointer"
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-slate-50 dark:bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-semibold text-[var(--bc-mobile-accent)] transition-all hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-[var(--bc-mobile-border-gold)] focus-visible:outline-none active:scale-98 cursor-pointer"
         >
           <VMarker />
           <span>{t("bc.mobile.home.empty.cta")}</span>

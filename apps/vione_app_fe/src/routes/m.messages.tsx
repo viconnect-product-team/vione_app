@@ -97,6 +97,22 @@ function parseMessageContent(body: string): ParsedContent {
   return { type: "text", text: body };
 }
 
+function formatMessagePreview(raw?: string | null): string {
+  if (!raw) return "";
+  const text = raw.trim();
+  if (
+    /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i.test(text) ||
+    /^(https?:\/\/[^\s]+?\.(png|jpe?g|gif|webp|svg))(?:\?.*)?$/i.test(text)
+  ) {
+    return "📷 [Hình ảnh]";
+  }
+  const fileMatch = text.match(/\[file:(https?:\/\/[^|\]]+)(?:\|([^|\]]*))?(?:\|(\d+))?\]/i);
+  if (fileMatch) {
+    return `📎 [Tệp] ${fileMatch[2] || "Tài liệu"}`;
+  }
+  return text;
+}
+
 function MessagesScreen() {
   const [active, setActive] = useState<MyConversation | null>(null);
 
@@ -122,7 +138,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
   }, [reload]);
 
   return (
-    <div className="vba-app vba-animate min-h-[100dvh] bg-[var(--vba-bg)] text-[#f5f7fa]">
+    <div className="vba-app vba-animate min-h-[100dvh] bg-[var(--vba-bg)] text-[var(--vba-text)]">
       <MemberHeader title={t("m.messages.title")} back />
       <p className="sr-only" role="status" aria-live="polite" data-testid="messages-announcement">
         {loading
@@ -153,23 +169,23 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           <div key={c.peerCode} role="listitem">
             <button
               onClick={() => onOpen(c)}
-              className="flex w-full items-center gap-3 border-b border-[var(--vba-border-soft)] py-3.5 text-left"
+              className="flex w-full items-center gap-3 border-b border-[var(--vba-border-soft)] py-3.5 text-left active:opacity-80"
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--vba-surface-2)] text-[14px] font-bold text-[var(--vba-gold)]">
                 {initialsOf(c.name)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[14px] font-semibold text-[#f5f7fa]">
+                  <span className="truncate text-[14px] font-bold text-slate-900 dark:text-[var(--vba-text)]">
                     {c.name}
                   </span>
-                  <span className="shrink-0 text-[11px] text-[var(--vba-text-dim)]">
+                  <span className="shrink-0 text-[11px] text-slate-500 dark:text-[var(--vba-text-dim)]">
                     {fmt.rel(c.time)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[12px] text-[var(--vba-text-muted)]">
-                    {c.last}
+                <div className="flex items-center justify-between gap-2 mt-0.5">
+                  <span className="truncate text-[12px] text-slate-600 dark:text-[var(--vba-text-muted)]">
+                    {formatMessagePreview(c.last)}
                   </span>
                   {c.unread > 0 && (
                     <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full vba-gold-grad px-1.5 text-[10px] font-bold text-[#1a1206]">
@@ -282,7 +298,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
 
   return (
     <div
-      className="vba-app vba-animate flex flex-col bg-[var(--vba-bg)] text-[#f5f7fa] overflow-hidden"
+      className="vba-app vba-animate flex flex-col bg-[var(--vba-bg)] text-[var(--vba-text)] overflow-hidden"
       style={{ height: "100dvh" }}
       onClick={() => setUploadMenuOpen(false)}
     >
@@ -338,11 +354,11 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3 border-b border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/95 px-4 py-3 shrink-0 backdrop-blur-md">
-        <button onClick={onBack} className="text-[var(--vba-gold)] text-[14px] font-medium cursor-pointer">
+      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-[var(--vba-border-soft)] bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-4 py-3 shrink-0 backdrop-blur-md shadow-xs">
+        <button onClick={onBack} className="text-amber-700 dark:text-[var(--vba-gold)] hover:underline text-[14px] font-medium cursor-pointer flex items-center gap-1">
           ‹ {t("m.messages.back")}
         </button>
-        <span className="truncate text-[15px] font-semibold text-[#f5f7fa]">
+        <span className="truncate text-[15px] font-bold text-slate-900 dark:text-[var(--vba-text)]">
           {data.peerName}
         </span>
       </div>
@@ -370,8 +386,8 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                 <div
                   className={`max-w-[82%] rounded-2xl shadow-xs overflow-hidden ${
                     m.mine
-                      ? "vba-gold-grad text-[#1a1206] font-medium"
-                      : "border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] text-[#f5f7fa]"
+                      ? "vba-gold-grad text-[#1a1206] font-medium shadow-amber-500/10"
+                      : "border border-slate-200 dark:border-[var(--vba-border-soft)] bg-white dark:bg-[var(--vba-surface-2)] text-slate-900 dark:text-[var(--vba-text)] shadow-slate-200/50 dark:shadow-none"
                   }`}
                 >
                   {content.type === "image" ? (
@@ -396,7 +412,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                       {content.caption ? (
                         <p
                           className={`px-2 pb-1 text-[13px] leading-relaxed ${
-                            m.mine ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                            m.mine ? "text-[#1a1206]" : "text-[var(--vba-text)]"
                           }`}
                         >
                           {content.caption}
@@ -416,7 +432,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                             className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer ${
                               m.mine
                                 ? "bg-black/10 hover:bg-black/15 text-[#1a1206]"
-                                : "bg-[var(--vba-surface-2)] hover:bg-[var(--vba-surface-2)]/80 text-[#f5f7fa] border border-[var(--vba-border-soft)]"
+                                : "bg-[var(--vba-surface-2)] hover:bg-[var(--vba-surface-2)]/80 text-[var(--vba-text)] border border-[var(--vba-border-soft)]"
                             }`}
                           >
                             <div
@@ -454,7 +470,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                       {content.caption ? (
                         <p
                           className={`px-2 text-[13px] leading-relaxed ${
-                            m.mine ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                            m.mine ? "text-[#1a1206]" : "text-[var(--vba-text)]"
                           }`}
                         >
                           {content.caption}
@@ -533,7 +549,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                     setUploadMenuOpen(false);
                     imageInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--vba-surface-2)] hover:text-[var(--vba-gold)] cursor-pointer transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--vba-text)] hover:bg-[var(--vba-surface-2)] hover:text-[var(--vba-gold)] cursor-pointer transition-colors"
                 >
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-400">
                     <ImageIcon className="h-4 w-4" />
@@ -547,7 +563,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                     setUploadMenuOpen(false);
                     fileInputRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--vba-surface-2)] hover:text-[var(--vba-gold)] cursor-pointer transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--vba-text)] hover:bg-[var(--vba-surface-2)] hover:text-[var(--vba-gold)] cursor-pointer transition-colors"
                 >
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/15 text-blue-400">
                     <FileText className="h-4 w-4" />
@@ -575,7 +591,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
             }}
             placeholder={t("m.messages.inputPlaceholder")}
             maxLength={2000}
-            className="chat-input no-focus-outline w-full max-h-[120px] min-h-[28px] resize-none bg-transparent py-1 text-[13.5px] text-[#f5f7fa] placeholder:text-[var(--vba-text-dim)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
+            className="chat-input no-focus-outline w-full max-h-[120px] min-h-[28px] resize-none bg-transparent py-1 text-[13.5px] text-[var(--vba-text)] placeholder:text-[var(--vba-text-dim)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
             style={{ border: "none", outline: "none", boxShadow: "none" }}
           />
 

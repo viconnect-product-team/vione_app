@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { decodeQrFromImage, decodeFromCanvas } from "@/lib/qr-image-decoder";
 
 export type ScannerStatus = "idle" | "starting" | "scanning" | "denied" | "unsupported" | "error";
 
@@ -6,7 +7,7 @@ interface DetectedBarcode {
   rawValue: string;
 }
 interface BarcodeDetectorLike {
-  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>;
+  detect(source: ImageBitmapSource | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement): Promise<DetectedBarcode[]>;
 }
 type BarcodeDetectorCtor = new (opts?: { formats?: string[] }) => BarcodeDetectorLike;
 
@@ -16,22 +17,55 @@ interface TorchCapabilities {
 }
 
 /**
- * Live camera QR scanner with multi-tier fallback for all mobile browsers & WebViews.
- * 1. Native BarcodeDetector (fast, hardware accelerated on Chrome Android)
- * 2. Canvas-based ZXing frame decoder (rock-solid on iOS Safari, Samsung Internet, WebViews)
- * 3. File upload / gallery image decoding support
+ * Play a crisp subtle success chime on QR detection (Web Audio API)
+ */
+function playSuccessBeep() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08); // E6
+
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.09);
+    setTimeout(() => ctx.close().catch(() => {}), 150);
+  } catch {
+    /* ignore audio policy errors */
+  }
+}
+
+/**
+ * Real-time camera QR scanner with Zalo/Banking-app grade dual-resolution square cropping.
+ * 1. Native BarcodeDetector (hardware accelerated)
+ * 2. High-res Center-Square Crop (guarantees small/dense QR codes inside the square viewfinder are sharp)
+ * 3. Full-Frame Canvas Decoder (detects QR anywhere on screen)
+ * 4. Audio Beep & Haptic Vibration on detection
  */
 export function useQrScanner(opts: {
   active: boolean;
   onDetect: (value: string) => void;
   torch?: boolean;
+  facingMode?: "environment" | "user";
 }) {
-  const { active, onDetect, torch = false } = opts;
+  const { active, onDetect, torch = false, facingMode = "environment" } = opts;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trackRef = useRef<TorchTrack | null>(null);
   const onDetectRef = useRef(onDetect);
   onDetectRef.current = onDetect;
   const [status, setStatus] = useState<ScannerStatus>("idle");
+  const [hasTorch, setHasTorch] = useState(false);
 
   useEffect(() => {
     if (!active) {
@@ -40,33 +74,59 @@ export function useQrScanner(opts: {
     }
     let stream: MediaStream | null = null;
     let raf = 0;
-    let intervalTimer: ReturnType<typeof setInterval> | null = null;
     let stopped = false;
     let lastValue = "";
     let lastTime = 0;
 
+    const triggerDetect = (val: string) => {
+      const now = Date.now();
+      if (val && (val !== lastValue || now - lastTime > 2000)) {
+        lastValue = val;
+        lastTime = now;
+
+        // 1. Audio chime
+        playSuccessBeep();
+
+        // 2. Haptic feedback on mobile if supported
+        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+          try {
+            navigator.vibrate([50, 30, 50]);
+          } catch {
+            /* ignore */
+          }
+        }
+
+        // 3. Callback
+        onDetectRef.current(val);
+      }
+    };
+
     async function getCameraStream(): Promise<MediaStream> {
-      // 1. Try environment camera with ideal dimensions
+      // 1. Ideal full HD or HD stream with environment camera
       try {
         return await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+          },
           audio: false,
         });
       } catch {
-        /* fallback to relaxed facingMode */
+        /* fallback */
       }
 
-      // 2. Try simple environment camera
+      // 2. Simple facingMode
       try {
         return await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: { facingMode },
           audio: false,
         });
       } catch {
-        /* fallback to any camera */
+        /* fallback */
       }
 
-      // 3. Try any available camera
+      // 3. Fallback to any camera
       return await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
@@ -94,7 +154,15 @@ export function useQrScanner(opts: {
         return;
       }
 
-      trackRef.current = (stream.getVideoTracks()[0] as TorchTrack) ?? null;
+      const videoTrack = stream.getVideoTracks()[0] as TorchTrack | undefined;
+      trackRef.current = videoTrack ?? null;
+
+      // Check torch capability
+      if (videoTrack?.getCapabilities) {
+        const caps = videoTrack.getCapabilities() as TorchCapabilities;
+        setHasTorch(Boolean(caps?.torch));
+      }
+
       const video = videoRef.current;
       if (video) {
         video.srcObject = stream;
@@ -105,11 +173,11 @@ export function useQrScanner(opts: {
         try {
           await video.play();
         } catch {
-          /* autoplay restriction guard — user can tap video or we retry when ready */
+          /* autoplay guard */
         }
       }
 
-      // Wait for video stream to provide dimensions
+      // Wait for video stream to initialize
       const waitForVideo = async (maxWaitMs = 3000): Promise<boolean> => {
         const startT = Date.now();
         while (Date.now() - startT < maxWaitMs) {
@@ -117,7 +185,7 @@ export function useQrScanner(opts: {
           if (videoRef.current && videoRef.current.videoWidth > 0 && videoRef.current.readyState >= 2) {
             return true;
           }
-          await new Promise((r) => setTimeout(r, 50));
+          await new Promise((r) => setTimeout(r, 40));
         }
         return !!videoRef.current;
       };
@@ -128,90 +196,112 @@ export function useQrScanner(opts: {
       setStatus("scanning");
 
       const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+      let nativeDetector: BarcodeDetectorLike | null = null;
       if (Ctor) {
         try {
-          const detector = new Ctor({ formats: ["qr_code"] });
-          const tick = async () => {
-            if (stopped || !videoRef.current) return;
-            try {
-              if (videoRef.current.readyState >= 2) {
-                const codes = await detector.detect(videoRef.current);
-                if (codes.length) {
-                  const value = String(codes[0].rawValue ?? "");
-                  const now = Date.now();
-                  if (value && (value !== lastValue || now - lastTime > 2500)) {
-                    lastValue = value;
-                    lastTime = now;
-                    onDetectRef.current(value);
-                  }
-                }
-              }
-            } catch {
-              /* Frame not ready / unreadable — continue */
-            }
-            if (!stopped) {
-              raf = requestAnimationFrame(tick);
-            }
-          };
-          raf = requestAnimationFrame(tick);
-          return;
+          nativeDetector = new Ctor({ formats: ["qr_code"] });
         } catch {
-          /* BarcodeDetector construction failed — fall back to ZXing */
+          nativeDetector = null;
         }
       }
 
-      // Fallback: Canvas-based ZXing frame scanning
-      try {
-        const { BrowserQRCodeReader } = await import("@zxing/browser");
-        const reader = new BrowserQRCodeReader();
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      // Two dedicated scratch canvases for dual-pass scanning
+      // Canvas 1: Center Square Crop (high pixel density on the QR code inside the viewfinder)
+      const cropCanvas = document.createElement("canvas");
+      const cropCtx = cropCanvas.getContext("2d", { willReadFrequently: true });
 
-        const scanFrame = async () => {
-          if (stopped || !videoRef.current || !ctx) return;
-          const v = videoRef.current;
-          if (v.readyState < 2 || v.videoWidth === 0) return;
+      // Canvas 2: Full Frame (scaled to optimal 800px)
+      const fullCanvas = document.createElement("canvas");
+      const fullCtx = fullCanvas.getContext("2d", { willReadFrequently: true });
+
+      let isDecoding = false;
+      let frameCounter = 0;
+
+      const scanLoop = async () => {
+        if (stopped || !videoRef.current) return;
+        const v = videoRef.current;
+
+        if (v.readyState >= 2 && v.videoWidth > 0 && !isDecoding) {
+          isDecoding = true;
+          frameCounter++;
 
           try {
-            // Scale frame down for maximum performance on mobile CPU
-            const maxDim = 480;
-            const scale = Math.min(1, maxDim / Math.max(v.videoWidth, v.videoHeight));
-            const w = Math.floor(v.videoWidth * scale);
-            const h = Math.floor(v.videoHeight * scale);
+            const vw = v.videoWidth;
+            const vh = v.videoHeight;
 
-            if (canvas.width !== w || canvas.height !== h) {
-              canvas.width = w;
-              canvas.height = h;
+            // 1. Try native BarcodeDetector directly on video if available
+            if (nativeDetector) {
+              try {
+                const codes = await nativeDetector.detect(v);
+                if (codes.length > 0 && codes[0].rawValue) {
+                  triggerDetect(codes[0].rawValue);
+                  isDecoding = false;
+                  if (!stopped) raf = requestAnimationFrame(scanLoop);
+                  return;
+                }
+              } catch {
+                /* continue to canvas decoder */
+              }
             }
-            ctx.drawImage(v, 0, 0, w, h);
 
-            const result = await reader.decodeFromCanvas(canvas);
-            if (result) {
-              const value = result.getText();
-              const now = Date.now();
-              if (value && (value !== lastValue || now - lastTime > 2500)) {
-                lastValue = value;
-                lastTime = now;
-                onDetectRef.current(value);
+            // 2. High-density Center-Square Crop (Focus Region)
+            // Extract the center 65% square matching the visual viewfinder box
+            if (cropCtx) {
+              const squareSize = Math.min(vw, vh);
+              const cropSize = Math.floor(squareSize * 0.7);
+              const sx = Math.floor((vw - cropSize) / 2);
+              const sy = Math.floor((vh - cropSize) / 2);
+
+              const targetCropDim = Math.min(cropSize, 720);
+              if (cropCanvas.width !== targetCropDim || cropCanvas.height !== targetCropDim) {
+                cropCanvas.width = targetCropDim;
+                cropCanvas.height = targetCropDim;
+              }
+
+              cropCtx.drawImage(v, sx, sy, cropSize, cropSize, 0, 0, targetCropDim, targetCropDim);
+              const cropResult = await decodeFromCanvas(cropCanvas);
+              if (cropResult) {
+                triggerDetect(cropResult);
+                isDecoding = false;
+                if (!stopped) raf = requestAnimationFrame(scanLoop);
+                return;
+              }
+            }
+
+            // 3. Full Frame scan every 2 frames for peripheral QR detection
+            if (fullCtx && frameCounter % 2 === 0) {
+              const maxDim = 800;
+              const scale = Math.min(1, maxDim / Math.max(vw, vh));
+              const fw = Math.max(1, Math.floor(vw * scale));
+              const fh = Math.max(1, Math.floor(vh * scale));
+
+              if (fullCanvas.width !== fw || fullCanvas.height !== fh) {
+                fullCanvas.width = fw;
+                fullCanvas.height = fh;
+              }
+
+              fullCtx.drawImage(v, 0, 0, fw, fh);
+              const fullResult = await decodeFromCanvas(fullCanvas);
+              if (fullResult) {
+                triggerDetect(fullResult);
+                isDecoding = false;
+                if (!stopped) raf = requestAnimationFrame(scanLoop);
+                return;
               }
             }
           } catch {
-            /* Normal: frame did not contain a readable QR */
+            /* Frame did not contain recognizable QR code */
+          } finally {
+            isDecoding = false;
           }
-        };
-
-        intervalTimer = setInterval(() => {
-          void scanFrame();
-        }, 150);
-      } catch (err) {
-        console.warn("[QR Scanner] Fallback engine error:", err);
-        // If canvas reader fails to initialize, remain in scanning state if stream is alive
-        if (stream && stream.active) {
-          setStatus("scanning");
-        } else {
-          setStatus("error");
         }
-      }
+
+        if (!stopped) {
+          raf = requestAnimationFrame(scanLoop);
+        }
+      };
+
+      raf = requestAnimationFrame(scanLoop);
     }
 
     void start();
@@ -219,13 +309,12 @@ export function useQrScanner(opts: {
     return () => {
       stopped = true;
       if (raf) cancelAnimationFrame(raf);
-      if (intervalTimer) clearInterval(intervalTimer);
       if (stream) stream.getTracks().forEach((t) => t.stop());
       trackRef.current = null;
     };
-  }, [active]);
+  }, [active, facingMode]);
 
-  // Torch / flashlight control (only when hardware supports it).
+  // Torch / flashlight control
   useEffect(() => {
     const track = trackRef.current;
     if (!track || status !== "scanning") return;
@@ -237,47 +326,23 @@ export function useQrScanner(opts: {
     }
   }, [torch, status]);
 
-  // Helper to scan a static image file (e.g. from photo gallery)
-  const scanImageFile = async (file: File): Promise<string | null> => {
-    try {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.src = url;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-      if (Ctor) {
+  // High-reliability static image file scan helper
+  const scanImageFile = async (file: File | Blob | string): Promise<string | null> => {
+    const res = await decodeQrFromImage(file);
+    if (res) {
+      playSuccessBeep();
+      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
         try {
-          const detector = new Ctor({ formats: ["qr_code"] });
-          const codes = await detector.detect(img);
-          URL.revokeObjectURL(url);
-          if (codes.length && codes[0].rawValue) {
-            const val = String(codes[0].rawValue);
-            onDetectRef.current(val);
-            return val;
-          }
+          navigator.vibrate([50, 30, 50]);
         } catch {
-          /* continue to zxing */
+          /* ignore */
         }
       }
-
-      const { BrowserQRCodeReader } = await import("@zxing/browser");
-      const reader = new BrowserQRCodeReader();
-      const result = await reader.decodeFromImageUrl(url);
-      URL.revokeObjectURL(url);
-      if (result) {
-        const val = result.getText();
-        onDetectRef.current(val);
-        return val;
-      }
-    } catch {
-      /* could not decode image */
+      onDetectRef.current(res);
     }
-    return null;
+    return res;
   };
 
-  return { videoRef, status, scanImageFile };
+  return { videoRef, status, hasTorch, scanImageFile };
 }
+

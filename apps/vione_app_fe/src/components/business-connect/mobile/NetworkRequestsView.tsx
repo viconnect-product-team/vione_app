@@ -110,24 +110,27 @@ export function NetworkRequestsView() {
                 .join(" · ");
               return (
                 <li key={req.connectionId} className="py-4">
-                  <div className="flex items-center gap-3.5">
+                  <Link
+                    to={req.counterpart?.userId ? `/connect-app/network/u:${req.counterpart.userId}` : "#"}
+                    className="flex items-center gap-3.5 group cursor-pointer"
+                  >
                     {req.counterpart?.avatarUrl ? (
                       <img
                         src={req.counterpart.avatarUrl}
                         alt=""
                         loading="lazy"
-                        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
+                        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)] group-hover:ring-[var(--bc-mobile-accent)] transition-all"
                       />
                     ) : (
                       <span
                         aria-hidden="true"
-                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)]"
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors"
                       >
                         {initialsOf(req.counterpart?.displayName ?? null)}
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-medium text-[var(--bc-mobile-text)]">
+                      <p className="truncate text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors">
                         {name}
                       </p>
                       {context ? (
@@ -140,7 +143,7 @@ export function NetworkRequestsView() {
                         {fmt.rel(req.requestedAt)}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="mt-3 flex gap-2 pl-[62px]">
                     <button
                       type="button"

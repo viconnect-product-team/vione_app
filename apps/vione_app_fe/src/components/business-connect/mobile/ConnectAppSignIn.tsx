@@ -91,7 +91,7 @@ export function ConnectAppSignIn({
   onAppPortalChange,
 }: Props) {
   const t = useT();
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLocal, setRememberLocal] = useState(true);
   const remember = rememberProp ?? rememberLocal;
@@ -103,14 +103,13 @@ export function ConnectAppSignIn({
   const busy = loading || oauthPending !== null;
 
   const fieldClass =
-    "h-10 sm:h-11 w-full rounded-xl border border-[#D8B282]/25 bg-transparent pl-10 pr-10 text-[14px] text-[#f5f7fa] outline-none transition-colors placeholder:text-[#D4C3A3]/50 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30";
+    "h-10 w-full rounded-xl border border-[#D8B282]/30 bg-black/40 pl-10 pr-10 text-[13.5px] text-[#f5f7fa] outline-none transition-colors placeholder:text-[#D4C3A3]/40 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30";
 
   const isAssociation = appPortal === "association";
 
   return (
     <main
-      className="relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col justify-between select-none"
-      style={{ background: NAVY, color: "#f5f7fa" }}
+      className="relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col justify-between select-none bg-[#050c15] text-[#f5f7fa]"
     >
       <img
         src={authBg}
@@ -118,12 +117,12 @@ export function ConnectAppSignIn({
         aria-hidden="true"
         width={1024}
         height={640}
-        className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-65"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-60"
       />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 90%)`,
+          background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 92%)`,
         }}
       />
 
@@ -136,88 +135,35 @@ export function ConnectAppSignIn({
           transition: background-color 5000s ease-in-out 0s !important;
           caret-color: #f5f7fa !important;
         }
-
-        @media (max-height: 700px) {
-          .vba-auth-container {
-            padding-top: 4px !important;
-            padding-bottom: 4px !important;
-          }
-          .vba-auth-header-title {
-            font-size: 22px !important;
-            margin-top: 4px !important;
-          }
-          .vba-auth-header-sub {
-            font-size: 12px !important;
-            margin-top: 2px !important;
-          }
-        }
-
-        @media (max-height: 620px) {
-          .vba-auth-wrapper {
-            transform: scale(0.92);
-            transform-origin: top center;
-          }
-        }
       `}</style>
 
       <div
-        className="vba-auth-wrapper relative mx-auto flex h-full max-h-full w-full max-w-md flex-col justify-between px-5 py-2.5 sm:px-6 sm:py-4 overflow-hidden"
+        className="vba-auth-wrapper relative mx-auto flex h-full max-h-full w-full max-w-md flex-col justify-between px-5 py-2 overflow-hidden"
         style={{
-          paddingTop: "max(8px, env(safe-area-inset-top))",
-          paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+          paddingTop: "max(6px, env(safe-area-inset-top))",
+          paddingBottom: "max(6px, env(safe-area-inset-bottom))",
         }}
       >
-        {/* Top bar: App Selector & Language switcher */}
-        <div className="flex items-center justify-between shrink-0">
-          {/* App Switcher Tabs: ViOne Connect vs Hiệp hội */}
-          <div className="flex items-center rounded-xl bg-black/40 border border-[#D8B282]/25 p-0.5 backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => onAppPortalChange?.("connect")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] font-semibold transition-all cursor-pointer ${
-                !isAssociation
-                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
-                  : "text-[#D4C3A3] hover:text-white"
-              }`}
-            >
-              <Sparkles className="h-3 w-3" />
-              <span>ViOne Connect</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onAppPortalChange?.("association")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] font-semibold transition-all cursor-pointer ${
-                isAssociation
-                  ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-[#050c15] shadow-xs"
-                  : "text-[#D4C3A3] hover:text-white"
-              }`}
-            >
-              <Building2 className="h-3 w-3" />
-              <span>Hiệp hội</span>
-            </button>
-          </div>
-
+        {/* Top bar: Language switcher */}
+        <div className="flex items-center justify-end shrink-0 pt-1">
           <LuxuryLangSwitcher />
         </div>
 
         {/* Brand & Welcome Header */}
-        <div className="flex flex-col items-center justify-center text-center shrink-0 my-auto">
-          <ViOneLogo className="h-8 sm:h-10 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-1 text-[9px] sm:text-[10px] font-medium tracking-[0.3em]" style={{ color: GOLD }}>
-            {isAssociation ? "HIỆP HỘI DOANH NGHIỆP" : "BUSINESS CONNECT"}
+        <div className="flex flex-col items-center justify-center text-center shrink-0 my-1">
+          <ViOneLogo className="h-8 w-auto transition-transform hover:scale-105 duration-300" />
+          <div className="mt-1 text-[9.5px] font-bold tracking-[0.25em] text-[#D8B282]">
+            BUSINESS CONNECT
           </div>
           <h1
-            className="vba-auth-header-title mt-2 font-serif text-[24px] sm:text-[28px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
+            className="mt-1 font-serif text-[22px] sm:text-[26px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
           >
-            {isAssociation ? "Cổng Hội viên Hiệp hội" : t("bc.mobile.auth.welcome")}
+            {t("bc.mobile.auth.welcome")}
           </h1>
           <p
-            className="vba-auth-header-sub mx-auto mt-1 max-w-[18rem] text-center text-[12.5px] sm:text-[13.5px] leading-tight font-light tracking-[0.02em]"
-            style={{ color: "#D4C3A3" }}
+            className="mx-auto mt-0.5 max-w-[19rem] text-center text-[12px] sm:text-[13px] leading-tight font-light text-[#D4C3A3]/90"
           >
-            {isAssociation
-              ? "Thẻ hội viên số, quyền lợi & check-in sự kiện"
-              : t("bc.mobile.auth.subtitle")}
+            {t("bc.mobile.auth.subtitle")}
           </p>
         </div>
 
@@ -226,11 +172,11 @@ export function ConnectAppSignIn({
           <div
             role="alert"
             aria-live="assertive"
-            className="my-1.5 rounded-xl border px-3 py-2 text-[13px] leading-snug shrink-0"
+            className="my-1 rounded-xl border px-3 py-1.5 text-[12.5px] leading-snug shrink-0"
             style={{ borderColor: "#5c2b2b", background: "#2a1414", color: "#ffd9d4" }}
           >
             <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <div className="flex-1">
                 <p>{errorMessage}</p>
                 {errorHint ? <p className="mt-0.5 text-[11px] opacity-80">{errorHint}</p> : null}
@@ -240,23 +186,23 @@ export function ConnectAppSignIn({
                   type="button"
                   onClick={onDismissError}
                   aria-label={t("bc.mobile.auth.dismissError")}
-                  className="-mr-1 -mt-1 flex h-6 w-6 items-center justify-center rounded-lg"
+                  className="-mr-1 -mt-1 flex h-5 w-5 items-center justify-center rounded-lg"
                 >
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               ) : null}
             </div>
             {onRetry || secondaryLabel ? (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-2">
                 {onRetry ? (
                   <button
                     type="button"
                     onClick={onRetry}
                     disabled={busy}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[12px] font-medium disabled:opacity-60"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11.5px] font-medium disabled:opacity-60"
                     style={{ borderColor: "#8a4a4a", color: "#ffd9d4" }}
                   >
-                    <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                    <RefreshCw className="h-3 w-3" aria-hidden="true" />
                     {t("bc.mobile.auth.retry")}
                   </button>
                 ) : null}
@@ -264,7 +210,7 @@ export function ConnectAppSignIn({
                   <button
                     type="button"
                     onClick={onSecondary}
-                    className="inline-flex h-8 items-center rounded-lg px-2 text-[12px] font-medium underline underline-offset-4"
+                    className="inline-flex h-7 items-center rounded-lg px-2 text-[11.5px] font-medium underline underline-offset-4"
                     style={{ color: "#ffd9d4" }}
                   >
                     {secondaryLabel}
@@ -275,45 +221,43 @@ export function ConnectAppSignIn({
           </div>
         ) : null}
 
-        {/* Social - Side-by-side with Google & Apple for max vertical efficiency */}
-        <div className="grid grid-cols-2 gap-2 shrink-0 my-1 sm:my-1.5">
+        {/* Social - Elongated buttons with full explicit text */}
+        <div className="space-y-2 shrink-0 my-1">
           <button
             type="button"
             onClick={onGoogle}
             disabled={busy}
             aria-busy={oauthPending === "google"}
-            className="flex h-10 sm:h-11 w-full items-center justify-center gap-2 rounded-xl border border-solid border-[#D8B282]/25 bg-white/[0.02] backdrop-blur-sm text-[13.5px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.08] hover:border-[#D8B282]/60 cursor-pointer"
-            style={{ color: "#f5f7fa" }}
+            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.08] hover:border-[#D8B282]/60 cursor-pointer text-[#f5f7fa]"
           >
             {oauthPending === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <GoogleMark />
             )}
-            <span className="truncate">Google</span>
+            <span>Đăng nhập với Google</span>
           </button>
           <button
             type="button"
             onClick={onApple}
             disabled={busy}
             aria-busy={oauthPending === "apple"}
-            className="flex h-10 sm:h-11 w-full items-center justify-center gap-2 rounded-xl border border-solid border-[#D8B282]/25 bg-white/[0.02] backdrop-blur-sm text-[13.5px] font-medium transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.08] hover:border-[#D8B282]/60 cursor-pointer"
-            style={{ color: "#f5f7fa" }}
+            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 hover:bg-white/[0.08] hover:border-[#D8B282]/60 cursor-pointer text-[#f5f7fa]"
           >
             {oauthPending === "apple" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <AppleMark />
             )}
-            <span className="truncate">Apple</span>
+            <span>Đăng nhập với Apple</span>
           </button>
         </div>
 
         {/* Divider */}
-        <div className="my-1 sm:my-2 flex items-center gap-3 text-[12px] shrink-0" style={{ color: "#8fa0b1" }}>
-          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
-          <span style={{ color: "#D4C3A3" }}>{t("bc.mobile.auth.or")}</span>
-          <span className="h-px flex-1" style={{ background: "rgba(216, 178, 130, 0.15)" }} />
+        <div className="my-1 flex items-center gap-3 text-[11.5px] shrink-0">
+          <span className="h-px flex-1 bg-[#D8B282]/20" />
+          <span className="text-[#D4C3A3]/80 font-medium">{t("bc.mobile.auth.or")}</span>
+          <span className="h-px flex-1 bg-[#D8B282]/20" />
         </div>
 
         {/* Form */}
@@ -322,16 +266,15 @@ export function ConnectAppSignIn({
             e.preventDefault();
             onSubmit();
           }}
-          className="space-y-2 sm:space-y-2.5 shrink-0"
+          className="space-y-2 shrink-0"
         >
           <div className="space-y-1">
-            <label htmlFor="bc-auth-email" className="block text-[12.5px] sm:text-[13px] font-medium" style={{ color: "#D4C3A3" }}>
+            <label htmlFor="bc-auth-email" className="block text-[12px] font-medium text-[#D4C3A3]">
               {t("bc.mobile.auth.emailLabel")}
             </label>
             <div className="relative">
               <Mail
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-                style={{ color: "#D4C3A3" }}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#D4C3A3]"
                 aria-hidden="true"
               />
               <input
@@ -341,21 +284,19 @@ export function ConnectAppSignIn({
                 autoComplete="username"
                 value={email}
                 onChange={(e) => onEmailChange(e.target.value)}
-                placeholder={isAssociation ? "email-hoi-vien@domain.com" : t("bc.mobile.auth.emailPlaceholder")}
+                placeholder={isAssociation ? "admin@connect.vn" : "admin@connect.vn"}
                 className={fieldClass}
-                style={{ color: "#f5f7fa" }}
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="bc-auth-password" className="block text-[12.5px] sm:text-[13px] font-medium" style={{ color: "#D4C3A3" }}>
+            <label htmlFor="bc-auth-password" className="block text-[12px] font-medium text-[#D4C3A3]">
               {t("bc.mobile.auth.passwordLabel")}
             </label>
             <div className="relative">
               <Lock
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
-                style={{ color: "#D4C3A3" }}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#D4C3A3]"
                 aria-hidden="true"
               />
               <input
@@ -364,9 +305,8 @@ export function ConnectAppSignIn({
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                placeholder={t("bc.mobile.auth.passwordPlaceholder")}
+                placeholder="Nhập mật khẩu"
                 className={fieldClass}
-                style={{ color: "#f5f7fa" }}
               />
               <button
                 type="button"
@@ -374,8 +314,7 @@ export function ConnectAppSignIn({
                 aria-label={t(
                   showPassword ? "bc.mobile.auth.hidePassword" : "bc.mobile.auth.showPassword",
                 )}
-                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg cursor-pointer"
-                style={{ color: "#D4C3A3" }}
+                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg cursor-pointer text-[#D4C3A3]"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -388,21 +327,20 @@ export function ConnectAppSignIn({
               role="checkbox"
               aria-checked={remember}
               onClick={toggleRemember}
-              className="flex items-center gap-2 text-[13px] sm:text-[14px] cursor-pointer"
-              style={{ color: "#D4C3A3" }}
+              className="flex items-center gap-2 text-[12.5px] cursor-pointer text-[#D4C3A3]"
             >
               <span
-                className="flex h-5 w-5 items-center justify-center rounded-[5px] border text-[#050c15]"
+                className="flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border text-[#050c15]"
                 style={{
                   background: remember ? GOLD : "transparent",
-                  borderColor: remember ? GOLD : "rgba(216, 178, 130, 0.25)",
+                  borderColor: remember ? GOLD : "rgba(216, 178, 130, 0.3)",
                 }}
                 aria-hidden="true"
               >
                 {remember ? (
                   <svg
                     viewBox="0 0 20 20"
-                    className="h-3.5 w-3.5"
+                    className="h-3 w-3"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="3"
@@ -411,13 +349,12 @@ export function ConnectAppSignIn({
                   </svg>
                 ) : null}
               </span>
-              {t("bc.mobile.auth.remember")}
+              <span>{t("bc.mobile.auth.remember")}</span>
             </button>
             <Link
               to="/forgot-password"
               search={{ m: "1", email: email.trim() || undefined }}
-              className="text-[13px] sm:text-[14px] font-medium"
-              style={{ color: "#E2D3B3" }}
+              className="text-[12.5px] font-medium text-[#E2D3B3] hover:underline"
             >
               {t("bc.mobile.auth.forgot")}
             </Link>
@@ -426,11 +363,7 @@ export function ConnectAppSignIn({
           <button
             type="submit"
             disabled={busy}
-            className="relative flex h-10 sm:h-11 w-full items-center justify-center rounded-xl text-[15px] sm:text-[16px] font-semibold text-[#050c15] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md"
-            style={{
-              background: "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-              boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 6px 20px -4px rgba(201, 163, 91, 0.5)",
-            }}
+            className="relative flex h-10 w-full items-center justify-center rounded-xl text-[14.5px] font-bold text-[#050c15] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -446,22 +379,15 @@ export function ConnectAppSignIn({
         </form>
 
         {/* Sign up */}
-        <div className="shrink-0 my-1 sm:my-1.5">
+        <div className="shrink-0 my-1">
           <Link
             to="/register"
             search={{ email: email.trim() || undefined }}
-            className="relative flex h-9.5 sm:h-10.5 w-full items-center justify-center gap-2 rounded-xl border text-[13.5px] sm:text-[14.5px] font-medium transition-all backdrop-blur-md hover:shadow-[0_0_12px_rgba(253,230,180,0.1)] cursor-pointer"
-            style={{
-              border: "1px solid transparent",
-              backgroundImage: "linear-gradient(rgba(18,17,15,0.45), rgba(18,17,15,0.45)), linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-              backgroundOrigin: "border-box",
-              backgroundClip: "padding-box, border-box",
-              color: "#E2D3B3",
-            }}
+            className="relative flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#D8B282]/40 bg-zinc-900/60 backdrop-blur-md text-[13.5px] font-semibold text-[#E2D3B3] transition-all hover:bg-zinc-800/80 active:scale-[0.99] cursor-pointer"
           >
-            <Shield className="h-4 w-4" style={{ color: "#E2D3B3" }} aria-hidden="true" />
-            {t("bc.mobile.auth.signup.createAccount")}
-            <ChevronRight className="absolute right-4 h-4 w-4" style={{ color: "#E2D3B3" }} aria-hidden="true" />
+            <Shield className="h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
+            <span>{t("bc.mobile.auth.signup.createAccount")}</span>
+            <ChevronRight className="absolute right-4 h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
           </Link>
         </div>
 
@@ -471,10 +397,10 @@ export function ConnectAppSignIn({
           onClick={onScanCard}
           className="flex w-full items-center justify-center gap-2.5 py-1 text-left shrink-0 cursor-pointer active:opacity-80"
         >
-          <QrCode className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" style={{ color: "#E2D3B3" }} aria-hidden="true" />
+          <QrCode className="h-5 w-5 shrink-0 text-[#E2D3B3]" aria-hidden="true" />
           <span>
-            <span className="block text-[13.5px] sm:text-[14.5px] font-semibold" style={{ color: "#E2D3B3" }}>{t("bc.mobile.auth.scanTitle")}</span>
-            <span className="block text-[11.5px] sm:text-[12.5px] leading-tight" style={{ color: "#D4C3A3" }}>
+            <span className="block text-[13px] font-bold text-[#E2D3B3]">{t("bc.mobile.auth.scanTitle")}</span>
+            <span className="block text-[11px] leading-tight text-[#D4C3A3]/80">
               {t("bc.mobile.auth.scanSubtitle")}
             </span>
           </span>
@@ -483,3 +409,4 @@ export function ConnectAppSignIn({
     </main>
   );
 }
+

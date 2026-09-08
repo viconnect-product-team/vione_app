@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { WifiOff } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { VSheetContext } from "@/hooks/use-v-sheet";
+import { useConnectAppRealtimeNotifications } from "@/hooks/use-connect-app-realtime-notifications";
 import authBg from "@/assets/connect-auth-bg.jpg";
 import { BusinessConnectBottomNav } from "./BusinessConnectBottomNav";
 import { VActionSheet } from "./VActionSheet";
@@ -14,13 +15,15 @@ import { VActionSheet } from "./VActionSheet";
 import { useTheme } from "@/lib/theme";
 
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
+  useConnectAppRealtimeNotifications();
   const { theme } = useTheme();
   const [vOpen, setVOpen] = useState(false);
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
 
   const isLight = theme === "light";
-  const bgMain = isLight ? "#FDFCF7" : theme === "contrast" ? "#000000" : "#050c15";
+  const isContrast = theme === "contrast";
+  const bgMain = isLight ? "#F8FAFC" : isContrast ? "#000000" : "#050c15";
 
   return (
     <VSheetContext.Provider value={vControls}>
@@ -30,7 +33,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
         style={{ background: bgMain }}
         aria-hidden="true"
       >
-        {!isLight && (
+        {!isLight && !isContrast && (
           <>
             <img
               src={authBg}

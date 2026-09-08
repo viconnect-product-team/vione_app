@@ -33,7 +33,14 @@ import type { GuestContact } from "@/lib/business-card/guest-contact";
 // ── DTO (whitelist — contract §4) ───────────────────────────────────────────
 
 export type BcMobilePersonRelationship =
-  | { kind: "connected"; connectedAt: string | null; requestedByViewer: boolean | null }
+  | {
+      kind: "connected";
+      connectedAt: string | null;
+      requestedByViewer: boolean | null;
+      status?: "none" | "pending" | "accepted" | "declined";
+      connectionId?: string | null;
+      direction?: "incoming" | "outgoing" | "self" | null;
+    }
   | { kind: "saved"; savedAt: string | null; favorite: boolean }
   // BC-Mobile-4B — `source` distinguishes a consent-based exchange from a
   // paper-card scan so the UI states provenance truthfully.
@@ -223,6 +230,9 @@ async function resolveConnectionPerson(
         kind: "connected",
         connectedAt: connection?.respondedAt ?? null,
         requestedByViewer: connection?.requestedByCurrentUser ?? (state.direction === "outgoing"),
+        status: state.status,
+        connectionId: state.connectionId,
+        direction: state.direction,
       },
       contact: null, // filled by the caller when a slug exists
     },

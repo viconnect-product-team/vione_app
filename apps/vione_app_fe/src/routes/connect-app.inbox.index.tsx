@@ -65,6 +65,29 @@ function Avatar({ thread }: { thread: BcDmThreadSummary }) {
   );
 }
 
+function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix = ""): string {
+  if (!raw) return "";
+  const text = raw.trim();
+  const prefix = isFromMe ? youPrefix : "";
+
+  // Image tag: [image:URL|NAME] or [image:URL] or raw image url
+  if (
+    /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i.test(text) ||
+    /^(https?:\/\/[^\s]+?\.(png|jpe?g|gif|webp|svg))(?:\?.*)?$/i.test(text)
+  ) {
+    return `${prefix}📷 [Hình ảnh]`;
+  }
+
+  // File tag: [file:URL|NAME|SIZE]
+  const fileMatch = text.match(/\[file:(https?:\/\/[^|\]]+)(?:\|([^|\]]*))?(?:\|(\d+))?\]/i);
+  if (fileMatch) {
+    const fileName = fileMatch[2] || "Tài liệu";
+    return `${prefix}📎 [Tệp] ${fileName}`;
+  }
+
+  return `${prefix}${text}`;
+}
+
 function InboxPage() {
   const t = useT();
   const { lang } = useLang();
@@ -82,7 +105,7 @@ function InboxPage() {
     <MobilePage>
       <BusinessConnectTopBar title={t("bc.mobile.inbox.title")} back />
       <div className="grid gap-4 pt-5">
-        <p className="text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">
+        <p className="text-[12.5px] leading-snug text-slate-500 dark:text-[var(--bc-mobile-muted)]">
           {t("bc.mobile.inbox.desc")}
         </p>
 
@@ -101,15 +124,15 @@ function InboxPage() {
               className="h-6 w-6 text-[var(--bc-mobile-accent)]"
               aria-hidden="true"
             />
-            <p className="text-[14px] font-medium text-[var(--bc-mobile-text)]">
+            <p className="text-[14px] font-semibold text-slate-900 dark:text-[var(--bc-mobile-text)]">
               {t("bc.mobile.inbox.empty.title")}
             </p>
-            <p className="text-[12.5px] leading-snug text-[var(--bc-mobile-muted)]">
+            <p className="text-[12.5px] leading-snug text-slate-500 dark:text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.inbox.empty.desc")}
             </p>
             <Link
               to="/connect-app/network"
-              className="mt-1 rounded-full border border-[var(--bc-mobile-border)] px-4 py-2 text-[12.5px] text-[var(--bc-mobile-text)]"
+              className="mt-1 rounded-full border border-[var(--bc-mobile-border)] px-4 py-2 text-[12.5px] text-slate-800 dark:text-[var(--bc-mobile-text)] hover:bg-slate-100 dark:hover:bg-white/5"
             >
               {t("bc.mobile.inbox.empty.cta")}
             </Link>
@@ -121,22 +144,26 @@ function InboxPage() {
                 <Link
                   to="/connect-app/inbox/$threadId"
                   params={{ threadId: thread.threadId }}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3 active:opacity-80"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] p-3 active:opacity-80 shadow-xs hover:border-amber-500/40 transition-colors"
                 >
                   <Avatar thread={thread} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-[14px] font-medium text-[var(--bc-mobile-text)]">
+                      <span className="truncate text-[14px] font-bold text-slate-900 dark:text-[var(--bc-mobile-text)]">
                         {thread.displayName}
                       </span>
-                      <span className="shrink-0 text-[11px] text-[var(--bc-mobile-muted)]">
+                      <span className="shrink-0 text-[11px] text-slate-500 dark:text-[var(--bc-mobile-muted)] font-medium">
                         {timeLabel(thread.lastMessageAt, locale)}
                       </span>
                     </span>
                     <span className="mt-0.5 flex items-center gap-2">
-                      <span className="truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
+                      <span className="truncate text-[12.5px] text-slate-600 dark:text-[var(--bc-mobile-muted)] font-normal">
                         {thread.lastMessagePreview
-                          ? `${thread.lastMessageFromMe ? t("bc.mobile.inbox.you") : ""}${thread.lastMessagePreview}`
+                          ? formatMessagePreview(
+                              thread.lastMessagePreview,
+                              thread.lastMessageFromMe,
+                              t("bc.mobile.inbox.you"),
+                            )
                           : t("bc.mobile.inbox.noMessage")}
                       </span>
                       {thread.unreadCount > 0 ? (

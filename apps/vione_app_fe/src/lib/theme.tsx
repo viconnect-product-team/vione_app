@@ -24,7 +24,7 @@ function applyTheme(theme: Theme) {
 }
 
 function readInitial(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "light" || saved === "dark" || saved === "contrast") return saved;
@@ -32,13 +32,13 @@ function readInitial(): Theme {
     /* ignore */
   }
   if (window.matchMedia?.("(prefers-contrast: more)").matches) return "contrast";
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "dark";
 }
 
-const ORDER: Theme[] = ["light", "dark", "contrast"];
+const ORDER: Theme[] = ["dark", "light", "contrast"];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   // Hydrate from stored/device preference on mount.
   useEffect(() => {

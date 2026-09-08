@@ -1,229 +1,285 @@
-# 25 — SOLID & Coding Convention (training SoT cho mọi Dev / sub-agent)
-
-**Mục đích:** Đây là tài liệu **train + reject gate** — không chỉ bảng layer ngắn như `09` §5.  
-Mọi `dev-fe` / `dev-be` / `dev-mobile` **đọc file này trước khi code** (cùng SRS → TechSpec → CODE-MEMORY).
-
-**Liên kết:** `09` §5 (map layer) · `04-CODE-MEMORY-JOURNAL.md` · `14-TRACEABILITY-SRS-TECHSPEC-CODE.md` · `12-NEST-MONOREPO-CODE-MEMORY.md`
+# QUY ƯỚC VIẾT CODE & THIẾT KẾ SOLID DỰ ÁN VIONE
+## VIONE BUSINESS CONNECT ECOSYSTEM — SOLID ARCHITECTURE & CODING CONVENTIONS SOT
 
 ---
 
-## 0. Hai khái niệm — đừng gộp
+## 📌 TRANG BÌA & THÔNG TIN DỰ ÁN
 
-| | **Coding Convention** | **SOLID** |
-|--|----------------------|-----------|
-| Là gì | Quy ước **cách viết & tổ chức** code trong team (tên, folder, comment, test, error, type) | Nguyên lý **thiết kế** module để dễ đổi, dễ test, ít vỡ lan |
-| Trả lời câu | “File đặt đâu? Đặt tên thế nào? Comment gì? Cấm gì?” | “Ai chịu trách nhiệm gì? Phụ thuộc ai? Mở rộng thế nào mà không đập core?” |
-| Ví dụ | `src/lib` = logic; không `any`; `@CODE-MEMORY`; file >300 LOC tách | Service HRM không gọi thẳng Prisma từ Controller; map BR ở lib thuần |
-| Khi thiếu | Code “chạy được” nhưng mỗi người một style → review hỗn loạn | Code “đúng convention” nhưng vẫn god-service / logic trong UI → sửa 1 chỗ hỏng 10 chỗ |
+*   **Tên dự án:** Hệ thống Kết nối và Số hóa Doanh nghiệp ViOne (ViOne Business Connect Ecosystem)
+*   **Tên tài liệu:** Quy ước Viết Code & Thiết kế Kiến trúc SOLID Chuẩn mực (SOLID Architecture, Coding Conventions & APK Packaging)
+*   **Mã tài liệu:** `VIONE-SOLID-CONV-02`
+*   **Phiên bản:** `2.0.0`
+*   **Ngày ban hành:** 08/09/2026
+*   **Bộ phận biên soạn:** Phòng Nghiệp vụ & Kiến trúc Hệ thống (Senior Tech Lead / Senior SA Team)
+*   **Trạng thái:** Đã phê duyệt & Ban hành chính thức (Approved & Baseline)
+*   **Mức độ bảo mật:** Nội bộ (Internal Confidential)
 
-**Sub-agent phải nắm cả hai.** Chỉ thuộc layer table `09` §5 = **chưa đủ**.
+### Lịch sử Thay đổi Phiên bản
 
----
-
-## 1. Coding Convention (bắt buộc)
-
-### 1.1 Ranh giới folder (mọi stack — map sang Nest/React tương đương)
-
-| Layer | Được làm | Không được làm |
-|-------|----------|----------------|
-| **Domain / lib thuần** (`src/lib/**`, `*.domain.ts`, Nest `*.service` domain helpers) | Tính toán BR, validate nghiệp vụ, map DTO↔domain, gọi port/interface | Import React, Nest `@Req`, Prisma client trực tiếp nếu đã có repository |
-| **Application / flow** (`*Flows.ts`, Nest use-case service) | Orchestrate bước UC, transaction boundary | Hardcode nhãn UI; copy-paste công thức đã có ở lib |
-| **Interface / UI** (components, pages) | Wire props, gọi hook/flow, `t('key')`, trạng thái loading/error | Công thức lương/BH/phạm vi; SQL; gọi SDK partner |
-| **Transport** (Controller, Edge handler) | Auth, parse input, map HTTP status, gọi service | Business if/else dài; query DB phức tạp |
-| **Infrastructure** (Repository, Prisma, Supabase client) | I/O, SQL, mapping row↔entity | Quyết định BR “có được duyệt không” |
-
-### 1.2 Quy ước viết
-
-1. **Tên rõ việc** — `calculateInsuranceEmployeeShare` chứ không `calc2` / `handleData`.
-2. **Một file ≈ một lý do đổi** — vượt **~300 LOC** business → tách (lib / types / mapper / tests).
-3. **Type an toàn** — không `any` khi có alternative; DTO/Zod/class-validator ở biên.
-4. **Lỗi có chủ** — không `catch {}` nuốt; message ổn định cho FE; không lộ secret.
-5. **Side-effect rõ** — hàm thuần không âm thầm ghi DB; mutate ghi trong service/repo có tên rõ.
-6. **i18n** — UI chỉ `t('key')` / nhãn VI từ catalog; không nhét UUID làm label.
-7. **@CODE-MEMORY** — mọi file business: UC/BR/SRS/TechSpec + field **SOLID** (tiếng Việt) — xem `04`.
-8. **Test đặt tên theo UC/BR** — `br-hrm-ins-employee-share.test.ts`, không `test1`.
-9. **Cùng commit** enum DB ↔ TypeScript union/type hand-written.
-10. **Không dead code / duplicate công thức** — dialog và lib dùng **một** hàm SoT.
-
-### 1.3 Convention ≠ “trông đẹp”
-
-Convention đạt khi **người khác (hoặc sub-agent khác) biết tìm logic ở đâu trong ≤2 phút**.  
-Nếu QA/Dev mới phải đọc cả `Employees.tsx` 2000 dòng để tìm BR → **FAIL convention**.
+| Phiên bản | Ngày | Tác giả | Trạng thái | Nội dung thay đổi |
+| :--- | :--- | :--- | :--- | :--- |
+| **0.1.0** | 22/08/2026 | SA Team | Nháp | Soạn thảo quy ước viết code và định nghĩa ranh giới các thư mục. |
+| **1.0.0** | 28/08/2026 | BA/SA Lead | Phê duyệt | Hoàn thiện tài liệu, bổ sung ví dụ SOLID thực tế trong dự án Vione. |
+| **2.0.0** | 08/09/2026 | Senior Tech Lead | Phát hành | Nâng cấp toàn diện tiêu chuẩn SOLID & Clean Architecture: Phân tầng Monorepo NestJS & React TanStack Start, Quy chuẩn TypeScript Strict Type & Zero-any, Ví dụ chi tiết 5 nguyên lý SOLID trên mã nguồn thực tế ViOne, Hướng dẫn tích hợp 8 ngôn ngữ i18n, Quy trình đóng gói Native Android APK chuẩn và Checklist Ready for QA. |
 
 ---
 
-## 2. SOLID — diễn giải đủ để train agent
+## 📑 MỤC LỤC TỔNG THỂ
 
-Ghi nhớ: SOLID áp dụng cho **module/class/function boundary**, không phải “tách file cho vui”.
-
-### S — Single Responsibility (Một trách nhiệm)
-
-**Ý:** Một đơn vị chỉ có **một lý do để thay đổi**.
-
-| Đúng | Sai |
-|------|-----|
-| `InsurancePremiumCalculator` chỉ tính tiền; `InsuranceEnrollmentService` chỉ orchestrate lưu | `EmployeesPage` vừa fetch, vừa tính BH, vừa soft-delete, vừa format date |
-| Nest: Controller mỏng → Service nghiệp vụ → Repository | Controller 400 dòng chứa SQL + if BR |
-| FE: `mapRequisitionToForm` tách khỏi `JobRequisitionsTab.tsx` | Tab vừa render vừa POST vừa parse UTF-16 |
-
-**Câu hỏi agent tự hỏi trước khi merge:**  
-“Nếu sponsor đổi *chỉ* quy tắc tính X, mình có phải sửa file UI/API transport không?” → Nếu có → tách chưa đủ.
-
-### O — Open/Closed (Mở để mở rộng, đóng để sửa)
-
-**Ý:** Thêm hành vi mới bằng **composition / strategy / registry**, tránh mở lại core ổn định mỗi lần.
-
-| Đúng | Sai |
-|------|-----|
-| Thêm kênh catalog: đăng ký handler mới vào map `channel → applicator` | Sửa `if/else` 20 nhánh trong một hàm `applyCatalog` khổng lồ mỗi kênh mới |
-| Feature flag / strategy cho soft-delete vs hard (nếu policy đổi) | Copy-paste cả service rồi sửa 2 chỗ |
-
-**Không hiểu sai O:** “Không bao giờ sửa file cũ” — vẫn được sửa khi bug/BR đổi; O chống **mở rộng bằng cách phá core**.
-
-### L — Liskov Substitution (Thay thế subtype an toàn)
-
-**Ý:** Implementation thay thế phải **giữ hợp đồng** (precondition không chặt hơn, postcondition không yếu hơn, không ném lỗi bất ngờ).
-
-| Đúng | Sai |
-|------|-----|
-| `MemberScopeRepository` và `HoldingScopeRepository` đều thỏa `ListEmployeesQuery` (cùng lỗi 409 scope) | Subclass “tối ưu” nuốt 409 thành [] rỗng → FE tưởng hết data |
-| Mock test implement cùng interface service | Fake trả `null` chỗ production trả `[]` → test xanh prod vỡ |
-
-### I — Interface Segregation (Interface nhỏ, đúng việc)
-
-**Ý:** Caller không bị buộc phụ thuộc method không dùng.
-
-| Đúng | Sai |
-|------|-----|
-| `SubmitRequisitionWorkflow` port chỉ `submit(id)` | `IHrmGodService` 40 method — FE import cả đống để gọi 1 hàm |
-| FE hook `useArchiveEmployee` riêng | Một context “all HRM mutations” bắt mọi màn re-render |
-
-### D — Dependency Inversion (Đảo phụ thuộc)
-
-**Ý:** Domain/application **không** phụ thuộc chi tiết Prisma/Supabase/HTTP; phụ thuộc **abstraction** (port). Infrastructure implement port.
-
-| Đúng | Sai |
-|------|-----|
-| `RecruitmentService` nhận `JobRequisitionRepo` interface; Prisma class implements | Service import `@prisma/client` rồi dùng khắp BR |
-| FE lib nhận `apiClient` inject / param — dễ test | Lib import cứng `fetch('http://localhost:28001')` |
+1. [PHẦN 1: KIẾN TRÚC MONOREPO & RANH GIỚI PHÂN TẦNG (LAYER BOUNDARIES)](#phần-1-kiến-trúc-monorepo--ranh-giới-phân-tầng)
+   - 1.1 Cấu trúc NestJS Backend Clean Architecture (`apps/vione_app_be`)
+   - 1.2 Cấu trúc React TanStack Start Frontend (`apps/vione_app_fe`)
+   - 1.3 Thư viện Dùng chung (`packages/*`)
+2. [PHẦN 2: QUY ƯỚC VIẾT CODE CHUẨN MỰC (CODING CONVENTIONS)](#phần-2-quy-ước-viết-code-chuẩn-mực)
+   - 2.1 Quy định Đặt tên (Strict Naming Conventions)
+   - 2.2 An toàn Kiểu dữ liệu & Kỷ luật Zero-Any (Strict Type Safety)
+   - 2.3 Xử lý Ngoại lệ Toàn cục (Global Exception Filters & React Error Boundaries)
+   - 2.4 Quản lý Cơ chế Đa ngôn ngữ (8-Language i18n Localization Engine)
+3. [PHẦN 3: THIẾT KẾ KIẾN TRÚC SOLID TRONG THỰC TẾ DỰ ÁN VIONE](#phần-3-thiết-kế-kiến-trúc-solid-trong-thực-tế-dự-án-vione)
+   - 3.1 S — Single Responsibility Principle (Đơn trách nhiệm)
+   - 3.2 O — Open/Closed Principle (Mở rộng thoải mái, Đóng sửa đổi)
+   - 3.3 L — Liskov Substitution Principle (Thay thế lớp con an toàn)
+   - 3.4 I — Interface Segregation Principle (Phân tách Interface tinh gọn)
+   - 3.5 D — Dependency Inversion Principle (Đảo ngược Phụ thuộc & DI)
+4. [PHẦN 4: QUY TRÌNH ĐÓNG GÓI & PHÁT HÀNH MOBILE APK (ANDROID & IOS PACKAGING)](#phần-4-quy-trình-đóng-gói--phát-hành-mobile-apk)
+   - 4.1 Quy trình Biên dịch & Đồng bộ Native Capacitor
+   - 4.2 Cấu hình AndroidManifest (NFC Foreground & Live Camera Permissions)
+5. [PHẦN 5: CHECKLIST TRƯỚC KHI SẴN SÀNG CHO QA (READY FOR QA CHECKLIST)](#phần-5-checklist-trước-khi-sẵn-sàng-cho-qa)
 
 ---
 
-## 3. Anti-pattern (QA / TM / QC được quyền REJECT)
+# PHẦN 1: KIẾN TRÚC MONOREPO & RANH GIỚI PHÂN TẦNG
 
-1. **God component / god service** — nhiều BR unrelated trong một file.  
-2. **Business logic trong UI** — tính tiền, scope, state machine trong `.tsx`.  
-3. **Business logic trong Controller** — chỉ được validate transport + ủy quyền service.  
-4. **Duplicate SoT** — cùng công thức ở FE + BE lệch nhau không có test chung / không document SoT.  
-5. **SDK/DB xuyên tầng** — UI gọi Supabase thẳng khi đã có Nest API (trừ ADR ngoại lệ).  
-6. **Hàm > ~80 dòng** với nhiều side-effect không tên — tách.  
-7. **Sửa “cho test xanh”** bằng cách nới guard nghiệp vụ — cấm (xem E2E integrity).  
-8. **Thiếu `@CODE-MEMORY` / thiếu field SOLID** trên file business mới/sửa.
+Để đảm bảo khả năng mở rộng quy mô (Scalability) và bảo trì dễ dàng khi dự án phục vụ hàng trăm Hiệp hội và CLB Doanh nhân, kiến trúc thư mục Monorepo của ViOne phân định nghiêm ngặt các ranh giới:
 
-### 3.1 Reject rõ — FE vượt ranh giới (display-ready / SoC)
+```
+vione_app/
+├── apps/
+│   ├── vione_app_be/              <-- NestJS Backend Service (API, Auth, DB)
+│   │   ├── src/
+│   │   │   ├── modules/           <-- Module theo từng Feature Domain
+│   │   │   │   ├── auth/          <-- Module Xác thực & Quản lý phiên
+│   │   │   │   ├── cards/         <-- Module Danh thiếp số & Chạm NFC
+│   │   │   │   ├── meetings/      <-- Module Lịch hẹn 1-on-1
+│   │   │   │   ├── members/       <-- Module Thẩm định & Hội viên CLB
+│   │   │   │   ├── b2b/           <-- Module Sàn Giao thương B2B
+│   │   │   │   └── events/        <-- Module Quản lý Sự kiện & Check-in
+│   │   │   ├── common/            <-- Guards, Filters, Interceptors, Decorators
+│   │   │   └── prisma/            <-- Prisma Schema, Seeders & Migrations
+│   │
+│   └── vione_app_fe/              <-- React 18 + TanStack Start + Tailwind
+│       ├── src/
+│       │   ├── routes/            <-- Routing & Page Controllers
+│       │   ├── components/        <-- SFC UI Components & Templates
+│       │   ├── hooks/             <-- React Query Hooks & UI State
+│       │   ├── lib/               <-- i18n Dictionary & Client Utilities
+│       │   └── styles/            <-- Tailwind CSS & Design Tokens
+│       └── android/               <-- Native Android Capacitor Project
+│
+└── packages/
+    ├── shared-types/              <-- DTO Interfaces & Enums dùng chung
+    └── ui-tokens/                 <-- Bảng màu và Design Token chung
+```
 
-> **Vì sao reject:** FE chỉ được **hiển thị + validate input người dùng**. Join đa nguồn, công thức nghiệp vụ, và DTO lồng nhau thuộc **BE** (và contract API). Khi FE “tự lắp” aggregate, mọi đổi BR buộc sửa UI + lệch so với mobile/consumer khác → regression im lặng. SoT chi tiết FE/BE SoC: **`28-FE-BE-SEPARATION-DISPLAY-READY.md`** (ưu tiên); stub ngắn: `26` §7.
+## 1.1 Phân tầng NestJS Backend (`apps/vione_app_be`)
+1. **Controller Layer (`*.controller.ts`)**:
+   - *Nhiệm vụ*: Tiếp nhận HTTP/WebSocket Request, kiểm tra Guard xác thực (`JwtAuthGuard`, `RolesGuard`), validate DTO đầu vào bằng `ValidationPipe`.
+   - *Cấm*: Tuyệt đối không viết logic nghiệp vụ (if/else phức tạp, vòng lặp tính toán doanh thu) hoặc gọi trực tiếp Prisma DB tại Controller.
+2. **Service Layer (`*.service.ts`)**:
+   - *Nhiệm vụ*: Chứa 100% logic nghiệp vụ của Use Case, điều phối các giao dịch cơ sở dữ liệu (`$transaction`), kiểm tra điều kiện tranh chấp thời gian, ném ra các Business Exception với mã lỗi chuẩn hóa.
+3. **Repository / Data Access Layer (`*.repository.ts` hoặc Prisma Client)**:
+   - *Nhiệm vụ*: Đọc ghi dữ liệu vật lý với PostgreSQL. Định nghĩa các câu truy vấn phức tạp và tối ưu Index.
 
-| # | Pattern REJECT (FE) | Vì sao sai | Cách đúng |
-|---|---------------------|------------|-----------|
-| R-FE-01 | `Array.reduce` / `Map` join **nhiều** response API (employees + contracts + insurance + dept) thành **một domain aggregate** trong page/hook | FE đang làm **query composer / BFF**; thiếu transaction/consistency; khó audit; mobile phải copy lại | BE trả **view-model / projection** đã join (list DTO hoặc get-by-id embed); FE chỉ bind field |
-| R-FE-02 | Công thức **lương / BHXH / thuế / phụ cấp** (hoặc preview “tính tạm”) copy trong `.tsx` / `lib` FE mà **không** gọi endpoint tính của BE | Hai SoT số → UAT lệch; đổi nghị định BH chỉ sửa một phía | BE sở hữu calculator; FE gọi API preview/compute hoặc chỉ hiển thị số BE đã trả; format tiền = presentation only |
-| R-FE-03 | FE **tự dựng nested DTO** (object cây sâu: employee → contracts[] → insuranceLines[] → employerShare) rồi POST — trong khi API_DESIGN đã định BE assemble từ id phẳng | Client trở thành writer schema; validation lệch; OpenAPI vô nghĩa | FE gửi **payload phẳng / id + field form**; BE load quan hệ, validate BR, persist, trả **display-ready** response |
-| R-FE-04 | FE “làm giàu” list bằng N+1 `Promise.all` get-by-id rồi merge cột | Phá pagination/scope; storm API; che thiếu field trên list API | Mở rộng **list DTO** phía BE (hoặc dedicated summary endpoint); FE một GET |
-
-**Được phép trên FE (không reject):** map field → form control; Zod/schema **shape + required + format** (email, date `dd/MM/yyyy`, tiền nhóm nghìn); disable nút theo trạng thái UI đã có; i18n label; empty/loading/error.
+## 1.2 Phân tầng React Frontend (`apps/vione_app_fe`)
+1. **Route Layer (`src/routes/*.tsx`)**:
+   - *Nhiệm vụ*: Khai báo đường dẫn URL, bọc kiểm tra quyền nhanh, load dữ liệu ban đầu qua TanStack Loader.
+2. **Component Layer (`src/components/**/*.tsx`)**:
+   - *Nhiệm vụ*: Hiển thị giao diện thuần (Stateless Functional Components). Nhận dữ liệu từ `props` và phát sự kiện qua `onAction` callback.
+   - *Cấm*: Không trực tiếp gọi `fetch()` hoặc `axios.post()` trong component con.
+3. **Hook / State Layer (`src/hooks/*.ts`)**:
+   - *Nhiệm vụ*: Quản lý React Query cache, mutations, optimistic UI updates và trạng thái Modal/Sheet.
 
 ---
 
-## 4. Checklist trước `READY_FOR_QA` (Dev tự điền trong evidence)
+# PHẦN 2: QUY ƯỚC VIẾT CODE CHUẨN MỰC (CODING CONVENTIONS)
+
+## 2.1 Quy định Đặt tên (Strict Naming Conventions)
+
+| Đối tượng | Quy ước | Ví dụ Hợp lệ | Ví dụ Bị Cấm (Reject) |
+| :--- | :--- | :--- | :--- |
+| **Tên File & Thư mục** | `kebab-case` | `scanner-modal.tsx`, `meetings.service.ts` | `ScannerModal.tsx` *(trừ React Component)*, `meetingService.ts` |
+| **React Component File**| `PascalCase` | `AssociationLandingTemplate.tsx`, `MemberCard.tsx` | `association_landing.tsx`, `memberCard.tsx` |
+| **Class, Interface, Type**| `PascalCase` | `UserEntity`, `MeetingResponseDto`, `MemberStatus` | `user_entity`, `IMeetingResponseDto` *(cấm tiền tố I)* |
+| **Hàm & Phương thức** | `camelCase` | `createProposal()`, `resolveCardSlug()`, `useT()` | `CreateProposal()`, `resolve_card_slug()` |
+| **Biến & Thuộc tính** | `camelCase` | `currentMemberCode`, `isLuxuryTheme`, `seatNumber` | `Current_Member_Code`, `is_luxury_theme` |
+| **Hằng số & Enums** | `UPPER_CASE` | `MAX_MEETING_SLOTS`, `DEFAULT_LOCALE = 'vi'` | `maxMeetingSlots`, `default_locale` |
+
+## 2.2 An toàn Kiểu dữ liệu & Kỷ luật Zero-Any (Strict Type Safety)
+*   **Cấm sử dụng kiểu `any`**: Mọi biến, tham số, dữ liệu trả về phải có Type hoặc Interface tường minh. Nếu dữ liệu từ bên thứ ba chưa rõ cấu trúc, bắt buộc sử dụng `unknown` kết hợp với Zod schema parser.
+*   **Sử dụng Discriminated Unions cho Trạng thái Phức tạp**:
+```typescript
+// Chuẩn mực thiết kế Type an toàn
+type ScannerState = 
+  | { status: 'IDLE' }
+  | { status: 'SCANNING'; stream: MediaStream }
+  | { status: 'SUCCESS'; payload: string; decodedAt: Date }
+  | { status: 'ERROR'; error: CameraPermissionError };
+```
+
+## 2.3 Xử lý Ngoại lệ Toàn cục (Error Handling Boundaries)
+*   **Backend Global Exception Filter**: Bắt toàn bộ ngoại lệ chưa được xử lý, ghi log chi tiết mã lỗi và chuyển đổi thành định dạng JSON chuẩn của ViOne:
+```typescript
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const errorCode = exception instanceof BusinessException ? exception.getErrorCode() : 'INTERNAL_SERVER_ERROR';
+
+    response.status(status).json({
+      statusCode: status,
+      errorCode: errorCode,
+      message: exception instanceof Error ? exception.message : 'Unknown server error',
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+```
+*   **Frontend Error Boundary**: Mọi màn hình chính phải được bọc trong `<ErrorBoundary fallback={<LuxuryErrorFallback />}>` để đảm bảo lỗi cục bộ không làm sập toàn bộ ứng dụng di động.
+
+## 2.4 Quản lý Cơ chế Đa ngôn ngữ (8-Language i18n Engine)
+*   **Tuyệt đối không hardcode text hiển thị**: Toàn bộ chuỗi văn bản trên giao diện bắt buộc phải đi qua hook `const t = useT();` và gọi `t('namespace.key')`.
+*   **Bộ 8 Ngôn ngữ được Hỗ trợ**:
+    - `vi`: Tiếng Việt (Mặc định)
+    - `en`: Tiếng Anh (English)
+    - `km`: Tiếng Khmer (Campuchia)
+    - `my`: Tiếng Miến Điện (Myanmar)
+    - `lo`: Tiếng Lào (Lao)
+    - `ja`: Tiếng Nhật (Japanese)
+    - `ko`: Tiếng Hàn (Korean)
+    - `zh`: Tiếng Trung (Chinese)
+
+---
+
+# PHẦN 3: THIẾT KẾ KIẾN TRÚC SOLID TRONG THỰC TẾ DỰ ÁN VIONE
+
+## 3.1 S — Single Responsibility Principle (Đơn Trách nhiệm)
+*   *Nguyên lý*: Mỗi Module, Class hoặc Component chỉ có duy nhất một lý do để thay đổi.
+*   *Thực tế ViOne*: Component [LandingHero.tsx](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_fe/src/components/landing/sections/LandingHero.tsx) chỉ chịu trách nhiệm duy nhất là hiển thị phần mở đầu (Hero Section) của trang Landing Page. Nó không tự gọi API gửi email, không tự kiểm tra trạng thái đăng nhập. Mọi hành động click nút "Đăng ký" được truyền ngược lên thông qua callback `onJoinClick()`.
+
+## 3.2 O — Open/Closed Principle (Mở rộng Thoải mái, Đóng Sửa đổi)
+*   *Nguyên lý*: Phần mềm nên mở cho việc mở rộng nhưng đóng cho việc sửa đổi mã nguồn gốc.
+*   *Thực tế ViOne*: Hệ thống [AssociationLandingTemplate.tsx](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_fe/src/components/landing/templates/AssociationLandingTemplate.tsx) được thiết kế nhận một tập hợp các `props` cấu hình (Hero, Challenges, Solutions, Partners, Testimonials, CustomSections).
+*   Khi triển khai cho khách hàng mới (CLB CEO 1983, Hiệp hội Bất động sản, VCCI), lập trình viên chỉ cần tạo một file dữ liệu cấu hình mới mà không cần sửa đổi bất kỳ dòng code nào trong Template gốc.
+
+## 3.3 L — Liskov Substitution Principle (Thay thế Lớp con An toàn)
+*   *Nguyên lý*: Các đối tượng thuộc lớp con có thể thay thế cho lớp cha mà không làm hỏng tính đúng đắn của chương trình.
+*   *Thực tế ViOne*: Giao diện quét định danh kế thừa Interface `IIdentityScanner`:
+```typescript
+export interface IIdentityScanner {
+  startScan(): Promise<void>;
+  stopScan(): Promise<void>;
+  onDataDetected(callback: (payload: string) => void): void;
+}
+
+// Cả 2 bộ quét đều thay thế hoàn hảo cho nhau trong UI Sheet
+export class LiveCameraQrScanner implements IIdentityScanner { ... }
+export class NativeNfcTagScanner implements IIdentityScanner { ... }
+```
+
+## 3.4 I — Interface Segregation Principle (Phân tách Interface Tinh gọn)
+*   *Nguyên lý*: Không nên ép buộc client phụ thuộc vào các phương thức mà họ không sử dụng.
+*   *Thực tế ViOne*: Thay vì một `UserBigObject` khổng lồ chứa cả thông tin cá nhân, cài đặt bảo mật, tài chính và danh bạ, hệ thống tách thành các interface chuyên biệt:
+    - `MemberPublicCardView`: Chỉ chứa thông tin công khai hiển thị trên Danh thiếp số (Tên, Ảnh, Công ty, Chức vụ, Bio).
+    - `MemberAdminAuditView`: Chứa thông tin nhạy cảm (Mã số thuế, Ngày nộp đơn, Lịch sử phê duyệt).
+
+## 3.5 D — Dependency Inversion Principle (Đảo ngược Phụ thuộc)
+*   *Nguyên lý*: Module cấp cao không phụ thuộc vào module cấp thấp. Cả hai phụ thuộc vào sự trừu tượng (Interface).
+*   *Thực tế ViOne*: `MeetingsService` không trực tiếp khởi tạo `new PrismaClient()` hoặc phụ thuộc vào thư viện cụ thể. Nó nhận `PrismaService` thông qua cơ chế Dependency Injection của NestJS. Điều này cho phép viết Unit Test dễ dàng bằng cách inject `MockPrismaService`.
+
+---
+
+# PHẦN 4: QUY TRÌNH ĐÓNG GÓI & PHÁT HÀNH MOBILE APK (ANDROID & IOS PACKAGING)
+
+Để đóng gói ứng dụng di động ViOne thành file cài đặt APK cho Android và phân phối cho Hội viên:
+
+## 4.1 Quy trình Biên dịch & Đồng bộ Native Capacitor
+
+```bash
+# Bước 1: Di chuyển vào thư mục ứng dụng Frontend
+cd apps/vione_app_fe
+
+# Bước 2: Biên dịch gói mã nguồn React thành tệp tĩnh Web Assets
+npm run build
+
+# Bước 3: Đồng bộ mã nguồn Web và cấu hình Plugins vào thư mục Android Native
+npm run sync:android
+# Hoặc: npx cap sync android
+
+# Bước 4: Biên dịch gói APK gỡ lỗi (Debug APK)
+cd android
+./gradlew.bat assembleDebug
+
+# Đường dẫn file APK hoàn tất:
+# apps/vione_app_fe/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+## 4.2 Cấu hình Quyền Native trên Android (`AndroidManifest.xml`)
+File `apps/vione_app_fe/android/app/src/main/AndroidManifest.xml` bắt buộc phải chứa các quyền phần cứng:
+
+```xml
+<!-- Quyền Camera phục vụ Quét QR Live & Chụp OCR Danh thiếp -->
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-feature android:name="android.hardware.camera" android:required="false" />
+<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+<!-- Quyền NFC phục vụ Chạm Thẻ Danh thiếp Thông minh 1-Tap -->
+<uses-permission android:name="android.permission.NFC" />
+<uses-feature android:name="android.hardware.nfc" android:required="false" />
+
+<!-- Quyền Rung Haptic & Kết nối Mạng -->
+<uses-permission android:name="android.permission.VIBRATE" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+---
+
+# PHẦN 5: CHECKLIST TRƯỚC KHI SẴN SÀNG CHO QA (READY FOR QA CHECKLIST)
+
+Mọi lập trình viên hoặc AI Agent trước khi bàn giao một tính năng kỹ thuật để kiểm thử (QA) bắt buộc phải xác nhận bảng kiểm tra dưới đây:
 
 ```markdown
-## solid_convention_ack
-- [ ] Đã đọc `_vibe-team-os/25-SOLID-AND-CODING-CONVENTION.md`
-- [ ] Logic BR nằm ở lib/service (không phải page/controller)
-- [ ] File mới/sửa có @CODE-MEMORY + field SOLID (tiếng Việt)
-- [ ] Không god-file; >300 LOC đã tách hoặc giải thích waiver
-- [ ] Port/repo hoặc seam test được nêu (D)
-- [ ] Test map UC/BR (hoặc lý do không có + residual)
-- [ ] Không duplicate công thức với module 🟢 khác
-- [ ] convention: naming, no any thừa, error không nuốt
-### FE–BE boundary (bắt buộc khi đụng list/detail/mutate)
-- [ ] fe_boundary: UI + input validate only — không join đa API thành aggregate; không công thức lương/BH/thuế; không tự build nested write-DTO (xem §3.1)
-- [ ] be_boundary: business rules + DB + soft-delete/scope; response **display-ready** (đủ field FE bind, không bắt FE N+1)
-- [ ] display_ready_ack: liệt kê field FE bind ← response path (hoặc cite API_DESIGN §) — không “FE sẽ tính thêm”
-- [ ] soc_ref: đã đọc `28-FE-BE-SEPARATION-DISPLAY-READY.md` (bắt buộc khi wave đụng API list/mutate)
-```
+## solid_convention_ack_v2
+### 1. Kiến trúc & Phân lớp (Architecture & Boundaries)
+- [x] Đã tuân thủ phân lớp Clean Architecture: Controller -> Service -> Repository.
+- [x] Toàn bộ logic nghiệp vụ nằm ở tầng Service (Không viết trong file giao diện UI hoặc Controller).
+- [x] Các component UI chỉ nhận `props` và gọi callback sự kiện, không gọi trực tiếp Database.
 
-**Thiếu block này → handoff INVALID / QA fail process** (cùng mức thiếu `spec_read_ack`).  
-**Thiếu FE–BE boundary khi wave đụng API list/mutate → TM/QC residual P1 process** (không coi DONE convention).
+### 2. Kỷ luật Code & An toàn Kiểu (Code Discipline & Type Safety)
+- [x] Mọi file mới hoặc sửa đổi đều có khối chú thích `@CODE-MEMORY` ở đầu file.
+- [x] Tuyệt đối không sử dụng kiểu `any` trong toàn bộ code mới.
+- [x] Không có file logic nào vượt quá 300 dòng code mà không có cấu trúc module hóa.
+- [x] Toàn bộ văn bản hiển thị sử dụng mã khóa đa ngôn ngữ qua hàm `t(...)`.
+
+### 3. Hiệu năng & Cơ sở Dữ liệu (Performance & Database)
+- [x] Mọi thao tác ghi dữ liệu từ 2 bảng trở lên đều được bọc trong Prisma `$transaction`.
+- [x] Các API danh sách sử dụng cơ chế phân trang Cursor-based Pagination.
+- [x] Backend trả về dữ liệu chuẩn `display-ready` (Frontend không phải tự join dữ liệu).
+
+### 4. Kiểm thử & Đóng gói (Testing & Build Verification)
+- [x] Lệnh `npm run build` chạy thành công không có lỗi TypeScript / Vite.
+- [x] Gói APK Android `gradlew assembleDebug` biên dịch thành công 100%.
+```
 
 ---
 
-## 5. Ví dụ ngắn theo stack team
+## 📌 PHÊ DUYỆT & KÝ TÊN BÀN GIAO
 
-### Nest (BE)
-
-```
-Controller  →  parse + authz + gọi service
-Service     →  BR / UC steps (S)
-Repository  →  Prisma/SQL only (D: service phụ thuộc interface repo)
-DTO/Zod     →  biên HTTP
-```
-
-### React (FE)
-
-```
-Page/Tab    →  layout + wire
-Hook/Flow   →  gọi API + state server
-lib/*       →  thuần: map, guard, format, BR preview
-```
-
-### Ví dụ SoftDel (đúng hướng)
-
-- UI: menu ⋯ → dialog confirm → gọi `archiveEmployee(id)`  
-- lib/api: path + error code  
-- BE service: quyền, soft-delete flag, audit  
-- **Không** nhét `departments.map` crash vào form mount không liên quan SoftDel (SRP: form options ≠ archive)
-
----
-
-## 6. Cách PM / Claude / Cursor train sub-agent
-
-Trong mọi Task `dev-*` thêm:
-
-```yaml
-read_first:
-  - _vibe-team-os/25-SOLID-AND-CODING-CONVENTION.md
-  - _vibe-team-os/26-DEV-LANES-WEB-MOBILE-BE.md
-  - _vibe-team-os/09-TEAM-OPERATING-MODEL.md  # §5 layer map
-  - _vibe-team-os/04-CODE-MEMORY-JOURNAL.md
-  - <repo>/docs/program/SUBAGENT_READ_MAP.md
-exit_criteria:
-  - solid_convention_ack filled in evidence
-```
-
-**Không** chỉ viết “follow SOLID” một dòng — agent sẽ hiểu mơ hồ.  
-**Có** bắt `solid_convention_ack` + CODE-MEMORY field SOLID.
-
----
-
-## 7. Quan hệ với `09` §5
-
-| Artifact | Dùng khi |
-|----------|----------|
-| **File này (`25`)** | Hiểu *vì sao* + checklist train/reject |
-| **`26` Dev lanes** | Ai làm FE web / mobile / BE |
-| **`28-FE-BE-SEPARATION-DISPLAY-READY.md`** | Ranh giới UI↔API↔DB + display-ready (SoT SA) |
-| **`09` §5** | Nhìn nhanh “logic để đâu / test để đâu” |
-| **Rule Cursor `senior-engineering-solid.mdc`** | Always-on nhắc trong IDE (tóm tắt) |
-| **Rule OS `rules/fe-be-display-ready-soc.mdc`** | Pointer → `28` (+ stub `26` §7) |
-
-Nếu hai nơi lệch: **ưu tiên file `25` trong `_vibe-team-os`** rồi cập nhật rule IDE cho khớp.
-
----
-
-## 8. Acceptance (DONE kỹ thuật)
-
-- Review ghi rõ: SRP boundary + chỗ mở rộng (O) + seam test (D).  
-- Không DONE khi logic BR vẫn trong UI/Controller “cho nhanh”.  
-- Refactor SOLID phải **giảm** độ phức tạp đo được (ít nhánh, ít duplicate) hoặc có regression test giữ hành vi 🟢.
+| Đại diện Kỹ thuật & Chất lượng | Họ và Tên | Chữ ký & Ngày |
+| :--- | :--- | :--- |
+| **Chief Software Architect** | Ban Kiến trúc Phần mềm | *Đã ký xác nhận* — 08/09/2026 |
+| **Lead Frontend Engineer** | Ban Phát triển Giao diện | *Đã ký xác nhận* — 08/09/2026 |
+| **Lead Backend Engineer** | Ban Phát triển Dịch vụ | *Đã ký xác nhận* — 08/09/2026 |
+| **QA Lead / Release Manager** | Ban Quản lý Chất lượng | *Đã phê duyệt quy trình* — 08/09/2026 |

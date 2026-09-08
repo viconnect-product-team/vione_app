@@ -170,6 +170,7 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href:
           "https://fonts.googleapis.com/css2?" +
+          "family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&" +
           "family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&" +
           "family=Inter:wght@400;500;600;700;800&" +
           "family=Playfair+Display:wght@500;600;700&" +
@@ -179,7 +180,7 @@ export const Route = createRootRoute({
           "family=Space+Grotesk:wght@400;500;600;700&" +
           "family=Manrope:wght@400;500;600;700&" +
           "family=JetBrains+Mono:wght@400;500;700&" +
-          "display=swap",
+          "display=swap&subset=vietnamese,latin-ext",
       },
     ],
   }),
@@ -192,6 +193,7 @@ export const Route = createRootRoute({
 function RootShell({ children }: { children: React.ReactNode }) {
   const redirectScript = `(${String(function () {
     // Immediately redirect root to /connect-app when no auth callback is present and on mobile.
+    // Also synchronously apply theme (defaulting to dark).
     try {
       var p = location.pathname;
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
@@ -201,13 +203,20 @@ function RootShell({ children }: { children: React.ReactNode }) {
       if (!hasCallback && p === "/" && isMobile) {
         location.replace("/connect-app");
       }
+      var savedTheme = localStorage.getItem("vba.theme");
+      var theme = (savedTheme === "light" || savedTheme === "dark" || savedTheme === "contrast") ? savedTheme : "dark";
+      var doc = document.documentElement;
+      doc.classList.toggle("dark", theme === "dark" || theme === "contrast");
+      doc.classList.toggle("hc", theme === "contrast");
+      doc.dataset.theme = theme;
+      doc.style.colorScheme = theme === "light" ? "light" : "dark";
     } catch (e) {
       /* ignore */
     }
   })})();`;
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
@@ -220,6 +229,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useConnectAppRealtimeNotifications } from "@/hooks/use-connect-app-realtime-notifications";
+
+function GlobalRealtimeNotifications() {
+  useConnectAppRealtimeNotifications();
+  return null;
+}
+
 function RootComponent() {
   const [lang, setLangState] = useState<Lang>("vi");
   const [queryClient] = useState(makeQueryClient);
@@ -228,8 +244,6 @@ function RootComponent() {
   useEffect(() => {
     registerServiceWorker();
   }, []);
-
-
 
   // Stale-deploy recovery: when a new build ships, cached HTML/JS can point at
   // chunk URLs that no longer exist. The dynamic import rejects and the page
@@ -271,9 +285,7 @@ function RootComponent() {
     };
   }, []);
 
-  // PWA: block zoom gestures. iOS honors the viewport meta only in installed
-  // (standalone) apps; Safari browser ignores it, so we also cancel pinch and
-  // double-tap zoom in JS. Input auto-zoom is prevented via >=16px font in CSS.
+  // PWA: block zoom gestures on standalone.
   useEffect(() => {
     const preventGesture = (e: Event) => e.preventDefault();
     let lastTouchEnd = 0;
@@ -283,11 +295,6 @@ function RootComponent() {
       lastTouchEnd = now;
       detachPinchGuard();
     };
-    // Pinch guard: a permanently attached non-passive touchmove listener makes
-    // iOS Safari route every scroll frame through the main thread, which is the
-    // single biggest source of scroll jank. Attach it only while a multi-touch
-    // gesture is actually in progress; single-finger scrolling stays passive
-    // and fully compositor-driven.
     const onPinchMove = (e: TouchEvent) => {
       if (e.touches.length > 1) e.preventDefault();
     };
@@ -321,10 +328,6 @@ function RootComponent() {
       detachPinchGuard();
     };
   }, []);
-
-  // Keep the app's motion system disabled when the user prefers reduced motion,
-  // and leave explicit per-screen entrance animations in CSS instead of toggling
-  // a broad global class for the whole document.
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -363,6 +366,7 @@ function RootComponent() {
           </div>
           <MockModeBanner />
           <AuthProvider>
+            <GlobalRealtimeNotifications />
             <AuthGate>
               <Outlet />
             </AuthGate>

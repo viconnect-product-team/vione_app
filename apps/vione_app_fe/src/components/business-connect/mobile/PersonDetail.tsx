@@ -24,8 +24,13 @@ import {
   ScanLine,
   UserRound,
   Youtube,
+  CircleCheck,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDmOpenThread } from "@/hooks/use-bc-dm";
 import { toast } from "sonner";
 import { useFmt, useT } from "@/lib/i18n";
@@ -33,6 +38,7 @@ import {
   useBusinessConnectPerson,
   type BcMobilePersonDetail,
 } from "@/hooks/use-business-connect-person";
+import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 import {
   buildPersonVCard,
   personVcfFilename,
@@ -268,6 +274,22 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
           ? t("bc.mobile.network.context.saved", { rel: fmt.rel(rel.savedAt) })
           : null;
 
+  const qc = useQueryClient();
+  const [actionBusy, setActionBusy] = useState(false);
+
+  const incomingConnectionId =
+    rel.kind === "connected" &&
+    rel.status === "pending" &&
+    rel.direction === "incoming" &&
+    rel.connectionId
+      ? rel.connectionId
+      : null;
+
+  const outgoingPending =
+    rel.kind === "connected" &&
+    rel.status === "pending" &&
+    rel.direction === "outgoing";
+
   const contact = person.contact;
   // The .vcf export only needs a display name; every other action needs a
   // real, visibility-cleared channel.
@@ -317,6 +339,72 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
           </div>
         </div>
       </section>
+
+      {/* Pending Connection Request Bar */}
+      {incomingConnectionId ? (
+        <section className="mt-5 rounded-2xl border border-[#D8B282]/80 bg-gradient-to-br from-[#1C2333] via-[#141A26] to-[#0D111A] p-4.5 text-white shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(216,178,130,0.15)]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#E8C986]">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#E8C986] animate-pulse" />
+            <span>Lời mời kết nối đang chờ bạn phản hồi</span>
+          </div>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[#D1D5DB]">
+            <strong className="text-white">{name}</strong> đã gửi lời mời kết nối danh thiếp thông minh với bạn. Bạn có muốn đồng ý kết bạn?
+          </p>
+          <div className="mt-3.5 flex items-center gap-2.5">
+            <button
+              type="button"
+              disabled={actionBusy}
+              onClick={async () => {
+                setActionBusy(true);
+                try {
+                  await GlobalNetworkSDK.mutations.accept(incomingConnectionId);
+                  void qc.invalidateQueries({ queryKey: ["bc-person", personId] });
+                  void qc.invalidateQueries({ queryKey: ["network-incoming-requests"] });
+                  void qc.invalidateQueries({ queryKey: ["network-requests"] });
+                  void qc.invalidateQueries({ queryKey: ["user-connections"] });
+                  toast.success(`Đã kết nối thành công với ${name}!`);
+                } catch {
+                  toast.error("Không thể hoàn tất kết nối. Vui lòng thử lại.");
+                } finally {
+                  setActionBusy(false);
+                }
+              }}
+              className="flex-1 py-3 px-4 rounded-full font-bold text-[13.5px] bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 shadow-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {actionBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" strokeWidth={2.5} />}
+              <span>Đồng ý kết bạn</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={actionBusy}
+              onClick={async () => {
+                setActionBusy(true);
+                try {
+                  await GlobalNetworkSDK.mutations.decline(incomingConnectionId);
+                  void qc.invalidateQueries({ queryKey: ["bc-person", personId] });
+                  void qc.invalidateQueries({ queryKey: ["network-incoming-requests"] });
+                  void qc.invalidateQueries({ queryKey: ["network-requests"] });
+                  toast.info("Đã từ chối lời mời kết nối.");
+                } catch {
+                  toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+                } finally {
+                  setActionBusy(false);
+                }
+              }}
+              className="py-3 px-4 rounded-full font-semibold text-[13px] border border-white/20 bg-white/5 hover:bg-white/10 text-[#9CA3AF] active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Từ chối
+            </button>
+          </div>
+        </section>
+      ) : outgoingPending ? (
+        <section className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-center">
+          <p className="text-xs font-semibold text-[#E8C986]">
+            ⏳ Lời mời kết nối đã được gửi đi và đang chờ đối phương chấp nhận.
+          </p>
+        </section>
+      ) : null}
 
       {/* Contact actions — real, visibility-cleared channels, plus the .vcf
           export (built from the same already-cleared DTO). */}

@@ -48,9 +48,10 @@ export class MeController {
   }
 
   @Get('notifications')
-  async listNotifications(@Request() req, @Query('limit') limit?: string) {
+  async listNotifications(@Request() req, @Query('limit') limit?: string, @Query('unreadOnly') unreadOnly?: string) {
     const lim = limit ? parseInt(limit, 10) : 30;
-    return this.connectAppService.listNotifications(req.user.id, lim);
+    const isUnreadOnly = unreadOnly === 'true' || unreadOnly === '1';
+    return this.connectAppService.listNotifications(req.user.id, lim, isUnreadOnly);
   }
 
   @Get('notifications/member')
@@ -85,6 +86,11 @@ export class MeController {
 
   @Patch('notifications/read')
   async markNotificationsRead(@Request() req, @Body('ids') ids?: string[]) {
+    return this.connectAppService.markNotificationsRead(req.user.id, ids);
+  }
+
+  @Post('notifications/read')
+  async markNotificationsReadPost(@Request() req, @Body('ids') ids?: string[]) {
     return this.connectAppService.markNotificationsRead(req.user.id, ids);
   }
 

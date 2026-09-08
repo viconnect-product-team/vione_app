@@ -1894,11 +1894,19 @@ export class ConnectAppService implements OnModuleInit {
 
 
   async getUnreadNotificationCount(userId: string) {
-    const countRes = await this.prisma.$queryRaw<any[]>`
-      SELECT COUNT(id)::int as count FROM public.business_notifications
-      WHERE recipient_user_id = ${userId}::uuid AND status = 'delivered'
-    `.catch(() => [{ count: 0 }]);
-    return { count: countRes[0]?.count || 0 };
+    const [notifCountRes, pendingConnRes] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT COUNT(id)::int as count FROM public.business_notifications
+        WHERE recipient_user_id = ${userId}::uuid AND status != 'read' AND read_at IS NULL
+      `.catch(() => [{ count: 0 }]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT COUNT(id)::int as count FROM public.user_connections
+        WHERE recipient_user_id = ${userId}::uuid AND status = 'pending'::public.global_connection_status
+      `.catch(() => [{ count: 0 }]),
+    ]);
+    const bCount = notifCountRes[0]?.count || 0;
+    const cCount = pendingConnRes[0]?.count || 0;
+    return { count: Math.max(bCount, cCount) };
   }
 
   async sendConnectionRequest(userId: string, body: any) {
@@ -1919,11 +1927,14 @@ export class ConnectAppService implements OnModuleInit {
       LIMIT 1
     `.catch(() => []);
 
+    let reqId = crypto.randomUUID();
+
     if (existing.length > 0) {
       const conn = existing[0];
       if (conn.status === 'accepted') {
         return { ok: true, connectionId: conn.id, status: 'accepted' };
       }
+      reqId = conn.id;
       // Re-connect: update row to 'pending'
       await this.prisma.$executeRaw`
         UPDATE public.user_connections
@@ -1936,42 +1947,249 @@ export class ConnectAppService implements OnModuleInit {
             updated_at = ${now}
         WHERE id = ${conn.id}::uuid
       `;
-      return { ok: true, connectionId: conn.id, status: 'pending' };
+    } else {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
+        VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
+      `;
     }
 
-    const reqId = crypto.randomUUID();
-    await this.prisma.$executeRaw`
-      INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
-      VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
-    `;
+    // Persist notification for recipient and emit WebSocket events
+    try {
+      const requesterProfiles = await this.prisma.$queryRaw<any[]>`
+        SELECT display_name, avatar_url, job_title, company_name
+        FROM public.business_identities
+        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+        LIMIT 1
+      `.catch(() => [] as any[]);
+      const requester = requesterProfiles[0] || { display_name: 'Hội viên ViOne' };
+      const notifId = crypto.randomUUID();
+      const safeData = JSON.stringify({
+        counterpartDisplayName: requester.display_name || 'Hội viên ViOne',
+        avatarUrl: requester.avatar_url || null,
+        jobTitle: requester.job_title || null,
+        companyName: requester.company_name || null,
+        connectionId: reqId,
+      });
+      const actionTarget = JSON.stringify({
+        route: '/connect-app/network',
+        search: { tab: 'requests' },
+      });
+      const dedupeKey = `connection_request:${reqId}:${Date.now()}`;
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+          priority, status, created_at, updated_at, dedupe_key
+        ) VALUES (
+          ${notifId}::uuid, ${targetUserId}::uuid, 'connection', ${reqId}, 'connection_request_received', 'connection_request_received',
+          'bc.notif.kind.connection_request_received.title', 'bc.notif.kind.connection_request_received.body',
+          ${safeData}::jsonb, 'open_route', 'bc.notif.action.viewConnectionRequests', ${actionTarget}::jsonb,
+          'high', 'delivered', ${now}, ${now}, ${dedupeKey}
+        )
+      `.catch((err) => console.warn('Could not insert connection notification:', err));
+
+      // Also persist to member_notifications for the member portal
+      try {
+        const targetMembers = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.members WHERE user_id = ${targetUserId}::uuid LIMIT 1
+        `.catch(() => []);
+        const memberRecipientId = targetMembers[0]?.id || targetUserId;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            ${crypto.randomUUID()}::uuid,
+            ${memberRecipientId}::uuid,
+            ${requester.display_name ? `${requester.display_name} muốn kết nối với bạn` : 'Lời mời kết nối mới'},
+            ${requester.job_title ? `${requester.job_title}${requester.company_name ? ' tại ' + requester.company_name : ''}` : 'Đã gửi cho bạn một yêu cầu kết nối.'},
+            false,
+            false,
+            'connection',
+            ${reqId},
+            ${now}
+          )
+        `.catch(() => {});
+      } catch {}
+
+      const notifPayload = {
+        id: notifId,
+        recipientUserId: targetUserId,
+        sourceDomain: 'connection',
+        sourceRecordId: reqId,
+        eventKind: 'connection_request_received',
+        notificationKind: 'connection_request_received',
+        titleKey: 'bc.notif.kind.connection_request_received.title',
+        bodyKey: 'bc.notif.kind.connection_request_received.body',
+        safeDisplayData: JSON.parse(safeData),
+        action: {
+          kind: 'open_route',
+          labelKey: 'bc.notif.action.viewConnectionRequests',
+          targetRoute: '/connect-app/network',
+          targetSearch: { tab: 'requests' },
+        },
+        priority: 'high',
+        status: 'delivered',
+        createdAt: now.toISOString(),
+      };
+
+      this.gateway.emitConnectionRequested(targetUserId, requester, reqId);
+      this.gateway.emitNotification(targetUserId, notifPayload);
+    } catch (e) {
+      console.warn('sendConnectionRequest notification broadcast failed:', e);
+    }
+
     return { ok: true, connectionId: reqId, status: 'pending' };
   }
 
   async acceptConnection(userId: string, body: any) {
     const now = new Date();
+    const connRows = await this.prisma.$queryRaw<any[]>`
+      SELECT requester_user_id FROM public.user_connections
+      WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+    const requesterUserId = connRows[0]?.requester_user_id;
+
     await this.prisma.$executeRaw`
       UPDATE public.user_connections
       SET status = 'accepted'::public.global_connection_status, responded_at = ${now}, updated_at = ${now}
       WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
     `;
+
+    if (requesterUserId) {
+      try {
+        const accepterProfiles = await this.prisma.$queryRaw<any[]>`
+          SELECT display_name, avatar_url, job_title, company_name
+          FROM public.business_identities
+          WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+          LIMIT 1
+        `.catch(() => [] as any[]);
+        const accepter = accepterProfiles[0] || { display_name: 'Hội viên ViOne' };
+        const notifId = crypto.randomUUID();
+        const safeData = JSON.stringify({
+          counterpartDisplayName: accepter.display_name || 'Hội viên ViOne',
+          avatarUrl: accepter.avatar_url || null,
+          connectionId: body.connectionId,
+        });
+        const actionTarget = JSON.stringify({
+          route: '/connect-app/network',
+          search: { tab: 'connections' },
+        });
+        const dedupeKey = `connection_accepted:${body.connectionId}`;
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+            priority, status, created_at, updated_at, dedupe_key
+          ) VALUES (
+            ${notifId}::uuid, ${requesterUserId}::uuid, 'connection', ${body.connectionId}, 'connection_request_accepted', 'connection_request_accepted',
+            'bc.notif.kind.connection_request_accepted.title', 'bc.notif.kind.connection_request_accepted.body',
+            ${safeData}::jsonb, 'open_route', 'bc.notif.action.view', ${actionTarget}::jsonb,
+            'normal', 'delivered', ${now}, ${now}, ${dedupeKey}
+          )
+        `.catch(() => {});
+
+        const notifPayload = {
+          id: notifId,
+          recipientUserId: requesterUserId,
+          sourceDomain: 'connection',
+          sourceRecordId: body.connectionId,
+          eventKind: 'connection_request_accepted',
+          notificationKind: 'connection_request_accepted',
+          titleKey: 'bc.notif.kind.connection_request_accepted.title',
+          bodyKey: 'bc.notif.kind.connection_request_accepted.body',
+          safeDisplayData: JSON.parse(safeData),
+          action: {
+            kind: 'open_route',
+            labelKey: 'bc.notif.action.view',
+            targetRoute: '/connect-app/network',
+            targetSearch: { tab: 'connections' },
+          },
+          priority: 'normal',
+          status: 'delivered',
+          createdAt: now.toISOString(),
+        };
+
+        this.gateway.emitConnectionAccepted(requesterUserId, accepter, body.connectionId);
+        this.gateway.emitNotification(requesterUserId, notifPayload);
+      } catch (e) {
+        console.warn('acceptConnection notification failed:', e);
+      }
+    }
     return { ok: true };
   }
 
   async declineConnection(userId: string, body: any) {
     const now = new Date();
+    const connRows = await this.prisma.$queryRaw<any[]>`
+      SELECT requester_user_id FROM public.user_connections
+      WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+    const requesterUserId = connRows[0]?.requester_user_id;
+
     await this.prisma.$executeRaw`
       UPDATE public.user_connections
       SET status = 'declined'::public.global_connection_status, responded_at = ${now}, updated_at = ${now}
       WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
     `;
+
+    // Mark notification as cancelled/declined
+    await this.prisma.$executeRaw`
+      UPDATE public.business_notifications
+      SET status = 'cancelled', updated_at = ${now}
+      WHERE source_record_id = ${body.connectionId} AND recipient_user_id = ${userId}::uuid
+    `.catch(() => {});
+
+    if (requesterUserId) {
+      try {
+        this.gateway.server?.to(`user:${requesterUserId}`).emit('connection:declined', {
+          connectionId: body.connectionId,
+          timestamp: now.toISOString(),
+        });
+      } catch (e) {
+        console.warn('declineConnection broadcast failed:', e);
+      }
+    }
+
     return { ok: true };
   }
 
   async cancelConnection(userId: string, body: any) {
+    const connRows = await this.prisma.$queryRaw<any[]>`
+      SELECT recipient_user_id FROM public.user_connections
+      WHERE id = ${body.connectionId}::uuid AND requester_user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+    const recipientUserId = connRows[0]?.recipient_user_id;
+
     await this.prisma.$executeRaw`
       DELETE FROM public.user_connections
       WHERE id = ${body.connectionId}::uuid AND requester_user_id = ${userId}::uuid
     `;
+
+    // Mark notification as cancelled in public.business_notifications
+    const now = new Date();
+    await this.prisma.$executeRaw`
+      UPDATE public.business_notifications
+      SET status = 'cancelled', updated_at = ${now}
+      WHERE source_record_id = ${body.connectionId}
+    `.catch(() => {});
+
+    if (recipientUserId) {
+      try {
+        this.gateway.server?.to(`user:${recipientUserId}`).emit('connection:cancelled', {
+          connectionId: body.connectionId,
+          timestamp: now.toISOString(),
+        });
+      } catch (e) {
+        console.warn('cancelConnection broadcast failed:', e);
+      }
+    }
+
     return { ok: true };
   }
 
@@ -2100,81 +2318,331 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   /**
-   * NFC Tap-to-Exchange: một lần gọi duy nhất.
-   * - Resolve token → lấy profile công khai của người được chạm
-   * - Tự động tạo/tìm kết nối với source_type = 'nfc'
-   * - Trả về profile + trạng thái kết nối
+   * NFC / QR Code Tap-to-Exchange — Unified Resolution & Connection Engine
+   * - Hỗ trợ các action:
+   *   + 'resolve': Tra cứu thông tin đối phương (preview Zalo-style), kèm trạng thái quan hệ
+   *   + 'connect' (hoặc mặc định): Gửi yêu cầu kết nối, lưu thông báo & phát WebSocket realtime
+   * - Phân giải đa nguồn token:
+   *   + identity_share_links (public_token)
+   *   + business_cards (slug hoặc id)
+   *   + members (code hoặc id)
+   *   + business_identities (id hoặc owner_user_id)
+   *   + profiles (id hoặc email)
    */
-  async nfcTap(userId: string, token: string) {
-    // 1. Resolve token → share link
-    const links = await this.prisma.$queryRaw<any[]>`
-      SELECT id, identity_id FROM public.identity_share_links
-      WHERE public_token = ${token} AND status = 'active'
-      LIMIT 1
-    `.catch(() => []);
+  async nfcTap(userId: string, payload: string | { token: string; action?: 'resolve' | 'connect'; message?: string }) {
+    const tokenRaw = typeof payload === 'string' ? payload : (payload?.token || (payload as any)?.value || '');
+    const action = (typeof payload === 'object' && payload?.action) ? payload.action : 'connect';
+    const message = (typeof payload === 'object' && payload?.message) ? payload.message : undefined;
 
-    if (links.length === 0) {
+    if (!tokenRaw || typeof tokenRaw !== 'string' || tokenRaw.trim().length === 0) {
+      return { ok: false, reason: 'invalid_token', profile: null, connectionId: null, state: 'unavailable' };
+    }
+
+    const cleanToken = tokenRaw.trim();
+
+    // 1. Phân giải targetUserId và metadata từ token
+    let targetUserId: string | null = null;
+    let shareLinkId: string | null = null;
+    let foundIdentity: any = null;
+    let foundCard: any = null;
+    let foundMember: any = null;
+    let foundProfile: any = null;
+
+    // 1a. Kiểm tra identity_share_links
+    try {
+      const links = await this.prisma.$queryRaw<any[]>`
+        SELECT id, identity_id FROM public.identity_share_links
+        WHERE public_token = ${cleanToken} AND status = 'active'
+        LIMIT 1
+      `;
+      if (links.length > 0) {
+        shareLinkId = links[0].id;
+        const identities = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.business_identities
+          WHERE id = ${links[0].identity_id}::uuid AND status = 'active'
+          LIMIT 1
+        `;
+        if (identities.length > 0) {
+          foundIdentity = identities[0];
+          targetUserId = foundIdentity.owner_user_id;
+        }
+      }
+    } catch {}
+
+    // 1b. Nếu chưa tìm thấy, kiểm tra business_cards (theo slug hoặc id)
+    if (!targetUserId) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const cards = isUuid
+          ? await this.prisma.$queryRaw<any[]>`
+              SELECT * FROM public.business_cards
+              WHERE id = ${cleanToken}::uuid OR slug = ${cleanToken}
+              LIMIT 1
+            `
+          : await this.prisma.$queryRaw<any[]>`
+              SELECT * FROM public.business_cards
+              WHERE slug = ${cleanToken}
+              LIMIT 1
+            `;
+        if (cards.length > 0) {
+          foundCard = cards[0];
+          targetUserId = foundCard.user_id;
+        }
+      } catch {}
+    }
+
+    // 1c. Nếu chưa tìm thấy, kiểm tra members (theo code hoặc id)
+    if (!targetUserId) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const members = isUuid
+          ? await this.prisma.$queryRaw<any[]>`
+              SELECT * FROM public.members
+              WHERE id = ${cleanToken}::uuid OR code = ${cleanToken}
+              LIMIT 1
+            `
+          : await this.prisma.$queryRaw<any[]>`
+              SELECT * FROM public.members
+              WHERE code = ${cleanToken}
+              LIMIT 1
+            `;
+        if (members.length > 0) {
+          foundMember = members[0];
+          targetUserId = foundMember.user_id;
+        }
+      } catch {}
+    }
+
+    // 1d. Nếu chưa tìm thấy, kiểm tra business_identities (theo id hoặc owner_user_id)
+    if (!targetUserId) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        if (isUuid) {
+          const identities = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM public.business_identities
+            WHERE id = ${cleanToken}::uuid OR owner_user_id = ${cleanToken}::uuid
+            LIMIT 1
+          `;
+          if (identities.length > 0) {
+            foundIdentity = identities[0];
+            targetUserId = foundIdentity.owner_user_id;
+          }
+        }
+      } catch {}
+    }
+
+    // 1e. Nếu chưa tìm thấy, kiểm tra profiles (theo id)
+    if (!targetUserId) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        if (isUuid) {
+          const profiles = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM public.profiles
+            WHERE id = ${cleanToken}::uuid
+            LIMIT 1
+          `;
+          if (profiles.length > 0) {
+            foundProfile = profiles[0];
+            targetUserId = foundProfile.id;
+          }
+        }
+      } catch {}
+    }
+
+    // Không tìm thấy user hợp lệ
+    if (!targetUserId) {
       return { ok: false, reason: 'not_found', profile: null, connectionId: null, state: 'unavailable' };
     }
-    const link = links[0];
 
-    // 2. Lấy full identity (kèm visibility)
-    const identities = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.business_identities
-      WHERE id = ${link.identity_id}::uuid AND status = 'active'
-      LIMIT 1
-    `.catch(() => []);
-
-    if (identities.length === 0) {
-      return { ok: false, reason: 'not_found', profile: null, connectionId: null, state: 'unavailable' };
-    }
-    const identity = identities[0];
-    const targetUserId = identity.owner_user_id;
-
+    // Tự quét mã của chính mình
     if (targetUserId === userId) {
       return { ok: false, reason: 'self', profile: null, connectionId: null, state: 'self' };
     }
 
-    // 3. Áp visibility filter
-    const visibilityRows = await this.prisma.$queryRaw<any[]>`
-      SELECT field_key, visibility FROM public.identity_field_visibility
-      WHERE identity_id = ${identity.id}::uuid
-    `.catch(() => []);
-    const vis: Record<string, string> = {};
-    for (const r of visibilityRows) vis[r.field_key] = r.visibility;
+    // 2. Fetch bổ sung đầy đủ thông tin profile đối phương (đảm bảo hiển thị đầy đủ avatar, tên, công ty, chức vụ)
+    if (!foundCard) {
+      try {
+        const c = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.business_cards
+          WHERE user_id = ${targetUserId}::uuid AND status = 'published'
+          ORDER BY is_primary DESC, updated_at DESC LIMIT 1
+        `;
+        if (c.length > 0) foundCard = c[0];
+      } catch {}
+    }
+    if (!foundIdentity) {
+      try {
+        const ids = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.business_identities
+          WHERE owner_user_id = ${targetUserId}::uuid AND status = 'active'
+          LIMIT 1
+        `;
+        if (ids.length > 0) foundIdentity = ids[0];
+      } catch {}
+    }
+    if (!foundMember) {
+      try {
+        const m = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.members
+          WHERE user_id = ${targetUserId}::uuid AND status = 'active'
+          LIMIT 1
+        `;
+        if (m.length > 0) foundMember = m[0];
+      } catch {}
+    }
+    if (!foundProfile) {
+      try {
+        const p = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.profiles
+          WHERE id = ${targetUserId}::uuid
+          LIMIT 1
+        `;
+        if (p.length > 0) foundProfile = p[0];
+      } catch {}
+    }
+
+    // Kiểm tra Field Visibility nếu có Identity
+    let vis: Record<string, string> = {};
+    if (foundIdentity) {
+      try {
+        const visibilityRows = await this.prisma.$queryRaw<any[]>`
+          SELECT field_key, visibility FROM public.identity_field_visibility
+          WHERE identity_id = ${foundIdentity.id}::uuid
+        `;
+        for (const r of visibilityRows) vis[r.field_key] = r.visibility;
+      } catch {}
+    }
     const show = (key: string) => vis[key] !== 'hidden';
 
+    const displayName = (foundIdentity?.display_name && show('displayName') ? foundIdentity.display_name : null)
+      || foundCard?.display_name
+      || foundMember?.name
+      || foundProfile?.display_name
+      || 'Hội viên ViOne';
+
+    const avatarUrl = (foundIdentity?.avatar_url && show('avatarUrl') ? foundIdentity.avatar_url : null)
+      || foundCard?.avatar_url
+      || foundMember?.avatar_url
+      || foundProfile?.avatar_url
+      || null;
+
+    const headline = (foundIdentity?.headline && show('headline') ? foundIdentity.headline : null)
+      || foundCard?.headline
+      || foundCard?.professional_title
+      || foundMember?.job_title
+      || foundProfile?.headline
+      || null;
+
+    const jobTitle = (foundIdentity?.job_title && show('jobTitle') ? foundIdentity.job_title : null)
+      || foundCard?.professional_title
+      || foundMember?.job_title
+      || null;
+
+    const companyName = (foundIdentity?.company_name && show('companyName') ? foundIdentity.company_name : null)
+      || foundCard?.company_name
+      || foundMember?.company_name
+      || foundProfile?.company_name
+      || null;
+
+    const primaryEmail = (foundIdentity?.primary_email && show('primaryEmail') ? foundIdentity.primary_email : null)
+      || foundCard?.email
+      || foundMember?.email
+      || foundProfile?.email
+      || null;
+
+    const primaryPhone = (foundIdentity?.primary_phone && show('primaryPhone') ? foundIdentity.primary_phone : null)
+      || foundCard?.phone
+      || foundMember?.phone
+      || foundProfile?.phone
+      || null;
+
+    const website = (foundIdentity?.website && show('website') ? foundIdentity.website : null)
+      || foundCard?.website
+      || null;
+
+    const linkedinUrl = (foundIdentity?.linkedin_url && show('linkedinUrl') ? foundIdentity.linkedin_url : null)
+      || foundCard?.linkedin_url
+      || null;
+
+    const city = (foundIdentity?.city && show('city') ? foundIdentity.city : null)
+      || foundCard?.address
+      || foundMember?.address
+      || null;
+
+    const bio = foundCard?.bio || foundIdentity?.bio || foundMember?.bio || null;
+
     const profile = {
-      displayName: show('displayName') ? (identity.display_name ?? null) : null,
-      headline: show('headline') ? (identity.headline ?? null) : null,
-      jobTitle: show('jobTitle') ? (identity.job_title ?? null) : null,
-      companyName: show('companyName') ? (identity.company_name ?? null) : null,
-      avatarUrl: show('avatarUrl') ? (identity.avatar_url ?? null) : null,
-      primaryEmail: show('primaryEmail') ? (identity.primary_email ?? null) : null,
-      primaryPhone: show('primaryPhone') ? (identity.primary_phone ?? null) : null,
-      website: show('website') ? (identity.website ?? null) : null,
-      linkedinUrl: show('linkedinUrl') ? (identity.linkedin_url ?? null) : null,
-      city: show('city') ? (identity.city ?? null) : null,
+      targetUserId,
+      displayName,
+      avatarUrl,
+      headline,
+      jobTitle,
+      companyName,
+      primaryEmail,
+      primaryPhone,
+      website,
+      linkedinUrl,
+      city,
+      bio,
+      primaryCardSlug: foundCard?.slug || null,
     };
 
-    // 4. Kiểm tra connection hiện tại
+    // 3. Kiểm tra trạng thái quan hệ connection hiện tại
     const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT id, requester_user_id, status FROM public.user_connections
+      SELECT id, requester_user_id, recipient_user_id, status FROM public.user_connections
       WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
          OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${userId}::uuid)
       LIMIT 1
     `.catch(() => []);
 
+    let state = 'none';
+    let connId: string | null = null;
     if (existing.length > 0) {
       const conn = existing[0];
+      connId = conn.id;
       const direction = conn.requester_user_id === userId ? 'outgoing' : 'incoming';
-      let state = 'pending';
       if (conn.status === 'accepted') {
         state = 'connected';
       } else if (conn.status === 'pending') {
         state = direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
       } else {
-        const now = new Date();
+        state = 'none';
+      }
+    }
+
+    // 4. Nếu action là 'resolve' (Zalo preview mode), chỉ trả về thông tin profile và trạng thái
+    if (action === 'resolve') {
+      return {
+        ok: true,
+        reason: 'resolved',
+        profile,
+        connectionId: connId,
+        state,
+      };
+    }
+
+    // 5. Nếu action là 'connect': Thực hiện tạo hoặc cập nhật kết nối + Gửi thông báo
+    const now = new Date();
+    let reqId = connId || crypto.randomUUID();
+
+    if (existing.length > 0) {
+      const conn = existing[0];
+      if (conn.status === 'accepted') {
+        return { ok: true, reason: 'already_connected', profile, connectionId: conn.id, state: 'connected' };
+      }
+      reqId = conn.id;
+      // Re-trigger / update pending
+      await this.prisma.$executeRaw`
+        UPDATE public.user_connections
+        SET requester_user_id = ${userId}::uuid,
+            recipient_user_id = ${targetUserId}::uuid,
+            status = 'pending'::public.global_connection_status,
+            source_type = 'nfc'::public.global_connection_source_type,
+            requested_at = ${now},
+            responded_at = NULL,
+            updated_at = ${now}
+        WHERE id = ${conn.id}::uuid
+      `.catch(async () => {
         await this.prisma.$executeRaw`
           UPDATE public.user_connections
           SET requester_user_id = ${userId}::uuid,
@@ -2186,47 +2654,141 @@ export class ConnectAppService implements OnModuleInit {
               updated_at = ${now}
           WHERE id = ${conn.id}::uuid
         `.catch(() => {});
-        state = 'outgoing_pending';
+      });
+    } else {
+      try {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
+          VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'nfc'::public.global_connection_source_type, ${now}, ${now}, ${now})
+        `;
+      } catch {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
+          VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
+        `;
       }
-      return { ok: true, reason: 'existing', profile, connectionId: conn.id, state };
     }
 
-    // 5. Tạo kết nối mới với source_type = 'nfc'
-    const reqId = crypto.randomUUID();
-    const now = new Date();
-    try {
-      await this.prisma.$executeRaw`
-        INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
-        VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'nfc'::public.global_connection_source_type, ${now}, ${now}, ${now})
-      `;
-    } catch {
-      // source_type 'nfc' có thể chưa có trong enum — fallback sang 'manual'
-      await this.prisma.$executeRaw`
-        INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, created_at, updated_at)
-        VALUES (${reqId}::uuid, ${userId}::uuid, ${targetUserId}::uuid, 'pending'::public.global_connection_status, 'manual'::public.global_connection_source_type, ${now}, ${now}, ${now})
-      `;
+    // Cập nhật last_used_at của share link nếu có
+    if (shareLinkId) {
+      this.prisma.$executeRaw`
+        UPDATE public.identity_share_links SET last_used_at = ${now} WHERE id = ${shareLinkId}::uuid
+      `.catch(() => {});
     }
 
-    // 6. Update last_used_at của link (async, không block)
-    this.prisma.$executeRaw`
-      UPDATE public.identity_share_links SET last_used_at = ${now} WHERE id = ${link.id}::uuid
-    `.catch(() => {});
+    // Lấy thông tin người gửi để đưa vào thông báo
+    const requesterSummaries = await this.resolvePublicCounterparts([userId]);
+    const requester = requesterSummaries[0] || {
+      userId,
+      displayName: 'Hội viên ViOne',
+      avatarUrl: null,
+      headline: null,
+      companyName: null,
+    };
 
-    // Broadcast NFC connection event via WebSocket to target user
+    // 6. Lưu thông báo vào Business Notifications
+    const notifId = crypto.randomUUID();
+    const safeDataObj = {
+      counterpartDisplayName: requester.displayName || 'Hội viên ViOne',
+      avatarUrl: requester.avatarUrl || null,
+      jobTitle: requester.headline || null,
+      companyName: requester.companyName || null,
+      connectionId: reqId,
+      source: 'nfc',
+      message: message || '',
+    };
+    const safeData = JSON.stringify(safeDataObj);
+    const actionTarget = JSON.stringify({
+      route: '/connect-app/network',
+      search: { tab: 'requests' },
+    });
+    const dedupeKey = `connection_request:${reqId}:${Date.now()}`;
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.business_notifications (
+        id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+        title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+        priority, status, created_at, updated_at, dedupe_key
+      ) VALUES (
+        ${notifId}::uuid, ${targetUserId}::uuid, 'connection', ${reqId}, 'connection_request_received', 'connection_request_received',
+        'bc.notif.kind.connection_request_received.title', 'bc.notif.kind.connection_request_received.body',
+        ${safeData}::jsonb, 'open_route', 'bc.notif.action.viewConnectionRequests', ${actionTarget}::jsonb,
+        'high', 'delivered', ${now}, ${now}, ${dedupeKey}
+      )
+    `.catch((err) => console.warn('Could not insert business notification for tap:', err));
+
+    // 7. Lưu thông báo vào Member Notifications (để trang Thông báo Hội viên cũng thấy)
     try {
-      const requesterProfiles = await this.prisma.$queryRaw<any[]>`
-        SELECT display_name, avatar_url, job_title, company_name
-        FROM public.business_identities
-        WHERE owner_user_id = ${userId}::uuid AND status = 'active'
-        LIMIT 1
-      `.catch(() => [] as any[]);
-      const requester = requesterProfiles[0] || { display_name: 'Hội viên ViOne' };
-      this.gateway.emitNfcTapped(targetUserId, requester, reqId);
+      const targetMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE user_id = ${targetUserId}::uuid LIMIT 1
+      `.catch(() => []);
+      const memberRecipientId = targetMembers[0]?.id || targetUserId;
+      const notifTitle = `${requester.displayName || 'Một hội viên'} muốn kết nối với bạn`;
+      const notifBody = message ? `${message}` : (requester.headline ? `${requester.headline}${requester.companyName ? ' tại ' + requester.companyName : ''}` : 'Đã gửi cho bạn một yêu cầu kết nối danh thiếp.');
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          ${crypto.randomUUID()}::uuid,
+          ${memberRecipientId}::uuid,
+          ${notifTitle},
+          ${notifBody},
+          false,
+          false,
+          'connection',
+          ${reqId},
+          ${now}
+        )
+      `.catch(() => {});
+    } catch {}
+
+    // 8. PHÁT WEBSOCKET EVENTS TỨC THÌ ĐẾN targetUserId
+    try {
+      const notifPayload = {
+        id: notifId,
+        recipientUserId: targetUserId,
+        sourceDomain: 'connection',
+        sourceRecordId: reqId,
+        eventKind: 'connection_request_received',
+        notificationKind: 'connection_request_received',
+        titleKey: 'bc.notif.kind.connection_request_received.title',
+        bodyKey: 'bc.notif.kind.connection_request_received.body',
+        safeDisplayData: safeDataObj,
+        action: {
+          kind: 'open_route',
+          labelKey: 'bc.notif.action.viewConnectionRequests',
+          targetRoute: '/connect-app/network',
+          targetSearch: { tab: 'requests' },
+        },
+        priority: 'high',
+        status: 'delivered',
+        createdAt: now.toISOString(),
+      };
+
+      const socketRequesterProfile = {
+        userId,
+        displayName: requester.displayName,
+        avatarUrl: requester.avatarUrl,
+        jobTitle: requester.headline,
+        companyName: requester.companyName,
+        message: message || undefined,
+      };
+
+      this.gateway.emitNfcTapped(targetUserId, socketRequesterProfile, reqId);
+      this.gateway.emitConnectionRequested(targetUserId, socketRequesterProfile, reqId);
+      this.gateway.emitNotification(targetUserId, notifPayload);
     } catch (e) {
-      console.warn('NFC tap WebSocket broadcast failed:', e);
+      console.warn('Tap connection WebSocket broadcast failed:', e);
     }
 
-    return { ok: true, reason: 'created', profile, connectionId: reqId, state: 'outgoing_pending' };
+    return {
+      ok: true,
+      reason: existing.length > 0 ? 'reconnected' : 'created',
+      profile,
+      connectionId: reqId,
+      state: 'outgoing_pending',
+    };
   }
 
 
@@ -2337,21 +2899,31 @@ export class ConnectAppService implements OnModuleInit {
     return { removed: true };
   }
 
-  async listNotifications(userId: string, limit: number = 30) {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-             title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
-             priority, status, created_at, updated_at, read_at
-      FROM public.business_notifications
-      WHERE recipient_user_id = ${userId}::uuid
-      ORDER BY created_at DESC
-      LIMIT ${limit}
-    `.catch((err) => {
-      console.error('Error listing notifications:', err);
-      return [];
-    });
+  async listNotifications(userId: string, limit: number = 30, unreadOnly: boolean = false) {
+    const [rows, pendingConnections] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+               title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+               priority, status, created_at, updated_at, read_at
+        FROM public.business_notifications
+        WHERE recipient_user_id = ${userId}::uuid
+          AND (${!unreadOnly} OR (status != 'read' AND read_at IS NULL))
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `.catch((err) => {
+        console.error('Error listing notifications:', err);
+        return [];
+      }),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, requester_user_id, status, requested_at, created_at
+        FROM public.user_connections
+        WHERE recipient_user_id = ${userId}::uuid AND status = 'pending'::public.global_connection_status
+        ORDER BY COALESCE(requested_at, created_at) DESC
+        LIMIT 10
+      `.catch(() => []),
+    ]);
 
-    return rows.map(r => ({
+    const mapped: any[] = rows.map(r => ({
       id: r.id,
       recipientUserId: r.recipient_user_id,
       sourceDomain: r.source_domain || 'meeting',
@@ -2362,11 +2934,11 @@ export class ConnectAppService implements OnModuleInit {
       bodyKey: r.body_key || '',
       safeDisplayData: r.safe_display_data || {},
       action: {
-        kind: r.action_kind || 'none',
+        kind: r.action_kind || 'open_route',
         labelKey: r.action_label_key || 'bc.notif.action.view',
-        targetRoute: r.action_target?.route || null,
+        targetRoute: r.action_target?.route || (r.source_domain === 'connection' ? '/connect-app/network' : null),
         targetParams: r.action_target?.params || null,
-        targetSearch: r.action_target?.search || null,
+        targetSearch: r.action_target?.search || (r.source_domain === 'connection' ? { tab: 'requests' } : null),
         requiresConfirmation: false,
         canonicalCapability: null,
       },
@@ -2382,6 +2954,70 @@ export class ConnectAppService implements OnModuleInit {
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
     }));
+
+    // Đảm bảo mọi pending connection request đều có mặt trong danh sách thông báo
+    const existingConnIds = new Set(
+      mapped
+        .filter(m => m.notificationKind === 'connection_request_received' || m.sourceDomain === 'connection')
+        .map(m => m.sourceRecordId)
+    );
+
+    const missingConns = pendingConnections.filter(c => !existingConnIds.has(c.id));
+    if (missingConns.length > 0) {
+      const requesterIds = missingConns.map(c => c.requester_user_id);
+      const counterparts = await this.resolvePublicCounterparts(requesterIds);
+      const cpMap = new Map(counterparts.map(cp => [cp.userId, cp]));
+
+      for (const conn of missingConns) {
+        const cp = cpMap.get(conn.requester_user_id) || {
+          displayName: 'Hội viên ViOne',
+          avatarUrl: null,
+          headline: null,
+          companyName: null,
+        };
+        const dt = conn.requested_at || conn.created_at || new Date();
+        mapped.unshift({
+          id: `conn-req-${conn.id}`,
+          recipientUserId: userId,
+          sourceDomain: 'connection',
+          sourceRecordId: conn.id,
+          eventKind: 'connection_request_received',
+          notificationKind: 'connection_request_received',
+          titleKey: 'bc.notif.kind.connection_request_received.title',
+          bodyKey: 'bc.notif.kind.connection_request_received.body',
+          safeDisplayData: {
+            counterpartDisplayName: cp.displayName || 'Hội viên ViOne',
+            avatarUrl: cp.avatarUrl || null,
+            jobTitle: cp.headline || null,
+            companyName: cp.companyName || null,
+            connectionId: conn.id,
+            source: 'nfc',
+          },
+          action: {
+            kind: 'open_route',
+            labelKey: 'bc.notif.action.viewConnectionRequests',
+            targetRoute: '/connect-app/network',
+            targetParams: null,
+            targetSearch: { tab: 'requests' },
+            requiresConfirmation: false,
+            canonicalCapability: null,
+          },
+          priority: 'high',
+          status: 'delivered',
+          scheduledFor: null,
+          deliveredAt: new Date(dt).toISOString(),
+          readAt: null,
+          archivedAt: null,
+          expiredAt: null,
+          dedupeKey: `conn-req-${conn.id}`,
+          schemaVersion: 1,
+          createdAt: new Date(dt).toISOString(),
+          updatedAt: new Date(dt).toISOString(),
+        });
+      }
+    }
+
+    return mapped.slice(0, limit);
   }
 
   async markNotificationsRead(userId: string, ids?: string[]) {
@@ -2420,7 +3056,7 @@ export class ConnectAppService implements OnModuleInit {
         ? this.prisma.$queryRaw<any[]>`
             SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
             FROM public.member_notifications
-            WHERE recipient_id = ANY(${memberIds}::uuid[])
+            WHERE recipient_id = ANY(${memberIds}::uuid[]) OR recipient_id = ${userId}::uuid
             ORDER BY created_at DESC
             LIMIT 50
           `.catch(() => [])
@@ -7357,6 +7993,150 @@ export class ConnectAppService implements OnModuleInit {
     } catch {
       return null;
     }
+  }
+
+  async submitClubRegistration(body: any) {
+    const fullName = String(body.fullName || body.name || '').trim();
+    const phone = String(body.phone || '').trim();
+    const email =
+      String(body.email || '').trim() ||
+      `${phone.replace(/\D/g, '') || 'applicant'}@applicant.vione.app`;
+    const company = String(body.company || body.companyName || fullName).trim();
+    const title = String(body.title || body.jobTitle || 'Lãnh đạo Doanh nghiệp').trim();
+    const revenue = String(body.revenue || '').trim();
+    const industry = String(body.industry || '').trim();
+    const clubSlug = String(body.clubSlug || 'ceo-1983').trim();
+
+    if (!fullName || !phone) {
+      throw new BadRequestException('Họ tên và số điện thoại là bắt buộc');
+    }
+
+    // 1. Resolve target association_id
+    let assocId: string | null = null;
+    try {
+      const assocs = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.associations 
+        WHERE LOWER(slug) IN (${clubSlug.toLowerCase()}, ${clubSlug.replace(/-/g, '').toLowerCase()}, 'ceo-1983', 'ceo1983', 'clb-ceo-1983')
+        LIMIT 1
+      `.catch(() => []);
+
+      if (assocs.length > 0 && assocs[0]?.id) {
+        assocId = assocs[0].id;
+      } else {
+        const firstAssoc = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.associations ORDER BY landing_published DESC, created_at DESC LIMIT 1
+        `.catch(() => []);
+        if (firstAssoc.length > 0 && firstAssoc[0]?.id) assocId = firstAssoc[0].id;
+      }
+    } catch {
+      assocId = null;
+    }
+
+    const notesContent = `Đăng ký CLB: ${clubSlug}. Doanh thu: ${revenue || 'N/A'}. Ngành nghề: ${industry || 'N/A'}. Chức vụ: ${title || 'N/A'}`;
+
+    // 2. Insert into demo_requests
+    let demoReqId: string | null = null;
+    try {
+      const demoRows = await this.prisma.$queryRaw<any[]>`
+        INSERT INTO public.demo_requests (
+          id, name, email, organization, phone, job_title, notes,
+          preferred_date, preferred_slot, timezone, locale, cta_source, cta_intent, status, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          ${fullName},
+          ${email},
+          ${company},
+          ${phone},
+          ${title},
+          ${notesContent},
+          ${new Date().toISOString().slice(0, 10)},
+          '09:00',
+          'Asia/Ho_Chi_Minh',
+          'vi',
+          ${clubSlug},
+          'join_club',
+          'new',
+          now(),
+          now()
+        ) RETURNING id
+      `.catch((e) => {
+        console.warn('Could not insert demo_request:', e);
+        return [];
+      });
+      if (demoRows.length > 0) demoReqId = demoRows[0].id;
+    } catch (e) {
+      console.warn('Demo request insert error:', e);
+    }
+
+    // 3. Insert into public.members with status='pending' and association_id
+    const now = new Date();
+    const memberId = `MB${now.getTime().toString(36).toUpperCase()}`;
+    const joinedAt = now.toISOString().slice(0, 10);
+    const feeYear = now.getFullYear();
+
+    try {
+      if (assocId) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, association_id, created_at, updated_at
+          ) VALUES (
+            ${memberId},
+            '',
+            ${company},
+            ${fullName},
+            ${email},
+            ${phone},
+            'company',
+            'memberLevel.medium',
+            'ind.it',
+            'region.north',
+            'pending',
+            ${joinedAt}::date,
+            ${feeYear},
+            false,
+            ${notesContent},
+            ${assocId}::uuid,
+            now(),
+            now()
+          )
+        `;
+      } else {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, created_at, updated_at
+          ) VALUES (
+            ${memberId},
+            '',
+            ${company},
+            ${fullName},
+            ${email},
+            ${phone},
+            'company',
+            'memberLevel.medium',
+            'ind.it',
+            'region.north',
+            'pending',
+            ${joinedAt}::date,
+            ${feeYear},
+            false,
+            ${notesContent},
+            now(),
+            now()
+          )
+        `;
+      }
+    } catch (err) {
+      console.error('Member insert error in submitClubRegistration:', err);
+    }
+
+    return {
+      success: true,
+      ok: true,
+      memberId,
+      reference: `APP-${memberId}`,
+      leadId: demoReqId || memberId,
+      message: 'Hồ sơ đăng ký gia nhập của bạn đã được tiếp nhận thành công!',
+    };
   }
 }
 

@@ -205,13 +205,31 @@ function ProfileScreen() {
 
       {/* LANGUAGE SELECTOR */}
       <div className="mx-4 mt-6">
-        <div className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-[var(--vba-text-muted)]">
-          Ngôn ngữ ứng dụng
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--vba-text-muted)]">
+            Ngôn ngữ ứng dụng (8 Ngôn ngữ)
+          </span>
+          <span className="text-[11px] font-medium text-[var(--vba-gold)]">
+            {lang === "vi" ? "Tiếng Việt" :
+             lang === "en" ? "English" :
+             lang === "km" ? "ភាសាខ្មែរ" :
+             lang === "my" ? "မြန်မာဘာသာ" :
+             lang === "lo" ? "ພາສາລາວ" :
+             lang === "ja" ? "日本語" :
+             lang === "ko" ? "한국어" :
+             "中文"}
+          </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[
             { code: "vi" as const, name: "Tiếng Việt", flag: "🇻🇳" },
-            { code: "en" as const, name: "English", flag: "🇺🇸" },
+            { code: "en" as const, name: "English", flag: "🇬🇧" },
+            { code: "km" as const, name: "ភាសាខ្មែរ", flag: "🇰🇭" },
+            { code: "my" as const, name: "မြန်မာဘာသာ", flag: "🇲🇲" },
+            { code: "lo" as const, name: "ພາສາລາວ", flag: "🇱🇦" },
+            { code: "ja" as const, name: "日本語", flag: "🇯🇵" },
+            { code: "ko" as const, name: "한국어", flag: "🇰🇷" },
+            { code: "zh" as const, name: "中文", flag: "🇨🇳" },
           ].map((l) => (
             <button
               key={l.code}
@@ -219,15 +237,15 @@ function ProfileScreen() {
               onClick={() => setLang(l.code)}
               className={`flex items-center justify-between rounded-xl p-3 border text-xs font-semibold transition cursor-pointer ${
                 lang === l.code
-                  ? "border-[var(--vba-gold)] bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]"
-                  : "border-[var(--vba-border-soft)] bg-[var(--vba-surface)] text-[var(--vba-text)]"
+                  ? "border-[var(--vba-gold)] bg-[var(--vba-gold-soft)] text-[var(--vba-gold)] shadow-xs"
+                  : "border-[var(--vba-border-soft)] bg-[var(--vba-surface)] text-[var(--vba-text)] hover:border-[var(--vba-border)]"
               }`}
             >
               <span className="flex items-center gap-2">
                 <span className="text-base">{l.flag}</span>
-                <span>{l.name}</span>
+                <span className="truncate">{l.name}</span>
               </span>
-              {lang === l.code && <Check className="h-4 w-4 text-[var(--vba-gold)]" />}
+              {lang === l.code && <Check className="h-4 w-4 shrink-0 text-[var(--vba-gold)]" />}
             </button>
           ))}
         </div>

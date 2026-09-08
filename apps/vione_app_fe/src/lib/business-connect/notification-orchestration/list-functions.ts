@@ -76,7 +76,8 @@ export const listNotificationsFn = createServerFn({ method: "GET" })
         data.limit ?? NOTIFICATION_LIST_PAGE_SIZE_DEFAULT,
         NOTIFICATION_LIST_PAGE_SIZE_MAX,
       );
-      const items = await fetchNestApiFromServer(`/me/notifications?limit=${limit}`, token);
+      const unreadParam = data.unreadOnly ? "&unreadOnly=true" : "";
+      const items = await fetchNestApiFromServer(`/me/notifications?limit=${limit}${unreadParam}`, token);
       return { items: items || [], nextCursor: null, policyVersion: NOTIFICATION_POLICY_VERSION };
     } catch (e) {
       throw toNotificationError(e);

@@ -346,7 +346,7 @@ function ThreadPage() {
 
   return (
     <div
-      className="bc-app flex h-[100dvh] w-full max-w-[480px] mx-auto flex-col bg-[var(--bc-mobile-bg)] text-[#f5f7fa] overflow-hidden transition-colors"
+      className="bc-app flex h-[100dvh] w-full max-w-[480px] mx-auto flex-col bg-[var(--bc-mobile-bg)] text-[var(--bc-mobile-text)] overflow-hidden transition-colors"
       style={{
         height: keyboardOffset > 0 ? `calc(100dvh - ${keyboardOffset}px)` : "100dvh",
         paddingTop: "env(safe-area-inset-top, 0px)",
@@ -404,13 +404,13 @@ function ThreadPage() {
         </div>
       ) : null}
 
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 px-3 py-2.5 backdrop-blur-md shrink-0">
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white/95 dark:bg-[var(--bc-mobile-surface)]/95 px-3 py-2.5 backdrop-blur-md shrink-0 shadow-2xs">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <button
             type="button"
             onClick={() => window.history.back()}
             aria-label={t("bc.mobile.topbar.back")}
-            className="grid h-9 w-9 place-items-center rounded-full text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] transition-colors shrink-0 cursor-pointer"
+            className="grid h-9 w-9 place-items-center rounded-full text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] transition-colors shrink-0 cursor-pointer"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -422,29 +422,29 @@ function ThreadPage() {
                   <img
                     src={thread.avatarUrl}
                     alt={thread.displayName}
-                    className="h-9 w-9 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
+                    className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200 dark:ring-[var(--bc-mobile-border)]"
                   />
                 ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[13px] font-bold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border)]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/10 dark:bg-[var(--bc-mobile-surface-2)] text-[13px] font-bold text-amber-700 dark:text-[var(--bc-mobile-accent)] ring-1 ring-amber-500/30 dark:ring-[var(--bc-mobile-border)]">
                     {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
                   </div>
                 )}
                 {thread.isOnline ? (
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-[var(--bc-mobile-surface)]"
+                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-white dark:ring-[var(--bc-mobile-surface)]"
                     title="Đang hoạt động"
                   />
                 ) : null}
               </div>
 
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-[15px] font-bold text-[#f5f7fa] leading-tight">
+                <h1 className="truncate text-[15px] font-bold text-slate-900 dark:text-white leading-tight">
                   {thread.displayName}
                 </h1>
-                <p className="truncate text-[11px] text-[var(--bc-mobile-muted)] leading-tight mt-0.5">
+                <p className="truncate text-[11px] text-slate-500 dark:text-[#D4C3A3] leading-tight mt-0.5 font-medium">
                   {thread.isOnline ? (
-                    <span className="text-[#22c55e] font-medium flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                    <span className="text-[#16a34a] dark:text-[#22c55e] font-semibold flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#16a34a] dark:bg-[#22c55e] animate-pulse" />
                       Đang hoạt động
                     </span>
                   ) : (
@@ -454,14 +454,14 @@ function ThreadPage() {
               </div>
             </div>
           ) : (
-            <h1 className="text-[15px] font-semibold text-[#f5f7fa]">{t("bc.mobile.inbox.title")}</h1>
+            <h1 className="text-[15px] font-bold text-slate-900 dark:text-white">{t("bc.mobile.inbox.title")}</h1>
           )}
         </div>
       </header>
 
       <div className="flex flex-1 min-h-0 flex-col max-w-full relative overflow-hidden">
         {copyToast ? (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-gold)] px-4 py-1.5 text-[12px] font-medium text-[#f5f7fa] shadow-lg backdrop-blur-md animate-fade-in">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-gold)] px-4 py-1.5 text-[12px] font-medium text-[var(--bc-mobile-text)] shadow-lg backdrop-blur-md animate-fade-in">
             {copyToast}
           </div>
         ) : null}
@@ -485,7 +485,7 @@ function ThreadPage() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)] mb-3 ring-1 ring-[var(--bc-mobile-border-gold)]">
                     <Sparkles className="h-7 w-7" />
                   </div>
-                  <p className="text-[14px] font-semibold text-[#f5f7fa]">
+                  <p className="text-[14px] font-semibold text-[var(--bc-mobile-text)]">
                     Bắt đầu cuộc trò chuyện với {thread.displayName}
                   </p>
                   <p className="text-[12px] text-[var(--bc-mobile-muted)] max-w-[280px] mt-1">
@@ -519,7 +519,7 @@ function ThreadPage() {
                     <div key={m.id} className="space-y-1.5">
                       {isNewDay ? (
                         <div className="flex items-center justify-center my-3">
-                          <span className="rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] px-3 py-1 text-[10.5px] font-medium text-[var(--bc-mobile-muted)] shadow-xs">
+                          <span className="rounded-full bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] border border-slate-200 dark:border-[var(--bc-mobile-border)] px-3 py-1 text-[10.5px] font-semibold text-slate-600 dark:text-[var(--bc-mobile-muted)] shadow-xs">
                             {formatDateSeparator(m.createdAt, locale)}
                           </span>
                         </div>
@@ -536,16 +536,16 @@ function ThreadPage() {
                               <img
                                 src={thread.avatarUrl}
                                 alt=""
-                                className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border-gold)] shadow-xs"
+                                className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 dark:ring-[var(--bc-mobile-border-gold)] shadow-xs"
                               />
                             ) : (
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[12px] font-bold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)] shadow-xs">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 dark:bg-[var(--bc-mobile-surface-2)] text-[12px] font-bold text-amber-700 dark:text-[var(--bc-mobile-accent)] ring-1 ring-amber-500/30 dark:ring-[var(--bc-mobile-border-gold)] shadow-xs">
                                 {thread.displayName.trim().charAt(0).toUpperCase() || "?"}
                               </div>
                             )}
                             {thread.isOnline ? (
                               <span
-                                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-[var(--bc-mobile-surface)]"
+                                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#22c55e] ring-2 ring-white dark:ring-[var(--bc-mobile-surface)]"
                                 title="Đang hoạt động"
                               />
                             ) : null}
@@ -571,17 +571,17 @@ function ThreadPage() {
                                     onClick={() =>
                                       setActiveMenuMsgId(activeMenuMsgId === m.id ? null : m.id)
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] text-slate-600 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-[var(--bc-mobile-accent)] hover:bg-slate-200 dark:hover:bg-[var(--bc-mobile-surface)] border border-slate-200 dark:border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                   >
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                   </button>
 
                                   {activeMenuMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 min-w-[140px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
+                                    <div className="absolute bottom-8 right-0 z-30 min-w-[140px] rounded-xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-slate-800 dark:text-[var(--bc-mobile-text)] hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] hover:text-amber-700 dark:hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <CornerUpLeft className="h-3.5 w-3.5" />
                                         <span>Trả lời</span>
@@ -589,7 +589,7 @@ function ThreadPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleCopyText(m.body)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-slate-800 dark:text-[var(--bc-mobile-text)] hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] hover:text-amber-700 dark:hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                         <span>Sao chép</span>
@@ -613,7 +613,7 @@ function ThreadPage() {
                                   type="button"
                                   title="Trả lời"
                                   onClick={() => handleSelectReply(m)}
-                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] text-slate-600 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-[var(--bc-mobile-accent)] hover:bg-slate-200 dark:hover:bg-[var(--bc-mobile-surface)] border border-slate-200 dark:border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors"
                                 >
                                   <CornerUpLeft className="h-3.5 w-3.5" />
                                 </button>
@@ -626,13 +626,13 @@ function ThreadPage() {
                                         activeReactionPickerMsgId === m.id ? null : m.id,
                                       )
                                     }
-                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] border border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors text-[13px]"
+                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] text-slate-600 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-[var(--bc-mobile-accent)] hover:bg-slate-200 dark:hover:bg-[var(--bc-mobile-surface)] border border-slate-200 dark:border-[var(--bc-mobile-border)] shadow-xs cursor-pointer transition-colors text-[13px]"
                                   >
                                     {myReaction ? myReaction.emoji : "👍"}
                                   </button>
 
                                   {activeReactionPickerMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
+                                    <div className="absolute bottom-8 right-0 z-30 flex items-center gap-1 rounded-full border border-slate-200 dark:border-[var(--bc-mobile-border-gold)] bg-white dark:bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
                                       {QUICK_REACTIONS.map((emoji) => (
                                         <button
                                           key={emoji}
@@ -640,8 +640,8 @@ function ThreadPage() {
                                           onClick={() => handleToggleReaction(m.id, emoji)}
                                           className={`flex h-7 w-7 items-center justify-center rounded-full text-[15px] hover:scale-125 transition-transform cursor-pointer ${
                                             myReaction?.emoji === emoji
-                                              ? "bg-[var(--bc-mobile-accent-soft)] ring-1 ring-[var(--bc-mobile-accent)]"
-                                              : "hover:bg-[var(--bc-mobile-surface-2)]"
+                                              ? "bg-amber-100 dark:bg-[var(--bc-mobile-accent-soft)] ring-1 ring-amber-500 dark:ring-[var(--bc-mobile-accent)]"
+                                              : "hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)]"
                                           }`}
                                         >
                                           {emoji}
@@ -654,7 +654,7 @@ function ThreadPage() {
                             ) : null}
 
                             {m.retractedAt ? (
-                              <div className="rounded-2xl border border-dashed border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 py-2 text-[12.5px] italic text-[var(--bc-mobile-muted)]">
+                              <div className="rounded-2xl border border-dashed border-slate-300 dark:border-[var(--bc-mobile-border)] bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] px-3.5 py-2 text-[12.5px] italic text-slate-500 dark:text-[var(--bc-mobile-muted)]">
                                 {t("bc.mobile.inbox.thread.retracted")}
                               </div>
                             ) : (
@@ -664,7 +664,7 @@ function ThreadPage() {
                                     className={`mb-1 rounded-xl px-3 py-1.5 text-[11.5px] border-l-2 ${
                                       m.fromMe
                                         ? "bg-black/15 border-black/50 text-[#1a1206]"
-                                        : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-accent)] text-[#D4C3A3]"
+                                        : "bg-slate-100 dark:bg-[var(--bc-mobile-surface-2)] border-amber-500 dark:border-[var(--bc-mobile-accent)] text-slate-800 dark:text-[var(--bc-mobile-text)]"
                                     }`}
                                   >
                                     <p className="font-semibold text-[10.5px]">
@@ -677,8 +677,8 @@ function ThreadPage() {
                                 <div
                                   className={`relative break-words transition-all shadow-xs overflow-hidden ${
                                     m.fromMe
-                                      ? "rounded-2xl rounded-tr-xs bg-[var(--bc-mobile-accent-grad)] text-[#1a1206] font-medium shadow-[0_2px_10px_rgba(184,134,11,0.25)]"
-                                      : "rounded-2xl rounded-tl-xs border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[#f5f7fa]"
+                                      ? "rounded-2xl rounded-tr-xs bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_50%,#C29B69_100%)] text-[#1A1206] font-medium shadow-[0_2px_10px_rgba(184,134,11,0.25)] border border-amber-300/40"
+                                      : "rounded-2xl rounded-tl-xs border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131A26] text-slate-900 dark:text-slate-100 shadow-xs"
                                   }`}
                                 >
                                   {content.type === "image" ? (
@@ -703,7 +703,7 @@ function ThreadPage() {
                                       {content.caption ? (
                                         <p
                                           className={`px-2 pb-1 text-[13.5px] leading-relaxed ${
-                                            m.fromMe ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                                            m.fromMe ? "text-[#1A1206] font-medium" : "text-slate-900 dark:text-[var(--bc-mobile-text)]"
                                           }`}
                                         >
                                           {content.caption}
@@ -722,8 +722,8 @@ function ThreadPage() {
                                             download
                                             className={`flex items-center gap-3 rounded-xl p-2.5 transition-all cursor-pointer ${
                                               m.fromMe
-                                                ? "bg-black/10 hover:bg-black/15 text-[#1a1206]"
-                                                : "bg-[var(--bc-mobile-surface-2)] hover:bg-[var(--bc-mobile-surface-2)]/80 text-[#f5f7fa] border border-[var(--bc-mobile-border)]"
+                                                ? "bg-black/10 hover:bg-black/15 text-[#1A1206]"
+                                                : "bg-slate-50 dark:bg-[var(--bc-mobile-surface-2)] hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)]/80 text-slate-900 dark:text-[var(--bc-mobile-text)] border border-slate-200 dark:border-[var(--bc-mobile-border)]"
                                             }`}
                                           >
                                             <div
@@ -732,7 +732,7 @@ function ThreadPage() {
                                               {badge.label}
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                              <p className="truncate text-[13px] font-semibold leading-tight">
+                                              <p className="truncate text-[13px] font-semibold leading-tight text-slate-900 dark:text-[var(--bc-mobile-text)]">
                                                 {content.name}
                                               </p>
                                               <div className="flex items-center gap-2 mt-0.5">
@@ -740,8 +740,8 @@ function ThreadPage() {
                                                   <span
                                                     className={`text-[11px] ${
                                                       m.fromMe
-                                                        ? "text-[#1a1206]/70"
-                                                        : "text-[var(--bc-mobile-muted)]"
+                                                        ? "text-[#1A1206]/70"
+                                                        : "text-slate-500 dark:text-[var(--bc-mobile-muted)]"
                                                     }`}
                                                   >
                                                     {formatFileSize(content.size)}
@@ -750,8 +750,8 @@ function ThreadPage() {
                                                 <span
                                                   className={`flex items-center gap-0.5 text-[11px] font-medium underline ${
                                                     m.fromMe
-                                                      ? "text-[#1a1206]"
-                                                      : "text-[var(--bc-mobile-accent)]"
+                                                      ? "text-[#1A1206]"
+                                                      : "text-amber-700 dark:text-[var(--bc-mobile-accent)]"
                                                   }`}
                                                 >
                                                   <Download className="h-3 w-3" />
@@ -765,7 +765,7 @@ function ThreadPage() {
                                       {content.caption ? (
                                         <p
                                           className={`px-2 text-[13.5px] leading-relaxed ${
-                                            m.fromMe ? "text-[#1a1206]" : "text-[#f5f7fa]"
+                                            m.fromMe ? "text-[#1A1206] font-medium" : "text-slate-900 dark:text-[var(--bc-mobile-text)]"
                                           }`}
                                         >
                                           {content.caption}
@@ -863,7 +863,7 @@ function ThreadPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <CornerUpLeft className="h-3.5 w-3.5" />
                                         <span>Trả lời</span>
@@ -871,7 +871,7 @@ function ThreadPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleCopyText(m.body)}
-                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-accent)] cursor-pointer"
                                       >
                                         <Copy className="h-3.5 w-3.5" />
                                         <span>Sao chép</span>
@@ -924,7 +924,7 @@ function ThreadPage() {
             ) : null}
 
             {replyingTo ? (
-              <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] px-4 py-2 text-[12px] text-[#f5f7fa] animate-fade-in">
+              <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] px-4 py-2 text-[12px] text-[var(--bc-mobile-text)] animate-fade-in">
                 <div className="flex items-center gap-2 min-w-0">
                   <CornerUpLeft className="h-4 w-4 text-[var(--bc-mobile-accent)] shrink-0" />
                   <div className="min-w-0">
@@ -937,7 +937,7 @@ function ThreadPage() {
                 <button
                   type="button"
                   onClick={() => setReplyingTo(null)}
-                  className="p-1 text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] cursor-pointer"
+                  className="p-1 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] cursor-pointer"
                   title="Hủy trả lời"
                 >
                   <X className="h-4 w-4" />
@@ -991,7 +991,7 @@ function ThreadPage() {
                           setUploadMenuOpen(false);
                           imageInputRef.current?.click();
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
                       >
                         <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-400">
                           <ImageIcon className="h-4 w-4" />
@@ -1005,7 +1005,7 @@ function ThreadPage() {
                           setUploadMenuOpen(false);
                           fileInputRef.current?.click();
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[#f5f7fa] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
                       >
                         <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/15 text-blue-400">
                           <FileText className="h-4 w-4" />
@@ -1032,7 +1032,7 @@ function ThreadPage() {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder={t("bc.mobile.inbox.thread.placeholder")}
-                  className="chat-input no-focus-outline max-h-[120px] min-h-[32px] flex-1 resize-none bg-transparent py-1 text-[13.5px] text-[#f5f7fa] placeholder-[var(--bc-mobile-muted)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
+                  className="chat-input no-focus-outline max-h-[120px] min-h-[32px] flex-1 resize-none bg-transparent py-1 text-[13.5px] text-[var(--bc-mobile-text)] placeholder-[var(--bc-mobile-muted)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
                   style={{ border: "none", outline: "none", boxShadow: "none" }}
                 />
 
@@ -1047,7 +1047,7 @@ function ThreadPage() {
                       }
                     }}
                     aria-label="Xóa nội dung nhập"
-                    className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-muted)] hover:text-[#f5f7fa] transition-colors cursor-pointer"
+                    className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>

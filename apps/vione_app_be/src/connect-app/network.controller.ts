@@ -113,8 +113,8 @@ export class NetworkController {
    * Frontend calls this immediately after reading an NFC tag — no extra steps.
    */
   @Post('nfc-tap')
-  async nfcTap(@Request() req, @Body('token') token: string) {
-    return this.connectAppService.nfcTap(req.user.id, token);
+  async nfcTap(@Request() req, @Body() body: any) {
+    return this.connectAppService.nfcTap(req.user.id, body);
   }
 
 

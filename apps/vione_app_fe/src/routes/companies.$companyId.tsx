@@ -315,6 +315,54 @@ function CompanyDetailPage() {
     0,
     Math.floor((Date.now() - new Date(company.joinedAt || Date.now()).getTime()) / (365 * 86400000)),
   );
+  const [approving, setApproving] = useState(false);
+  const handleQuickApprove = async () => {
+    setApproving(true);
+    try {
+      await fetchNestApi(`/members/${company.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...company,
+          status: "active",
+        }),
+      });
+      setCompanyState((prev) => ({ ...prev, status: "active" }));
+      toast.success("✓ Đã duyệt hồ sơ doanh nghiệp thành công! Trạng thái chuyển sang Hoạt động.");
+    } catch (err: any) {
+      console.error("[Companies] Failed to approve company:", err);
+      toast.error(err?.message || "Không thể duyệt hồ sơ doanh nghiệp");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const [submittingFee, setSubmittingFee] = useState(false);
+  const handleToggleFeePaid = async () => {
+    setSubmittingFee(true);
+    const nextPaid = !company.feePaid;
+    try {
+      await fetchNestApi(`/members/${company.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...company,
+          feePaid: nextPaid,
+          feeYear: company.feeYear || new Date().getFullYear(),
+        }),
+      });
+      setCompanyState((prev) => ({ ...prev, feePaid: nextPaid }));
+      toast.success(
+        nextPaid
+          ? "✓ Đã xác nhận nộp hội phí thành công!"
+          : "Đã chuyển trạng thái sang chưa đóng phí.",
+      );
+    } catch (err: any) {
+      console.error("[Companies] Failed to update fee status:", err);
+      toast.error(err?.message || "Không thể cập nhật trạng thái hội phí");
+    } finally {
+      setSubmittingFee(false);
+    }
+  };
+
   const s = statusStyle[company.status] || statusStyle.pending;
 
   const tabs: { key: typeof tab; label: TKey; Icon: typeof Activity; count?: number }[] = [
@@ -384,7 +432,18 @@ function CompanyDetailPage() {
               <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
               {t(`status.${company.status}` as TKey)}
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {company.status === "pending" && (
+                <button
+                  type="button"
+                  onClick={handleQuickApprove}
+                  disabled={approving}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition cursor-pointer"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>{approving ? "Đang duyệt..." : "Duyệt hồ sơ"}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setOpenEmail(true)}
@@ -466,7 +525,14 @@ function CompanyDetailPage() {
       </div>
 
       {/* Tab content */}
-      {tab === "overview" && <Overview company={company} onSaveContact={handleSaveContact} />}
+      {tab === "overview" && (
+        <Overview
+          company={company}
+          onSaveContact={handleSaveContact}
+          onToggleFeePaid={handleToggleFeePaid}
+          submittingFee={submittingFee}
+        />
+      )}
       {tab === "activity" && <ActivityTab entries={history.activities} />}
       {tab === "events" && <EventsTab entries={history.events} />}
       {tab === "payments" && <PaymentsTab entries={history.payments} />}
@@ -520,7 +586,7 @@ function Kpi({
           <Icon className={`h-5 w-5 ${c.text}`} />
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
           <div className="truncate text-lg font-bold text-foreground">{value}</div>
         </div>
       </div>
@@ -531,9 +597,13 @@ function Kpi({
 function Overview({
   company,
   onSaveContact,
+  onToggleFeePaid,
+  submittingFee,
 }: {
   company: Member;
   onSaveContact: (next: { email: string; phone: string; address: string }) => void;
+  onToggleFeePaid?: () => void;
+  submittingFee?: boolean;
 }) {
   const t = useT();
   return (
@@ -579,31 +649,50 @@ function Overview({
         <ContactSection company={company} onSave={onSaveContact} />
 
         <Section title={t("detail.fee")}>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                  company.feePaid
-                    ? "bg-success/15 text-success"
-                    : "bg-destructive/15 text-destructive"
-                }`}
-              >
-                {company.feePaid ? (
-                  <CheckCircle2 className="h-5 w-5" />
-                ) : (
-                  <XCircle className="h-5 w-5" />
-                )}
-              </div>
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("detail.feeYear")} {company.feeYear}
+          <div className="flex flex-col gap-3 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                    company.feePaid
+                      ? "bg-success/15 text-success"
+                      : "bg-destructive/15 text-destructive"
+                  }`}
+                >
+                  {company.feePaid ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : (
+                    <XCircle className="h-5 w-5" />
+                  )}
                 </div>
-                <div className="text-sm font-semibold text-foreground">
-                  {company.feePaid ? t("detail.feePaid") : t("detail.feeUnpaid")}
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("detail.feeYear")} {company.feeYear}
+                  </div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {company.feePaid ? t("detail.feePaid") : t("detail.feeUnpaid")}
+                  </div>
                 </div>
               </div>
+              <Wallet className="h-5 w-5 text-muted-foreground" />
             </div>
-            <Wallet className="h-5 w-5 text-muted-foreground" />
+
+            <button
+              type="button"
+              disabled={submittingFee}
+              onClick={onToggleFeePaid}
+              className={`mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                company.feePaid
+                  ? "bg-secondary text-secondary-foreground hover:bg-destructive/15 hover:text-destructive"
+                  : "bg-success text-white hover:bg-success/90"
+              }`}
+            >
+              {submittingFee
+                ? "Đang xử lý..."
+                : company.feePaid
+                  ? "Đổi sang Chưa nộp"
+                  : "Xác nhận đã đóng phí"}
+            </button>
           </div>
         </Section>
       </div>

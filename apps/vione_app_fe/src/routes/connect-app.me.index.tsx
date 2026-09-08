@@ -705,23 +705,32 @@ function ConnectAppMePage() {
                 aria-label={t("bc.mobile.me.language.title")}
                 className="grid grid-cols-2 gap-2 py-1"
               >
-                {(["vi", "en", "lo", "km", "my"] as const).map((code) => (
+                {[
+                  { code: "vi" as const, name: "Tiếng Việt", flag: "🇻🇳" },
+                  { code: "en" as const, name: "English", flag: "🇬🇧" },
+                  { code: "km" as const, name: "ភាសាខ្មែរ", flag: "🇰🇭" },
+                  { code: "my" as const, name: "မြန်မာဘာသာ", flag: "🇲🇲" },
+                  { code: "lo" as const, name: "ພາສາລາວ", flag: "🇱🇦" },
+                  { code: "ja" as const, name: "日本語", flag: "🇯🇵" },
+                  { code: "ko" as const, name: "한국어", flag: "🇰🇷" },
+                  { code: "zh" as const, name: "中文", flag: "🇨🇳" },
+                ].map((l) => (
                   <button
-                    key={code}
+                    key={l.code}
                     type="button"
-                    onClick={() => setLang(code)}
-                    aria-pressed={lang === code}
-                    className={`rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition text-center ${
-                      lang === code
-                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent font-bold shadow-sm"
-                        : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                    onClick={() => setLang(l.code)}
+                    aria-pressed={lang === l.code}
+                    className={`rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition text-left flex items-center justify-between gap-1.5 cursor-pointer ${
+                      lang === l.code
+                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent font-bold shadow-xs"
+                        : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:border-[#D8B282]/50 hover:text-white"
                     }`}
                   >
-                    {code === "vi" ? "Tiếng Việt" :
-                     code === "en" ? "English" :
-                     code === "lo" ? "ພາສາລາວ" :
-                     code === "km" ? "ភាសាខ្មែរ" :
-                     "မြန်မာဘာသာ"}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0">{l.flag}</span>
+                      <span className="truncate">{l.name}</span>
+                    </span>
+                    {lang === l.code && <span className="text-xs shrink-0 font-bold">✓</span>}
                   </button>
                 ))}
               </div>

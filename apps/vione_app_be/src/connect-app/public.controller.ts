@@ -27,6 +27,17 @@ export class PublicController {
     return this.connectAppService.shareGuestContact(slug, body);
   }
 
+  /** Public club registration endpoint from landing pages. No auth required. */
+  @Post('club-registration')
+  async submitClubRegistration(@Body() body: any) {
+    return this.connectAppService.submitClubRegistration(body);
+  }
+
+  @Post('leads/club-registration')
+  async submitClubRegistrationAlias(@Body() body: any) {
+    return this.connectAppService.submitClubRegistration(body);
+  }
+
   /** Admin renewal audit scope — requires JWT. */
   @Get('admin/renewal-scope')
   @UseGuards(JwtAuthGuard)

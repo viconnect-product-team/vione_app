@@ -307,23 +307,25 @@
 /* ============================================================
    Unified enterprise theme (navy / warm gold) for the member app.
    Legacy .vba-* class names are kept as aliases so every screen
-   inherits the same semantic tokens as the dashboard.
+/* ============================================================
+   Unified enterprise theme (navy / warm gold) for the member app.
+   Standardized 3-dominant-color system for Dark, Light, & Contrast.
    ============================================================ */
 .vba-app {
   --vba-bg: #050c15;
   --vba-bg-2: #09111d;
-  --vba-surface: rgba(13, 22, 35, 0.85);
-  --vba-surface-2: rgba(18, 30, 48, 0.9);
-  --vba-border: rgba(216, 178, 130, 0.28);        /* tăng từ 0.18 → 0.28 */
-  --vba-border-soft: rgba(255, 255, 255, 0.13);   /* tăng từ 0.08 → 0.13 */
-  --vba-border-accent: rgba(216, 178, 130, 0.45); /* viền gold rõ cho focus/active */
+  --vba-surface: rgba(13, 22, 35, 0.95);
+  --vba-surface-2: rgba(18, 30, 48, 0.95);
+  --vba-border: rgba(216, 178, 130, 0.28);
+  --vba-border-soft: rgba(255, 255, 255, 0.13);
+  --vba-border-accent: rgba(216, 178, 130, 0.45);
   --vba-gold: #D8B282;
   --vba-gold-2: #F0D5A8;
   --vba-gold-soft: rgba(216, 178, 130, 0.14);
   --vba-gold-glow: 0 8px 24px -8px rgba(216, 178, 130, 0.45);
   --vba-text: #FFFFFF;
-  --vba-text-muted: #B0BEC8;   /* sáng hơn từ #94A3B8 → #B0BEC8 */
-  --vba-text-dim: #7A8FA0;     /* sáng hơn từ #64748B → #7A8FA0 */
+  --vba-text-muted: #B0BEC8;
+  --vba-text-dim: #7A8FA0;
   --vba-danger: #EF4444;
 
   background: transparent;
@@ -336,24 +338,24 @@
 @media (prefers-contrast: more) {
   .vba-app {
     --vba-gold-glow: none;
-    --vba-text-muted: #CBD5E1;
-    --vba-border: rgba(216, 178, 130, 0.4);
+    --vba-text-muted: #FFFFFF;
+    --vba-border: #FACC15;
   }
 }
 
-/* Light mode tokens for .vba-app */
+/* Light mode tokens for .vba-app — Clean Executive White & Warm Bronze Gold */
 html:not(.dark) .vba-app {
   --vba-bg: #F8FAFC;
   --vba-bg-2: #FFFFFF;
-  --vba-surface: rgba(255, 255, 255, 0.94);
-  --vba-surface-2: rgba(241, 245, 249, 0.96);
-  --vba-border: rgba(184, 134, 11, 0.32);        /* tăng độ rõ */
-  --vba-border-soft: rgba(0, 0, 0, 0.14);        /* tăng độ rõ */
-  --vba-border-accent: rgba(184, 134, 11, 0.5);
-  --vba-gold: #B8860B;
-  --vba-gold-2: #8B6508;
-  --vba-gold-soft: rgba(184, 134, 11, 0.12);
-  --vba-gold-glow: 0 4px 16px -4px rgba(184, 134, 11, 0.25);
+  --vba-surface: #FFFFFF;
+  --vba-surface-2: #F1F5F9;
+  --vba-border: rgba(180, 83, 9, 0.25);
+  --vba-border-soft: rgba(15, 23, 42, 0.08);
+  --vba-border-accent: rgba(180, 83, 9, 0.50);
+  --vba-gold: #B45309;
+  --vba-gold-2: #92400E;
+  --vba-gold-soft: rgba(180, 83, 9, 0.08);
+  --vba-gold-glow: none;
   --vba-text: #0F172A;
   --vba-text-muted: #475569;
   --vba-text-dim: #64748B;
@@ -365,47 +367,65 @@ html:not(.dark) .vba-app {
 }
 
 html:not(.dark) .vba-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: #FFFFFF;
   color: #0F172A;
-  border: 1px solid rgba(184, 134, 11, 0.22);
-  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(180, 83, 9, 0.20);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05);
 }
 
 html:not(.dark) .vba-gold-text {
-  background: linear-gradient(135deg, #B8860B 0%, #8B6508 100%);
+  background: linear-gradient(135deg, #B45309 0%, #92400E 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* High-contrast mode tokens for .vba-app */
+html:not(.dark) .vba-gold-grad {
+  background: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #B45309 100%);
+  color: #0F172A !important;
+  font-weight: 700;
+  box-shadow: 0 2px 10px -2px rgba(180, 83, 9, 0.25);
+}
+
+/* High-contrast mode tokens for .vba-app — Pure Solid Black, Pure White, & Electric Gold */
 html.hc .vba-app {
   --vba-bg: #000000;
-  --vba-bg-2: #050505;
-  --vba-surface: #0A0A0A;
-  --vba-surface-2: #141414;
-  --vba-border: #FCD34D;
+  --vba-bg-2: #000000;
+  --vba-surface: #000000;
+  --vba-surface-2: #0D0D0D;
+  --vba-border: #FACC15;
   --vba-border-soft: #FFFFFF;
-  --vba-gold: #FCD34D;
+  --vba-border-accent: #FEF08A;
+  --vba-gold: #FACC15;
   --vba-gold-2: #FEF08A;
-  --vba-gold-soft: rgba(252, 211, 77, 0.25);
+  --vba-gold-soft: rgba(250, 204, 21, 0.20);
+  --vba-gold-glow: none;
   --vba-text: #FFFFFF;
-  --vba-text-muted: #F3F4F6;
-  --vba-text-dim: #E5E7EB;
+  --vba-text-muted: #FFFFFF;
+  --vba-text-dim: #E2E8F0;
   color: #FFFFFF;
 }
 
 html.hc .vba-card {
-  background: #0D0D0D;
+  background: #000000;
   color: #FFFFFF;
-  border: 2px solid #FCD34D;
+  border: 2px solid #FACC15;
   box-shadow: none;
 }
 
 html.hc .vba-gold-text {
   background: none;
-  -webkit-text-fill-color: #FCD34D;
-  color: #FCD34D;
+  -webkit-text-fill-color: #FACC15;
+  color: #FACC15;
+  font-weight: 700;
+}
+
+html.hc .vba-gold-grad {
+  background: #FACC15;
+  color: #000000 !important;
+  font-weight: 800;
+  border: 2px solid #FFFFFF;
+  box-shadow: none;
 }
 
 .vba-gold-text {
@@ -416,11 +436,11 @@ html.hc .vba-gold-text {
 }
 
 .vba-card {
-  background: linear-gradient(165deg, rgba(13, 22, 35, 0.88) 0%, rgba(8, 14, 23, 0.92) 100%);
+  background: linear-gradient(165deg, rgba(13, 22, 35, 0.95) 0%, rgba(8, 14, 23, 0.98) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #FFFFFF;
-  border: 1px solid rgba(216, 178, 130, 0.15);
+  border: 1px solid rgba(216, 178, 130, 0.28);
   border-radius: 1rem;
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
@@ -742,96 +762,100 @@ input[type="radio"] {
   color-scheme: dark;
 }
 
-/* Light mode tokens for .bc-app (ViOne Connect) — Ultra Luxury Warm Ivory & Champagne Gold */
+/* Light mode tokens for .bc-app (ViOne Connect) — Clean Executive White & Warm Bronze Gold */
 html:not(.dark) .bc-app {
-  --bc-bg-deep: #F7F5EE;
-  --bc-bg-primary: #FDFCF7;
+  --bc-bg-deep: #F1F5F9;
+  --bc-bg-primary: #F8FAFC;
   --bc-bg-secondary: #FFFFFF;
   --bc-surface: #FFFFFF;
-  --bc-surface-elevated: #FAF8F2;
+  --bc-surface-elevated: #F8FAFC;
 
-  --bc-mobile-bg: #FDFCF7;
-  --bc-mobile-bg-deep: #F7F5EE;
+  --bc-mobile-bg: #F8FAFC;
+  --bc-mobile-bg-deep: #F1F5F9;
   --bc-mobile-surface: #FFFFFF;
-  --bc-mobile-surface-2: #F5F2E9;
+  --bc-mobile-surface-2: #F1F5F9;
   --bc-mobile-navy: #FFFFFF;
-  --bc-mobile-navy-deep: #F0EDE4;
-  --bc-mobile-app-gradient: linear-gradient(180deg, #FDFCF7 0%, #F8F5EC 48%, #F2EEE4 100%);
-  --bc-mobile-card-grad: linear-gradient(150deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 250, 246, 0.99) 100%);
+  --bc-mobile-navy-deep: #E2E8F0;
+  --bc-mobile-app-gradient: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+  --bc-mobile-card-grad: linear-gradient(150deg, #FFFFFF 0%, #F8FAFC 100%);
 
-  --bc-text-primary: #18181B;
-  --bc-text-secondary: #52525B;
-  --bc-text-tertiary: #71717A;
-  --bc-text-disabled: #A1A1AA;
+  --bc-text-primary: #0F172A;
+  --bc-text-secondary: #475569;
+  --bc-text-tertiary: #64748B;
+  --bc-text-disabled: #94A3B8;
 
-  --bc-mobile-ivory: #18181B;
-  --bc-mobile-text: #18181B;
-  --bc-mobile-text-2: #52525B;
-  --bc-mobile-muted: #71717A;
-  --bc-mobile-disabled: #A1A1AA;
+  --bc-mobile-ivory: #0F172A;
+  --bc-mobile-text: #0F172A;
+  --bc-mobile-text-2: #475569;
+  --bc-mobile-muted: #64748B;
+  --bc-mobile-disabled: #94A3B8;
 
-  --bc-border-subtle: rgba(184, 134, 11, 0.20);
-  --bc-border-medium: rgba(184, 134, 11, 0.35);
-  --bc-border-gold: rgba(184, 134, 11, 0.60);
-  --bc-mobile-border: rgba(184, 134, 11, 0.28);
-  --bc-mobile-border-subtle: rgba(0, 0, 0, 0.08);
-  --bc-mobile-border-gold: rgba(184, 134, 11, 0.60);
-  --bc-mobile-border-strong: rgba(184, 134, 11, 0.85);
+  --bc-border-subtle: rgba(180, 83, 9, 0.15);
+  --bc-border-medium: rgba(180, 83, 9, 0.28);
+  --bc-border-gold: rgba(180, 83, 9, 0.50);
+  --bc-mobile-border: rgba(180, 83, 9, 0.22);
+  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.08);
+  --bc-mobile-border-gold: rgba(180, 83, 9, 0.50);
+  --bc-mobile-border-strong: rgba(180, 83, 9, 0.80);
 
-  --bc-gold-300: #E6CA85;
-  --bc-gold-400: #B8860B;
-  --bc-gold-500: #C59B27;
-  --bc-gold-600: #8C653B;
+  --bc-gold-300: #FDE68A;
+  --bc-gold-400: #B45309;
+  --bc-gold-500: #92400E;
+  --bc-gold-600: #78350F;
 
-  --bc-mobile-accent: #B8860B;
-  --bc-mobile-accent-strong: #8C653B;
-  --bc-mobile-accent-soft: rgba(184, 134, 11, 0.12);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #E6CA85 0%, #C59B27 50%, #9E741A 100%);
-  --bc-mobile-accent-on: #FFFFFF;
+  --bc-mobile-accent: #B45309;
+  --bc-mobile-accent-strong: #92400E;
+  --bc-mobile-accent-soft: rgba(180, 83, 9, 0.08);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #B45309 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FEF08A 0%, #F59E0B 50%, #D97706 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #92400E 100%);
+  --bc-mobile-accent-on: #0F172A;
 
   color-scheme: light;
 }
 
-/* High-contrast mode tokens for .bc-app (ViOne Connect) */
+/* High-contrast mode tokens for .bc-app (ViOne Connect) — Pure Solid Black, Pure White, & Electric Gold */
 html.hc .bc-app {
   --bc-bg-deep: #000000;
   --bc-bg-primary: #000000;
-  --bc-bg-secondary: #050505;
-  --bc-surface: #080808;
-  --bc-surface-elevated: #121212;
+  --bc-bg-secondary: #000000;
+  --bc-surface: #000000;
+  --bc-surface-elevated: #0A0A0A;
 
   --bc-mobile-bg: #000000;
   --bc-mobile-bg-deep: #000000;
-  --bc-mobile-surface: #0A0A0A;
-  --bc-mobile-surface-2: #141414;
-  --bc-mobile-navy: #050505;
+  --bc-mobile-surface: #000000;
+  --bc-mobile-surface-2: #0D0D0D;
+  --bc-mobile-navy: #000000;
   --bc-mobile-navy-deep: #000000;
   --bc-mobile-app-gradient: #000000;
-  --bc-mobile-card-grad: #0A0A0A;
+  --bc-mobile-card-grad: #000000;
 
   --bc-text-primary: #FFFFFF;
-  --bc-text-secondary: #FEF08A;
-  --bc-text-tertiary: #FDE68A;
-  --bc-text-disabled: #A3A3A3;
+  --bc-text-secondary: #FFFFFF;
+  --bc-text-tertiary: #E2E8F0;
+  --bc-text-disabled: #A1A1AA;
 
   --bc-mobile-ivory: #FFFFFF;
   --bc-mobile-text: #FFFFFF;
   --bc-mobile-text-2: #FEF08A;
-  --bc-mobile-muted: #FDE68A;
-  --bc-mobile-disabled: #A3A3A3;
+  --bc-mobile-muted: #FFFFFF;
+  --bc-mobile-disabled: #A1A1AA;
 
-  --bc-border-subtle: #FCD34D;
-  --bc-border-medium: #FCD34D;
-  --bc-border-gold: #FCD34D;
-  --bc-mobile-border: #FCD34D;
+  --bc-border-subtle: #FACC15;
+  --bc-border-medium: #FACC15;
+  --bc-border-gold: #FACC15;
+  --bc-mobile-border: #FACC15;
   --bc-mobile-border-subtle: #FFFFFF;
-  --bc-mobile-border-gold: #FCD34D;
+  --bc-mobile-border-gold: #FACC15;
   --bc-mobile-border-strong: #FEF08A;
 
-  --bc-mobile-accent: #FCD34D;
+  --bc-mobile-accent: #FACC15;
   --bc-mobile-accent-strong: #FEF08A;
-  --bc-mobile-accent-soft: rgba(252, 211, 77, 0.25);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #FEF08A 0%, #FCD34D 100%);
+  --bc-mobile-accent-soft: rgba(250, 204, 21, 0.25);
+  --bc-mobile-accent-grad: #FACC15;
+  --bc-mobile-accent-grad-hover: #FEF08A;
+  --bc-mobile-accent-grad-active: #EAB308;
   --bc-mobile-accent-on: #000000;
 
   color-scheme: dark;
@@ -1054,14 +1078,17 @@ textarea::placeholder {
 
 html:not(.dark) .bc-translucent-card {
   background: #FFFFFF;
-  border: 1px solid rgba(184, 134, 11, 0.25);
-  box-shadow: 0 4px 20px -2px rgba(184, 134, 11, 0.06), 0 2px 8px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(180, 83, 9, 0.20);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05);
 }
 
-html.hc .bc-translucent-card {
-  background: #0A0A0A;
-  border: 1px solid #F59E0B;
-  box-shadow: none;
+html.hc .bc-translucent-card,
+html.hc .bc-card,
+html.hc .bc-card-soft {
+  background: #000000 !important;
+  border: 2px solid #FACC15 !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
 }
 
 /* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus */
@@ -1085,6 +1112,26 @@ html.dark body > div[role="menu"] {
   border-color: rgba(216, 178, 130, 0.35) !important;
 }
 
+html.hc [role="dialog"],
+html.hc [role="menu"],
+html.hc [role="listbox"],
+html.hc [data-vaul-drawer],
+html.hc [vaul-drawer],
+html.hc [data-radix-popper-content-wrapper] > [role="menu"],
+html.hc [data-radix-popper-content-wrapper] > div,
+html.hc .radix-dialog-content,
+html.hc .radix-dropdown-content,
+html.hc body > [data-radix-portal] [role="dialog"],
+html.hc body > [data-radix-portal] [role="menu"],
+html.hc body > [data-radix-portal] [role="listbox"],
+html.hc body > div[role="dialog"],
+html.hc body > div[role="menu"] {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FACC15 !important;
+  box-shadow: none !important;
+}
+
 html:not(.dark) [role="dialog"],
 html:not(.dark) [role="menu"],
 html:not(.dark) [role="listbox"],
@@ -1103,8 +1150,8 @@ html:not(.dark) body > div[role="menu"] {
   color: #0F172A !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(184, 134, 11, 0.35) !important;
-  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.12) !important;
+  border-color: rgba(180, 83, 9, 0.25) !important;
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.10) !important;
 }
 
 /* Luxury gold text gradient matching Login "Chào mừng" title */
@@ -1575,3 +1622,30 @@ html:not(.dark) body > div[role="menu"] {
 .btn-luxury-gold:active {
   transform: scale(0.98);
 }
+
+/* ── ZALO-STYLE QR SCANNER LASER ANIMATION ── */
+@keyframes scanLaser {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+.scanner-laser-line {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #D0A95C 20%, #FFE8B5 50%, #D0A95C 80%, transparent 100%);
+  box-shadow: 0 0 15px 2px rgba(208, 169, 92, 0.8), 0 0 30px 4px rgba(245, 158, 11, 0.4);
+  animation: scanLaser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 20;
+}

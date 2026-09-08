@@ -29,17 +29,24 @@ export function useConnectAppSocket(room?: string) {
     const socket = getConnectAppSocket();
     socketRef.current = socket;
 
-    // Join personal user room for targeted notifications, NFC tap alerts, DMs
-    if (viewerUserId) {
-      socket.emit("join:room", `user:${viewerUserId}`);
-    }
+    const joinRooms = () => {
+      // Join personal user room for targeted notifications, NFC tap alerts, DMs
+      if (viewerUserId) {
+        socket.emit("join:room", `user:${viewerUserId}`);
+      }
+      // Join specific room if provided (e.g. `moment:${momentId}`, `thread:${threadId}`)
+      if (room) {
+        socket.emit("join:room", room);
+      }
+    };
 
-    // Join specific room if provided (e.g. `moment:${momentId}`, `thread:${threadId}`)
-    if (room) {
-      socket.emit("join:room", room);
+    if (socket.connected) {
+      joinRooms();
     }
+    socket.on("connect", joinRooms);
 
     return () => {
+      socket.off("connect", joinRooms);
       if (room) {
         socket.emit("leave:room", room);
       }

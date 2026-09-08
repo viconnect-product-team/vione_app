@@ -20,9 +20,13 @@ function text(
 
 function UnreadList({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const q = useNotifications({ unreadOnly: true, limit: 6 });
+  const q = useNotifications({ unreadOnly: true, limit: 10 });
   const markRead = useMarkNotificationRead();
   const items: NotificationDTO[] = q.data?.items ?? [];
+
+  useEffect(() => {
+    void q.refetch();
+  }, []);
 
   if (q.isPending) {
     return (
@@ -58,41 +62,68 @@ function UnreadList({ onClose }: { onClose: () => void }) {
   return (
     <>
       <ul className="max-h-[60vh] overflow-y-auto">
-        {items.map((n: any) => (
-          <li
-            key={n.id}
-            className="flex items-start gap-2 border-b border-[var(--bc-mobile-border)] px-3 py-3 last:border-b-0"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13.5px] font-medium text-[var(--bc-mobile-text)]">
-                {text(t, n.titleKey, n.notificationKind, n.safeDisplayData)}
-              </p>
-              {text(t, n.bodyKey, "", n.safeDisplayData) ? (
-                <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
-                  {text(t, n.bodyKey, "", n.safeDisplayData)}
-                </p>
-              ) : null}
-              {n.action.targetRoute ? (
-                <Link
-                  to={n.action.targetRoute}
-                  onClick={onClose}
-                  className="mt-1 inline-block text-[12.5px] font-medium text-[var(--bc-mobile-accent)]"
-                >
-                  {text(t, n.action.labelKey, t("bc.mobile.home.notifications.panel.open"), n.safeDisplayData)}
-                </Link>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              disabled={markRead.isPending}
-              onClick={() => markRead.mutate({ id: n.id })}
-              aria-label={t("bc.mobile.home.notifications.panel.markRead")}
-              className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] disabled:opacity-60"
+        {items.map((n: any) => {
+          const avatarUrl = n.safeDisplayData?.avatarUrl;
+          const counterpartName = n.safeDisplayData?.counterpartDisplayName || "ViOne Member";
+          const initial = counterpartName[0]?.toUpperCase() || "V";
+          const isConnection = n.notificationKind === "connection_request_received" || n.sourceDomain === "connection";
+          const displayTitle = isConnection
+            ? "Lời mời kết nối mới"
+            : text(t, n.titleKey, n.notificationKind, n.safeDisplayData);
+          const displayBody = n.safeDisplayData?.message
+            ? `"${n.safeDisplayData.message}"`
+            : isConnection
+              ? `${counterpartName} muốn kết nối danh thiếp với bạn.`
+              : text(t, n.bodyKey, "", n.safeDisplayData);
+          const targetRoute = isConnection ? "/connect-app/network" : (n.action?.targetRoute || "/connect-app/notifications");
+          const targetSearch = isConnection ? { tab: "requests" } : (n.action?.targetSearch || undefined);
+
+          return (
+            <li
+              key={n.id}
+              className="flex items-start gap-2.5 border-b border-[var(--bc-mobile-border)] px-3.5 py-3 last:border-b-0 hover:bg-white/[0.04] transition-colors"
             >
-              <Check className="size-4" aria-hidden />
-            </button>
-          </li>
-        ))}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="size-9 shrink-0 rounded-full border border-[var(--bc-mobile-border-gold)] object-cover shadow-sm"
+                />
+              ) : (
+                <div className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border-gold)] bg-[linear-gradient(135deg,rgba(216,178,130,0.2)_0%,rgba(194,155,105,0.1)_100%)] text-[12px] font-bold text-[#D8B282]">
+                  {initial}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13.5px] font-medium text-[var(--bc-mobile-text)]">
+                  {displayTitle}
+                </p>
+                {displayBody ? (
+                  <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-[var(--bc-mobile-muted)]">
+                    {displayBody}
+                  </p>
+                ) : null}
+                <Link
+                  to={targetRoute}
+                  search={targetSearch}
+                  onClick={onClose}
+                  className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#D8B282] hover:underline"
+                >
+                  {isConnection ? "Xem lời mời kết nối" : text(t, n.action?.labelKey, t("bc.mobile.home.notifications.panel.open"), n.safeDisplayData)} →
+                </Link>
+              </div>
+              <button
+                type="button"
+                disabled={markRead.isPending}
+                onClick={() => markRead.mutate({ id: n.id })}
+                aria-label={t("bc.mobile.home.notifications.panel.markRead")}
+                className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)] hover:bg-[#D8B282]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] disabled:opacity-60"
+              >
+                <Check className="size-4" aria-hidden />
+              </button>
+            </li>
+          );
+        })}
       </ul>
       <div className="flex items-center gap-2 border-t border-[var(--bc-mobile-border)] p-2">
         <button

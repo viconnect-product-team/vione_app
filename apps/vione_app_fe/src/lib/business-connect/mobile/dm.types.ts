@@ -55,7 +55,8 @@ export type BcDmErrorCode =
   | "not_connected"
   | "not_found"
   | "empty_message"
-  | "unavailable";
+  | "unavailable"
+  | "generic";
 
 export type BcDmResult<T> = ({ ok: true } & T) | { ok: false; error: BcDmErrorCode };
 

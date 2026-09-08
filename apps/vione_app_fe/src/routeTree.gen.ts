@@ -68,6 +68,7 @@ import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
 import { Route as ConnectAppIndexRouteImport } from './routes/connect-app.index'
 import { Route as CompaniesIndexRouteImport } from './routes/companies.index'
 import { Route as BusinessConnectIndexRouteImport } from './routes/business-connect.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountSettingsIndexRouteImport } from './routes/account-settings.index'
 import { Route as PlatformRenewalAuditRouteImport } from './routes/platform.renewal-audit'
 import { Route as PlatformPermissionsRouteImport } from './routes/platform.permissions'
@@ -487,6 +488,11 @@ const BusinessConnectIndexRoute = BusinessConnectIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BusinessConnectRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AccountSettingsIndexRoute = AccountSettingsIndexRouteImport.update({
   id: '/',
@@ -1262,6 +1268,7 @@ export interface FileRoutesByFullPath {
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
@@ -1424,6 +1431,7 @@ export interface FileRoutesByTo {
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings': typeof AccountSettingsIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/business-connect': typeof BusinessConnectIndexRoute
   '/companies': typeof CompaniesIndexRoute
   '/connect-app': typeof ConnectAppIndexRoute
@@ -1610,6 +1618,7 @@ export interface FileRoutesById {
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
@@ -1797,6 +1806,7 @@ export interface FileRouteTypes {
     | '/platform/permissions'
     | '/platform/renewal-audit'
     | '/account-settings/'
+    | '/admin/'
     | '/business-connect/'
     | '/companies/'
     | '/connect-app/'
@@ -1959,6 +1969,7 @@ export interface FileRouteTypes {
     | '/platform/permissions'
     | '/platform/renewal-audit'
     | '/account-settings'
+    | '/admin'
     | '/business-connect'
     | '/companies'
     | '/connect-app'
@@ -2144,6 +2155,7 @@ export interface FileRouteTypes {
     | '/platform/permissions'
     | '/platform/renewal-audit'
     | '/account-settings/'
+    | '/admin/'
     | '/business-connect/'
     | '/companies/'
     | '/connect-app/'
@@ -2282,6 +2294,7 @@ export interface RootRouteChildren {
   PlatformIntroductionOperationsRoute: typeof PlatformIntroductionOperationsRoute
   PlatformPermissionsRoute: typeof PlatformPermissionsRoute
   PlatformRenewalAuditRoute: typeof PlatformRenewalAuditRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   MembersIndexRoute: typeof MembersIndexRoute
   PlatformIndexRoute: typeof PlatformIndexRoute
   ApiPublicCardChar123slugChar125DotvcfRoute: typeof ApiPublicCardChar123slugChar125DotvcfRoute
@@ -2707,6 +2720,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/business-connect/'
       preLoaderRoute: typeof BusinessConnectIndexRouteImport
       parentRoute: typeof BusinessConnectRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/account-settings/': {
       id: '/account-settings/'
@@ -4185,6 +4205,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlatformIntroductionOperationsRoute: PlatformIntroductionOperationsRoute,
   PlatformPermissionsRoute: PlatformPermissionsRoute,
   PlatformRenewalAuditRoute: PlatformRenewalAuditRoute,
+  AdminIndexRoute: AdminIndexRoute,
   MembersIndexRoute: MembersIndexRoute,
   PlatformIndexRoute: PlatformIndexRoute,
   ApiPublicCardChar123slugChar125DotvcfRoute:

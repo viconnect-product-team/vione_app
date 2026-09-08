@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Bell, Check, CheckCheck, Loader2, Undo2 } from "lucide-react";
+import { toast } from "sonner";
 import { hasTKey, useLang, useT } from "@/lib/i18n";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
@@ -13,6 +14,7 @@ import {
   useMarkNotificationRead,
   useMarkNotificationUnread,
 } from "@/hooks/use-bc-notifications";
+import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 import type { NotificationDTO } from "@/lib/business-connect/notification-orchestration/types";
 
 export const Route = createFileRoute("/connect-app/notifications")({
@@ -189,12 +191,22 @@ function ConnectAppNotificationsPage() {
           >
             {items.map((n: any) => {
               const unread = n.readAt === null;
+              const isConnectionRequest =
+                n.notificationKind === "connection_request_received" ||
+                n.titleKey === "connection_request_received";
+              const connectionId = n.sourceRecordId;
+              const senderUserId =
+                n.safeDisplayData?.counterpartUserId || n.actorUserId;
+              const profileRoute = senderUserId
+                ? `/connect-app/network/u:${senderUserId}`
+                : n.action?.targetRoute || "/connect-app/network";
+
               return (
                 <li
                   key={n.id}
-                  className={`rounded-3xl border bg-[var(--bc-mobile-surface)] p-4 ${
+                  className={`rounded-3xl border bg-[var(--bc-mobile-surface)] p-4 transition-all ${
                     unread
-                      ? "border-[var(--bc-mobile-border-gold)]"
+                      ? "border-[var(--bc-mobile-border-gold)] shadow-sm"
                       : "border-[var(--bc-mobile-border)]"
                   }`}
                 >
@@ -206,9 +218,17 @@ function ConnectAppNotificationsPage() {
                       }`}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[14.5px] font-semibold leading-snug text-[var(--bc-mobile-text)]">
-                        {fill(label(t, n.titleKey, n.notificationKind), n.safeDisplayData)}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[14.5px] font-semibold leading-snug text-[var(--bc-mobile-text)]">
+                          {fill(label(t, n.titleKey, n.notificationKind), n.safeDisplayData)}
+                        </p>
+                        {isConnectionRequest ? (
+                          <span className="shrink-0 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#D8B282]/15 text-[#D8B282] border border-[#D8B282]/30">
+                            Kết nối B2B
+                          </span>
+                        ) : null}
+                      </div>
+
                       {label(t, n.bodyKey, "") ? (
                         <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
                           {fill(label(t, n.bodyKey, ""), n.safeDisplayData)}
@@ -217,35 +237,85 @@ function ConnectAppNotificationsPage() {
                       <p className="mt-1.5 text-[11.5px] text-[var(--bc-mobile-muted)]">
                         {timeLabel(n.createdAt, locale)}
                       </p>
-                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                        {n.action.targetRoute ? (
-                          <Link
-                            to={n.action.targetRoute}
-                            search={(n.action.targetSearch ?? undefined) as never}
-                            className="inline-flex min-h-9 items-center rounded-full border border-[var(--bc-mobile-border-gold)] px-3.5 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
-                          >
-                            {label(t, n.action.labelKey, t("bc.mobile.notifications.page.open"))}
-                          </Link>
-                        ) : null}
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            unread
-                              ? markRead.mutate({ id: n.id })
-                              : markUnread.mutate({ id: n.id })
-                          }
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] px-3.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:opacity-60"
-                        >
-                          {unread ? (
-                            <Check className="size-3.5" aria-hidden />
-                          ) : (
-                            <Undo2 className="size-3.5" aria-hidden />
-                          )}
-                          {unread
-                            ? t("bc.mobile.notifications.page.markRead")
-                            : t("bc.mobile.notifications.page.markUnread")}
-                        </button>
+
+                      {/* Nút hành động */}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {isConnectionRequest && connectionId ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await GlobalNetworkSDK.mutations.accept(connectionId);
+                                  markRead.mutate({ id: n.id });
+                                  void query.refetch();
+                                  toast.success("Đã đồng ý kết nối thành công!");
+                                } catch {
+                                  toast.error("Có lỗi xảy ra khi chấp nhận kết nối.");
+                                }
+                              }}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] px-4 text-[12.5px] font-bold text-slate-950 shadow-sm hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+                            >
+                              <Check className="size-3.5" strokeWidth={2.5} />
+                              <span>Đồng ý kết bạn</span>
+                            </button>
+
+                            <Link
+                              to={profileRoute}
+                              className="inline-flex min-h-9 items-center rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[12.5px] font-semibold text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface)]"
+                            >
+                              Xem hồ sơ chi tiết
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await GlobalNetworkSDK.mutations.decline(connectionId);
+                                  markRead.mutate({ id: n.id });
+                                  void query.refetch();
+                                  toast.info("Đã từ chối lời mời.");
+                                } catch {
+                                  // ignore
+                                }
+                              }}
+                              className="inline-flex min-h-9 items-center rounded-full border border-[var(--bc-mobile-border)] px-3 text-[12px] font-medium text-[var(--bc-mobile-muted)] hover:text-white"
+                            >
+                              Từ chối
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {n.action.targetRoute ? (
+                              <Link
+                                to={profileRoute}
+                                search={(n.action.targetSearch ?? undefined) as never}
+                                className="inline-flex min-h-9 items-center rounded-full border border-[var(--bc-mobile-border-gold)] px-3.5 text-[12.5px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
+                              >
+                                {label(t, n.action.labelKey, t("bc.mobile.notifications.page.open"))}
+                              </Link>
+                            ) : null}
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                unread
+                                  ? markRead.mutate({ id: n.id })
+                                  : markUnread.mutate({ id: n.id })
+                              }
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] px-3.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:opacity-60"
+                            >
+                              {unread ? (
+                                <Check className="size-3.5" aria-hidden />
+                              ) : (
+                                <Undo2 className="size-3.5" aria-hidden />
+                              )}
+                              {unread
+                                ? t("bc.mobile.notifications.page.markRead")
+                                : t("bc.mobile.notifications.page.markUnread")}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

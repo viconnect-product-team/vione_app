@@ -201,6 +201,24 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     });
   }
 
+  emitConnectionRequested(targetUserId: string, requesterProfile: any, connectionId: string) {
+    if (!this.server) return;
+    this.server.to(`user:${targetUserId}`).emit('connection:requested', {
+      requesterProfile,
+      connectionId,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  emitConnectionAccepted(targetUserId: string, accepterProfile: any, connectionId: string) {
+    if (!this.server) return;
+    this.server.to(`user:${targetUserId}`).emit('connection:accepted', {
+      accepterProfile,
+      connectionId,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   emitNotification(userId: string, notification: any) {
     if (!this.server) return;
     this.server.to(`user:${userId}`).emit('notification:new', notification);
