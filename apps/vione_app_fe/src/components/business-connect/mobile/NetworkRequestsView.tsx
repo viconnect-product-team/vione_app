@@ -1,13 +1,6 @@
-// BC-Mobile-5E — /connect-app/network/requests: incoming connection requests.
-//
-// Explicit handshake continuation: each row is ONE pending request with
-// Accept (primary) and Decline (quiet). Every transition flows through the
-// frozen RPCs via GlobalNetworkSDK; the list and the Network composition
-// invalidate together so a newly accepted person appears in Network at once.
-// Calm Executive Minimal: hairline rows, no cards, truthful states only.
-
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, CircleCheck, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, CircleCheck, Loader2, RefreshCw, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { useFmt, useT } from "@/lib/i18n";
 import { useIncomingConnectionRequests } from "@/hooks/use-network-requests";
@@ -26,6 +19,7 @@ function initialsOf(name: string | null): string {
 export function NetworkRequestsView() {
   const t = useT();
   const fmt = useFmt();
+  const [actionStates, setActionStates] = useState<Record<string, "accepted" | "declined">>({});
   const { requests, initialLoading, coreError, retry, accept, decline, busy } =
     useIncomingConnectionRequests();
 
@@ -108,84 +102,138 @@ export function NetworkRequestsView() {
               const context = [req.counterpart?.headline, req.counterpart?.companyName]
                 .filter(Boolean)
                 .join(" · ");
+              const status = actionStates[req.connectionId];
+
               return (
                 <li key={req.connectionId} className="py-4">
-                  <Link
-                    to={req.counterpart?.userId ? `/connect-app/network/u:${req.counterpart.userId}` : "#"}
-                    className="flex items-center gap-3.5 group cursor-pointer"
-                  >
-                    {req.counterpart?.avatarUrl ? (
-                      <img
-                        src={req.counterpart.avatarUrl}
-                        alt=""
-                        loading="lazy"
-                        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)] group-hover:ring-[var(--bc-mobile-accent)] transition-all"
-                      />
-                    ) : (
+                  {req.counterpart?.userId ? (
+                    <Link
+                      to="/connect-app/network/$personId"
+                      params={{ personId: `u:${req.counterpart.userId}` }}
+                      className="flex items-center gap-3.5 group cursor-pointer"
+                    >
+                      {req.counterpart?.avatarUrl ? (
+                        <img
+                          src={req.counterpart.avatarUrl}
+                          alt=""
+                          loading="lazy"
+                          className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)] group-hover:ring-[var(--bc-mobile-accent)] transition-all"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors"
+                        >
+                          {initialsOf(req.counterpart?.displayName ?? null)}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors">
+                          {name}
+                        </p>
+                        {context ? (
+                          <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
+                            {context}
+                          </p>
+                        ) : null}
+                        <p className="mt-0.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
+                          {t("bc.mobile.network.requests.wantsToConnect")} ·{" "}
+                          {fmt.rel(req.requestedAt)}
+                        </p>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3.5">
                       <span
                         aria-hidden="true"
-                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors"
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)]"
                       >
-                        {initialsOf(req.counterpart?.displayName ?? null)}
+                        {initialsOf(null)}
                       </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors">
-                        {name}
-                      </p>
-                      {context ? (
-                        <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
-                          {context}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
+                          {name}
                         </p>
-                      ) : null}
-                      <p className="mt-0.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
-                        {t("bc.mobile.network.requests.wantsToConnect")} ·{" "}
-                        {fmt.rel(req.requestedAt)}
-                      </p>
+                        <p className="mt-0.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
+                          {t("bc.mobile.network.requests.wantsToConnect")} ·{" "}
+                          {fmt.rel(req.requestedAt)}
+                        </p>
+                      </div>
                     </div>
-                  </Link>
+                  )}
+
                   <div className="mt-3 flex gap-2 pl-[62px]">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      aria-label={t("bc.mobile.network.requests.acceptAria", { name })}
-                      onClick={() =>
-                        accept.mutate(req.connectionId, {
-                          onSuccess: () => {
-                            reportIdentityMetric("CONNECTION_REQUEST_ACCEPTED");
-                            toast.success(t("bc.mobile.connection.toast.accepted"));
-                          },
-                          onError: fail,
-                        })
-                      }
-                      className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-text)] px-4 text-[14px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
-                    >
-                      {accept.isPending ? (
-                        <Loader2
-                          aria-hidden="true"
-                          className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                          strokeWidth={1.8}
-                        />
-                      ) : null}
-                      {t("bc.mobile.connection.accept")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      aria-label={t("bc.mobile.network.requests.declineAria", { name })}
-                      onClick={() =>
-                        decline.mutate(req.connectionId, {
-                          onSuccess: () => {
-                            reportIdentityMetric("CONNECTION_REQUEST_DECLINED");
-                            toast.success(t("bc.mobile.connection.toast.declined"));
-                          },
-                          onError: fail,
-                        })
-                      }
-                      className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 text-[14px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
-                    >
-                      {t("bc.mobile.connection.decline")}
-                    </button>
+                    {status === "accepted" ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1.5 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <UserCheck className="h-4 w-4" />
+                        ✓ Đã kết nối
+                      </span>
+                    ) : status === "declined" ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--bc-mobile-surface-2)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--bc-mobile-muted)]">
+                        <UserX className="h-4 w-4" />
+                        ✕ Đã từ chối
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          aria-label={t("bc.mobile.network.requests.acceptAria", { name })}
+                          onClick={() => {
+                            setActionStates((prev) => ({ ...prev, [req.connectionId]: "accepted" }));
+                            accept.mutate(req.connectionId, {
+                              onSuccess: () => {
+                                reportIdentityMetric("CONNECTION_REQUEST_ACCEPTED");
+                                toast.success(t("bc.mobile.connection.toast.accepted"));
+                              },
+                              onError: (err) => {
+                                setActionStates((prev) => {
+                                  const next = { ...prev };
+                                  delete next[req.connectionId];
+                                  return next;
+                                });
+                                fail();
+                              },
+                            });
+                          }}
+                          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-text)] px-4 text-[14px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none cursor-pointer"
+                        >
+                          {accept.isPending ? (
+                            <Loader2
+                              aria-hidden="true"
+                              className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                              strokeWidth={1.8}
+                            />
+                          ) : null}
+                          {t("bc.mobile.connection.accept")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          aria-label={t("bc.mobile.network.requests.declineAria", { name })}
+                          onClick={() => {
+                            setActionStates((prev) => ({ ...prev, [req.connectionId]: "declined" }));
+                            decline.mutate(req.connectionId, {
+                              onSuccess: () => {
+                                reportIdentityMetric("CONNECTION_REQUEST_DECLINED");
+                                toast.success(t("bc.mobile.connection.toast.declined"));
+                              },
+                              onError: (err) => {
+                                setActionStates((prev) => {
+                                  const next = { ...prev };
+                                  delete next[req.connectionId];
+                                  return next;
+                                });
+                                fail();
+                              },
+                            });
+                          }}
+                          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 text-[14px] font-medium text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none cursor-pointer"
+                        >
+                          {t("bc.mobile.connection.decline")}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </li>
               );
@@ -196,3 +244,4 @@ export function NetworkRequestsView() {
     </>
   );
 }
+

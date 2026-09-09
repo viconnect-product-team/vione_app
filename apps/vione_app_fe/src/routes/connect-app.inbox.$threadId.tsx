@@ -15,12 +15,15 @@ import {
   FileText,
   Image as ImageIcon,
   Loader2,
+  Mic,
   MoreHorizontal,
   Paperclip,
+  Phone,
   Plus,
   RotateCcw,
   Send,
   Sparkles,
+  Video,
   X,
 } from "lucide-react";
 import { useLang, useT } from "@/lib/i18n";
@@ -40,6 +43,11 @@ import {
 } from "@/lib/business-connect/mobile/dm.types";
 import { safeRandomUUID } from "@/lib/utils";
 import { uploadChatAttachment } from "@/lib/upload-media";
+import { DmCallModal } from "@/components/business-connect/mobile/inbox/DmCallModal";
+import { VoiceMessagePlayer } from "@/components/business-connect/mobile/inbox/VoiceMessagePlayer";
+import { VoiceMessageRecorder } from "@/components/business-connect/mobile/inbox/VoiceMessageRecorder";
+import { NotificationPermissionBanner } from "@/components/business-connect/mobile/inbox/NotificationPermissionBanner";
+import { sendExternalNotification } from "@/lib/notification-permissions";
 
 export const Route = createFileRoute("/connect-app/inbox/$threadId")({
   head: () => ({
@@ -59,6 +67,33 @@ export const Route = createFileRoute("/connect-app/inbox/$threadId")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  errorComponent: ({ error, reset }) => (
+    <div className="bc-app flex min-h-[100dvh] w-full max-w-[480px] mx-auto flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-[#070B12] text-slate-900 dark:text-slate-100">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-4 border border-amber-500/20">
+        <Sparkles className="h-7 w-7" />
+      </div>
+      <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">Không thể tải cuộc trò chuyện</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-6 leading-relaxed">
+        Đang khởi tạo kết nối hoặc kết nối mạng bị gián đoạn. Vui lòng thử lại.
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] px-5 py-2.5 text-xs font-bold text-slate-950 shadow-sm hover:brightness-105 transition-all cursor-pointer"
+        >
+          Thử lại
+        </button>
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 px-5 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+        >
+          Quay lại
+        </button>
+      </div>
+    </div>
+  ),
   component: ThreadPage,
 });
 
@@ -117,10 +152,21 @@ function getFileBadgeInfo(fileName: string) {
 type ParsedContent =
   | { type: "image"; url: string; name?: string; caption?: string }
   | { type: "file"; url: string; name: string; size?: number; caption?: string }
+  | { type: "voice"; url: string; duration?: number; caption?: string }
   | { type: "text"; text: string };
 
 function parseMessageContent(body: string): ParsedContent {
-  // Pattern 1: [image:URL|NAME] or [image:URL]
+  // Pattern 0: voice:URL|DURATION or voice:URL
+  const voiceRegex = /\[voice:(https?:\/\/[^|\]]+|data:audio\/[^|\]]+)(?:\|(\d+))?\]/i;
+  const voiceMatch = body.match(voiceRegex);
+  if (voiceMatch) {
+    const url = voiceMatch[1];
+    const duration = voiceMatch[2] ? parseInt(voiceMatch[2], 10) : undefined;
+    const caption = body.replace(voiceRegex, "").trim();
+    return { type: "voice", url, duration, caption: caption || undefined };
+  }
+
+  // Pattern 1: image:URL|NAME or image:URL
   const imageRegex = /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i;
   const imageMatch = body.match(imageRegex);
   if (imageMatch) {
@@ -130,7 +176,7 @@ function parseMessageContent(body: string): ParsedContent {
     return { type: "image", url, name, caption: caption || undefined };
   }
 
-  // Pattern 2: [file:URL|NAME|SIZE] or [file:URL|NAME] or [file:URL]
+  // Pattern 2: file:URL|NAME|SIZE or file:URL|NAME or file:URL
   const fileRegex = /\[file:(https?:\/\/[^|\]]+)(?:\|([^|\]]*))?(?:\|(\d+))?\]/i;
   const fileMatch = body.match(fileRegex);
   if (fileMatch) {
@@ -164,9 +210,13 @@ function ThreadPage() {
   const viewerUserId = useViewerUserId();
 
   const query = useDmThread(threadId);
-  const send = useDmSend(threadId);
-  const retract = useDmRetract(threadId);
-  const react = useDmReact(threadId);
+  const result = query.data;
+  const thread = result?.ok ? result.thread : null;
+  const actualThreadId = thread?.threadId || threadId;
+
+  const send = useDmSend(actualThreadId);
+  const retract = useDmRetract(actualThreadId);
+  const react = useDmReact(actualThreadId);
   const markRead = useDmMarkRead();
 
   const [draft, setDraft] = useState("");
@@ -182,6 +232,11 @@ function ThreadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [callModal, setCallModal] = useState<{ isOpen: boolean; type: "audio" | "video" }>({
+    isOpen: false,
+    type: "audio",
+  });
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -189,13 +244,33 @@ function ThreadPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const markedRef = useRef<string | null>(null);
 
-  const result = query.data;
-  const thread = result?.ok ? result.thread : null;
   const messages = useMemo(() => (result?.ok ? result.messages : []), [result]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
+
+  // External system push notification when new message arrives in background
+  const prevMsgCountRef = useRef(messages.length);
+  useEffect(() => {
+    if (messages.length > prevMsgCountRef.current) {
+      const latest = messages[messages.length - 1];
+      if (latest && !latest.fromMe && (typeof document !== "undefined" && document.hidden)) {
+        let preview = latest.body;
+        if (preview.startsWith("[image:")) preview = "📷 Đã gửi một hình ảnh";
+        else if (preview.startsWith("[file:")) preview = "📎 Đã gửi một tệp đính kèm";
+        else if (preview.startsWith("[voice:")) preview = "🎙️ Đã gửi một tin nhắn thoại";
+
+        sendExternalNotification(thread?.displayName || "Tin nhắn mới", {
+          body: preview,
+          icon: thread?.avatarUrl || "/app-icon.png",
+          tag: `msg-${actualThreadId}`,
+          url: `/connect-app/inbox/${actualThreadId}`,
+        });
+      }
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages, thread?.displayName, thread?.avatarUrl, actualThreadId]);
 
   // Visual viewport listener: detect keyboard open/close on mobile
   useEffect(() => {
@@ -218,10 +293,10 @@ function ThreadPage() {
 
   useEffect(() => {
     if (!thread) return;
-    if (markedRef.current === threadId && thread.unreadCount === 0) return;
-    markedRef.current = threadId;
-    markRead.mutate(threadId);
-  }, [thread, threadId, markRead]);
+    if (markedRef.current === actualThreadId && thread.unreadCount === 0) return;
+    markedRef.current = actualThreadId;
+    markRead.mutate(actualThreadId);
+  }, [thread, actualThreadId, markRead]);
 
   useEffect(() => {
     const handleOutsideClick = () => {
@@ -300,6 +375,27 @@ function ThreadPage() {
       setIsUploading(false);
       setUploadProgress(null);
       if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleSendVoice = async (payload: { url: string; duration: number }) => {
+    setIsRecordingVoice(false);
+    const bodyPayload = `[voice:${payload.url}|${payload.duration}]`;
+    const res = await send.mutateAsync({
+      body: bodyPayload,
+      clientToken: newToken(),
+      replyTo: replyingTo
+        ? {
+            id: replyingTo.id,
+            senderName: replyingTo.senderName,
+            preview: replyingTo.preview,
+          }
+        : null,
+    });
+    if (res.ok) {
+      setReplyingTo(null);
+    } else {
+      setErrorCode(res.error);
     }
   };
 
@@ -457,7 +553,41 @@ function ThreadPage() {
             <h1 className="text-[15px] font-bold text-slate-900 dark:text-white">{t("bc.mobile.inbox.title")}</h1>
           )}
         </div>
+
+        {thread ? (
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setCallModal({ isOpen: true, type: "audio" })}
+              aria-label="Gọi thoại"
+              title="Gọi thoại"
+              className="grid h-9 w-9 place-items-center rounded-full text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
+            >
+              <Phone className="h-4.5 w-4.5 text-[var(--bc-mobile-accent,#B8860B)]" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCallModal({ isOpen: true, type: "video" })}
+              aria-label="Gọi video"
+              title="Gọi video"
+              className="grid h-9 w-9 place-items-center rounded-full text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
+            >
+              <Video className="h-4.5 w-4.5 text-[var(--bc-mobile-accent,#B8860B)]" strokeWidth={1.8} />
+            </button>
+          </div>
+        ) : null}
       </header>
+
+      {/* Direct Call Modal */}
+      <DmCallModal
+        isOpen={callModal.isOpen}
+        callType={callModal.type}
+        counterpartUserId={thread?.personId ? thread.personId.replace(/^u:/, "") : undefined}
+        counterpartName={thread?.displayName ?? "Đối tác"}
+        counterpartAvatar={thread?.avatarUrl}
+        counterpartTitle={thread?.companyName || thread?.headline}
+        onClose={() => setCallModal((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       <div className="flex flex-1 min-h-0 flex-col max-w-full relative overflow-hidden">
         {copyToast ? (
@@ -465,6 +595,9 @@ function ThreadPage() {
             {copyToast}
           </div>
         ) : null}
+
+        {/* Global Notification & Device Permissions Banner */}
+        <NotificationPermissionBanner />
 
         {query.isLoading ? (
           <div className="flex flex-1 items-center justify-center gap-2 py-10 text-[13px] text-[var(--bc-mobile-muted)]">
@@ -772,6 +905,19 @@ function ThreadPage() {
                                         </p>
                                       ) : null}
                                     </div>
+                                  ) : content.type === "voice" ? (
+                                    <div className="p-0.5">
+                                      <VoiceMessagePlayer url={content.url} duration={content.duration} fromMe={m.fromMe} />
+                                      {content.caption ? (
+                                        <p
+                                          className={`px-3 pb-2 text-[13px] leading-relaxed ${
+                                            m.fromMe ? "text-[#1A1206] font-medium" : "text-slate-900 dark:text-[var(--bc-mobile-text)]"
+                                          }`}
+                                        >
+                                          {content.caption}
+                                        </p>
+                                      ) : null}
+                                    </div>
                                   ) : (
                                     <div className="px-4 py-2.5 text-[14px] leading-relaxed break-words">
                                       {content.text}
@@ -952,121 +1098,158 @@ function ThreadPage() {
               </div>
             ) : null}
 
-            <form
+            <div
               className="border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 p-3 backdrop-blur-md shrink-0"
               style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
-              onSubmit={(e) => {
-                e.preventDefault();
-                void submit();
-              }}
             >
-              <div className="flex items-end gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-1.5 focus-within:border-[var(--bc-mobile-border-gold)] transition-all shadow-none">
-                {/* Plus (+) Button for attachment menu */}
-                <div className="relative shrink-0 mb-0.5">
-                  <button
-                    type="button"
-                    disabled={isUploading || send.isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setUploadMenuOpen(!uploadMenuOpen);
-                    }}
-                    aria-label="Đính kèm tệp hoặc ảnh"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
-                  >
-                    <Plus
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        uploadMenuOpen ? "rotate-45" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {uploadMenuOpen ? (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-11 left-0 z-40 w-48 rounded-2xl border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] p-1.5 shadow-2xl backdrop-blur-xl animate-fade-in"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadMenuOpen(false);
-                          imageInputRef.current?.click();
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
-                      >
-                        <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-400">
-                          <ImageIcon className="h-4 w-4" />
-                        </div>
-                        <span>Gửi hình ảnh</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadMenuOpen(false);
-                          fileInputRef.current?.click();
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
-                      >
-                        <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/15 text-blue-400">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <span>Gửi tài liệu / tệp</span>
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <label className="sr-only" htmlFor="bc-dm-input">
-                  {t("bc.mobile.inbox.thread.placeholder")}
-                </label>
-                <textarea
-                  id="bc-dm-input"
-                  ref={textareaRef}
-                  rows={1}
-                  value={draft}
-                  maxLength={DM_MAX_BODY_LEN}
-                  onChange={(e) => {
-                    setDraft(e.target.value);
-                    e.target.style.height = "auto";
-                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={t("bc.mobile.inbox.thread.placeholder")}
-                  className="chat-input no-focus-outline max-h-[120px] min-h-[32px] flex-1 resize-none bg-transparent py-1 text-[13.5px] text-[var(--bc-mobile-text)] placeholder-[var(--bc-mobile-muted)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
-                  style={{ border: "none", outline: "none", boxShadow: "none" }}
+              {isRecordingVoice ? (
+                <VoiceMessageRecorder
+                  onSendVoice={handleSendVoice}
+                  onCancel={() => setIsRecordingVoice(false)}
                 />
-
-                {draft.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft("");
-                      if (textareaRef.current) {
-                        textareaRef.current.style.height = "auto";
-                        textareaRef.current.focus();
-                      }
-                    }}
-                    aria-label="Xóa nội dung nhập"
-                    className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors cursor-pointer"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={send.isPending || isUploading || sanitizeDmBody(draft).length === 0}
-                  aria-label={t("bc.mobile.inbox.thread.send")}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-accent-grad)] text-[#1a1206] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 cursor-pointer shadow-md mb-0.5"
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void submit();
+                  }}
                 >
-                  {send.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
-            </form>
+                  <div className="flex items-end gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-1.5 focus-within:border-[var(--bc-mobile-border-gold)] transition-all shadow-none">
+                    {/* Plus (+) Button for attachment menu */}
+                    <div className="relative shrink-0 mb-0.5">
+                      <button
+                        type="button"
+                        disabled={isUploading || send.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUploadMenuOpen(!uploadMenuOpen);
+                        }}
+                        aria-label="Đính kèm tệp hoặc ảnh"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
+                      >
+                        <Plus
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            uploadMenuOpen ? "rotate-45" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {uploadMenuOpen ? (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute bottom-11 left-0 z-40 w-52 rounded-2xl border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] p-1.5 shadow-2xl backdrop-blur-xl animate-fade-in"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadMenuOpen(false);
+                              imageInputRef.current?.click();
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                          >
+                            <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-400">
+                              <ImageIcon className="h-4 w-4" />
+                            </div>
+                            <span>Gửi hình ảnh</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadMenuOpen(false);
+                              fileInputRef.current?.click();
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                          >
+                            <div className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/15 text-blue-400">
+                              <FileText className="h-4 w-4" />
+                            </div>
+                            <span>Gửi tài liệu / tệp</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadMenuOpen(false);
+                              setIsRecordingVoice(true);
+                            }}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-accent)] cursor-pointer transition-colors"
+                          >
+                            <div className="grid h-7 w-7 place-items-center rounded-lg bg-red-500/15 text-red-400">
+                              <Mic className="h-4 w-4" />
+                            </div>
+                            <span>Ghi âm giọng nói</span>
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <label className="sr-only" htmlFor="bc-dm-input">
+                      {t("bc.mobile.inbox.thread.placeholder")}
+                    </label>
+                    <textarea
+                      id="bc-dm-input"
+                      ref={textareaRef}
+                      rows={1}
+                      value={draft}
+                      maxLength={DM_MAX_BODY_LEN}
+                      onChange={(e) => {
+                        setDraft(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                      }}
+                      onKeyDown={handleKeyDown}
+                      placeholder={t("bc.mobile.inbox.thread.placeholder")}
+                      className="chat-input no-focus-outline max-h-[120px] min-h-[32px] flex-1 resize-none bg-transparent py-1 text-[13.5px] text-[var(--bc-mobile-text)] placeholder-[var(--bc-mobile-muted)] border-none outline-none focus:outline-none focus:ring-0 shadow-none leading-relaxed"
+                      style={{ border: "none", outline: "none", boxShadow: "none" }}
+                    />
+
+                    {draft.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraft("");
+                          if (textareaRef.current) {
+                            textareaRef.current.style.height = "auto";
+                            textareaRef.current.focus();
+                          }
+                        }}
+                        aria-label="Xóa nội dung nhập"
+                        className="mb-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-white/20 text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-white/30 transition-colors cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
+                    {/* High-Contrast Send Button or Voice Mic Button */}
+                    {draft.trim().length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsRecordingVoice(true)}
+                        aria-label="Ghi âm tin nhắn thoại"
+                        title="Ghi âm tin nhắn thoại"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[#F7D896] hover:bg-amber-500/30 border border-amber-500/40 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-sm mb-0.5"
+                      >
+                        <Mic className="h-4 w-4 text-[#F7D896]" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={send.isPending || isUploading}
+                        aria-label={t("bc.mobile.inbox.thread.send")}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black shadow-[0_2px_12px_rgba(216,178,130,0.5)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer mb-0.5"
+                      >
+                        {send.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-950" aria-hidden="true" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5 fill-current text-slate-950 ml-0.5" aria-hidden="true" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
           </>
         )}
       </div>

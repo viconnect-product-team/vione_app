@@ -22,6 +22,8 @@ import {
   Camera,
   ChevronRight,
   Crop as CropIcon,
+  Globe,
+  Lock,
   ImagePlus,
   MapPin,
   NotebookPen,
@@ -141,6 +143,7 @@ export function MomentComposer({ personId }: { personId: string }) {
     atLocal: defaultReminderAt(7),
     label: "",
   });
+  const [visibility, setVisibility] = useState<"friends" | "public" | "private">("friends");
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   // Tiến trình xử lý ảnh phía trình duyệt (nén/xoay/strip EXIF) và tải lên máy chủ.
   const [processing, setProcessing] = useState<{ done: number; total: number } | null>(null);
@@ -478,6 +481,7 @@ export function MomentComposer({ personId }: { personId: string }) {
         placeLabel: placeLabel.trim() || null,
         note: note.trim() || null,
         photoCount: validPhotos.length,
+        visibility,
         clientToken: clientTokenRef.current,
       };
 
@@ -840,6 +844,73 @@ export function MomentComposer({ personId }: { personId: string }) {
                 </button>
               ) : null}
             </div>
+
+            {/* Phạm vi chia sẻ khoảnh khắc */}
+            <section className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]">
+                    {visibility === "public" ? <Globe className="h-4.5 w-4.5" strokeWidth={1.8} /> : visibility === "private" ? <Lock className="h-4.5 w-4.5" strokeWidth={1.8} /> : <Users className="h-4.5 w-4.5" strokeWidth={1.8} />}
+                  </span>
+                  <div>
+                    <span className="block text-[13.5px] font-semibold text-[var(--bc-mobile-text)]">
+                      Phạm vi hiển thị
+                    </span>
+                    <span className="block text-[11.5px] text-[var(--bc-mobile-muted)]">
+                      {visibility === "public"
+                        ? "Công khai — Mọi người đều thấy được trên mạng lưới"
+                        : visibility === "private"
+                          ? "Riêng tư — Chỉ 1 mình tôi xem được"
+                          : "Bạn bè — Chỉ những người đã kết bạn mới xem được"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setVisibility("friends")}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                    visibility === "friends"
+                      ? "border-[var(--bc-mobile-border-gold,#D8B282)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                      : "border-[var(--bc-mobile-border)] bg-transparent text-[var(--bc-mobile-muted)] hover:bg-[var(--bc-mobile-surface-2)] font-medium"
+                  }`}
+                >
+                  <Users className={`h-4.5 w-4.5 ${visibility === "friends" ? "text-[var(--bc-mobile-accent)]" : ""}`} />
+                  <span className="text-[12px] leading-tight">Bạn bè</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setVisibility("public")}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                    visibility === "public"
+                      ? "border-[var(--bc-mobile-border-gold,#D8B282)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                      : "border-[var(--bc-mobile-border)] bg-transparent text-[var(--bc-mobile-muted)] hover:bg-[var(--bc-mobile-surface-2)] font-medium"
+                  }`}
+                >
+                  <Globe className={`h-4.5 w-4.5 ${visibility === "public" ? "text-[var(--bc-mobile-accent)]" : ""}`} />
+                  <span className="text-[12px] leading-tight">Công khai</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setVisibility("private")}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                    visibility === "private"
+                      ? "border-[var(--bc-mobile-border-gold,#D8B282)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                      : "border-[var(--bc-mobile-border)] bg-transparent text-[var(--bc-mobile-muted)] hover:bg-[var(--bc-mobile-surface-2)] font-medium"
+                  }`}
+                >
+                  <Lock className={`h-4.5 w-4.5 ${visibility === "private" ? "text-[var(--bc-mobile-accent)]" : ""}`} />
+                  <span className="text-[12px] leading-tight">1 mình tôi</span>
+                </button>
+              </div>
+            </section>
 
 
             <section

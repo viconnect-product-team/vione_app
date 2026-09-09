@@ -30,6 +30,7 @@ import { LangSwitcher } from "@/components/LangSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useLang } from "@/lib/i18n";
 import type { PublicAssociation } from "@/lib/associations.functions";
+import { LandingInteractiveShowcase } from "./LandingInteractiveShowcase";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
 /** Multilingual dictionary for Association Landing showcase elements */
@@ -853,6 +854,11 @@ export function AssociationLandingView({ a }: { a: PublicAssociation }) {
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* Breakthrough 3D Interactive Slide Showcase */}
+          <section className="mt-20">
+            <LandingInteractiveShowcase />
           </section>
 
           {/* Section 2: Hệ Sinh Thái Quyền Lợi & Tính Năng Hội Viên */}

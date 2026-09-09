@@ -358,7 +358,7 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
                 setActionBusy(true);
                 try {
                   await GlobalNetworkSDK.mutations.accept(incomingConnectionId);
-                  void qc.invalidateQueries({ queryKey: ["bc-person", personId] });
+                  void qc.invalidateQueries({ queryKey: ["bc-person", person.personId] });
                   void qc.invalidateQueries({ queryKey: ["network-incoming-requests"] });
                   void qc.invalidateQueries({ queryKey: ["network-requests"] });
                   void qc.invalidateQueries({ queryKey: ["user-connections"] });
@@ -382,7 +382,7 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
                 setActionBusy(true);
                 try {
                   await GlobalNetworkSDK.mutations.decline(incomingConnectionId);
-                  void qc.invalidateQueries({ queryKey: ["bc-person", personId] });
+                  void qc.invalidateQueries({ queryKey: ["bc-person", person.personId] });
                   void qc.invalidateQueries({ queryKey: ["network-incoming-requests"] });
                   void qc.invalidateQueries({ queryKey: ["network-requests"] });
                   toast.info("Đã từ chối lời mời kết nối.");

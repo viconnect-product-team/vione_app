@@ -11,6 +11,7 @@ import {
 import {
   archiveAllReadNotificationsFn,
   archiveNotificationFn,
+  deleteNotificationFn,
   getUnreadNotificationCountFn,
   listNotificationsFn,
   markNotificationReadFn,
@@ -24,6 +25,7 @@ export const NOTIFICATION_SDK_METHODS = Object.freeze([
   "markUnread",
   "archiveNotification",
   "archiveAllRead",
+  "deleteNotification",
   "getPreferences",
   "updatePreferences",
   "updateOverride",
@@ -37,6 +39,7 @@ export const NotificationOrchestrationSDK = Object.freeze({
   markUnread: markNotificationUnreadFn,
   archiveNotification: archiveNotificationFn,
   archiveAllRead: archiveAllReadNotificationsFn,
+  deleteNotification: deleteNotificationFn,
   getPreferences: getNotificationPreferencesFn,
   updatePreferences: updateNotificationPreferencesFn,
   updateOverride: updateNotificationPreferenceOverrideFn,
@@ -44,3 +47,4 @@ export const NotificationOrchestrationSDK = Object.freeze({
 });
 
 export type NotificationOrchestrationSDKType = typeof NotificationOrchestrationSDK;
+

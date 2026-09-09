@@ -1,10 +1,11 @@
-import { Bell, CheckCheck, Megaphone, Info, ChevronRight } from "lucide-react";
+import { Bell, CheckCheck, Megaphone, Info, ChevronRight, Trash2, ExternalLink } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useT } from "@/lib/i18n";
+import { toast } from "sonner";
 import type { Notification } from "@/lib/extra-data";
-import { listNotificationsFn } from "@/lib/notifications.functions";
+import { listNotificationsFn, deleteNotificationFn } from "@/lib/notifications.functions";
 import { getLastSeen, markNotificationsSeen } from "@/hooks/use-unread-notifications";
 import { ListSkeleton, NoNotifications } from "@/components/dashboard/StateKit";
 
@@ -42,7 +43,9 @@ function audienceIcon(a: Notification["audience"]) {
 export function NotificationCenter() {
   const t = useT();
   const rel = useRelativeTime();
+  const navigate = useNavigate();
   const list = useServerFn(listNotificationsFn);
+  const deleteFn = useServerFn(deleteNotificationFn);
   const [items, setItems] = useState<Notification[]>([]);
   const [seen, setSeen] = useState(0);
   const [open, setOpen] = useState(false);
@@ -65,7 +68,12 @@ export function NotificationCenter() {
     void refresh();
     const onSeen = () => setSeen(getLastSeen());
     window.addEventListener("notifications-seen", onSeen);
-    return () => window.removeEventListener("notifications-seen", onSeen);
+    // Realtime notification listeners
+    window.addEventListener("connect-app:notification", refresh);
+    return () => {
+      window.removeEventListener("notifications-seen", onSeen);
+      window.removeEventListener("connect-app:notification", refresh);
+    };
   }, [refresh]);
 
   useEffect(() => {
@@ -80,6 +88,17 @@ export function NotificationCenter() {
       document.removeEventListener("keydown", onKey);
     };
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await deleteFn({ data: { id } });
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      toast.success("Đã xóa thông báo");
+    } catch {
+      toast.error("Không thể xóa thông báo");
+    }
+  };
 
   const sorted = useMemo(
     () =>
@@ -109,6 +128,52 @@ export function NotificationCenter() {
     setSeen(Date.now());
   };
 
+  const handleItemClick = (n: Notification) => {
+    setOpen(false);
+    markNotificationsSeen();
+    setSeen(Date.now());
+
+    // Determine target redirection route based on notification content/title
+    const titleLower = (n.title || "").toLowerCase();
+    const bodyLower = (n.body || "").toLowerCase();
+
+    if (
+      titleLower.includes("hội viên") ||
+      titleLower.includes("đăng ký") ||
+      titleLower.includes("gia nhập") ||
+      bodyLower.includes("duyệt") ||
+      bodyLower.includes("hồ sơ")
+    ) {
+      void navigate({ to: "/members", search: { status: "pending" } });
+      return;
+    }
+
+    if (
+      titleLower.includes("phí") ||
+      titleLower.includes("thanh toán") ||
+      bodyLower.includes("hội phí")
+    ) {
+      void navigate({ to: "/fees" });
+      return;
+    }
+
+    if (titleLower.includes("sự kiện") || bodyLower.includes("sự kiện")) {
+      void navigate({ to: "/events" });
+      return;
+    }
+
+    if (
+      titleLower.includes("kết nối") ||
+      bodyLower.includes("kết bạn") ||
+      titleLower.includes("khoảnh khắc")
+    ) {
+      void navigate({ to: "/connect-app/network" });
+      return;
+    }
+
+    void navigate({ to: "/notifications" });
+  };
+
   const renderItem = (n: Notification, i: number) => {
     const ts = n.sentAt ? new Date(n.sentAt).getTime() : 0;
     const unread = ts > seen;
@@ -116,7 +181,8 @@ export function NotificationCenter() {
     return (
       <div
         key={n.id ?? `${n.title}-${i}`}
-        className={`flex gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted ${
+        onClick={() => handleItemClick(n)}
+        className={`group flex items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted relative cursor-pointer ${
           unread ? "bg-accent/40" : ""
         }`}
       >
@@ -129,12 +195,27 @@ export function NotificationCenter() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{n.title}</p>
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">{n.title}</p>
             {unread && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
           </div>
           {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
-          <p className="mt-1 text-[11px] text-muted-foreground">{rel(n.sentAt)}</p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[11px] text-muted-foreground">{rel(n.sentAt)}</p>
+            <span className="text-[10px] text-primary/80 font-medium group-hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span>Xem chi tiết</span>
+              <ChevronRight className="h-3 w-3" />
+            </span>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={(e) => handleDelete(e, n.id)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded ml-1"
+          title="Xóa thông báo"
+          aria-label="Xóa thông báo"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     );
   };
@@ -143,7 +224,7 @@ export function NotificationCenter() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
         aria-label={t("notif.title")}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -170,7 +251,7 @@ export function NotificationCenter() {
             {unreadCount > 0 && (
               <button
                 onClick={markAll}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 {t("notif.markAll")}
@@ -219,3 +300,4 @@ export function NotificationCenter() {
     </div>
   );
 }
+

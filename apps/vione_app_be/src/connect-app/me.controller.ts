@@ -94,6 +94,16 @@ export class MeController {
     return this.connectAppService.markNotificationsRead(req.user.id, ids);
   }
 
+  @Delete('notifications/:id')
+  async deleteNotification(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.deleteNotification(req.user.id, id);
+  }
+
+  @Post('notifications/delete')
+  async deleteNotificationsPost(@Request() req, @Body('ids') ids: string[]) {
+    return this.connectAppService.deleteNotifications(req.user.id, ids);
+  }
+
   @Get('notifications/prefs')
   async getNotificationPrefs(@Request() req) {
     return this.connectAppService.getNotificationPrefs(req.user.id);

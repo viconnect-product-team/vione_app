@@ -62,42 +62,13 @@ export function LandingChallenges({ tag, title, items, themeMode = "dark" }: Lan
         }`}
       />
 
-      {/* Background Graphic Texture: Image layer & Diagonal Cyber Circuit */}
+      {/* Clean Subtle Ambient Lighting */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Luxury dark textured backdrop */}
-        <img
-          src="/landing/ceo1983-mastermind-bg.jpg"
-          alt="Challenges Background"
-          className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-            isDark
-              ? "opacity-35 mix-blend-luminosity"
-              : isContrast
-              ? "opacity-15 mix-blend-luminosity"
-              : "opacity-15 mix-blend-multiply"
-          }`}
-        />
-
-        {/* Amber-Crimson friction aura */}
         <div
-          className={`absolute top-1/2 left-1/4 -translate-y-1/2 w-[650px] h-[450px] rounded-full blur-[160px] ${
-            isDark ? "bg-amber-500/15" : isContrast ? "bg-amber-500/20" : "bg-amber-500/8"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] rounded-full blur-[160px] ${
+            isDark ? "bg-amber-500/10" : isContrast ? "bg-amber-500/15" : "bg-amber-500/5"
           }`}
         />
-        <div
-          className={`absolute top-1/2 right-1/4 -translate-y-1/2 w-[550px] h-[450px] rounded-full blur-[170px] ${
-            isDark ? "bg-rose-600/10" : isContrast ? "bg-amber-600/10" : "bg-rose-600/6"
-          }`}
-        />
-
-        {/* SVG Diagonal Tech Pinstripes */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="challenges-diag-lines" width="30" height="30" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="0" x2="0" y2="30" stroke="rgba(245, 158, 11, 0.5)" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#challenges-diag-lines)" />
-        </svg>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

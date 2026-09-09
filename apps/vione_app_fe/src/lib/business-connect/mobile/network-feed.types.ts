@@ -35,6 +35,7 @@ export type BcNetworkFeedItem = {
   /** URL ký ngắn hạn, tối đa 5 ảnh, theo thứ tự sort_order. */
   photoUrls: string[];
   photoCount: number;
+  visibility?: "public" | "private" | "friends" | string | null;
 };
 
 export type BcNetworkFeedPage = {

@@ -37,9 +37,9 @@ export type BcMobilePersonRelationship =
       kind: "connected";
       connectedAt: string | null;
       requestedByViewer: boolean | null;
-      status?: "none" | "pending" | "accepted" | "declined";
+      status?: "none" | "pending" | "accepted" | "declined" | "cancelled" | "disconnected" | "blocked";
       connectionId?: string | null;
-      direction?: "incoming" | "outgoing" | "self" | null;
+      direction?: "none" | "incoming" | "outgoing" | "self" | null;
     }
   | { kind: "saved"; savedAt: string | null; favorite: boolean }
   // BC-Mobile-4B — `source` distinguishes a consent-based exchange from a

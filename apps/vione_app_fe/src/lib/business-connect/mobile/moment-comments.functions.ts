@@ -17,7 +17,7 @@ export async function listMomentComments(momentId: string): Promise<MomentCommen
 
 export async function createMomentComment(
   momentId: string,
-  input: { parentId?: string | null; content: string; mentions?: any[] },
+  input: { parentId?: string | null; content: string; photoUrl?: string | null; mentions?: any[] },
 ): Promise<{ ok: boolean; comment: MomentComment }> {
   return fetchNestApi<{ ok: boolean; comment: MomentComment }>(
     `/connect-app/moments/${momentId}/comments`,

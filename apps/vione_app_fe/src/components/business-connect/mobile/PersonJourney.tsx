@@ -83,9 +83,11 @@ function MomentPhotoLightbox({
  * Chủ sở hữu có thể sửa hoặc xoá khoảnh khắc của chính mình. */
 function MomentJourneyRow({
   item,
+  personId,
   onChanged,
 }: {
   item: BcMobileJourneyItem;
+  personId?: string;
   onChanged: () => void;
 }) {
   const t = useT();
@@ -160,6 +162,8 @@ function MomentJourneyRow({
           title={m.title}
           placeLabel={m.placeLabel}
           note={m.note}
+          photoUrls={m.photoUrl ? [m.photoUrl] : []}
+          targetPersonId={personId}
           hasPhotos={m.photoCount > 0}
           onChanged={onChanged}
         />
@@ -255,7 +259,7 @@ export function PersonJourney({
                   className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--bc-mobile-navy)]"
                 />
                 {item.kind === "moment" ? (
-                  <MomentJourneyRow item={item} onChanged={refreshJourney} />
+                  <MomentJourneyRow item={item} personId={personId} onChanged={refreshJourney} />
                 ) : (
                   <div className="min-w-0">
                     <p className="text-[14px] leading-snug text-[var(--bc-mobile-text)]">

@@ -97,6 +97,8 @@ import { Route as MCheckinRouteImport } from './routes/m.checkin'
 import { Route as MCardRouteImport } from './routes/m.card'
 import { Route as MBusinessCardsRouteImport } from './routes/m.business-cards'
 import { Route as LandingCeo1983RouteImport } from './routes/landing.ceo1983'
+import { Route as LandingBussinessConnectRouteImport } from './routes/landing.bussiness-connect'
+import { Route as LandingBusinessConnectRouteImport } from './routes/landing.business-connect'
 import { Route as HSlugRouteImport } from './routes/h.$slug'
 import { Route as FeesInvoiceIdRouteImport } from './routes/fees.$invoiceId'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
@@ -633,6 +635,16 @@ const MBusinessCardsRoute = MBusinessCardsRouteImport.update({
 const LandingCeo1983Route = LandingCeo1983RouteImport.update({
   id: '/ceo1983',
   path: '/ceo1983',
+  getParentRoute: () => LandingRoute,
+} as any)
+const LandingBussinessConnectRoute = LandingBussinessConnectRouteImport.update({
+  id: '/bussiness-connect',
+  path: '/bussiness-connect',
+  getParentRoute: () => LandingRoute,
+} as any)
+const LandingBusinessConnectRoute = LandingBusinessConnectRouteImport.update({
+  id: '/business-connect',
+  path: '/business-connect',
   getParentRoute: () => LandingRoute,
 } as any)
 const HSlugRoute = HSlugRouteImport.update({
@@ -1240,6 +1252,8 @@ export interface FileRoutesByFullPath {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/business-connect': typeof LandingBusinessConnectRoute
+  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
   '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -1405,6 +1419,8 @@ export interface FileRoutesByTo {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/business-connect': typeof LandingBusinessConnectRoute
+  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
   '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -1590,6 +1606,8 @@ export interface FileRoutesById {
   '/events/$eventId': typeof EventsEventIdRoute
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/business-connect': typeof LandingBusinessConnectRoute
+  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
   '/landing/ceo1983': typeof LandingCeo1983Route
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -1778,6 +1796,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/business-connect'
+    | '/landing/bussiness-connect'
     | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
@@ -1943,6 +1963,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/business-connect'
+    | '/landing/bussiness-connect'
     | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
@@ -2127,6 +2149,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
+    | '/landing/business-connect'
+    | '/landing/bussiness-connect'
     | '/landing/ceo1983'
     | '/m/business-cards'
     | '/m/card'
@@ -2922,6 +2946,20 @@ declare module '@tanstack/react-router' {
       path: '/ceo1983'
       fullPath: '/landing/ceo1983'
       preLoaderRoute: typeof LandingCeo1983RouteImport
+      parentRoute: typeof LandingRoute
+    }
+    '/landing/bussiness-connect': {
+      id: '/landing/bussiness-connect'
+      path: '/bussiness-connect'
+      fullPath: '/landing/bussiness-connect'
+      preLoaderRoute: typeof LandingBussinessConnectRouteImport
+      parentRoute: typeof LandingRoute
+    }
+    '/landing/business-connect': {
+      id: '/landing/business-connect'
+      path: '/business-connect'
+      fullPath: '/landing/business-connect'
+      preLoaderRoute: typeof LandingBusinessConnectRouteImport
       parentRoute: typeof LandingRoute
     }
     '/h/$slug': {
@@ -4001,11 +4039,15 @@ const FeesRouteChildren: FeesRouteChildren = {
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
 interface LandingRouteChildren {
+  LandingBusinessConnectRoute: typeof LandingBusinessConnectRoute
+  LandingBussinessConnectRoute: typeof LandingBussinessConnectRoute
   LandingCeo1983Route: typeof LandingCeo1983Route
   LandingIndexRoute: typeof LandingIndexRoute
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
+  LandingBusinessConnectRoute: LandingBusinessConnectRoute,
+  LandingBussinessConnectRoute: LandingBussinessConnectRoute,
   LandingCeo1983Route: LandingCeo1983Route,
   LandingIndexRoute: LandingIndexRoute,
 }

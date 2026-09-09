@@ -105,6 +105,15 @@ export function useArchiveAllRead() {
   });
 }
 
+export function useDeleteNotification() {
+  const fn = useServerFn(NotificationOrchestrationSDK.deleteNotification);
+  const invalidate = useInvalidateAll();
+  return useMutation<{ ok: boolean; id: string }, Error, { id: string }>({
+    mutationFn: (input) => fn({ data: input }),
+    onSuccess: invalidate,
+  });
+}
+
 // ── Preferences ─────────────────────────────────────────────────────────────
 
 export function useNotificationPreferences() {

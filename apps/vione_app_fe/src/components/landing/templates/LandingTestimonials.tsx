@@ -60,40 +60,21 @@ export function LandingTestimonials({
         }`}
       />
 
-      {/* Giant Stylized Gold Quote Watermark & Vertical Laser Pinstripes */}
+      {/* Giant Stylized Gold Quote Watermark & Clean Ambient Lighting */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Luxury Backdrop Image */}
-        <img
-          src="/landing/business-solutions-bg.jpg"
-          alt="Testimonials Backdrop"
-          className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-            isDark ? "opacity-25 mix-blend-screen" : isContrast ? "opacity-15" : "opacity-10 mix-blend-multiply"
-          }`}
-        />
-
         {/* Giant Metallic Quotation Mark */}
         <div
           className={`absolute -top-12 -right-8 font-serif text-[320px] select-none pointer-events-none leading-none ${
-            themeClass("text-amber-500/[0.06]", "text-amber-900/[0.04]", "text-white/[0.08]")
+            themeClass("text-amber-500/[0.04]", "text-amber-900/[0.03]", "text-white/[0.05]")
           }`}
         >
           “
         </div>
         <div
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] rounded-full blur-[170px] ${
-            isDark ? "bg-amber-500/15" : isContrast ? "bg-amber-500/20" : "bg-amber-500/8"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] rounded-full blur-[170px] ${
+            isDark ? "bg-amber-500/10" : isContrast ? "bg-amber-500/15" : "bg-amber-500/5"
           }`}
         />
-
-        {/* SVG Vertical Architectural Laser Lines */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="testimonials-vert-lines" width="80" height="100" patternUnits="userSpaceOnUse">
-              <line x1="80" y1="0" x2="80" y2="100" stroke="rgba(245, 158, 11, 0.4)" strokeWidth="0.8" strokeDasharray="6 8" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#testimonials-vert-lines)" />
-        </svg>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

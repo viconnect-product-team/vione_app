@@ -230,10 +230,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 import { useConnectAppRealtimeNotifications } from "@/hooks/use-connect-app-realtime-notifications";
+import { GlobalIncomingCallModal } from "@/components/business-connect/mobile/inbox/GlobalIncomingCallModal";
 
 function GlobalRealtimeNotifications() {
   useConnectAppRealtimeNotifications();
-  return null;
+  return <GlobalIncomingCallModal />;
 }
 
 function RootComponent() {
@@ -410,7 +411,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         p === "/forgot-password" ||
         p === "/reset-password" ||
         p === "/install" ||
-        p === "/landing" ||
+        p.startsWith("/landing") ||
         p === "/demo" ||
         p.startsWith("/h/") ||
         p.startsWith("/card/") ||
@@ -490,7 +491,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname === "/forgot-password" ||
     pathname === "/reset-password" ||
     pathname === "/install" ||
-    pathname === "/landing" ||
+    pathname.startsWith("/landing") ||
     pathname === "/demo" ||
     pathname.startsWith("/h/") ||
     pathname === "/m" ||

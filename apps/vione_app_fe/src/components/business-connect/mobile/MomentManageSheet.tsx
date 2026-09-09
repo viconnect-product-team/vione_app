@@ -1,73 +1,87 @@
-// BC-Mobile — Sửa / Xoá một khoảnh khắc đã lưu.
-//
-// Chỉ nội dung do người dùng nhập (thời điểm, tên dịp, nơi gặp, ghi chú riêng)
-// được sửa. Người liên quan là bất biến ở màn này — muốn đổi người thì
-// tạo khoảnh khắc mới. Ảnh có thể gỡ hoặc thêm ngay trong sheet.
-// Xoá khoảnh khắc là vĩnh viễn, có bước xác nhận riêng.
-//
-// Sheet dùng ngữ nghĩa hộp thoại: Escape/nền bị vô hiệu khi đang xử lý.
-import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+// BC-Mobile — Modal Chỉnh sửa khoảnh khắc toàn diện (Facebook-Grade Moment Editor).
+// Hỗ trợ sửa toàn bộ thông tin như lúc tạo mới: Nội dung, Quản lý ảnh (giữ ảnh cũ, thêm ảnh mới, xóa ảnh),
+// Gắn thẻ đối tác (@tag), Chọn cảm xúc/hoạt động kinh doanh, Check-in địa điểm, Quyền riêng tư, Thời điểm & Xóa bài.
+
+import { useEffect, useRef, useState } from "react";
+import {
+  X,
+  Image as ImageIcon,
+  Users,
+  Smile,
+  MapPin,
+  Globe,
+  Lock,
+  UserCheck,
+  Loader2,
+  Check,
+  Search,
+  Sparkles,
+  Trash2,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { useBusinessConnectNetwork } from "@/hooks/use-business-connect-network";
+import { uploadFileToNest } from "@/lib/api-client";
+import { avatarOrDemo } from "@/lib/business-connect/mobile/demo-avatars";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useT, type TKey } from "@/lib/i18n";
-import {
+  updateMomentDirect,
   deleteMomentDirect,
-  bcMobileMomentUpdateFn,
 } from "@/lib/business-connect/mobile/moment.functions";
-import { MomentPhotosEditor } from "./MomentPhotosEditor";
-import { MomentRemindersSection } from "./MomentRemindersSection";
 import {
-  MOMENT_MAX_EVENT_NAME_LEN,
-  MOMENT_MAX_NOTE_LEN,
-  MOMENT_MAX_PLACE_LABEL_LEN,
-  type BcMobileMomentErrorCode,
-} from "@/lib/business-connect/mobile/moment.types";
-
-const INPUT_CLASS =
-  "mt-1.5 w-full rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 py-3 text-[15px] text-[var(--bc-mobile-text)] outline-none transition-colors placeholder:text-[var(--bc-mobile-muted)] focus:border-[var(--bc-mobile-accent)] disabled:opacity-60";
-const LABEL_CLASS =
-  "block text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--bc-mobile-muted)]";
-const FOCUS =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]";
-
-function toLocalInputValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function errorKeyFor(code: BcMobileMomentErrorCode, fallback: TKey): TKey {
-  switch (code) {
-    case "invalid_occurred_at":
-      return "bc.mobile.moment.error.occurredAt";
-    case "relationship_not_authorized":
-      return "bc.mobile.moment.error.relationship";
-    case "not_found":
-      return "bc.mobile.moment.error.notFound";
-    default:
-      return fallback;
-  }
-}
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type MomentManageSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   momentId: string;
-  occurredAt: string;
-  title: string | null;
-  placeLabel: string | null;
-  note: string | null;
-  /** @deprecated giữ để tương thích; ảnh nay sửa trực tiếp trong sheet. */
+  occurredAt?: string;
+  title?: string | null;
+  placeLabel?: string | null;
+  note?: string | null;
+  photoUrls?: string[];
+  initialPhotos?: string[];
   hasPhotos?: boolean;
-  /** Gọi sau khi sửa hoặc xoá thành công để làm mới dòng thời gian. */
+  visibility?: "public" | "friends" | "private" | string | null;
+  targetPersonId?: string | null;
+  targetPersonName?: string | null;
   onChanged: () => void;
 };
+
+const FEELINGS_LIST = [
+  { id: "sign_contract", label: "Ký kết hợp đồng", emoji: "🤝" },
+  { id: "meet_partner", label: "Gặp gỡ đối tác", emoji: "☕" },
+  { id: "launch_project", label: "Khởi động dự án mới", emoji: "🚀" },
+  { id: "celebrate", label: "Chúc mừng thành tựu", emoji: "🏆" },
+  { id: "share_opportunity", label: "Chia sẻ cơ hội kinh doanh", emoji: "💡" },
+  { id: "business_trip", label: "Đi công tác xúc tiến", emoji: "✈️" },
+  { id: "networking_event", label: "Tham gia sự kiện kết nối", emoji: "🎉" },
+  { id: "proud", label: "Tự hào về đội ngũ", emoji: "🌟" },
+];
+
+const POPULAR_LOCATIONS = [
+  "CLB Doanh Nhân CEO 1983",
+  "Trụ sở ViConnect - Hà Nội",
+  "Khách sạn Daewoo Hà Nội",
+  "Khách sạn JW Marriott",
+  "Trung tâm Hội nghị Quốc gia",
+  "TP. Hồ Chí Minh",
+  "Hà Nội",
+  "Đà Nẵng",
+];
+
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export function MomentManageSheet({
   open,
@@ -77,251 +91,713 @@ export function MomentManageSheet({
   title,
   placeLabel,
   note,
+  photoUrls = [],
+  initialPhotos = [],
+  visibility: initialVis,
+  targetPersonId,
+  targetPersonName,
   onChanged,
 }: MomentManageSheetProps) {
-  const t = useT();
-  const [occurredLocal, setOccurredLocal] = useState("");
-  const [eventName, setEventName] = useState("");
-  const [place, setPlace] = useState("");
-  const [noteText, setNoteText] = useState("");
-  const [busy, setBusy] = useState<false | "save" | "delete">(false);
-  const [confirming, setConfirming] = useState(false);
-  const [errorKey, setErrorKey] = useState<TKey | null>(null);
+  const viewerUserId = useViewerUserId();
+  const [tagSearchTerm, setTagSearchTerm] = useState("");
+  const network = useBusinessConnectNetwork(tagSearchTerm);
 
-  // Nạp lại giá trị gốc mỗi lần mở để không bao giờ hiển thị bản nháp cũ.
+  const [content, setContent] = useState(note || "");
+  const [visibility, setVisibility] = useState<"public" | "friends" | "private">(
+    (initialVis as any) || "friends",
+  );
+  const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
+  const [location, setLocation] = useState<string>(placeLabel || "");
+  const [occurredLocal, setOccurredLocal] = useState<string>("");
+  const [taggedPersons, setTaggedPersons] = useState<{ id: string; name: string }[]>([]);
+  
+  // Existing photo URLs from backend
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  // Newly added photo files with local blob preview
+  const [newPhotos, setNewPhotos] = useState<{ file: File; previewUrl: string }[]>([]);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Sub-view toggles
+  const [activeSubView, setActiveSubView] = useState<"none" | "tag" | "feeling" | "location" | "time">("none");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize data on open or when props change
   useEffect(() => {
     if (!open) return;
-    const d = new Date(occurredAt);
-    setOccurredLocal(toLocalInputValue(Number.isNaN(d.getTime()) ? new Date() : d));
-    setEventName(title ?? "");
-    setPlace(placeLabel ?? "");
-    setNoteText(note ?? "");
-    setConfirming(false);
-    setErrorKey(null);
-    setBusy(false);
-  }, [open, occurredAt, title, placeLabel, note]);
+    setContent(note || "");
+    setLocation(placeLabel || "");
+    setVisibility((initialVis as any) || "friends");
+    
+    const d = occurredAt ? new Date(occurredAt) : new Date();
+    setOccurredLocal(toLocalInputValue(isNaN(d.getTime()) ? new Date() : d));
 
-  const close = () => {
-    if (busy) return;
-    onOpenChange(false);
+    // Resolve feeling matching title
+    if (title) {
+      const match = FEELINGS_LIST.find(
+        (f) => title.includes(f.emoji) || title.toLowerCase().includes(f.label.toLowerCase()),
+      );
+      setSelectedFeeling(match ? match.id : null);
+    } else {
+      setSelectedFeeling(null);
+    }
+
+    // Existing photos
+    const allExisting = photoUrls.length > 0 ? photoUrls : initialPhotos;
+    setExistingPhotos(allExisting);
+    setNewPhotos([]);
+
+    // Tagged person if provided
+    if (targetPersonId) {
+      setTaggedPersons([{ id: targetPersonId, name: targetPersonName || "Đối tác" }]);
+    } else {
+      setTaggedPersons([]);
+    }
+
+    setActiveSubView("none");
+  }, [open, momentId, occurredAt, title, placeLabel, note, photoUrls, initialPhotos, initialVis, targetPersonId, targetPersonName]);
+
+  // Clean up blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      newPhotos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    };
+  }, [newPhotos]);
+
+  if (!open) return null;
+
+  const totalPhotosCount = existingPhotos.length + newPhotos.length;
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.max(100, textareaRef.current.scrollHeight)}px`;
+    }
   };
 
-  const save = async () => {
-    if (busy) return;
-    setBusy("save");
-    setErrorKey(null);
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (validFiles.length + totalPhotosCount > 6) {
+      toast.warning("Bạn có thể tải lên tối đa 6 ảnh cho mỗi khoảnh khắc.");
+    }
+
+    const availableSlots = Math.max(0, 6 - totalPhotosCount);
+    const filesToAdd = validFiles.slice(0, availableSlots);
+
+    const created = filesToAdd.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setNewPhotos((prev) => [...prev, ...created]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeExistingPhoto = (index: number) => {
+    setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeNewPhoto = (index: number) => {
+    setNewPhotos((prev) => {
+      const target = prev[index];
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const toggleTagPerson = (person: { personId: string; displayName?: string | null }) => {
+    const id = person.personId;
+    const name = person.displayName || "Đối tác";
+    setTaggedPersons((prev) => {
+      if (prev.some((p) => p.id === id)) {
+        return prev.filter((p) => p.id !== id);
+      }
+      return [...prev, { id, name }];
+    });
+  };
+
+  const handleSave = async () => {
+    const cleanContent = content.trim();
+    if (!cleanContent && totalPhotosCount === 0) {
+      toast.warning("Vui lòng nhập nội dung hoặc đính kèm hình ảnh.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const iso = new Date(occurredLocal).toISOString();
-      const res = await bcMobileMomentUpdateFn({
-        data: {
-          momentId,
-          occurredAt: iso,
-          eventName: eventName.trim() || null,
-          placeLabel: place.trim() || null,
-          note: noteText.trim() || null,
-        },
+      // 1. Upload new photos
+      const uploadedNewUrls: string[] = [];
+      for (const p of newPhotos) {
+        try {
+          const res = await uploadFileToNest(p.file, "relationship-moments");
+          if (res) uploadedNewUrls.push(res);
+        } catch {
+          const reader = new FileReader();
+          const b64 = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(p.file);
+          });
+          uploadedNewUrls.push(b64);
+        }
+      }
+
+      const finalPhotoUrls = [...existingPhotos, ...uploadedNewUrls];
+      const feelingObj = FEELINGS_LIST.find((f) => f.id === selectedFeeling);
+      const eventName = feelingObj ? `${feelingObj.emoji} ${feelingObj.label}` : title || undefined;
+      const primaryPersonId = taggedPersons[0]?.id || targetPersonId || undefined;
+      const isoOccurredAt = occurredLocal ? new Date(occurredLocal).toISOString() : new Date().toISOString();
+
+      // 2. Call update endpoint
+      const updateRes = await updateMomentDirect(momentId, {
+        momentId,
+        occurredAt: isoOccurredAt,
+        eventName: eventName || null,
+        placeLabel: location.trim() || null,
+        note: cleanContent || null,
+        visibility,
+        targetPersonId: primaryPersonId,
+        photoUrls: finalPhotoUrls,
+        taggedUserIds: taggedPersons.map((p) => p.id.replace(/^u:/, "")),
       });
-      if (!res.ok) {
-        setErrorKey(errorKeyFor(res.error, "bc.mobile.moment.error.update"));
-        setBusy(false);
-        return;
+
+      if (updateRes.ok) {
+        toast.success("Đã cập nhật khoảnh khắc thành công!");
+        onOpenChange(false);
+        onChanged();
+      } else {
+        toast.error("Không thể cập nhật khoảnh khắc. Vui lòng thử lại.");
       }
-      toast.success(t("bc.mobile.moment.edit.savedToast"));
-      setBusy(false);
-      onOpenChange(false);
-      onChanged();
-    } catch {
-      setErrorKey("bc.mobile.moment.error.update");
-      setBusy(false);
+    } catch (err) {
+      console.error("Save moment error:", err);
+      toast.error("Đã xảy ra lỗi khi lưu khoảnh khắc.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const remove = async () => {
-    if (busy) return;
-    setBusy("delete");
-    setErrorKey(null);
+  const handleDelete = async () => {
+    setDeleting(true);
     try {
-      // Use direct API call to bypass requireSupabaseAuth middleware
       const res = await deleteMomentDirect(momentId);
-      if (!res.ok) {
-        setErrorKey(errorKeyFor(res.error, "bc.mobile.moment.error.delete"));
-        setBusy(false);
-        return;
+      if (res.ok) {
+        toast.success("Đã xoá khoảnh khắc thành công.");
+        setDeleteConfirmOpen(false);
+        onOpenChange(false);
+        onChanged();
+      } else {
+        toast.error("Không thể xoá khoảnh khắc.");
       }
-      toast.success(t("bc.mobile.moment.delete.deletedToast"));
-      setBusy(false);
-      onOpenChange(false);
-      onChanged();
     } catch {
-      setErrorKey("bc.mobile.moment.error.delete");
-      setBusy(false);
+      toast.error("Lỗi kết nối khi xoá khoảnh khắc.");
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const activeFeelingObj = FEELINGS_LIST.find((f) => f.id === selectedFeeling);
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={(next) => {
-        if (!next && busy) return;
-        onOpenChange(next);
-      }}
-      dismissible={!busy}
-    >
-      <DrawerContent className="bc-app mx-auto w-full max-w-[480px] rounded-t-[var(--bc-mobile-radius-sheet)] border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl">
-        <DrawerHeader className="text-left">
-          <DrawerTitle className="text-[17px] text-[var(--bc-mobile-text)]">
-            {t("bc.mobile.moment.edit.title")}
-          </DrawerTitle>
-          <DrawerDescription className="text-[13px] text-[var(--bc-mobile-muted)]">
-            {t("bc.mobile.moment.edit.description")}
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <form
-          className="max-h-[76dvh] space-y-4 overflow-y-auto px-4"
-          style={{ paddingBottom: "max(1.25rem, var(--bc-mobile-safe-bottom))" }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save();
-          }}
+    <>
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md transition-all animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="bc-app relative flex flex-col w-full max-w-[540px] max-h-[92vh] rounded-t-3xl sm:rounded-3xl border border-[#D8B282]/30 bg-[linear-gradient(165deg,rgba(13,22,35,0.98)_0%,rgba(8,14,23,0.99)_100%)] text-white shadow-2xl overflow-hidden box-border"
         >
-          <div>
-            <label htmlFor="bc-moment-edit-time" className={LABEL_CLASS}>
-              {t("bc.mobile.moment.field.occurredAt")}
-            </label>
-            <input
-              id="bc-moment-edit-time"
-              type="datetime-local"
-              value={occurredLocal}
-              max={toLocalInputValue(new Date())}
-              onChange={(e) => setOccurredLocal(e.target.value)}
-              disabled={busy !== false}
-              className={INPUT_CLASS}
-            />
-          </div>
+          {/* Header */}
+          <div className="relative flex items-center justify-between px-5 py-4 border-b border-[#D8B282]/20">
+            {activeSubView !== "none" ? (
+              <button
+                type="button"
+                onClick={() => setActiveSubView("none")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D8B282] hover:underline"
+              >
+                ← Quay lại
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#D8B282]" />
+                <h2 className="text-base font-bold text-white tracking-wide">
+                  Chỉnh sửa khoảnh khắc
+                </h2>
+              </div>
+            )}
 
-          <div>
-            <label htmlFor="bc-moment-edit-title" className={LABEL_CLASS}>
-              {t("bc.mobile.moment.field.eventName")}
-            </label>
-            <input
-              id="bc-moment-edit-title"
-              type="text"
-              value={eventName}
-              maxLength={MOMENT_MAX_EVENT_NAME_LEN}
-              placeholder={t("bc.mobile.moment.field.eventName.placeholder")}
-              onChange={(e) => setEventName(e.target.value)}
-              disabled={busy !== false}
-              className={INPUT_CLASS}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="bc-moment-edit-place" className={LABEL_CLASS}>
-              {t("bc.mobile.moment.field.place")}
-            </label>
-            <input
-              id="bc-moment-edit-place"
-              type="text"
-              value={place}
-              maxLength={MOMENT_MAX_PLACE_LABEL_LEN}
-              placeholder={t("bc.mobile.moment.field.place.placeholder")}
-              onChange={(e) => setPlace(e.target.value)}
-              disabled={busy !== false}
-              className={INPUT_CLASS}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="bc-moment-edit-note" className={LABEL_CLASS}>
-              {t("bc.mobile.moment.field.note")}
-            </label>
-            <textarea
-              id="bc-moment-edit-note"
-              rows={3}
-              value={noteText}
-              maxLength={MOMENT_MAX_NOTE_LEN}
-              placeholder={t("bc.mobile.moment.field.note.placeholder")}
-              onChange={(e) => setNoteText(e.target.value)}
-              disabled={busy !== false}
-              className={`${INPUT_CLASS} resize-none`}
-            />
-          </div>
-
-          <MomentPhotosEditor momentId={momentId} disabled={busy !== false} onChanged={onChanged} />
-
-          <MomentRemindersSection momentId={momentId} />
-
-          {errorKey ? (
-            <p role="alert" className="text-[13px] text-[var(--bc-mobile-danger,#E5484D)]">
-              {t(errorKey)}
-            </p>
-          ) : null}
-
-          <div className="flex gap-2 pt-1">
             <button
               type="button"
-              onClick={close}
-              disabled={busy !== false}
-              className={`min-h-12 flex-1 rounded-2xl border border-[var(--bc-mobile-border)] text-[15px] font-medium text-[var(--bc-mobile-text)] disabled:opacity-60 ${FOCUS}`}
+              onClick={() => onOpenChange(false)}
+              className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Đóng"
             >
-              {t("bc.mobile.moment.edit.cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={busy !== false}
-              className={`min-h-12 flex-1 rounded-2xl bg-[var(--bc-mobile-accent)] text-[15px] font-semibold text-[var(--bc-mobile-navy)] disabled:opacity-60 ${FOCUS}`}
-            >
-              {busy === "save"
-                ? t("bc.mobile.moment.edit.saving")
-                : t("bc.mobile.moment.edit.submit")}
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="border-t border-[var(--bc-mobile-border)] pt-3">
-            {confirming ? (
-              <div role="group" aria-label={t("bc.mobile.moment.delete.title")}>
-                <p className="text-[14px] font-medium text-[var(--bc-mobile-text)]">
-                  {t("bc.mobile.moment.delete.title")}
-                </p>
-                <p className="mt-0.5 text-[13px] text-[var(--bc-mobile-muted)]">
-                  {t("bc.mobile.moment.delete.description")}
-                </p>
-                <div className="mt-3 flex gap-2">
+          {/* Subview: Gắn thẻ đối tác */}
+          {activeSubView === "tag" ? (
+            <div className="flex-1 flex flex-col p-4 overflow-hidden min-h-[380px]">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm đối tác theo tên, công ty..."
+                  value={tagSearchTerm}
+                  onChange={(e) => setTagSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-400 focus:outline-none focus:border-[#D8B282]"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                {network.people.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-400">
+                    Chưa tìm thấy đối tác nào phù hợp
+                  </div>
+                ) : (
+                  network.people.map((person) => {
+                    const isSelected = taggedPersons.some((p) => p.id === person.personId);
+                    return (
+                      <button
+                        key={person.personId}
+                        type="button"
+                        onClick={() => toggleTagPerson(person)}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
+                          isSelected
+                            ? "bg-[#D8B282]/15 border-[#D8B282] text-white"
+                            : "bg-slate-900/40 border-slate-800 text-slate-300 hover:bg-slate-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={avatarOrDemo(person.avatarUrl, person.personId)}
+                            alt={person.displayName || "Avatar"}
+                            className="h-10 w-10 rounded-full object-cover border border-[#D8B282]/30"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate text-white">
+                              {person.displayName || "Đối tác"}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {person.headline || person.companyName || "Thành viên mạng lưới"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`h-5 w-5 rounded-full flex items-center justify-center border ${
+                            isSelected
+                              ? "bg-[#D8B282] border-[#D8B282] text-slate-950"
+                              : "border-slate-600"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubView("none")}
+                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                >
+                  Xong ({taggedPersons.length})
+                </button>
+              </div>
+            </div>
+          ) : activeSubView === "feeling" ? (
+            /* Subview: Chọn cảm xúc / Hoạt động */
+            <div className="flex-1 p-4 overflow-y-auto min-h-[380px]">
+              <p className="text-xs font-medium text-slate-400 mb-3 uppercase tracking-wider">
+                Bạn và đối tác đang thực hiện hoạt động gì?
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {FEELINGS_LIST.map((f) => {
+                  const isSelected = selectedFeeling === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFeeling(isSelected ? null : f.id);
+                        setActiveSubView("none");
+                      }}
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                        isSelected
+                          ? "bg-[#D8B282]/20 border-[#D8B282] text-[#F0D5A8]"
+                          : "bg-slate-900/50 border-slate-800 text-slate-200 hover:bg-slate-800/60"
+                      }`}
+                    >
+                      <span className="text-xl">{f.emoji}</span>
+                      <span className="text-xs font-semibold">{f.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : activeSubView === "location" ? (
+            /* Subview: Check-in vị trí */
+            <div className="flex-1 p-4 overflow-y-auto min-h-[380px] space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Nhập địa điểm / Nhà hàng / Văn phòng
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#D8B282]" />
+                  <input
+                    type="text"
+                    placeholder="VD: Khách sạn JW Marriott, Hà Nội..."
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D8B282]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-slate-400 mb-2">Gợi ý địa điểm phổ biến:</p>
+                <div className="flex flex-wrap gap-2">
+                  {POPULAR_LOCATIONS.map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onClick={() => {
+                        setLocation(loc);
+                        setActiveSubView("none");
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        location === loc
+                          ? "bg-[#D8B282] border-[#D8B282] text-slate-950 font-semibold"
+                          : "bg-slate-800/60 border-slate-700 text-slate-300 hover:border-[#D8B282]/60"
+                      }`}
+                    >
+                      📍 {loc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubView("none")}
+                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                >
+                  Xác nhận
+                </button>
+              </div>
+            </div>
+          ) : activeSubView === "time" ? (
+            /* Subview: Thời điểm diễn ra */
+            <div className="flex-1 p-4 overflow-y-auto min-h-[300px] space-y-4">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Ngày & giờ diễn ra khoảnh khắc:
+              </label>
+              <input
+                type="datetime-local"
+                value={occurredLocal}
+                max={toLocalInputValue(new Date())}
+                onChange={(e) => setOccurredLocal(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-[#D8B282]"
+              />
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubView("none")}
+                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                >
+                  Xong
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Main Form View */
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* User Bar & Scope */}
+              <div className="flex items-center gap-3">
+                <img
+                  src={avatarOrDemo(null, viewerUserId || "me")}
+                  alt="Avatar"
+                  className="h-11 w-11 rounded-full object-cover border-2 border-[#D8B282]"
+                />
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-white">Bạn</span>
+                    {activeFeelingObj && (
+                      <span className="inline-flex items-center gap-1 text-xs text-[#F0D5A8] bg-[#D8B282]/20 px-2 py-0.5 rounded-full border border-[#D8B282]/30">
+                        {activeFeelingObj.emoji} đang {activeFeelingObj.label.toLowerCase()}
+                      </span>
+                    )}
+                    {location && (
+                      <span className="inline-flex items-center gap-1 text-xs text-amber-200/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        📍 tại {location}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Privacy Picker */}
+                  <div className="flex items-center gap-1 mt-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibility((prev) =>
+                          prev === "public" ? "friends" : prev === "friends" ? "private" : "public",
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors"
+                    >
+                      {visibility === "public" ? (
+                        <>
+                          <Globe className="h-3 w-3 text-sky-400" /> Công khai
+                        </>
+                      ) : visibility === "friends" ? (
+                        <>
+                          <UserCheck className="h-3 w-3 text-emerald-400" /> Mạng lưới
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="h-3 w-3 text-amber-400" /> Chỉ mình tôi
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tagged Persons List */}
+              {taggedPersons.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 bg-[#D8B282]/10 p-2.5 rounded-xl border border-[#D8B282]/20">
+                  <span className="text-xs font-semibold text-[#D8B282]">Cùng với:</span>
+                  {taggedPersons.map((tp) => (
+                    <span
+                      key={tp.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D8B282]/20 text-white text-xs font-medium border border-[#D8B282]/40"
+                    >
+                      @{tp.name}
+                      <button
+                        type="button"
+                        onClick={() => toggleTagPerson({ personId: tp.id })}
+                        className="hover:text-red-400 ml-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
                   <button
                     type="button"
-                    onClick={() => setConfirming(false)}
-                    disabled={busy !== false}
-                    className={`min-h-12 flex-1 rounded-2xl border border-[var(--bc-mobile-border)] text-[15px] font-medium text-[var(--bc-mobile-text)] disabled:opacity-60 ${FOCUS}`}
+                    onClick={() => setActiveSubView("tag")}
+                    className="text-xs text-[#D8B282] hover:underline ml-1"
                   >
-                    {t("bc.mobile.moment.edit.cancel")}
+                    + Thêm
                   </button>
+                </div>
+              )}
+
+              {/* Text Input */}
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  rows={4}
+                  placeholder="Cập nhật nội dung khoảnh khắc..."
+                  value={content}
+                  onChange={handleContentChange}
+                  className="w-full bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed border-none p-0"
+                />
+              </div>
+
+              {/* Photo Preview Grid */}
+              {totalPhotosCount > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>Hình ảnh đính kèm ({totalPhotosCount}/6):</span>
+                    {totalPhotosCount < 6 && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-[#D8B282] hover:underline"
+                      >
+                        + Thêm ảnh
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Existing Photos */}
+                    {existingPhotos.map((url, i) => (
+                      <div
+                        key={`exist-${i}`}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-[#D8B282]/30 group"
+                      >
+                        <img src={url} alt={`Ảnh ${i + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingPhoto(i)}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors"
+                          aria-label="Xóa ảnh"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* New Photos */}
+                    {newPhotos.map((p, i) => (
+                      <div
+                        key={`new-${i}`}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-emerald-500/40 group"
+                      >
+                        <img src={p.previewUrl} alt={`Ảnh mới ${i + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeNewPhoto(i)}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors"
+                          aria-label="Xóa ảnh"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+
+              {/* Quick Actions Toolbar */}
+              <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-300">Tùy chỉnh:</span>
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     type="button"
-                    onClick={() => void remove()}
-                    disabled={busy !== false}
-                    className={`min-h-12 flex-1 rounded-2xl bg-[var(--bc-mobile-danger,#E5484D)] text-[15px] font-semibold text-white disabled:opacity-60 ${FOCUS}`}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 rounded-xl text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                    title="Thêm ảnh"
                   >
-                    {busy === "delete"
-                      ? t("bc.mobile.moment.delete.deleting")
-                      : t("bc.mobile.moment.delete.confirm")}
+                    <ImageIcon className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubView("tag")}
+                    className="p-2 rounded-xl text-sky-400 hover:bg-sky-500/10 transition-colors"
+                    title="Gắn thẻ đối tác"
+                  >
+                    <Users className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubView("feeling")}
+                    className="p-2 rounded-xl text-amber-400 hover:bg-amber-500/10 transition-colors"
+                    title="Cảm xúc / Hoạt động"
+                  >
+                    <Smile className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubView("location")}
+                    className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Check-in vị trí"
+                  >
+                    <MapPin className="h-5 w-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubView("time")}
+                    className="p-2 rounded-xl text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
+                    title="Thời gian diễn ra"
+                  >
+                    <Clock className="h-5 w-5" />
                   </button>
                 </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                disabled={busy !== false}
-                className={`inline-flex min-h-11 items-center gap-2 text-[14px] font-medium text-[var(--bc-mobile-danger,#E5484D)] disabled:opacity-60 ${FOCUS}`}
-              >
-                <Trash2 aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-                {t("bc.mobile.moment.manage.delete")}
-              </button>
-            )}
-          </div>
-        </form>
-      </DrawerContent>
-    </Drawer>
+
+              {/* Footer Actions: Save & Delete */}
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Xoá bài
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onOpenChange(false)}
+                    disabled={submitting}
+                    className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition-colors"
+                  >
+                    Hủy
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[linear-gradient(135deg,#F0D5A8_0%,#D8B282_50%,#C49B6A_100%)] hover:brightness-110 active:scale-95 shadow-md shadow-[#D8B282]/20 disabled:opacity-60 transition-all cursor-pointer"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                        Đang lưu...
+                      </>
+                    ) : (
+                      "Lưu thay đổi"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="border border-[#2a364a] bg-[#0c131f]/95 backdrop-blur-xl text-[#f1f5f9]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#f87171]">Xác nhận xoá khoảnh khắc</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#94a3b8]">
+              Bạn có chắc chắn muốn xoá khoảnh khắc này? Hành động này sẽ xoá vĩnh viễn hình ảnh, bình luận và lượt thích đi kèm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#2a364a] text-[#f1f5f9] hover:bg-[#1a2332]">
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? "Đang xoá..." : "Xoá vĩnh viễn"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -15,8 +15,8 @@ export function useConnectAppRealtimeNotifications() {
   useEffect(() => {
     if (!socket || !viewerUserId) return;
 
-    let lastShownKey = "";
-    let lastShownTime = 0;
+    // Cache of recent notifications / connection event keys to strictly prevent double toasts
+    const recentToastKeys = new Map<string, number>();
 
     const playNotificationSound = () => {
       try {
@@ -43,13 +43,18 @@ export function useConnectAppRealtimeNotifications() {
       void qc.invalidateQueries({ queryKey: ["member-app"] });
     };
 
-    const shouldShowToast = (dedupeId: string): boolean => {
+    const shouldShowToast = (keys: (string | undefined | null)[]): boolean => {
       const now = Date.now();
-      if (dedupeId && dedupeId === lastShownKey && now - lastShownTime < 3000) {
-        return false;
+      const validKeys = keys.filter(Boolean) as string[];
+      for (const k of validKeys) {
+        const prev = recentToastKeys.get(k);
+        if (prev && now - prev < 8000) {
+          return false;
+        }
       }
-      lastShownKey = dedupeId;
-      lastShownTime = now;
+      for (const k of validKeys) {
+        recentToastKeys.set(k, now);
+      }
       return true;
     };
 
@@ -71,6 +76,12 @@ export function useConnectAppRealtimeNotifications() {
       senderUserId?: string;
       connectionId?: string;
     }) => {
+      const dedupeKeys = [
+        connectionId ? `conn_req:${connectionId}` : null,
+        senderUserId ? `conn_req_user:${senderUserId}` : null,
+      ];
+      if (!shouldShowToast(dedupeKeys)) return;
+
       playNotificationSound();
 
       toast.custom(
@@ -113,7 +124,7 @@ export function useConnectAppRealtimeNotifications() {
                   </p>
                 )}
                 <p className="text-[11px] text-[#D8B282]/90 mt-0.5 font-medium">
-                  Đã gửi lời mời kết nối danh thiếp
+                  Đã gửi lời mời kết bạn với bạn
                 </p>
               </div>
             </div>
@@ -131,7 +142,7 @@ export function useConnectAppRealtimeNotifications() {
                       toast.success(`Đã kết nối thành công với ${senderName}!`, {
                         description: "Bạn có thể trò chuyện và trao đổi cơ hội kinh doanh ngay.",
                       });
-                    } catch (e) {
+                    } catch {
                       toast.error("Không thể hoàn tất kết nối. Vui lòng thử lại sau.");
                     }
                   }}
@@ -167,7 +178,7 @@ export function useConnectAppRealtimeNotifications() {
                       await GlobalNetworkSDK.mutations.decline(connectionId);
                       invalidateEverything();
                       toast.info("Đã từ chối lời mời kết nối.");
-                    } catch (e) {
+                    } catch {
                       // ignore
                     }
                   }}
@@ -183,14 +194,74 @@ export function useConnectAppRealtimeNotifications() {
       );
     };
 
+    const handleConnectionAccepted = (data: any) => {
+      invalidateEverything();
+      const connectionId = data?.connectionId || data?.sourceRecordId;
+      const dedupeKeys = [connectionId ? `conn_acc:${connectionId}` : null];
+      if (!shouldShowToast(dedupeKeys)) return;
+
+      playNotificationSound();
+      const name =
+        data?.accepterProfile?.display_name ||
+        data?.safeDisplayData?.counterpartDisplayName ||
+        data?.actorDisplayName ||
+        "Đối tác";
+
+      toast.success(`${name} đã xác nhận kết bạn`, {
+        description: `${name} đã đồng ý lời mời kết bạn của bạn.`,
+        action: {
+          label: "Xem hồ sơ",
+          onClick: () => {
+            if (typeof window !== "undefined") {
+              const uId = data?.accepterUserId || data?.actorUserId || data?.safeDisplayData?.counterpartUserId;
+              if (uId) {
+                window.location.href = `/connect-app/network/u:${uId}`;
+              } else {
+                window.location.href = "/connect-app/network";
+              }
+            }
+          },
+        },
+        duration: 8000,
+      });
+    };
+
+    const handleConnectionDeclined = (data: any) => {
+      invalidateEverything();
+      const connectionId = data?.connectionId || data?.sourceRecordId;
+      const dedupeKeys = [connectionId ? `conn_dec:${connectionId}` : null];
+      if (!shouldShowToast(dedupeKeys)) return;
+
+      const name =
+        data?.declinerProfile?.display_name ||
+        data?.safeDisplayData?.counterpartDisplayName ||
+        data?.actorDisplayName ||
+        "Người dùng";
+
+      toast.info(`${name} đã từ chối lời mời kết bạn`, {
+        description: `${name} đã từ chối lời mời kết bạn.`,
+        duration: 6000,
+      });
+    };
+
     const handleNewNotification = (notif: any) => {
       invalidateEverything();
-      const dedupeId = notif?.sourceRecordId || notif?.id || "notif";
-      if (!shouldShowToast(dedupeId)) return;
+
+      const eventKind = notif?.eventKind || notif?.notificationKind || notif?.type;
+
+      if (eventKind === "connection_request_accepted") {
+        handleConnectionAccepted(notif);
+        return;
+      }
+
+      if (eventKind === "connection_request_declined") {
+        handleConnectionDeclined(notif);
+        return;
+      }
 
       const isConnectionRequest =
-        notif?.notificationKind === "connection_request_received" ||
-        notif?.type === "connection_request" ||
+        eventKind === "connection_request_received" ||
+        eventKind === "connection_request" ||
         notif?.titleKey === "connection_request_received";
 
       const senderName =
@@ -216,6 +287,9 @@ export function useConnectAppRealtimeNotifications() {
         return;
       }
 
+      const notifId = notif?.id || notif?.sourceRecordId;
+      if (!shouldShowToast([notifId ? `notif:${notifId}` : null])) return;
+
       playNotificationSound();
       const title = notif?.safeDisplayData?.title || "Bạn có thông báo mới";
       const desc = notif?.safeDisplayData?.body || notif?.safeDisplayData?.companyName;
@@ -237,9 +311,6 @@ export function useConnectAppRealtimeNotifications() {
 
     const handleNfcTapped = (data: any) => {
       invalidateEverything();
-      const dedupeId = data?.connectionId || "nfc";
-      if (!shouldShowToast(dedupeId)) return;
-
       const name = data?.requesterProfile?.display_name || "Hội viên ViOne";
       const company = data?.requesterProfile?.company_name;
       const title = data?.requesterProfile?.professional_title;
@@ -260,9 +331,6 @@ export function useConnectAppRealtimeNotifications() {
 
     const handleConnectionRequested = (data: any) => {
       invalidateEverything();
-      const dedupeId = data?.connectionId || "req";
-      if (!shouldShowToast(dedupeId)) return;
-
       const name = data?.requesterProfile?.display_name || "Hội viên ViOne";
       const company = data?.requesterProfile?.company_name;
       const title = data?.requesterProfile?.professional_title;
@@ -281,37 +349,21 @@ export function useConnectAppRealtimeNotifications() {
       });
     };
 
-    const handleConnectionAccepted = (data: any) => {
-      invalidateEverything();
-      playNotificationSound();
-      const name = data?.accepterProfile?.display_name || "Hội viên ViOne";
-      toast.success("Kết nối thành công", {
-        description: `${name} đã chấp nhận lời mời kết nối của bạn.`,
-        action: {
-          label: "Xem mạng lưới",
-          onClick: () => {
-            if (typeof window !== "undefined") {
-              window.location.href = "/connect-app/network";
-            }
-          },
-        },
-        duration: 8000,
-      });
-    };
-
-    const handleConnectionDeclined = (_data: any) => {
-      invalidateEverything();
-      toast.info("Yêu cầu kết nối", {
-        description: "Lời mời kết nối đã được cập nhật.",
-        duration: 4000,
-      });
-    };
-
     const handleConnectionCancelled = (_data: any) => {
       invalidateEverything();
     };
 
+    const handleNotificationUpdated = (_data: any) => {
+      invalidateEverything();
+    };
+
+    const handleNotificationDeleted = (_data: any) => {
+      invalidateEverything();
+    };
+
     socket.on("notification:new", handleNewNotification);
+    socket.on("notification:updated", handleNotificationUpdated);
+    socket.on("notification:deleted", handleNotificationDeleted);
     socket.on("nfc:tapped", handleNfcTapped);
     socket.on("connection:requested", handleConnectionRequested);
     socket.on("connection:accepted", handleConnectionAccepted);
@@ -320,6 +372,8 @@ export function useConnectAppRealtimeNotifications() {
 
     return () => {
       socket.off("notification:new", handleNewNotification);
+      socket.off("notification:updated", handleNotificationUpdated);
+      socket.off("notification:deleted", handleNotificationDeleted);
       socket.off("nfc:tapped", handleNfcTapped);
       socket.off("connection:requested", handleConnectionRequested);
       socket.off("connection:accepted", handleConnectionAccepted);

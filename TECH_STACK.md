@@ -254,3 +254,56 @@ Capacitor sử dụng cấu hình nằm tại [apps/mobile/capacitor.config.ts](
 3.  **Relative URLs:** Khi thực hiện các lệnh gọi API từ client (ví dụ: upload avatar), luôn dùng đường dẫn tương đối `/api/...` thay vì đường dẫn tuyệt đối kèm `window.location.origin` nhằm tránh lỗi CORS và xung đột cổng kết nối cục bộ.
 4.  **Prisma Type Mismatch:** Khi viết query, hãy chú ý cấu trúc schema ở [schema.prisma](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/packages/db/prisma/schema.prisma) để tránh các thuộc tính legacy chưa được đồng bộ (như `password_salt` hoặc `email` ở bảng users).
 5.  **Memory Limit during Build:** Khi thực hiện build frontend, Node cần tăng giới hạn bộ nhớ lớn để tránh lỗi OOM. Lệnh build chuẩn đã được tích hợp giới hạn bộ nhớ: `cross-env NODE_OPTIONS=--max-old-space-size=12288 vite build`.
+
+---
+
+## 6. Multi-Tenant SaaS Architecture & Realtime WebSocket Protocol
+
+### 6.1. Kiến Trúc SaaS Đa Tổ Chức (Multi-Tenant Architecture)
+*   **Mô hình SaaS**: Hệ thống được thiết kế hướng dịch vụ đám mây phục vụ hàng loạt tổ chức, hiệp hội (Hiệp hội Doanh nhân, Hội Doanh nghiệp trẻ, Câu lạc bộ CEO, Liên minh ngành nghề) trên cùng một cơ sở hạ tầng.
+*   **Tenant Isolation**:
+    *   Mỗi tổ chức có một định danh `association_id` (Tenant Identifier).
+    *   Tách biệt dữ liệu cấp tổ chức (Hội viên, Báo cáo, Tài chính, Sự kiện, Thông báo nội bộ) qua Scope Middleware và PostgreSQL RLS.
+*   **Unified Executive Identity**:
+    *   Một tài khoản người dùng (`User`) duy nhất có thể liên kết với nhiều tổ chức/hiệp hội, đóng vai trò hội viên hoặc quản trị viên ở từng tổ chức.
+    *   Sở hữu một Danh thiếp số (Digital Business Card) toàn cầu, hỗ trợ chia sẻ qua NFC, QR Code và liên kết động.
+
+### 6.2. Ma Trận Nghiệp Vụ: Mobile Connect App vs Web CRM
+
+| Đặc Điểm | Mobile Connect App (`/connect-app/*`) | Web CRM & Operations (`/`, `/dashboard`, `/business-connect/*`) |
+| :--- | :--- | :--- |
+| **Đối tượng sử dụng** | Cá nhân Doanh nhân, Hội viên, Khách mời tại sự kiện | Ban Lãnh đạo, Ban Thư ký, Quản trị viên Hiệp hội & Sales/CRM Doanh nghiệp |
+| **Thiết bị tối ưu** | Smartphone (iOS/Android PWA & Native Capacitor) | Máy tính để bàn, Laptop, Màn hình lớn (Desktop Web) |
+| **Chức năng lõi** | - Quét/Chạm danh thiếp NFC, QR Code<br>- Xử lý lời mời kết nối tức thì<br>- Nhắn tin 1-1 & nhóm thời gian thực<br>- Bảng tin Khoảnh khắc (Moments feed)<br>- Đặt lịch hẹn & Cuộc gặp 1-1 thông minh<br>- Trí tuệ quan hệ cá nhân (Relationship Intelligence) | - Quản trị hồ sơ & phân hạng hội viên<br>- Soạn & gửi thông báo toàn hiệp hội<br>- Báo cáo tài chính & hội phí<br>- Quản lý nhà tài trợ & quyền lợi đối tác<br>- Pipeline CRM kết nối kinh doanh B2B<br>- Phân tích hiệu quả giao thương tổng thể |
+| **Giao diện & Trải nghiệm** | Executive Minimal Luxury (Đen/Hoàng kim, vuốt chạm mượt mà) | Bảng điều khiển quản trị hiện đại, bộ lọc đa chiều, Topbar Notification popover |
+
+### 6.3. Chuẩn Giao Thức WebSocket Realtime (`ConnectAppGateway`)
+*   **Namespace**: `/connect-app`
+*   **Xác thực kết nối**: Bearer JWT Token hoặc Cookie phiên làm việc.
+*   **Hệ thống Phòng đa tầng (Multi-tier Rooms)**:
+    *   `user:<userId>`: Phòng cá nhân cho các sự kiện riêng tư (lời mời kết nối, tin nhắn 1-1, gắn thẻ).
+    *   `assoc:<associationId>`: Phòng hiệp hội/tổ chức cho ban quản trị CRM (hội viên mới đăng ký, nộp phí, đăng ký tài trợ).
+    *   `emitToAll`: Phát sóng toàn bộ các phiên làm việc Web CRM Desktop.
+*   **Danh sách Sự kiện Realtime**:
+    *   `notification:new`: Thông báo mới được gửi đến (kèm `targetRoute` để điều hướng click).
+    *   `notification:updated`: Trạng thái thông báo thay đổi (đã đọc/chưa đọc, đã chấp nhận/từ chối lời mời).
+    *   `notification:deleted`: Thông báo bị xóa (xóa đơn lẻ hoặc xóa hàng loạt).
+    *   `connection:requested`: Có người dùng gửi lời mời kết nối mới.
+    *   `connection:accepted`: Lời mời kết nối được chấp nhận -> Cập nhật trạng thái tức thì sang "✓ Đã kết nối".
+    *   `connection:declined`: Lời mời kết nối bị từ chối -> Cập nhật sang "✕ Đã từ chối".
+    *   `message:new`: Tin nhắn văn bản/đa phương tiện mới trong hộp thoại.
+    *   `nfc:tapped`: Sự kiện chạm danh thiếp NFC thành công.
+
+### 6.4. Bảng Tin Khoảnh Khắc (Moments Stream) & Bình Luận Đính Kèm Ảnh
+*   **Đăng Khoảnh Khắc (Facebook-Grade Workflow)**:
+    *   Hỗ trợ bài viết đa năng: Text note, đính kèm tối đa 6 ảnh với preview và upload trực tiếp lên Nest storage (`/connect-app/relationship-moments`), chọn gắn thẻ đối tác từ danh bạ mạng lưới, huy hiệu cảm xúc kinh doanh (Ký hợp đồng, Gặp gỡ đối tác, Dự án mới, Cơ hội kinh doanh), check-in vị trí, và cấu hình quyền riêng tư.
+    *   Backend endpoints: `POST /connect-app/moment/` (prepare), `POST /connect-app/moment/:id/finalize` (finalize), `POST /connect-app/moments/notify-tags` (notify tagged users).
+*   **Bình Luận Đính Kèm Ảnh**:
+    *   Cho phép đính kèm ảnh khi bình luận (`photoUrl`), hiển thị ảnh xem trước, tải lên server an toàn, và hỗ trợ phóng to ảnh (Lightbox) khi người dùng bấm vào ảnh trong bình luận.
+
+### 6.5. Điều Hướng Hành Động Tức Thì Từ Thông Báo (Actionable Notification Redirection)
+*   Mọi thông báo từ Web CRM tới Mobile đều mang trường `targetRoute` (ví dụ: `/members?status=pending`, `/fees`, `/events`, `/connect-app/network`).
+*   Khi người dùng hoặc admin bấm vào thông báo, hệ thống tự động:
+    1. Đánh dấu đã đọc (`status = 'read'`).
+    2. Điều hướng thẳng tới trang nghiệp vụ cần xử lý (ví dụ: màn hình Quản lý hội viên ở bộ lọc Chờ duyệt khi có người nộp hồ sơ xin vào CLB CEO 1983).
+

@@ -67,31 +67,11 @@ export function LandingPartners({
         }`}
       />
 
-      {/* Background Graphic Texture: Image layer & Horizontal Laser Grid */}
+      {/* Background Graphic Texture: Clean Ambient Glow */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Luxury Backdrop Image */}
-        <img
-          src="/landing/ceo1983-mastermind-bg.jpg"
-          alt="Partners Backdrop"
-          className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-            isDark ? "opacity-30 mix-blend-luminosity" : isContrast ? "opacity-15" : "opacity-10 mix-blend-multiply"
-          }`}
-        />
-
         <div
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px] rounded-full blur-[160px] ${
-            isDark ? "bg-amber-500/15" : isContrast ? "bg-amber-500/20" : "bg-amber-500/8"
-          }`}
-        />
-        
-        {/* Subtle Horizontal Tech Trace */}
-        <div
-          className={`absolute top-1/2 left-0 right-0 h-[1px] ${
-            themeClass(
-              "bg-gradient-to-r from-transparent via-amber-400/25 to-transparent",
-              "bg-gradient-to-r from-transparent via-amber-600/15 to-transparent",
-              "bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
-            )
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] rounded-full blur-[160px] ${
+            isDark ? "bg-amber-500/10" : isContrast ? "bg-amber-500/15" : "bg-amber-500/5"
           }`}
         />
       </div>

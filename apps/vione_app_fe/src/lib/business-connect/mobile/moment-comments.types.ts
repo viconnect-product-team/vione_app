@@ -18,6 +18,7 @@ export type MomentComment = {
   userId: string;
   parentId: string | null;
   content: string;
+  photoUrl?: string | null;
   mentions: MomentCommentMention[];
   createdAt: string;
   author: MomentCommentAuthor;

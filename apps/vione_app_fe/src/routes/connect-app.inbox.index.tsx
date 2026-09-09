@@ -70,7 +70,7 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
   const text = raw.trim();
   const prefix = isFromMe ? youPrefix : "";
 
-  // Image tag: [image:URL|NAME] or [image:URL] or raw image url
+  // Image tag format: image:URL|NAME or image:URL or raw image url
   if (
     /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i.test(text) ||
     /^(https?:\/\/[^\s]+?\.(png|jpe?g|gif|webp|svg))(?:\?.*)?$/i.test(text)
@@ -78,7 +78,7 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
     return `${prefix}📷 [Hình ảnh]`;
   }
 
-  // File tag: [file:URL|NAME|SIZE]
+  // File tag format: file:URL|NAME|SIZE
   const fileMatch = text.match(/\[file:(https?:\/\/[^|\]]+)(?:\|([^|\]]*))?(?:\|(\d+))?\]/i);
   if (fileMatch) {
     const fileName = fileMatch[2] || "Tài liệu";

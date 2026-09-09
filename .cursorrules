@@ -36,16 +36,36 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
 ## Context Synchronization
 - **ALWAYS** check and keep `MEMORY.md` updated with any new architectural decisions, port mappings, infrastructure changes, or caveats.
 
+## Multi-Tenant SaaS & Business Conventions
+- **Multi-Tenant SaaS Scope**: The entire platform operates as a Multi-Tenant B2B/B2C SaaS. Data is scoped by `association_id` (Tenant ID) with PostgreSQL RLS and server middleware.
+- **Mobile vs Web CRM Relationship**:
+  - **Mobile (`/connect-app/*`)**: Focuses on individual Executive Networking, NFC business cards, live connection requests, instant messaging, and social moments stream.
+  - **Web CRM (`/dashboard`, `/notifications`, `/business-connect/*`)**: Focuses on Association Operations, membership tiering, broadcast notifications, CRM pipelines, and revenue management.
+- **Moments & Social Streams (Facebook-Grade Workflow)**:
+  - Creating & Editing Moments must support 100% full rich features: text, multi-photo attachments (max 6 with keep/delete/upload), partner tagging (`@mention` + directory picker), business activity badges, check-in locations, occurred-at date-time, and privacy scope.
+  - Moment comments support photo attachments with live preview and lightbox view.
+- **Default Theme Standard**:
+  - ViOne App (`/connect-app/*`), Association Apps, and Web CRM must default to Dark Mode (`dark`).
+- **Realtime Nurture Intelligence ("Cần giữ kết nối")**:
+  - Days since last contact must always be computed from real DB interaction timestamps (`last_moment_at`, `last_message_at`, `uc.updated_at` / `uc.created_at`). Never mock or hardcode day values.
+- **Realtime WebSocket & Actionable Notification Rules**:
+  - Every connection request, acceptance/rejection, moment tag, and association event (new member registration, fee payment) must trigger WebSocket events through `ConnectAppGateway`.
+  - Every business notification from Web CRM to Mobile MUST provide a clear `targetRoute` (e.g. `/members?status=pending`, `/fees`, `/events`, `/connect-app/network`). Clicking a notification MUST automatically mark it as read and redirect to the target management view.
+  - Every connection notification must accurately transition to resolved state ("✓ Đã kết nối" or "✕ Đã từ chối") once acted upon, removing invitation action buttons and exposing chat/profile options.
+  - Every notification card on both Mobile and Web CRM MUST include a delete button (`Trash2`) calling the backend deletion endpoint.
+- **Luxury Gold UI Aesthetic**:
+  - Central floating navigation button (`VButton`) and key actions use the standard metallic champagne gold gradient (`#C29B69`, `#F6E1C3`, `#D8B282`).
+  - Active tab styles on bottom navigation must use subtle glow instead of coarse outlines.
+
 ## Troubleshooting & Bug Fixes Log
 *(Quy tắc: Bất kỳ lỗi/cấu hình sai nào phát sinh khi phát triển hoặc deploy phải được ghi nhận vào đây và MEMORY.md để AI/Dev tránh lặp lại)*
 
 | Vấn đề / Lỗi gặp phải (Issue) | Nguyên nhân gốc rễ (Root Cause) | Giải pháp / Cách fix triệt để (Solution) | Cách phòng tránh (Prevention) |
 | :--- | :--- | :--- | :--- |
-| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file pps/web/nitro.config.ts. | Đảm bảo khai báo rõ preset: 'node-server' cho các project SSR chạy Node container. |
+| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file  apps/vione_app_fe/nitro.config.ts. | Đảm bảo khai báo rõ preset: 'node-server' cho các project SSR chạy Node container. |
 | **Lỗi Prisma P1013 (unsupported startup parameter)** | Prisma kết nối Supabase qua PgBouncer (port 6432) thiếu flag. | Thêm ?pgbouncer=true vào URL. | Luôn thêm pgbouncer=true khi gọi pooler. |
 | **Lỗi Prisma báo sai port (invalid port) do BOM** | File .env.production lưu với UTF-8 with BOM trên Windows có chứa ký tự tàng hình. | Đổi encoding sang UTF-8 (không BOM). | Luôn dùng UTF-8 thuần trên Windows cho config. |
 | **Không truy cập được Frontend từ ngoài Host (Connection Refused)** | Nitro mặc định chỉ bind 127.0.0.1 bên trong container. | Thêm HOST=0.0.0.0 và NITRO_HOST=0.0.0.0 vào docker-compose.clean.yml. | Khai báo biến môi trường Host bind là 0.0.0.0. |
-| **Backend crash do WebSocket undefined trên Node 20** | Dockerfile dùng 
-ode:20-alpine thiếu globalThis.WebSocket. | Dùng 
-ode:22-alpine làm base image. | Đồng nhất version LTS 22+ giữa local và Docker. |
+| **Backend crash do WebSocket undefined trên Node 20** | Dockerfile dùng node:20-alpine thiếu globalThis.WebSocket. | Dùng node:22-alpine làm base image. | Đồng nhất version LTS 22+ giữa local và Docker. |
 | **Lỗi file cấu hình Windows khi chạy trên Linux (CRLF)** | Windows dùng \r\n khiến bash script trên Linux lỗi phân tích cú pháp. | Dùng sed -i 's/\r//g' trước khi chạy. | Lưu các tệp script và config ở định dạng LF. |
+

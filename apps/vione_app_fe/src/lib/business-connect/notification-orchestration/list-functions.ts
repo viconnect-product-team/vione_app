@@ -134,3 +134,19 @@ export const archiveAllReadNotificationsFn = createServerFn({ method: "POST" })
   .handler(async (): Promise<{ archived: number }> => {
     return { archived: 0 };
   });
+
+export const deleteNotificationFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => idSchema.parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; id: string }> => {
+    try {
+      const { token } = context as any;
+      const { fetchNestApiFromServer } = await import("../../api-client");
+      await fetchNestApiFromServer(`/me/notifications/${encodeURIComponent(data.id)}`, token, {
+        method: "DELETE",
+      });
+      return { ok: true, id: data.id };
+    } catch (e) {
+      throw toNotificationError(e);
+    }
+  });

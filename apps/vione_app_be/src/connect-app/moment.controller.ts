@@ -7,10 +7,15 @@ import { ConnectAppService } from './connect-app.service';
 export class MomentController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  // --- Mentionable Users Autocomplete ---
+  // --- Mentionable Users Autocomplete & Moment Tagging ---
   @Get('mentionable-users')
   async searchMentionableUsers(@Request() req, @Query('q') query?: string) {
     return this.connectAppService.searchMentionableUsers(req.user.id, query || '');
+  }
+
+  @Post('notify-tags')
+  async notifyMomentTags(@Request() req, @Body() body: { momentId: string; taggedUserIds: string[]; content?: string }) {
+    return this.connectAppService.notifyMomentTags(req.user.id, body);
   }
 
   // --- Moment Likes & Comments ---

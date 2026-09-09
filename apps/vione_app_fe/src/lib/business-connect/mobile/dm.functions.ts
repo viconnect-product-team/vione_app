@@ -28,7 +28,7 @@ export const bcDmThreadsFn = createServerFn({ method: "GET" })
     },
   );
 
-const openInput = z.object({ personId: z.string().regex(/^u:[0-9a-fA-F-]{36}$/) });
+const openInput = z.object({ personId: z.string() });
 
 export const bcDmOpenThreadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
@@ -49,7 +49,7 @@ export const bcDmOpenThreadFn = createServerFn({ method: "POST" })
   );
 
 const threadInput = z.object({
-  threadId: z.string().uuid(),
+  threadId: z.string(),
   limit: z.number().int().min(1).max(100).default(DM_PAGE_SIZE),
 });
 
@@ -72,9 +72,9 @@ export const bcDmThreadFn = createServerFn({ method: "GET" })
   );
 
 const sendInput = z.object({
-  threadId: z.string().uuid(),
+  threadId: z.string(),
   body: z.string().max(DM_MAX_BODY_LEN + 200),
-  clientToken: z.string().uuid(),
+  clientToken: z.string(),
   replyTo: z
     .object({
       id: z.string(),
@@ -105,7 +105,7 @@ export const bcDmSendFn = createServerFn({ method: "POST" })
   );
 
 const reactInput = z.object({
-  messageId: z.string().uuid(),
+  messageId: z.string(),
   emoji: z.string().min(1).max(10),
 });
 
@@ -127,7 +127,7 @@ export const bcDmReactFn = createServerFn({ method: "POST" })
     },
   );
 
-const markReadInput = z.object({ threadId: z.string().uuid() });
+const markReadInput = z.object({ threadId: z.string() });
 
 export const bcDmMarkReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])

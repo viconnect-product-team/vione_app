@@ -27,7 +27,7 @@ function readInitial(): Theme {
   if (typeof window === "undefined") return "dark";
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark" || saved === "contrast") return saved;
+    if (saved === "dark" || saved === "contrast") return saved;
   } catch {
     /* ignore */
   }

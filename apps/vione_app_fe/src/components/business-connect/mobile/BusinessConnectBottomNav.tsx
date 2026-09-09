@@ -75,8 +75,8 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
         key={tab.to}
         to={tab.to}
         activeOptions={{ exact: tab.exact ?? false }}
-        className="group relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl transition-colors duration-150 motion-reduce:transition-none"
-        activeProps={{ className: "text-[var(--bc-mobile-accent)]" }}
+        className="group relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 select-none transition-colors duration-150 motion-reduce:transition-none cursor-pointer"
+        activeProps={{ className: "text-[#D8B282] font-semibold" }}
         inactiveProps={{
           className: "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]",
         }}
@@ -86,7 +86,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
           aria-hidden="true"
           className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
         />
-        <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[color-mix(in_oklab,var(--bc-mobile-accent)_14%,transparent)] motion-reduce:transition-none">
+        <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[#D8B282]/15 motion-reduce:transition-none">
           <Icon className="h-[20px] w-[20px]" />
         </span>
         <span className="text-[10.5px] font-medium leading-none group-data-[status=active]:font-semibold">

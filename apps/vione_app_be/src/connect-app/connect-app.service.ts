@@ -57,6 +57,14 @@ export class ConnectAppService implements OnModuleInit {
           CONSTRAINT uq_brm_moment_like UNIQUE (moment_id, user_id)
         );
       `);
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.business_relationship_moments
+        ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends';
+      `);
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.business_relationship_moment_comments
+        ADD COLUMN IF NOT EXISTS photo_url TEXT;
+      `);
     } catch (err) {
       console.warn('Note: Could not ensure moment comments/likes tables:', err);
     }
@@ -1469,9 +1477,30 @@ export class ConnectAppService implements OnModuleInit {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
     const safeUserId = isUuid ? userId : '00000000-0000-0000-0000-000000000000';
     
-    // Fetch connected users (Nurture Connections list)
+    // Fetch connected users with real interaction timestamps (Nurture Connections list)
     const connectedRows: any[] = await this.prisma.$queryRaw<any[]>`
-      SELECT bi.id as identity_id, bi.owner_user_id, bi.display_name, bi.avatar_url, bi.headline, bi.company_name, bi.city
+      SELECT 
+        bi.id as identity_id, 
+        bi.owner_user_id, 
+        bi.display_name, 
+        bi.avatar_url, 
+        bi.headline, 
+        bi.company_name, 
+        bi.city,
+        uc.created_at as connection_created_at,
+        uc.updated_at as connection_updated_at,
+        (
+          SELECT MAX(m.occurred_at)
+          FROM public.business_relationship_moments m
+          WHERE (m.owner_user_id = ${safeUserId}::uuid AND m.target_person_id = bi.owner_user_id)
+             OR (m.owner_user_id = bi.owner_user_id AND m.target_person_id = ${safeUserId}::uuid)
+        ) as last_moment_at,
+        (
+          SELECT MAX(msg.created_at)
+          FROM public.direct_messages msg
+          WHERE (msg.sender_id = ${safeUserId}::uuid AND msg.recipient_id = bi.owner_user_id)
+             OR (msg.sender_id = bi.owner_user_id AND msg.recipient_id = ${safeUserId}::uuid)
+        ) as last_message_at
       FROM public.user_connections uc
       JOIN public.business_identities bi ON (
         (uc.requester_user_id = ${safeUserId}::uuid AND uc.recipient_user_id = bi.owner_user_id) OR
@@ -1518,7 +1547,7 @@ export class ConnectAppService implements OnModuleInit {
           owner_user_id: u.id,
           display_name: u.name || u.username,
           avatar_url: u.avatar_url,
-          headline: 'Doanh nhĂ¢n ViOne',
+          headline: 'Doanh nhân ViOne',
           company_name: 'ViOne Network',
           city: 'Việt Nam',
         });
@@ -1561,11 +1590,16 @@ export class ConnectAppService implements OnModuleInit {
       });
     });
 
-    // Map connected users to Nurture Connections list (days > 0)
-    connectedRows.forEach((row, idx) => {
+    // Map connected users to Nurture Connections list with REAL calculated days since last interaction
+    connectedRows.forEach((row) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
       const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
-      const days = 90 + idx * 10;
+      
+      const lastInteractionDate = row.last_moment_at || row.last_message_at || row.connection_updated_at || row.connection_created_at || now;
+      const lastTime = new Date(lastInteractionDate).getTime();
+      const diffMs = Math.max(0, now.getTime() - (isNaN(lastTime) ? now.getTime() : lastTime));
+      const days = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      
       const displayName = row.display_name || 'Đối tác';
       const aiSuggestion = `AI nhắc nhở: Đã ${days} ngày chưa tương tác cùng ${displayName}. Hãy gửi tin nhắn hoặc sắp xếp buổi gặp để hâm nóng mối quan hệ hợp tác.`;
 
@@ -1630,6 +1664,7 @@ export class ConnectAppService implements OnModuleInit {
           m.event_name, 
           m.place_label, 
           m.note,
+          COALESCE(m.visibility, 'friends') as visibility,
           bi_owner.display_name as owner_display_name,
           bi_owner.avatar_url as owner_avatar_url,
           bi_owner.job_title as owner_job_title,
@@ -1652,13 +1687,19 @@ export class ConnectAppService implements OnModuleInit {
         LEFT JOIN public.guest_contacts g ON m.target_guest_id = g.id
         WHERE (
           m.owner_user_id = ${userId}::uuid 
-          OR m.target_user_id = ${userId}::uuid
-          OR m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
-          OR m.owner_user_id IN (
-            SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
-            FROM public.user_connections
-            WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-              AND status = 'accepted'
+          OR (m.target_user_id = ${userId}::uuid AND COALESCE(m.visibility, 'friends') != 'private')
+          OR (COALESCE(m.visibility, 'friends') = 'public')
+          OR (
+            COALESCE(m.visibility, 'friends') = 'friends'
+            AND (
+              m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
+              OR m.owner_user_id IN (
+                SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
+                FROM public.user_connections
+                WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+                  AND status = 'accepted'
+              )
+            )
           )
         )
           AND m.status IN ('active', 'pending')
@@ -1680,6 +1721,7 @@ export class ConnectAppService implements OnModuleInit {
           m.event_name, 
           m.place_label, 
           m.note,
+          COALESCE(m.visibility, 'friends') as visibility,
           bi_owner.display_name as owner_display_name,
           bi_owner.avatar_url as owner_avatar_url,
           bi_owner.job_title as owner_job_title,
@@ -1702,13 +1744,19 @@ export class ConnectAppService implements OnModuleInit {
         LEFT JOIN public.guest_contacts g ON m.target_guest_id = g.id
         WHERE (
           m.owner_user_id = ${userId}::uuid 
-          OR m.target_user_id = ${userId}::uuid
-          OR m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
-          OR m.owner_user_id IN (
-            SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
-            FROM public.user_connections
-            WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-              AND status = 'accepted'
+          OR (m.target_user_id = ${userId}::uuid AND COALESCE(m.visibility, 'friends') != 'private')
+          OR (COALESCE(m.visibility, 'friends') = 'public')
+          OR (
+            COALESCE(m.visibility, 'friends') = 'friends'
+            AND (
+              m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
+              OR m.owner_user_id IN (
+                SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
+                FROM public.user_connections
+                WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+                  AND status = 'accepted'
+              )
+            )
           )
         )
           AND m.status IN ('active', 'pending')
@@ -1932,7 +1980,21 @@ export class ConnectAppService implements OnModuleInit {
     if (existing.length > 0) {
       const conn = existing[0];
       if (conn.status === 'accepted') {
-        return { ok: true, connectionId: conn.id, status: 'accepted' };
+        const targetProfiles = await this.prisma.$queryRaw<any[]>`
+          SELECT display_name, avatar_url, job_title, company_name
+          FROM public.business_identities
+          WHERE owner_user_id = ${targetUserId}::uuid AND status = 'active'
+          LIMIT 1
+        `.catch(() => [] as any[]);
+        const targetName = targetProfiles[0]?.display_name || 'đối tác';
+        return {
+          ok: true,
+          connectionId: conn.id,
+          status: 'accepted',
+          isAlreadyConnected: true,
+          message: `Bạn và ${targetName} đã là kết nối của nhau`,
+          targetProfile: targetProfiles[0] || null,
+        };
       }
       reqId = conn.id;
       // Re-connect: update row to 'pending'
@@ -2058,6 +2120,27 @@ export class ConnectAppService implements OnModuleInit {
       WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
     `;
 
+    // Cập nhật trạng thái 'accepted' trực tiếp vào thông báo của người nhận
+    await this.prisma.$executeRaw`
+      UPDATE public.business_notifications
+      SET safe_display_data = jsonb_set(
+        COALESCE(safe_display_data, '{}'::jsonb),
+        '{connectionStatus}',
+        '"accepted"'::jsonb
+      ),
+      read_at = COALESCE(read_at, ${now}),
+      updated_at = ${now}
+      WHERE (source_record_id = ${body.connectionId} OR (safe_display_data->>'connectionId') = ${body.connectionId})
+        AND recipient_user_id = ${userId}::uuid
+    `.catch(() => {});
+
+    // Phát sự kiện realtime cho người nhận (để UI đổi ngay thành Đã kết nối)
+    this.gateway.server?.to(`user:${userId}`).emit('notification:updated', {
+      connectionId: body.connectionId,
+      connectionStatus: 'accepted',
+      timestamp: now.toISOString(),
+    });
+
     if (requesterUserId) {
       try {
         const accepterProfiles = await this.prisma.$queryRaw<any[]>`
@@ -2072,6 +2155,7 @@ export class ConnectAppService implements OnModuleInit {
           counterpartDisplayName: accepter.display_name || 'Hội viên ViOne',
           avatarUrl: accepter.avatar_url || null,
           connectionId: body.connectionId,
+          connectionStatus: 'accepted',
         });
         const actionTarget = JSON.stringify({
           route: '/connect-app/network',
@@ -2119,7 +2203,7 @@ export class ConnectAppService implements OnModuleInit {
         console.warn('acceptConnection notification failed:', e);
       }
     }
-    return { ok: true };
+    return { ok: true, connectionStatus: 'accepted' };
   }
 
   async declineConnection(userId: string, body: any) {
@@ -2137,17 +2221,66 @@ export class ConnectAppService implements OnModuleInit {
       WHERE id = ${body.connectionId}::uuid AND recipient_user_id = ${userId}::uuid
     `;
 
-    // Mark notification as cancelled/declined
+    // Cập nhật trạng thái 'declined' trực tiếp vào thông báo của người nhận
     await this.prisma.$executeRaw`
       UPDATE public.business_notifications
-      SET status = 'cancelled', updated_at = ${now}
-      WHERE source_record_id = ${body.connectionId} AND recipient_user_id = ${userId}::uuid
+      SET safe_display_data = jsonb_set(
+        COALESCE(safe_display_data, '{}'::jsonb),
+        '{connectionStatus}',
+        '"declined"'::jsonb
+      ),
+      read_at = COALESCE(read_at, ${now}),
+      updated_at = ${now}
+      WHERE (source_record_id = ${body.connectionId} OR (safe_display_data->>'connectionId') = ${body.connectionId})
+        AND recipient_user_id = ${userId}::uuid
     `.catch(() => {});
+
+    // Phát sự kiện realtime cho người nhận
+    this.gateway.server?.to(`user:${userId}`).emit('notification:updated', {
+      connectionId: body.connectionId,
+      connectionStatus: 'declined',
+      timestamp: now.toISOString(),
+    });
 
     if (requesterUserId) {
       try {
+        const declinerProfiles = await this.prisma.$queryRaw<any[]>`
+          SELECT bi.display_name, bi.avatar_url, bi.company_name, bi.job_title, u.full_name
+          FROM public.vione_users u
+          LEFT JOIN public.business_identities bi ON bi.owner_user_id = u.id AND bi.status = 'active'
+          WHERE u.id = ${userId}::uuid
+          LIMIT 1
+        `.catch(() => [] as any[]);
+        const declinerUser = declinerProfiles[0];
+        const declinerName = declinerUser?.display_name || declinerUser?.full_name || declinerUser?.company_name || 'Hội viên ViOne';
+
+        const notifId = crypto.randomUUID();
+        const safeData = JSON.stringify({
+          counterpartDisplayName: declinerName,
+          avatarUrl: declinerUser?.avatar_url || null,
+          connectionId: body.connectionId,
+        });
+        const dedupeKey = `connection_declined:${body.connectionId}`;
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, action_kind, action_label_key,
+            priority, status, created_at, updated_at, dedupe_key
+          ) VALUES (
+            ${notifId}::uuid, ${requesterUserId}::uuid, 'connection', ${body.connectionId}, 'connection_request_declined', 'connection_request_declined',
+            'bc.notif.kind.connection_request_declined.title', 'bc.notif.kind.connection_request_declined.body',
+            ${safeData}::jsonb, 'none', 'bc.notif.action.dismiss',
+            'low', 'delivered', ${now}, ${now}, ${dedupeKey}
+          )
+        `.catch(() => {});
+
         this.gateway.server?.to(`user:${requesterUserId}`).emit('connection:declined', {
           connectionId: body.connectionId,
+          declinerProfile: {
+            display_name: declinerName,
+            avatar_url: declinerUser?.avatar_url || null,
+          },
           timestamp: now.toISOString(),
         });
       } catch (e) {
@@ -2923,37 +3056,69 @@ export class ConnectAppService implements OnModuleInit {
       `.catch(() => []),
     ]);
 
-    const mapped: any[] = rows.map(r => ({
-      id: r.id,
-      recipientUserId: r.recipient_user_id,
-      sourceDomain: r.source_domain || 'meeting',
-      sourceRecordId: r.source_record_id || '',
-      eventKind: r.event_kind || '',
-      notificationKind: r.notification_kind || '',
-      titleKey: r.title_key || '',
-      bodyKey: r.body_key || '',
-      safeDisplayData: r.safe_display_data || {},
-      action: {
-        kind: r.action_kind || 'open_route',
-        labelKey: r.action_label_key || 'bc.notif.action.view',
-        targetRoute: r.action_target?.route || (r.source_domain === 'connection' ? '/connect-app/network' : null),
-        targetParams: r.action_target?.params || null,
-        targetSearch: r.action_target?.search || (r.source_domain === 'connection' ? { tab: 'requests' } : null),
-        requiresConfirmation: false,
-        canonicalCapability: null,
-      },
-      priority: r.priority || 'normal',
-      status: r.status || 'unread',
-      scheduledFor: null,
-      deliveredAt: r.created_at ? new Date(r.created_at).toISOString() : null,
-      readAt: r.read_at ? new Date(r.read_at).toISOString() : null,
-      archivedAt: null,
-      expiredAt: null,
-      dedupeKey: r.id,
-      schemaVersion: 1,
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
-      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
-    }));
+    // Tra cứu trạng thái thực tế mới nhất của các connection trong user_connections
+    const allConnIds = rows
+      .map(r => r.source_record_id || r.safe_display_data?.connectionId)
+      .filter(Boolean);
+
+    let connStatusMap = new Map<string, string>();
+    if (allConnIds.length > 0) {
+      try {
+        const connRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, status
+          FROM public.user_connections
+          WHERE id = ANY(${allConnIds}::uuid[])
+        `.catch(() => []);
+        for (const c of connRows) {
+          connStatusMap.set(c.id, c.status);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const mapped: any[] = rows.map(r => {
+      const connId = r.source_record_id || r.safe_display_data?.connectionId;
+      const connStatus = (connId ? connStatusMap.get(connId) : null) ||
+        r.safe_display_data?.connectionStatus ||
+        (r.notification_kind === 'connection_request_accepted' ? 'accepted' : r.notification_kind === 'connection_request_declined' ? 'declined' : 'pending');
+
+      return {
+        id: r.id,
+        recipientUserId: r.recipient_user_id,
+        sourceDomain: r.source_domain || 'meeting',
+        sourceRecordId: r.source_record_id || '',
+        eventKind: r.event_kind || '',
+        notificationKind: r.notification_kind || '',
+        titleKey: r.title_key || '',
+        bodyKey: r.body_key || '',
+        safeDisplayData: {
+          ...(r.safe_display_data || {}),
+          connectionStatus: connStatus,
+          connectionId: connId || undefined,
+        },
+        action: {
+          kind: r.action_kind || 'open_route',
+          labelKey: r.action_label_key || 'bc.notif.action.view',
+          targetRoute: r.action_target?.route || (r.source_domain === 'connection' ? '/connect-app/network' : null),
+          targetParams: r.action_target?.params || null,
+          targetSearch: r.action_target?.search || (r.source_domain === 'connection' ? { tab: 'requests' } : null),
+          requiresConfirmation: false,
+          canonicalCapability: null,
+        },
+        priority: r.priority || 'normal',
+        status: r.status || 'unread',
+        scheduledFor: null,
+        deliveredAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+        readAt: r.read_at ? new Date(r.read_at).toISOString() : null,
+        archivedAt: null,
+        expiredAt: null,
+        dedupeKey: r.id,
+        schemaVersion: 1,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
+        updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+      };
+    });
 
     // Đảm bảo mọi pending connection request đều có mặt trong danh sách thông báo
     const existingConnIds = new Set(
@@ -2991,6 +3156,7 @@ export class ConnectAppService implements OnModuleInit {
             jobTitle: cp.headline || null,
             companyName: cp.companyName || null,
             connectionId: conn.id,
+            connectionStatus: 'pending',
             source: 'nfc',
           },
           action: {
@@ -3036,6 +3202,65 @@ export class ConnectAppService implements OnModuleInit {
       `;
       return res;
     }
+  }
+
+  async deleteNotification(userId: string, id: string) {
+    if (id.startsWith('conn-req-')) {
+      const connId = id.replace('conn-req-', '');
+      await this.prisma.$executeRaw`
+        UPDATE public.user_connections
+        SET status = 'declined'::public.global_connection_status, responded_at = now(), updated_at = now()
+        WHERE id = ${connId}::uuid AND recipient_user_id = ${userId}::uuid
+      `.catch(() => {});
+    } else {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_notifications
+        WHERE recipient_user_id = ${userId}::uuid AND id = ${id}::uuid
+      `.catch(() => {});
+      await this.prisma.$executeRaw`
+        DELETE FROM public.member_notifications
+        WHERE user_id = ${userId}::uuid AND id = ${id}::uuid
+      `.catch(() => {});
+    }
+
+    this.gateway.server?.to(`user:${userId}`).emit('notification:deleted', {
+      id,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true, id };
+  }
+
+  async deleteNotifications(userId: string, ids: string[]) {
+    if (!ids || ids.length === 0) return { ok: true, deleted: 0 };
+    const realIds = ids.filter(id => !id.startsWith('conn-req-'));
+    if (realIds.length > 0) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_notifications
+        WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${realIds}::uuid[])
+      `.catch(() => {});
+      await this.prisma.$executeRaw`
+        DELETE FROM public.member_notifications
+        WHERE user_id = ${userId}::uuid AND id = ANY(${realIds}::uuid[])
+      `.catch(() => {});
+    }
+    const virtualConnIds = ids
+      .filter(id => id.startsWith('conn-req-'))
+      .map(id => id.replace('conn-req-', ''));
+    if (virtualConnIds.length > 0) {
+      await this.prisma.$executeRaw`
+        UPDATE public.user_connections
+        SET status = 'declined'::public.global_connection_status, responded_at = now(), updated_at = now()
+        WHERE id = ANY(${virtualConnIds}::uuid[]) AND recipient_user_id = ${userId}::uuid
+      `.catch(() => {});
+    }
+
+    this.gateway.server?.to(`user:${userId}`).emit('notification:deleted', {
+      ids,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true, deleted: ids.length };
   }
 
   async listMyMemberNotifications(userId: string) {
@@ -3258,7 +3483,7 @@ export class ConnectAppService implements OnModuleInit {
   // --- Moments (BC-Mobile-2E) ---
   
   async prepareMoment(userId: string, input: any) {
-    const { personId, occurredAt, eventName, placeLabel, note, photoCount, clientToken } = input;
+    const { personId, occurredAt, eventName, placeLabel, note, photoCount, clientToken, visibility = 'friends' } = input;
 
     const m = /^([ucg]):([0-9a-fA-F-]{36})$/.exec(personId);
     if (!m) throw new ForbiddenException('relationship_not_authorized');
@@ -3322,6 +3547,7 @@ export class ConnectAppService implements OnModuleInit {
             event_name = ${eventName || null},
             place_label = ${placeLabel || null},
             note = ${note || null},
+            visibility = ${visibility || 'friends'},
             updated_at = now()
         WHERE id = ${momentId}::uuid
       `;
@@ -3330,14 +3556,14 @@ export class ConnectAppService implements OnModuleInit {
       await this.prisma.$executeRaw`
         INSERT INTO public.business_relationship_moments (
           id, owner_user_id, target_kind, target_user_id, target_card_id, target_guest_id,
-          occurred_at, event_name, place_label, note, status, client_token, created_at, updated_at
+          occurred_at, event_name, place_label, note, status, visibility, client_token, created_at, updated_at
         ) VALUES (
           ${momentId}::uuid, ${userId}::uuid, ${targetKind},
           ${targetUserId ? targetUserId : null}::uuid,
           ${targetCardId ? targetCardId : null}::uuid,
           ${targetGuestId ? targetGuestId : null}::uuid,
           ${new Date(occurredAt)}, ${eventName || null}, ${placeLabel || null}, ${note || null},
-          'pending', ${clientToken}::uuid, now(), now()
+          'pending', ${visibility || 'friends'}, ${clientToken}::uuid, now(), now()
         )
       `;
     }
@@ -3423,7 +3649,17 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async updateMoment(userId: string, input: any) {
-    const { momentId, occurredAt, eventName, placeLabel, note } = input;
+    const {
+      momentId,
+      occurredAt,
+      eventName,
+      placeLabel,
+      note,
+      visibility,
+      targetPersonId,
+      photoUrls,
+      taggedUserIds,
+    } = input;
 
     const momentRows = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.business_relationship_moments
@@ -3433,15 +3669,64 @@ export class ConnectAppService implements OnModuleInit {
 
     if (momentRows.length === 0) throw new NotFoundException('not_found');
 
-    await this.prisma.$executeRaw`
-      UPDATE public.business_relationship_moments
-      SET occurred_at = ${new Date(occurredAt)},
-          event_name = ${eventName || null},
-          place_label = ${placeLabel || null},
-          note = ${note || null},
-          updated_at = now()
-      WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
-    `;
+    const cleanTargetId = targetPersonId ? String(targetPersonId).replace(/^[ucg]:/, '') : null;
+    const isTargetUuid = cleanTargetId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanTargetId);
+    const safeOccurredAt = occurredAt ? new Date(occurredAt) : new Date();
+
+    if (isTargetUuid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.business_relationship_moments
+        SET occurred_at = ${safeOccurredAt},
+            event_name = ${eventName || null},
+            place_label = ${placeLabel || null},
+            note = ${note || null},
+            visibility = COALESCE(${visibility || null}, visibility, 'friends'),
+            target_person_id = ${cleanTargetId}::uuid,
+            updated_at = now()
+        WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      `;
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE public.business_relationship_moments
+        SET occurred_at = ${safeOccurredAt},
+            event_name = ${eventName || null},
+            place_label = ${placeLabel || null},
+            note = ${note || null},
+            visibility = COALESCE(${visibility || null}, visibility, 'friends'),
+            updated_at = now()
+        WHERE id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      `;
+    }
+
+    // Update photos if photoUrls array is provided
+    if (Array.isArray(photoUrls)) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_relationship_moment_media
+        WHERE moment_id = ${momentId}::uuid AND owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+
+      for (let i = 0; i < photoUrls.length; i++) {
+        const photoUrl = photoUrls[i];
+        if (!photoUrl) continue;
+        const mediaId = crypto.randomUUID();
+        await this.prisma.$executeRaw`
+          INSERT INTO public.business_relationship_moment_media (
+            id, moment_id, owner_user_id, storage_path, media_type, sort_order
+          ) VALUES (
+            ${mediaId}::uuid, ${momentId}::uuid, ${userId}::uuid, ${photoUrl}, 'image/jpeg', ${i}
+          )
+        `.catch(() => null);
+      }
+    }
+
+    // Notify tagged users if provided
+    if (Array.isArray(taggedUserIds) && taggedUserIds.length > 0) {
+      void this.notifyMomentTags(userId, {
+        momentId,
+        taggedUserIds,
+        content: note || eventName || '',
+      });
+    }
 
     return { ok: true, momentId };
   }
@@ -3480,7 +3765,7 @@ export class ConnectAppService implements OnModuleInit {
 
   async listMomentComments(momentId: string, viewerUserId: string) {
     const rawComments = await this.prisma.$queryRaw<any[]>`
-      SELECT c.id, c.moment_id, c.user_id, c.parent_id, c.content, c.mentions, c.created_at, c.updated_at,
+      SELECT c.id, c.moment_id, c.user_id, c.parent_id, c.content, c.photo_url, c.mentions, c.created_at, c.updated_at,
              bi.display_name, bi.avatar_url, bi.job_title, bi.company_name
       FROM public.business_relationship_moment_comments c
       LEFT JOIN public.business_identities bi ON c.user_id = bi.owner_user_id
@@ -3519,6 +3804,7 @@ export class ConnectAppService implements OnModuleInit {
         userId: c.user_id,
         parentId: c.parent_id || null,
         content: c.content,
+        photoUrl: c.photo_url || null,
         mentions: Array.isArray(c.mentions) ? c.mentions : (typeof c.mentions === 'string' ? JSON.parse(c.mentions || '[]') : []),
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : new Date().toISOString(),
         author: {
@@ -3566,10 +3852,10 @@ export class ConnectAppService implements OnModuleInit {
   async createMomentComment(
     userId: string,
     momentId: string,
-    input: { parentId?: string | null; content: string; mentions?: any[] },
+    input: { parentId?: string | null; content: string; photoUrl?: string | null; mentions?: any[] },
   ) {
-    const { parentId, content, mentions = [] } = input;
-    if (!content || !content.trim()) {
+    const { parentId, content, photoUrl = null, mentions = [] } = input;
+    if ((!content || !content.trim()) && !photoUrl) {
       throw new BadRequestException('content_required');
     }
 
@@ -3579,11 +3865,12 @@ export class ConnectAppService implements OnModuleInit {
 
     await this.prisma.$executeRaw`
       INSERT INTO public.business_relationship_moment_comments (
-        id, moment_id, user_id, parent_id, content, mentions, created_at, updated_at
+        id, moment_id, user_id, parent_id, content, photo_url, mentions, created_at, updated_at
       ) VALUES (
         ${commentId}::uuid, ${momentId}::uuid, ${userId}::uuid,
         ${parentId ? parentId : null}::uuid,
-        ${content.trim()},
+        ${content ? content.trim() : '(Hình ảnh)'},
+        ${photoUrl},
         ${mentionsJson}::jsonb,
         ${now}, ${now}
       )
@@ -3608,7 +3895,8 @@ export class ConnectAppService implements OnModuleInit {
       momentId,
       userId,
       parentId: parentId || null,
-      content: content.trim(),
+      content: content ? content.trim() : '(Hình ảnh)',
+      photoUrl: photoUrl || null,
       mentions,
       createdAt: now.toISOString(),
       author: {
@@ -4560,15 +4848,52 @@ export class ConnectAppService implements OnModuleInit {
     };
   }
 
-  async getMyDmThreadDetail(userId: string, threadId: string) {
-    const threads = await this.prisma.$queryRaw<any[]>`
+  private async resolveDmThread(userId: string, threadOrUserId: string): Promise<any> {
+    const cleanId = threadOrUserId.startsWith('u:') ? threadOrUserId.substring(2) : threadOrUserId;
+
+    // 1. Try finding by thread ID directly
+    let threads = await this.prisma.$queryRaw<any[]>`
       SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
       FROM public.bc_dm_threads
-      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+      WHERE id = ${cleanId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
       LIMIT 1
     `.catch(() => [] as any[]);
 
-    const thread = threads[0];
+    if (threads.length > 0) return threads[0];
+
+    // 2. Try finding by counterpart userId pair
+    threads = await this.prisma.$queryRaw<any[]>`
+      SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+      FROM public.bc_dm_threads
+      WHERE (pair_user_low = LEAST(${userId}::uuid, ${cleanId}::uuid) AND pair_user_high = GREATEST(${userId}::uuid, ${cleanId}::uuid))
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    if (threads.length > 0) return threads[0];
+
+    // 3. Auto-open / create thread if cleanId is another user ID
+    if (cleanId !== userId) {
+      try {
+        const opened = await this.openMyDmThread(userId, cleanId);
+        if (opened?.threadId) {
+          threads = await this.prisma.$queryRaw<any[]>`
+            SELECT id, pair_user_low, pair_user_high, last_message_at, last_message_preview, last_message_sender_id, updated_at
+            FROM public.bc_dm_threads
+            WHERE id = ${opened.threadId}::uuid
+            LIMIT 1
+          `.catch(() => [] as any[]);
+          if (threads.length > 0) return threads[0];
+        }
+      } catch {
+        // Not a user id or failed
+      }
+    }
+
+    return null;
+  }
+
+  async getMyDmThreadDetail(userId: string, threadId: string) {
+    const thread = await this.resolveDmThread(userId, threadId);
     if (!thread) throw new NotFoundException('thread_not_found');
 
     const counterpartId = thread.pair_user_low === userId ? thread.pair_user_high : thread.pair_user_low;
@@ -4605,7 +4930,7 @@ export class ConnectAppService implements OnModuleInit {
       unreadCount: 0,
     };
 
-    const messages = await this.listMyDmThreadMessages(userId, threadId);
+    const messages = await this.listMyDmThreadMessages(userId, thread.id);
 
     return {
       ok: true,
@@ -4615,18 +4940,14 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async listMyDmThreadMessages(userId: string, threadId: string) {
-    const threads = await this.prisma.$queryRaw<any[]>`
-      SELECT id, pair_user_low, pair_user_high FROM public.bc_dm_threads
-      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-      LIMIT 1
-    `.catch(() => [] as any[]);
+    const thread = await this.resolveDmThread(userId, threadId);
+    if (!thread) throw new ForbiddenException('thread_access_denied');
 
-    if (threads.length === 0) throw new ForbiddenException('thread_access_denied');
-
+    const actualThreadId = thread.id;
     const messages = await this.prisma.$queryRaw<any[]>`
       SELECT id, thread_id, sender_user_id, body, client_token, read_at, retracted_at, created_at, reactions, reply_to
       FROM public.bc_dm_messages
-      WHERE thread_id = ${threadId}::uuid
+      WHERE thread_id = ${actualThreadId}::uuid
       ORDER BY created_at ASC
       LIMIT 1000
     `.catch(() => [] as any[]);
@@ -4646,19 +4967,15 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async sendMyDmMessage(userId: string, threadId: string, input: any) {
-    const threads = await this.prisma.$queryRaw<any[]>`
-      SELECT id, pair_user_low, pair_user_high FROM public.bc_dm_threads
-      WHERE id = ${threadId}::uuid AND (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-      LIMIT 1
-    `.catch(() => [] as any[]);
+    const thread = await this.resolveDmThread(userId, threadId);
+    if (!thread) throw new ForbiddenException('thread_access_denied');
 
-    if (threads.length === 0) throw new ForbiddenException('thread_access_denied');
-
-    const counterpartId = threads[0].pair_user_low === userId ? threads[0].pair_user_high : threads[0].pair_user_low;
+    const actualThreadId = thread.id;
+    const counterpartId = thread.pair_user_low === userId ? thread.pair_user_high : thread.pair_user_low;
 
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_dm_messages
-      WHERE client_token = ${input.clientToken}::uuid AND thread_id = ${threadId}::uuid
+      WHERE client_token = ${input.clientToken}::uuid AND thread_id = ${actualThreadId}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
 
@@ -4674,7 +4991,7 @@ export class ConnectAppService implements OnModuleInit {
       INSERT INTO public.bc_dm_messages (
         id, thread_id, sender_user_id, body, client_token, reply_to, reactions, created_at
       ) VALUES (
-        ${msgId}::uuid, ${threadId}::uuid, ${userId}::uuid, ${input.body}, ${input.clientToken}::uuid, ${replyToData}::jsonb, '[]'::jsonb, ${now}
+        ${msgId}::uuid, ${actualThreadId}::uuid, ${userId}::uuid, ${input.body}, ${input.clientToken}::uuid, ${replyToData}::jsonb, '[]'::jsonb, ${now}
       )
     `;
 
@@ -4685,12 +5002,12 @@ export class ConnectAppService implements OnModuleInit {
           last_message_preview = ${preview},
           last_message_sender_id = ${userId}::uuid,
           updated_at = ${now}
-      WHERE id = ${threadId}::uuid
+      WHERE id = ${actualThreadId}::uuid
     `;
 
     const messageResult = {
       id: msgId,
-      threadId,
+      threadId: actualThreadId,
       fromMe: true,
       body: input.body,
       clientToken: input.clientToken,
@@ -4708,7 +5025,7 @@ export class ConnectAppService implements OnModuleInit {
       `.catch(() => [] as any[]);
       const s = senderIdentities[0] || {};
       const threadSummaryForCounterpart = {
-        threadId,
+        threadId: actualThreadId,
         personId: `u:${userId}`,
         displayName: s.display_name || 'Hội viên ViOne',
         avatarUrl: s.avatar_url || null,
@@ -4721,7 +5038,7 @@ export class ConnectAppService implements OnModuleInit {
         unreadCount: 1,
       };
 
-      this.gateway.emitDmMessageReceived(threadId, counterpartId, {
+      this.gateway.emitDmMessageReceived(actualThreadId, counterpartId, {
         ...messageResult,
         fromMe: false,
       }, threadSummaryForCounterpart);
@@ -4733,14 +5050,18 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async markMyDmThreadRead(userId: string, threadId: string) {
+    const thread = await this.resolveDmThread(userId, threadId);
+    if (!thread) return { ok: true, updated: 0 };
+    const actualThreadId = thread.id;
+
     const now = new Date();
     await this.prisma.$executeRaw`
       UPDATE public.bc_dm_messages
       SET read_at = ${now}
-      WHERE thread_id = ${threadId}::uuid AND sender_user_id != ${userId}::uuid AND read_at IS NULL
+      WHERE thread_id = ${actualThreadId}::uuid AND sender_user_id != ${userId}::uuid AND read_at IS NULL
     `;
 
-    this.gateway.emitDmReadReceipt(threadId, userId);
+    this.gateway.emitDmReadReceipt(actualThreadId, userId);
     return { ok: true, updated: 1 };
   }
 
@@ -6399,6 +6720,26 @@ export class ConnectAppService implements OnModuleInit {
           ${reqId}::uuid, ${userId}::uuid, ${communityId}::uuid, 'approved', ${note}, ${now}, ${now}, ${now}
         )
       `.catch(() => {});
+    }
+
+    // Trigger Realtime Notification for Association CRM Admins
+    try {
+      const userProfiles = await this.prisma.$queryRaw<any[]>`
+        SELECT display_name, company_name FROM public.business_identities WHERE owner_user_id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      const applicantName = userProfiles[0]?.display_name || 'Hội viên ViOne';
+      const applicantCompany = userProfiles[0]?.company_name || '';
+
+      void this.notifyAssociationAdmins(communityId, {
+        title: `Yêu cầu gia nhập cộng đồng: ${applicantName}`,
+        body: `${applicantName} ${applicantCompany ? `(${applicantCompany})` : ''} vừa tham gia cộng đồng. Bấm để xem chi tiết.`,
+        targetRoute: `/members?status=pending`,
+        type: 'community_join_received',
+        sourceRecordId: communityId,
+        meta: { applicantName, applicantCompany },
+      });
+    } catch {
+      // ignore
     }
 
     return { status: 'approved' };
@@ -8125,6 +8466,18 @@ export class ConnectAppService implements OnModuleInit {
           )
         `;
       }
+
+      if (assocId) {
+        // Trigger Realtime Notifications to Association Admins & Web CRM
+        void this.notifyAssociationAdmins(assocId, {
+          title: `Đăng ký hội viên mới: ${fullName} - ${company}`,
+          body: `Ứng viên ${fullName} (${title}) vừa nộp hồ sơ xin gia nhập. Bấm để duyệt ngay.`,
+          targetRoute: `/members?status=pending`,
+          type: 'club_registration_received',
+          sourceRecordId: memberId,
+          meta: { applicantName: fullName, companyName: company, phone },
+        });
+      }
     } catch (err) {
       console.error('Member insert error in submitClubRegistration:', err);
     }
@@ -8137,6 +8490,173 @@ export class ConnectAppService implements OnModuleInit {
       leadId: demoReqId || memberId,
       message: 'Hồ sơ đăng ký gia nhập của bạn đã được tiếp nhận thành công!',
     };
+  }
+
+  /**
+   * Universal Notification Dispatcher for Association Staff / CRM Admins
+   * Creates records in public.notifications and public.business_notifications,
+   * and dispatches instant WebSocket alerts to Web CRM & Mobile admins with actionable redirection.
+   */
+  async notifyAssociationAdmins(
+    associationId: string,
+    payload: {
+      title: string;
+      body: string;
+      targetRoute: string;
+      type?: string;
+      sourceRecordId?: string;
+      meta?: any;
+    },
+  ) {
+    try {
+      const now = new Date();
+      const code = `NTF-${Date.now().toString(36).toUpperCase()}`;
+
+      // 1. Insert into public.notifications for Web CRM Notification Center
+      await this.prisma.$executeRaw`
+        INSERT INTO public.notifications (
+          id, code, title, body, audience, channel, status, sent_at, association_id, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), ${code}, ${payload.title}, ${payload.body},
+          'staff', 'inapp', 'sent', ${now}, ${associationId}::uuid, ${now}, ${now}
+        )
+      `.catch((err) => console.warn('Could not insert public.notifications:', err));
+
+      // 2. Query admin / staff user IDs of this association
+      const adminMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT DISTINCT user_id FROM public.memberships
+        WHERE association_id = ${associationId}::uuid
+          AND role IN ('admin', 'owner', 'staff', 'manager', 'executive')
+      `.catch(() => [] as any[]);
+
+      const adminUserIds = adminMembers.map((m) => m.user_id).filter(Boolean);
+
+      // 3. For each admin user, insert business_notifications & emit WebSocket
+      for (const adminId of adminUserIds) {
+        const notifId = crypto.randomUUID();
+        const safeData = JSON.stringify({
+          title: payload.title,
+          body: payload.body,
+          companyName: payload.title,
+          targetRoute: payload.targetRoute,
+          ...(payload.meta || {}),
+        });
+        const actionTarget = JSON.stringify({
+          route: payload.targetRoute,
+          targetRoute: payload.targetRoute,
+          associationId,
+        });
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+            priority, status, created_at, updated_at, dedupe_key
+          ) VALUES (
+            ${notifId}::uuid, ${adminId}::uuid, 'association', ${payload.sourceRecordId || associationId},
+            ${payload.type || 'assoc_registration'}, ${payload.type || 'assoc_admin_alert'},
+            'assoc.notif.admin.title', 'assoc.notif.admin.body',
+            ${safeData}::jsonb, 'navigate', 'Xem chi tiết', ${actionTarget}::jsonb,
+            'high', 'delivered', ${now}, ${now}, ${`assoc_alert:${notifId}`}
+          )
+        `.catch(() => null);
+
+        this.gateway.emitNotification(adminId, {
+          id: notifId,
+          title: payload.title,
+          body: payload.body,
+          action: { targetRoute: payload.targetRoute },
+          safeDisplayData: {
+            title: payload.title,
+            body: payload.body,
+          },
+          targetRoute: payload.targetRoute,
+        });
+      }
+
+      // 4. Also broadcast to association room & all connected CRM clients
+      this.gateway.emitToRoom(`assoc:${associationId}`, 'notification:new', {
+        title: payload.title,
+        body: payload.body,
+        targetRoute: payload.targetRoute,
+        action: { targetRoute: payload.targetRoute },
+        safeDisplayData: {
+          title: payload.title,
+          body: payload.body,
+        },
+      });
+
+      this.gateway.emitToAll('notification:new', {
+        title: payload.title,
+        body: payload.body,
+        targetRoute: payload.targetRoute,
+        action: { targetRoute: payload.targetRoute },
+        safeDisplayData: {
+          title: payload.title,
+          body: payload.body,
+        },
+      });
+    } catch (err) {
+      console.warn('Error in notifyAssociationAdmins:', err);
+    }
+  }
+
+  /**
+   * Notify Tagged Users in Moments
+   */
+  async notifyMomentTags(userId: string, input: { momentId: string; taggedUserIds: string[]; content?: string }) {
+    const { momentId, taggedUserIds = [], content = '' } = input;
+    if (taggedUserIds.length === 0) return { ok: true, count: 0 };
+
+    const authorProfiles = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name FROM public.business_identities
+      WHERE owner_user_id = ${userId}::uuid AND status = 'active'
+      LIMIT 1
+    `.catch(() => [] as any[]);
+    const displayName = authorProfiles[0]?.display_name || 'Đối tác trong mạng lưới';
+    const now = new Date();
+
+    for (const targetId of taggedUserIds) {
+      if (!targetId || targetId === userId) continue;
+      const cleanTargetId = targetId.replace(/^u:/, '');
+      const notifId = crypto.randomUUID();
+      const safeData = JSON.stringify({
+        authorName: displayName,
+        title: `${displayName} đã gắn thẻ bạn trong một khoảnh khắc`,
+        body: content ? content.slice(0, 100) : `${displayName} vừa gắn thẻ bạn trong bài viết mới`,
+        content: content ? content.slice(0, 100) : '',
+        targetRoute: '/connect-app',
+      });
+      const actionTarget = JSON.stringify({ route: '/connect-app', momentId });
+      const dedupeKey = `moment_tag:${momentId}:${cleanTargetId}`;
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+          priority, status, created_at, updated_at, dedupe_key
+        ) VALUES (
+          ${notifId}::uuid, ${cleanTargetId}::uuid, 'moment', ${momentId}, 'moment_tagged', 'moment_tag_person',
+          'bc.notif.moment_tag.title', 'bc.notif.moment_tag.body',
+          ${safeData}::jsonb, 'open_moment_detail', 'bc.notif.action.view', ${actionTarget}::jsonb,
+          'high', 'delivered', ${now}, ${now}, ${dedupeKey}
+        )
+      `.catch(() => null);
+
+      this.gateway.emitNotification(cleanTargetId, {
+        id: notifId,
+        title: `${displayName} đã gắn thẻ bạn trong khoảnh khắc`,
+        body: content ? content.slice(0, 100) : '',
+        momentId,
+        action: { targetRoute: '/connect-app' },
+        safeDisplayData: {
+          title: `${displayName} đã gắn thẻ bạn trong khoảnh khắc`,
+          body: content ? content.slice(0, 100) : '',
+        },
+      });
+    }
+
+    return { ok: true, count: taggedUserIds.length };
   }
 }
 

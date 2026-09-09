@@ -223,4 +223,135 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     if (!this.server) return;
     this.server.to(`user:${userId}`).emit('notification:new', notification);
   }
+
+  emitToRoom(room: string, event: string, payload: any) {
+    if (!this.server) return;
+    this.server.to(room).emit(event, payload);
+  }
+
+  emitToAll(event: string, payload: any) {
+    if (!this.server) return;
+    this.server.emit(event, payload);
+  }
+
+  // ── Real-time Audio & Video Call Signaling ────────────────────
+
+  @SubscribeMessage('call:initiate')
+  handleCallInitiate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      callId: string;
+      recipientUserId: string;
+      callerUserId?: string;
+      callerName: string;
+      callerAvatar?: string;
+      callerTitle?: string;
+      callType: 'audio' | 'video';
+    },
+  ) {
+    if (!payload?.recipientUserId || !this.server) return { ok: false };
+    this.logger.log(`Call initiated [${payload.callType}] by ${payload.callerName} -> user:${payload.recipientUserId}`);
+
+    this.server.to(`user:${payload.recipientUserId}`).emit('call:incoming', {
+      callId: payload.callId,
+      callerUserId: payload.callerUserId || client.id,
+      callerName: payload.callerName,
+      callerAvatar: payload.callerAvatar || null,
+      callerTitle: payload.callerTitle || null,
+      callType: payload.callType || 'video',
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true, callId: payload.callId };
+  }
+
+  @SubscribeMessage('call:accept')
+  handleCallAccept(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      callId: string;
+      callerUserId: string;
+      calleeUserId: string;
+      calleeName?: string;
+      calleeAvatar?: string;
+    },
+  ) {
+    if (!payload?.callerUserId || !this.server) return { ok: false };
+    this.logger.log(`Call accepted: ${payload.callId} by ${payload.calleeUserId}`);
+
+    this.server.to(`user:${payload.callerUserId}`).emit('call:accepted', {
+      callId: payload.callId,
+      calleeUserId: payload.calleeUserId,
+      calleeName: payload.calleeName,
+      calleeAvatar: payload.calleeAvatar,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('call:decline')
+  handleCallDecline(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      callId: string;
+      callerUserId: string;
+      reason?: string;
+    },
+  ) {
+    if (!payload?.callerUserId || !this.server) return { ok: false };
+    this.logger.log(`Call declined: ${payload.callId} -> user:${payload.callerUserId}`);
+
+    this.server.to(`user:${payload.callerUserId}`).emit('call:declined', {
+      callId: payload.callId,
+      reason: payload.reason || 'busy',
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('call:end')
+  handleCallEnd(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      callId: string;
+      targetUserId: string;
+      duration?: number;
+    },
+  ) {
+    if (!payload?.targetUserId || !this.server) return { ok: false };
+    this.logger.log(`Call ended: ${payload.callId} -> user:${payload.targetUserId}`);
+
+    this.server.to(`user:${payload.targetUserId}`).emit('call:ended', {
+      callId: payload.callId,
+      duration: payload.duration || 0,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('call:signal')
+  handleCallSignal(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      callId: string;
+      targetUserId: string;
+      signal: any;
+    },
+  ) {
+    if (!payload?.targetUserId || !this.server) return { ok: false };
+    this.server.to(`user:${payload.targetUserId}`).emit('call:signal', {
+      callId: payload.callId,
+      senderSocketId: client.id,
+      signal: payload.signal,
+    });
+    return { ok: true };
+  }
 }

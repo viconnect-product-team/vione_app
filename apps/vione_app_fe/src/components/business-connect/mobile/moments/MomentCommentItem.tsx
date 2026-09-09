@@ -173,6 +173,19 @@ export function MomentCommentItem({
               <div className="text-[13px] text-[var(--bc-mobile-text)] leading-snug mt-1 whitespace-pre-wrap break-words">
                 {renderCommentContent(comment.content, comment.mentions)}
               </div>
+
+              {/* Photo attached to comment */}
+              {comment.photoUrl && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] max-w-[220px]">
+                  <img
+                    src={comment.photoUrl}
+                    alt="Ảnh đính kèm"
+                    loading="lazy"
+                    onClick={() => window.open(comment.photoUrl || "", "_blank")}
+                    className="w-full max-h-56 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Reaction badge floating on comment bubble if liked */}

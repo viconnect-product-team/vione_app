@@ -282,30 +282,30 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
   const oppCount = preview?.openOpportunities.length ?? null;
 
   return (
-    <li className="overflow-hidden rounded-2xl bc-translucent-card p-3.5 flex flex-col gap-3">
+    <li className="overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 flex flex-col gap-3 shadow-sm transition-all hover:border-[#D8B282]/40">
       <Link
         to="/connect-app/community/$communityId"
         params={{ communityId: community.communityId }}
-        className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+        className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] cursor-pointer"
       >
         <CommunityAvatar name={community.name} logoUrl={community.logoUrl} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-col items-start gap-1">
             <div className="flex items-center gap-1.5 w-full">
-              <p className="truncate text-[16px] font-semibold text-[#f2efe9]">
+              <p className="truncate text-[16px] font-semibold text-foreground dark:text-[#f2efe9]">
                 {community.name}
               </p>
               <ChevronRight
                 aria-hidden="true"
-                className="h-4 w-4 shrink-0 text-[#d8c3b180] ml-auto"
+                className="h-4 w-4 shrink-0 text-muted-foreground dark:text-[#d8c3b180] ml-auto"
                 strokeWidth={1.8}
               />
             </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/30 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#D8B282]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/40 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#c49253] dark:text-[#D8B282]">
                 {community.viewerRole === "admin" ? "Quản trị viên" : "Thành viên"}
               </span>
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/30 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#D8B282]">
+              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/40 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#c49253] dark:text-[#D8B282]">
                 Đã tham gia
               </span>
             </div>
@@ -313,7 +313,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
         </div>
       </Link>
 
-      <p className="text-[13px] [font-family:'Inter-Light',Helvetica] font-light text-[#d8c3b1b2] leading-relaxed">
+      <p className="text-[13px] font-normal text-muted-foreground dark:text-[#d8c3b1b2] leading-relaxed">
         {[
           community.memberCount !== null
             ? `${community.memberCount} thành viên`
@@ -325,13 +325,13 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
           .join(" • ") || (community.shortDescription ?? "")}
       </p>
 
-      <div className="w-full h-px bg-[#D8B282]/15" />
+      <div className="w-full h-px bg-[var(--bc-mobile-border)]" />
 
-      <div className="grid grid-cols-3 divide-x divide-[#D8B282]/15 -mx-3.5 -mb-3.5">
+      <div className="grid grid-cols-3 divide-x divide-[var(--bc-mobile-border)] -mx-3.5 -mb-3.5">
         <Link
           to="/connect-app/community/$communityId/members"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
         >
           <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Thành viên
@@ -339,7 +339,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
         <Link
           to="/connect-app/community/$communityId/events"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
         >
           <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Sự kiện
@@ -347,7 +347,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
         <Link
           to="/connect-app/community/$communityId/opportunities"
           params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-normal text-[#D4C3A3] hover:text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
         >
           <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
           Cơ hội

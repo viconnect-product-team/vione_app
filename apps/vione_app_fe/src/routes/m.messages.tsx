@@ -611,13 +611,13 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
         <button
           type="submit"
           disabled={sending || isUploading || !text.trim()}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full vba-gold-grad text-[#1a1206] disabled:opacity-40 transition-all active:scale-95 shadow-md mb-0.5"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black disabled:opacity-35 transition-all hover:scale-105 active:scale-95 shadow-[0_2px_12px_rgba(216,178,130,0.4)] cursor-pointer mb-0.5"
           aria-label={t("m.messages.sendAria")}
         >
           {sending || isUploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <Loader2 className="h-4 w-4 animate-spin text-slate-950" aria-hidden="true" />
           ) : (
-            <Send className="h-4 w-4" aria-hidden="true" />
+            <Send className="h-4 w-4 fill-current text-slate-950 ml-0.5" aria-hidden="true" />
           )}
         </button>
       </form>

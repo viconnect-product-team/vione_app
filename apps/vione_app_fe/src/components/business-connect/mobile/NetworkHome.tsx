@@ -12,9 +12,14 @@ import {
   ChevronDown,
   ChevronRight,
   CircleCheck,
+  Image as ImageIcon,
+  MapPin,
+  MessageSquare,
+  Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Smile,
   Sparkles,
   UserPlus,
   Users,
@@ -33,14 +38,20 @@ import {
 } from "@/hooks/use-business-connect-network";
 import { useBusinessConnectHome } from "@/hooks/use-business-connect-home";
 import { useTodayRelationshipRecommendations } from "@/hooks/use-relationship-intelligence";
+import { useIncomingConnectionRequests } from "@/hooks/use-network-requests";
+import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { toast } from "sonner";
 import { useVSheet } from "@/hooks/use-v-sheet";
 import { useNetworkFeed } from "@/hooks/use-network-feed";
+import { useUnreadDmCount } from "@/hooks/use-bc-dm";
 import { avatarOrDemo } from "@/lib/business-connect/mobile/demo-avatars";
 import { BusinessConnectTopBar } from "./BusinessConnectTopBar";
 import { NetworkFeedCard } from "./NetworkFeedCard";
 import { NetworkPersonRow } from "./NetworkPersonRow";
 import { AiMatchConnectAction, AiMatchDetailSheet } from "./AiMatchDetailSheet";
 import { CustomersPanel } from "./customers/CustomersPanel";
+import { PostMomentModal } from "./moments/PostMomentModal";
+import { HomeNotificationsMenu } from "./HomeNotificationsMenu";
 
 type NetworkSort = "recent" | "name" | "company";
 type NetworkFilter = "all" | "connected" | "saved_card" | "card_scanned" | "contact_shared";
@@ -72,11 +83,14 @@ export function NetworkHome() {
   const searchId = useId();
   const { lang } = useLang();
   const { openV } = useVSheet();
+  const viewerUserId = useViewerUserId();
   const [tab, setTab] = useState<"network" | "customers" | "suggestions">("network");
   const [term, setTerm] = useState("");
   const [sort, setSort] = useState<NetworkSort>("recent");
   const [filter, setFilter] = useState<NetworkFilter>("all");
   const [sortOpen, setSortOpen] = useState(false);
+  const [postModalOpen, setPostModalOpen] = useState(false);
+  const [initialFeeling, setInitialFeeling] = useState<string | undefined>(undefined);
   const network = useBusinessConnectNetwork(term);
   const { recommendations } = useTodayRelationshipRecommendations(lang);
   const clearSearch = () => setTerm("");
@@ -121,6 +135,10 @@ export function NetworkHome() {
 
 
 
+  const home = useBusinessConnectHome();
+  const unread = home.data?.unreadNotificationCount ?? null;
+  const unreadDmCount = useUnreadDmCount();
+
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
@@ -132,7 +150,19 @@ export function NetworkHome() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <NetworkNotificationsButton />
+          <Link
+            to="/connect-app/inbox"
+            aria-label="Tin nhắn"
+            className="relative grid place-items-center rounded-full p-1 text-[var(--bc-mobile-muted)] transition-colors hover:bg-black/5 dark:hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
+          >
+            <MessageSquare className="h-5 w-5 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]" strokeWidth={1.8} />
+            {unreadDmCount > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[var(--bc-mobile-surface)] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
+                {unreadDmCount}
+              </span>
+            ) : null}
+          </Link>
+          <HomeNotificationsMenu unreadCount={unread} />
         </div>
       </header>
 
@@ -301,6 +331,9 @@ export function NetworkHome() {
           )
         ) : (
           <>
+            {/* Lời mời kết bạn đang chờ phản hồi */}
+            {tab === "network" && <NetworkIncomingRequestsSection />}
+
             {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network hoặc suggestions */}
             {(tab === "network" || tab === "suggestions") && (
               <>
@@ -329,35 +362,66 @@ export function NetworkHome() {
                   />
                 ) : null}
 
-                {/* Ghi khoảnh khắc nhanh */}
+                {/* Hộp Đăng khoảnh khắc Facebook-grade */}
                 {!narrowed ? (
-                  <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-accent)]/30 bg-[var(--bc-mobile-surface)] p-3.5">
-                    <Link
-                      to="/connect-app/moment"
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-accent)]/60 text-[var(--bc-mobile-accent)]"
+                  <div className="mt-5 rounded-2xl border border-[var(--bc-mobile-border-gold,#D8B282)]/40 bg-[var(--bc-mobile-surface)] p-3.5 shadow-md space-y-3">
+                    {/* Top Row: Avatar + Prompt Bar */}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={avatarOrDemo(null, viewerUserId || "me")}
+                        alt=""
+                        className="h-10 w-10 rounded-full object-cover border border-[#D8B282]/50 shrink-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInitialFeeling(undefined);
+                          setPostModalOpen(true);
+                        }}
+                        className="flex-1 text-left px-4 py-2.5 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] text-xs sm:text-[13px] text-[var(--bc-mobile-muted)] transition-colors cursor-pointer truncate"
                       >
-                        <Sparkles className="h-5 w-5" strokeWidth={1.9} />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[16px] font-semibold text-[var(--bc-mobile-accent)]">
-                          {t("bc.mobile.network.compose.title")}
-                        </span>
-                        <span className="mt-0.5 block truncate text-[13px] text-[var(--bc-mobile-muted)]">
-                          {t("bc.mobile.network.compose.subtitle")}
-                        </span>
-                      </span>
-                    </Link>
-                    <Link
-                      to="/connect-app/card-scan"
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] transition-colors hover:text-[var(--bc-mobile-accent)]"
-                      aria-label={t("bc.mobile.network.compose.scan")}
-                    >
-                      <Camera className="h-5 w-5" strokeWidth={1.8} />
-                    </Link>
+                        Bạn đang nghĩ gì? Chia sẻ khoảnh khắc, cơ hội...
+                      </button>
+                    </div>
+
+                    {/* Quick Action Buttons Row (Facebook style) */}
+                    <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border)] pt-2.5 px-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInitialFeeling(undefined);
+                          setPostModalOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Ảnh/Video</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInitialFeeling(undefined);
+                          setPostModalOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-sky-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Gắn thẻ</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInitialFeeling("sign_contract");
+                          setPostModalOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
+                      >
+                        <Smile className="h-4 w-4" />
+                        <span>Cảm xúc</span>
+                      </button>
+                    </div>
                   </div>
                 ) : null}
 
@@ -443,6 +507,12 @@ export function NetworkHome() {
         )}
         </>
         )}
+
+        <PostMomentModal
+          open={postModalOpen}
+          onOpenChange={setPostModalOpen}
+          initialFeeling={initialFeeling}
+        />
       </main>
 
     </>
@@ -867,5 +937,120 @@ function NetworkFilterEmpty({ onReset }: { onReset: () => void }) {
         {t("bc.mobile.network.filterReset")}
       </button>
     </div>
+  );
+}
+
+/** Lời mời kết bạn đang chờ phản hồi trên màn hình Network */
+function NetworkIncomingRequestsSection() {
+  const t = useT();
+  const { requests, accept, decline, busy } = useIncomingConnectionRequests();
+
+  if (requests.length === 0) return null;
+
+  return (
+    <section aria-label="Lời mời kết bạn" className="mt-4">
+      <div className="flex items-center justify-between w-full mb-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-[var(--bc-mobile-accent,#E2B755)] animate-pulse" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--bc-mobile-text,#0F172A)]">
+            Lời mời kết bạn ({requests.length})
+          </h2>
+        </div>
+        <Link
+          to="/connect-app/network/requests"
+          className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--bc-mobile-accent,#B8860B)] hover:underline"
+        >
+          Xem tất cả ({requests.length})
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      <div className="divide-y divide-[var(--bc-mobile-border)] rounded-2xl border border-[var(--bc-mobile-border-gold,#D8B282)]/60 bg-[var(--bc-mobile-surface)] p-3 shadow-md">
+        {requests.slice(0, 3).map((req) => {
+          const name = req.counterpart?.displayName ?? "Hội viên ViOne";
+          const subtitle = [req.counterpart?.headline, req.counterpart?.companyName].filter(Boolean).join(" · ");
+          const userId = req.counterpart?.userId;
+
+          return (
+            <div key={req.connectionId} className="py-2.5 first:pt-1 last:pb-1">
+              <div className="flex items-center gap-3">
+                {userId ? (
+                  <Link
+                    to="/connect-app/network/$personId"
+                    params={{ personId: `u:${userId}` }}
+                    className="shrink-0"
+                  >
+                    {req.counterpart?.avatarUrl ? (
+                      <img
+                        src={req.counterpart.avatarUrl}
+                        alt=""
+                        className="h-11 w-11 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
+                      />
+                    ) : (
+                      <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-bold text-[var(--bc-mobile-accent)]">
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </Link>
+                ) : (
+                  <div className="grid h-11 w-11 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-bold text-[var(--bc-mobile-accent)]">
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  {userId ? (
+                    <Link
+                      to="/connect-app/network/$personId"
+                      params={{ personId: `u:${userId}` }}
+                      className="truncate text-[14px] font-bold text-[var(--bc-mobile-text)] hover:text-[var(--bc-mobile-accent)] block"
+                    >
+                      {name}
+                    </Link>
+                  ) : (
+                    <p className="truncate text-[14px] font-bold text-[var(--bc-mobile-text)]">{name}</p>
+                  )}
+                  {subtitle && (
+                    <p className="truncate text-[12px] text-[var(--bc-mobile-muted)] mt-0.5">{subtitle}</p>
+                  )}
+                  <p className="text-[11px] text-[var(--bc-mobile-accent)] font-medium mt-0.5">
+                    Đã gửi lời mời kết bạn
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-2.5 flex items-center gap-2 pl-14">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    accept.mutate(req.connectionId, {
+                      onSuccess: () => toast.success(`Đã kết nối thành công với ${name}!`),
+                      onError: () => toast.error("Không thể hoàn tất kết nối. Vui lòng thử lại."),
+                    })
+                  }
+                  className="flex-1 py-1.5 px-3 rounded-full font-bold text-[12.5px] bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 shadow hover:opacity-95 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1"
+                >
+                  ✓ Đồng ý
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    decline.mutate(req.connectionId, {
+                      onSuccess: () => toast.info("Đã từ chối lời mời kết bạn."),
+                      onError: () => toast.error("Có lỗi xảy ra."),
+                    })
+                  }
+                  className="py-1.5 px-3 rounded-full font-semibold text-[12px] border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] hover:bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] active:scale-95 transition-all cursor-pointer"
+                >
+                  Từ chối
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

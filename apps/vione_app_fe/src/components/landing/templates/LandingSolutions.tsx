@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "@tanstack/react-router";
 import {
   Users2,
   Briefcase,
@@ -21,6 +22,7 @@ export interface SolutionModule {
   desc: string;
   badge?: string;
   icon?: React.ReactNode;
+  link?: string;
 }
 
 export interface LandingSolutionsProps {
@@ -90,87 +92,43 @@ export function LandingSolutions({
         }`}
       />
 
-      {/* Background Graphic Texture: Image layer, Hexagonal Matrix & Light Cone */}
+      {/* Clean Subtle Ambient Light */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Luxury Solutions background image */}
-        <img
-          src="/landing/business-solutions-bg.jpg"
-          alt="Solutions Background"
-          className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
+        <div
+          className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] blur-[150px] ${
             isDark
-              ? "opacity-50 mix-blend-screen"
+              ? "bg-gradient-to-b from-amber-400/15 via-yellow-600/5 to-transparent"
               : isContrast
-              ? "opacity-25 mix-blend-screen"
-              : "opacity-20 mix-blend-multiply"
-          }`}
-          style={{
-            WebkitMaskImage:
-              "radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 85%)",
-            maskImage:
-              "radial-gradient(ellipse at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 85%)",
-          }}
-        />
-
-        {/* Top Centered Golden Light Cone */}
-        <div
-          className={`absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] blur-[140px] ${
-            isDark
-              ? "bg-gradient-to-b from-amber-400/25 via-yellow-600/10 to-transparent"
-              : isContrast
-              ? "bg-gradient-to-b from-amber-400/30 to-transparent"
-              : "bg-gradient-to-b from-amber-400/15 via-yellow-500/8 to-transparent"
+              ? "bg-gradient-to-b from-amber-400/20 to-transparent"
+              : "bg-gradient-to-b from-amber-400/10 via-yellow-500/5 to-transparent"
           }`}
         />
-        <div
-          className={`absolute top-1/2 right-10 w-[600px] h-[600px] rounded-full blur-[170px] ${
-            isDark ? "bg-amber-500/15" : isContrast ? "bg-amber-500/20" : "bg-amber-500/8"
-          }`}
-        />
-        <div
-          className={`absolute bottom-10 left-10 w-[500px] h-[500px] rounded-full blur-[160px] ${
-            isDark ? "bg-indigo-950/30" : isContrast ? "opacity-0" : "bg-indigo-950/8"
-          }`}
-        />
-
-        {/* SVG Hexagonal Matrix Grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.14]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="solutions-hex-pattern" width="56" height="96" patternUnits="userSpaceOnUse">
-              <path
-                d="M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z M28 96 L56 80 L56 48 L28 64 L0 48 L0 80 Z"
-                fill="none"
-                stroke="rgba(245, 158, 11, 0.5)"
-                strokeWidth="0.9"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#solutions-hex-pattern)" />
-        </svg>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
-          {/* Left Column: Sticky/Intro (4 cols) */}
-          <div className="lg:col-span-4 text-left space-y-6 lg:sticky lg:top-28">
+          {/* Left Column: Title & Headline (4 cols) */}
+          <div className="lg:col-span-4 text-left space-y-6 lg:sticky lg:top-32">
             <div
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border backdrop-blur-md shadow-sm ${
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono ${
                 themeClass(
-                  "border-[#C5A25D]/50 text-[#E8C986] bg-[#C5A25D]/15 shadow-[0_0_15px_rgba(197,162,93,0.15)]",
-                  "border-amber-700/30 text-amber-900 bg-amber-50/80",
-                  "border-amber-400 text-amber-300 bg-black shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                  "border-[#C5A25D]/50 bg-[#C5A25D]/15 text-[#E8C986] backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.15)]",
+                  "border-[#C5A25D]/50 bg-[#FEF3C7]/80 text-[#92400E]",
+                  "border-white/40 bg-white/10 text-white"
                 )
               }`}
             >
+              <Sparkles className="w-3.5 h-3.5 text-[#E8C986]" />
               <span>{tag || "GIẢI PHÁP BUSINESS CONNECT"}</span>
             </div>
 
             <h2
-              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.16] ${
+              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.14] whitespace-pre-line ${
                 themeClass(
                   "text-transparent bg-clip-text bg-[linear-gradient(180deg,#FFFFFF_0%,#F8F3E8_25%,#E5D4B2_55%,#BCA16B_85%,#876F3E_100%)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                  "text-slate-900",
-                  "text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+                  "text-[#0F172A]",
+                  "text-white"
                 )
               }`}
               style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, sans-serif" }}
@@ -187,8 +145,8 @@ export function LandingSolutions({
             </p>
 
             <div className="pt-2">
-              <button
-                onClick={onCtaClick}
+              <Link
+                to="/auth"
                 className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-extrabold text-sm sm:text-base transition-all transform hover:-translate-y-0.5 cursor-pointer shadow-lg ${
                   themeClass(
                     "text-slate-950 bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] hover:from-[#FFF0C7] hover:to-[#E2B755] shadow-[0_4px_25px_rgba(226,183,85,0.35)]",
@@ -199,16 +157,17 @@ export function LandingSolutions({
               >
                 <span>{ctaText}</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
           </div>
 
-          {/* Right Column: 3x3 Grid of 9 Cards (8 cols) */}
+          {/* Right Column: 3x3 Grid of 9 Cards with API Links (8 cols) */}
           <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {modules.map((mod, idx) => (
-              <div
+              <Link
                 key={mod.id || idx}
-                className={`p-6 rounded-2xl border transition-all duration-300 group hover:-translate-y-1.5 flex flex-col justify-between backdrop-blur-md shadow-lg ${
+                to={(mod.link || "/auth") as any}
+                className={`p-6 rounded-2xl border transition-all duration-300 group hover:-translate-y-1.5 flex flex-col justify-between backdrop-blur-md shadow-lg cursor-pointer ${
                   themeClass(
                     "bg-gradient-to-b from-[#0F1422]/95 to-[#080B14]/95 border-white/[0.09] hover:border-[#C5A25D]/60 hover:shadow-[0_15px_35px_rgba(197,162,93,0.15)]",
                     "bg-slate-50/90 border-slate-200/90 hover:border-amber-500/50 hover:bg-white hover:shadow-xl",
@@ -268,10 +227,10 @@ export function LandingSolutions({
                       )
                     }`}
                   >
-                    Chi tiết →
+                    Trải nghiệm →
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 

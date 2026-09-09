@@ -1,15 +1,22 @@
-// BC-Mobile — Khung nhập bình luận kèm gợi ý Tag tên (@mention) và chế độ Phản hồi.
+// BC-Mobile — Khung nhập bình luận kèm gợi ý Tag tên (@mention), gửi kèm ảnh và chế độ Phản hồi.
 
 import { useEffect, useRef, useState } from "react";
-import { Send, X, AtSign, Loader2 } from "lucide-react";
+import { Send, X, AtSign, Loader2, Image as ImageIcon } from "lucide-react";
 import type { MentionableUser, MomentComment } from "@/lib/business-connect/mobile/moment-comments.types";
 import { searchMentionableUsers } from "@/lib/business-connect/mobile/moment-comments.functions";
+import { uploadFileToNest } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export type MomentCommentInputProps = {
   replyingTo?: MomentComment | null;
   replyTo?: MomentComment | null;
   onCancelReply: () => void;
-  onSubmit: (data: { content: string; parentId?: string | null; mentions?: any[] }) => Promise<void>;
+  onSubmit: (data: {
+    content: string;
+    parentId?: string | null;
+    photoUrl?: string | null;
+    mentions?: any[];
+  }) => Promise<void>;
   disabled?: boolean;
   isSubmitting?: boolean;
   momentId?: string;
@@ -30,7 +37,20 @@ export function MomentCommentInput({
   const [mentionSuggestions, setMentionSuggestions] = useState<MentionableUser[]>([]);
   const [chosenMentions, setChosenMentions] = useState<{ userId: string; displayName: string }[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [attachedPhoto, setAttachedPhoto] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up preview object url on unmount or replace
+  useEffect(() => {
+    return () => {
+      if (attachedPhoto?.previewUrl) {
+        URL.revokeObjectURL(attachedPhoto.previewUrl);
+      }
+    };
+  }, [attachedPhoto]);
 
   // When activeReply changes, auto-fill @Name into input and focus
   useEffect(() => {
@@ -102,22 +122,75 @@ export function MomentCommentInput({
     inputRef.current.focus();
   };
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn tệp hình ảnh hợp lệ");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ảnh quá lớn (tối đa 10MB)");
+      return;
+    }
+
+    if (attachedPhoto?.previewUrl) {
+      URL.revokeObjectURL(attachedPhoto.previewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAttachedPhoto({ file, previewUrl });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemovePhoto = () => {
+    if (attachedPhoto?.previewUrl) {
+      URL.revokeObjectURL(attachedPhoto.previewUrl);
+    }
+    setAttachedPhoto(null);
+  };
+
   const handleSend = async () => {
     const clean = text.trim();
-    if (!clean || submitting) return;
+    if ((!clean && !attachedPhoto) || submitting || uploadingPhoto) return;
 
     setSubmitting(true);
+    let photoUrl: string | null = null;
+
     try {
+      if (attachedPhoto) {
+        setUploadingPhoto(true);
+        try {
+          const uploadedUrl = await uploadFileToNest(attachedPhoto.file, "relationship-moments");
+          photoUrl = uploadedUrl || null;
+        } catch {
+          // Fallback to base64 if direct upload endpoint fails
+          const reader = new FileReader();
+          photoUrl = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(attachedPhoto.file);
+          });
+        }
+      }
+
       await onSubmit({
-        content: clean,
+        content: clean || "(Hình ảnh)",
         parentId: activeReply?.id || null,
+        photoUrl,
         mentions: chosenMentions,
       });
+
       setText("");
       setChosenMentions([]);
+      handleRemovePhoto();
       onCancelReply();
+    } catch (err) {
+      toast.error("Không thể gửi bình luận. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
+      setUploadingPhoto(false);
     }
   };
 
@@ -129,36 +202,63 @@ export function MomentCommentInput({
   };
 
   return (
-    <div className="relative border-t border-[#2f3542] pt-3 mt-3">
+    <div className="relative border-t border-[var(--bc-mobile-border)] pt-3 mt-3">
       {/* Banner đang phản hồi */}
       {activeReply && (
-        <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-[#1c2333] px-3 py-1.5 text-xs text-[#D8B282]">
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] px-3 py-1.5 text-xs text-[var(--bc-mobile-accent)]">
           <span className="truncate">
             Đang phản hồi <strong>@{activeReply.author.displayName}</strong>
           </span>
           <button
             type="button"
             onClick={onCancelReply}
-            className="text-[#8a8d91] hover:text-white transition-colors cursor-pointer"
+            className="text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors cursor-pointer"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
+      {/* Ảnh đính kèm xem trước */}
+      {attachedPhoto && (
+        <div className="mb-2.5 relative inline-block">
+          <div className="relative rounded-xl overflow-hidden border border-[var(--bc-mobile-border-gold,#D8B282)]/60 max-w-[140px] max-h-[140px] bg-[var(--bc-mobile-surface-2)] shadow-md">
+            <img
+              src={attachedPhoto.previewUrl}
+              alt="Ảnh đính kèm"
+              className="w-full h-full object-cover max-h-[140px]"
+            />
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              className="absolute top-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-white hover:bg-black transition-colors"
+              title="Gỡ ảnh"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          {uploadingPhoto && (
+            <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center text-white text-[11px] font-medium gap-1">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Đang tải ảnh...
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Mention suggestion popover */}
       {mentionQuery !== null && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 max-h-48 overflow-y-auto rounded-xl border border-[#2f3542] bg-[#121824] shadow-2xl p-1 z-30">
-          <div className="px-2 py-1 text-[11px] font-semibold text-[#8a8d91] uppercase tracking-wider">
+        <div className="absolute bottom-full left-0 right-0 mb-2 max-h-48 overflow-y-auto rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-2xl p-1 z-30">
+          <div className="px-2 py-1 text-[11px] font-semibold text-[var(--bc-mobile-muted)] uppercase tracking-wider">
             Nhắc đến hội viên
           </div>
           {loadingSuggestions ? (
-            <div className="flex items-center justify-center p-3 text-xs text-[#8a8d91]">
+            <div className="flex items-center justify-center p-3 text-xs text-[var(--bc-mobile-muted)]">
               <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
               Đang tìm kiếm…
             </div>
           ) : mentionSuggestions.length === 0 ? (
-            <div className="p-3 text-center text-xs text-[#8a8d91]">
+            <div className="p-3 text-center text-xs text-[var(--bc-mobile-muted)]">
               Không tìm thấy người phù hợp
             </div>
           ) : (
@@ -167,25 +267,25 @@ export function MomentCommentInput({
                 key={u.userId}
                 type="button"
                 onClick={() => selectMention(u)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[#1c2333] transition-colors text-left cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)] transition-colors text-left cursor-pointer"
               >
                 {u.avatarUrl ? (
                   <img
                     src={u.avatarUrl}
                     alt=""
-                    className="w-6 h-6 rounded-full object-cover border border-[#2f3542]"
+                    className="w-6 h-6 rounded-full object-cover border border-[var(--bc-mobile-border)]"
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#1c2333] text-[10px] font-bold text-[#D8B282] grid place-items-center">
+                  <div className="w-6 h-6 rounded-full bg-[var(--bc-mobile-surface-2)] text-[10px] font-bold text-[var(--bc-mobile-accent)] grid place-items-center">
                     {u.initials || "HV"}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-[#e4e6eb] truncate">
+                  <div className="text-[13px] font-medium text-[var(--bc-mobile-text)] truncate">
                     {u.displayName}
                   </div>
                   {u.jobTitle && (
-                    <div className="text-[11px] text-[#8a8d91] truncate">
+                    <div className="text-[11px] text-[var(--bc-mobile-muted)] truncate">
                       {u.jobTitle} {u.companyName ? `· ${u.companyName}` : ""}
                     </div>
                   )}
@@ -195,6 +295,15 @@ export function MomentCommentInput({
           )}
         </div>
       )}
+
+      {/* Hidden image input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoSelect}
+      />
 
       {/* Ô nhập bình luận */}
       <div className="flex items-center gap-2">
@@ -209,32 +318,44 @@ export function MomentCommentInput({
             value={text}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
-            disabled={disabled || submitting || isSubmitting}
-            placeholder={activeReply ? `Phản hồi @${activeReply.author.displayName}…` : "Viết bình luận… (gõ @ để tag tên)"}
-            className="w-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] rounded-full px-4 py-2 pr-9 text-[13px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] outline-none transition-colors focus:border-[var(--bc-mobile-accent)]"
+            disabled={disabled || submitting || isSubmitting || uploadingPhoto}
+            placeholder={activeReply ? `Phản hồi @${activeReply.author.displayName}…` : "Viết bình luận… (gõ @ hoặc đính kèm ảnh)"}
+            className="w-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] rounded-full px-4 py-2 pr-16 text-[13px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] outline-none transition-colors focus:border-[var(--bc-mobile-accent)]"
           />
-          <button
-            type="button"
-            onClick={() => {
-              setText((prev) => `${prev}@`);
-              setMentionQuery("");
-              inputRef.current?.focus();
-            }}
-            className="absolute right-3 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-accent)] transition-colors"
-            title="Gắn thẻ người dùng"
-          >
-            <AtSign className="h-4 w-4" />
-          </button>
+
+          <div className="absolute right-2 flex items-center gap-1.5 text-[var(--bc-mobile-muted)]">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1 hover:text-[var(--bc-mobile-accent)] transition-colors cursor-pointer"
+              title="Đính kèm ảnh"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setText((prev) => `${prev}@`);
+                setMentionQuery("");
+                inputRef.current?.focus();
+              }}
+              className="p-1 hover:text-[var(--bc-mobile-accent)] transition-colors cursor-pointer"
+              title="Gắn thẻ người dùng"
+            >
+              <AtSign className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleSend}
-          disabled={!text.trim() || submitting || disabled}
-          className="h-9 w-9 shrink-0 grid place-items-center rounded-full bg-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent-on)] font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={(!text.trim() && !attachedPhoto) || submitting || disabled || uploadingPhoto}
+          className="h-9 w-9 shrink-0 grid place-items-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           aria-label="Gửi bình luận"
         >
-          {submitting ? (
+          {submitting || uploadingPhoto ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Send className="h-4 w-4" />

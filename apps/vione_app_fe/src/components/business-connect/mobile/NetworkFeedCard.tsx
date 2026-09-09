@@ -11,10 +11,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   Check,
+  Globe,
   Loader2,
+  Lock,
   MapPin,
   MoreHorizontal,
   UserPlus,
+  Users,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -189,9 +192,23 @@ export function NetworkFeedCard({
             </p>
           ) : null}
 
-          <p className="mt-1 flex items-center gap-1 text-[10px] font-normal text-[var(--bc-mobile-muted,#64748B)] leading-[15px]">
+          <p className="mt-1 flex items-center gap-1.5 text-[10px] font-normal text-[var(--bc-mobile-muted,#64748B)] leading-[15px]">
             <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-muted)]" strokeWidth={1.7} />
             <span className="truncate">{timeDisplay}</span>
+            <span aria-hidden="true">·</span>
+            {item.visibility === "public" ? (
+              <span className="inline-flex items-center gap-0.5 text-[9.5px] text-[var(--bc-mobile-muted)]" title="Công khai">
+                <Globe className="h-3 w-3" /> Công khai
+              </span>
+            ) : item.visibility === "private" ? (
+              <span className="inline-flex items-center gap-0.5 text-[9.5px] text-[var(--bc-mobile-muted)]" title="Chỉ mình tôi">
+                <Lock className="h-3 w-3" /> Riêng tư
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-0.5 text-[9.5px] text-[var(--bc-mobile-muted)]" title="Bạn bè">
+                <Users className="h-3 w-3" /> Bạn bè
+              </span>
+            )}
             {place ? (
               <>
                 <span aria-hidden="true">·</span>
@@ -288,6 +305,42 @@ function FeedActionRow({
     }
   };
 
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/connect-app/network#moment-${item.momentId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.eventName || "Khoảnh khắc Business Connect",
+          text: item.note || "Khoảnh khắc giao thương trên ViOne",
+          url: shareUrl,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Đã sao chép liên kết khoảnh khắc");
+    } catch {
+      toast.error("Không thể sao chép liên kết");
+    }
+  };
+
+  const handleToggleBookmark = () => {
+    setIsBookmarked((prev) => {
+      const next = !prev;
+      if (next) {
+        toast.success("Đã lưu khoảnh khắc vào mục Đã lưu");
+      } else {
+        toast.info("Đã bỏ lưu khoảnh khắc");
+      }
+      return next;
+    });
+  };
+
   const pill =
     "inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-3 text-[12px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none";
   const quiet = `${pill} bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-text)] active:bg-[var(--bc-mobile-border)]`;
@@ -369,12 +422,11 @@ function FeedActionRow({
         </div>
       )}
 
-      {/* Thanh tương tác Ghi nhớ - Bình luận - Thích */}
+      {/* Thanh tương tác Thích - Bình luận - Chia sẻ - Lưu */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <MomentActionBar
             momentId={item.momentId}
-            onOpenRemember={() => setManageOpen(true)}
             commentsCount={totalComments}
             isCommentsOpen={commentsOpen}
             onToggleComments={() => setCommentsOpen((prev) => !prev)}
@@ -382,16 +434,19 @@ function FeedActionRow({
             userLiked={userLiked}
             onToggleLike={() => toggleMomentLike()}
             isLikeBusy={isLikingMoment}
+            onShare={handleShare}
+            isBookmarked={isBookmarked}
+            onToggleBookmark={handleToggleBookmark}
           />
         </div>
 
-        {/* Menu mở rộng (Xem hồ sơ, Chỉnh sửa / Xoá khoảnh khắc) */}
+        {/* Menu mở rộng (Xem hồ sơ, Sao chép link, Chỉnh sửa / Xoá khoảnh khắc) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               aria-label={t("bc.mobile.network.feed.more")}
-              className="mt-2.5 ml-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 active:bg-[var(--bc-mobile-surface-2)] hover:text-[#e4e6eb] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
+              className="mt-2 ml-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 active:bg-[var(--bc-mobile-surface-2)] hover:text-[#e4e6eb] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] cursor-pointer"
             >
               <MoreHorizontal aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
             </button>
@@ -411,10 +466,21 @@ function FeedActionRow({
               </DropdownMenuItem>
             ) : null}
 
+            <DropdownMenuItem onSelect={handleShare}>
+              Sao chép liên kết
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onSelect={handleToggleBookmark}>
+              {isBookmarked ? "Bỏ lưu khoảnh khắc" : "Lưu khoảnh khắc"}
+            </DropdownMenuItem>
+
             {/* Chỉ hiện tuỳ chọn Sửa & Xoá cho chính chủ sở hữu bài đăng */}
             {isOwner ? (
               <>
-                <DropdownMenuItem onSelect={() => setManageOpen(true)}>
+                <DropdownMenuItem
+                  onSelect={() => setManageOpen(true)}
+                  className="text-[var(--bc-mobile-accent)] focus:text-[var(--bc-mobile-accent)] cursor-pointer"
+                >
                   {t("bc.mobile.network.feed.editMoment")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -441,6 +507,10 @@ function FeedActionRow({
         title={item.eventName}
         placeLabel={item.placeLabel}
         note={item.note}
+        photoUrls={item.photoUrls}
+        visibility={item.visibility}
+        targetPersonId={item.personId}
+        targetPersonName={item.target?.displayName}
         onChanged={() => {
           void queryClient.invalidateQueries({ queryKey: networkFeedKeys.root });
         }}

@@ -70,6 +70,14 @@ export const bcMobileMomentDeleteFn = createServerFn({ method: "POST" })
 
 // ── Client-side direct helpers (bypass middleware) ───────────────────────────
 
+/** Sửa khoảnh khắc trực tiếp qua fetchNestApi (client JWT). */
+export async function updateMomentDirect(momentId: string, data: any): Promise<BcMobileMomentUpdateResult> {
+  return fetchNestApi<BcMobileMomentUpdateResult>(`/connect-app/moment/${momentId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 /** Xóa khoảnh khắc trực tiếp qua fetchNestApi (client JWT). */
 export async function deleteMomentDirect(momentId: string): Promise<BcMobileMomentDeleteResult> {
   return fetchNestApi<BcMobileMomentDeleteResult>(`/connect-app/moment/${momentId}`, {
