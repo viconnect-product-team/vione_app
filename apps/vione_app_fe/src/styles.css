@@ -694,12 +694,13 @@ html.hc .bc-app {
   --bc-mobile-muted: #CBD5E1;
   --bc-mobile-disabled: #94A3B8;
 
-  --bc-border-subtle: rgba(216, 178, 130, 0.45);
+  --bc-border-subtle: rgba(255, 255, 255, 0.15);
   --bc-border-medium: #FACC15;
   --bc-border-gold: #FACC15;
-  --bc-mobile-border: rgba(216, 178, 130, 0.65);
-  --bc-mobile-border-subtle: #FFFFFF;
+  --bc-mobile-border: rgba(255, 255, 255, 0.20);
+  --bc-mobile-border-subtle: rgba(255, 255, 255, 0.10);
   --bc-mobile-border-gold: #FACC15;
+  --bc-mobile-border-active: #FFFFFF;
 }
 
 .vba-card {
@@ -767,25 +768,26 @@ html.hc .bc-app {
   --bc-mobile-app-gradient: linear-gradient(180deg, #070B14 0%, #04070D 100%);
   --bc-mobile-card-grad: linear-gradient(165deg, rgba(16, 24, 40, 0.85) 0%, rgba(9, 14, 25, 0.90) 100%);
 
-  /* Text - High luminance white & vibrant champagne gold, crisp subtitles */
+  /* Text - High luminance white & vibrant champagne gold ViOne, no dim gray */
   --bc-text-primary: #FFFFFF;
-  --bc-text-secondary: #FEE6B4;
-  --bc-text-tertiary: #CBD5E1;
-  --bc-text-disabled: #64748B;
+  --bc-text-secondary: #F6E1C3;
+  --bc-text-tertiary: #FFFFFF;
+  --bc-text-disabled: #D8B282;
 
   --bc-mobile-ivory: #FFFFFF;
   --bc-mobile-text: #FFFFFF;
-  --bc-mobile-text-2: #FEE6B4;
-  --bc-mobile-muted: #94A3B8;
-  --bc-mobile-disabled: #64748B;
+  --bc-mobile-text-2: #F6E1C3;
+  --bc-mobile-muted: rgba(255, 255, 255, 0.85);
+  --bc-mobile-disabled: #D8B282;
 
-  /* Borders — delicate champagne gold matching ViOne button */
-  --bc-border-subtle: rgba(216, 178, 130, 0.25);
-  --bc-border-medium: rgba(216, 178, 130, 0.35);
-  --bc-border-gold: rgba(216, 178, 130, 0.60);
-  --bc-mobile-border: rgba(216, 178, 130, 0.32);
-  --bc-mobile-border-subtle: rgba(246, 225, 195, 0.20);
-  --bc-mobile-border-gold: rgba(216, 178, 130, 0.60);
+  /* Borders — quiet, subtle hairline; lights up brighter on click / tap */
+  --bc-border-subtle: rgba(255, 255, 255, 0.06);
+  --bc-border-medium: rgba(216, 178, 130, 0.20);
+  --bc-border-gold: rgba(216, 178, 130, 0.45);
+  --bc-mobile-border: rgba(255, 255, 255, 0.08);
+  --bc-mobile-border-subtle: rgba(255, 255, 255, 0.05);
+  --bc-mobile-border-gold: rgba(216, 178, 130, 0.45);
+  --bc-mobile-border-active: rgba(216, 178, 130, 0.70);
   --bc-mobile-border-strong: rgba(246, 225, 195, 0.85);
 
   /* Gold & Warm Highlights */
@@ -839,6 +841,96 @@ html.hc .bc-app {
   color-scheme: dark;
 }
 
+/* Dark theme: ONLY crisp pure white and signature ViOne champagne gold text */
+.dark .bc-app .text-slate-400,
+.dark .bc-app .text-slate-500,
+.dark .bc-app .text-slate-600,
+.dark .bc-app .text-gray-400,
+.dark .bc-app .text-gray-500,
+.dark .bc-app .text-gray-600,
+.dark .bc-app .text-neutral-400,
+.dark .bc-app .text-neutral-500,
+.dark .bc-app .text-muted-foreground,
+.dark .bc-app [class*="text-[var(--bc-mobile-muted)]"],
+.dark .bc-app .text-\[var\(--bc-mobile-muted\)\] {
+  color: #F6E1C3 !important;
+}
+
+.dark .bc-app .text-slate-200,
+.dark .bc-app .text-slate-300,
+.dark .bc-app .text-gray-200,
+.dark .bc-app .text-gray-300,
+.dark .bc-app .text-zinc-200,
+.dark .bc-app .text-zinc-300 {
+  color: #FFFFFF !important;
+}
+
+/* ============================================================
+   Light mode mobile text fixes — bc-app & vba-app
+   White / cream / yellow text in dark-hardcoded components must
+   switch to dark navy so it's readable on white card surfaces.
+   ============================================================ */
+
+html:not(.dark) .bc-app .text-white,
+html:not(.dark) .bc-app .text-slate-50,
+html:not(.dark) .bc-app .text-slate-100,
+html:not(.dark) .bc-app .text-slate-200,
+html:not(.dark) .bc-app .text-slate-300,
+html:not(.dark) .bc-app .text-gray-100,
+html:not(.dark) .bc-app .text-gray-200,
+html:not(.dark) .bc-app .text-gray-300,
+html:not(.dark) .bc-app .text-zinc-100,
+html:not(.dark) .bc-app .text-zinc-200,
+html:not(.dark) .bc-app .text-zinc-300,
+html:not(.dark) .bc-app .text-neutral-100,
+html:not(.dark) .bc-app .text-neutral-200,
+html:not(.dark) .bc-app .text-neutral-300 {
+  color: #0F172A !important;
+}
+
+html:not(.dark) .bc-app .text-slate-400,
+html:not(.dark) .bc-app .text-slate-500,
+html:not(.dark) .bc-app .text-slate-600,
+html:not(.dark) .bc-app .text-gray-400,
+html:not(.dark) .bc-app .text-gray-500,
+html:not(.dark) .bc-app .text-neutral-400,
+html:not(.dark) .bc-app .text-neutral-500,
+html:not(.dark) .bc-app .text-muted-foreground {
+  color: #475569 !important;
+}
+
+/* Gold/amber/yellow in light mode → warm dark amber for contrast */
+html:not(.dark) .bc-app .text-amber-100,
+html:not(.dark) .bc-app .text-amber-200,
+html:not(.dark) .bc-app .text-amber-300,
+html:not(.dark) .bc-app .text-yellow-100,
+html:not(.dark) .bc-app .text-yellow-200,
+html:not(.dark) .bc-app .text-yellow-300 {
+  color: #92400E !important;
+}
+
+/* vba-app light mode text fixes */
+html:not(.dark) .vba-app {
+  --foreground: #0F172A;
+  --card-foreground: #0F172A;
+  --popover-foreground: #0F172A;
+  --muted-foreground: #475569;
+}
+
+html:not(.dark) .vba-app .text-white,
+html:not(.dark) .vba-app .text-slate-50,
+html:not(.dark) .vba-app .text-slate-100,
+html:not(.dark) .vba-app .text-slate-200,
+html:not(.dark) .vba-app .text-slate-300 {
+  color: #0F172A !important;
+}
+
+html:not(.dark) .vba-app .text-slate-400,
+html:not(.dark) .vba-app .text-slate-500,
+html:not(.dark) .vba-app .text-muted-foreground {
+  color: #475569 !important;
+}
+
 /* Light mode tokens for .bc-app (ViOne Connect) — Crisp Porcelain Platinum & Vibrant Royal Gold */
 html:not(.dark) .bc-app {
   --bc-bg-deep: #EEF2F6;
@@ -867,12 +959,13 @@ html:not(.dark) .bc-app {
   --bc-mobile-muted: #64748B;
   --bc-mobile-disabled: #94A3B8;
 
-  --bc-border-subtle: rgba(15, 23, 42, 0.08);
-  --bc-border-medium: rgba(217, 119, 6, 0.35);
-  --bc-border-gold: rgba(217, 119, 6, 0.65);
-  --bc-mobile-border: rgba(15, 23, 42, 0.10);
-  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.06);
-  --bc-mobile-border-gold: rgba(217, 119, 6, 0.55);
+  --bc-border-subtle: rgba(15, 23, 42, 0.06);
+  --bc-border-medium: rgba(217, 119, 6, 0.25);
+  --bc-border-gold: rgba(217, 119, 6, 0.45);
+  --bc-mobile-border: rgba(15, 23, 42, 0.08);
+  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.04);
+  --bc-mobile-border-gold: rgba(217, 119, 6, 0.45);
+  --bc-mobile-border-active: rgba(217, 119, 6, 0.70);
   --bc-mobile-border-strong: rgba(217, 119, 6, 0.85);
 
   --bc-gold-300: #FDE68A;
@@ -1014,7 +1107,7 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
    /connect-app surface — presentation only, no layout opinions.
    Deep obsidian gradient matching section Hôm nay */
 @utility bc-card {
-  border: 1px solid rgba(216, 178, 130, 0.32);
+  border: 1px solid var(--bc-mobile-border);
   border-radius: var(--bc-mobile-radius-card);
   background: linear-gradient(165deg, rgba(16, 23, 38, 0.82) 0%, rgba(9, 14, 24, 0.88) 100%);
   backdrop-filter: blur(20px);
@@ -1023,7 +1116,7 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 
 /* Slightly raised variant (inputs, chips, nested rows). */
 @utility bc-card-soft {
-  border: 1px solid rgba(216, 178, 130, 0.40);
+  border: 1px solid var(--bc-mobile-border);
   border-radius: var(--bc-mobile-radius-card);
   background: linear-gradient(165deg, rgba(20, 30, 48, 0.85) 0%, rgba(12, 18, 30, 0.90) 100%);
   backdrop-filter: blur(20px);
@@ -1033,6 +1126,30 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 /* Any hairline separator inside the app follows the same border token. */
 .bc-app hr {
   border-color: var(--bc-mobile-border);
+}
+
+/* Interactive elements in .bc-app: subtle hairline border, lights up brighter on click / tap */
+.bc-app button,
+.bc-app a[class*="border"],
+.bc-app [role="button"],
+.bc-app .bc-card-interactive,
+.bc-app li[class*="border"] > a,
+.bc-app li[class*="border"] > button {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, transform 0.1s ease;
+}
+
+.bc-app button:active,
+.bc-app a[class*="border"]:active,
+.bc-app [role="button"]:active,
+.bc-app .bc-card-interactive:active {
+  border-color: var(--bc-mobile-border-active) !important;
+  box-shadow: 0 0 12px rgba(216, 178, 130, 0.25) !important;
+}
+
+.bc-app input:focus,
+.bc-app textarea:focus {
+  border-color: var(--bc-mobile-border-active) !important;
+  box-shadow: 0 0 10px rgba(216, 178, 130, 0.2) !important;
 }
 
 /* Dark / high-contrast site modes reuse the same executive tokens: the
@@ -1110,18 +1227,18 @@ textarea::placeholder {
 
 
 
-/* Translucent card with subtle gradient & gold hairline border matching section Hôm nay */
+/* Translucent card with subtle gradient & unified hairline border */
 @utility bc-translucent-card {
   background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(216, 178, 130, 0.35);
+  border: 1px solid var(--bc-mobile-border);
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
 }
 
 html:not(.dark) .bc-translucent-card {
   background: #FFFFFF;
-  border: 1px solid rgba(180, 83, 9, 0.20);
+  border: 1px solid var(--bc-mobile-border);
   box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05);
 }
 
@@ -1736,4 +1853,93 @@ html:not(.dark) body > div[role="menu"] {
 .animate-spin-slow {
   animation: orbitSpin 28s linear infinite;
 }
+
+/* ============================================================
+   LANDING PAGE LIGHT MODE OVERRIDES
+   Target: .bc-landing[data-theme="light"] and .ceo1983-landing[data-theme="light"]
+   Purpose: Fix white/amber text becoming invisible on light backgrounds
+   ============================================================ */
+
+/* BusinessConnect Landing - Light Mode Text Fixes (Deep, Rich, High-Contrast) */
+.bc-landing[data-theme="light"] .text-\[\#F6E1C3\],
+.bc-landing[data-theme="light"] .text-\[\#D8B282\],
+.bc-landing[data-theme="light"] .text-\[\#C29B69\],
+.bc-landing[data-theme="light"] .text-\[\#E8C898\] {
+  color: #7C2D12 !important;
+  font-weight: 600 !important;
+}
+
+.bc-landing[data-theme="light"] .text-white {
+  color: #0A0F1D !important;
+}
+
+.bc-landing[data-theme="light"] .text-slate-200,
+.bc-landing[data-theme="light"] .text-slate-300,
+.bc-landing[data-theme="light"] .text-slate-400 {
+  color: #334155 !important;
+}
+
+.bc-landing[data-theme="light"] .text-amber-300,
+.bc-landing[data-theme="light"] .text-amber-400,
+.bc-landing[data-theme="light"] .text-orange-300,
+.bc-landing[data-theme="light"] .text-orange-400,
+.bc-landing[data-theme="light"] .text-orange-500 {
+  color: #9A3412 !important;
+  font-weight: 700 !important;
+}
+
+/* CEO1983 Landing - Light Mode: Radiant Imperial Amber Gold & Deep Obsidian Contrast */
+.ceo1983-landing[data-theme="light"] .text-\[\#F6E1C3\],
+.ceo1983-landing[data-theme="light"] .text-\[\#D8B282\],
+.ceo1983-landing[data-theme="light"] .text-\[\#C4A07A\] {
+  color: #B45309 !important; /* Radiant Royal Amber Gold */
+  font-weight: 700 !important;
+}
+
+.ceo1983-landing[data-theme="light"] .text-white {
+  color: #0F172A !important; /* Deep Obsidian Slate */
+}
+
+.ceo1983-landing[data-theme="light"] .text-slate-200,
+.ceo1983-landing[data-theme="light"] .text-slate-300,
+.ceo1983-landing[data-theme="light"] .text-slate-400 {
+  color: #334155 !important; /* Crisp Slate for Subtitles */
+}
+
+.ceo1983-landing[data-theme="light"] .text-amber-300,
+.ceo1983-landing[data-theme="light"] .text-amber-400,
+.ceo1983-landing[data-theme="light"] .text-orange-400 {
+  color: #D97706 !important;
+  font-weight: 700 !important;
+}
+
+/* CEO1983 badges with hardcoded bg-white/10 border-white/40 in light mode */
+.ceo1983-landing[data-theme="light"] .bg-white\/10 {
+  background-color: rgba(254, 243, 199, 0.85) !important;
+}
+
+.ceo1983-landing[data-theme="light"] .border-white\/40 {
+  border-color: rgba(217, 119, 6, 0.45) !important;
+}
+
+/* CEO1983 Light mode cards & gold gradients */
+.ceo1983-landing[data-theme="light"] .bc-cta-gold {
+  background: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%) !important;
+  color: #0A0D14 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 24px rgba(180, 83, 9, 0.28) !important;
+}
+
+.ceo1983-landing[data-theme="light"] .border-\[\#D8B282\]\/30,
+.ceo1983-landing[data-theme="light"] .border-\[\#D8B282\]\/35,
+.ceo1983-landing[data-theme="light"] .border-\[\#D8B282\]\/40,
+.ceo1983-landing[data-theme="light"] .border-\[\#D8B282\]\/50 {
+  border-color: rgba(180, 83, 9, 0.38) !important;
+}
+
+.ceo1983-landing[data-theme="light"] .bg-\[\#D8B282\]\/15,
+.ceo1983-landing[data-theme="light"] .bg-\[\#D8B282\]\/20 {
+  background-color: rgba(254, 243, 199, 0.7) !important;
+}
+
 

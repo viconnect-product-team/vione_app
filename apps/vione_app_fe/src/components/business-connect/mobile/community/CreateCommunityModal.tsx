@@ -57,14 +57,14 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ảnh quá lớn (tối đa 5MB)");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ảnh quá lớn (tối đa 10MB)");
       return;
     }
 
     setUploadingLogo(true);
     try {
-      const url = await uploadFileToNest(file, "community-logos");
+      const url = await uploadFileToNest(file, file.name || "logo.png");
       if (url) {
         setLogoUrl(url);
         toast.success("Tải logo thành công");
@@ -86,14 +86,14 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ảnh quá lớn (tối đa 5MB)");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ảnh quá lớn (tối đa 10MB)");
       return;
     }
 
     setUploadingBanner(true);
     try {
-      const url = await uploadFileToNest(file, "community-banners");
+      const url = await uploadFileToNest(file, file.name || "banner.jpg");
       if (url) {
         setBannerUrl(url);
         toast.success("Tải ảnh bìa thành công");
@@ -233,7 +233,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
                       Tải ảnh bìa background lên
                     </span>
                     <span className="text-[10.5px] text-[var(--bc-mobile-muted)]">
-                      Khuyến nghị ảnh ngang tỉ lệ 16:9 hoặc 3:1 (PNG, JPG, tối đa 5MB)
+                      Khuyến nghị ảnh ngang tỉ lệ 16:9 hoặc 3:1 (PNG, JPG, tối đa 10MB)
                     </span>
                   </>
                 )}
@@ -277,7 +277,7 @@ export function CreateCommunityModal({ open, onClose, onCreated }: Props) {
                   {logoUrl ? "Thay đổi logo" : "Tải ảnh logo lên"}
                 </button>
                 <p className="mt-1 text-[11px] text-[var(--bc-mobile-muted)]">
-                  Khuyến nghị ảnh vuông tỉ lệ 1:1 (PNG, JPG, tối đa 5MB)
+                  Khuyến nghị ảnh vuông tỉ lệ 1:1 (PNG, JPG, tối đa 10MB)
                 </p>
               </div>
             </div>

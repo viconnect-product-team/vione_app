@@ -29,10 +29,17 @@ export function CommunityNewsDetail({
         ) : coreError ? (
           <CommunityError onRetry={retry} />
         ) : unavailable || !detail ? (
-          <section className="mt-14">
+          <section className="mt-14 flex flex-col items-center text-center px-4">
             <p className="max-w-[34ch] text-[15px] leading-relaxed text-[var(--bc-mobile-muted)]">
-              {t("bc.mobile.community.unavailable")}
+              Bài viết hiện không tồn tại hoặc đã được cập nhật.
             </p>
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] px-6 py-2.5 text-[14px] font-bold text-[#050c15] shadow-md shadow-[#D8B282]/25 cursor-pointer"
+            >
+              Quay lại bảng tin
+            </button>
           </section>
         ) : (
           <article className="mt-5">

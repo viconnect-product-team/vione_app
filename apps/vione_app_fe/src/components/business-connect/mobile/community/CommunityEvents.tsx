@@ -16,10 +16,13 @@ import type {
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityError } from "./CommunityHome";
 
-/** Localized short month from a month number — no Date parsing of event dates. */
+/** Localized short month from a month number — clean, single-line, non-wrapping on mobile */
 export function monthLabel(locale: string, month: number): string {
   if (month < 1 || month > 12) return "";
-  return new Intl.DateTimeFormat(locale, { month: "short" }).format(new Date(2000, month - 1, 1));
+  if (locale.startsWith("vi")) {
+    return `Thg ${month}`;
+  }
+  return new Intl.DateTimeFormat(locale, { month: "short" }).format(new Date(2000, month - 1, 1)).toUpperCase();
 }
 
 export function ActivityListSkeleton({ rows = 5 }: { rows?: number }) {
@@ -158,12 +161,12 @@ function EventRow({
       >
         <div
           aria-hidden="true"
-          className="flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]"
+          className="flex h-[52px] w-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-gradient-to-b from-[var(--bc-mobile-surface-2)] to-[rgba(216,178,130,0.08)] shadow-xs transition-transform"
         >
-          <span className="text-[16px] font-semibold leading-none text-[var(--bc-mobile-text)]">
+          <span className="text-[17px] font-extrabold leading-none text-[var(--bc-mobile-text)]">
             {parts?.day ?? "--"}
           </span>
-          <span className="mt-0.5 text-[10px] font-medium uppercase text-[var(--bc-mobile-muted)]">
+          <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--bc-mobile-muted)] whitespace-nowrap">
             {parts ? monthLabel(fmt.locale, parts.month) : ""}
           </span>
         </div>

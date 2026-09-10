@@ -2,7 +2,7 @@
 // Slide-up drawer with drag handle, header, post preview box, scrollable thread, and sticky bottom input.
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, MessageSquareOff, MessageSquare, Heart, MapPin, Sparkles, ChevronDown } from "lucide-react";
+import { X, Loader2, MessageSquareOff, MessageSquare } from "lucide-react";
 import { useMomentComments } from "@/hooks/use-moment-comments";
 import { MomentCommentItem } from "./MomentCommentItem";
 import { MomentCommentInput } from "./MomentCommentInput";
@@ -143,117 +143,8 @@ export function MomentCommentSheet({
           </button>
         </div>
 
-        {/* Main Modal Scrollable Body: Facebook-Style Post Header + Comments Thread */}
-        <div className="flex-1 overflow-y-auto px-3.5 sm:px-5 py-4 space-y-4 divide-y divide-slate-200 dark:divide-[#1E293B]/70 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/50">
-          
-          {/* A — Facebook-style Original Post Preview */}
-          {postPreview ? (
-            <div className="rounded-2xl border border-amber-400/40 bg-amber-50/50 dark:bg-[#0C1529]/80 p-3.5 shadow-xs dark:shadow-md space-y-2.5">
-              
-              {/* Author Row */}
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {postPreview.authorAvatar ? (
-                    <img
-                      src={postPreview.authorAvatar}
-                      alt={nameToDisplay}
-                      className="h-10 w-10 shrink-0 rounded-full object-cover border border-[#D8B282]/50 shadow-sm"
-                    />
-                  ) : (
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-700 dark:text-amber-300 border border-[#D8B282]/40">
-                      {initialsOf(nameToDisplay)}
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                      {nameToDisplay}
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/30">
-                        Tác giả
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {postPreview.authorRoleLine && <span className="truncate">{postPreview.authorRoleLine}</span>}
-                      {postPreview.timeDisplay && (
-                        <>
-                          <span>•</span>
-                          <span className="shrink-0">{postPreview.timeDisplay}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Optional collapse toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsPostCollapsed((p) => !p)}
-                  className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-md cursor-pointer text-[11px] flex items-center gap-0.5"
-                  aria-label="Thu gọn bài viết"
-                >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isPostCollapsed ? "-rotate-90" : ""}`} />
-                </button>
-              </div>
-
-              {/* Post Content & Photos (Collapsible) */}
-              {!isPostCollapsed && (
-                <div className="space-y-2.5 pt-1">
-                  {postPreview.content && (
-                    <p className="text-[13px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line font-normal">
-                      {postPreview.content}
-                    </p>
-                  )}
-
-                  {postPreview.place && (
-                    <div className="flex items-center gap-1 text-[11.5px] text-amber-700 dark:text-amber-300 font-medium">
-                      <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span className="truncate">{postPreview.place}</span>
-                    </div>
-                  )}
-
-                  {/* Thumbnail previews if any */}
-                  {postPreview.photos && postPreview.photos.length > 0 && (
-                    <div className="flex gap-1.5 overflow-x-auto py-1">
-                      {postPreview.photos.slice(0, 3).map((imgUrl, i) => (
-                        <img
-                          key={i}
-                          src={imgUrl}
-                          alt="Ảnh đính kèm"
-                          className="h-20 w-24 rounded-lg object-cover border border-slate-300 dark:border-slate-700/60 shrink-0"
-                        />
-                      ))}
-                      {postPreview.photos.length > 3 && (
-                        <div className="grid h-20 w-20 place-items-center rounded-lg bg-slate-200 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-xs font-bold text-amber-700 dark:text-amber-300 shrink-0">
-                          +{postPreview.photos.length - 3} ảnh
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Quick Reactions Bar */}
-                  <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-2 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={postPreview.onToggleLike}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                          postPreview.isLiked
-                            ? "bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40"
-                            : "bg-slate-200/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${postPreview.isLiked ? "fill-current text-rose-500 dark:text-rose-400" : ""}`} />
-                        <span>{postPreview.likeCount && postPreview.likeCount > 0 ? postPreview.likeCount : "Thích"}</span>
-                      </button>
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {totalComments} lượt bình luận
-                    </span>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          ) : null}
+        {/* Main Modal Scrollable Body: Facebook-Style Comments Thread */}
+        <div className="flex-1 overflow-y-auto px-3.5 sm:px-5 py-3 space-y-3 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700/50">
 
           {/* B — Comment Section with Scrollable Thread */}
           <div className="pt-3">

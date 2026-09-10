@@ -369,7 +369,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
   const memberCount = community.memberCount ?? 24;
 
   return (
-    <li className="overflow-hidden rounded-3xl border border-slate-200 dark:border-[#D8B282]/45 bg-white dark:bg-[#0A0A0A] shadow-md dark:shadow-[0_8px_30px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-[#D8B282]/70 dark:hover:border-[#D8B282] hover:shadow-xl flex flex-col">
+    <li className="overflow-hidden rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-xs transition-all duration-300 hover:border-[var(--bc-mobile-border-active)] active:border-[var(--bc-mobile-border-active)] flex flex-col">
       
       {/* Top Cover Banner */}
       <Link
@@ -383,7 +383,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-[0.85] dark:brightness-[0.70]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0A0A0A] via-white/30 dark:via-[#0A0A0A]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bc-mobile-surface)] via-[var(--bc-mobile-surface)]/30 to-transparent" />
         
         {/* Category Badge over Banner */}
         <div className="absolute top-2.5 left-3 flex items-center gap-1.5">
@@ -394,7 +394,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
 
         {/* Member Status Badge */}
         <div className="absolute top-2.5 right-3">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-[#D8B282]/50 text-[10.5px] font-bold text-[#F6E1C3] shadow-sm">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bc-mobile-surface-2)]/90 backdrop-blur-md border border-[var(--bc-mobile-border)] text-[10.5px] font-bold text-[var(--bc-mobile-accent)] shadow-xs">
             {community.viewerRole === "admin" ? "Quản trị viên" : "Đã tham gia"}
           </span>
         </div>
@@ -408,7 +408,7 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
           <CommunityAvatar
             name={community.name}
             logoUrl={visuals.avatarUrl}
-            className="h-14 w-14 ring-4 ring-white dark:ring-black shadow-xl"
+            className="h-14 w-14 ring-2 ring-[var(--bc-mobile-surface)] shadow-md"
           />
 
           <div className="min-w-0 flex-1 pt-6">
@@ -417,24 +417,24 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
               params={{ communityId: community.communityId }}
               className="group flex items-center justify-between gap-1.5 cursor-pointer"
             >
-              <h3 className="truncate text-base font-bold text-slate-900 dark:text-white group-hover:text-[#8C653B] dark:group-hover:text-[#F6E1C3] transition-colors">
+              <h3 className="truncate text-base font-bold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors">
                 {community.name}
               </h3>
               <ChevronRight
                 aria-hidden="true"
-                className="h-4 w-4 shrink-0 text-[#8C653B] dark:text-[#D8B282] group-hover:translate-x-0.5 transition-transform"
+                className="h-4 w-4 shrink-0 text-[var(--bc-mobile-accent)] group-hover:translate-x-0.5 transition-transform"
                 strokeWidth={2}
               />
             </Link>
 
-            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed font-normal">
+            <p className="mt-1 text-xs text-[var(--bc-mobile-muted)] line-clamp-2 leading-relaxed font-normal">
               {community.shortDescription || visuals.descFallback}
             </p>
           </div>
         </div>
 
         {/* Overlapping Members Pile & Activity Metrics */}
-        <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-2 text-xs">
+        <div className="mt-3.5 pt-3 border-t border-[var(--bc-mobile-border)] flex items-center justify-between gap-2 text-xs">
           
           {/* Member Avatars Row */}
           <div className="flex items-center gap-2">
@@ -444,11 +444,11 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
                   key={i}
                   src={attUrl}
                   alt="Thành viên"
-                  className="h-6 w-6 rounded-full object-cover border-2 border-white dark:border-black shadow-sm"
+                  className="h-6 w-6 rounded-full object-cover border border-[var(--bc-mobile-border)] shadow-xs"
                 />
               ))}
             </div>
-            <span className="font-semibold text-[#8C653B] dark:text-[#F6E1C3] text-[11.5px]">
+            <span className="font-semibold text-[var(--bc-mobile-accent)] text-[11.5px]">
               {memberCount} thành viên
             </span>
           </div>
@@ -469,29 +469,29 @@ function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
         </div>
 
         {/* Quick Action Navigation Buttons */}
-        <div className="mt-3.5 grid grid-cols-3 divide-x divide-slate-200 dark:divide-white/10 rounded-2xl bg-slate-50 dark:bg-black/60 border border-slate-200 dark:border-[#D8B282]/30 overflow-hidden">
+        <div className="mt-3.5 grid grid-cols-3 divide-x divide-[var(--bc-mobile-border)] rounded-2xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] overflow-hidden">
           <Link
             to="/connect-app/community/$communityId/members"
             params={{ communityId: community.communityId }}
-            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-[var(--bc-mobile-text)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] transition-colors cursor-pointer"
           >
-            <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <Users aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" strokeWidth={1.8} />
             <span>Thành viên</span>
           </Link>
           <Link
             to="/connect-app/community/$communityId/events"
             params={{ communityId: community.communityId }}
-            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-[var(--bc-mobile-text)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] transition-colors cursor-pointer"
           >
-            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" strokeWidth={1.8} />
             <span>Sự kiện</span>
           </Link>
           <Link
             to="/connect-app/community/$communityId/opportunities"
             params={{ communityId: community.communityId }}
-            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-[var(--bc-mobile-text)] hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface)] transition-colors cursor-pointer"
           >
-            <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" strokeWidth={1.8} />
             <span>Cơ hội</span>
           </Link>
         </div>
@@ -519,7 +519,7 @@ export function CommunityAvatar({
         alt={name}
         loading="lazy"
         onError={() => setImgError(true)}
-        className={`${className} shrink-0 rounded-full border-2 border-[#D8B282]/60 object-cover shadow-md`}
+        className={`${className} shrink-0 rounded-full border border-[var(--bc-mobile-border)] object-cover shadow-xs`}
       />
     );
   }
@@ -529,7 +529,7 @@ export function CommunityAvatar({
   return (
     <div
       aria-hidden="true"
-      className={`grid ${className} shrink-0 place-items-center rounded-full border-2 border-[#D8B282]/60 bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-[#0B111E] text-base font-black text-amber-300 shadow-md`}
+      className={`grid ${className} shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-base font-black text-[var(--bc-mobile-accent)] shadow-xs`}
     >
       {initial}
     </div>
@@ -542,13 +542,13 @@ export function CommunityListSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-2xl border border-solid border-[#D8B282]/20 bg-[#0c1522]/80 p-3.5"
+          className="rounded-2xl border border-solid border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5"
         >
           <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 animate-pulse rounded-full bg-[#D8B282]/10" />
+            <div className="h-12 w-12 animate-pulse rounded-full bg-[var(--bc-mobile-surface-2)]" />
             <div className="flex-1 space-y-2">
-              <div className="h-3.5 w-2/5 animate-pulse rounded-full bg-[#D8B282]/10" />
-              <div className="h-3 w-3/5 animate-pulse rounded-full bg-[#D8B282]/10" />
+              <div className="h-3.5 w-2/5 animate-pulse rounded-full bg-[var(--bc-mobile-surface-2)]" />
+              <div className="h-3 w-3/5 animate-pulse rounded-full bg-[var(--bc-mobile-surface-2)]" />
             </div>
           </div>
         </div>

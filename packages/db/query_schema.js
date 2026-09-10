@@ -6,12 +6,19 @@ async function main() {
   });
   await client.connect();
 
-  const cols = await client.query(`
-    SELECT conname, pg_get_constraintdef(oid) 
-    FROM pg_constraint 
-    WHERE conrelid = 'public.documents'::regclass
+  const newsCols = await client.query(`
+    SELECT column_name, data_type 
+    FROM information_schema.columns 
+    WHERE table_name = 'news' AND table_schema = 'public'
   `);
-  console.log("documents constraints:", cols.rows);
+  console.log("news columns:", newsCols.rows);
+
+  const eventCols = await client.query(`
+    SELECT column_name, data_type 
+    FROM information_schema.columns 
+    WHERE table_name = 'events' AND table_schema = 'public'
+  `);
+  console.log("event columns:", eventCols.rows);
 
   await client.end();
 }

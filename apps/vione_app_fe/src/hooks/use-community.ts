@@ -109,7 +109,7 @@ export function useCommunityMembers(
   const query = rawQuery.trim();
   const result = useInfiniteQuery({
     queryKey: communityKeys.members(viewerKey, communityId, query, roleFilter),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 15_000,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {

@@ -69,6 +69,8 @@ function useInvalidateAll() {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: notificationKeys.root });
+    void qc.invalidateQueries({ queryKey: ["bc-mobile", "home"] });
+    void qc.invalidateQueries({ queryKey: ["bc-notifications"] });
   };
 }
 

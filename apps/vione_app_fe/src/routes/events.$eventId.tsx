@@ -47,9 +47,18 @@ export const Route = createFileRoute("/events/$eventId")({
       fetchNestApi<TicketType[]>(`/events/${params.eventId}/tickets`).catch(() => []),
       fetchNestApi<Registration[]>(`/events/registrations?eventId=${params.eventId}`).catch(() => []),
     ]);
-    if (!event) throw notFound();
+
+    let resolvedEvent = event;
+    if (!resolvedEvent) {
+      const allEvents = await fetchNestApi<any[]>('/events').catch(() => []);
+      if (Array.isArray(allEvents)) {
+        resolvedEvent = allEvents.find((e: any) => e.id === params.eventId || e.slug === params.eventId) || null;
+      }
+    }
+
+    if (!resolvedEvent) throw notFound();
     return {
-      event,
+      event: resolvedEvent,
       registrations: Array.isArray(registrations) ? registrations : [],
       tickets: Array.isArray(tickets) ? tickets : [],
     };

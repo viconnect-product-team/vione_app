@@ -1,22 +1,27 @@
 // Xem lịch — /connect-app/calendar
 //
-// Lịch làm việc của người dùng dựng từ đúng nguồn dữ liệu chuẩn đang có
-// (Work Hub qua useBusinessConnectHome). Không tạo backend lịch song song,
-// không dữ liệu giả: ngày trống hiển thị đúng trạng thái trống.
+// Lịch làm việc & sự kiện của người dùng tổng hợp từ:
+// 1. Sự kiện đã lưu / thêm vào lịch (vione_saved_calendar_events)
+// 2. Sự kiện đã đăng ký tham gia từ hệ sinh thái (/events)
+// 3. Cuộc gặp & việc cần theo dõi (Work Hub / useBusinessConnectHome)
 
-import { useMemo, useState } from "react";
-import { CalendarDays, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, CalendarPlus, RefreshCw } from "lucide-react";
 import { useFmt, useT } from "@/lib/i18n";
 import { useBusinessConnectHome, type BcMobileTodayItem } from "@/hooks/use-business-connect-home";
+import { fetchNestApi } from "@/lib/api-client";
+import { getSavedCalendarEvents, type SavedCalendarEvent } from "@/lib/business-connect/mobile/calendar-storage";
 import { TodayItem } from "./TodayItem";
+import { EventDetailMobileSheet } from "./EventDetailMobileSheet";
+import type { CrmEvent } from "./ExecutiveHome";
 
-type Filter = "all" | "meeting" | "follow_up" | "other";
+type Filter = "all" | "event" | "meeting" | "follow_up";
 
-const FILTERS: { id: Filter; labelKey: Parameters<ReturnType<typeof useT>>[0] }[] = [
-  { id: "all", labelKey: "bc.mobile.calendar.filter.all" },
-  { id: "meeting", labelKey: "bc.mobile.calendar.filter.meeting" },
-  { id: "follow_up", labelKey: "bc.mobile.calendar.filter.followUp" },
-  { id: "other", labelKey: "bc.mobile.calendar.filter.other" },
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: "all", label: "Tất cả" },
+  { id: "event", label: "Sự kiện" },
+  { id: "meeting", label: "Cuộc gặp" },
+  { id: "follow_up", label: "Cần theo dõi" },
 ];
 
 function itemDate(item: BcMobileTodayItem): Date | null {
@@ -32,9 +37,10 @@ function dayKey(d: Date): string {
 
 function matchesFilter(item: BcMobileTodayItem, filter: Filter): boolean {
   if (filter === "all") return true;
+  if (filter === "event") return item.kind === "calendar" || item.id.startsWith("event:");
   if (filter === "meeting") return item.kind === "meeting";
   if (filter === "follow_up") return item.kind === "follow_up";
-  return item.kind !== "meeting" && item.kind !== "follow_up";
+  return true;
 }
 
 export function ScheduleCalendar() {
@@ -43,7 +49,91 @@ export function ScheduleCalendar() {
   const home = useBusinessConnectHome();
   const [filter, setFilter] = useState<Filter>("all");
 
-  const pool = home.data?.today.pool ?? [];
+  // Sự kiện đã lưu cá nhân
+  const [savedEvents, setSavedEvents] = useState<SavedCalendarEvent[]>(() => getSavedCalendarEvents());
+
+  // Lắng nghe thay đổi từ các modal sự kiện khác
+  useEffect(() => {
+    const handleUpdate = () => {
+      setSavedEvents(getSavedCalendarEvents());
+    };
+    window.addEventListener("vione:calendar-updated", handleUpdate);
+    return () => window.removeEventListener("vione:calendar-updated", handleUpdate);
+  }, []);
+
+  // Lấy danh sách sự kiện từ backend /events để kiểm tra các sự kiện đã đăng ký
+  const [crmEvents, setCrmEvents] = useState<CrmEvent[]>([]);
+  useEffect(() => {
+    let active = true;
+    fetchNestApi<any[]>("/events")
+      .then((res) => {
+        if (active && Array.isArray(res)) {
+          setCrmEvents(res);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Modal xem chi tiết sự kiện khi bấm từ lịch
+  const [selectedEvent, setSelectedEvent] = useState<CrmEvent | null>(null);
+  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
+
+  // Chuyển đổi sự kiện đã lưu và sự kiện đã đăng ký thành TodayItem
+  const eventItems: BcMobileTodayItem[] = useMemo(() => {
+    const list: BcMobileTodayItem[] = [];
+    const seenIds = new Set<string>();
+
+    for (const s of savedEvents) {
+      seenIds.add(s.id);
+      list.push({
+        id: `event:${s.id}`,
+        kind: "calendar",
+        titleKey: s.title,
+        descriptionKey: s.location || (s.isOnline ? "Sự kiện trực tuyến" : "Sự kiện kết nối"),
+        startsAt: s.startsAt,
+        dueAt: s.startsAt,
+        category: "today",
+        urgency: "normal",
+        counterpartDisplayName: s.organizer || "ViOne Event",
+        action: { canRoute: false, targetRoute: null },
+      });
+    }
+
+    for (const e of crmEvents) {
+      if (seenIds.has(e.id)) continue;
+      const isReg =
+        (typeof window !== "undefined" && localStorage.getItem(`bc_event_reg_${e.id}`) === "true") ||
+        (e as any).registered;
+      if (isReg) {
+        seenIds.add(e.id);
+        const startsAt = e.date || (e as any).startDate || new Date().toISOString();
+        list.push({
+          id: `event:${e.id}`,
+          kind: "calendar",
+          titleKey: e.title || (e as any).name || "Sự kiện doanh nghiệp",
+          descriptionKey: e.location || (e.type === "online" ? "Sự kiện trực tuyến" : "Sự kiện trực tiếp"),
+          startsAt,
+          dueAt: startsAt,
+          category: "today",
+          urgency: "normal",
+          counterpartDisplayName: e.associationName || (e as any).communityName || "ViOne Event",
+          action: { canRoute: false, targetRoute: null },
+        });
+      }
+    }
+
+    return list;
+  }, [savedEvents, crmEvents]);
+
+  // Hợp nhất dữ liệu: Work Hub hôm nay + Toàn bộ sự kiện đã lưu và đăng ký
+  const pool = useMemo(() => {
+    const homePool = home.data?.today.pool ?? [];
+    return [...eventItems, ...homePool];
+  }, [eventItems, home.data?.today.pool]);
+
   const dataError = home.data?.today.status === "error";
 
   const { groups, undated } = useMemo(() => {
@@ -87,12 +177,34 @@ export function ScheduleCalendar() {
     });
   }
 
+  const handleSelectItem = (item: BcMobileTodayItem) => {
+    if (item.id.startsWith("event:")) {
+      const eventId = item.id.replace(/^event:/, "");
+      const matched = crmEvents.find((e) => e.id === eventId);
+      const savedMatched = savedEvents.find((s) => s.id === eventId);
+      if (matched) {
+        setSelectedEvent(matched);
+      } else if (savedMatched) {
+        setSelectedEvent({
+          id: savedMatched.id,
+          title: savedMatched.title,
+          date: savedMatched.startsAt,
+          location: savedMatched.location || "ViOne Center",
+          type: savedMatched.isOnline ? "online" : "offline",
+          associationName: savedMatched.organizer,
+          description: savedMatched.description,
+        });
+      }
+      setIsEventSheetOpen(true);
+    }
+  };
+
   return (
-    <div className="pt-5">
+    <div className="pt-5 pb-12">
       <section className="flex items-center gap-3">
         <span
           aria-hidden="true"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border-gold)] text-[var(--bc-mobile-accent)]"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border-gold)] text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)]"
         >
           <CalendarDays className="h-[18px] w-[18px]" strokeWidth={1.6} />
         </span>
@@ -101,11 +213,12 @@ export function ScheduleCalendar() {
             {t("bc.mobile.calendar.title")}
           </h1>
           <p className="mt-0.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
-            {t("bc.mobile.calendar.subtitle")}
+            Lịch cuộc gặp, việc cần theo dõi và sự kiện đã lưu của bạn.
           </p>
         </div>
       </section>
 
+      {/* Bộ lọc tab */}
       <div
         role="tablist"
         aria-label={t("bc.mobile.calendar.filter.label")}
@@ -120,25 +233,25 @@ export function ScheduleCalendar() {
               role="tab"
               aria-selected={active}
               onClick={() => setFilter(f.id)}
-              className={`min-h-[38px] rounded-full border px-3.5 text-[12.5px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] ${
+              className={`inline-flex min-h-[34px] items-center rounded-full px-3.5 text-[12.5px] font-semibold transition-all cursor-pointer ${
                 active
-                  ? "border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                  ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] shadow-xs"
+                  : "border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
               }`}
             >
-              {t(f.labelKey)}
+              {f.label}
             </button>
           );
         })}
       </div>
 
       <p aria-live="polite" className="mt-3 text-[12px] text-[var(--bc-mobile-muted)]">
-        {home.isPending
+        {home.isPending && eventItems.length === 0
           ? t("bc.mobile.calendar.loading")
           : t("bc.mobile.calendar.count", { count: total })}
       </p>
 
-      {home.isError || dataError ? (
+      {home.isError && dataError && eventItems.length === 0 ? (
         <section role="alert" className="mt-6 text-center">
           <p className="text-[13.5px] text-[var(--bc-mobile-muted)]">
             {t("bc.mobile.calendar.error")}
@@ -152,34 +265,28 @@ export function ScheduleCalendar() {
             {t("bc.mobile.calendar.retry")}
           </button>
         </section>
-      ) : home.isPending ? (
-        <div role="status" aria-busy="true" className="mt-6 space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-16 animate-pulse rounded-2xl bg-[var(--bc-mobile-surface-2)] motion-reduce:animate-none"
-            />
-          ))}
-        </div>
       ) : total === 0 ? (
         <section className="mt-8 rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6 text-center">
-          <p className="text-[14px] font-medium text-[var(--bc-mobile-text)]">
-            {t("bc.mobile.calendar.empty.title")}
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)]">
+            <CalendarPlus className="h-6 w-6" strokeWidth={1.5} />
+          </div>
+          <p className="text-[15px] font-bold text-[var(--bc-mobile-text)]">
+            Chưa có lịch hẹn hoặc sự kiện nào
           </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--bc-mobile-muted)]">
-            {t("bc.mobile.calendar.empty.body")}
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--bc-mobile-muted)] max-w-xs mx-auto">
+            Khi bạn lưu sự kiện hoặc thiết lập lịch hẹn công việc, mọi kế hoạch sẽ hiển thị gọn gàng tại đây.
           </p>
         </section>
       ) : (
         <div className="mt-5 space-y-7">
           {groups.map((g) => (
             <section key={dayKey(g.date)}>
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-muted)]">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-accent)]">
                 {dayLabel(g.date)}
               </h2>
-              <ul className="mt-3 space-y-5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
+              <ul className="mt-3 space-y-3 border-l-2 border-[var(--bc-mobile-border-gold)] pl-3.5">
                 {g.items.map((item) => (
-                  <TodayItem key={item.id} item={item} />
+                  <TodayItem key={item.id} item={item} onSelect={handleSelectItem} />
                 ))}
               </ul>
             </section>
@@ -190,14 +297,26 @@ export function ScheduleCalendar() {
               <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.calendar.undated")}
               </h2>
-              <ul className="mt-3 space-y-5 border-l border-[var(--bc-mobile-border)] pl-4">
+              <ul className="mt-3 space-y-3 border-l-2 border-[var(--bc-mobile-border)] pl-3.5">
                 {undated.map((item) => (
-                  <TodayItem key={item.id} item={item} />
+                  <TodayItem key={item.id} item={item} onSelect={handleSelectItem} />
                 ))}
               </ul>
             </section>
           ) : null}
         </div>
+      )}
+
+      {/* Sheet xem chi tiết sự kiện khi bấm từ lịch */}
+      {selectedEvent && (
+        <EventDetailMobileSheet
+          open={isEventSheetOpen}
+          onOpenChange={setIsEventSheetOpen}
+          event={selectedEvent}
+          onRegisteredChange={() => {
+            setSavedEvents(getSavedCalendarEvents());
+          }}
+        />
       )}
     </div>
   );

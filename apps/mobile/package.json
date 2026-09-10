@@ -6,9 +6,14 @@
   "scripts": {
     "sync": "npx cap sync",
     "sync:android": "npx cap sync android",
+    "sync:ios": "npx cap sync ios",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios",
     "build:static": "npm run build --prefix ../vione_app_fe && npx cap sync android",
+    "build:ios:dev": "eas build --profile development --platform ios",
+    "build:ios:preview": "eas build --profile preview --platform ios",
+    "build:ios:prod": "eas build --profile production --platform ios",
+    "submit:ios": "eas submit --platform ios",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

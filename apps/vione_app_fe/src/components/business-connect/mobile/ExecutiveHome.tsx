@@ -54,6 +54,7 @@ import { QuickMeetIcon, QuickScanIcon, QuickCardIcon } from "./NavIcons";
 import { TodayCustomizeSheet } from "./TodayCustomizeSheet";
 import { TodayItem } from "./TodayItem";
 import { VIconMark } from "./VIconMark";
+import { EventDetailMobileSheet } from "./EventDetailMobileSheet";
 
 export type CrmEvent = {
   id: string;
@@ -97,6 +98,31 @@ export function ExecutiveHome() {
   const { prefs, update, reset } = useTodayPreferences();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [scheduleTab, setScheduleTab] = useState<"today" | "upcoming">("today");
+  const [selectedEvent, setSelectedEvent] = useState<CrmEvent | null>(null);
+  const [eventSheetOpen, setEventSheetOpen] = useState(false);
+
+  const handleOpenEvent = (ev: CrmEvent) => {
+    setSelectedEvent(ev);
+    setEventSheetOpen(true);
+  };
+
+  const handleOpenTodayItem = (item: BcMobileTodayItem) => {
+    if (item.id.startsWith("event:")) {
+      const rawId = item.id.replace("event:", "");
+      const found = crmList.find((c) => String(c.id) === rawId);
+      if (found) {
+        handleOpenEvent(found);
+        return;
+      }
+    }
+    handleOpenEvent({
+      id: item.id.replace("event:", ""),
+      title: item.titleKey,
+      location: item.descriptionKey,
+      communityName: item.counterpartDisplayName,
+      startDate: item.startsAt,
+    });
+  };
 
   // Kéo cả CRM events để đảm bảo dual-source cho sự kiện hôm nay & sắp tới (an toàn không throw khi thiếu QueryClientProvider)
   const [crmEventsData, setCrmEventsData] = useState<any>(null);
@@ -241,13 +267,13 @@ export function ExecutiveHome() {
               </div>
 
               {/* Segmented Tab Bar */}
-              <div className="mt-3 flex items-center rounded-xl bg-slate-100 dark:bg-black/40 p-1 border border-[var(--bc-mobile-border)]">
+              <div className="mt-3 flex items-center rounded-xl bg-[var(--bc-mobile-surface-2)] p-1 border border-[var(--bc-mobile-border)]">
                 <button
                   type="button"
                   onClick={() => setScheduleTab("today")}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
                     scheduleTab === "today"
-                      ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-bold"
+                      ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold shadow-xs"
                       : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                   }`}
                 >
@@ -258,7 +284,7 @@ export function ExecutiveHome() {
                   onClick={() => setScheduleTab("upcoming")}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     scheduleTab === "upcoming"
-                      ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-bold"
+                      ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold shadow-xs"
                       : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                   }`}
                 >
@@ -296,7 +322,7 @@ export function ExecutiveHome() {
                     <>
                       <ul className="mt-1 divide-y divide-[var(--bc-mobile-border)]">
                         {todayItems.map((item) => (
-                          <TodayItem key={item.id} item={item} />
+                          <TodayItem key={item.id} item={item} onSelect={handleOpenTodayItem} />
                         ))}
                       </ul>
                       <TodayPrimaryAction items={todayItems} onOpenV={openV} />
@@ -323,7 +349,11 @@ export function ExecutiveHome() {
                     <>
                       <ul className="mt-4 space-y-3.5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
                         {upcomingEvents.slice(0, 5).map((ev) => (
-                          <UpcomingEventTimelineRow key={ev.id} event={ev} />
+                          <UpcomingEventTimelineRow
+                            key={ev.id}
+                            event={ev}
+                            onSelect={() => handleOpenEvent(ev)}
+                          />
                         ))}
                       </ul>
 
@@ -356,6 +386,12 @@ export function ExecutiveHome() {
               prefs={prefs}
               onChange={update}
               onReset={reset}
+            />
+
+            <EventDetailMobileSheet
+              open={eventSheetOpen}
+              onOpenChange={setEventSheetOpen}
+              event={selectedEvent}
             />
           </div>
         )}
@@ -583,6 +619,7 @@ function InsightCard() {
       </p>
       <Link
         to="/connect-app/network"
+        search={{ tab: "suggestions" }}
         className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[var(--bc-mobile-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
         {isEmpty ? t("bc.mobile.home.insight.emptyCta") : t("bc.mobile.home.insight.cta")}
@@ -632,7 +669,7 @@ function Greeting({
             {name}
           </h1>
           {role ? (
-            <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
+            <p className="mt-0.5 truncate text-[14px] font-normal text-[var(--bc-mobile-muted)]">
               {role}
             </p>
           ) : null}
@@ -700,8 +737,14 @@ function VMarker() {
   );
 }
 
-/** Một dòng sự kiện SẮP TỚI — hiển thị ngày tháng chuẩn từ CRM, tên sự kiện, địa điểm, sức chứa và liên kết chi tiết */
-function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
+/** Một dòng sự kiện SẮP TỚI — hiển thị ngày tháng chuẩn từ CRM, tên sự kiện, địa điểm, sức chứa và mở EventDetailMobileSheet khi bấm */
+function UpcomingEventTimelineRow({
+  event,
+  onSelect,
+}: {
+  event: CrmEvent;
+  onSelect?: () => void;
+}) {
   const fmt = useFmt();
   const dt = getEventDate(event);
   const dateFormatted = dt
@@ -727,10 +770,10 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
         aria-hidden="true"
         className="absolute -left-[21px] top-[6px] h-2.5 w-2.5 rounded-full bg-[var(--bc-mobile-accent)] shadow-xs group-hover:scale-125 transition-transform"
       />
-      <Link
-        to="/events/$eventId"
-        params={{ eventId: String(event.id) }}
-        className="flex flex-col items-start w-full rounded-lg p-1.5 -m-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282]"
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex flex-col items-start w-full text-left rounded-lg p-2 -m-1 transition-all hover:bg-black/5 dark:hover:bg-white/[0.03] active:bg-black/10 dark:active:bg-white/[0.06] border border-transparent active:border-[var(--bc-mobile-border-active)] cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
         <div className="flex w-full items-center justify-between gap-2">
           <span className="text-[12px] font-bold capitalize tabular-nums text-[var(--bc-mobile-accent)]">
@@ -765,7 +808,7 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
             </span>
           )}
         </div>
-      </Link>
+      </button>
     </li>
   );
 }

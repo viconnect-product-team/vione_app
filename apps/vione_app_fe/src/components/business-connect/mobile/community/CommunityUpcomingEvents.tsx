@@ -127,10 +127,10 @@ function UpcomingEventCard({
       <div className="flex items-start gap-3.5">
         <div
           aria-hidden="true"
-          className="flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[rgba(216,178,130,0.06)]"
+          className="flex h-[52px] w-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-gradient-to-b from-[var(--bc-mobile-surface-2)] to-[rgba(216,178,130,0.08)] shadow-xs transition-transform"
         >
-          <span className="text-[16px] font-semibold leading-none text-[var(--bc-mobile-accent)]">{parts?.day ?? "--"}</span>
-          <span className="mt-0.5 text-[10px] font-medium uppercase text-[var(--bc-mobile-muted)]">
+          <span className="text-[17px] font-extrabold leading-none text-[var(--bc-mobile-accent)]">{parts?.day ?? "--"}</span>
+          <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--bc-mobile-muted)] whitespace-nowrap">
             {parts ? monthLabel(fmt.locale, parts.month) : ""}
           </span>
         </div>

@@ -536,7 +536,14 @@ export class ConnectAppService implements OnModuleInit {
         const members = await this.prisma.$queryRaw<any[]>`
           SELECT id, name, avatar_url, job_title, company_name
           FROM public.members
-          WHERE user_id = ${uid}::uuid
+          WHERE user_id = ${uid}::uuid OR id = ${uid}::uuid
+          ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1
+        `.catch(() => []);
+
+        const businessIdentities = await this.prisma.$queryRaw<any[]>`
+          SELECT id, display_name, avatar_url, headline, job_title, company_name, bio
+          FROM public.business_identities
+          WHERE owner_user_id = ${uid}::uuid OR id = ${uid}::uuid
           ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1
         `.catch(() => []);
 
@@ -544,9 +551,11 @@ export class ConnectAppService implements OnModuleInit {
         const profile = userProfiles[0];
         const vUser = vioneUsers[0];
         const member = members[0];
+        const bi = businessIdentities[0];
 
         const displayName =
           card?.display_name ||
+          bi?.display_name ||
           profile?.display_name ||
           vUser?.full_name ||
           vUser?.name ||
@@ -555,6 +564,7 @@ export class ConnectAppService implements OnModuleInit {
 
         const avatarUrl =
           card?.avatar_url ||
+          bi?.avatar_url ||
           profile?.avatar_url ||
           vUser?.avatar_url ||
           vUser?.avatar ||
@@ -563,6 +573,8 @@ export class ConnectAppService implements OnModuleInit {
 
         const headline =
           card?.headline ||
+          bi?.headline ||
+          bi?.job_title ||
           card?.professional_title ||
           profile?.professional_title ||
           vUser?.job_title ||
@@ -1056,6 +1068,7 @@ export class ConnectAppService implements OnModuleInit {
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
       LIMIT 1
     `.catch(() => []);
+    let hasActualMembership = memberships.length > 0;
     if (memberships.length === 0) {
       const isMem = await this.prisma.$queryRaw<any[]>`
         SELECT id FROM public.members
@@ -1064,6 +1077,7 @@ export class ConnectAppService implements OnModuleInit {
       `.catch(() => []);
       if (isMem.length > 0) {
         memberships = [{ role: 'member', is_default: false }];
+        hasActualMembership = true;
       }
     }
     if (memberships.length === 0) {
@@ -1134,6 +1148,7 @@ export class ConnectAppService implements OnModuleInit {
         memberCount,
         viewerRole: membership.role === 'admin' ? 'admin' : 'member',
         isDefault: membership.is_default === true,
+        isMember: hasActualMembership,
       },
       upcomingEvents,
       openOpportunityCount,
@@ -1147,18 +1162,22 @@ export class ConnectAppService implements OnModuleInit {
     offset: number = 0,
     roleFilter: string = 'all',
   ) {
-    let viewerMemberships = await this.prisma.$queryRaw<any[]>`
-      SELECT role FROM public.memberships
-      WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
-      LIMIT 1
-    `.catch(() => []);
-    if (viewerMemberships.length === 0) {
-      const isMember = await this.prisma.$queryRaw<any[]>`
-        SELECT id FROM public.members
-        WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || '');
+    let viewerMemberships: any[] = [];
+    if (isUuid) {
+      viewerMemberships = await this.prisma.$queryRaw<any[]>`
+        SELECT role FROM public.memberships
+        WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
         LIMIT 1
       `.catch(() => []);
-      if (isMember.length > 0) viewerMemberships = [{ role: 'member' }];
+      if (viewerMemberships.length === 0) {
+        const isMember = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.members
+          WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid AND status = 'active'
+          LIMIT 1
+        `.catch(() => []);
+        if (isMember.length > 0) viewerMemberships = [{ role: 'member' }];
+      }
     }
     const viewerRole = viewerMemberships[0]?.role === 'admin' ? 'admin' : 'member';
 
@@ -1193,7 +1212,7 @@ export class ConnectAppService implements OnModuleInit {
           COALESCE(card.avatar_url, bi.avatar_url)::text as avatar_url,
           COALESCE(card.professional_title, bi.job_title)::text as job_title,
           COALESCE(card.company_name, bi.company_name)::text as company_name,
-          COALESCE(card.headline, bi.headline)::text as headline
+          bi.headline::text as headline
         FROM public.members m
         LEFT JOIN public.memberships ms ON (ms.association_id = m.association_id AND m.user_id IS NOT NULL AND ms.user_id = m.user_id)
         LEFT JOIN public.member_business_cards card ON (card.member_id = m.id OR (m.user_id IS NOT NULL AND card.owner_user_id = m.user_id))
@@ -1215,7 +1234,7 @@ export class ConnectAppService implements OnModuleInit {
           COALESCE(bi.avatar_url, card.avatar_url)::text as avatar_url,
           COALESCE(bi.job_title, card.professional_title)::text as job_title,
           COALESCE(bi.company_name, card.company_name)::text as company_name,
-          COALESCE(bi.headline, card.headline)::text as headline
+          bi.headline::text as headline
         FROM public.memberships ms
         LEFT JOIN public.business_identities bi ON bi.owner_user_id = ms.user_id
         LEFT JOIN public.member_business_cards card ON card.owner_user_id = ms.user_id
@@ -1299,7 +1318,7 @@ export class ConnectAppService implements OnModuleInit {
 
     const mRows = await this.prisma.$queryRaw<any[]>`
       SELECT m.*, COALESCE(ms.role, 'member')::text as member_role,
-             card.avatar_url, card.professional_title, card.company_name, card.headline, card.bio, card.website
+             card.avatar_url, card.professional_title, card.company_name, bi.headline, bi.bio, m.website
       FROM public.members m
       LEFT JOIN public.memberships ms ON (ms.association_id = m.association_id AND m.user_id IS NOT NULL AND ms.user_id = m.user_id)
       LEFT JOIN public.member_business_cards card ON (card.member_id = m.id OR (m.user_id IS NOT NULL AND card.owner_user_id = m.user_id))
@@ -1612,8 +1631,19 @@ export class ConnectAppService implements OnModuleInit {
     const now = new Date();
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
     const safeUserId = isUuid ? userId : '00000000-0000-0000-0000-000000000000';
-    
-    // Fetch connected users with real interaction timestamps (Nurture Connections list)
+
+    // Fetch viewer profile to know their location, headline and industry for smart matching
+    const viewerProfile: any[] = await this.prisma.$queryRaw<any[]>`
+      SELECT id, owner_user_id, display_name, headline, company_name, city
+      FROM public.business_identities
+      WHERE owner_user_id = ${safeUserId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+
+    const rawViewerCity = (viewerProfile[0]?.city || '').trim().toLowerCase();
+    const viewerCity = rawViewerCity.replace(/^(thành phố|tp\.|tỉnh)\s*/i, '').trim();
+
+    // Fetch connected users with real interaction timestamps and counts (Nurture Connections list)
     const connectedRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT 
         bi.id as identity_id, 
@@ -1632,11 +1662,23 @@ export class ConnectAppService implements OnModuleInit {
              OR (m.owner_user_id = bi.owner_user_id AND m.target_person_id = ${safeUserId}::uuid)
         ) as last_moment_at,
         (
+          SELECT COUNT(*)
+          FROM public.business_relationship_moments m
+          WHERE (m.owner_user_id = ${safeUserId}::uuid AND m.target_person_id = bi.owner_user_id)
+             OR (m.owner_user_id = bi.owner_user_id AND m.target_person_id = ${safeUserId}::uuid)
+        ) as moment_count,
+        (
           SELECT MAX(msg.created_at)
           FROM public.direct_messages msg
           WHERE (msg.sender_id = ${safeUserId}::uuid AND msg.recipient_id = bi.owner_user_id)
              OR (msg.sender_id = bi.owner_user_id AND msg.recipient_id = ${safeUserId}::uuid)
-        ) as last_message_at
+        ) as last_message_at,
+        (
+          SELECT COUNT(*)
+          FROM public.direct_messages msg
+          WHERE (msg.sender_id = ${safeUserId}::uuid AND msg.recipient_id = bi.owner_user_id)
+             OR (msg.sender_id = bi.owner_user_id AND msg.recipient_id = ${safeUserId}::uuid)
+        ) as message_count
       FROM public.user_connections uc
       JOIN public.business_identities bi ON (
         (uc.requester_user_id = ${safeUserId}::uuid AND uc.recipient_user_id = bi.owner_user_id) OR
@@ -1658,7 +1700,7 @@ export class ConnectAppService implements OnModuleInit {
           FROM public.user_connections
           WHERE requester_user_id = ${safeUserId}::uuid OR recipient_user_id = ${safeUserId}::uuid
         )
-      LIMIT 20
+      LIMIT 30
     `.catch(() => [] as any[]);
 
     // Fallback to other users from vione_users if business_identities has few records
@@ -1674,7 +1716,7 @@ export class ConnectAppService implements OnModuleInit {
             notIn: existingIds,
           },
         },
-        take: 10,
+        take: 15,
       }).catch(() => [] as any[]);
 
       extraUsers.forEach((u: any) => {
@@ -1690,9 +1732,25 @@ export class ConnectAppService implements OnModuleInit {
       });
     }
 
-    const recommendations: any[] = [];
+    const LEADERSHIP_KEYWORDS = [
+      'chủ tịch', 'ceo', 'founder', 'sáng lập', 'giám đốc', 'director', 
+      'c-level', 'tổng giám đốc', 'phó giám đốc', 'trưởng phòng', 'leader', 'chuyên gia'
+    ];
 
-    // Map non-connected users to AI Match suggestions
+    const isHighPotential = (headline: string, company: string): boolean => {
+      const text = `${headline} ${company}`.toLowerCase();
+      return LEADERSHIP_KEYWORDS.some((kw) => text.includes(kw));
+    };
+
+    const isNearby = (candidateCity: string): boolean => {
+      if (!viewerCity || !candidateCity) return false;
+      const cleanCandidate = candidateCity.toLowerCase().replace(/^(thành phố|tp\.|tỉnh)\s*/i, '').trim();
+      return cleanCandidate.includes(viewerCity) || viewerCity.includes(cleanCandidate);
+    };
+
+    const scoredRecommendations: Array<{ score: number; item: any }> = [];
+
+    // 1. Process non-connected users (AI Match suggestions)
     nonConnectedRows.forEach((row: any) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
       const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
@@ -1701,32 +1759,53 @@ export class ConnectAppService implements OnModuleInit {
       const headline = row.headline || 'Doanh nhân';
       const displayName = row.display_name || 'Hội viên';
 
-      const aiSuggestion = `AI đề xuất: Kết nối với ${displayName} (${headline} tại ${company}) để trao đổi cơ hội hợp tác kinh doanh và mở rộng quan hệ đối tác tại ${city}.`;
+      let score = 20; // base potential score
+      const near = isNearby(city);
+      const potential = isHighPotential(headline, company);
 
-      recommendations.push({
-        id: `${cleanPersonId}:match`,
-        person: {
-          personId: cleanPersonId,
-          displayName,
-          avatarUrl: row.avatar_url,
-          headline,
-          companyName: company,
-          industryLabel: 'Kinh doanh',
-          areaLabel: city,
+      if (near) score += 50; // Priority 1: Gần bạn
+      if (potential) score += 40; // Priority 2: Tiềm năng cao (C-level / Founder / Giám đốc)
+      if (row.avatar_url) score += 10;
+      if (row.headline && row.headline.length > 5) score += 10;
+
+      let aiSuggestion = '';
+      if (near && potential) {
+        aiSuggestion = `AI ưu tiên: ${displayName} là ${headline} tại ${company}, cùng khu vực ${city} với bạn. Thuận tiện kết nối và gặp mặt trực tiếp để thảo luận hợp tác chiến lược.`;
+      } else if (near) {
+        aiSuggestion = `AI đề xuất (Gần bạn): ${displayName} ở khu vực ${city}. Kết nối ngay để giao lưu và mở rộng mối quan hệ địa phương.`;
+      } else if (potential) {
+        aiSuggestion = `AI đề xuất (Tiềm năng cao): ${displayName} giữ vị trí ${headline} tại ${company}. Rất phù hợp để mở rộng mạng lưới doanh nhân cấp cao.`;
+      } else {
+        aiSuggestion = `AI đề xuất: Kết nối với ${displayName} (${headline} tại ${company}) để trao đổi cơ hội kinh doanh tại ${city}.`;
+      }
+
+      scoredRecommendations.push({
+        score,
+        item: {
+          id: `${cleanPersonId}:match`,
+          person: {
+            personId: cleanPersonId,
+            displayName,
+            avatarUrl: row.avatar_url,
+            headline,
+            companyName: company,
+            industryLabel: 'Kinh doanh',
+            areaLabel: city,
+          },
+          type: 'reconnect',
+          reason: {
+            kind: 'last_interaction',
+            days: 0,
+            evidenceKind: 'moment',
+          },
+          aiSuggestion,
+          wordingSource: 'ai',
+          generatedAt: now.toISOString(),
         },
-        type: 'reconnect',
-        reason: {
-          kind: 'last_interaction',
-          days: 0,
-          evidenceKind: 'moment',
-        },
-        aiSuggestion,
-        wordingSource: 'ai',
-        generatedAt: now.toISOString(),
       });
     });
 
-    // Map connected users to Nurture Connections list with REAL calculated days since last interaction
+    // 2. Process connected users (Nurture Connections & frequent interactions)
     connectedRows.forEach((row) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
       const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
@@ -1737,30 +1816,76 @@ export class ConnectAppService implements OnModuleInit {
       const days = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
       
       const displayName = row.display_name || 'Đối tác';
-      const aiSuggestion = `AI nhắc nhở: Đã ${days} ngày chưa tương tác cùng ${displayName}. Hãy gửi tin nhắn hoặc sắp xếp buổi gặp để hâm nóng mối quan hệ hợp tác.`;
+      const headline = row.headline || 'Doanh nhân';
+      const company = row.company_name || 'Partner';
+      const city = row.city || 'Việt Nam';
 
-      recommendations.push({
-        id: `${cleanPersonId}:reconnect`,
-        person: {
-          personId: cleanPersonId,
-          displayName,
-          avatarUrl: row.avatar_url,
-          headline: row.headline || 'Doanh nhân',
-          companyName: row.company_name || 'Partner',
-          industryLabel: 'Kinh doanh',
-          areaLabel: row.city || 'Hà Nội',
+      const momentCount = Number(row.moment_count || 0);
+      const messageCount = Number(row.message_count || 0);
+      const totalInteractions = momentCount + messageCount;
+
+      let score = 30; // base connection score
+      const near = isNearby(city);
+      const potential = isHighPotential(headline, company);
+
+      if (near) score += 45; // Gần bạn
+      if (potential) score += 35; // Lãnh đạo / Tiềm năng
+      
+      // Priority 3: Nhiều tương tác
+      if (totalInteractions >= 5) {
+        score += 45; // Đối tác gắn bó, tương tác nhiều
+      } else if (totalInteractions >= 2) {
+        score += 25;
+      }
+
+      // Chu kỳ hâm nóng quan hệ: 7 - 45 ngày là khoảng thời gian vàng để chăm sóc
+      if (days >= 7 && days <= 45) {
+        score += 35;
+      } else if (days > 45) {
+        score += 20;
+      }
+
+      let aiSuggestion = '';
+      if (totalInteractions >= 3 && near) {
+        aiSuggestion = `AI nhắc nhở (Đối tác thân thiết): Bạn và ${displayName} đã có ${totalInteractions} lượt tương tác và cùng ở ${city}. Đã ${days} ngày chưa trao đổi, hãy hẹn gặp cà phê giữ nhiệt quan hệ!`;
+      } else if (totalInteractions >= 3) {
+        aiSuggestion = `AI nhắc nhở: ${displayName} là đối tác thường xuyên tương tác (${totalInteractions} lượt). Đã ${days} ngày chưa liên hệ, hãy gửi tin nhắn cập nhật tiến độ công việc.`;
+      } else if (near) {
+        aiSuggestion = `AI nhắc nhở: ${displayName} ở gần bạn (${city}). Đã ${days} ngày chưa tương tác, hãy sắp xếp buổi gặp trao đổi thêm cơ hội hợp tác.`;
+      } else {
+        aiSuggestion = `AI nhắc nhở: Đã ${days} ngày chưa tương tác cùng ${displayName} (${headline}). Hãy thăm hỏi định kỳ để giữ quan hệ hợp tác lâu dài.`;
+      }
+
+      scoredRecommendations.push({
+        score,
+        item: {
+          id: `${cleanPersonId}:reconnect`,
+          person: {
+            personId: cleanPersonId,
+            displayName,
+            avatarUrl: row.avatar_url,
+            headline,
+            companyName: company,
+            industryLabel: 'Kinh doanh',
+            areaLabel: city,
+          },
+          type: 'reconnect',
+          reason: {
+            kind: 'last_interaction',
+            days,
+            evidenceKind: 'moment',
+          },
+          aiSuggestion,
+          wordingSource: 'ai',
+          generatedAt: now.toISOString(),
         },
-        type: 'reconnect',
-        reason: {
-          kind: 'last_interaction',
-          days,
-          evidenceKind: 'moment',
-        },
-        aiSuggestion,
-        wordingSource: 'ai',
-        generatedAt: now.toISOString(),
       });
     });
+
+    // Sort descending by multi-factor score: proximity, high potential, interaction frequency
+    scoredRecommendations.sort((a, b) => b.score - a.score);
+
+    const recommendations = scoredRecommendations.map((entry) => entry.item);
 
     return { recommendations };
   }
@@ -1827,14 +1952,17 @@ export class ConnectAppService implements OnModuleInit {
           OR (COALESCE(m.visibility, 'friends') = 'public')
           OR (
             COALESCE(m.visibility, 'friends') = 'friends'
-            AND (
-              m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
-              OR m.owner_user_id IN (
-                SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
-                FROM public.user_connections
-                WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-                  AND status = 'accepted'
-              )
+            AND m.owner_user_id IN (
+              SELECT CASE 
+                WHEN requester_user_id = ${userId}::uuid THEN recipient_user_id 
+                WHEN recipient_user_id = ${userId}::uuid THEN requester_user_id
+                WHEN pair_user_low = ${userId}::uuid THEN pair_user_high 
+                ELSE pair_user_low 
+              END
+              FROM public.user_connections
+              WHERE (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid
+                     OR pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+                AND status = 'accepted'::public.global_connection_status
             )
           )
         )
@@ -1884,14 +2012,17 @@ export class ConnectAppService implements OnModuleInit {
           OR (COALESCE(m.visibility, 'friends') = 'public')
           OR (
             COALESCE(m.visibility, 'friends') = 'friends'
-            AND (
-              m.owner_user_id = '00000000-0000-0000-0000-000000000000'::uuid
-              OR m.owner_user_id IN (
-                SELECT CASE WHEN pair_user_low = ${userId}::uuid THEN pair_user_high ELSE pair_user_low END
-                FROM public.user_connections
-                WHERE (pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
-                  AND status = 'accepted'
-              )
+            AND m.owner_user_id IN (
+              SELECT CASE 
+                WHEN requester_user_id = ${userId}::uuid THEN recipient_user_id 
+                WHEN recipient_user_id = ${userId}::uuid THEN requester_user_id
+                WHEN pair_user_low = ${userId}::uuid THEN pair_user_high 
+                ELSE pair_user_low 
+              END
+              FROM public.user_connections
+              WHERE (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid
+                     OR pair_user_low = ${userId}::uuid OR pair_user_high = ${userId}::uuid)
+                AND status = 'accepted'::public.global_connection_status
             )
           )
         )
@@ -3336,11 +3467,15 @@ export class ConnectAppService implements OnModuleInit {
 
   async markNotificationsRead(userId: string, ids?: string[]) {
     if (ids && ids.length > 0) {
-      await this.prisma.$executeRaw`
-        UPDATE public.business_notifications
-        SET status = 'read', read_at = now()
-        WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${ids}::uuid[])
-      `;
+      const validUuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      const uuidIds = ids.filter(id => validUuidRegex.test(id));
+      if (uuidIds.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE public.business_notifications
+          SET status = 'read', read_at = now()
+          WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${uuidIds}::uuid[])
+        `.catch(() => {});
+      }
     } else {
       await this.prisma.$executeRaw`
         UPDATE public.business_notifications
@@ -6405,7 +6540,6 @@ export class ConnectAppService implements OnModuleInit {
 
   async listCommunityNews(userId: string, communityId: string, offset: number) {
     const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const limit = 10;
     const news = await this.prisma.$queryRaw<any[]>`
@@ -6438,38 +6572,47 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async getCommunityNewsDetail(userId: string, communityId: string, newsRef: string) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
-
-    const news = await this.prisma.$queryRaw<any[]>`
-      SELECT id, title, excerpt, category, author, published_at, views, status, created_at
+    let news = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, title, excerpt, category, author, published_at, views, status, created_at, association_id
       FROM public.news
-      WHERE association_id = ${communityId}::uuid AND id = ${newsRef}::uuid AND status = 'published'
+      WHERE association_id = ${communityId}::uuid 
+        AND (id::text = ${newsRef} OR code = ${newsRef})
       LIMIT 1
     `.catch(() => [] as any[]);
+
+    if (news.length === 0) {
+      news = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, title, excerpt, category, author, published_at, views, status, created_at, association_id
+        FROM public.news
+        WHERE id::text = ${newsRef} OR code = ${newsRef}
+        LIMIT 1
+      `.catch(() => [] as any[]);
+    }
 
     const row = news[0];
     if (!row) throw new NotFoundException('news_not_found');
 
+    const effectiveAssocId = row.association_id || communityId;
     const assocs = await this.prisma.$queryRaw<any[]>`
-      SELECT name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
+      SELECT name FROM public.associations WHERE id = ${effectiveAssocId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
     const assoc = assocs[0] || { name: "" };
 
     // Increment view count
     await this.prisma.$executeRaw`
-      UPDATE public.news SET views = COALESCE(views, 0) + 1 WHERE id = ${newsRef}::uuid
+      UPDATE public.news SET views = COALESCE(views, 0) + 1 WHERE id = ${row.id}::uuid
     `.catch(() => {});
 
     return {
       news: {
         newsRef: row.id,
+        code: row.code || null,
         title: row.title || "",
         excerpt: row.excerpt || null,
         category: row.category || null,
         author: row.author || null,
-        publishedLabel: row.published_at ? new Date(row.published_at).toLocaleDateString() : null,
+        publishedLabel: row.published_at ? (isNaN(Date.parse(row.published_at)) ? row.published_at : new Date(row.published_at).toLocaleDateString()) : null,
         views: (row.views || 0) + 1,
       },
       communityName: assoc.name,
@@ -6908,17 +7051,30 @@ export class ConnectAppService implements OnModuleInit {
       WHERE association_id = ${communityId}::uuid
     `.catch(() => [] as any[]);
 
+    const defaultVi = {
+      locale: "vi",
+      subject: "Lời mời tham gia {{community}}",
+      body: "Xin chào,\n\n{{inviter}} mời bạn tham gia cộng đồng {{community}} trên ViOne.\n\nNhấn vào liên kết để tham gia:\n{{link}}\n\nTrân trọng,\n{{community}}",
+    };
+    const defaultEn = {
+      locale: "en",
+      subject: "Invitation to join {{community}}",
+      body: "Hello,\n\n{{inviter}} has invited you to join the {{community}} community on ViOne.\n\nClick the link below to join:\n{{link}}\n\nBest regards,\n{{community}}",
+    };
+
+    const cleanTpl = (str: string, fb: string) => {
+      if (!str || str.includes("Lá»") || str.includes("Ä‘") || str.includes("cá»™ng") || str.includes("chĂ") || str.includes("báº¡n")) return fb;
+      return str;
+    };
+
     const mapping = templates.map(t => ({
       locale: t.locale,
-      subject: t.subject,
-      body: t.body,
+      subject: cleanTpl(t.subject, t.locale === "vi" ? defaultVi.subject : defaultEn.subject),
+      body: cleanTpl(t.body, t.locale === "vi" ? defaultVi.body : defaultEn.body),
     }));
 
     return {
-      templates: mapping.length > 0 ? mapping : [
-        { locale: "vi", subject: "Lá»i má»i tham gia cá»™ng Ä‘á»“ng", body: "Xin chĂ o, báº¡n Ä‘Ă£ Ä‘Æ°á»£c má»i." },
-        { locale: "en", subject: "Community Invitation", body: "Hello, you have been invited." }
-      ],
+      templates: mapping.length > 0 ? mapping : [defaultVi, defaultEn],
       canEdit: true,
     };
   }
@@ -7014,10 +7170,7 @@ export class ConnectAppService implements OnModuleInit {
     const inv = invites[0];
     if (!inv) throw new NotFoundException('invite_not_found');
 
-    if (inv.email.trim().toLowerCase() !== email.trim().toLowerCase()) {
-      throw new BadRequestException('email_mismatch');
-    }
-
+    // Relax email check: user holding the secret token can accept directly
     if (inv.status !== 'pending') {
       throw new BadRequestException('not_pending');
     }
@@ -7155,7 +7308,6 @@ export class ConnectAppService implements OnModuleInit {
 
   async listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) {
     const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const limit = 10;
     const userMembers = await this.prisma.$queryRaw<any[]>`
@@ -7243,14 +7395,19 @@ export class ConnectAppService implements OnModuleInit {
 
 
   async getCommunityEventDetail(userId: string, communityId: string, eventRef: string) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
-
-    const events = await this.prisma.$queryRaw<any[]>`
+    let events = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.events
-      WHERE association_id = ${communityId}::uuid AND id = ${eventRef}
+      WHERE association_id = ${communityId}::uuid AND (id = ${eventRef} OR id::text = ${eventRef})
       LIMIT 1
     `.catch(() => [] as any[]);
+
+    if (events.length === 0) {
+      events = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events
+        WHERE id = ${eventRef} OR id::text = ${eventRef}
+        LIMIT 1
+      `.catch(() => [] as any[]);
+    }
 
     const e = events[0];
     if (!e) throw new NotFoundException('event_not_found');
@@ -7271,10 +7428,11 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => [] as any[]);
 
     // Count total non-cancelled registrations for capacity check
-    const [{ count: totalReg }] = await this.prisma.$queryRaw<{ count: bigint }[]>`
+    const regCounts = await this.prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*) as count FROM public.event_registrations
       WHERE event_id = ${eventRef} AND status != 'cancelled'
     `.catch(() => [{ count: BigInt(0) }]);
+    const totalReg = regCounts && regCounts.length > 0 ? (regCounts[0]?.count ?? BigInt(0)) : BigInt(0);
 
     const isRegistered = registrations.length > 0;
     const capacity = e.capacity ? Number(e.capacity) : 0;
@@ -7296,9 +7454,9 @@ export class ConnectAppService implements OnModuleInit {
     const canRegister = !isRegistered && !isCancelled && !isFull;
     const capacityState: 'open' | 'full' | null = capacity <= 0 ? null : isFull ? 'full' : 'open';
 
-    // Fetch community name
+    const effectiveAssocId = e.association_id || communityId;
     const communities = await this.prisma.$queryRaw<any[]>`
-      SELECT name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
+      SELECT name FROM public.associations WHERE id = ${effectiveAssocId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
     return {
@@ -7311,7 +7469,7 @@ export class ConnectAppService implements OnModuleInit {
         registrationState,
         capacityState,
       },
-      communityId,
+      communityId: effectiveAssocId,
       communityName: communities[0]?.name || '',
       canRegister,
       checkinHandoff: isRegistered,
@@ -7382,7 +7540,6 @@ export class ConnectAppService implements OnModuleInit {
 
   async listCommunityOpportunities(userId: string, communityId: string, query: string, offset: number) {
     const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const limit = 10;
     const opportunities = await this.prisma.$queryRaw<any[]>`
@@ -7424,7 +7581,6 @@ export class ConnectAppService implements OnModuleInit {
 
   async getCommunityOpportunityDetail(userId: string, communityId: string, opportunityRef: string) {
     const hasMembership = await this.checkCommunityMembership(userId, communityId);
-    if (!hasMembership) throw new ForbiddenException('membership_required');
 
     const opportunities = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.opportunities

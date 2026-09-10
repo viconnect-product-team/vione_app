@@ -779,6 +779,51 @@ export function MomentComposer({ personId }: { personId: string }) {
             </button>
           )}
 
+          {/* Privacy Selector — 3 chế độ: Công khai, Bạn bè, Chỉ mình tôi */}
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-2">
+            <span className="text-[12px] font-semibold text-[var(--bc-mobile-text-2)] pl-1">Quyền xem:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setVisibility("public")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                  visibility === "public"
+                    ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3]"
+                    : "bg-[var(--bc-mobile-surface)] border border-transparent text-[var(--bc-mobile-muted)]"
+                }`}
+              >
+                <Globe className="h-3 w-3 text-sky-400" />
+                <span>Công khai</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVisibility("friends")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                  visibility === "friends"
+                    ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3]"
+                    : "bg-[var(--bc-mobile-surface)] border border-transparent text-[var(--bc-mobile-muted)]"
+                }`}
+              >
+                <Users className="h-3 w-3 text-amber-400" />
+                <span>Bạn bè</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVisibility("private")}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                  visibility === "private"
+                    ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3]"
+                    : "bg-[var(--bc-mobile-surface)] border border-transparent text-[var(--bc-mobile-muted)]"
+                }`}
+              >
+                <Lock className="h-3 w-3 text-rose-400" />
+                <span>Chỉ mình tôi</span>
+              </button>
+            </div>
+          </div>
+
           <form
             id="bc-mobile-moment-form"
             className="mt-4 space-y-3"

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, Patch } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
 export class CreateCommunityDto {
@@ -14,16 +15,18 @@ export class CreateCommunityDto {
 }
 
 @Controller(['communities', 'connect-app/community'])
-@UseGuards(JwtAuthGuard)
+@UseGuards(OptionalJwtAuthGuard)
 export class CommunityController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async getMyCommunities(@Request() req) {
     return this.connectAppService.getMyCommunities(req.user.id);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async createCommunity(
     @Request() req,
     @Body() body: CreateCommunityDto,
@@ -43,6 +46,7 @@ export class CommunityController {
   }
 
   @Post('join-requests/sync')
+  @UseGuards(JwtAuthGuard)
   async syncCommunityJoinDecisions(@Request() req) {
     return this.connectAppService.syncCommunityJoinDecisions(req.user.id);
   }
@@ -53,11 +57,13 @@ export class CommunityController {
   }
 
   @Delete('invites/:inviteRef')
+  @UseGuards(JwtAuthGuard)
   async cancelCommunityInvite(@Request() req, @Param('inviteRef') inviteRef: string) {
     return this.connectAppService.cancelCommunityInvite(req.user.id, inviteRef);
   }
 
   @Post('invites/:inviteRef/resend')
+  @UseGuards(JwtAuthGuard)
   async resendCommunityInvite(
     @Request() req,
     @Param('inviteRef') inviteRef: string,
@@ -72,11 +78,13 @@ export class CommunityController {
   }
 
   @Post('invites/accept')
+  @UseGuards(JwtAuthGuard)
   async acceptCommunityInvite(@Request() req, @Body() body: { token: string; email: string }) {
     return this.connectAppService.acceptCommunityInvite(req.user.id, body.token, body.email);
   }
 
   @Patch('invites/:inviteRef/role')
+  @UseGuards(JwtAuthGuard)
   async updateAcceptedInviteRole(
     @Request() req,
     @Param('inviteRef') inviteRef: string,
@@ -128,6 +136,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/members/:memberRef/connect')
+  @UseGuards(JwtAuthGuard)
   async connectCommunityMember(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -137,6 +146,7 @@ export class CommunityController {
   }
 
   @Patch(':communityId/members/:memberRef/role')
+  @UseGuards(JwtAuthGuard)
   async updateCommunityMemberRole(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -170,6 +180,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/join-requests')
+  @UseGuards(JwtAuthGuard)
   async requestCommunityJoin(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -179,6 +190,7 @@ export class CommunityController {
   }
 
   @Delete(':communityId/join-requests')
+  @UseGuards(JwtAuthGuard)
   async cancelCommunityJoin(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -189,11 +201,13 @@ export class CommunityController {
 
   // --- Community Invites (:communityId) ---
   @Get(':communityId/invites')
+  @UseGuards(JwtAuthGuard)
   async listCommunityInvites(@Request() req, @Param('communityId') communityId: string) {
     return this.connectAppService.listCommunityInvites(req.user.id, communityId);
   }
 
   @Post(':communityId/invites')
+  @UseGuards(JwtAuthGuard)
   async createCommunityInvite(@Request() req, @Param('communityId') communityId: string, @Body() body: any) {
     return this.connectAppService.createCommunityInvite(req.user.id, { ...body, communityId });
   }
@@ -239,6 +253,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/events/:eventRef/registrations')
+  @UseGuards(JwtAuthGuard)
   async registerCommunityEvent(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -248,6 +263,7 @@ export class CommunityController {
   }
 
   @Delete(':communityId/events/:eventRef/registrations')
+  @UseGuards(JwtAuthGuard)
   async cancelCommunityEventRegistration(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -281,6 +297,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/opportunities/:opportunityRef/interests')
+  @UseGuards(JwtAuthGuard)
   async expressCommunityOpportunityInterest(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -296,6 +313,7 @@ export class CommunityController {
   }
 
   @Delete(':communityId/opportunities/:opportunityRef/interests')
+  @UseGuards(JwtAuthGuard)
   async withdrawCommunityOpportunityInterest(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -305,6 +323,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/opportunities/:opportunityRef/followups')
+  @UseGuards(JwtAuthGuard)
   async scheduleCommunityOpportunityFollowUp(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -320,6 +339,7 @@ export class CommunityController {
   }
 
   @Patch(':communityId/opportunities/:opportunityRef/followups')
+  @UseGuards(JwtAuthGuard)
   async updateCommunityOpportunityFollowUp(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -335,6 +355,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/opportunities/:opportunityRef/progress')
+  @UseGuards(JwtAuthGuard)
   async saveCommunityOpportunityProgress(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -352,6 +373,7 @@ export class CommunityController {
   }
 
   @Post(':communityId/opportunities/:opportunityRef/attachments')
+  @UseGuards(JwtAuthGuard)
   async addCommunityOpportunityAttachment(
     @Request() req,
     @Param('communityId') communityId: string,
@@ -366,6 +388,7 @@ export class CommunityController {
   }
 
   @Delete('opportunities/attachments/:attachmentId')
+  @UseGuards(JwtAuthGuard)
   async removeCommunityOpportunityAttachment(@Request() req, @Param('attachmentId') attachmentId: string) {
     return this.connectAppService.removeCommunityOpportunityAttachment(req.user.id, attachmentId);
   }

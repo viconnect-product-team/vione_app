@@ -194,6 +194,7 @@ export function PostMomentModal({
           placeLabel: location.trim() || undefined,
           note: cleanContent,
           photoCount: uploadedUrls.length,
+          visibility,
         },
       });
 
@@ -330,36 +331,46 @@ export function PostMomentModal({
                 )}
               </div>
 
-              {/* Privacy Selector Dropdown */}
-              <div className="mt-1 flex items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--bc-mobile-text)] relative">
-                  {visibility === "public" ? (
-                    <>
-                      <Globe className="h-3 w-3 text-sky-500" />
-                      <span>Công khai</span>
-                    </>
-                  ) : visibility === "friends" ? (
-                    <>
-                      <UserCheck className="h-3 w-3 text-emerald-500" />
-                      <span>Mạng lưới</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="h-3 w-3 text-amber-500" />
-                      <span>Chỉ mình tôi (Private)</span>
-                    </>
-                  )}
-                  <select
-                    value={visibility}
-                    onChange={(e) => setVisibility(e.target.value as any)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                    aria-label="Chọn quyền riêng tư"
-                  >
-                    <option value="friends" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">👥 Mạng lưới kết nối</option>
-                    <option value="public" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">🌍 Công khai toàn hệ sinh thái</option>
-                    <option value="private" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">🔒 Chỉ mình tôi (Ghi chú riêng tư)</option>
-                  </select>
-                </div>
+              {/* Privacy Selector — 3 chế độ: Công khai, Bạn bè, Chỉ mình tôi */}
+              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setVisibility("public")}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                    visibility === "public"
+                      ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3] shadow-xs"
+                      : "bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  }`}
+                >
+                  <Globe className="h-3 w-3 text-sky-400" />
+                  <span>Công khai</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVisibility("friends")}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                    visibility === "friends"
+                      ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3] shadow-xs"
+                      : "bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  }`}
+                >
+                  <Users className="h-3 w-3 text-amber-400" />
+                  <span>Bạn bè</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVisibility("private")}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                    visibility === "private"
+                      ? "bg-[#D8B282]/20 border border-[#D8B282] text-[#F6E1C3] shadow-xs"
+                      : "bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  }`}
+                >
+                  <Lock className="h-3 w-3 text-rose-400" />
+                  <span>Chỉ mình tôi</span>
+                </button>
               </div>
             </div>
           </div>

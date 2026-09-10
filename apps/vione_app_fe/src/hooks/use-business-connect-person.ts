@@ -37,7 +37,14 @@ export type BcMobilePersonRelationship =
       kind: "connected";
       connectedAt: string | null;
       requestedByViewer: boolean | null;
-      status?: "none" | "pending" | "accepted" | "declined" | "cancelled" | "disconnected" | "blocked";
+      status?:
+        | "none"
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "cancelled"
+        | "disconnected"
+        | "blocked";
       connectionId?: string | null;
       direction?: "none" | "incoming" | "outgoing" | "self" | null;
     }
@@ -76,16 +83,25 @@ export type BcMobilePersonResult =
 
 const PERSON_ID_RE =
   /^([ucg]):([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+const BARE_UUID_RE =
+  /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
 
 export type ParsedPersonId = { kind: "connection" | "saved_card" | "guest_contact"; id: string };
 
 export function parseBcMobilePersonId(raw: string): ParsedPersonId | null {
   if (!raw || typeof raw !== "string") return null;
-  const trimmed = raw.trim();
+  let trimmed = raw.trim();
+  try {
+    trimmed = decodeURIComponent(trimmed);
+  } catch {}
   const m = PERSON_ID_RE.exec(trimmed);
   if (m) {
     const kind = m[1] === "u" ? "connection" : m[1] === "c" ? "saved_card" : "guest_contact";
     return { kind, id: m[2]!.toLowerCase() };
+  }
+  const u = BARE_UUID_RE.exec(trimmed);
+  if (u) {
+    return { kind: "connection", id: u[1]!.toLowerCase() };
   }
   return null;
 }
@@ -188,44 +204,53 @@ async function resolveConnectionPerson(
   personId: string,
   userId: string,
 ): Promise<BcMobilePersonResult> {
-  // 1. Authorization: user must not be blocked, not self, and accepted.
-  const state = await GlobalNetworkSDK.connections.getState(userId);
-  if (state.blocked || state.direction === "self" || state.status !== "accepted") {
+  // 1. Authorization: user must not be blocked and not self.
+  const state = await GlobalNetworkSDK.connections.getState(userId).catch(() => ({
+    status: "none" as const,
+    direction: "none" as const,
+    connectionId: null,
+    blocked: false,
+    connectedAt: null,
+  }));
+  if (state.blocked || state.direction === "self") {
     return UNAVAILABLE;
   }
 
-  // 2. Authoritative relationship edge (participant-scoped) if connection exists.
-  if (!state.connectionId) {
-    return UNAVAILABLE;
-  }
+  // 2. Authoritative relationship edge if connection exists.
   let connection: any = null;
-  try {
-    connection = await GlobalNetworkSDK.connections.getById(state.connectionId);
-  } catch {
-    return UNAVAILABLE;
-  }
-  if (!connection) {
-    return UNAVAILABLE;
+  if (state.connectionId) {
+    try {
+      connection = await GlobalNetworkSDK.connections.getById(state.connectionId);
+    } catch {
+      connection = null;
+    }
   }
 
   // 3. Identity: privacy-safe public counterpart summary.
   const summaries = await GlobalNetworkSDK.counterparts.resolvePublic([userId]).catch(() => []);
   const s = summaries.find((x) => x.userId === userId) ?? null;
 
+  const normalizedPersonId = personId.startsWith("u:") ? personId : `u:${userId}`;
+
   return {
     status: "ok",
     person: {
-      personId,
+      personId: normalizedPersonId,
       kind: "connection",
-      displayName: s?.displayName ?? null,
+      displayName: s?.displayName || "Hội viên ViOne",
       avatarUrl: s?.avatarUrl ?? null,
       headline: s?.headline ?? null,
       companyName: s?.companyName ?? null,
       primaryCardSlug: s?.primaryCardSlug ?? null,
       relationship: {
         kind: "connected",
-        connectedAt: connection?.respondedAt ?? null,
-        requestedByViewer: connection?.requestedByCurrentUser ?? (state.direction === "outgoing"),
+        connectedAt:
+          connection?.respondedAt ??
+          (state.status === "accepted" ? (connection?.updatedAt ?? null) : null),
+        requestedByViewer: connection?.requestedByCurrentUser ?? state.direction === "outgoing",
+        status: state.status,
+        connectionId: state.connectionId,
+        direction: state.direction,
       },
       contact: null, // filled by the caller when a slug exists
     },

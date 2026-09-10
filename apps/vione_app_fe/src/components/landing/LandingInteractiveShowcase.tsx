@@ -32,7 +32,7 @@ export interface ShowcaseSlide {
   ctaLabel: string;
   ctaLink: string;
   accentColor: string;
-  silverTone: "platinum" | "blue" | "purple" | "orange";
+  silverTone: "platinum" | "blue" | "purple" | "orange" | "gold";
   activeBorder: string;
   activeBg: string;
   iconBg: string;
@@ -87,13 +87,13 @@ const DEFAULT_SLIDES: ShowcaseSlide[] = [
     ],
     ctaLabel: "Khám Phá Sàn B2B →",
     ctaLink: "/connect-app/network",
-    accentColor: "from-[#E0F2FE] via-[#7DD3FC] to-[#0284C7]",
-    silverTone: "blue",
-    activeBorder: "border-[#7DD3FC] ring-2 ring-cyan-400/40 shadow-[0_10px_30px_rgba(125,211,252,0.35),inset_0_0_20px_rgba(56,189,248,0.18)]",
-    activeBg: "bg-gradient-to-br from-[#0C2340]/95 via-[#08172E]/95 to-[#030B18]",
-    iconBg: "bg-gradient-to-br from-[#F0F9FF] via-[#7DD3FC] to-[#0284C7] text-slate-950 font-black shadow-[0_0_16px_rgba(125,211,252,0.7)]",
-    indicatorBg: "bg-gradient-to-r from-[#BAE6FD] via-[#38BDF8] to-[#0284C7] shadow-[0_0_12px_#38BDF8]",
-    badgeStyle: "border-cyan-300/50 bg-cyan-400/15 text-cyan-200",
+    accentColor: "from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282]",
+    silverTone: "gold",
+    activeBorder: "border-[#D8B282] ring-2 ring-[#D8B282]/40 shadow-[0_10px_30px_rgba(216,178,130,0.35),inset_0_0_20px_rgba(216,178,130,0.18)]",
+    activeBg: "bg-gradient-to-br from-[#121B2A]/95 via-[#0A101C]/95 to-[#040810]",
+    iconBg: "bg-gradient-to-br from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] text-slate-950 font-black shadow-[0_0_16px_rgba(216,178,130,0.7)]",
+    indicatorBg: "bg-gradient-to-r from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] shadow-[0_0_12px_#D8B282]",
+    badgeStyle: "border-[#D8B282]/50 bg-[#D8B282]/15 text-[#F6E1C3]",
     previewType: "b2b",
   },
   {
@@ -114,13 +114,13 @@ const DEFAULT_SLIDES: ShowcaseSlide[] = [
     ],
     ctaLabel: "Xem Lịch Sự Kiện →",
     ctaLink: "/connect-app/calendar",
-    accentColor: "from-[#F3E8FF] via-[#D8B4FE] to-[#7E22CE]",
-    silverTone: "purple",
-    activeBorder: "border-[#D8B4FE] ring-2 ring-purple-400/40 shadow-[0_10px_30px_rgba(216,180,254,0.35),inset_0_0_20px_rgba(168,85,247,0.18)]",
-    activeBg: "bg-gradient-to-br from-[#231238]/95 via-[#170B26]/95 to-[#090310]",
-    iconBg: "bg-gradient-to-br from-[#FAF5FF] via-[#D8B4FE] to-[#7E22CE] text-slate-950 font-black shadow-[0_0_16px_rgba(216,180,254,0.7)]",
-    indicatorBg: "bg-gradient-to-r from-[#E9D5FF] via-[#C084FC] to-[#7E22CE] shadow-[0_0_12px_#C084FC]",
-    badgeStyle: "border-purple-300/50 bg-purple-400/15 text-purple-200",
+    accentColor: "from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282]",
+    silverTone: "gold",
+    activeBorder: "border-[#D8B282] ring-2 ring-[#D8B282]/40 shadow-[0_10px_30px_rgba(216,178,130,0.35),inset_0_0_20px_rgba(216,178,130,0.18)]",
+    activeBg: "bg-gradient-to-br from-[#121B2A]/95 via-[#0A101C]/95 to-[#040810]",
+    iconBg: "bg-gradient-to-br from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] text-slate-950 font-black shadow-[0_0_16px_rgba(216,178,130,0.7)]",
+    indicatorBg: "bg-gradient-to-r from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] shadow-[0_0_12px_#D8B282]",
+    badgeStyle: "border-[#D8B282]/50 bg-[#D8B282]/15 text-[#F6E1C3]",
     previewType: "event",
   },
   {
@@ -141,13 +141,13 @@ const DEFAULT_SLIDES: ShowcaseSlide[] = [
     ],
     ctaLabel: "Khám phá Đặc Quyền →",
     ctaLink: "/m/perks",
-    accentColor: "from-[#FFF7ED] via-[#FDBA74] to-[#C2410C]",
-    silverTone: "orange",
-    activeBorder: "border-[#FDBA74] ring-2 ring-orange-400/40 shadow-[0_10px_30px_rgba(253,186,116,0.35),inset_0_0_20px_rgba(234,88,12,0.18)]",
-    activeBg: "bg-gradient-to-br from-[#2D1606]/95 via-[#1D0E03]/95 to-[#0D0501]",
-    iconBg: "bg-gradient-to-br from-[#FFF7ED] via-[#FDBA74] to-[#C2410C] text-slate-950 font-black shadow-[0_0_16px_rgba(253,186,116,0.7)]",
-    indicatorBg: "bg-gradient-to-r from-[#FED7AA] via-[#FB923C] to-[#C2410C] shadow-[0_0_12px_#FB923C]",
-    badgeStyle: "border-orange-300/50 bg-orange-400/15 text-orange-200",
+    accentColor: "from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282]",
+    silverTone: "gold",
+    activeBorder: "border-[#D8B282] ring-2 ring-[#D8B282]/40 shadow-[0_10px_30px_rgba(216,178,130,0.35),inset_0_0_20px_rgba(216,178,130,0.18)]",
+    activeBg: "bg-gradient-to-br from-[#18120B]/95 via-[#100C06]/95 to-[#060402]",
+    iconBg: "bg-gradient-to-br from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] text-slate-950 font-black shadow-[0_0_16px_rgba(216,178,130,0.7)]",
+    indicatorBg: "bg-gradient-to-r from-[#FFFFFF] via-[#F6E1C3] to-[#D8B282] shadow-[0_0_12px_#D8B282]",
+    badgeStyle: "border-[#D8B282]/50 bg-[#D8B282]/15 text-[#F6E1C3]",
     previewType: "perks",
   },
 ];
@@ -207,7 +207,7 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
 
       {/* Ambient Radial Mesh Lighting */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-gradient-to-b from-[#D8B282]/20 via-amber-500/10 to-transparent blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-[#D8B282]/10 blur-[150px] pointer-events-none" />
 
       {/* 1. Header Row Matching Reference Image 3 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-6 mb-8 relative z-10">
@@ -402,8 +402,8 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
             <div className="space-y-3 pt-2">
               {current.highlights.map((h, i) => (
                 <div key={i} className="flex items-start gap-3 text-xs sm:text-[13px]">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center shrink-0 mt-0.5 shadow-[0_0_8px_rgba(52,211,153,0.4)]">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  <div className="w-4 h-4 rounded-full bg-[#D8B282]/20 border border-[#D8B282] flex items-center justify-center shrink-0 mt-0.5 shadow-[0_0_8px_rgba(216,178,130,0.4)]">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#F6E1C3]" />
                   </div>
                   <span className={`font-medium ${themeClass("text-slate-200", "text-[#181512]", "text-white")}`}>
                     {h}
@@ -425,42 +425,42 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
 
           {/* Right Column: 3D Interactive Mockup Showcase */}
           <div className="lg:col-span-6 flex items-center justify-center">
-            {/* 1. Sàn B2B Live Deal Room Card (Xanh Bạc / Silver-Blue Theme) */}
+            {/* 1. Sàn B2B Live Deal Room Card (Champagne Gold Theme) */}
             {current.previewType === "b2b" && (
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-full max-w-md rounded-3xl border-2 border-cyan-400/50 bg-gradient-to-b from-[#0C2442] via-[#081830] to-[#040D1B] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(56,189,248,0.25)] space-y-4 backdrop-blur-xl text-left"
+                className="w-full max-w-md rounded-3xl border-2 border-[#D8B282]/50 bg-gradient-to-b from-[#121B2A] via-[#0A101C] to-[#050811] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(216,178,130,0.2)] space-y-4 backdrop-blur-xl text-left"
               >
                 {/* Live Match Bar */}
-                <div className="flex items-center justify-between pb-3 border-b border-cyan-400/20">
-                  <span className="text-xs font-mono font-bold text-cyan-300 flex items-center gap-1.5">
-                    <Cpu className="w-4 h-4 text-cyan-300 animate-pulse" /> AI MATCHMAKING 98%
+                <div className="flex items-center justify-between pb-3 border-b border-[#D8B282]/20">
+                  <span className="text-xs font-mono font-bold text-[#F6E1C3] flex items-center gap-1.5">
+                    <Cpu className="w-4 h-4 text-[#D8B282] animate-pulse" /> AI MATCHMAKING 98%
                   </span>
-                  <span className="text-[10px] px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-[10px] px-3 py-1 rounded-full bg-[#D8B282]/20 border border-[#D8B282]/40 text-[#F6E1C3] font-mono font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#F6E1C3] animate-ping" />
                     Đang diễn ra
                   </span>
                 </div>
 
                 {/* Opportunity Title */}
                 <div className="space-y-1.5">
-                  <p className="text-xs font-mono text-cyan-200/70">Cơ hội giao thương B2B</p>
+                  <p className="text-xs font-mono text-[#D8B282]/80">Cơ hội giao thương B2B</p>
                   <p className="text-sm sm:text-base font-bold text-white leading-snug">
                     Cung ứng hệ thống ERP &amp; Hạ tầng Cloud Server cho tập đoàn bán lẻ 50 chi nhánh
                   </p>
                 </div>
 
                 {/* Budget Row */}
-                <div className="flex items-center justify-between text-xs bg-black/50 p-3.5 rounded-2xl border border-cyan-400/20">
+                <div className="flex items-center justify-between text-xs bg-black/50 p-3.5 rounded-2xl border border-[#D8B282]/20">
                   <span className="text-slate-300 font-medium">Ngân sách dự kiến:</span>
-                  <span className="font-mono font-black text-amber-300 text-sm">2.500.000.000 đ</span>
+                  <span className="font-mono font-black text-[#F6E1C3] text-sm">2.500.000.000 đ</span>
                 </div>
 
-                {/* Action Deal Room Button matching Image 3 (Royal Indigo / Ice Blue Gradient) */}
+                {/* Action Deal Room Button */}
                 <Link
                   to="/connect-app/network"
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-115 text-white font-black text-xs shadow-[0_10px_25px_rgba(37,99,235,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 font-black text-xs shadow-[0_10px_25px_rgba(216,178,130,0.35)] hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>Vào Deal Room Đàm Phán Ngay</span>
                   <ArrowRight className="w-4 h-4" />
@@ -516,62 +516,62 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
               </div>
             )}
 
-            {/* 3. QR Event Ticket Check-in Scanner (Tím Bạc / Silver-Purple Theme) */}
+            {/* 3. QR Event Ticket Check-in Scanner (Champagne Gold Theme) */}
             {current.previewType === "event" && (
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-full max-w-md rounded-3xl border-2 border-purple-400/50 bg-gradient-to-b from-[#25103A] via-[#1A0B2A] to-[#0A0312] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(168,85,247,0.25)] space-y-4 backdrop-blur-xl text-left"
+                className="w-full max-w-md rounded-3xl border-2 border-[#D8B282]/50 bg-gradient-to-b from-[#121B2A] via-[#0A101C] to-[#050811] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(216,178,130,0.2)] space-y-4 backdrop-blur-xl text-left"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-purple-400/20">
-                  <span className="text-xs font-mono font-bold text-purple-300 flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" /> VÉ VIP SUMMIT 2026
+                <div className="flex items-center justify-between pb-3 border-b border-[#D8B282]/20">
+                  <span className="text-xs font-mono font-bold text-[#F6E1C3] flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-[#D8B282]" /> VÉ VIP SUMMIT 2026
                   </span>
-                  <span className="text-[10px] px-3 py-1 rounded-full bg-purple-400/30 border border-purple-300/40 text-purple-200 font-mono font-bold">
+                  <span className="text-[10px] px-3 py-1 rounded-full bg-[#D8B282]/30 border border-[#D8B282]/40 text-[#F6E1C3] font-mono font-bold">
                     ĐÃ XÁC NHẬN
                   </span>
                 </div>
                 <div>
                   <p className="text-base font-bold text-white">Diễn Đàn Doanh Nghiệp Trẻ Thủ Đô &amp; Gala Dinner</p>
-                  <p className="text-xs text-purple-200/80 mt-1">18:00 · 28/09/2026 · JW Marriott Hotel</p>
+                  <p className="text-xs text-[#D8B282]/80 mt-1">18:00 · 28/09/2026 · JW Marriott Hotel</p>
                 </div>
-                <div className="flex items-center gap-4 bg-black/50 p-4 rounded-2xl border border-purple-400/20">
+                <div className="flex items-center gap-4 bg-black/50 p-4 rounded-2xl border border-[#D8B282]/20">
                   <div className="w-14 h-14 bg-white rounded-xl p-1.5 shrink-0 flex items-center justify-center shadow-lg relative overflow-hidden">
-                    <div className="absolute inset-x-0 h-1 bg-purple-500 animate-bounce" />
+                    <div className="absolute inset-x-0 h-1 bg-[#D8B282] animate-bounce" />
                     <span className="text-[9px] font-mono font-black text-slate-950 text-center leading-none">
                       QR PASS [1s]
                     </span>
                   </div>
                   <div className="text-xs space-y-0.5">
                     <p className="font-mono font-bold text-white">Mã vé: HN-VIP-2026-99</p>
-                    <p className="text-purple-300 text-[11px] font-medium">Sẵn sàng quét Check-in tại cổng VIP</p>
+                    <p className="text-[#F6E1C3] text-[11px] font-medium">Sẵn sàng quét Check-in tại cổng VIP</p>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* 4. C-Level Vault Perks (Cam Bạc / Silver-Orange Theme) */}
+            {/* 4. C-Level Vault Perks (Champagne Gold Theme) */}
             {current.previewType === "perks" && (
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-full max-w-md rounded-3xl border-2 border-orange-400/50 bg-gradient-to-b from-[#2E1404] via-[#1E0C02] to-[#0E0501] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(249,115,22,0.25)] space-y-4 backdrop-blur-xl text-left"
+                className="w-full max-w-md rounded-3xl border-2 border-[#D8B282]/50 bg-gradient-to-b from-[#18120B] via-[#100C06] to-[#060402] p-6 sm:p-7 text-white shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(216,178,130,0.25)] space-y-4 backdrop-blur-xl text-left"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-orange-400/20">
-                  <span className="text-xs font-mono font-bold text-orange-300 flex items-center gap-1.5">
-                    <Crown className="w-4 h-4" /> ĐẶC QUYỀN HỘI VIÊN VIP
+                <div className="flex items-center justify-between pb-3 border-b border-[#D8B282]/20">
+                  <span className="text-xs font-mono font-bold text-[#F6E1C3] flex items-center gap-1.5">
+                    <Crown className="w-4 h-4 text-[#D8B282]" /> ĐẶC QUYỀN HỘI VIÊN VIP
                   </span>
-                  <span className="text-[10px] px-3 py-1 rounded-full bg-orange-500/30 border border-orange-400/40 text-orange-200 font-mono font-bold">
+                  <span className="text-[10px] px-3 py-1 rounded-full bg-[#D8B282]/30 border border-[#D8B282]/40 text-[#F6E1C3] font-mono font-bold">
                     Mở Khóa 100%
                   </span>
                 </div>
                 <div className="space-y-1">
                   <p className="text-base font-bold text-white">Gói Ưu Đãi Golf &amp; Nghỉ Dưỡng 5 Sao Toàn Quốc</p>
-                  <p className="text-xs text-orange-200/80">Giảm 35% chi phí dịch vụ &amp; tặng 1 giờ phòng chờ VIP sân bay</p>
+                  <p className="text-xs text-[#D8B282]/80">Giảm 35% chi phí dịch vụ &amp; tặng 1 giờ phòng chờ VIP sân bay</p>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-[#D8B282]/15 border border-[#D8B282]/30 text-xs flex items-center justify-between">
                   <span className="text-slate-300">Mã kích hoạt ưu đãi:</span>
-                  <span className="font-mono font-black text-[#FED7AA]">VIONE-VIP-PERK</span>
+                  <span className="font-mono font-black text-[#F6E1C3]">VIONE-VIP-PERK</span>
                 </div>
               </motion.div>
             )}

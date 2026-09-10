@@ -78,6 +78,8 @@ export function parseTapConnectValue(raw: string, origin: string): TapConnectTar
     if (bMatch && bMatch[1]) return { kind: "token", token: decodeURIComponent(bMatch[1]) };
     const cardM = /^\/card\/([^/]+)\/?$/.exec(path);
     if (cardM && cardM[1]) return { kind: "token", token: decodeURIComponent(cardM[1]) };
+    const netM = /^\/connect-app\/network\/(?:u:)?([^/]+)\/?$/.exec(path);
+    if (netM && netM[1]) return { kind: "token", token: decodeURIComponent(netM[1]) };
   }
 
   // 8. If value is a clean alphanumeric slug / code (3-64 chars), allow trying it
@@ -87,5 +89,3 @@ export function parseTapConnectValue(raw: string, origin: string): TapConnectTar
 
   return { kind: "unknown" };
 }
-
-

@@ -14,15 +14,16 @@ import { EventsService, CreateEventDto, UpdateEventDto } from './events.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('events')
-@UseGuards(JwtAuthGuard)
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get('my-events')
   async listMyEvents(@Request() req: any) {
     return this.eventsService.listMyEvents(req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('overview')
   async getEventsOverview(
     @Request() req: any,
@@ -31,15 +32,17 @@ export class EventsController {
     return this.eventsService.getEventsOverview(req.user.id, associationId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('registrations')
   async listRegistrations(
     @Request() req: any,
     @Query('associationId') associationId?: string,
     @Query('eventId') eventId?: string,
   ) {
-    return this.eventsService.listRegistrations(req.user.id, associationId, eventId);
+    return this.eventsService.listRegistrations(req.user?.id || '', associationId, eventId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('with-registrations')
   async listEventsWithRegistrations(
     @Request() req: any,
@@ -53,12 +56,12 @@ export class EventsController {
     @Request() req: any,
     @Query('associationId') associationId?: string,
   ) {
-    return this.eventsService.listEvents(req.user.id, associationId);
+    return this.eventsService.listEvents(req.user?.id || '', associationId);
   }
 
   @Get(':id')
   async getEventById(@Request() req: any, @Param('id') id: string) {
-    return this.eventsService.getEventById(req.user.id, id);
+    return this.eventsService.getEventById(req.user?.id || '', id);
   }
 
   @Get(':id/tickets')
@@ -66,6 +69,7 @@ export class EventsController {
     return this.eventsService.getEventTickets(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createEvent(@Request() req: any, @Body() body: CreateEventDto) {
     return this.eventsService.createEvent(req.user.id, body);

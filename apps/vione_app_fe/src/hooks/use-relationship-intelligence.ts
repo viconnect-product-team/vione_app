@@ -25,10 +25,10 @@ export function useTodayRelationshipRecommendations(
   enabled = true,
 ) {
   const viewerId = useViewerUserId();
-  const key = relationshipIntelKeys.today(viewerId ?? "viewer-pending");
+  const key = relationshipIntelKeys.today(viewerId ?? "viewer-active");
   const query = useQuery({
     queryKey: key,
-    enabled: enabled && viewerId !== null,
+    enabled: enabled,
     staleTime: 60_000,
     queryFn: () => {
       trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_REQUESTED", { surface: "home" });
@@ -38,7 +38,7 @@ export function useTodayRelationshipRecommendations(
   });
   return {
     recommendations: query.data?.recommendations ?? [],
-    initialLoading: query.isPending && viewerId !== null,
+    initialLoading: query.isPending,
     error: query.isError && !query.data,
     retry: () => void query.refetch(),
   };
@@ -50,10 +50,10 @@ export function usePersonRelationshipRecommendation(
   enabled = true,
 ) {
   const viewerId = useViewerUserId();
-  const key = relationshipIntelKeys.person(viewerId ?? "viewer-pending", personId);
+  const key = relationshipIntelKeys.person(viewerId ?? "viewer-active", personId);
   const query = useQuery({
     queryKey: key,
-    enabled: enabled && viewerId !== null,
+    enabled: enabled && Boolean(personId),
     staleTime: 60_000,
     queryFn: () => {
       const safeLocale = (locale === "vi" || locale === "en") ? locale : "vi";
@@ -62,7 +62,7 @@ export function usePersonRelationshipRecommendation(
   });
   return {
     recommendation: query.data?.recommendation ?? null,
-    initialLoading: query.isPending && viewerId !== null,
+    initialLoading: query.isPending,
     error: query.isError && !query.data,
     retry: () => void query.refetch(),
   };

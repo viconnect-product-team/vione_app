@@ -43,9 +43,9 @@ function SuggestionRow({
 }) {
   const t = useT();
   const [hidden, setHidden] = useState(false);
-  const name = rec.person.displayName?.trim() || "—";
+  const name = rec.person?.displayName?.trim() || "—";
   const suggestionText = rec.aiSuggestion ?? t("bc.mobile.intel.reconnect.suggestion");
-  const reasonText = t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days });
+  const reasonText = t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason?.days ?? 0 });
 
   if (hidden) return null;
 
@@ -178,6 +178,7 @@ export function RelationshipSuggestions() {
 
   const [industry, setIndustry] = useState<string>("all");
   const [distance, setDistance] = useState<DistanceFilter>("all");
+  const [expandedAll, setExpandedAll] = useState(false);
 
   const industries = useMemo(() => {
     const seen = new Map<string, string>();
@@ -294,7 +295,8 @@ export function RelationshipSuggestions() {
       </h2>
       <Link
         to="/connect-app/network"
-        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1.5 text-[11px] font-medium text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] transition-all cursor-pointer shrink-0"
+        search={{ tab: "suggestions" } as any}
+        className="inline-flex h-7 px-2.5 rounded-full items-center gap-1.5 text-[11px] font-medium text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] active:border-[var(--bc-mobile-border-active)] transition-all cursor-pointer shrink-0"
       >
         <span>{t("bc.mobile.intel.home.viewAll")}</span>
         {recommendations.length > 0 ? (
@@ -310,6 +312,8 @@ export function RelationshipSuggestions() {
   if (recommendations.length === 0) {
     return null;
   }
+
+  const displayedList = expandedAll ? filtered : filtered.slice(0, 3);
 
   return (
     <section aria-labelledby="bc-rel-intel-title" className="mt-6">
@@ -377,7 +381,7 @@ export function RelationshipSuggestions() {
         </div>
       ) : null}
       <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 space-y-2.5">
-        {filtered.slice(0, 3).map((rec) => (
+        {displayedList.map((rec) => (
           <SuggestionRow
             key={rec.id}
             rec={rec}
@@ -386,6 +390,29 @@ export function RelationshipSuggestions() {
           />
         ))}
       </ul>
+
+      {filtered.length > 3 && (
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setExpandedAll((v) => !v)}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 py-1.5 text-xs font-semibold text-[var(--bc-mobile-accent)] hover:border-[var(--bc-mobile-accent)] active:border-[var(--bc-mobile-border-active)] transition-all cursor-pointer"
+          >
+            <span>{expandedAll ? "Thu gọn danh sách" : `Xem tất cả (${filtered.length}) gợi ý`}</span>
+            <ChevronRight
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedAll ? "-rotate-90" : "rotate-90"}`}
+            />
+          </button>
+          <Link
+            to="/connect-app/network"
+            search={{ tab: "suggestions" } as any}
+            className="inline-flex min-h-[38px] items-center gap-1 text-xs font-medium text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors"
+          >
+            <span>Mở tab Network</span>
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

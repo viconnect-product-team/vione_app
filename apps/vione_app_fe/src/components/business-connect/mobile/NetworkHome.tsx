@@ -26,9 +26,10 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState, useId } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useFmt, useLang, useT } from "@/lib/i18n";
 import { getVNTimeGreeting } from "@/lib/utils";
+import { fetchNestApi } from "@/lib/api-client";
 import icon from "./icon.svg";
 import { MobileSearchBar } from "./MobileSearchBar";
 import image from "./image.svg";
@@ -78,13 +79,49 @@ const tabs = [
   { id: "suggestions", label: "Gợi ý (AI)" },
 ];
 
-export function NetworkHome() {
+export function NetworkHome({
+  initialTab,
+}: {
+  initialTab?: "network" | "customers" | "suggestions";
+} = {}) {
   const t = useT();
   const searchId = useId();
   const { lang } = useLang();
   const { openV } = useVSheet();
   const viewerUserId = useViewerUserId();
-  const [tab, setTab] = useState<"network" | "customers" | "suggestions">("network");
+  const [tab, setTab] = useState<"network" | "customers" | "suggestions">(() => {
+    if (initialTab) return initialTab;
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("tab");
+      if (p === "customers" || p === "suggestions") return p;
+    }
+    return "network";
+  });
+
+  useEffect(() => {
+    if (initialTab) {
+      setTab(initialTab);
+    } else if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("tab");
+      if (p === "customers" || p === "suggestions" || p === "network") {
+        setTab(p as any);
+      }
+    }
+  }, [initialTab]);
+
+  const handleTabChange = (newTab: "network" | "customers" | "suggestions") => {
+    setTab(newTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (newTab === "network") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", newTab);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
   const [term, setTerm] = useState("");
   const [sort, setSort] = useState<NetworkSort>("recent");
   const [filter, setFilter] = useState<NetworkFilter>("all");
@@ -216,7 +253,7 @@ export function NetworkHome() {
               <button
                 key={tabItem.id}
                 type="button"
-                onClick={() => setTab(tabItem.id as any)}
+                onClick={() => handleTabChange(tabItem.id as any)}
                 aria-pressed={isActive}
                 className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                   isActive
@@ -238,6 +275,8 @@ export function NetworkHome() {
 
         {tab === "customers" ? (
           <CustomersPanel />
+        ) : tab === "suggestions" ? (
+          <NetworkAllAiSuggestionsPanel peopleById={peopleById} />
         ) : (
         <>
 
@@ -332,17 +371,17 @@ export function NetworkHome() {
             {/* Lời mời kết bạn đang chờ phản hồi */}
             {!narrowed && tab === "network" && <NetworkIncomingRequestsSection />}
 
-            {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network hoặc suggestions */}
-            {(tab === "network" || tab === "suggestions") && (
+            {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network */}
+            {tab === "network" && (
               <>
                 <NetworkAiMatchStrip
                   peopleById={peopleById}
                   allowedIds={allowedIds}
-                  onViewAll={() => setTab("suggestions")}
+                  onViewAll={() => handleTabChange("suggestions")}
                 />
                 <NetworkNurtureList
                   allowedIds={allowedIds}
-                  onViewAll={() => setTab("suggestions")}
+                  onViewAll={() => handleTabChange("suggestions")}
                 />
               </>
             )}
@@ -476,6 +515,322 @@ export function NetworkHome() {
 
 // ── Subcomponents ────────────────────────────────────────────────────────────
 
+/** Bảng hiển thị toàn bộ gợi ý AI khi người dùng chọn tab "Gợi ý (AI)". */
+function NetworkAllAiSuggestionsPanel({
+  peopleById,
+}: {
+  peopleById: Map<string, BcMobileNetworkPerson>;
+}) {
+  const t = useT();
+  const { lang } = useLang();
+  const { recommendations, initialLoading, error: coreError, retry } = useTodayRelationshipRecommendations(lang as any);
+  const [filterMode, setFilterMode] = useState<"all" | "near" | "potential" | "frequent" | "nurture">("all");
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const viewerUserId = useViewerUserId();
+  const [viewerCity, setViewerCity] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewerUserId) return;
+    let active = true;
+    fetchNestApi<any>("/connect-app/me/identity")
+      .then((payload) => {
+        if (active) setViewerCity(payload?.identity?.city ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [viewerUserId]);
+
+  const filtered = useMemo(() => {
+    let list = recommendations;
+    const vCity = (viewerCity || "").toLowerCase().replace(/^(thành phố|tp\.|tỉnh)\s*/i, "").trim();
+
+    if (filterMode === "near") {
+      list = list.filter((r) => {
+        const area = (r.person.areaLabel || "").toLowerCase();
+        const sugg = (r.aiSuggestion || "").toLowerCase();
+        return (vCity && area.includes(vCity)) || sugg.includes("gần") || sugg.includes("khu vực");
+      });
+    } else if (filterMode === "potential") {
+      const keywords = ["chủ tịch", "ceo", "founder", "sáng lập", "giám đốc", "director", "c-level", "leader", "tiềm năng"];
+      list = list.filter((r) => {
+        const text = `${r.person.headline ?? ""} ${r.person.companyName ?? ""} ${r.aiSuggestion ?? ""}`.toLowerCase();
+        return keywords.some((kw) => text.includes(kw));
+      });
+    } else if (filterMode === "frequent") {
+      list = list.filter((r) => {
+        const sugg = (r.aiSuggestion || "").toLowerCase();
+        return sugg.includes("tương tác") || sugg.includes("thân thiết");
+      });
+    } else if (filterMode === "nurture") {
+      list = list.filter((r) => r.reason.days > 0);
+    }
+
+    if (query.trim()) {
+      const q = query.toLowerCase().trim();
+      list = list.filter((r) => {
+        const name = (r.person.displayName ?? "").toLowerCase();
+        const comp = (r.person.companyName ?? "").toLowerCase();
+        const head = (r.person.headline ?? "").toLowerCase();
+        const sugg = (r.aiSuggestion ?? "").toLowerCase();
+        return name.includes(q) || comp.includes(q) || head.includes(q) || sugg.includes(q);
+      });
+    }
+    return list;
+  }, [recommendations, filterMode, query, viewerCity]);
+
+  const activeRec = recommendations.find((r) => r.id === openId) ?? null;
+  const targetFor = (personId: string) => {
+    const person = peopleById.get(personId);
+    return {
+      cardSlug: person?.cardSlug ?? null,
+      alreadyConnected: person?.relationshipKind === "connection",
+    };
+  };
+
+  if (initialLoading) {
+    return (
+      <div className="mt-4 flex flex-col gap-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-28 animate-pulse rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4" />
+        ))}
+      </div>
+    );
+  }
+
+  if (coreError) {
+    return (
+      <div className="mt-6 text-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6">
+        <p className="text-sm text-[var(--bc-mobile-muted)]">Không thể tải danh sách gợi ý quan hệ.</p>
+        <button
+          type="button"
+          onClick={() => retry()}
+          className="mt-3 inline-flex h-8 items-center rounded-full px-4 text-xs font-semibold text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="mt-4 flex flex-col gap-4">
+      {/* Header giới thiệu */}
+      <div className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-[var(--bc-mobile-accent)]">
+          <Sparkles className="h-4.5 w-4.5 text-[var(--bc-mobile-accent)]" />
+          <h2 className="text-sm font-bold text-[var(--bc-mobile-text)]">
+            Tất cả gợi ý trí tuệ nhân tạo (AI Match)
+          </h2>
+        </div>
+        <p className="mt-1 text-xs text-[var(--bc-mobile-muted)] leading-relaxed">
+          Hệ thống AI tự động ưu tiên gợi ý người ở gần, lãnh đạo doanh nghiệp tiềm năng và các đối tác tương tác cao để tối ưu hiệu quả kết nối.
+        </p>
+      </div>
+
+      {/* Ô tìm kiếm gợi ý */}
+      <div className="flex items-center gap-2">
+        <MobileSearchBar
+          id="bc-ai-search"
+          value={query}
+          onChange={setQuery}
+          placeholder="Tìm theo tên, công ty, ghi chú gợi ý..."
+        />
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          onClick={() => setFilterMode("all")}
+          className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
+            filterMode === "all"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          }`}
+        >
+          Tất cả ({recommendations.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("near")}
+          className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
+            filterMode === "near"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          }`}
+        >
+          📍 Ở gần bạn
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("potential")}
+          className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
+            filterMode === "potential"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          }`}
+        >
+          ⭐ Tiềm năng cao
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("frequent")}
+          className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
+            filterMode === "frequent"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          }`}
+        >
+          🔥 Nhiều tương tác
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterMode("nurture")}
+          className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
+            filterMode === "nurture"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          }`}
+        >
+          ⏳ Cần chăm sóc
+        </button>
+      </div>
+
+      {/* Danh sách gợi ý */}
+      {filtered.length === 0 ? (
+        <div className="py-12 text-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6">
+          <Sparkles className="mx-auto h-8 w-8 text-[var(--bc-mobile-muted)] opacity-50" />
+          <p className="mt-3 text-sm font-semibold text-[var(--bc-mobile-text)]">
+            Không tìm thấy gợi ý phù hợp
+          </p>
+          <p className="mt-1 text-xs text-[var(--bc-mobile-muted)]">
+            Thử tìm kiếm với từ khóa khác hoặc chuyển chế độ xem
+          </p>
+          {(query || filterMode !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setFilterMode("all");
+              }}
+              className="mt-4 inline-flex h-8 items-center rounded-full px-4 text-xs font-medium text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+            >
+              Xem lại tất cả
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((rec) => {
+            const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
+            const roleLine = [rec.person.headline, rec.person.companyName].filter(Boolean).join(" · ");
+            const daysText = rec.reason.days > 0 ? `${rec.reason.days} ngày chưa liên hệ` : "Gợi ý kết nối";
+            const target = targetFor(rec.person.personId);
+            const isNearBadge = (rec.aiSuggestion || "").includes("Gần bạn") || (rec.aiSuggestion || "").includes("khu vực");
+            const isPotentialBadge = (rec.aiSuggestion || "").includes("Tiềm năng") || (rec.aiSuggestion || "").includes("lãnh đạo");
+            const isFrequentBadge = (rec.aiSuggestion || "").includes("tương tác") || (rec.aiSuggestion || "").includes("thân thiết");
+
+            return (
+              <article
+                key={rec.id}
+                className="flex flex-col rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 transition-all hover:border-[var(--bc-mobile-border-active)] active:border-[var(--bc-mobile-border-active)] shadow-xs"
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={avatarOrDemo(rec.person.avatarUrl, rec.person.personId)}
+                    alt={name}
+                    loading="lazy"
+                    className="h-12 w-12 rounded-full object-cover border border-[var(--bc-mobile-border)] shrink-0"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="truncate text-sm font-bold text-[var(--bc-mobile-text)]">
+                        {name}
+                      </h3>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isNearBadge && (
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                            Gần bạn
+                          </span>
+                        )}
+                        {isPotentialBadge && (
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                            Tiềm năng
+                          </span>
+                        )}
+                        <span className="rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[10px] font-semibold text-[var(--bc-mobile-accent)]">
+                          {daysText}
+                        </span>
+                      </div>
+                    </div>
+                    {roleLine && (
+                      <p className="mt-0.5 truncate text-xs text-[var(--bc-mobile-muted)]">
+                        {roleLine}
+                      </p>
+                    )}
+                    <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[var(--bc-mobile-muted)]">
+                      {rec.person.areaLabel && (
+                        <span>📍 {rec.person.areaLabel}</span>
+                      )}
+                      {rec.person.industryLabel && (
+                        <span>• {rec.person.industryLabel}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Khối gợi ý nội dung AI */}
+                <div className="mt-3 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-3 text-xs leading-relaxed text-[var(--bc-mobile-text)]">
+                  <div className="flex items-center gap-1.5 font-semibold text-[var(--bc-mobile-accent)] mb-1">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Lý do AI đề xuất:</span>
+                  </div>
+                  <p className="text-[var(--bc-mobile-muted)]">
+                    {rec.aiSuggestion || `Đã ${rec.reason.days > 0 ? rec.reason.days : "nhiều"} ngày từ lần tương tác gần nhất. Duy trì liên hệ định kỳ giúp củng cố mối quan hệ và tạo cơ hội hợp tác mới.`}
+                  </p>
+                </div>
+
+                {/* Hàng hành động */}
+                <div className="mt-3.5 flex items-center justify-between gap-2 pt-2 border-t border-[var(--bc-mobile-border)]">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(rec.id)}
+                    className="inline-flex h-9 items-center justify-center rounded-xl px-3 text-xs font-semibold text-[var(--bc-mobile-text)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] transition-colors cursor-pointer"
+                  >
+                    Xem phân tích
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/connect-app/network/$personId"
+                      params={{ personId: rec.person.personId }}
+                      className="inline-flex h-9 items-center justify-center rounded-xl px-3 text-xs font-semibold text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] transition-colors"
+                    >
+                      Hồ sơ
+                    </Link>
+                    <AiMatchConnectAction personName={name} target={target} compact />
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <AiMatchDetailSheet
+        open={activeRec !== null}
+        onOpenChange={(next: boolean) => setOpenId(next ? openId : null)}
+        rec={activeRec}
+        target={activeRec ? targetFor(activeRec.person.personId) : { cardSlug: null, alreadyConnected: false }}
+      />
+    </section>
+  );
+}
+
+
+
 /** Dải ngang gợi ý quan hệ 6A ("AI Match"). */
 function NetworkAiMatchStrip({
   peopleById,
@@ -533,7 +888,7 @@ function NetworkAiMatchStrip({
           const roleLine = [rec.person.headline, rec.person.companyName]
             .filter(Boolean)
             .join(" · ");
-          const daysText = rec.reason.days > 0 
+          const daysText = (rec.reason?.days ?? 0) > 0 
             ? `${rec.reason.days} ngày từ lần gặp...`
             : "Gặp gần đây...";
 
@@ -601,7 +956,8 @@ function NetworkNurtureList({
   const uniqueItems: typeof recommendations = [];
   const seenIds = new Set<string>();
   for (const rec of recommendations) {
-    if (rec.reason.days > 0 && !seenIds.has(rec.person.personId)) {
+    const days = rec.reason?.days ?? 0;
+    if (days > 0 && rec.person?.personId && !seenIds.has(rec.person.personId)) {
       seenIds.add(rec.person.personId);
       uniqueItems.push(rec);
     }
@@ -632,12 +988,13 @@ function NetworkNurtureList({
 
       <div className="mt-3 flex flex-col w-full bg-[var(--bc-mobile-surface)] backdrop-blur-md rounded-xl border border-solid border-[var(--bc-mobile-border)] overflow-hidden box-border shadow-xs">
         {items.map((rec, index) => {
-          const name = rec.person.displayName ?? t("bc.mobile.network.unknownPerson");
-          const roleLine = [rec.person.headline, rec.person.companyName]
+          const name = rec.person?.displayName ?? t("bc.mobile.network.unknownPerson");
+          const roleLine = [rec.person?.headline, rec.person?.companyName]
             .filter(Boolean)
             .join(" · ");
-          const daysText = rec.reason.days > 0 
-            ? `${rec.reason.days} ngày chưa liên hệ`
+          const days = rec.reason?.days ?? 0;
+          const daysText = days > 0 
+            ? `${days} ngày chưa liên hệ`
             : "Chưa liên hệ...";
 
           return (

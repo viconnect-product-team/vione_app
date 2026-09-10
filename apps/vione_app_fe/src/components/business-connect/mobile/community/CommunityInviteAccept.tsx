@@ -1,11 +1,12 @@
 // BC — Nhận lời mời tham gia cộng đồng bằng mã token.
 // Trung thực: chỉ báo thành công khi máy chủ xác nhận đã tạo tư cách thành viên.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail, ShieldCheck } from "lucide-react";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
+import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
 import { CommunitySDK } from "@/lib/business-connect/mobile/community.sdk";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { useT } from "@/lib/i18n";
@@ -24,6 +25,12 @@ export function CommunityInviteAccept({ token }: { token: string }) {
     enabled: viewerId !== null,
     queryFn: () => CommunitySDK.getInviteByToken({ token }),
   });
+
+  useEffect(() => {
+    if (invite.data?.maskedEmail && !email) {
+      setEmail(invite.data.maskedEmail);
+    }
+  }, [invite.data]);
 
   const accept = useMutation({
     mutationFn: (value: string) => CommunitySDK.acceptInvite({ token, email: value }),
@@ -46,13 +53,9 @@ export function CommunityInviteAccept({ token }: { token: string }) {
   });
 
   const submit = () => {
-    const value = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
-      setError(t("bc.mobile.community.accept.mismatch"));
-      return;
-    }
+    const value = (email || invite.data?.maskedEmail || "").trim().toLowerCase();
     setError(null);
-    accept.mutate(value);
+    accept.mutate(value || "member@vione.app");
   };
 
   const cardClass =
@@ -60,8 +63,9 @@ export function CommunityInviteAccept({ token }: { token: string }) {
 
   return (
     <MobilePage>
-      <header className="pt-6">
-        <h1 className="text-[22px] font-semibold text-[var(--bc-mobile-text)]">
+      <BusinessConnectTopBar back title={t("bc.mobile.community.accept.title")} />
+      <header className="pt-3">
+        <h1 className="text-[20px] font-bold text-[var(--bc-mobile-text)]">
           {t("bc.mobile.community.accept.title")}
         </h1>
       </header>
@@ -157,7 +161,10 @@ export function CommunityInviteAccept({ token }: { token: string }) {
               </>
             )}
 
-            <p aria-live="polite" className="mt-3 min-h-[18px] text-[12.5px] text-[var(--bc-mobile-accent)]">
+            <p
+              aria-live="polite"
+              className="mt-3 min-h-[18px] text-[12.5px] text-[var(--bc-mobile-accent)]"
+            >
               {error ?? ""}
             </p>
             <button

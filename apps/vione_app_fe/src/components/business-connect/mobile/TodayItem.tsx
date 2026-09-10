@@ -54,7 +54,13 @@ function contextTime(item: BcMobileTodayItem, locale: string): string | null {
   return null;
 }
 
-export function TodayItem({ item }: { item: BcMobileTodayItem }) {
+export function TodayItem({
+  item,
+  onSelect,
+}: {
+  item: BcMobileTodayItem;
+  onSelect?: (item: BcMobileTodayItem) => void;
+}) {
   const t = useT();
   const fmt = useFmt();
   const Icon = KIND_ICON[item.kind];
@@ -76,7 +82,8 @@ export function TodayItem({ item }: { item: BcMobileTodayItem }) {
   const overdue = item.category === "overdue";
 
   const ariaLabel = context ? `${title}. ${context}` : title;
-  const canRoute = item.action.canRoute && item.action.targetRoute;
+  const isEventAction = Boolean(onSelect) && (item.id.startsWith("event:") || item.action.targetRoute === "/events/$eventId");
+  const canRoute = !isEventAction && item.action.canRoute && Boolean(item.action.targetRoute);
 
   const body = (
     <>
@@ -102,7 +109,7 @@ export function TodayItem({ item }: { item: BcMobileTodayItem }) {
           </span>
         ) : null}
       </span>
-      {canRoute ? (
+      {canRoute || isEventAction ? (
         <ChevronRight
           aria-hidden="true"
           className="h-4 w-4 shrink-0 self-center text-[var(--bc-mobile-muted)]"
@@ -115,11 +122,17 @@ export function TodayItem({ item }: { item: BcMobileTodayItem }) {
 
   return (
     <li>
-      {canRoute ? (
+      {isEventAction ? (
+        <button
+          type="button"
+          onClick={() => onSelect?.(item)}
+          aria-label={ariaLabel}
+          className={`${rowClass} rounded-lg transition-transform duration-150 active:scale-[0.99] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none motion-reduce:active:scale-100`}
+        >
+          {body}
+        </button>
+      ) : canRoute ? (
         <Link
-          // Untyped runtime navigation is intentional: hub items route into
-          // arbitrary product surfaces from the frozen resolver output.
-
           to={item.action.targetRoute as any}
           params={(item.action.targetParams ?? {}) as any}
           search={(item.action.targetSearch ?? {}) as any}
@@ -129,7 +142,6 @@ export function TodayItem({ item }: { item: BcMobileTodayItem }) {
           {body}
         </Link>
       ) : (
-        // Non-actionable briefing line: static content, never a fake button.
         <div aria-label={ariaLabel} className={rowClass}>
           {body}
         </div>

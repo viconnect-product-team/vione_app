@@ -3,8 +3,9 @@
 // không tạo backend mời song song và không báo thành công khi thao tác thất bại.
 
 import { useEffect, useRef, useState } from "react";
-import { Copy, Mail, Share2, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Copy, Mail, Share2, UserPlus, X } from "lucide-react";
 import { useLang, useT } from "@/lib/i18n";
+import { copyToClipboard } from "@/lib/clipboard";
 import {
   useCommunityInvites,
   useCommunityInviteTemplates,
@@ -39,7 +40,7 @@ export function CommunityInviteButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] px-4 text-[13px] font-semibold text-[var(--bc-mobile-navy)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gradient-to-r from-[#F97316] via-[#EA580C] to-[#C2410C] px-5 text-[13.5px] font-semibold text-white shadow-md shadow-orange-500/25 transition-all duration-150 hover:opacity-95 hover:shadow-orange-500/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] cursor-pointer motion-reduce:transition-none"
       >
         <UserPlus aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
         {t("bc.mobile.community.invite.cta")}
@@ -74,11 +75,14 @@ function CommunityInviteSheet({
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && state !== "sending") onClose();
+      if (e.key === "Escape" && state !== "sending") {
+        if (tab !== "link") setTab("link");
+        else onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, state]);
+  }, [onClose, state, tab]);
 
   const message = `${t("bc.mobile.community.invite.message", { community: communityName })}${
     note.trim() ? `\n\n${note.trim()}` : ""
@@ -89,10 +93,9 @@ function CommunityInviteSheet({
     try {
       if (mode === "share" && typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: communityName, text: message });
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(message);
       } else {
-        throw new Error("clipboard_unavailable");
+        const ok = await copyToClipboard(message, true, "Đã sao chép liên kết lời mời!");
+        if (!ok) throw new Error("clipboard_unavailable");
       }
       setState("success");
     } catch (error) {
@@ -114,25 +117,41 @@ function CommunityInviteSheet({
         if (e.target === e.currentTarget && state !== "sending") onClose();
       }}
     >
-      <div className="w-full max-w-[520px] rounded-t-3xl border border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-2xl p-5 pb-8">
+      <div className="w-full max-w-[520px] max-h-[90dvh] overflow-y-auto rounded-t-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-text)] shadow-2xl p-5 pb-8">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2
-              id="bc-invite-title"
-              className="text-[18px] font-semibold text-[var(--bc-mobile-text)]"
-            >
-              {t("bc.mobile.community.invite.title")}
-            </h2>
-            <p className="mt-1 text-[13px] leading-snug text-[var(--bc-mobile-muted)]">
-              {t("bc.mobile.community.invite.desc", { community: communityName })}
-            </p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            {tab !== "link" ? (
+              <button
+                type="button"
+                onClick={() => setTab("link")}
+                aria-label="Quay lại"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] cursor-pointer"
+              >
+                <ArrowLeft aria-hidden="true" className="h-5 w-5" strokeWidth={2} />
+              </button>
+            ) : null}
+            <div className="min-w-0">
+              <h2
+                id="bc-invite-title"
+                className="text-[18px] font-semibold text-[var(--bc-mobile-text)]"
+              >
+                {tab === "template"
+                  ? "Mẫu email lời mời"
+                  : tab === "email"
+                    ? "Gửi lời mời qua Email"
+                    : t("bc.mobile.community.invite.title")}
+              </h2>
+              <p className="mt-1 text-[13px] leading-snug text-[var(--bc-mobile-muted)]">
+                {t("bc.mobile.community.invite.desc", { community: communityName })}
+              </p>
+            </div>
           </div>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={t("bc.mobile.community.invite.close")}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] cursor-pointer"
           >
             <X aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           </button>
@@ -150,7 +169,7 @@ function CommunityInviteSheet({
           onChange={(e) => setNote(e.target.value.slice(0, 240))}
           rows={3}
           placeholder={t("bc.mobile.community.invite.notePlaceholder")}
-          className="mt-1.5 w-full resize-none rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-3 text-[14px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+          className="mt-1.5 w-full resize-none rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-3 text-[14px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
         />
 
         <div
@@ -165,10 +184,10 @@ function CommunityInviteSheet({
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`min-h-[38px] flex-1 rounded-full text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none ${
+              className={`min-h-[38px] flex-1 rounded-full text-[13px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none cursor-pointer ${
                 tab === key
-                  ? "bg-[var(--bc-mobile-accent)] text-[var(--bc-mobile-navy)]"
-                  : "text-[var(--bc-mobile-muted)]"
+                  ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-bold shadow-md shadow-[#D8B282]/25"
+                  : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
               }`}
             >
               {t(`bc.mobile.community.invite.tab.${key}` as never)}
@@ -186,47 +205,49 @@ function CommunityInviteSheet({
         ) : tab === "email" ? (
           <CommunityInviteEmailPanel communityId={communityId} note={note} link={link} />
         ) : (
-        <>
-        <p className="mt-3 break-all rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-3 text-[12.5px] text-[var(--bc-mobile-muted)]">
-          {link}
-        </p>
+          <>
+            <p className="mt-3 break-all rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] p-3 text-[12.5px] text-[var(--bc-mobile-muted)]">
+              {link}
+            </p>
 
-        <div className="mt-4 flex gap-2.5">
-          <button
-            type="button"
-            disabled={state === "sending"}
-            onClick={() => void send("share")}
-            className="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] px-4 text-[14px] font-semibold text-[var(--bc-mobile-navy)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
-          >
-            <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-            {state === "sending"
-              ? t("bc.mobile.community.invite.sending")
-              : t("bc.mobile.community.invite.send")}
-          </button>
-          <button
-            type="button"
-            disabled={state === "sending"}
-            onClick={() => void send("copy")}
-            className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] px-4 text-[14px] font-medium text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60"
-          >
-            <Copy aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-            {t("bc.mobile.community.invite.copy")}
-          </button>
-        </div>
+            <div className="mt-4 flex gap-2.5">
+              <button
+                type="button"
+                disabled={state === "sending"}
+                onClick={() => void send("share")}
+                className="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] px-4 text-[14px] font-bold text-[#050c15] shadow-md shadow-[#D8B282]/25 transition-all duration-150 hover:brightness-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] disabled:opacity-60 motion-reduce:transition-none cursor-pointer"
+              >
+                <Share2 aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
+                {state === "sending"
+                  ? t("bc.mobile.community.invite.sending")
+                  : t("bc.mobile.community.invite.send")}
+              </button>
+              <button
+                type="button"
+                disabled={state === "sending"}
+                onClick={() => void send("copy")}
+                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] px-4 text-[14px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] disabled:opacity-60 cursor-pointer"
+              >
+                <Copy aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                {t("bc.mobile.community.invite.copy")}
+              </button>
+            </div>
 
-        <p
-          aria-live="polite"
-          className={`mt-3 min-h-[18px] text-[12.5px] ${
-            state === "error" ? "text-[var(--bc-mobile-accent)]" : "text-[var(--bc-mobile-muted)]"
-          }`}
-        >
-          {state === "success"
-            ? t("bc.mobile.community.invite.success")
-            : state === "error"
-              ? t("bc.mobile.community.invite.failed")
-              : ""}
-        </p>
-        </>
+            <p
+              aria-live="polite"
+              className={`mt-3 min-h-[18px] text-[12.5px] ${
+                state === "error"
+                  ? "text-[var(--bc-mobile-accent)]"
+                  : "text-[var(--bc-mobile-muted)]"
+              }`}
+            >
+              {state === "success"
+                ? t("bc.mobile.community.invite.success")
+                : state === "error"
+                  ? t("bc.mobile.community.invite.failed")
+                  : ""}
+            </p>
+          </>
         )}
       </div>
     </div>
@@ -319,9 +340,9 @@ function CommunityInviteEmailPanel({
           type="button"
           onClick={submit}
           disabled={create.isPending}
-          className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] px-4 text-[14px] font-semibold text-[var(--bc-mobile-navy)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
+          className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] px-5 text-[14px] font-bold text-[#050c15] shadow-md shadow-[#D8B282]/25 transition-all duration-150 hover:brightness-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] disabled:opacity-60 cursor-pointer motion-reduce:transition-none"
         >
-          <Mail aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          <Mail aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
           {create.isPending
             ? t("bc.mobile.community.invite.email.sending")
             : t("bc.mobile.community.invite.email.send")}
@@ -333,28 +354,29 @@ function CommunityInviteEmailPanel({
           {t("bc.mobile.community.invite.email.roleLabel")}
         </legend>
         <div className="mt-1.5 flex gap-2">
-          {(canAssignAdmin ? (["member", "admin"] as const) : (["member"] as const)).map((r: any) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={invitedRole === r}
-              onClick={() => setInvitedRole(r)}
-              className={`min-h-[38px] flex-1 rounded-full border px-3 text-[12.5px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none ${
-                invitedRole === r
-                  ? "border-transparent bg-[var(--bc-mobile-accent)] text-[var(--bc-mobile-navy)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)]"
-              }`}
-            >
-              {t(`bc.mobile.community.role.${r}` as never)}
-            </button>
-          ))}
+          {(canAssignAdmin ? (["member", "admin"] as const) : (["member"] as const)).map(
+            (r: any) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={invitedRole === r}
+                onClick={() => setInvitedRole(r)}
+                className={`min-h-[38px] flex-1 rounded-full border px-3 text-[12.5px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] cursor-pointer motion-reduce:transition-none ${
+                  invitedRole === r
+                    ? "border-transparent bg-gradient-to-r from-[#F97316] via-[#EA580C] to-[#C2410C] text-white font-semibold shadow-sm"
+                    : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)]"
+                }`}
+              >
+                {t(`bc.mobile.community.role.${r}` as never)}
+              </button>
+            ),
+          )}
         </div>
         <p className="mt-1 text-[12px] leading-snug text-[var(--bc-mobile-muted)]">
           {canAssignAdmin
             ? t("bc.mobile.community.invite.email.roleHint")
             : t("bc.mobile.community.invite.email.roleAdminOnly")}
         </p>
-
       </fieldset>
 
       <p
@@ -409,25 +431,25 @@ function CommunityInviteEmailPanel({
                     resend.mutate(
                       { inviteRef: invite.inviteRef, locale },
                       {
-                      onSuccess: (res) =>
-                        setFeedback(
-                          res.ok
-                            ? {
-                                tone: "ok",
-                                text: t("bc.mobile.community.invite.list.resent", {
-                                  time: new Date().toLocaleTimeString(),
-                                }),
-                              }
-                            : {
-                                tone: "error",
-                                text: t("bc.mobile.community.invite.list.resendFailed"),
-                              },
-                        ),
-                      onError: () =>
-                        setFeedback({
-                          tone: "error",
-                          text: t("bc.mobile.community.invite.list.resendFailed"),
-                        }),
+                        onSuccess: (res) =>
+                          setFeedback(
+                            res.ok
+                              ? {
+                                  tone: "ok",
+                                  text: t("bc.mobile.community.invite.list.resent", {
+                                    time: new Date().toLocaleTimeString(),
+                                  }),
+                                }
+                              : {
+                                  tone: "error",
+                                  text: t("bc.mobile.community.invite.list.resendFailed"),
+                                },
+                          ),
+                        onError: () =>
+                          setFeedback({
+                            tone: "error",
+                            text: t("bc.mobile.community.invite.list.resendFailed"),
+                          }),
                       },
                     )
                   }
@@ -441,9 +463,9 @@ function CommunityInviteEmailPanel({
               {invite.status === "pending" && invite.token ? (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     const url = `${window.location.origin}/connect-app/invite/${invite.token}`;
-                    void navigator.clipboard?.writeText(url);
+                    await copyToClipboard(url, true, "Đã sao chép liên kết lời mời!");
                     setCopied(invite.inviteRef);
                   }}
                   className="min-h-[38px] shrink-0 rounded-full border border-[var(--bc-mobile-border)] px-3 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
@@ -679,7 +701,7 @@ function CommunityInviteTemplatePanel({
                     },
                   )
                 }
-                className="inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-[var(--bc-mobile-accent)] px-4 text-[14px] font-semibold text-[var(--bc-mobile-navy)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
+                className="inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] px-4 text-[14px] font-bold text-[#050c15] shadow-md shadow-[#D8B282]/25 transition-all duration-150 hover:brightness-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] disabled:opacity-60 cursor-pointer motion-reduce:transition-none"
               >
                 {save.isPending
                   ? t("bc.mobile.community.invite.template.saving")
@@ -704,7 +726,7 @@ function CommunityInviteTemplatePanel({
                       }),
                   })
                 }
-                className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-4 text-[13.5px] font-medium text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60"
+                className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-[var(--bc-mobile-border)] px-4 text-[13.5px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] disabled:opacity-60 cursor-pointer"
               >
                 {t("bc.mobile.community.invite.template.reset")}
               </button>

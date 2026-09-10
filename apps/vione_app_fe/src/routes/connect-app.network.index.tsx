@@ -5,7 +5,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { NetworkHome } from "@/components/business-connect/mobile/NetworkHome";
 
+type NetworkSearchParams = {
+  tab?: "network" | "customers" | "suggestions";
+};
+
 export const Route = createFileRoute("/connect-app/network/")({
+  validateSearch: (search: Record<string, unknown>): NetworkSearchParams => ({
+    tab: search.tab === "customers" || search.tab === "suggestions" ? search.tab : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Network — Business Connect" },
@@ -28,9 +35,10 @@ export const Route = createFileRoute("/connect-app/network/")({
 });
 
 function ConnectAppNetworkPage() {
+  const { tab } = Route.useSearch();
   return (
     <MobilePage>
-      <NetworkHome />
+      <NetworkHome initialTab={tab} />
     </MobilePage>
   );
 }

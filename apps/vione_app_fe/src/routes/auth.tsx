@@ -130,8 +130,9 @@ function AuthPage() {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobileScreen(
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768,
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        ) || window.innerWidth <= 768,
       );
     };
     window.addEventListener("resize", checkMobile);
@@ -147,6 +148,16 @@ function AuthPage() {
 
   async function goPostLogin() {
     const target = safeRedirect(redirectTo);
+
+    // If user explicitly selected Association portal on mobile, prioritize /m!
+    if (appPortal === "association" || searchPortal === "association") {
+      try {
+        localStorage.removeItem("bc.vione-app.context");
+      } catch {}
+      navigate({ to: "/m", replace: true });
+      return;
+    }
+
     // If explicit target given other than login pages
     if (
       target &&
@@ -159,12 +170,16 @@ function AuthPage() {
       return;
     }
 
-    if (mobileParam === "1" || searchPortal === "association" || target?.startsWith("/m") || appPortal === "association") {
+    if (mobileParam === "1" || target?.startsWith("/m")) {
       navigate({ to: "/m", replace: true });
       return;
     }
 
-    if (searchPortal === "connect" || target?.startsWith("/connect-app") || (isMobileAuth && appPortal === "connect")) {
+    if (
+      searchPortal === "connect" ||
+      target?.startsWith("/connect-app") ||
+      (isMobileAuth && appPortal === "connect")
+    ) {
       const dest = resolveVionePostLoginPath(safeRedirect(redirectTo), true);
       navigate({ to: dest || "/connect-app", replace: true });
       return;
@@ -229,7 +244,9 @@ function AuthPage() {
           body: JSON.stringify({ email: email.trim(), password }),
         });
         if (!res?.access_token) {
-          throw new Error("Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.");
+          throw new Error(
+            "Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.",
+          );
         }
         setAuthData(res);
         applyRememberPreference(remember, email.trim());
@@ -238,7 +255,9 @@ function AuthPage() {
     } catch (e: any) {
       const info = classifyAuthError(e, { provider: "password" });
       setAuthErrorInfo(info);
-      setAuthError(t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập thất bại");
+      setAuthError(
+        t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập thất bại",
+      );
     } finally {
       setLoading(false);
     }
@@ -367,7 +386,9 @@ function AuthPage() {
     } catch (e: any) {
       const info = classifyAuthError(e, { provider });
       setAuthErrorInfo(info);
-      setAuthError(t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập OAuth thất bại");
+      setAuthError(
+        t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập OAuth thất bại",
+      );
     } finally {
       setOauthPending(null);
     }
@@ -596,7 +617,11 @@ function AuthPage() {
                 <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("auth.processing")}
               </span>
             ) : mode === "signin" ? (
-              isAssociation ? "Đăng nhập Cổng Hội viên" : t("auth.signInButton")
+              isAssociation ? (
+                "Đăng nhập Cổng Hội viên"
+              ) : (
+                t("auth.signInButton")
+              )
             ) : (
               t("auth.signUpButton")
             )}
@@ -672,13 +697,17 @@ function AuthPage() {
             className="text-xs sm:text-[13px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
           >
             {(() => {
-              const fullText = mode === "signin" ? t("auth.switchToSignUp") : t("auth.switchToSignIn");
+              const fullText =
+                mode === "signin" ? t("auth.switchToSignUp") : t("auth.switchToSignIn");
               const delimiter = fullText.includes("?") ? "?" : fullText.includes("။") ? "။" : null;
               if (delimiter) {
                 const [question, action] = fullText.split(delimiter);
                 return (
                   <>
-                    <span>{question}{delimiter} </span>
+                    <span>
+                      {question}
+                      {delimiter}{" "}
+                    </span>
                     <span className="font-semibold text-foreground underline underline-offset-4 decoration-muted-foreground/40 hover:decoration-foreground">
                       {action.trim()}
                     </span>

@@ -33,7 +33,7 @@ export function useCommunityEvents(communityId: string, tab: CommunityEventsTabD
   const viewerKey = viewerId ?? "viewer-pending";
   const result = useInfiniteQuery({
     queryKey: communityActivityKeys.events(viewerKey, communityId, tab),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 15_000,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
@@ -60,7 +60,7 @@ export function useCommunityEvents(communityId: string, tab: CommunityEventsTabD
     /** null = membership missing/unavailable (neutral state). */
     unavailable: !result.isPending && !result.isError && firstPage === null,
     totalCount: firstPage?.totalCount ?? 0,
-    initialLoading: result.isPending && viewerId !== null,
+    initialLoading: result.isPending,
     coreError: result.isError && !result.data,
     retry: () => void result.refetch(),
     hasMore: result.hasNextPage,
@@ -71,11 +71,11 @@ export function useCommunityEvents(communityId: string, tab: CommunityEventsTabD
 
 export function useCommunityEventDetail(communityId: string, eventRef: string) {
   const viewerId = useViewerUserId();
-  const viewerKey = viewerId ?? "viewer-pending";
+  const viewerKey = viewerId ?? "viewer-public";
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: communityActivityKeys.event(viewerKey, communityId, eventRef),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId) && Boolean(eventRef),
     staleTime: 15_000,
     queryFn: async () => {
       try {
@@ -151,7 +151,7 @@ export function useCommunityEventDetail(communityId: string, eventRef: string) {
   return {
     detail: query.data ?? null,
     unavailable: !query.isPending && !query.isError && query.data === null,
-    initialLoading: query.isPending && viewerId !== null,
+    initialLoading: query.isPending,
     coreError: query.isError && query.data === undefined,
     retry: () => void query.refetch(),
     register,
@@ -165,7 +165,7 @@ export function useCommunityOpportunities(communityId: string, rawQuery: string)
   const query = rawQuery.trim();
   const result = useInfiniteQuery({
     queryKey: communityActivityKeys.opportunities(viewerKey, communityId, query),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 15_000,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
@@ -207,7 +207,7 @@ export function useCommunityOpportunityDetail(communityId: string, opportunityRe
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: communityActivityKeys.opportunity(viewerKey, communityId, opportunityRef),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId) && Boolean(opportunityRef),
     staleTime: 15_000,
     queryFn: async () => {
       try {
@@ -313,7 +313,7 @@ export function useCommunityActivityPreview(communityId: string) {
   const viewerKey = viewerId ?? "viewer-pending";
   const query = useQuery({
     queryKey: communityActivityKeys.preview(viewerKey, communityId),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 30_000,
     queryFn: async () => {
       try {

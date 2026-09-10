@@ -69,6 +69,20 @@ export async function getTodayRecommendationsDirect(
   }
 }
 
+/** Lấy gợi ý cho một người cụ thể trực tiếp qua fetchNestApi (client JWT). */
+export async function getPersonRecommendationDirect(
+  personId: string,
+  locale?: "vi" | "en",
+): Promise<BcMobilePersonRecommendationResult> {
+  try {
+    return await fetchNestApi<BcMobilePersonRecommendationResult>(
+      `/connect-app/network/recommendations/person/${personId}`,
+    );
+  } catch {
+    return { recommendation: null };
+  }
+}
+
 /** Xóa gợi ý trực tiếp qua fetchNestApi (client JWT). */
 export async function dismissRecommendationDirect(
   personId: string,
@@ -78,3 +92,4 @@ export async function dismissRecommendationDirect(
     { method: "DELETE" },
   );
 }
+

@@ -28,6 +28,8 @@ import {
   Check,
   X,
   Loader2,
+  UserPlus,
+  UserX,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,7 +37,18 @@ import { useDmOpenThread } from "@/hooks/use-bc-dm";
 import { toast } from "sonner";
 import { useFmt, useT } from "@/lib/i18n";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useBusinessConnectPerson,
+  parseBcMobilePersonId,
   type BcMobilePersonDetail,
 } from "@/hooks/use-business-connect-person";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
@@ -174,7 +187,6 @@ function PersonMessageButton({ personId }: { personId: string }) {
   );
 }
 
-
 /** .vcf export as a first-class contact action — same visual language as
     ActionButton/CardActionLink, but a <button> because it opens the preview
     sheet (an action, not a navigation). */
@@ -276,6 +288,33 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
 
   const qc = useQueryClient();
   const [actionBusy, setActionBusy] = useState(false);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+
+  const handleDisconnect = async () => {
+    setActionBusy(true);
+    try {
+      const parsed = parseBcMobilePersonId(person.personId);
+      let connId = rel.connectionId;
+      if (!connId && parsed?.id) {
+        const state = await GlobalNetworkSDK.connections.getState(parsed.id);
+        connId = state.connectionId;
+      }
+      if (connId) {
+        await GlobalNetworkSDK.mutations.disconnect(connId);
+      }
+      void qc.invalidateQueries({ queryKey: ["bc-person", person.personId] });
+      void qc.invalidateQueries({ queryKey: ["bc-mobile", "person"] });
+      void qc.invalidateQueries({ queryKey: ["user-connections"] });
+      void qc.invalidateQueries({ queryKey: ["network-requests"] });
+      void qc.invalidateQueries({ queryKey: ["network-incoming-requests"] });
+      toast.success(`Đã hủy kết nối với ${name}`);
+      setDisconnectDialogOpen(false);
+    } catch {
+      toast.error("Không thể hủy kết nối. Vui lòng thử lại sau.");
+    } finally {
+      setActionBusy(false);
+    }
+  };
 
   const incomingConnectionId =
     rel.kind === "connected" &&
@@ -286,9 +325,7 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
       : null;
 
   const outgoingPending =
-    rel.kind === "connected" &&
-    rel.status === "pending" &&
-    rel.direction === "outgoing";
+    rel.kind === "connected" && rel.status === "pending" && rel.direction === "outgoing";
 
   const contact = person.contact;
   // The .vcf export only needs a display name; every other action needs a
@@ -348,7 +385,8 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
             <span>Lời mời kết nối đang chờ bạn phản hồi</span>
           </div>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[#D1D5DB]">
-            <strong className="text-white">{name}</strong> đã gửi lời mời kết nối danh thiếp thông minh với bạn. Bạn có muốn đồng ý kết bạn?
+            <strong className="text-white">{name}</strong> đã gửi lời mời kết nối danh thiếp thông
+            minh với bạn. Bạn có muốn đồng ý kết bạn?
           </p>
           <div className="mt-3.5 flex items-center gap-2.5">
             <button
@@ -371,7 +409,11 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
               }}
               className="flex-1 py-3 px-4 rounded-full font-bold text-[13.5px] bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 shadow-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              {actionBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" strokeWidth={2.5} />}
+              {actionBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" strokeWidth={2.5} />
+              )}
               <span>Đồng ý kết bạn</span>
             </button>
 
@@ -403,6 +445,47 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
           <p className="text-xs font-semibold text-[#E8C986]">
             ⏳ Lời mời kết nối đã được gửi đi và đang chờ đối phương chấp nhận.
           </p>
+        </section>
+      ) : rel.kind === "connection" ||
+        (rel.kind === "connected" &&
+          (rel.status === "none" || (!rel.status && !rel.connectedAt))) ? (
+        <section className="mt-5 rounded-2xl border border-[#D8B282]/50 bg-gradient-to-br from-[#1C2333]/90 via-[#141A26]/90 to-[#0D111A]/90 p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#E8C986]">
+                Gợi ý kết nối đối tác
+              </p>
+              <p className="mt-1 text-[13px] text-slate-200">
+                Kết nối để xem đầy đủ danh thiếp thông minh và giao thương cùng {name}.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={actionBusy}
+              onClick={async () => {
+                const parsed = parseBcMobilePersonId(person.personId);
+                if (!parsed || parsed.kind !== "connection") return;
+                setActionBusy(true);
+                try {
+                  await GlobalNetworkSDK.mutations.sendRequest({ targetUserId: parsed.id });
+                  void qc.invalidateQueries({ queryKey: ["bc-person", person.personId] });
+                  toast.success(`Đã gửi lời mời kết nối tới ${name}!`);
+                } catch {
+                  toast.error("Không thể gửi lời mời kết nối. Vui lòng thử lại sau.");
+                } finally {
+                  setActionBusy(false);
+                }
+              }}
+              className="py-2.5 px-4 rounded-full font-bold text-[13px] bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#B88E4C] text-[#050811] shadow-md hover:opacity-95 active:scale-98 transition-all shrink-0 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {actionBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              <span>Kết nối ngay</span>
+            </button>
+          </div>
         </section>
       ) : null}
 
@@ -473,7 +556,9 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
         {/* BC-Mobile-8A — nhắn tin nội bộ, CHỈ với kết nối đã chấp nhận
             (personId dạng `u:`). Thẻ đã lưu / liên hệ khách vẫn dùng
             tel:/mailto: vì họ chưa chắc là người dùng hệ thống. */}
-        {person.personId.startsWith("u:") ? <PersonMessageButton personId={person.personId} /> : null}
+        {person.personId.startsWith("u:") ? (
+          <PersonMessageButton personId={person.personId} />
+        ) : null}
       </section>
 
       {/* vCard preview — confirm exports exactly what was reviewed. The sheet
@@ -639,6 +724,51 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
           )}
         </ul>
       </section>
+
+      {/* Hủy kết nối (Unfriend / Disconnect) */}
+      {rel.kind === "connected" && (rel.status === "accepted" || rel.connectedAt) ? (
+        <section className="mt-8 pt-4 border-t border-[var(--bc-mobile-border)] flex flex-col items-center">
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => setDisconnectDialogOpen(true)}
+            className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-5 text-[13px] font-medium text-rose-400 hover:bg-rose-500/20 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <UserX className="w-4 h-4" />
+            <span>Hủy kết nối</span>
+          </button>
+
+          <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+            <AlertDialogContent className="max-w-[360px] rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-[17px] font-bold text-[var(--bc-mobile-text)]">
+                  Xác nhận hủy kết nối?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-[13px] text-[var(--bc-mobile-muted)] leading-relaxed">
+                  Bạn có chắc chắn muốn hủy kết nối với{" "}
+                  <strong className="text-[var(--bc-mobile-text)]">{name}</strong>? Sau khi hủy,
+                  người này sẽ không còn trong danh bạ kết nối trực tiếp của bạn.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4 flex gap-2">
+                <AlertDialogCancel
+                  disabled={actionBusy}
+                  className="flex-1 rounded-full border border-[var(--bc-mobile-border)] text-[13px]"
+                >
+                  Giữ lại
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={actionBusy}
+                  onClick={handleDisconnect}
+                  className="flex-1 rounded-full bg-rose-500 text-white font-semibold text-[13px] hover:bg-rose-600 cursor-pointer"
+                >
+                  {actionBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hủy kết nối"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </section>
+      ) : null}
     </main>
   );
 }

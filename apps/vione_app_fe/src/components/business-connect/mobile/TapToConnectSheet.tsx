@@ -6,13 +6,14 @@
 //   3. Hiển thị Card Profile xem trước: Avatar, Tên, Chức danh, Công ty, Thông tin liên hệ.
 //   4. Cho phép nhập lời nhắn và bấm nút "Gửi yêu cầu kết nối" -> Lập tức gửi thông báo Real-time cho người nhận!
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   AtSign,
   Briefcase,
   Camera,
   CheckCircle2,
+  Copy,
   Globe,
   ImagePlus,
   Loader2,
@@ -34,11 +35,19 @@ import { useT } from "@/lib/i18n";
 import { useNfcScanner } from "@/hooks/use-nfc-scanner";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { IdentityConnectSDK } from "@/lib/business-connect/mobile/identity-connect.sdk";
-import type { NfcTapResult, NfcTapProfile } from "@/lib/business-connect/mobile/identity-connect.sdk";
+import type {
+  NfcTapResult,
+  NfcTapProfile,
+} from "@/lib/business-connect/mobile/identity-connect.sdk";
 import { MeSheet } from "@/components/business-connect/mobile/me/MeSheet";
 import { parseTapConnectValue } from "@/lib/business-connect/mobile/tap-connect";
 import { reportIdentityMetric } from "@/lib/business-connect/mobile/identity.telemetry";
 import { toast } from "sonner";
+import { QrCanvas } from "@/components/member/QrCanvas";
+import { useMyIdentity } from "@/hooks/use-my-identity";
+import { getOrCreateShareLinkDirect } from "@/lib/business-connect/mobile/identity.functions";
+import type { IdentityShareLinkInfo } from "@/lib/business-connect/mobile/identity.types";
+import { copyToClipboard } from "@/lib/clipboard";
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -51,18 +60,42 @@ const SECONDARY_BTN =
 
 export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const [mode, setMode] = useState<"qr" | "nfc">("qr");
+  const [mode, setMode] = useState<"qr" | "myQr" | "nfc">("qr");
   const [torch, setTorch] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  
+
+  // My identity & share link for "Mã QR của tôi"
+  const myIdentity = useMyIdentity();
+  const identity = myIdentity.data?.identity;
+  const [shareLink, setShareLink] = useState<IdentityShareLinkInfo | null>(null);
+  const [loadingShareLink, setLoadingShareLink] = useState(false);
+
+  useEffect(() => {
+    if (mode === "myQr" && !shareLink && !loadingShareLink) {
+      setLoadingShareLink(true);
+      getOrCreateShareLinkDirect()
+        .then((sl) => setShareLink(sl))
+        .catch(() => {})
+        .finally(() => setLoadingShareLink(false));
+    }
+  }, [mode, shareLink, loadingShareLink]);
+
+  const myQrValue = shareLink?.token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/c/${shareLink.token}`
+    : identity?.ownerUserId
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}/connect-app/network/u:${identity.ownerUserId}`
+      : "";
+
   // State for resolved profile before / after connecting
   const [detectedToken, setDetectedToken] = useState<string | null>(null);
   const [resolvedResult, setResolvedResult] = useState<NfcTapResult | null>(null);
   const [resolving, setResolving] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
-  const [requestMessage, setRequestMessage] = useState("Xin chào, tôi muốn kết nối với bạn qua ViOne.");
+  const [requestMessage, setRequestMessage] = useState(
+    "Xin chào, tôi muốn kết nối với bạn qua ViOne.",
+  );
   const [requestSent, setRequestSent] = useState(false);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [isDecodingFile, setIsDecodingFile] = useState(false);
   const processingRef = useRef(false);
@@ -127,7 +160,13 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   const nfc = useNfcScanner({ active: !resolvedResult && !resolving, onDetect: handleDetected });
 
   // Real-time camera QR scanner is active whenever mode === "qr"
-  const { videoRef, status: qrStatus, hasTorch, scanImageFile, retry: retryCamera } = useQrScanner({
+  const {
+    videoRef,
+    status: qrStatus,
+    hasTorch,
+    scanImageFile,
+    retry: retryCamera,
+  } = useQrScanner({
     active: mode === "qr" && !resolvedResult && !resolving,
     torch,
     facingMode,
@@ -166,7 +205,9 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   return (
     <MeSheet
       title={resolvedResult?.ok ? "Thông tin Hội viên" : t("bc.mobile.tapConnect.title")}
-      subtitle={resolvedResult?.ok ? "Xác nhận kết nối danh thiếp" : t("bc.mobile.tapConnect.subtitle")}
+      subtitle={
+        resolvedResult?.ok ? "Xác nhận kết nối danh thiếp" : t("bc.mobile.tapConnect.subtitle")
+      }
       onClose={onClose}
     >
       <div className="grid gap-3.5 pb-2">
@@ -185,7 +226,6 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
             </p>
           </div>
         ) : resolvedResult && resolvedResult.ok && resolvedResult.profile ? (
-          /* Zalo-style Profile Preview Card */
           <ZaloProfilePreview
             result={resolvedResult}
             requestMessage={requestMessage}
@@ -199,21 +239,36 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             {/* Mode Switcher Tabs */}
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)]">
+            <div className="grid grid-cols-3 p-1 rounded-2xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] gap-0.5">
               <button
                 type="button"
                 onClick={() => {
                   setMode("qr");
                   setError(null);
                 }}
-                className={`flex items-center justify-center gap-2 py-2 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1 rounded-xl text-[11px] xs:text-[12px] sm:text-[13px] font-bold transition-all cursor-pointer select-none ${
                   mode === "qr"
                     ? "bg-[var(--bc-mobile-accent)] text-[#0b0c10] shadow-md"
                     : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                 }`}
               >
-                <Camera className="h-4 w-4" />
-                <span>Quét mã QR Live</span>
+                <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="truncate">Quét QR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("myQr");
+                  setError(null);
+                }}
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1 rounded-xl text-[11px] xs:text-[12px] sm:text-[13px] font-bold transition-all cursor-pointer select-none ${
+                  mode === "myQr"
+                    ? "bg-[var(--bc-mobile-accent)] text-[#0b0c10] shadow-md"
+                    : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                }`}
+              >
+                <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="truncate">QR của tôi</span>
               </button>
               <button
                 type="button"
@@ -221,20 +276,19 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                   setMode("nfc");
                   setError(null);
                 }}
-                className={`flex items-center justify-center gap-2 py-2 rounded-xl text-[13.5px] font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1 rounded-xl text-[11px] xs:text-[12px] sm:text-[13px] font-bold transition-all cursor-pointer select-none ${
                   mode === "nfc"
                     ? "bg-[var(--bc-mobile-accent)] text-[#0b0c10] shadow-md"
                     : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                 }`}
               >
-                <Nfc className="h-4 w-4" />
-                <span>Chạm thẻ NFC</span>
+                <Nfc className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="truncate">Thẻ NFC</span>
               </button>
             </div>
 
             {mode === "qr" ? (
-              /* Authentic Zalo / Banking App Camera Viewfinder */
-              <div className="relative aspect-[3/4] sm:aspect-square w-full overflow-hidden rounded-3xl bg-black border border-[var(--bc-mobile-border)] shadow-2xl">
+              <div className="relative aspect-[3/4] sm:aspect-square max-h-[38vh] w-full overflow-hidden rounded-3xl bg-black border border-[var(--bc-mobile-border)] shadow-2xl">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -257,12 +311,18 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                           : "bg-black/60 text-white hover:bg-black/80"
                       }`}
                     >
-                      {torch ? <Zap className="h-4.5 w-4.5 fill-current" /> : <ZapOff className="h-4.5 w-4.5" />}
+                      {torch ? (
+                        <Zap className="h-4.5 w-4.5 fill-current" />
+                      ) : (
+                        <ZapOff className="h-4.5 w-4.5" />
+                      )}
                     </button>
                   )}
                   <button
                     type="button"
-                    onClick={() => setFacingMode((m) => (m === "environment" ? "user" : "environment"))}
+                    onClick={() =>
+                      setFacingMode((m) => (m === "environment" ? "user" : "environment"))
+                    }
                     aria-label="Đổi camera"
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 transition-colors cursor-pointer shadow-lg"
                   >
@@ -277,7 +337,8 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                       <div
                         className="relative w-[72%] aspect-square rounded-2xl border-2 border-[var(--bc-mobile-accent)]/40 overflow-hidden"
                         style={{
-                          boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 30px rgba(216, 178, 130, 0.25) inset",
+                          boxShadow:
+                            "0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 30px rgba(216, 178, 130, 0.25) inset",
                         }}
                       >
                         {/* 4 Thick Glowing Corner Brackets */}
@@ -309,7 +370,9 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                     {qrStatus === "starting" ? (
                       <div className="flex flex-col items-center gap-2.5">
                         <Loader2 className="h-7 w-7 animate-spin text-[var(--bc-mobile-accent)]" />
-                        <p className="font-medium text-[var(--bc-mobile-text)]">{t("bc.mobile.tapConnect.cameraStarting")}</p>
+                        <p className="font-medium text-[var(--bc-mobile-text)]">
+                          {t("bc.mobile.tapConnect.cameraStarting")}
+                        </p>
                       </div>
                     ) : qrStatus === "unsupported" ? (
                       <div className="flex flex-col items-center gap-3.5 px-3 py-2 w-full max-w-[320px]">
@@ -326,7 +389,8 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                             Quét Mã QR Bằng Máy Ảnh
                           </p>
                           <p className="mt-1 text-[12.5px] text-[var(--bc-mobile-muted)] leading-relaxed">
-                            Bấm nút bên dưới để mở trực tiếp máy ảnh điện thoại, chụp quét mã QR và tự động kết nối hội viên.
+                            Bấm nút bên dưới để mở trực tiếp máy ảnh điện thoại, chụp quét mã QR và
+                            tự động kết nối hội viên.
                           </p>
                         </div>
 
@@ -374,9 +438,71 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
               </div>
-            ) : (
-              /* NFC Mode View */
-              <div className="grid justify-items-center gap-3 rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-5 py-10 text-center">
+            ) : mode === "myQr" ? (
+              <div className="flex flex-col items-center rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 text-center shadow-xl animate-fade-in">
+                <div className="flex flex-col items-center">
+                  <div className="h-16 w-16 overflow-hidden rounded-2xl border-2 border-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] shadow-[0_4px_16px_rgba(216,178,130,0.3)] mb-2.5">
+                    {identity?.avatarUrl ? (
+                      <img
+                        src={identity.avatarUrl}
+                        alt={identity.displayName || "Avatar"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center text-[20px] font-bold text-[var(--bc-mobile-accent)]">
+                        {(identity?.displayName || "V").slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-[17px] font-bold text-[var(--bc-mobile-text)]">
+                    {identity?.displayName || "Hội viên ViOne"}
+                  </h3>
+                  {(identity?.jobTitle || identity?.headline || identity?.companyName) && (
+                    <p className="mt-0.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
+                      {[identity?.jobTitle || identity?.headline, identity?.companyName]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-white p-4 shadow-lg">
+                  {loadingShareLink ? (
+                    <div className="flex h-[200px] w-[200px] items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[var(--bc-mobile-accent)]" />
+                    </div>
+                  ) : myQrValue ? (
+                    <QrCanvas
+                      value={myQrValue}
+                      size={200}
+                      logoUrl={identity?.avatarUrl}
+                      logoScale={0.22}
+                    />
+                  ) : (
+                    <div className="flex h-[200px] w-[200px] items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[var(--bc-mobile-accent)]" />
+                    </div>
+                  )}
+                </div>
+
+                <p className="mt-3.5 max-w-[280px] text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
+                  Đưa mã này cho người đối diện quét camera để kết nối và trao đổi danh thiếp ngay
+                  lập tức.
+                </p>
+
+                {myQrValue && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(myQrValue, "Đã sao chép liên kết danh thiếp!")}
+                    className="mt-3 flex items-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-4 py-2 text-[13px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface)] transition-colors cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" />
+                    <span>Sao chép liên kết</span>
+                  </button>
+                )}
+              </div>
+            ) : mode === "nfc" ? (
+              <div className="grid justify-items-center gap-3.5 rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-5 py-8 text-center animate-fade-in">
                 <div className="relative">
                   <Nfc
                     aria-hidden="true"
@@ -402,21 +528,44 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                               : t("bc.mobile.tapConnect.starting")}
                   </p>
                   {nfc.status === "scanning" ? (
-                    <p className="mt-1.5 text-[13.5px] text-[var(--bc-mobile-muted)] max-w-[280px]">
-                      Áp thẻ danh thiếp NFC hoặc điện thoại vào giữa mặt lưng máy để kết nối tự động
-                    </p>
+                    <div className="mt-2 space-y-2 text-[13px] text-[var(--bc-mobile-muted)] max-w-[300px]">
+                      <p>
+                        Áp thẻ danh thiếp thông minh NFC vào mặt lưng điện thoại để đọc thẻ tự động.
+                      </p>
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-[12px] text-amber-800 dark:text-amber-300 leading-snug">
+                        💡 <strong>Kết nối giữa 2 điện thoại:</strong> Trình duyệt Web không hỗ trợ
+                        chạm 2 điện thoại để truyền thẻ qua NFC. Hãy dùng{" "}
+                        <strong>Mã QR của tôi</strong> để người đối diện quét camera ngay.
+                      </div>
+                    </div>
                   ) : nfc.status === "unsupported" ? (
-                    <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
-                      NFC hỗ trợ trên Google Chrome (Android). Bạn có thể chuyển sang tab Quét QR ở trên.
-                    </p>
+                    <div className="mt-2 space-y-2 text-[12.5px] text-[var(--bc-mobile-muted)] max-w-[300px]">
+                      <p>
+                        NFC Web chỉ hỗ trợ đọc thẻ trên Google Chrome (Android). iOS Safari không hỗ
+                        trợ Web NFC.
+                      </p>
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-[12px] text-amber-800 dark:text-amber-300 leading-snug">
+                        💡 <strong>Khuyên dùng:</strong> Hãy chọn tab <strong>Mã QR của tôi</strong>{" "}
+                        hoặc <strong>Quét camera</strong> để kết nối giữa 2 máy.
+                      </div>
+                    </div>
                   ) : nfc.status === "denied" ? (
                     <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
                       Vui lòng cấp quyền NFC trong cài đặt trình duyệt để kích hoạt.
                     </p>
                   ) : null}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMode("myQr")}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[var(--bc-mobile-accent)] px-4 py-2.5 text-[13px] font-bold text-[#0b0c10] shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <QrCode className="h-4 w-4" />
+                  <span>Hiển thị mã QR của tôi</span>
+                </button>
               </div>
-            )}
+            ) : null}
 
             {/* Hidden file inputs */}
             <input
@@ -435,36 +584,46 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
               onChange={handleFileUpload}
             />
 
-            {/* Actions for Gallery Image & Snapshot */}
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <button
-                type="button"
-                disabled={isDecodingFile}
-                onClick={() => captureInputRef.current?.click()}
-                className={SECONDARY_BTN}
-              >
-                {isDecodingFile ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-[var(--bc-mobile-accent)]" />
-                ) : (
-                  <Camera aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={1.8} />
-                )}
-                <span>Chụp ảnh tĩnh</span>
-              </button>
+            {/* Actions for Gallery Image & Snapshot (only in camera qr mode) */}
+            {mode === "qr" && (
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  type="button"
+                  disabled={isDecodingFile}
+                  onClick={() => captureInputRef.current?.click()}
+                  className={SECONDARY_BTN}
+                >
+                  {isDecodingFile ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--bc-mobile-accent)]" />
+                  ) : (
+                    <Camera
+                      aria-hidden="true"
+                      className="h-4 w-4 text-[var(--bc-mobile-accent)]"
+                      strokeWidth={1.8}
+                    />
+                  )}
+                  <span>Chụp ảnh tĩnh</span>
+                </button>
 
-              <button
-                type="button"
-                disabled={isDecodingFile}
-                onClick={() => fileInputRef.current?.click()}
-                className={SECONDARY_BTN}
-              >
-                {isDecodingFile ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-[var(--bc-mobile-accent)]" />
-                ) : (
-                  <ImagePlus aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={1.8} />
-                )}
-                <span>Ảnh từ thư viện</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  disabled={isDecodingFile}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={SECONDARY_BTN}
+                >
+                  {isDecodingFile ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--bc-mobile-accent)]" />
+                  ) : (
+                    <ImagePlus
+                      aria-hidden="true"
+                      className="h-4 w-4 text-[var(--bc-mobile-accent)]"
+                      strokeWidth={1.8}
+                    />
+                  )}
+                  <span>Ảnh từ thư viện</span>
+                </button>
+              </div>
+            )}
 
             {error && (
               <div
@@ -602,23 +761,14 @@ function ZaloProfilePreview({
       {/* Primary Action Button */}
       {isConnected ? (
         <div className="grid gap-2">
-          <Link
-            to="/connect-app/inbox"
-            onClick={onClose}
-            className={PRIMARY_BTN}
-          >
+          <Link to="/connect-app/inbox" onClick={onClose} className={PRIMARY_BTN}>
             <MessageSquare className="h-4.5 w-4.5" />
             <span>Nhắn tin ngay</span>
           </Link>
         </div>
       ) : isOutgoingPending ? (
         <div className="grid gap-2.5">
-          <button
-            type="button"
-            disabled={sending}
-            onClick={onSendConnect}
-            className={PRIMARY_BTN}
-          >
+          <button type="button" disabled={sending} onClick={onSendConnect} className={PRIMARY_BTN}>
             {sending ? (
               <Loader2 className="h-4.5 w-4.5 animate-spin" />
             ) : (
@@ -626,18 +776,14 @@ function ZaloProfilePreview({
             )}
             <span>Gửi lại yêu cầu kết nối ngay</span>
           </button>
-          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 text-center text-[12px] text-amber-300 font-medium">
-            ✓ Đã gửi yêu cầu kết nối trước đó. Bấm nút trên để gửi nhắc lại thông báo tới người nhận.
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 text-center text-[12px] text-amber-800 dark:text-amber-300 font-medium">
+            ✓ Đã gửi yêu cầu kết nối trước đó. Bấm nút trên để gửi nhắc lại thông báo tới người
+            nhận.
           </div>
         </div>
       ) : isIncomingPending ? (
         <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={sending}
-            onClick={onSendConnect}
-            className={PRIMARY_BTN}
-          >
+          <button type="button" disabled={sending} onClick={onSendConnect} className={PRIMARY_BTN}>
             {sending ? (
               <Loader2 className="h-4.5 w-4.5 animate-spin" />
             ) : (
@@ -647,12 +793,7 @@ function ZaloProfilePreview({
           </button>
         </div>
       ) : isSelf ? null : (
-        <button
-          type="button"
-          disabled={sending}
-          onClick={onSendConnect}
-          className={PRIMARY_BTN}
-        >
+        <button type="button" disabled={sending} onClick={onSendConnect} className={PRIMARY_BTN}>
           {sending ? (
             <Loader2 className="h-4.5 w-4.5 animate-spin" />
           ) : (
@@ -670,7 +811,7 @@ function ZaloProfilePreview({
         </button>
         <Link
           to="/connect-app/network"
-          search={{ tab: "requests" }}
+          search={{ tab: "network" }}
           onClick={onClose}
           className={SECONDARY_BTN}
         >

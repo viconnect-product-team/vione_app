@@ -15,10 +15,10 @@ export const communityNewsKeys = {
 
 export function useCommunityNews(communityId: string) {
   const viewerId = useViewerUserId();
-  const viewerKey = viewerId ?? "viewer-pending";
+  const viewerKey = viewerId ?? "viewer-public";
   const result = useInfiniteQuery({
     queryKey: communityNewsKeys.list(viewerKey, communityId),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId),
     staleTime: 30_000,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
@@ -42,7 +42,7 @@ export function useCommunityNews(communityId: string) {
     items: pages.flatMap((p) => p?.items ?? []),
     unavailable: !result.isPending && !result.isError && firstPage === null,
     totalCount: firstPage?.totalCount ?? 0,
-    initialLoading: result.isPending && viewerId !== null,
+    initialLoading: result.isPending,
     coreError: result.isError && !result.data,
     retry: () => void result.refetch(),
     hasMore: result.hasNextPage,
@@ -53,10 +53,10 @@ export function useCommunityNews(communityId: string) {
 
 export function useCommunityNewsDetail(communityId: string, newsRef: string) {
   const viewerId = useViewerUserId();
-  const viewerKey = viewerId ?? "viewer-pending";
+  const viewerKey = viewerId ?? "viewer-public";
   const query = useQuery({
     queryKey: communityNewsKeys.detail(viewerKey, communityId, newsRef),
-    enabled: viewerId !== null,
+    enabled: Boolean(communityId) && Boolean(newsRef),
     staleTime: 30_000,
     queryFn: async () => {
       try {
@@ -71,7 +71,7 @@ export function useCommunityNewsDetail(communityId: string, newsRef: string) {
   return {
     detail: query.data ?? null,
     unavailable: !query.isPending && !query.isError && query.data === null,
-    initialLoading: query.isPending && viewerId !== null,
+    initialLoading: query.isPending,
     coreError: query.isError && query.data === undefined,
     retry: () => void query.refetch(),
   };

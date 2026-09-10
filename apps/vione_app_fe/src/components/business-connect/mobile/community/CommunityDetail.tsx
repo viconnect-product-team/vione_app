@@ -4,26 +4,61 @@
 // No CRUD, no settings, no fake social metrics, no feed.
 
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Newspaper, RefreshCw, Users } from "lucide-react";
+import { ChevronRight, Newspaper, RefreshCw, Users, UserPlus, CheckCircle } from "lucide-react";
 import { useFmt, useT } from "@/lib/i18n";
 import { useCommunityDetail, useCommunityMembers } from "@/hooks/use-community";
 import { useCommunityActivityPreview } from "@/hooks/use-community-activity";
 import { useCommunityNews } from "@/hooks/use-community-news";
+import { useJoinableCommunities } from "@/hooks/use-community-join";
+import { toast } from "sonner";
 import { eventDateParts } from "@/lib/business-connect/mobile/community-activity.service";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityInviteButton } from "./CommunityInviteSheet";
-import { CommunityAvatar, CommunityError, CommunityListSkeleton, getCommunityVisuals } from "./CommunityHome";
+import {
+  CommunityAvatar,
+  CommunityError,
+  CommunityListSkeleton,
+  getCommunityVisuals,
+} from "./CommunityHome";
 import { monthLabel } from "./CommunityEvents";
 import { daysLeftLabel, opportunityCategoryLabel } from "./CommunityOpportunities";
 
 export function CommunityDetail({ communityId }: { communityId: string }) {
   const t = useT();
   const fmt = useFmt();
-  const { detail, unavailable, initialLoading, error: coreError, retry } = useCommunityDetail(communityId);
+  const {
+    detail,
+    unavailable,
+    initialLoading,
+    error: coreError,
+    retry,
+  } = useCommunityDetail(communityId);
   const activity = useCommunityActivityPreview(communityId);
+  const { requestJoin } = useJoinableCommunities();
+
+  const isMember = detail?.community?.isMember ?? true;
+
+  const handleJoin = () => {
+    requestJoin.mutate(
+      { communityId },
+      {
+        onSuccess: () => {
+          toast.success("Đã tham gia cộng đồng thành công!");
+          retry();
+        },
+        onError: () => {
+          toast.error("Không thể tham gia cộng đồng. Vui lòng thử lại.");
+        },
+      },
+    );
+  };
 
   const visuals = detail?.community
-    ? getCommunityVisuals(detail.community.name, detail.community.logoUrl, detail.community.bannerUrl)
+    ? getCommunityVisuals(
+        detail.community.name,
+        detail.community.logoUrl,
+        detail.community.bannerUrl,
+      )
     : null;
 
   return (
@@ -52,10 +87,12 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
                 className="h-full w-full object-cover brightness-[0.90] dark:brightness-[0.75]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--bc-mobile-surface)] via-transparent to-black/30" />
-              
+
               {/* Category Pill Tag on Banner - positioned bottom-right with luxury styling */}
               <div className="absolute bottom-3 right-4 z-10">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md bg-black/65 shadow-md border border-amber-400/40 text-amber-300`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md bg-black/65 shadow-md border border-amber-400/40 text-amber-300`}
+                >
                   <span>{visuals.category}</span>
                 </span>
               </div>
@@ -83,9 +120,11 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
             <section className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-1 text-[12px] font-medium text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.community.yourRole")}:{" "}
-                {detail.community.viewerRole === "admin"
-                  ? t("bc.mobile.community.role.admin")
-                  : t("bc.mobile.community.role.member")}
+                {isMember
+                  ? detail.community.viewerRole === "admin"
+                    ? t("bc.mobile.community.role.admin")
+                    : t("bc.mobile.community.role.member")
+                  : "Chưa tham gia"}
               </span>
               {detail.community.memberCount !== null ? (
                 <span className="rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 py-1 text-[12px] font-medium text-[var(--bc-mobile-muted)]">
@@ -93,6 +132,28 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
                 </span>
               ) : null}
             </section>
+
+            {!isMember ? (
+              <section className="mt-4 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent p-4 flex items-center justify-between gap-3 shadow-md">
+                <div>
+                  <p className="text-[14px] font-bold text-[var(--bc-mobile-text)]">
+                    Gia nhập cộng đồng
+                  </p>
+                  <p className="text-[12px] text-[var(--bc-mobile-muted)]">
+                    Tham gia để kết nối hội viên và cập nhật tin tức, sự kiện mới nhất.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleJoin}
+                  disabled={requestJoin.isPending}
+                  className="inline-flex min-h-[42px] items-center gap-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#B88E4C] px-5 text-[13.5px] font-bold text-[#050811] shadow-md hover:brightness-105 active:scale-95 transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {requestJoin.isPending ? "Đang tham gia..." : "Tham gia ngay"}
+                </button>
+              </section>
+            ) : null}
 
             {detail.community.description ? (
               <section className="mt-5">
@@ -226,12 +287,12 @@ function ActivityPreviews({
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-10 w-9 shrink-0 flex-col items-center justify-center rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]"
+                      className="flex h-[52px] w-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-gradient-to-b from-[var(--bc-mobile-surface-2)] to-[rgba(216,178,130,0.08)] shadow-xs transition-transform"
                     >
-                      <span className="text-[13px] font-semibold leading-none text-[var(--bc-mobile-text)]">
+                      <span className="text-[17px] font-extrabold leading-none text-[var(--bc-mobile-text)]">
                         {parts?.day ?? "--"}
                       </span>
-                      <span className="mt-0.5 text-[9px] font-medium uppercase text-[var(--bc-mobile-muted)]">
+                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--bc-mobile-muted)] whitespace-nowrap">
                         {parts ? monthLabel(fmt.locale, parts.month) : ""}
                       </span>
                     </span>
@@ -264,8 +325,6 @@ function ActivityPreviews({
           {t("bc.mobile.community.events.viewAll")}
         </Link>
       </section>
-
-
 
       <section className="mt-7">
         <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--bc-mobile-muted)]">
@@ -453,7 +512,9 @@ function NewsPreview({ communityId }: { communityId: string }) {
       ) : (
         <ul className="mt-2 divide-y divide-[var(--bc-mobile-border)]">
           {rows.map((item) => {
-            const meta = [item.category, item.author, item.publishedLabel].filter(Boolean).join(" · ");
+            const meta = [item.category, item.author, item.publishedLabel]
+              .filter(Boolean)
+              .join(" · ");
             return (
               <li key={item.newsRef}>
                 <Link
@@ -505,4 +566,3 @@ function NewsPreview({ communityId }: { communityId: string }) {
     </section>
   );
 }
-

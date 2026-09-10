@@ -3,7 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { Bell, Check, CheckCheck, Trash2, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useT, hasTKey } from "@/lib/i18n";
-import { useNotifications, useMarkNotificationRead, useDeleteNotification } from "@/hooks/use-bc-notifications";
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useDeleteNotification,
+} from "@/hooks/use-bc-notifications";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 import type { NotificationDTO } from "@/lib/business-connect/notification-orchestration/types";
 
@@ -11,7 +15,7 @@ function text(
   t: ReturnType<typeof useT>,
   key: string,
   fallback: string,
-  vars?: Record<string, any>
+  vars?: Record<string, any>,
 ): string {
   return key && hasTKey(key) ? t(key as any, vars) : fallback;
 }
@@ -86,7 +90,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
   }
 
   const handleAccept = async (notifId: string, connectionId: string) => {
-    setActionStates(prev => ({ ...prev, [notifId]: "accepted", [connectionId]: "accepted" }));
+    setActionStates((prev) => ({ ...prev, [notifId]: "accepted", [connectionId]: "accepted" }));
     try {
       await GlobalNetworkSDK.mutations.accept(connectionId);
       markRead.mutate({ id: notifId });
@@ -98,7 +102,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
   };
 
   const handleDecline = async (notifId: string, connectionId: string) => {
-    setActionStates(prev => ({ ...prev, [notifId]: "declined", [connectionId]: "declined" }));
+    setActionStates((prev) => ({ ...prev, [notifId]: "declined", [connectionId]: "declined" }));
     try {
       await GlobalNetworkSDK.mutations.decline(connectionId);
       markRead.mutate({ id: notifId });
@@ -126,9 +130,14 @@ function UnreadList({ onClose }: { onClose: () => void }) {
           const avatarUrl = n.safeDisplayData?.avatarUrl;
           const counterpartName = n.safeDisplayData?.counterpartDisplayName || "ViOne Member";
           const initial = counterpartName[0]?.toUpperCase() || "V";
-          const isConnection = n.notificationKind === "connection_request_received" || n.sourceDomain === "connection";
+          const isConnection =
+            n.notificationKind === "connection_request_received" || n.sourceDomain === "connection";
           const connectionId = n.sourceRecordId || n.safeDisplayData?.connectionId;
-          const resolvedStatus = actionStates[n.id] || (connectionId ? actionStates[connectionId] : null) || n.safeDisplayData?.connectionStatus || (n.notificationKind === "connection_request_accepted" ? "accepted" : "pending");
+          const resolvedStatus =
+            actionStates[n.id] ||
+            (connectionId ? actionStates[connectionId] : null) ||
+            n.safeDisplayData?.connectionStatus ||
+            (n.notificationKind === "connection_request_accepted" ? "accepted" : "pending");
 
           const rawTitle = text(t, n.titleKey, n.notificationKind, n.safeDisplayData);
           const displayTitle = isConnection
@@ -139,8 +148,12 @@ function UnreadList({ onClose }: { onClose: () => void }) {
             : isConnection
               ? `${counterpartName} muốn kết nối danh thiếp với bạn.`
               : text(t, n.bodyKey, "", n.safeDisplayData);
-          const targetRoute = isConnection ? "/connect-app/network" : (n.action?.targetRoute || "/connect-app/notifications");
-          const targetSearch = isConnection ? { tab: "requests" } : (n.action?.targetSearch || undefined);
+          const targetRoute = isConnection
+            ? "/connect-app/network"
+            : n.action?.targetRoute || "/connect-app/notifications";
+          const targetSearch = isConnection
+            ? { tab: "requests" }
+            : n.action?.targetSearch || undefined;
 
           return (
             <li
@@ -201,7 +214,10 @@ function UnreadList({ onClose }: { onClose: () => void }) {
                     <Link
                       to={targetRoute}
                       search={targetSearch}
-                      onClick={onClose}
+                      onClick={() => {
+                        markRead.mutate({ id: n.id });
+                        onClose();
+                      }}
                       className="inline-flex items-center gap-0.5 text-[11.5px] font-semibold text-[#D8B282] hover:underline ml-auto"
                     >
                       Chi tiết →
@@ -211,10 +227,19 @@ function UnreadList({ onClose }: { onClose: () => void }) {
                   <Link
                     to={targetRoute}
                     search={targetSearch}
-                    onClick={onClose}
+                    onClick={() => {
+                      markRead.mutate({ id: n.id });
+                      onClose();
+                    }}
                     className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#D8B282] hover:underline"
                   >
-                    {text(t, n.action?.labelKey, t("bc.mobile.home.notifications.panel.open"), n.safeDisplayData)} →
+                    {text(
+                      t,
+                      n.action?.labelKey,
+                      t("bc.mobile.home.notifications.panel.open"),
+                      n.safeDisplayData,
+                    )}{" "}
+                    →
                   </Link>
                 )}
               </div>
@@ -247,8 +272,12 @@ function UnreadList({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           disabled={markRead.isPending}
-          onClick={() => {
-            for (const n of items) markRead.mutate({ id: n.id });
+          onClick={async () => {
+            for (const n of items) {
+              await markRead.mutateAsync({ id: n.id }).catch(() => {});
+            }
+            void q.refetch();
+            toast.success("Đã đánh dấu tất cả là đã đọc");
           }}
           className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D8B282]/50 bg-gradient-to-r from-[#D8B282]/15 to-[#C29B69]/10 text-[12px] font-bold text-[#F7D896] hover:bg-[#D8B282]/20 transition-all cursor-pointer disabled:opacity-60"
         >

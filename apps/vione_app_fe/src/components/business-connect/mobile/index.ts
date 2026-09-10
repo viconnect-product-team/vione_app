@@ -47,6 +47,7 @@ export * from "./ScheduleCalendar";
 export * from "./SectionHeaderInfo";
 export * from "./TodayCustomizeSheet";
 export * from "./TodayItem";
+export * from "./EventDetailMobileSheet";
 
 // 5. Xác thực (Auth)
 export * from "./ConnectAppSignIn";

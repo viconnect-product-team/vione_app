@@ -231,6 +231,7 @@ export async function uploadFileToNest(file: File | Blob, filename: string): Pro
   }
 
   const text = await response.text();
-  const data = JSON.parse(text); // Bypasses automatic URL transform so we get raw path e.g., "/upload/file/documents/..."
-  return data.url;
+  const data = JSON.parse(text);
+  const transformed = transformUrls(data);
+  return transformed?.url || data.url;
 }
