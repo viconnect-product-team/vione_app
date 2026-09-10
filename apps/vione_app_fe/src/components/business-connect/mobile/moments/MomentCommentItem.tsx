@@ -248,19 +248,19 @@ export function MomentCommentItem({
           </div>
 
           {/* Hàng hành động (Thích/Emotion, Phản hồi, Thời gian) */}
-          <div className="flex items-center gap-3.5 mt-1.5 ml-1 text-[11px] font-semibold text-[#8a8d91]">
+          <div className="flex items-center gap-3.5 mt-1.5 ml-1 text-[11px] font-semibold text-slate-500 dark:text-[#8a8d91]">
             {/* Reaction Bar & Nút Thích */}
             <div className="relative" ref={reactionPickerRef}>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => handleLike()}
-                  className={`cursor-pointer transition-colors flex items-center gap-1 hover:text-[#e4e6eb] ${
-                    comment.userLiked ? "text-[#D8B282] font-bold" : ""
+                  className={`cursor-pointer transition-colors flex items-center gap-1 hover:text-slate-900 dark:hover:text-[#e4e6eb] ${
+                    comment.userLiked ? "text-[#8C653B] dark:text-[#D8B282] font-bold" : ""
                   }`}
                 >
                   <Heart
-                    className={`h-3 w-3 ${comment.userLiked ? "fill-[#D8B282] text-[#D8B282]" : ""}`}
+                    className={`h-3 w-3 ${comment.userLiked ? "fill-[#8C653B] text-[#8C653B] dark:fill-[#D8B282] dark:text-[#D8B282]" : ""}`}
                     strokeWidth={2}
                   />
                   <span>{comment.userLiked && userReactionEmoji ? `Thích ${userReactionEmoji}` : "Thích"}</span>
@@ -271,7 +271,7 @@ export function MomentCommentItem({
                   type="button"
                   onClick={() => setShowReactionPicker((prev) => !prev)}
                   title="Thả cảm xúc"
-                  className="p-0.5 rounded text-[#6c7078] hover:text-[#D8B282] transition-colors cursor-pointer"
+                  className="p-0.5 rounded text-slate-400 dark:text-[#6c7078] hover:text-[#8C653B] dark:hover:text-[#D8B282] transition-colors cursor-pointer"
                 >
                   <Smile className="h-3 w-3" />
                 </button>
@@ -279,13 +279,13 @@ export function MomentCommentItem({
 
               {/* Floating Emotion Reactions Bar */}
               {showReactionPicker && (
-                <div className="absolute bottom-6 left-0 z-40 flex items-center gap-1 rounded-full border border-[#D8B282]/30 bg-[#0f172a]/95 p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute bottom-6 left-0 z-40 flex items-center gap-1 rounded-full border border-slate-200 dark:border-[#D8B282]/30 bg-white/95 dark:bg-[#0f172a]/95 p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
                   {QUICK_REACTIONS.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
                       onClick={() => handleLike(emoji)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[15px] hover:scale-130 transition-transform cursor-pointer hover:bg-white/10"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-[15px] hover:scale-130 transition-transform cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                     >
                       {emoji}
                     </button>
@@ -298,20 +298,20 @@ export function MomentCommentItem({
             <button
               type="button"
               onClick={() => onReply(comment)}
-              className="cursor-pointer transition-colors hover:text-[#e4e6eb] hover:underline"
+              className="cursor-pointer transition-colors hover:text-slate-900 dark:hover:text-[#e4e6eb] hover:underline"
             >
               Phản hồi
             </button>
 
             {/* Thời gian */}
-            <span className="font-normal text-[#6c7078]">
+            <span className="font-normal text-slate-400 dark:text-[#6c7078]">
               {fmt.rel(comment.createdAt)}
             </span>
           </div>
 
           {/* Cấp con (Cấp 2 hoặc Cấp 3): Đường nối cây .replies-container */}
           {replies.length > 0 && (
-            <div className="ml-2 pl-3 border-l-2 border-[#2f3542] flex flex-col gap-3 mt-3">
+            <div className="ml-2 pl-3 border-l-2 border-slate-200 dark:border-[#2f3542] flex flex-col gap-3 mt-3">
               {replies.map((child) => (
                 <MomentCommentItem
                   key={child.id}

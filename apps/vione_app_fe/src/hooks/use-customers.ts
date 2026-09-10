@@ -54,12 +54,17 @@ export function useCustomers() {
     enabled: viewerId !== null,
     staleTime: 30_000,
     queryFn: async () => {
-      const res = await bcMobileCustomersFn();
-      return res.ok ? res.customers : [];
+      const res: any = await bcMobileCustomersFn();
+      if (res?.ok && Array.isArray(res?.customers)) return res.customers;
+      if (Array.isArray(res?.customers)) return res.customers;
+      if (Array.isArray(res)) return res;
+      return [];
     },
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: customerKeys.root });
+  const invalidate = async () => {
+    await qc.invalidateQueries({ queryKey: customerKeys.root });
+  };
 
   const create = useMutation({
     mutationFn: (input: {
@@ -73,7 +78,17 @@ export function useCustomers() {
       note?: string | null;
       nextActionAt?: string | null;
     }) => bcMobileCustomerCreateFn({ data: input }),
-    onSuccess: invalidate,
+    onSuccess: async (res: any) => {
+      const newCust = res?.customer || res;
+      if (newCust && newCust.id) {
+        qc.setQueryData(key, (old: BcCustomer[] | undefined) => {
+          if (!old) return [newCust];
+          if (old.some((c) => c.id === newCust.id)) return old;
+          return [newCust, ...old];
+        });
+      }
+      await invalidate();
+    },
   });
 
   const update = useMutation({
@@ -86,12 +101,27 @@ export function useCustomers() {
       note?: string | null;
       nextActionAt?: string | null;
     }) => bcMobileCustomerUpdateFn({ data: input }),
-    onSuccess: invalidate,
+    onSuccess: async (res: any) => {
+      const updated = res?.customer || res;
+      if (updated && updated.id) {
+        qc.setQueryData(key, (old: BcCustomer[] | undefined) => {
+          if (!old) return [updated];
+          return old.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        });
+      }
+      await invalidate();
+    },
   });
 
   const remove = useMutation({
     mutationFn: (customerId: string) => bcMobileCustomerDeleteFn({ data: { customerId } }),
-    onSuccess: invalidate,
+    onSuccess: async (_data, customerId) => {
+      qc.setQueryData(key, (old: BcCustomer[] | undefined) => {
+        if (!old) return [];
+        return old.filter((c) => c.id !== customerId);
+      });
+      await invalidate();
+    },
   });
 
   const setTags = useMutation({
@@ -222,27 +252,57 @@ export function useCustomerTags() {
     enabled: viewerId !== null,
     staleTime: 60_000,
     queryFn: async () => {
-      const res = await bcMobileCustomerTagsFn();
-      return res.ok ? res.tags : [];
+      const res: any = await bcMobileCustomerTagsFn();
+      if (res?.ok && Array.isArray(res?.tags)) return res.tags;
+      if (Array.isArray(res?.tags)) return res.tags;
+      if (Array.isArray(res)) return res;
+      return [];
     },
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: customerKeys.root });
+  const tagKey = customerKeys.tags(viewerId ?? "viewer-pending");
+
+  const invalidate = async () => {
+    await qc.invalidateQueries({ queryKey: customerKeys.root });
+  };
 
   const create = useMutation({
     mutationFn: (name: string) => bcMobileCustomerTagCreateFn({ data: { name } }),
-    onSuccess: invalidate,
+    onSuccess: async (res: any) => {
+      const newTag = res?.tag || res;
+      if (newTag && newTag.id) {
+        qc.setQueryData(tagKey, (old: BcCustomerTag[] | undefined) => {
+          if (!old) return [newTag];
+          if (old.some((t) => t.id === newTag.id)) return old;
+          return [...old, newTag];
+        });
+      }
+      await invalidate();
+    },
   });
 
   const rename = useMutation({
     mutationFn: (input: { tagId: string; name: string }) =>
       bcMobileCustomerTagRenameFn({ data: input }),
-    onSuccess: invalidate,
+    onSuccess: async (res: any, variables) => {
+      const updated = res?.tag || res;
+      qc.setQueryData(tagKey, (old: BcCustomerTag[] | undefined) => {
+        if (!old) return [];
+        return old.map((t) => (t.id === variables.tagId ? { ...t, name: variables.name, ...(updated?.id ? updated : {}) } : t));
+      });
+      await invalidate();
+    },
   });
 
   const remove = useMutation({
     mutationFn: (tagId: string) => bcMobileCustomerTagDeleteFn({ data: { tagId } }),
-    onSuccess: invalidate,
+    onSuccess: async (_data, tagId) => {
+      qc.setQueryData(tagKey, (old: BcCustomerTag[] | undefined) => {
+        if (!old) return [];
+        return old.filter((t) => t.id !== tagId);
+      });
+      await invalidate();
+    },
   });
 
   return {

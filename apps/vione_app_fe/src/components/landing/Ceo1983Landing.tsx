@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { LangSwitcher } from "@/components/LangSwitcher";
 import { LandingInteractiveShowcase } from "./LandingInteractiveShowcase";
 import { submitClubApplication } from "@/lib/club-application.functions";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
-  ArrowRight,
   Sparkles,
   Smartphone,
   Wallet,
@@ -18,62 +18,179 @@ import {
   Users,
   TrendingUp,
   BarChart3,
-  Network,
-  Cpu,
-  BadgeCheck,
-  FileCheck,
-  Award,
-  Flame,
-  Hexagon,
   Building2,
   Globe2,
   Handshake,
   GraduationCap,
   Coins,
-  Landmark,
-  Briefcase,
   Menu,
-  Play,
+  ArrowRight,
+  ChevronRight,
+  ChevronLeft,
+  UserCheck,
+  Award,
+  Radio,
+  Sun,
+  Moon,
+  Contrast,
+  Flame,
+  BadgeCheck,
+  Compass,
+  Volume2,
+  Lock,
+  Activity,
+  Check,
   Film,
+  Play,
+  Pause,
+  VolumeX,
 } from "lucide-react";
 
 type ThemeMode = "dark" | "light" | "contrast";
 
-/** Comprehensive Multi-Language Dictionary for CEO 1983 Landing */
+/** 3D Page Turn / Theatrical Curtain Unveil Scroll Transition Wrapper */
+function SectionFlip3D({
+  children,
+  id,
+  className = "",
+}: {
+  children: React.ReactNode;
+  id?: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  // Dramatic 3D page curl & theatrical curtain reveal curve
+  const rotateX = useTransform(scrollYProgress, [0, 0.28, 0.72, 1], [10, 0, 0, -8]);
+  const scale = useTransform(scrollYProgress, [0, 0.25, 0.75, 1], [0.93, 1, 1, 0.94]);
+  const opacity = useTransform(scrollYProgress, [0, 0.18, 0.82, 1], [0.45, 1, 1, 0.55]);
+  const y = useTransform(scrollYProgress, [0, 0.28, 0.72, 1], [80, 0, 0, -60]);
+  const curtainGlow = useTransform(scrollYProgress, [0, 0.25, 0.5, 0.75, 1], [0, 0.8, 0, 0, 0]);
+
+  return (
+    <div
+      ref={ref}
+      id={id}
+      style={{ perspective: "2200px", perspectiveOrigin: "50% 30%" }}
+      className={`relative w-full ${className}`}
+    >
+      <motion.div
+        style={{
+          rotateX,
+          scale,
+          opacity,
+          y,
+          transformStyle: "preserve-3d",
+          transformOrigin: "center top",
+        }}
+        className="w-full h-full will-change-transform"
+      >
+        {/* Dynamic Sweeping Specular Gold Rim as Curtain Unveils */}
+        <motion.div
+          style={{ opacity: curtainGlow }}
+          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#F6E1C3] to-transparent pointer-events-none z-30 shadow-[0_0_25px_rgba(216,178,130,0.8)]"
+        />
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+/** Section sliding in from left to center on scroll */
+function SectionSlideLeft({
+  children,
+  id,
+  className = "",
+}: {
+  children: React.ReactNode;
+  id?: string;
+  className?: string;
+}) {
+  return (
+    <div id={id} className={`relative w-full overflow-hidden ${className}`}>
+      <motion.div
+        initial={{ opacity: 0, x: -90, scale: 0.95 }}
+        whileInView={{ opacity: 1, x: 0, scale: 1 }}
+        viewport={{ once: false, amount: 0.12 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full h-full will-change-transform"
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+/** Section sliding in from right to center on scroll */
+function SectionSlideRight({
+  children,
+  id,
+  className = "",
+}: {
+  children: React.ReactNode;
+  id?: string;
+  className?: string;
+}) {
+  return (
+    <div id={id} className={`relative w-full overflow-hidden ${className}`}>
+      <motion.div
+        initial={{ opacity: 0, x: 90, scale: 0.95 }}
+        whileInView={{ opacity: 1, x: 0, scale: 1 }}
+        viewport={{ once: false, amount: 0.12 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full h-full will-change-transform"
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+const PageTurnSection = SectionFlip3D;
+
+/** Concise Multi-Language Dictionary for CEO 1983 Landing */
 const CEO1983_I18N = {
   vi: {
     navBadge: "HIỆP HỘI DOANH NGHIỆP",
     navVip: "VIP PASS",
-    navAbout: "Giới Thiệu",
-    navMatrix: "Ma Trận Chiến Lược",
-    navEcosystem: "Hệ Sinh Thái",
-    navCore: "Giá Trị Cốt Lõi",
-    navActivities: "Hoạt Động & Tour",
     navLeadership: "Ban Lãnh Đạo",
-    navRoadmap: "Lộ Trình Gia Nhập",
+    navTimeline: "Tòa Tháp Cột Mốc",
+    navEcosystem: "Quỹ Đạo Hệ Sinh Thái",
+    navCore: "Giá Trị Cốt Lõi",
+    navRoadmap: "Gia Nhập VIP",
     navJoin: "GIA NHẬP CLB VIP →",
-    modeDark: "🌙 Obsidian",
-    modeLight: "☀️ Ivory",
-    modeContrast: "🌓 Onyx",
-    heroHanoiba: "👑 TRỰC THUỘC HỘI DOANH NHÂN TRẺ HÀ NỘI (HANOIBA)",
-    heroTitle1: "KẾT NỐI ĐỒNG NIÊN",
-    heroTitle2: "THIẾT LẬP ĐẾ CHẾ",
-    heroTitle3: "GIAO THƯƠNG B2B",
-    heroDesc: "Cộng đồng tinh hoa quy tụ hơn 200 Chủ tịch, Nhà sáng lập & CEO sinh năm 1983 (Quý Hợi) – liên minh bản lĩnh, giàu kinh nghiệm, nắm giữ chuỗi cung ứng thực chất và cùng nhau bứt phá ở đỉnh cao sự nghiệp.",
+    modeDark: "Tối",
+    modeLight: "Sáng",
+    modeContrast: "Tương phản",
+
+    // Hero
+    heroHanoiba: "★ TRỰC THUỘC HỘI DOANH NHÂN TRẺ HÀ NỘI (HANOIBA)",
+    heroTitle1: "LIÊN MINH DOANH NHÂN 1983",
+    heroTitle2: "HỘI TỤ ĐỈNH CAO —",
+    heroTitle3: "GIAO THƯƠNG THỰC CHẤT",
+    heroDesc:
+      "Vòng tròn kết nối độc bản giữa 200+ Chủ tịch & CEO sinh năm 1983 (Quý Hợi). Mở khóa chuỗi cung ứng khép kín >5.000 Tỷ VNĐ và bứt phá ở đỉnh cao sự nghiệp.",
     heroJoinBtn: "ĐĂNG KÝ GIA NHẬP CLB VIP →",
     heroOpenApp: "Mở Cổng Hội Viên App",
-    cardVipPass: "VIP PASS",
+    heroWatchVideo: "Xem Video (2 phút)",
+
+    // Card VIP
+    cardVipPass: "TITANIUM VIP PASS",
     cardNfcTouch: "NFC TOUCH",
     cardExecMember: "EXECUTIVE MEMBER",
     cardMemberName: "DOANH NHÂN QUÝ HỢI",
-    cardMemberAlt: "LÊ HOÀNG LONG",
     cardIdLabel: "ID: 1983-HNBA-8888",
-    cardWallet: "Apple & Google Wallet",
+    cardWallet: "Apple & Google Wallet Ready",
     cardTapHint: "CHẠM ĐỂ XEM MẶT SAU ↺",
-    cardPedestalDesc: "Thẻ Hội Viên Kim Loại Định Danh Số 1-Chạm NFC & Apple Wallet Sync",
+
+    // Stats
     stat1Num: "200+",
     stat1Title: "CEO Đồng Niên",
-    stat1Desc: "Chủ tịch & Tổng Giám Đốc",
+    stat1Desc: "Chủ tịch & TGĐ đã thẩm định",
     stat2Num: ">5.000 Tỷ",
     stat2Title: "VND Giao Thương",
     stat2Desc: "Chuỗi cung ứng khép kín",
@@ -83,689 +200,489 @@ const CEO1983_I18N = {
     stat4Num: "100%",
     stat4Title: "Thẩm Định Minh Bạch",
     stat4Desc: "Bảo chứng uy tín C-Level",
-    matrixTag: "MA TRẬN CHUYỂN HÓA CHIẾN LƯỢC",
-    matrixTitle1: "Thách Thức Người Thuyền Trưởng &",
-    matrixTitle2: "Lời Giải Độc Bản Từ CEO 1983",
-    matrixDesc: "Thương trường không thiếu hội nhóm bề nổi hay danh bạ danh thiếp giấy. Nhưng tìm được một vòng tròn đồng đẳng tin cậy tuyệt đối để giải quyết bài toán dòng tiền, chuỗi cung ứng và rủi ro lại là điều xa xỉ.",
-    matrixColBefore: "THỰC TRẠNG THƯỜNG GẶP",
-    matrixColAfter: "ĐẶC QUYỀN ĐỘC BẢN CEO 1983",
-    mItem1B: "Sự cô đơn trên bàn cờ chiến lược, áp lực tái cấu trúc & rủi ro pháp lý không thể trải lòng cùng cấp dưới hay đối thủ.",
-    mItem1A: "Vòng tròn kín Mastermind đàm đạo thực chiến cùng các Shark & Chủ tịch tập đoàn lớn, tháo gỡ điểm nghẽn quản trị.",
-    mItem2B: "Bội thực hội nhóm bề nổi, gom hàng trăm danh thiếp giấy rồi bỏ quên, lãng phí thời gian vào những buổi xã giao vô bổ.",
-    mItem2A: "Thẻ Titanium NFC 1-chạm & Trợ lý AI Matchmaking tự động đề xuất chính xác đối tác chiến lược trong vài giây.",
-    mItem3B: "Rủi ro nợ xấu, thiếu tin cậy và chi phí thẩm định quá cao khi tìm kiếm đối tác cung ứng mới trên thị trường tự do.",
-    mItem3A: "Chuỗi cung ứng khép kín >5.000 Tỷ VNĐ với cam kết ưu tiên sản phẩm nội bộ và cơ chế bảo chứng tín nhiệm tuyệt đối.",
-    ecoTag: "HỆ SINH THÁI 4 TRỤ CỘT TOÀN DIỆN",
-    ecoTitle1: "Liên Minh Đồng Niên 1983:",
-    ecoTitle2: "Bento Giao Thương & Trí Tuệ Thực Chiến",
-    ecoDesc: "Không dừng lại ở việc kết nối danh bạ, CLB CEO 1983 vận hành hệ sinh thái 4 trụ cột khép kín giúp doanh nghiệp gia tăng doanh số, tối ưu chuỗi cung ứng và nâng tầm vị thế thương hiệu cá nhân.",
-    p1Tag: "TRỤ CỘT TRÍ TUỆ",
-    p1Title: "Vòng Tròn Mastermind & Executive Business Tours",
-    p1Desc: "Tham quan trực tiếp nhà máy công nghệ cao, giải mã mô hình kinh doanh và đối thoại kín cùng các Shark, Chủ tịch tập đoàn lớn (Shark Phú - Sunhouse, Flexfit, AMG...).",
-    p1Item1: "Shark Phú • Sunhouse",
-    p1Sub1: "Quản trị dòng tiền & tái cấu trúc",
-    p1Item2: "Flexfit & AMG Tour",
-    p1Sub2: "Khảo sát tự động hóa chuẩn Đức",
-    p2Tag: "TRỤ CỘT GIAO THƯƠNG",
-    p2Title: "Chuỗi Cung Ứng Khép Kín & B2B Deal Flow",
-    p2Desc: "Cam kết ưu tiên sử dụng sản phẩm, dịch vụ của nhau trong mạng lưới đồng niên với chính sách chiết khấu đặc quyền. Hơn 200 doanh nghiệp luân chuyển hàng nghìn tỷ đồng mỗi năm.",
-    p2Item1: ">5.000 Tỷ VNĐ",
-    p2Sub1: "Doanh số giao thương nội bộ",
-    p2Item2: "Zero Fraud Risk",
-    p2Sub2: "Thẩm định tín nhiệm đồng niên",
-    p3Tag: "TRỤ CỘT CÔNG NGHỆ ĐỊNH DANH",
-    p3Title: "Thẻ VIP NFC Titanium & Apple / Google Wallet",
-    p3Desc: "Xóa bỏ hoàn toàn danh thiếp giấy lỗi thời. Mỗi hội viên được cấp thẻ kim loại khắc tên Laser tích hợp chip NFC và chuẩn Apple/Google Wallet. 1 chạm vào điện thoại là mở trọn bộ Profile C-Level.",
-    p3Badge1: "⚡ 1-Touch NFC Metal",
-    p3Badge2: "📱 Apple & Google Wallet",
-    p3Badge3: "🛡️ Định danh C-Level",
-    p4Tag: "TRỤ CỘT MATCHMAKING AI",
-    p4Title: "Trợ Lý AI Ghép Nối & Phòng Deal Kín",
-    p4Desc: "Hệ thống AI tự động phân tích nhu cầu gọi vốn, tìm nguồn cung ứng và liên doanh để ghép nối chính xác CEO đồng niên chỉ trong vài giây, bảo mật mã hóa tuyệt đối.",
-    p4Badge1: "🤖 AI Matching Engine",
-    p4Badge2: "🤝 Deal Room Kín 1:1",
-    p4Badge3: "📈 Giao Thương Thời Gian Thực",
+
+    // Section 2: Leadership
+    leadTag: "GƯƠNG MẶT ĐẦU TÀU NHIỆM KỲ 2025 - 2028",
+    leadTitle: "Ban Lãnh Đạo & Cố Vấn Chiến Lược",
+    leadDesc:
+      "Những thuyền trưởng bản lĩnh dẫn dắt liên minh doanh nghiệp 1983 kiến tạo chuẩn mực giao thương và chia sẻ giá trị bền vững.",
+    leadHint: "Chạm vào bong bóng avatar nổi trên sóng để xem hồ sơ chiến lược",
+
+    // Section 3: Timeline & Skyscraper Skyline
+    timeTag: "HÀNH TRÌNH BỨT PHÁ & TẦM NHÌN SKYLINE",
+    timeTitle: "Tòa Tháp Tăng Trưởng CEO 1983",
+    timeDesc:
+      "Từ liên minh đồng niên thành lập năm 2021 đến chuỗi giao thương nghìn tỷ và kỷ nguyên chuyển đổi số toàn diện.",
+
+    // Section 4: Ecosystem
+    ecoTag: "HỆ SINH THÁI DOANH NHÂN 1983",
+    ecoTitle1: "Cùng Nhau Tạo Ra Giá Trị Lớn Hơn",
+    ecoDesc:
+      "CLB Doanh Nhân CEO 1983 kết nối hội viên, hiệp hội doanh nghiệp, chuyên gia, đối tác, nhà đầu tư và các tổ chức uy tín trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực và cơ hội kinh doanh bền vững.",
+    ecoBtn: "Xem hệ sinh thái →",
+    ecoRight1: "NHIỀU KẾT NỐI HƠN",
+    ecoRight2: "NHIỀU CƠ HỘI HƠN",
+    ecoRight3: "NHIỀU GIÁ TRỊ HƠN",
+
+    // Section 5: Core Values & Admission
     coreTag: "TÔN CHỈ HOẠT ĐỘNG",
-    coreTitle: "4 Giá Trị Cốt Lõi Của CLB",
-    core1Title: "Gắn Kết Bền Lâu",
-    core1Desc: "Xây dựng môi trường đồng niên chân thành, tin cậy tuyệt đối để sẻ chia và cùng nhau phát triển.",
-    core2Title: "Học Tập Liên Tục",
-    core2Desc: "Đúc rút bài học quản trị thực chiến từ các lãnh đạo đầu ngành, cập nhật chính sách thuế & tài chính vĩ mô.",
-    core3Title: "Đổi Mới Sáng Tạo",
-    core3Desc: "Khuyến khích chuyển đổi số, ứng dụng AI và công nghệ định danh số vào vận hành doanh nghiệp.",
-    core4Title: "Phát Triển Bền Vững",
-    core4Desc: "Kiến tạo liên minh doanh nghiệp thực chất, đẩy mạnh trách nhiệm xã hội CSR và cùng vươn tầm quốc tế.",
-    actTag: "SỰ KIỆN ĐẶC QUYỀN LÃNH ĐẠO",
-    actTitle: "Hoạt Động & Business Tour Nổi Bật",
-    act1Tag: "BUSINESS TALKSHOW",
-    act1Title: "Đàm Đạo Quản Trị Cùng Shark Phú",
-    act1Desc: "Bài học quản trị dòng tiền và vượt bão kinh tế từ Chủ tịch Tập đoàn Sunhouse.",
-    act2Tag: "BUSINESS TOUR",
-    act2Title: "Thăm Nhà Máy Flexfit & AMG",
-    act2Desc: "Khảo sát dây chuyền sản xuất tự động hóa và học hỏi tối ưu chuỗi cung ứng.",
-    act3Tag: "TÀI CHÍNH & CHÍNH SÁCH",
-    act3Title: "Tọa Đàm Thuế & Tài Chính 2026-2028",
-    act3Desc: "Cập nhật chính sách thuế mới và tối ưu cấu trúc tài chính cho doanh nghiệp hội viên.",
-    roadmapTag: "LỘ TRÌNH GIA NHẬP MINH BẠCH",
-    roadmapTitle: "4 Bước Trở Thành Hội Viên VIP",
-    roadmap1Title: "Nộp Hồ Sơ Trực Tuyến",
-    roadmap1Desc: "Cung cấp thông tin chức danh lãnh đạo, quy mô công ty và ngành nghề hoạt động chính.",
-    roadmap2Title: "Thẩm Định Đồng Niên",
-    roadmap2Desc: "Ban Thư Ký xét duyệt hồ sơ uy tín, doanh thu thực tế và năm sinh 1983 (Quý Hợi).",
-    roadmap3Title: "Phê Duyệt & Trao Thẻ VIP",
-    roadmap3Desc: "Ban Lãnh Đạo phê duyệt chính thức và trao thẻ NFC Titanium khắc tên riêng.",
-    roadmap4Title: "Kích Hoạt Hệ Sinh Thái",
-    roadmap4Desc: "Tham gia các buổi Mastermind, sàn giao thương B2B và phòng kết nối đối tác kín.",
-    leadTag: "BAN LÃNH ĐẠO NHIỆM KỲ 2025 - 2028",
-    leadTitle: "Đội Ngũ Lãnh Đạo Tiên Phong",
+    coreTitle: "4 Giá Trị Cốt Lõi Đồng Niên",
+    coreDesc:
+      "Những nguyên tắc nền tảng xây dựng môi trường doanh nhân chân thành, tin cậy và bền vững.",
+
+    roadmapTag: "QUY TRÌNH XÉT DUYỆT BẢO MẬT",
+    roadmapTitle: "4 Bước Nhận Thẻ VIP Pass",
+
     ctaBoxTag: "ĐẶC QUYỀN DOANH NHÂN QUÝ HỢI",
     ctaBoxTitle1: "Đừng Để Doanh Nghiệp Của Bạn",
     ctaBoxTitle2: "Đơn Độc Giữa Biển Lớn",
-    ctaBoxDesc: "Hãy gia nhập mạng lưới hơn 200 Chủ tịch và CEO sinh năm 1983 uy tín hàng đầu. Sở hữu thẻ VIP Titanium NFC và mở ra cơ hội giao thương hàng nghìn tỷ đồng.",
+    ctaBoxDesc:
+      "Gia nhập mạng lưới 200+ Chủ tịch & CEO 1983 uy tín. Nhận thẻ Titanium NFC và kết nối thương vụ nghìn tỷ ngay hôm nay.",
     ctaBoxBtn: "NỘP HỒ SƠ XÉT DUYỆT VIP NGAY →",
-    footerCopy: "CLB Doanh Nhân CEO 1983. Nền tảng hội viên số được phát triển bởi ViOne.",
+
+    footerCopy: "CLB Doanh Nhân CEO 1983 • Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA). Nền tảng kết nối tinh hoa doanh nhân Lợn Vàng 1983.",
+
     modalTitle: "Đăng Ký Gia Nhập CLB CEO 1983",
-    modalSubtitle: "Dành riêng cho Chủ tịch, Nhà sáng lập và C-Level sinh năm 1983 (Quý Hợi)",
+    modalSubtitle: "Dành riêng cho Chủ tịch, Nhà sáng lập & C-Level sinh năm 1983 (Quý Hợi)",
     formName: "Họ và Tên *",
     formNamePlh: "Ví dụ: Lê Hoàng Long",
     formPhone: "Số điện thoại / Zalo *",
     formPhonePlh: "0912 345 678",
-    formCompany: "Tên Doanh Nghiệp & Chức Danh *",
+    formCompany: "Doanh Nghiệp & Chức Danh *",
     formCompanyPlh: "Ví dụ: Chủ tịch HĐQT - Công ty Cổ phần ABC",
     formRevenue: "Doanh thu năm gần nhất",
     formRev1: "Dưới 10 Tỷ VNĐ",
     formRev2: "10 - 50 Tỷ VNĐ",
     formRev3: "50 - 200 Tỷ VNĐ",
     formRev4: "Trên 200 Tỷ VNĐ",
-    formIndustry: "Lĩnh vực kinh doanh chính *",
+    formIndustry: "Lĩnh vực kinh doanh *",
     formIndustryPlh: "Ví dụ: Công nghệ, Bất động sản, Sản xuất...",
     formSubmit: "GỬI HỒ SƠ XÉT DUYỆT NGAY →",
-    formSubmitting: "Đang gửi hồ sơ xét duyệt...",
+    formSubmitting: "Đang gửi hồ sơ...",
     formSuccessTitle: "Nộp Hồ Sơ Thành Công!",
-    formSuccessDesc: "Ban Thư Ký CLB CEO 1983 sẽ liên hệ thẩm định và phản hồi trong vòng 24 giờ làm việc.",
+    formSuccessDesc: "Ban Thư Ký CLB CEO 1983 sẽ liên hệ thẩm định trong vòng 24 giờ làm việc.",
   },
   en: {
     navBadge: "ENTERPRISE ALLIANCE",
     navVip: "VIP PASS",
-    navAbout: "About Us",
-    navMatrix: "Strategic Matrix",
-    navEcosystem: "Ecosystem",
-    navCore: "Core Values",
-    navActivities: "Activities & Tours",
     navLeadership: "Executive Board",
-    navRoadmap: "Admission Process",
+    navTimeline: "Milestone Skyline",
+    navEcosystem: "Business Constellation",
+    navCore: "Core Values",
+    navRoadmap: "VIP Admission",
     navJoin: "JOIN VIP ALLIANCE →",
-    modeDark: "🌙 Obsidian",
-    modeLight: "☀️ Ivory",
-    modeContrast: "🌓 Onyx",
-    heroHanoiba: "👑 AFFILIATED WITH HANOI YOUNG BUSINESS ASSOCIATION (HANOIBA)",
-    heroTitle1: "PEER ALLIANCE",
-    heroTitle2: "ESTABLISHING B2B",
-    heroTitle3: "TRADE EMPIRES",
-    heroDesc: "A premier executive alliance uniting 200+ Chairs, Founders & C-Level Leaders born in 1983 (Year of the Water Boar) – seasoned visionary entrepreneurs at the prime peak of their strategic careers.",
+    modeDark: "Dark",
+    modeLight: "Light",
+    modeContrast: "Contrast",
+
+    heroHanoiba: "★ AFFILIATED WITH HANOI YOUNG BUSINESS ASSOCIATION (HANOIBA)",
+    heroTitle1: "1983 EXECUTIVE ALLIANCE",
+    heroTitle2: "PEER EXCELLENCE —",
+    heroTitle3: "HIGH-VALUE B2B COMMERCE",
+    heroDesc:
+      "An exclusive inner circle of 200+ Chairs & CEOs born in 1983. Unlocking a $200M+ closed-loop supply chain at career peak.",
     heroJoinBtn: "APPLY FOR VIP MEMBERSHIP →",
     heroOpenApp: "Open Member App Portal",
-    cardVipPass: "VIP PASS",
+    heroWatchVideo: "Watch Video (2 mins)",
+
+    cardVipPass: "TITANIUM VIP PASS",
     cardNfcTouch: "NFC TOUCH",
     cardExecMember: "EXECUTIVE MEMBER",
     cardMemberName: "1983 EXECUTIVE LEADER",
-    cardMemberAlt: "LE HOANG LONG",
     cardIdLabel: "ID: 1983-HNBA-8888",
-    cardWallet: "Apple & Google Wallet",
+    cardWallet: "Apple & Google Wallet Ready",
     cardTapHint: "TAP TO FLIP ↺",
-    cardPedestalDesc: "1-Tap NFC Titanium Identity Pass & Apple Wallet Integration",
+
     stat1Num: "200+",
     stat1Title: "Peer CEOs",
-    stat1Desc: "Presidents & Managing Directors",
+    stat1Desc: "Presidents & MDs Vetted",
     stat2Num: ">$200M+",
     stat2Title: "Internal Trade",
     stat2Desc: "Closed-loop supply chain",
     stat3Num: "+35%",
     stat3Title: "B2B Growth",
-    stat3Desc: "Internal Alliance Advantage",
+    stat3Desc: "Exclusive internal deals",
     stat4Num: "100%",
     stat4Title: "Verified Enterprises",
     stat4Desc: "Rigorous Peer Vetting",
-    matrixTag: "STRATEGIC TRANSFORMATION MATRIX",
-    matrixTitle1: "The Captain's Dilemma &",
-    matrixTitle2: "The Exclusive CEO 1983 Solution",
-    matrixDesc: "The commercial arena has no shortage of superficial networking groups or paper business cards. But finding an authentic, trusted inner circle of peers to solve critical governance challenges is a rare luxury.",
-    matrixColBefore: "COMMON CHALLENGES",
-    matrixColAfter: "CEO 1983 EXCLUSIVE ADVANTAGE",
-    mItem1B: "Solitude at the boardroom table with heavy restructuring & legal pressures that cannot be shared with subordinates or competitors.",
-    mItem1A: "Private Mastermind circles with industry titans and Shark mentors to unlock critical strategic governance bottlenecks.",
-    mItem2B: "Superficial networking fatigue, stacks of forgotten paper business cards, and wasted executive hours on unproductive pleasantries.",
-    mItem2A: "1-Touch Titanium NFC Pass & AI Matchmaking Engine that instantly pairs verified C-Level partners in seconds.",
-    mItem3B: "High partner search costs, severe fraud risks, and supply chain fragility in open, unverified external markets.",
-    mItem3A: "Closed-loop $200M+ supply network with internal procurement commitments and verified peer trust backing.",
-    ecoTag: "4-PILLAR COMPREHENSIVE ECOSYSTEM",
-    ecoTitle1: "1983 Executive Alliance:",
-    ecoTitle2: "Strategic Trade & Mastermind Bento Grid",
-    ecoDesc: "Far beyond a contact directory, CEO 1983 Club creates a 4-pillar closed-loop ecosystem empowering member enterprises to accelerate revenue, streamline supply chains, and elevate leadership prominence.",
-    p1Tag: "INTELLECTUAL PILLAR",
-    p1Title: "Mastermind Circles & Executive Business Tours",
-    p1Desc: "Direct factory walkthroughs, business model deconstruction, and private closed-door sessions with prominent business moguls (Shark Phu - Sunhouse, Flexfit, AMG...).",
-    p1Item1: "Shark Phu • Sunhouse",
-    p1Sub1: "Governance & Cash Flow Mastermind",
-    p1Item2: "Flexfit & AMG Tour",
-    p1Sub2: "German-Standard Supply Chain Visit",
-    p2Tag: "TRADE PILLAR",
-    p2Title: "Closed-Loop Supply Chain & B2B Deal Flow",
-    p2Desc: "Commitment to prioritize peer products and services with exclusive alliance discounts. Over 200 enterprises transacting millions in internal trade annually.",
-    p2Item1: "$200M+ USD",
-    p2Sub1: "Internal B2B Trade Volume",
-    p2Item2: "Zero Fraud Risk",
-    p2Sub2: "Rigorous Peer Trust Vetting",
-    p3Tag: "IDENTITY TECH PILLAR",
-    p3Title: "Titanium NFC VIP Pass & Apple / Google Wallet",
-    p3Desc: "Completely eliminate outdated paper cards. Every executive receives a custom laser-engraved titanium card with integrated NFC and Apple/Google Wallet sync.",
-    p3Badge1: "⚡ 1-Touch NFC Metal",
-    p3Badge2: "📱 Apple & Google Wallet",
-    p3Badge3: "🛡️ C-Level Verified ID",
-    p4Tag: "SMART MATCHING PILLAR",
-    p4Title: "AI Matchmaking Assistant & Private Deal Rooms",
-    p4Desc: "AI engine analyzes fundraising, supplier sourcing, and joint-venture requests to recommend verified peer CEOs within seconds, backed by high-security encrypted Deal Rooms.",
-    p4Badge1: "🤖 AI Matching Engine",
-    p4Badge2: "🤝 Confidential Deal Room",
-    p4Badge3: "📈 Realtime Business Sync",
+
+    leadTag: "LEADERSHIP TERM 2025 - 2028",
+    leadTitle: "Executive Board & Strategic Advisors",
+    leadDesc:
+      "Proven business captains leading the 1983 alliance toward new benchmarks of commerce and collective growth.",
+    leadHint: "Click any floating avatar bubble to view strategic briefing & direct connect",
+
+    timeTag: "BREAKTHROUGH JOURNEY & SKYLINE VISION",
+    timeTitle: "CEO 1983 Growth Skyline",
+    timeDesc:
+      "From our founding in 2021 to multi-million-dollar supply deals and digital transformation.",
+
+    ecoTag: "CEO 1983 EXECUTIVE ECOSYSTEM",
+    ecoTitle1: "Creating Greater Value Together",
+    ecoDesc:
+      "CEO 1983 Club unites founders, members, enterprises, experts, partners, and investors in an executive ecosystem to share knowledge, capital, and trade opportunities.",
+    ecoBtn: "Explore Ecosystem →",
+    ecoRight1: "MORE CONNECTIONS",
+    ecoRight2: "MORE OPPORTUNITIES",
+    ecoRight3: "MORE VALUE CREATED",
+
     coreTag: "GUIDING PRINCIPLES",
-    coreTitle: "4 Core Values of the Club",
-    core1Title: "Enduring Bonding",
-    core1Desc: "Fostering an authentic, trustworthy peer environment where 1983 entrepreneurs share insights and support one another wholeheartedly.",
-    core2Title: "Continuous Learning",
-    core2Desc: "Delivering practical governance insights from top industry leaders, macro tax updates, and investment trend forecasts.",
-    core3Title: "Creative Innovation",
-    core3Desc: "Encouraging transformative mindsets, Artificial Intelligence (AI) integration, and digital technology identity into enterprise management.",
-    core4Title: "Sustainable Growth",
-    core4Desc: "Building high-value enterprise alliances, championing Corporate Social Responsibility (CSR), and expanding together onto the global stage.",
-    actTag: "EXCLUSIVE EXECUTIVE EVENTS",
-    actTitle: "Signature Activities & Tours",
-    act1Tag: "BUSINESS TALKSHOW",
-    act1Title: "Executive Mastermind with Shark Phu",
-    act1Desc: "Battlefield governance lessons on cash flow resilience and corporate restructuring from Sunhouse Group Chairman.",
-    act2Tag: "BUSINESS TOUR",
-    act2Title: "Site Visit at Flexfit & AMG",
-    act2Desc: "Inspecting high-tech automated manufacturing lines and supply chain optimization.",
-    act3Tag: "FINANCE & POLICY",
-    act3Title: "Navigating Tax & Finance 2026-2028",
-    act3Desc: "Updates on cutting-edge tax policies and optimal capital structuring for member enterprises.",
-    roadmapTag: "TRANSPARENT ADMISSION ROADMAP",
-    roadmapTitle: "4 Steps to Secure VIP Membership",
-    roadmap1Title: "Online Credentials Submission",
-    roadmap1Desc: "Submit your executive title, company profile, and primary industry for preliminary vetting.",
-    roadmap2Title: "Peer Due Diligence",
-    roadmap2Desc: "The Secretariat assesses business reputation, verified revenue, and 1983 peer eligibility.",
-    roadmap3Title: "Executive Approval & NFC Pass",
-    roadmap3Desc: "Board formalizes admission and presents your personalized Titanium NFC Smart Pass.",
-    roadmap4Title: "Ecosystem Activation",
-    roadmap4Desc: "Gain immediate access to Masterminds, B2B deal-flow channels, and closed-door conferences.",
-    leadTag: "EXECUTIVE BOARD TERM 2025 - 2028",
-    leadTitle: "Pioneering Leadership Team",
-    ctaBoxTag: "PEER EXECUTIVE PRIVILEGE",
-    ctaBoxTitle1: "Never Let Your Enterprise Navigate",
-    ctaBoxTitle2: "The Open Ocean Alone",
-    ctaBoxDesc: "Join an elite alliance of over 200 reputable Chairs and CEOs born in 1983. Own your Titanium NFC Pass and unlock multimillion-dollar strategic partnerships.",
-    ctaBoxBtn: "SUBMIT VIP APPLICATION →",
-    footerCopy: "CEO 1983 Business Club. Digital membership ecosystem developed by ViOne.",
-    modalTitle: "Apply to Join CEO 1983 Club",
-    modalSubtitle: "Exclusively for Founders, Chairs, and C-Level Executives born in 1983",
+    coreTitle: "4 Core Peer Values",
+    coreDesc:
+      "Foundational values fostering an authentic, trustworthy, and enduring enterprise community.",
+
+    roadmapTag: "CONFIDENTIAL ADMISSION PROCESS",
+    roadmapTitle: "4 Steps to Secure VIP Pass",
+
+    ctaBoxTag: "1983 PEER PRIVILEGE",
+    ctaBoxTitle1: "Do Not Let Your Enterprise Sail",
+    ctaBoxTitle2: "Alone in Stormy Seas",
+    ctaBoxDesc:
+      "Join 200+ verified 1983 CEOs. Hold your custom titanium NFC pass and unlock high-level B2B deals today.",
+    ctaBoxBtn: "SUBMIT VIP APPLICATION NOW →",
+
+    footerCopy: "CEO 1983 Club • Affiliated with HanoiBA. Official executive platform for 1983 Golden Pig entrepreneurs.",
+
+    modalTitle: "Apply for CEO 1983 Club Membership",
+    modalSubtitle: "Exclusively for Chairs, Founders & C-Level Leaders born in 1983",
     formName: "Full Name *",
-    formNamePlh: "e.g. John Smith",
-    formPhone: "Phone / WhatsApp / Zalo *",
+    formNamePlh: "e.g., Le Hoang Long",
+    formPhone: "Phone / Zalo / WhatsApp *",
     formPhonePlh: "+84 912 345 678",
-    formCompany: "Enterprise Name & Executive Title *",
-    formCompanyPlh: "e.g. Chairman & CEO - ABC Group",
-    formRevenue: "Annual Revenue",
+    formCompany: "Enterprise Name & Title *",
+    formCompanyPlh: "e.g., Chairman & CEO - ABC Group",
+    formRevenue: "Annual Revenue Scale",
     formRev1: "Under $500K USD",
-    formRev2: "$500K - $2M USD",
-    formRev3: "$2M - $10M USD",
+    formRev2: "$500K - $2.5M USD",
+    formRev3: "$2.5M - $10M USD",
     formRev4: "Above $10M USD",
     formIndustry: "Primary Industry *",
-    formIndustryPlh: "e.g. Tech, Manufacturing, Real Estate...",
-    formSubmit: "SUBMIT APPLICATION NOW →",
-    formSubmitting: "Submitting application...",
+    formIndustryPlh: "e.g., Technology, Manufacturing, Real Estate...",
+    formSubmit: "SUBMIT VIP CREDENTIALS →",
+    formSubmitting: "Submitting...",
     formSuccessTitle: "Application Submitted Successfully!",
-    formSuccessDesc: "The CEO 1983 Secretariat will review your credentials and contact you within 24 business hours.",
-  },
-  ja: {
-    navBadge: "企業経営者連盟",
-    navVip: "VIP PASS",
-    navAbout: "概要",
-    navMatrix: "戦略マトリックス",
-    navEcosystem: "エコシステム",
-    navCore: "理念・価値観",
-    navActivities: "活動・ツアー",
-    navLeadership: "理事会",
-    navRoadmap: "入会プロセス",
-    navJoin: "VIP入会申請 →",
-    modeDark: "🌙 オブシディアン",
-    modeLight: "☀️ アイボリー",
-    modeContrast: "🌓 オニキス",
-    heroHanoiba: "👑 ハノイ青年実業家協会（HANOIBA）直属",
-    heroTitle1: "同年代リーダーの結集",
-    heroTitle2: "B2B商流帝国の",
-    heroTitle3: "共創と確立",
-    heroDesc: "1983年（癸亥）生まれの経営者・創業者・最高幹部200名以上が集う最高峰のアライアンス。キャリアの絶頂期を迎えたリーダーたちの戦略的共創コミュニティ。",
-    heroJoinBtn: "VIPクラブ入会を申請する →",
-    heroOpenApp: "会員アプリを開く",
-    cardVipPass: "VIP PASS",
-    cardNfcTouch: "NFC TOUCH",
-    cardExecMember: "EXECUTIVE MEMBER",
-    cardMemberName: "1983年生まれ 経営者",
-    cardMemberAlt: "LE HOANG LONG",
-    cardIdLabel: "ID: 1983-HNBA-8888",
-    cardWallet: "Apple & Google Wallet",
-    cardTapHint: "タップして裏返す ↺",
-    cardPedestalDesc: "1タップNFCチタン製デジタル会員証 & Apple Wallet連携",
-    stat1Num: "200+",
-    stat1Title: "同年代CEO",
-    stat1Desc: "会長・代表取締役",
-    stat2Num: ">300億円",
-    stat2Title: "内部取引総額",
-    stat2Desc: "閉鎖サプライチェーン",
-    stat3Num: "+35%",
-    stat3Title: "B2B成長率",
-    stat3Desc: "会員間優先取引の成果",
-    stat4Num: "100%",
-    stat4Title: "実態企業審査",
-    stat4Desc: "厳格な資格審査",
-    matrixTag: "戦略的変革マトリックス",
-    matrixTitle1: "経営トップの葛藤と",
-    matrixTitle2: "CEO 1983の独占的ソリューション",
-    matrixDesc: "表面的な交流会や名刺交換会は溢れていますが、重大な経営判断を率直に共有できる「絶対的信頼の仲間」と出会うことは極めて困難です。",
-    matrixColBefore: "一般的な経営課題",
-    matrixColAfter: "CEO 1983の独占的強み",
-    mItem1B: "取締役会における深い孤独感。事業再構築や法的リスクを部下や外部の競合に打ち明けられない。",
-    mItem1A: "業界の重鎮やSharkメンターとの非公開マスターマインドで、経営のボトルネックを即座に解決。",
-    mItem2B: "形骸化した名刺交換会での時間浪費。引き出しに眠る数百枚の名刺から実質的案件が生まれない。",
-    mItem2A: "1タップチタン製NFCカードとAIマッチングエンジンが、数秒で最適な提携先CEOを特定・連携。",
-    mItem3B: "外部市場でのパートナー開拓に伴う高い探索コスト、焦げ付きリスク、サプライチェーンの脆弱性。",
-    mItem3A: "年間300億円超の閉鎖サプライチェーンと会員間優先調達コミットメントによる安心の取引。",
-    ecoTag: "4大支柱エコシステム",
-    ecoTitle1: "1983年経営者連盟:",
-    ecoTitle2: "取引促進・マスターマインド Bento Grid",
-    ecoDesc: "単なる名簿管理にとどまらず、会員企業の売上拡大、サプライチェーン最適化、リーダーシップ強化を実現する4本柱のエコシステムです。",
-    p1Tag: "知性の柱",
-    p1Title: "マスターマインド・企業視察ツアー",
-    p1Desc: "先進工場ラインの視察、ビジネスモデルの徹底解剖、著名企業トップとの対談。危機管理とキャッシュフローに関する実践的な知見を深めます。",
-    p1Item1: "Shark Phu • Sunhouse",
-    p1Sub1: "経営とキャッシュフロー対談",
-    p1Item2: "Flexfit & AMG ツアー",
-    p1Sub2: "ドイツ規格の生産ライン視察",
-    p2Tag: "商流の柱",
-    p2Title: "閉鎖サプライチェーン・B2B案件創出",
-    p2Desc: "同世代ネットワーク内での優先調達と特別優遇条件。200社以上の会員企業が相互に信頼できるサプライチェーンを形成。",
-    p2Item1: "300億円以上",
-    p2Sub1: "内部取引総額",
-    p2Item2: "不正リスクゼロ",
-    p2Sub2: "厳格な相互審査",
-    p3Tag: "認証技術の柱",
-    p3Title: "チタン製NFC VIPカード・Apple Wallet",
-    p3Desc: "紙の名刺を完全撤廃。レーザー刻印のチタンカードにNFCチップを内蔵。スマホに1タップするだけで役員プロフィールを瞬時に共有。",
-    p3Badge1: "⚡ 1-Touch NFC Metal",
-    p3Badge2: "📱 Apple & Google Wallet",
-    p3Badge3: "🛡️ C-Level Verified ID",
-    p4Tag: "AIマッチングの柱",
-    p4Title: "AIマッチングアシスタント・機密商談ルーム",
-    p4Desc: "AIが調達・販売・提携ニーズを自動分析し、最適なCEOパートナーを瞬時に提案。高度な暗号化Deal Roomで安全に商談。",
-    p4Badge1: "🤖 AI Matching Engine",
-    p4Badge2: "🤝 Confidential Deal Room",
-    p4Badge3: "📈 Realtime Business Sync",
-    coreTag: "活動理念",
-    coreTitle: "クラブの4つのコアバリュー",
-    core1Title: "持続的な絆",
-    core1Desc: "1983年生まれの仲間が誠実かつ無私で支え合える絶対的な信頼環境を育みます。",
-    core2Title: "継続的な学び",
-    core2Desc: "第一線の経営者や専門家から実践的な経営知見、最新の税制・投資動向を学びます。",
-    core3Title: "創造的革新",
-    core3Desc: "AI活用、包括的なDX推進、最新の技術アイデンティティを企業経営に取り入れます。",
-    core4Title: "持続的発展",
-    core4Desc: "実質的な価値を生む企業アライアンスを築き、CSRを推進しながら共に世界へ羽ばたきます。",
-    actTag: "限定エグゼクティブ活動",
-    actTitle: "注目の活動とイベント",
-    act1Tag: "BUSINESS TALKSHOW",
-    act1Title: "Shark Phu氏との経営対談",
-    act1Desc: "Sunhouseグループ会長から学ぶ、キャッシュフロー管理と企業再生の実践論。",
-    act2Tag: "BUSINESS TOUR",
-    act2Title: "Flexfit & AMG 現場視察",
-    act2Desc: "ハイテク自動化製造ラインの視察とサプライチェーンの最適化検証。",
-    act3Tag: "財務と政策",
-    act3Title: "2026-2028年 税務・財務戦略フォーラム",
-    act3Desc: "最新の税制改正に対応した会員企業の最適な資本構造構築。",
-    roadmapTag: "透明な入会ロードマップ",
-    roadmapTitle: "VIP会員資格取得の4ステップ",
-    roadmap1Title: "オンライン申請",
-    roadmap1Desc: "役職、企業概要、主要事業分野を入力して一次審査を申請します。",
-    roadmap2Title: "厳格な資格審査",
-    roadmap2Desc: "事務局が企業信用、業績、1983年生まれの同世代資格を確認します。",
-    roadmap3Title: "理事会承認・NFCカード発行",
-    roadmap3Desc: "入会が正式決定され、パーソナライズされたチタン製NFCカードが授与されます。",
-    roadmap4Title: "エコシステム始動",
-    roadmap4Desc: "マスターマインド、B2B案件創出、非公開フォーラムへの全アクセスが有効化されます。",
-    leadTag: "2025〜2028年 理事会役員",
-    leadTitle: "先駆的なリーダーシップ陣",
-    ctaBoxTag: "同世代経営者の特権",
-    ctaBoxTitle1: "貴方の企業を広大な大海原で",
-    ctaBoxTitle2: "決して孤立させない",
-    ctaBoxDesc: "1983年生まれの有力CEO 200名以上の強固な連盟に加わり、チタン製NFCカードを手にして巨額の戦略的提携を実現してください。",
-    ctaBoxBtn: "VIP入会審査に申し込む →",
-    footerCopy: "CLB CEO 1983. ViOneが開発するデジタル会員プラットフォーム。",
-    modalTitle: "CLB CEO 1983 入会申請",
-    modalSubtitle: "1983年生まれの創業者・役員・経営者限定",
-    formName: "氏名 *",
-    formNamePlh: "例: 山田 太郎",
-    formPhone: "電話番号 / WhatsApp / Zalo *",
-    formPhonePlh: "+84 912 345 678",
-    formCompany: "会社名および役職 *",
-    formCompanyPlh: "例: 代表取締役会長 - ABCグループ",
-    formRevenue: "直近年次売上高",
-    formRev1: "5,000万円未満",
-    formRev2: "5,000万〜2億円",
-    formRev3: "2億〜10億円",
-    formRev4: "10億円以上",
-    formIndustry: "主な事業分野 *",
-    formIndustryPlh: "例: IT、製造、不動産、流通...",
-    formSubmit: "申請を送信する →",
-    formSubmitting: "送信中...",
-    formSuccessTitle: "申請が完了しました！",
-    formSuccessDesc: "CEO 1983 事務局が内容を確認し、24営業時間以内にご連絡いたします。",
-  },
-  ko: {
-    navBadge: "최고경영자 연합",
-    navVip: "VIP PASS",
-    navAbout: "클럽 소개",
-    navMatrix: "전략 매트릭스",
-    navEcosystem: "생태계",
-    navCore: "핵심 가치",
-    navActivities: "활동 및 투어",
-    navLeadership: "이사회",
-    navRoadmap: "가입 로드맵",
-    navJoin: "VIP 클럽 가입 →",
-    modeDark: "🌙 옵시디언",
-    modeLight: "☀️ 아이보리",
-    modeContrast: "🌓 오닉스",
-    heroHanoiba: "👑 하노이 청년기업가협회(HANOIBA) 직속",
-    heroTitle1: "동년배 리더의 결속",
-    heroTitle2: "B2B 무역 제국의",
-    heroTitle3: "공창과 확립",
-    heroDesc: "1983년(계해년) 출생 의장, 창립자, 최고경영진 200인 이상이 결집한 최정상 경영자 얼라이언스. 커리어의 정점에 도달한 리더들이 함께 구축하는 전략적 성장 생태계.",
-    heroJoinBtn: "VIP 클럽 가입 신청하기 →",
-    heroOpenApp: "회원 전용 앱 열기",
-    cardVipPass: "VIP PASS",
-    cardNfcTouch: "NFC TOUCH",
-    cardExecMember: "EXECUTIVE MEMBER",
-    cardMemberName: "1983년생 경영자",
-    cardMemberAlt: "LE HOANG LONG",
-    cardIdLabel: "ID: 1983-HNBA-8888",
-    cardWallet: "Apple & Google Wallet",
-    cardTapHint: "터치하여 뒤집기 ↺",
-    cardPedestalDesc: "원터치 NFC 티타늄 디지털 신분증 & Apple Wallet 연동",
-    stat1Num: "200+",
-    stat1Title: "동년배 CEO",
-    stat1Desc: "회장 및 대표이사",
-    stat2Num: ">3,000억원",
-    stat2Title: "내부 거래 규모",
-    stat2Desc: "폐쇄형 공급망 생태계",
-    stat3Num: "+35%",
-    stat3Title: "B2B 성장률",
-    stat3Desc: "회원 간 우선 혜택 성과",
-    stat4Num: "100%",
-    stat4Title: "실체 기업 검증",
-    stat4Desc: "엄격한 회원 자격 심사",
-    matrixTag: "전략적 혁신 매트릭스",
-    matrixTitle1: "경영진의 고독한 고민 &",
-    matrixTitle2: "CEO 1983만의 독점적 솔루션",
-    matrixDesc: "비즈니스계엔 피상적인 모임이나 명함이 넘쳐나지만, 중대한 사업 판단을 솔직하게 나누고 협력할 '절대적 신뢰의 동료'를 만나는 것은 매우 어렵습니다.",
-    matrixColBefore: "일반적인 경영 현주소",
-    matrixColAfter: "CEO 1983만의 독보적 가치",
-    mItem1B: "이사회에서의 깊은 고독감. 사업재편이나 법적 리스크를 부하직원이나 외부에 털어놓을 수 없음.",
-    mItem1A: "업계 거물 및 Shark 멘토와의 비공개 마스터마인드를 통해 핵심 경영 난제를 즉시 해결.",
-    mItem2B: "형식적인 명함 교환 모임의 시간 낭비. 서랍 속에 쌓인 수백 장의 명함에서 실질 거래 전무.",
-    mItem2A: "1초 터치 티타늄 NFC 패스와 AI 매칭 엔진이 최적의 CEO 파트너를 즉시 연결.",
-    mItem3B: "외부 파트너 탐색에 따른 과도한 비용, 부실 리스크, 공급망의 취약성.",
-    mItem3A: "연간 3,000억원 규모의 폐쇄형 공급망과 회원 간 우선 구매 협약을 통한 안전한 거래.",
-    ecoTag: "4대 핵심 축 생태계",
-    ecoTitle1: "1983 경영자 연합:",
-    ecoTitle2: "전략적 무역 및 마스터마인드 Bento Grid",
-    ecoDesc: "단순한 연락처 공유를 넘어, 회원사의 매출 증대, 공급망 최적화, 리더십 강화를 지원하는 4대 핵심 축 폐쇄형 생태계입니다.",
-    p1Tag: "지성의 축",
-    p1Title: "마스터마인드 서클 & 기업 탐방 투어",
-    p1Desc: "첨단 생산 라인 직접 견학, 비즈니스 모델 정밀 분석, 유명 그룹 회장과의 비공개 대담. 위기관리와 현금흐름에 관한 실전 전략 습득.",
-    p1Item1: "Shark Phu • Sunhouse",
-    p1Sub1: "경영 및 현금흐름 대담",
-    p1Item2: "Flexfit & AMG 투어",
-    p1Sub2: "독일 표준 생산라인 견학",
-    p2Tag: "무역의 축",
-    p2Title: "폐쇄형 공급망 & B2B 딜 플로우",
-    p2Desc: "동세대 네트워크 내 우선 조달 및 독점 할인 혜택. 200여 개 회원사가 상호 신뢰할 수 있는 공급망 형성.",
-    p2Item1: "3,000억원 이상",
-    p2Sub1: "내부 거래 총액",
-    p2Item2: "사기 리스크 ZERO",
-    p2Sub2: "철저한 상호 신용 검증",
-    p3Tag: "인증 기술의 축",
-    p3Title: "티타늄 NFC VIP 카드 & Apple/Google Wallet",
-    p3Desc: "종이 명함을 완전히 대체. 레이저 각인 티타늄 카드에 NFC 칩을 내장하여 스마트폰 1회 탭으로 프로필 즉시 전달.",
-    p3Badge1: "⚡ 1-Touch NFC Metal",
-    p3Badge2: "📱 Apple & Google Wallet",
-    p3Badge3: "🛡️ C-Level Verified ID",
-    p4Tag: "AI 매칭의 축",
-    p4Title: "AI 매칭 비서 & 비밀 협상 룸",
-    p4Desc: "AI가 투자, 구매, 제휴 수요를 분석하여 최적의 CEO를 연결하고, 보안 협상 룸에서 안전하게 계약 진행.",
-    p4Badge1: "🤖 AI Matching Engine",
-    p4Badge2: "🤝 Confidential Deal Room",
-    p4Badge3: "📈 Realtime Business Sync",
-    coreTag: "행동 강령",
-    coreTitle: "클럽 4대 핵심 가치",
-    core1Title: "영구적인 유대",
-    core1Desc: "1983년생 동료들이 진솔하고 사심 없이 상호 신뢰를 나누는 환경을 조성합니다.",
-    core2Title: "지속적인 배움",
-    core2Desc: "업계 최고 리더들의 실전 경험과 최신 세무 및 투자 트렌드를 학습합니다.",
-    core3Title: "혁신적 변화",
-    core3Desc: "AI 활용, 디지털 전환, 신기술을 기업 경영에 적극 도입합니다.",
-    core4Title: "동반 성장",
-    core4Desc: "실질적 가치를 창출하는 기업 연합을 구축하고, CSR을 실천하며 글로벌 무대로 도약합니다.",
-    actTag: "VIP 전용 행사",
-    actTitle: "주요 활동 및 비즈니스 투어",
-    act1Tag: "BUSINESS TALKSHOW",
-    act1Title: "Shark Phu 회장과의 경영 대담",
-    act1Desc: "Sunhouse 그룹 회장에게 듣는 현금흐름 위기 극복 및 기업 재편 실전 전략.",
-    act2Tag: "BUSINESS TOUR",
-    act2Title: "Flexfit & AMG 현장 견학",
-    act2Desc: "첨단 자동화 생산 라인 견학 및 공급망 최적화 벤치마킹.",
-    act3Tag: "세무 및 재무",
-    act3Title: "2026-2028 세무·재무 전략 포럼",
-    act3Desc: "최신 세법 개정에 따른 회원사의 최적 자본 구조 설계 방안.",
-    roadmapTag: "투명한 가입 로드맵",
-    roadmapTitle: "VIP 회원 자격 획득 4단계",
-    roadmap1Title: "온라인 신청서 제출",
-    roadmap1Desc: "직함, 회사 개요, 주요 사업 분야를 입력하여 1차 심사를 신청합니다.",
-    roadmap2Title: "동년배 자격 심사",
-    roadmap2Desc: "사무국에서 기업 신용, 매출, 1983년생 자격을 심사합니다.",
-    roadmap3Title: "이사회 승인 및 카드 발급",
-    roadmap3Desc: "최종 가입 승인 후 맞춤형 티타늄 NFC 카드가 수여됩니다.",
-    roadmap4Title: "생태계 전격 활성화",
-    roadmap4Desc: "마스터마인드, B2B 거래 플랫폼, 비공개 포럼 등 모든 권한이 부여됩니다.",
-    leadTag: "2025 - 2028 이사회",
-    leadTitle: "선구적 리더십 팀",
-    ctaBoxTag: "동년배 경영자의 특권",
-    ctaBoxTitle1: "귀사의 기업이 비즈니스 대해에서",
-    ctaBoxTitle2: "절대 홀로 항해하지 않도록",
-    ctaBoxDesc: "1983년생 유력 CEO 200여 명의 강력한 연대에 동참하여 티타늄 NFC VIP 카드를 획득하고 수천억 원 규모의 비즈니스를 창출하십시오.",
-    ctaBoxBtn: "VIP 가입 심사 신청하기 →",
-    footerCopy: "CEO 1983 비즈니스 클럽. ViOne이 개발한 디지털 회원제 플랫폼.",
-    modalTitle: "CEO 1983 클럽 가입 신청",
-    modalSubtitle: "1983년생 창립자, 의장, C-Level 경영자 전용",
-    formName: "성명 *",
-    formNamePlh: "예: 홍길동",
-    formPhone: "연락처 / WhatsApp / Zalo *",
-    formPhonePlh: "010-1234-5678",
-    formCompany: "회사명 및 직함 *",
-    formCompanyPlh: "예: 대표이사 회장 - ABC 그룹",
-    formRevenue: "최근 연매출",
-    formRev1: "5억원 미만",
-    formRev2: "5억 ~ 25억원",
-    formRev3: "25억 ~ 100억원",
-    formRev4: "100억원 이상",
-    formIndustry: "주요 사업 분야 *",
-    formIndustryPlh: "예: IT/기술, 제조, 부동산, 유통...",
-    formSubmit: "심사 신청서 제출 →",
-    formSubmitting: "신청서 제출 중...",
-    formSuccessTitle: "신청서가 성공적으로 접수되었습니다!",
-    formSuccessDesc: "CEO 1983 사무국에서 검토 후 24시간 이내에 연락드리겠습니다.",
-  },
-  zh: {
-    navBadge: "顶级企业家商会",
-    navVip: "VIP PASS",
-    navAbout: "关于我们",
-    navMatrix: "战略矩阵",
-    navEcosystem: "赋能生态",
-    navCore: "核心价值",
-    navActivities: "活动与考察",
-    navLeadership: "理事会",
-    navRoadmap: "入会路径",
-    navJoin: "申请VIP入会 →",
-    modeDark: "🌙 黑曜石",
-    modeLight: "☀️ 象牙白",
-    modeContrast: "🌓 玛瑙黑",
-    heroHanoiba: "👑 隶属于河内青年企业家协会（HANOIBA）",
-    heroTitle1: "同龄领袖汇聚",
-    heroTitle2: "缔造B2B经贸",
-    heroTitle3: "商业帝国",
-    heroDesc: "汇聚200余位1983年（癸亥年）出生的杰出董事长、创始人及CEO。他们经验丰富、锐意创新，正处于事业最具突破力的巅峰黄金期。",
-    heroJoinBtn: "申请加入VIP俱乐部 →",
-    heroOpenApp: "打开会员专属应用",
-    cardVipPass: "VIP PASS",
-    cardNfcTouch: "NFC TOUCH",
-    cardExecMember: "EXECUTIVE MEMBER",
-    cardMemberName: "1983年出生 领军企业家",
-    cardMemberAlt: "LE HOANG LONG",
-    cardIdLabel: "ID: 1983-HNBA-8888",
-    cardWallet: "Apple & Google Wallet",
-    cardTapHint: "点击翻转 ↺",
-    cardPedestalDesc: "一触即达 NFC 钛金数字身份卡 & Apple Wallet 智能同步",
-    stat1Num: "200+",
-    stat1Title: "同龄CEO领袖",
-    stat1Desc: "董事长与总经理",
-    stat2Num: ">15亿元",
-    stat2Title: "内部经贸交易额",
-    stat2Desc: "闭环供应链联盟",
-    stat3Num: "+35%",
-    stat3Title: "B2B增长率",
-    stat3Desc: "内部优先采购红利",
-    stat4Num: "100%",
-    stat4Title: "资质合规审核",
-    stat4Desc: "严格同行背书",
-    matrixTag: "战略破局演化矩阵",
-    matrixTitle1: "领袖者的现实困局与",
-    matrixTitle2: "CEO 1983 的独占解法",
-    matrixDesc: "商场不缺泛泛之交的饭局与纸质名片，但能多维度深度推演生死决策、共享供应链与现金流匮乏的『绝对信任同侪圈』弥足珍贵。",
-    matrixColBefore: "传统社交痛点",
-    matrixColAfter: "CEO 1983 专属特权",
-    mItem1B: "董事会前深沉的战略孤独。宏观压力、重组与法律风险无法向部属或外部竞品透露。",
-    mItem1A: "与知名投资大咖及集团董事长闭门推演，直击企业治理与现金流核心难题。",
-    mItem2B: "泛泛社交的巨大消耗。抽屉中堆满遗忘的纸质名片，无法沉淀真正的供应链合作。",
-    mItem2A: "一触即达的钛金NFC卡与AI精准匹配引擎，秒级推荐高信誉同龄战略伙伴。",
-    mItem3B: "外部拓客存在极高的坏账风险、寻源成本与交付不确定性。",
-    mItem3A: "超15亿元闭环内部供应链，优先采购承诺与同侪诚信背书机制保驾护航。",
-    ecoTag: "四大支柱全景生态",
-    ecoTitle1: "1983领袖联盟:",
-    ecoTitle2: "经贸实战与智库 Bento Grid",
-    ecoDesc: "不仅是通讯录，更是驱动企业业绩倍增、供应链优化与领袖品牌塑造的4大支柱闭环生态系统。",
-    p1Tag: "智库之柱",
-    p1Title: "闭门智库 & 标杆企业考察游学",
-    p1Desc: "深入高新制造基地现场，深度拆解商业模式，与头部企业掌门人面对面探讨宏观避险与资本布局。",
-    p1Item1: "Shark Phu • Sunhouse",
-    p1Sub1: "现金流与重组实战",
-    p1Item2: "Flexfit & AMG 考察",
-    p1Sub2: "德国标准自动化工厂参访",
-    p2Tag: "经贸之柱",
-    p2Title: "闭环供应链与B2B精准商机",
-    p2Desc: "同龄网络内优先采购与专属折扣承诺。200多家会员企业构成高信誉闭环供应链，年流转交易额达数亿元。",
-    p2Item1: "超15亿元人民币",
-    p2Sub1: "内部经贸交易总额",
-    p2Item2: "零欺诈违约",
-    p2Sub2: "严格同侪信用核验",
-    p3Tag: "科技身份之柱",
-    p3Title: "钛金NFC VIP身份卡 & Apple Wallet",
-    p3Desc: "彻底告别纸质名片。专属激光定制钛金金属卡，内置NFC芯片，一触即可向合作伙伴展示完整的高管档案与业务版图。",
-    p3Badge1: "⚡ 1-Touch NFC Metal",
-    p3Badge2: "📱 Apple & Google Wallet",
-    p3Badge3: "🛡️ C-Level Verified ID",
-    p4Tag: "智能匹配之柱",
-    p4Title: "AI智能配对助手 & 绝密商洽室",
-    p4Desc: "AI算法解析投融资、供应链寻源及联营需求，精准推荐匹配CEO，并在加密商洽室中安全推进战略合作。",
-    p4Badge1: "🤖 AI Matching Engine",
-    p4Badge2: "🤝 Confidential Deal Room",
-    p4Badge3: "📈 Realtime Business Sync",
-    coreTag: "立会宗旨",
-    coreTitle: "俱乐部4大核心价值观",
-    core1Title: "持久联结",
-    core1Desc: "营造真诚纯粹、绝对信任的同龄环境，无私分享认知与资源，守望相助。",
-    core2Title: "持续精进",
-    core2Desc: "汇聚商界导师实战智慧，前瞻把握宏观财税新规与资本流动风向。",
-    core3Title: "创新求变",
-    core3Desc: "积极拥抱人工智能（AI）、全面跨越数字化与前沿科技身份体系赋能经营。",
-    core4Title: "基业长青",
-    core4Desc: "构建高含金量的商业联盟，践行社会责任（CSR），携手跨越周期、走向全球。",
-    actTag: "高管专属实战活动",
-    actTitle: "重磅活动与高端游学",
-    act1Tag: "BUSINESS TALKSHOW",
-    act1Title: "与 Shark Phu 闭门问道",
-    act1Desc: "Sunhouse集团董事长倾囊相授危机应对、现金流底线与重组实操心得。",
-    act2Tag: "BUSINESS TOUR",
-    act2Title: "Flexfit & AMG 现场参访",
-    act2Desc: "实地探秘高精尖自动化产线与精益供应链管理模式。",
-    act3Tag: "政策与财税",
-    act3Title: "2026-2028 赋税合规与顶层设计",
-    act3Desc: "紧扣新政趋势，优化会员企业资本结构与财税合规路径。",
-    roadmapTag: "严谨入会流程",
-    roadmapTitle: "获颁VIP会员身份的4大步骤",
-    roadmap1Title: "提交在线档案",
-    roadmap1Desc: "填写高管职务、企业规模及主营行业，进入初审通道。",
-    roadmap2Title: "同侪背书与资质核验",
-    roadmap2Desc: "秘书处对企业信用、实际业绩及1983同龄背景进行审查。",
-    roadmap3Title: "常务理事会核准授卡",
-    roadmap3Desc: "通过决议并定制颁发刻有专属ID的钛金NFC智能会员卡。",
-    roadmap4Title: "激活生态特权",
-    roadmap4Desc: "即刻开通闭门智库、B2B经贸池及高端闭门峰会全部特权。",
-    leadTag: "2025 - 2028 理事会班子",
-    leadTitle: "领舵管理团队",
-    ctaBoxTag: "同龄领袖专属特权",
-    ctaBoxTitle1: "莫让您的企业在商海风浪中",
-    ctaBoxTitle2: "孤独前行",
-    ctaBoxDesc: "加入由200余位1983年实力CEO构建的战略联盟，执掌专属钛金NFC卡，开启数亿元级经贸合作新篇章。",
-    ctaBoxBtn: "立即提交VIP入会申请 →",
-    footerCopy: "CEO 1983 商业俱乐部。数字化会员生态由 ViOne 赋能开发。",
-    modalTitle: "申请加入 CEO 1983 俱乐部",
-    modalSubtitle: "专为1983年出生（癸亥年）的创始人、董事长及C-Level领军人开放",
-    formName: "姓名 *",
-    formNamePlh: "例如：张三",
-    formPhone: "电话 / 微信 / Zalo *",
-    formPhonePlh: "+84 912 345 678",
-    formCompany: "企业名称及担任职务 *",
-    formCompanyPlh: "例如：董事长兼CEO - ABC集团",
-    formRevenue: "近一年营收规模",
-    formRev1: "300万元以下",
-    formRev2: "300万 - 1500万元",
-    formRev3: "1500万 - 6000万元",
-    formRev4: "6000万元以上",
-    formIndustry: "主营业务领域 *",
-    formIndustryPlh: "例如：科技创新、智能制造、地产商业...",
-    formSubmit: "提交入会申请档案 →",
-    formSubmitting: "正在提交申请...",
-    formSuccessTitle: "申请已成功提交！",
-    formSuccessDesc: "CEO 1983 秘书处将在24个工作小时内核验并与您取得联系。",
+    formSuccessDesc: "The Secretariat will contact you for confidential vetting within 24 business hours.",
   },
 };
 
+
+
+/** 
+ * SECTION 5A: 4 CORE VALUES CARDS WITH STAGGERED SPRING DROP-DOWN ANIMATION (RƠI TỪ TRÊN XUỐNG)
+ * Show text tiêu đề trước, sau đó 4 khối giá trị cốt lõi rơi từ trên xuống tuần tự với hiệu ứng lực hút & spring bounce!
+ */
+function CoreValuesYachtConvoy({ themeMode, t }: { themeMode: ThemeMode; t: any }) {
+  const coreValues = [
+    { num: "01", title: "Gắn Kết Bền Lâu", desc: "Môi trường đồng niên chân thành, tin cậy tuyệt đối để sẻ chia bài toán quản trị & dòng tiền.", icon: <Users className="w-5 h-5 text-[#D8B282]" /> },
+    { num: "02", title: "Học Tập Liên Tục", desc: "Đúc rút bài học quản trị từ các Shark và lãnh đạo đầu ngành, cập nhật chính sách thuế & tài chính.", icon: <GraduationCap className="w-5 h-5 text-[#D8B282]" /> },
+    { num: "03", title: "Đổi Mới Sáng Tạo", desc: "Tiên phong ứng dụng AI, công nghệ thẻ định danh số và giải pháp tự động hóa vào vận hành.", icon: <Zap className="w-5 h-5 text-[#D8B282]" /> },
+    { num: "04", title: "Phát Triển Bền Vững", desc: "Kiến tạo liên minh kinh tế thực chất, đẩy mạnh trách nhiệm CSR và cùng vươn tầm quốc tế.", icon: <Globe2 className="w-5 h-5 text-[#D8B282]" /> },
+  ];
+
+  const themeClass = (darkClass: string, lightClass: string, contrastClass?: string) => {
+    if (themeMode === "contrast" && contrastClass) return contrastClass;
+    if (themeMode === "dark" || themeMode === "contrast") return darkClass;
+    return lightClass;
+  };
+
+  return (
+    <div className="relative w-full py-8">
+      {/* Ocean Current & Laser Energy Track */}
+      <div className="absolute inset-x-0 bottom-8 h-20 pointer-events-none opacity-40 overflow-hidden">
+        <svg viewBox="0 0 1440 80" fill="none" className="w-full h-full animate-pulse" style={{ animationDuration: "4s" }}>
+          <path d="M0,40 Q360,10 720,40 T1440,40" stroke="#38BDF8" strokeWidth="2.5" strokeDasharray="16 10" className="animate-laser-flow" opacity="0.75" />
+          <path d="M0,55 Q360,75 720,55 T1440,55" stroke="#D8B282" strokeWidth="2" strokeDasharray="20 12" className="animate-laser-flow-reverse" opacity="0.65" />
+        </svg>
+      </div>
+
+      {/* 4 Core Value Cards Dropping from Above (Staggered Spring Gravity Drop) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 relative z-10 max-w-[1360px] mx-auto px-4">
+        {coreValues.map((cVal, cIdx) => (
+          <motion.div
+            key={cIdx}
+            initial={{ opacity: 0, y: -220, scale: 0.82 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.15 }}
+            transition={{
+              delay: 0.38 + cIdx * 0.18,
+              duration: 0.9,
+              type: "spring",
+              stiffness: 140,
+              damping: 13,
+            }}
+            whileHover={{ y: -12, scale: 1.03 }}
+            className={`relative p-6 sm:p-7 rounded-[30px] border-2 backdrop-blur-2xl shadow-2xl transition-all group overflow-hidden flex flex-col justify-between ${
+              themeClass(
+                "border-[#D8B282]/50 bg-gradient-to-b from-[#0F1B36]/95 via-[#080F22]/98 to-[#040814] shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(216,178,130,0.25)] hover:border-[#F6E1C3] hover:shadow-[0_30px_70px_rgba(216,178,130,0.5)]",
+                "border-[#D8B282]/60 bg-white/95 shadow-[0_15px_35px_rgba(140,101,59,0.18)] hover:border-[#D8B282]",
+                "border-yellow-400 bg-black text-yellow-300"
+              )
+            }`}
+          >
+            {/* Top Specular Rim Reflection */}
+            <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#F6E1C3] to-transparent opacity-80" />
+
+            <div>
+              {/* Pontoon Hull Glow & Navigation Lamp */}
+              <div className="flex items-center justify-between mb-5 relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#34D399] animate-ping" />
+                  <span className="text-[10px] font-mono font-black tracking-widest text-[#D8B282] uppercase">
+                    BARGE #{cVal.num}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-2xl bg-[#D8B282]/15 border border-[#D8B282]/40 group-hover:scale-115 transition-transform shadow-md">
+                  {cVal.icon}
+                </div>
+              </div>
+
+              {/* Metric Number & Title */}
+              <div className="relative z-10 text-left">
+                <span className="text-4xl sm:text-5xl font-black font-serif text-transparent bg-clip-text bg-gradient-to-r from-[#FFF5E6] via-[#F6E1C3] to-[#D8B282] drop-shadow-sm">
+                  {cVal.num}
+                </span>
+                <h3 className={`text-xl font-black mt-2 group-hover:text-[#D8B282] transition-colors leading-tight ${themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                  {cVal.title}
+                </h3>
+                <p className={`text-xs sm:text-[13px] mt-2.5 leading-relaxed font-normal ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+                  {cVal.desc}
+                </p>
+              </div>
+            </div>
+
+            {/* Base Water Displacement & Branding Line */}
+            <div className="mt-6 pt-4 border-t border-[#D8B282]/20 flex items-center justify-between text-[10.5px] font-mono text-[#D8B282] relative z-10">
+              <span className="flex items-center gap-1.5 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] animate-pulse" />
+                HẢI TRÌNH ĐỒNG NIÊN
+              </span>
+              <span className="font-semibold text-slate-400 group-hover:text-[#F6E1C3] transition-colors">CEO 1983</span>
+            </div>
+
+            {/* Glowing Stern Foam Underneath */}
+            <div className="absolute -bottom-2 left-6 right-6 h-3 bg-gradient-to-r from-cyan-400/40 via-white/50 to-[#D8B282]/40 blur-[6px] rounded-full pointer-events-none opacity-80" />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * SECTION 5B: 4 BƯỚC NHẬN THẺ VIP PASS (STEP-BY-STEP PROGRESSIVE ANIMATION MATCHING IMAGE 1)
+ */
+function VipPass4StepsProgressiveFlow({ themeMode, t }: { themeMode: ThemeMode; t: any }) {
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Auto-progression cycle every 3 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const steps = [
+    {
+      step: "01",
+      title: "Nộp Hồ Sơ Online",
+      desc: "Cung cấp chức danh lãnh đạo, quy mô công ty và ngành nghề hoạt động.",
+      status: "BƯỚC 1 • KHỞI TẠO",
+    },
+    {
+      step: "02",
+      title: "Thẩm Định Đồng Niên",
+      desc: "Ban Thư Ký thẩm định uy tín, doanh thu thực tế và năm sinh 1983 (Quý Hợi).",
+      status: "BƯỚC 2 • THẨM ĐỊNH",
+    },
+    {
+      step: "03",
+      title: "Phê Duyệt & Trao Thẻ",
+      desc: "Ban Lãnh Đạo phê duyệt chính thức và trao Thẻ NFC Titanium khắc tên riêng.",
+      status: "BƯỚC 3 • PHÊ DUYỆT",
+    },
+    {
+      step: "04",
+      title: "Kích Hoạt Hệ Sinh Thái",
+      desc: "Tham gia các buổi Mastermind, sàn thương vụ B2B và phòng deal kín.",
+      status: "BƯỚC 4 • ĐẶC QUYỀN VIP",
+    },
+  ];
+
+  const themeClass = (darkClass: string, lightClass: string, contrastClass?: string) => {
+    if (themeMode === "contrast" && contrastClass) return contrastClass;
+    if (themeMode === "dark" || themeMode === "contrast") return darkClass;
+    return lightClass;
+  };
+
+  return (
+    <div id="roadmap" className="pt-16 relative">
+      {/* Header Matching Reference Image 1 */}
+      <div className="text-center max-w-2xl mx-auto mb-14">
+        <div
+          className={`inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase font-mono border mb-3 backdrop-blur-md shadow-md ${
+            themeClass(
+              "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15 shadow-[0_0_15px_rgba(216,178,130,0.2)]",
+              "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30",
+              "border-yellow-400 text-yellow-300 bg-yellow-400/20"
+            )
+          }`}
+        >
+          <span>QUY TRÌNH XÉT DUYỆT BẢO MẬT</span>
+        </div>
+        <h3
+          className={`text-2xl sm:text-4xl font-black uppercase tracking-tight ${themeClass(
+            "text-white",
+            "text-[#181512]",
+            "text-yellow-300"
+          )}`}
+        >
+          4 BƯỚC NHẬN THẺ VIP PASS
+        </h3>
+      </div>
+
+      {/* Connecting Laser Energy Beam flowing through the 4 steps */}
+      <div className="relative max-w-7xl mx-auto">
+        <div className="hidden lg:block absolute top-[44px] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-[#D8B282]/40 to-transparent pointer-events-none z-0">
+          <motion.div
+            animate={{ left: ["0%", "100%"] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-1 w-12 h-3 bg-gradient-to-r from-transparent via-[#F6E1C3] to-transparent shadow-[0_0_12px_#FFF] rounded-full"
+          />
+        </div>
+
+        {/* 4 Step Cards Matching Reference Image 1 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+          {steps.map((step, sIdx) => {
+            const isCurrent = activeStep === sIdx;
+            return (
+              <motion.div
+                key={sIdx}
+                onClick={() => setActiveStep(sIdx)}
+                whileHover={{ y: -6, scale: 1.02 }}
+                transition={{ duration: 0.25 }}
+                className={`p-6 sm:p-7 rounded-[28px] border backdrop-blur-2xl shadow-xl flex flex-col justify-between transition-all duration-500 cursor-pointer relative overflow-hidden ${
+                  isCurrent
+                    ? themeClass(
+                        "border-2 border-[#D8B282] bg-gradient-to-b from-[#121B30] to-[#070D1A] shadow-[0_20px_50px_rgba(216,178,130,0.4),0_0_30px_rgba(216,178,130,0.2)] ring-2 ring-[#D8B282]/50 scale-[1.03]",
+                        "border-2 border-[#D8B282] bg-white shadow-[0_15px_40px_rgba(140,101,59,0.25)] scale-[1.03]",
+                        "border-2 border-yellow-400 bg-black text-yellow-300"
+                      )
+                    : themeClass(
+                        "border border-white/12 bg-[#070E20]/80 hover:border-[#D8B282]/60 text-slate-300 opacity-90",
+                        "border border-slate-200 bg-white/90 hover:border-[#D8B282] text-slate-700 shadow-sm",
+                        "border border-yellow-400/40 bg-zinc-950 text-yellow-200"
+                      )
+                }`}
+              >
+                {/* Step Top Badge Circle Matching Image 1 */}
+                <div className="flex items-center justify-between mb-5">
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center font-mono font-black text-sm transition-all shadow-md ${
+                      isCurrent
+                        ? "bg-gradient-to-br from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 ring-4 ring-[#D8B282]/30 shadow-[0_0_15px_rgba(216,178,130,0.6)]"
+                        : "bg-[#F6E1C3]/80 text-slate-950"
+                    }`}
+                  >
+                    {step.step}
+                  </div>
+
+                  {isCurrent && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      ĐANG TIẾN HÀNH
+                    </span>
+                  )}
+                </div>
+
+                {/* Step Content */}
+                <div className="text-left space-y-2">
+                  <h4
+                    className={`text-base sm:text-lg font-black tracking-tight ${
+                      isCurrent ? themeClass("text-white", "text-[#181512]", "text-white") : "text-slate-100"
+                    }`}
+                  >
+                    {step.title}
+                  </h4>
+                  <p
+                    className={`text-xs leading-relaxed font-normal ${
+                      isCurrent ? themeClass("text-slate-200", "text-[#4A3F35]", "text-yellow-100") : "text-slate-400"
+                    }`}
+                  >
+                    {step.desc}
+                  </p>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-mono">
+                  <span className={isCurrent ? "text-[#D8B282] font-bold" : "text-slate-400"}>{step.status}</span>
+                  {isCurrent && (
+                    <div className="w-2 h-2 rotate-45 bg-[#D8B282] shadow-[0_0_8px_#D8B282] animate-pulse" />
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Ceo1983Landing() {
   const { lang } = useLang();
-  // Default to Dark/Obsidian luxury mode with user toggle
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [modalOpen, setModalOpen] = useState(false);
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cardFlipped, setCardFlipped] = useState(false);
+  const [activeMilestone, setActiveMilestone] = useState(3); // 2025 (Centerpiece) by default
+  const [heroSlide, setHeroSlide] = useState(0); // 0, 1, 2
+  const [slideDirection, setSlideDirection] = useState(1);
+  const [isSlidePaused, setIsSlidePaused] = useState(false);
+
+  // Section 2 Leadership States (Waves & Floating Bubbles)
+  const [activeLeaderIdx, setActiveLeaderIdx] = useState<number>(0);
+  const [autoRotateBubbles, setAutoRotateBubbles] = useState<boolean>(true);
+
+  // Section 4 Constellation Orbit State
+  const [orbitPaused, setOrbitPaused] = useState<boolean>(false);
+  const [activeSatellite, setActiveSatellite] = useState<number | null>(null);
+
+  // Slide 3 KYC Video Player States
+  const [selectedKycVideo, setSelectedKycVideo] = useState<number>(0);
+  const [kycVideoPlaying, setKycVideoPlaying] = useState<boolean>(true);
+  const [kycVideoMuted, setKycVideoMuted] = useState<boolean>(true);
+  const kycVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const kycVideoSources = [
+    {
+      id: "kyc-onboarding",
+      title: "Bản Tin Thời Sự: Thẩm Định Doanh Nghiệp & KYC 100% C-Level 1983",
+      time: "01:25",
+      badge: "THỜI SỰ CEO 1983",
+      poster: "/landing/ceo1983_news_studio.jpg",
+      src: "/landing/video_ceo1983_kyc.mp4",
+      desc: "Trực tiếp từ trường quay: Nữ BTV cùng Nam doanh nhân 1983 bình luận và phân tích quy trình thẩm định năng lực, uy tín pháp lý trước khi kết nạp.",
+    },
+    {
+      id: "kyc-deal-flow",
+      title: "Tiêu Điểm Kinh Tế: Cấp Thẻ Titanium NFC & Bảo Mật E2E",
+      time: "02:10",
+      badge: "ĐẶC QUYỀN VIP PASS",
+      poster: "/landing/ceo1983_news_studio.jpg",
+      src: "/landing/video_ceo1983_kyc.mp4",
+      desc: "Phóng sự công nghệ kết nối 1-chạm NFC mã hóa, mở lối trực tiếp vào mạng lưới thương mại kín của các nhà sáng lập 1983.",
+    },
+    {
+      id: "kyc-governance",
+      title: "Toạ Đàm Doanh Nghiệp: Mạng Lưới Giao Thương >5.000 Tỷ VNĐ",
+      time: "01:45",
+      badge: "BẢO CHỨNG HANOIBA",
+      poster: "/landing/ceo1983_news_studio.jpg",
+      src: "/landing/video_ceo1983_kyc.mp4",
+      desc: "Bản tin đối thoại chuyên sâu về hệ sinh thái chuỗi cung ứng khép kín, hiệp lực tài chính và bảo trợ uy tín HanoiBA.",
+    },
+  ];
+
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -776,13 +693,42 @@ export function Ceo1983Landing() {
   });
   const [submitted, setSubmitted] = useState(false);
 
+  const { scrollYProgress } = useScroll();
+
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";
 
-  // Active language dictionary with fallback to Vietnamese
   const t = (CEO1983_I18N as any)[lang] || CEO1983_I18N.vi;
 
-  // Helper function to switch classes based on current theme
+  // Auto-play hero slider every 7.5s unless paused
+  useEffect(() => {
+    if (isSlidePaused) return;
+    const interval = setInterval(() => {
+      setSlideDirection(1);
+      setHeroSlide((prev) => (prev + 1) % 3);
+    }, 7500);
+    return () => clearInterval(interval);
+  }, [isSlidePaused]);
+
+  // Auto-rotate leadership bubbles gently every 5.5s
+  useEffect(() => {
+    if (!autoRotateBubbles) return;
+    const interval = setInterval(() => {
+      setActiveLeaderIdx((prev) => (prev + 1) % leaders.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [autoRotateBubbles]);
+
+  const changeSlide = (newIndex: number) => {
+    setSlideDirection(newIndex > heroSlide ? 1 : -1);
+    setHeroSlide(newIndex);
+  };
+
+  const selectLeader = (index: number) => {
+    setAutoRotateBubbles(false);
+    setActiveLeaderIdx(index);
+  };
+
   const themeClass = (darkClass: string, lightClass: string, contrastClass?: string) => {
     if (isContrast && contrastClass) return contrastClass;
     if (isDark || isContrast) return darkClass;
@@ -815,176 +761,716 @@ export function Ceo1983Landing() {
     } finally {
       setSubmitting(false);
       setSubmitted(true);
-      setTimeout(() => {
-        setModalOpen(false);
-        setSubmitted(false);
-      }, 2500);
     }
   };
 
-  // Real leaders of CLB CEO 1983 (Nhi盻㍊ k盻ｳ 2025 - 2028) with localized roles
+  // Multi-Slide Hero Data (Dedicated Unique Layouts & Content)
+  const heroSlides = [
+    {
+      id: "vip-card",
+      badge: "Thẻ VIP Titanium NFC",
+      icon: <Sparkles className="w-3.5 h-3.5" />,
+      tag: t.heroHanoiba || "💎 ĐẶC QUYỀN ĐỊNH DANH DOANH NHÂN QUÝ HỢI 1983",
+      title1: t.heroTitle1 || "LIÊN MINH DOANH NHÂN",
+      title2: t.heroTitle2 || "ĐỒNG NIÊN QUÝ HỢI 1983",
+      title3: t.heroTitle3 || "HANOIBA ALLIANCE",
+      desc: t.heroDesc || "Thẻ định danh kỹ thuật số cao cấp tích hợp chip NFC & mã QR mã hóa E2E, bảo chứng bởi HanoiBA. Chạm nhẹ vào smartphone đối tác để trao đổi hồ sơ doanh nghiệp đã thẩm định trong 1 giây.",
+      type: "card",
+      highlights: [
+        { icon: <Zap className="w-4 h-4 text-[#D8B282]" />, label: "Chạm NFC 1s", desc: "Không cần cài app" },
+        { icon: <ShieldCheck className="w-4 h-4 text-[#D8B282]" />, label: "Bảo chứng HanoiBA", desc: "100% hồ sơ uy tín" },
+        { icon: <CheckCircle2 className="w-4 h-4 text-[#D8B282]" />, label: "Mã hóa E2E", desc: "Bảo mật danh bạ" },
+      ],
+    },
+    {
+      id: "c-level-directory",
+      badge: "Mạng Lưới C-Level 200+",
+      icon: <Users className="w-3.5 h-3.5" />,
+      tag: "🏛️ 200+ CHỦ TỊCH & TỔNG GIÁM ĐỐC QUÝ HỢI 1983",
+      title1: "BẢO CHỨNG UY TÍN",
+      title2: "KẾT NỐI TRỰC TIẾP —",
+      title3: "200+ THUYỀN TRƯỞNG",
+      desc: "Mạng lưới tinh hoa khép kín quy tụ các nhà sáng lập, Chủ tịch & CEO sinh năm 1983. Tất cả thành viên đều trải qua thẩm định minh bạch về năng lực tài chính và đạo đức kinh doanh.",
+      type: "network",
+      highlights: [
+        { icon: <Award className="w-4 h-4 text-[#D8B282]" />, label: "Doanh thu >20 Tỷ/năm", desc: "Tiêu chuẩn gia nhập" },
+        { icon: <ShieldCheck className="w-4 h-4 text-[#D8B282]" />, label: "HanoiBA Bảo Chứng", desc: "Thẩm định 3 vòng" },
+        { icon: <Handshake className="w-4 h-4 text-[#D8B282]" />, label: "Cam kết Tương Trợ", desc: "Không bán chéo spam" },
+      ],
+    },
+    {
+      id: "kyc-video-terminal",
+      badge: "Video KYC & Thẻ VIP Pass",
+      icon: <Film className="w-3.5 h-3.5" />,
+      tag: "📹 XÁC THỰC KYC & ĐỊNH DANH TITANIUM NFC",
+      title1: "THẨM ĐỊNH MINH BẠCH",
+      title2: "QUY TRÌNH KYC 100% —",
+      title3: "CẤP THẺ TITANIUM",
+      desc: "Trực quan hóa quy trình thẩm định 3 vòng nghiêm ngặt, đối soát tư cách pháp nhân và trao đặc quyền thẻ Titanium VIP Pass kích hoạt kết nối phòng Deal Kín >5.000 Tỷ VNĐ.",
+      type: "video",
+      highlights: [
+        { icon: <ShieldCheck className="w-4 h-4 text-cyan-400" />, label: "Xác thực KYC 100%", desc: "Thẩm định C-Level" },
+        { icon: <Zap className="w-4 h-4 text-[#D8B282]" />, label: "Chip Titanium NFC", desc: "Mã hóa E2E" },
+        { icon: <Coins className="w-4 h-4 text-emerald-400" />, label: ">5.000 Tỷ VNĐ", desc: "Sàn thương vụ B2B" },
+      ],
+    },
+  ];
+
+  // Section 2: Real Leaders & Advisors (Waves & Floating Bubbles)
   const leaders = [
     {
-      name: "Lﾃｪ Dung",
-      role: lang === "vi" ? "Ch盻ｧ T盻議h CLB CEO 1983" : lang === "en" ? "President of CEO 1983 Club" : lang === "ja" ? "CEO 1983 繧ｯ繝ｩ繝� 莨夐聞" : lang === "ko" ? "CEO 1983 增ｴ�ｽ 巐護棗" : lang === "zh" ? "CEO 1983 菫ｱ荵宣Κ莨夐柄" : lang === "km" ? "癰批汳癰壯梺癰ｶ癰乍梳癲低椦癰ｹ癰� CEO 1983" : lang === "lo" ? "犲巵ｺｰ犲伶ｺｲ犲吭ｺｪ犲ｰ狃もｺ｡犲ｪ犲ｭ犲� CEO 1983" : "CEO 1983 痼痼憮甫ｺ 痼･痼痼ｹ痼痼吟ｹ痼�",
-      company: lang === "vi" ? "Vi盻㌻ Trﾆｰ盻殤g Vi盻㌻ Doanh Trﾃｭ / TGﾄ� DGroup" : "President of Business Intelligence Institute / CEO DGroup",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
+      name: "Lê Hoàng Long",
+      role: "Chủ tịch CLB CEO 1983 (Nhiệm kỳ 2025 - 2028)",
+      company: "Chủ tịch HĐQT kiêm TGĐ Công ty CP Tập đoàn Tinh Hoa",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+      highlight: "Đầu tàu liên minh doanh nghiệp 1983",
+      quote: "Đồng niên gắn kết — Tiên phong kiến tạo chuỗi cung ứng khép kín vững mạnh.",
+      badge: "CHỦ TỊCH CLB",
+      floatDelay: 0,
     },
     {
-      name: "Lﾃｪ Hoﾃ�ng Long",
-      role: lang === "vi" ? "Phﾃｳ Ch盻ｧ T盻議h Chi蘯ｿn Lﾆｰ盻｣c & Cﾃｴng Ngh盻�" : lang === "en" ? "VP of Strategy & Technology" : lang === "ja" ? "謌ｦ逡･繝ｻ繝�け繝弱Ο繧ｸ繝ｼ諡�ｽ灘憶莨夐聞" : lang === "ko" ? "��楫 �� �ｰ�� �ｴ�ｹ �巐護棗" : lang === "zh" ? "謌倡払荳守ｧ第橿蜑ｯ莨夐柄" : lang === "km" ? "癰｢癰乍椽癰批汳癰壯梺癰ｶ癰乍棘癰ｻ癰黛汳癰低棔癰ｶ癰溂汳癰障汳癰� 癰乍楾癰�梍癰�汳癰�氈癰癰憮楾癰黛汳癰吼楔" : lang === "lo" ? "犲ｮ犲ｭ犲�ｺ巵ｺｰ犲伶ｺｲ犲吭ｺ財ｺｸ犲扉ｺ伶ｺｰ犲ｪ犲ｲ犲� & 狃犲歩ｺｱ犲≒ｻもｺ吭ｻもｺ･犲癌ｺｵ" : "痼吼溂ｬ痼例ｻ痼ｰ痼溂ｬ痼批ｾ痼�ｷ痼ｺ 痼批眼ｺ痼ｸ痼甫眼ｬ 痼低ｯ-痼･痼痼ｹ痼痼吟ｹ痼�",
-      company: lang === "vi" ? "T盻貧g Giﾃ｡m ﾄ雪ｻ祖 ViConnect / Founder Linh Vﾅｩ Media" : "CEO ViConnect / Founder Linh Vu Media",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      name: "Trần Anh Quân",
+      role: "Phó Chủ tịch Thường Trực",
+      company: "Chủ tịch Công ty CP Đầu Tư & Phát Triển Công Nghệ Việt An",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80",
+      highlight: "Phụ trách Xúc tiến Giao thương B2B",
+      quote: "Biến mỗi cơ hội giao lưu thành hợp đồng thương vụ thực chất.",
+      badge: "PHÓ CHỦ TỊCH",
+      floatDelay: 1.2,
     },
     {
-      name: "Tr蘯ｧn Th盻� Mai Lan",
-      role: lang === "vi" ? "Phﾃｳ Ch盻ｧ T盻議h Thﾆｰ盻拵g Tr盻ｱc" : lang === "en" ? "Standing Vice President" : lang === "ja" ? "蟶ｸ莉ｻ蜑ｯ莨夐聞 蜈ｼ 莠句漁邱城聞" : lang === "ko" ? "�們� �巐護棗 �ｸ �ｬ�ｴ�晧棗" : lang === "zh" ? "蟶ｸ蜉｡蜑ｯ莨夐柄蜈ｼ遘倅ｹｦ髟ｿ" : lang === "km" ? "癰｢癰乍椽癰批汳癰壯梺癰ｶ癰乍椶癰�楾癰乍汳癰障汳癰壯气癰吼沚" : lang === "lo" ? "犲ｮ犲ｭ犲�ｺ巵ｺｰ犲伶ｺｲ犲吭ｺ巵ｺｰ犲謂ｻ財ｺｲ犲≒ｺｲ犲�" : "痼｡痼吼ｼ痼ｲ痼雪吼ｺ痼ｸ 痼低ｯ痼雪ｭ痼壯･痼痼ｹ癰痼吟ｹ痼�",
-      company: lang === "vi" ? "T盻貧g Thﾆｰ Kﾃｽ CLB CEO 1983 / CEO LanDecor Group" : "Secretary General / CEO LanDecor Group",
-      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80",
+      name: "Shark Nguyễn Xuân Phú",
+      role: "Cố Vấn Chiến Lược Danh Dự",
+      company: "Chủ tịch HĐQT Tập đoàn Sunhouse",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&auto=format&fit=crop&q=80",
+      highlight: "Định hướng Quản trị & M&A Doanh nghiệp",
+      quote: "Dòng tiền và quản trị rủi ro là sinh mệnh của doanh nghiệp tăng trưởng nhanh.",
+      badge: "CỐ VẤN CHIẾN LƯỢC",
+      floatDelay: 0.6,
     },
     {
-      name: "Ph蘯｡m ﾄ雪ｻｩc Minh",
-      role: lang === "vi" ? "Phﾃｳ Ch盻ｧ T盻議h Xﾃｺc Ti蘯ｿn Thﾆｰﾆ｡ng M蘯｡i" : lang === "en" ? "VP of Trade Promotion" : lang === "ja" ? "雋ｿ譏謎ｿ�ｲ諡�ｽ灘憶莨夐聞" : lang === "ko" ? "�ｴ�ｭ ��擂 �ｴ�ｹ �巐護棗" : lang === "zh" ? "雍ｸ譏謎ｿ�ｿ帛憶莨夐柄" : lang === "km" ? "癰｢癰乍椽癰批汳癰壯梺癰ｶ癰乍梏癲�椢癰ｻ癰蚊椁癰ｶ癰若楾癰�汳癰�梳癰倔汳癰�" : lang === "lo" ? "犲ｮ犲ｭ犲�ｺ巵ｺｰ犲伶ｺｲ犲吭ｺｪ犲ｻ狃謂ｺ�ｻ犲ｪ犲ｵ犲｡犲≒ｺｲ犲吭ｺ�ｻ霞ｺｲ" : "痼痼ｯ痼批ｺ痼榱ｽ痼壯ｺ痼吼ｾ痼ｯ痼吼ｼ痼ｾ痼�ｷ痼ｺ痼雪�ｺ痼帋ｱ痼ｸ 痼低ｯ-痼･痼痼ｹ痼痼吟ｹ痼�",
-      company: lang === "vi" ? "Trﾆｰ盻殤g Ban B2B / Ch盻ｧ T盻議h Minh Phﾃ｡t Holdings" : "Head of B2B Committee / Chairman Minh Phat Holdings",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+      name: "Nguyễn Minh Châu",
+      role: "Phó Chủ tịch phụ trách Tài Chính",
+      company: "Tổng Giám Đốc Công ty Chứng Khoán & Quản Lý Quỹ Alpha",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
+      highlight: "Quản trị Dòng tiền & Quỹ đầu tư",
+      quote: "Tối ưu hóa cấu trúc vốn và bảo lãnh thanh khoản nội bộ.",
+      badge: "PHÓ CHỦ TỊCH",
+      floatDelay: 1.8,
     },
     {
-      name: "Vﾅｩ Thu Trang",
-      role: lang === "vi" ? "Trﾆｰ盻殤g Ban Truy盻］ Thﾃｴng & S盻ｱ Ki盻㌻" : lang === "en" ? "Head of Media & Events" : lang === "ja" ? "蠎��ｱ繝ｻ繧､繝吶Φ繝亥ｧ泌藤髟ｷ" : lang === "ko" ? "嶹鷺ｳｴ �� 嵂餓ぎ ��寳�･" : lang === "zh" ? "蟐剃ｽ謎ｸ主刀迚梧ｴｻ蜉ｨ驛ｨ髟ｿ" : lang === "km" ? "癰批汳癰壯梺癰ｶ癰乍桾癲低椏癲ゃ梳癰溂楔癰壯椁癲雪桴癲吾椈癰ｶ癰� & 癰貰汳癰壯椹癰障汳癰障楾癰癰ｶ癰壯梹癲�" : lang === "lo" ? "犲ｫ犲ｻ犲ｧ狃憫ｻ霞ｺｲ犲�ｺｰ犲吭ｺｰ犲ｪ犲ｷ狃謂ｺ｡犲ｧ犲吭ｺ癌ｺｻ犲� & 犲�ｺｲ犲吭ｺ≒ｺｴ犲扉ｺ謂ｺｰ犲≒ｻ財ｺｲ" : "痼吼ｮ痼低ｮ痼壯ｬ痼批ｾ痼�ｷ痼ｺ 痼甫ｽ痼ｲ痼吼ｻ痼ｬ痼ｸ痼�ｭ痼ｯ痼�ｺ痼帋ｬ 痼｡痼痼ｼ痼ｮ痼ｸ痼｡痼痼ｲ",
-      company: lang === "vi" ? "Ph盻･ Trﾃ｡ch ﾄ雪ｻ訴 Ngo蘯｡i & Mastermind Tour" : "Director of External Relations & Mastermind Tours",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
+      name: "Phạm Hải Đăng",
+      role: "Phó Chủ tịch Ban Pháp chế & Thẩm định",
+      company: "Luật sư Điều hành - Hãng Luật Quốc tế H&D Partners",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500&auto=format&fit=crop&q=80",
+      highlight: "Bảo chứng Pháp lý & Trọng tài kinh tế",
+      quote: "Bảo vệ pháp lý minh bạch cho mọi giao dịch giữa các thành viên.",
+      badge: "PHÓ CHỦ TỊCH",
+      floatDelay: 2.4,
     },
+    {
+      name: "Vũ Bích Ngọc",
+      role: "Tổng Thư Ký CLB CEO 1983",
+      company: "Chủ tịch HĐQT Công ty Truyền Thông & Sự Kiện V-Media",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80",
+      highlight: "Kết nối Hội viên & Quan hệ đối ngoại",
+      quote: "Gắn kết triệu trái tim doanh nhân Quý Hợi bằng sự chân thành và nhiệt huyết.",
+      badge: "TỔNG THƯ KÝ",
+      floatDelay: 0.9,
+    },
+  ];
+
+  // Section 3: Futuristic Glass Skyscraper City Skyline Milestones (6 Strategic Towers)
+  const skyscrapers = [
+    {
+      year: "2021",
+      tag: "KHỞI NGUYÊN ĐỒNG NIÊN",
+      name: "Tháp Khởi Nguyên",
+      heightPx: 220,
+      floors: 6,
+      metric: "50+ CEO",
+      subMetric: "Ban Vận Động HanoiBA",
+      desc: "Quy tụ 50 Chủ tịch & CEO Quý Hợi đầu tiên trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA). Đặt nền móng cho văn hóa tương trợ, chân thành và minh bạch.",
+      icon: <Flame className="w-5 h-5 text-[#D8B282]" />,
+    },
+    {
+      year: "2023",
+      tag: "MỞ RỘNG GIAO THƯƠNG",
+      name: "Tháp Hội Tụ",
+      heightPx: 270,
+      floors: 8,
+      metric: "1.200 Tỷ VNĐ",
+      subMetric: "24 Sự kiện Xúc tiến",
+      desc: "Tổng doanh thu hội viên vượt mốc 1.200 Tỷ VNĐ. Triển khai chuỗi Business Tour thực chiến, talkshow quản trị dòng tiền và mở rộng liên minh đối tác chiến lược.",
+      icon: <Building2 className="w-5 h-5 text-[#D8B282]" />,
+    },
+    {
+      year: "2024",
+      tag: "HÀNH TRÌNH XUYÊN VIỆT",
+      name: "Tháp Bắc - Nam",
+      heightPx: 320,
+      floors: 10,
+      metric: "Liên Minh Toàn Quốc",
+      subMetric: "CEO 1983 Miền Nam & Site Visit",
+      desc: "Thành lập chi hội CEO 1983 Miền Nam, đẩy mạnh các chương trình Site Visit thực địa tại các nhà máy lớn (Flexfit, Cao su An Việt, Thái Bình...), kết nối cung ứng liên vùng.",
+      icon: <Handshake className="w-5 h-5 text-[#D8B282]" />,
+    },
+    {
+      year: "2025",
+      tag: "CHUYỂN ĐỔI SỐ & ĐỊNH DANH AI",
+      name: "Đại Tháp Bứt Phá",
+      heightPx: 420,
+      floors: 14,
+      metric: ">5.000 Tỷ VNĐ",
+      subMetric: "Thẻ VIP NFC & Mạng Lưới HanoiBA",
+      desc: "Ứng dụng giải pháp số độc quyền CLB, phát hành Thẻ Titanium NFC bảo chứng định danh doanh nhân số. Giao thương nội bộ bứt phá vượt mốc 5.000 Tỷ VNĐ.",
+      icon: <Zap className="w-5 h-5 text-[#F6E1C3]" />,
+      isCurrent: true,
+    },
+    {
+      year: "2026 — 2028",
+      tag: "QUỸ ĐẦU TƯ & CỐ VẤN CHIẾN LƯỢC",
+      name: "Tháp Vươn Tầm",
+      heightPx: 360,
+      floors: 12,
+      metric: "500+ Doanh Nghiệp",
+      subMetric: "Cố Vấn Shark Phú & Quỹ Mạo Hiểm",
+      desc: "Đồng hành cùng Shark Nguyễn Xuân Phú và các chuyên gia đầu ngành; thành lập Quỹ đầu tư mạo hiểm nội bộ, hỗ trợ bảo lãnh tài chính và dòng tiền cho doanh nghiệp SME.",
+      icon: <Globe2 className="w-5 h-5 text-[#D8B282]" />,
+    },
+    {
+      year: "2030+",
+      tag: "KỲ LÂN DI SẢN & IPO QUỐC TẾ",
+      name: "Đại Tháp Tương Lai",
+      heightPx: 480,
+      floors: 16,
+      metric: "10.000+ Tỷ VNĐ",
+      subMetric: "Vươn Tầm Đông Nam Á & IPO",
+      desc: "Liên minh kinh tế hùng mạnh khu vực Đông Nam Á, bệ phóng nâng tầm thương hiệu quốc gia và hỗ trợ IPO cho các doanh nghiệp thành viên tiêu biểu lên sàn chứng khoán.",
+      icon: <Crown className="w-5 h-5 text-[#F6E1C3]" />,
+    },
+  ];
+
+  // Section 4: 8 Orbiting Satellites
+  const constellationSatellites = [
+    { id: "hiep-hoi", name: "Hiệp hội", icon: <Users className="w-4 h-4" />, desc: "Kết nối sâu rộng với HanoiBA, VCCI và các tổ chức ngành nghề toàn quốc", angle: 160 },
+    { id: "doanh-nhan", name: "Doanh nhân", icon: <UserCheck className="w-4 h-4" />, desc: "Cộng đồng 200+ Chủ tịch & CEO 1983 cùng thế hệ, cùng tư duy dẫn đầu", angle: 195 },
+    { id: "doanh-nghiep", name: "Doanh nghiệp", icon: <Building2 className="w-4 h-4" />, desc: "Mạng lưới chuỗi cung ứng khép kín tối ưu dòng tiền và sản lượng B2B", angle: 230 },
+    { id: "chuyen-gia", name: "Chuyên gia", icon: <Award className="w-4 h-4" />, desc: "Đội ngũ cố vấn tài chính, thuế, pháp lý và tái cấu trúc doanh nghiệp", angle: 265 },
+    { id: "nha-dau-tu", name: "Nhà đầu tư", icon: <Coins className="w-4 h-4" />, desc: "Quỹ đầu tư nội bộ và mạng lưới Angel Investors tìm kiếm deal tăng trưởng", angle: 20 },
+    { id: "co-quan-quan-ly", name: "Cơ quan quản lý", icon: <ShieldCheck className="w-4 h-4" />, desc: "Đối thoại chính sách kinh tế và xúc tiến đầu tư chính ngạch", angle: 335 },
+    { id: "to-chuc-quoc-te", name: "Tổ chức quốc tế", icon: <Globe2 className="w-4 h-4" />, desc: "Hợp tác thương mại song phương, xuất khẩu và đưa sản phẩm ra toàn cầu", angle: 300 },
+    { id: "doi-tac-chien-luoc", name: "Đối tác chiến lược", icon: <Handshake className="w-4 h-4" />, desc: "Các tập đoàn lớn đồng hành cung ứng giải pháp tài chính và công nghệ", angle: 270 },
   ];
 
   return (
     <div
-      className={`transition-colors duration-500 relative overflow-x-hidden selection:bg-[#B18B44] selection:text-white ${
-        themeClass("bg-[#06080F] text-[#F8F7F3]", "bg-[#FAF8F5] text-[#0F172A]", "bg-black text-white")
+      className={`transition-colors duration-500 relative overflow-x-hidden ${
+        themeClass(
+          "bg-[#02040A] text-[#FAF6F0] selection:bg-[#D8B282] selection:text-black",
+          "bg-[#FAF8F5] text-[#181512] selection:bg-[#D8B282] selection:text-white",
+          "bg-black text-[#FFE57F] selection:bg-yellow-400 selection:text-black"
+        )
       }`}
       style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
-      {/* 1. EMBEDDED LUXURY FONTS & SHINE ANIMATION */}
+      {/* 0. STICKY TOP SCROLL PROGRESS BAR */}
+      <motion.div
+        style={{ scaleX: scrollYProgress }}
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] origin-left z-50 shadow-[0_0_16px_rgba(216,178,130,0.85)] pointer-events-none"
+      />
+
+      {/* 1. EMBEDDED FONTS & KEYFRAME ANIMATIONS */}
       <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
-        
-        @keyframes shineSweep {
-          0% { transform: translateX(-150%) skewX(-25deg); }
-          100% { transform: translateX(250%) skewX(-25deg); }
-        }
-        .shine-sweep {
-          position: relative;
-          overflow: hidden;
-        }
-        .shine-sweep::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 60%;
-          height: 100%;
-          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
-          transform: translateX(-150%) skewX(-25deg);
-          animation: shineSweep 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes orbitSpinClockwise {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes orbitSpinCounter {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(-360deg); }
-        }
-        .ceo-orbit-spin-slow {
-          animation: orbitSpinClockwise 36s linear infinite;
-        }
-        .ceo-orbit-spin-reverse-slow {
-          animation: orbitSpinCounter 52s linear infinite;
-        }
-        .ceo-orbit-counter-slow {
-          animation: orbitSpinCounter 36s linear infinite;
-        }
-        .ceo-orbit-counter-reverse {
-          animation: orbitSpinClockwise 52s linear infinite;
-        }
-        .ceo-orbit-container:hover .ceo-orbit-spin-slow,
-        .ceo-orbit-container:hover .ceo-orbit-spin-reverse-slow,
-        .ceo-orbit-container:hover .ceo-orbit-counter-slow,
-        .ceo-orbit-container:hover .ceo-orbit-counter-reverse {
-          animation-play-state: paused;
-        }
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap');
+          
+          @keyframes laserStreamFlow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -160; }
+          }
+          @keyframes laserStreamFlowReverse {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 160; }
+          }
+          @keyframes neonGlowPulse {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.6)); opacity: 0.9; }
+            50% { filter: drop-shadow(0 0 16px rgba(129, 140, 248, 1)) drop-shadow(0 0 35px rgba(216, 178, 130, 0.9)); opacity: 1; }
+          }
+          @keyframes goldGlowPulse {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(246, 225, 195, 0.9)) drop-shadow(0 0 22px rgba(216, 178, 130, 0.7)); }
+            50% { filter: drop-shadow(0 0 18px rgba(255, 255, 255, 1)) drop-shadow(0 0 38px rgba(216, 178, 130, 1)); }
+          }
+          
+          @keyframes floatingWave {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-14px) rotate(0.8deg); }
+          }
+
+          @keyframes waterBobbing {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            35% { transform: translateY(-16px) scale(1.03); }
+            70% { transform: translateY(8px) scale(0.98); }
+          }
+
+          @keyframes skyscraperLights {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.95; }
+          }
+
+          @keyframes gentleRibbonDrift {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(-10px, 8px, 0) scale(1.015); }
+          }
+
+          @keyframes waterWaveFlow1 {
+            0% { transform: translate3d(0, 0, 0) scaleY(1); }
+            50% { transform: translate3d(-35px, 14px, 0) scaleY(1.06); }
+            100% { transform: translate3d(0, 0, 0) scaleY(1); }
+          }
+
+          @keyframes waterWaveFlow2 {
+            0% { transform: translate3d(0, 0, 0) scaleY(1); }
+            50% { transform: translate3d(30px, -12px, 0) scaleY(0.95); }
+            100% { transform: translate3d(0, 0, 0) scaleY(1); }
+          }
+
+          @keyframes waterCurrentLoop {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -120; }
+          }
+
+          @keyframes waterDropletGlide {
+            0% { stroke-dashoffset: 200; opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { stroke-dashoffset: -200; opacity: 0; }
+          }
+
+          .animate-wave-1 {
+            animation: waterWaveFlow1 9s ease-in-out infinite;
+            will-change: transform;
+          }
+
+          .animate-wave-2 {
+            animation: waterWaveFlow2 12s ease-in-out infinite;
+            will-change: transform;
+          }
+
+          .animate-water-current {
+            animation: waterCurrentLoop 6s linear infinite;
+          }
+
+          @keyframes gentleOrbitSlow {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(2deg) scale(1.02); }
+          }
+
+          @keyframes orbitContinuous {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          @keyframes orbitCounterContinuous {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+          }
+
+          .animate-ribbon-drift {
+            animation: gentleRibbonDrift 12s ease-in-out infinite;
+            will-change: transform;
+          }
+
+          .animate-orbit-spin {
+            animation: orbitContinuous 28s linear infinite;
+            transform-origin: center center;
+            will-change: transform;
+          }
+
+          .animate-orbit-reverse {
+            animation: orbitCounterContinuous 28s linear infinite;
+            transform-origin: center center;
+            will-change: transform;
+          }
+
+          .animate-orbit-gentle {
+            animation: gentleOrbitSlow 9s ease-in-out infinite;
+            will-change: transform;
+          }
+
+          .paused-spin {
+            animation-play-state: paused !important;
+          }
         `}
       </style>
 
-      {/* 2. HIGH-DEPTH LUXURY 3D BACKGROUND IMAGE & RADIAL LIGHTING */}
-      <div className="absolute inset-0 top-0 left-0 w-full h-[1350px] pointer-events-none z-0 overflow-hidden">
-        <img
-          src={
-            isContrast
-              ? "/landing/ceo1983-contrast.jpg"
-              : isDark
-              ? "/landing/ceo1983-hero-bg.jpg"
-              : "/landing/business-hero-light.jpg"
-          }
-          alt="CEO 1983 Luxury Background"
-          className={`absolute top-0 right-0 w-full h-[1150px] object-cover object-top transition-all duration-700 ${
-            isContrast ? "opacity-90" : isDark ? "opacity-95" : "opacity-85"
-          }`}
-          style={{
-            WebkitMaskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 75%, rgba(0,0,0,0) 100%)",
-            maskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 75%, rgba(0,0,0,0) 100%)",
-          }}
-        />
+      {/* 2. HERO LUXURY BACKGROUND: ADAPTIVE THEME ATMOSPHERE (SÓNG NƯỚC 3D THEME TỐI • LUỒNG GIÓ KHÍ ĐỘNG THEME SÁNG • CYBER OBSIDIAN THEME TƯƠNG PHẢN) */}
+      <div className="absolute inset-0 top-0 left-0 w-full h-[1400px] pointer-events-none z-0 overflow-hidden">
+        {/* Dynamic Background Backdrop Image & Atmosphere per Theme */}
+        {themeMode === "light" ? (
+          <>
+            {/* Real Hanoi City Daytime Luxury Skyline & Golden Sunlit Sky */}
+            <div className="absolute inset-0 w-full h-full opacity-60 scale-105 transition-opacity duration-700">
+              <img
+                src="/ceo1983_hero_daylight_skyline.jpg"
+                alt="CEO 1983 Hanoi Daytime Luxury Skyline"
+                className="w-full h-full object-cover object-center filter brightness-105 contrast-105"
+              />
+            </div>
+            {/* Bright Porcelain Daylight Vignette */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/30 via-[#FAF8F5]/75 to-[#FAF8F5] pointer-events-none" />
+          </>
+        ) : themeMode === "contrast" ? (
+          <>
+            {/* Dedicated High-Contrast Cyber Obsidian Backdrop */}
+            <div className="absolute inset-0 w-full h-full opacity-90 scale-105 transition-opacity duration-700 bg-[radial-gradient(ellipse_at_top,#121826_0%,#040710_60%,#000000_100%)]">
+              {/* High Contrast Holographic Matrix Grid */}
+              <div
+                className="absolute inset-0 opacity-25"
+                style={{
+                  backgroundImage: "linear-gradient(to right, #FACC15 1px, transparent 1px), linear-gradient(to bottom, #38BDF8 1px, transparent 1px)",
+                  backgroundSize: "60px 60px",
+                }}
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/80 to-black pointer-events-none" />
+          </>
+        ) : (
+          <>
+            {/* Real Hanoi City Night Skyline & Cosmic Starfield Image */}
+            <div className="absolute inset-0 w-full h-full opacity-65 mix-blend-screen scale-105 animate-pulse transition-opacity duration-700" style={{ animationDuration: "8s" }}>
+              <img
+                src="/ceo1983_hero_cosmos_skyline.jpg"
+                alt="CEO 1983 Cosmos Hanoi Skyline"
+                className="w-full h-full object-cover object-center filter brightness-110 contrast-125"
+              />
+            </div>
+            {/* Dynamic Dark Radial Gradient Vignette for Text Legibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#02040A]/40 via-[#02040A]/85 to-[#02040A] pointer-events-none" />
+          </>
+        )}
 
-        {/* Ambient Warm Golden Halo Spotlight on Card Area */}
-        <div className={`absolute top-16 right-10 lg:right-32 w-[750px] h-[750px] rounded-full blur-[170px] pointer-events-none transition-opacity duration-700 ${
-          isDark ? "bg-gradient-to-br from-amber-500/35 via-yellow-600/20 to-transparent opacity-100" : isContrast ? "bg-white/10 opacity-50" : "bg-gradient-to-br from-amber-400/20 via-yellow-500/10 to-transparent opacity-80"
-        }`} />
-        <div className={`absolute top-60 left-10 w-[550px] h-[550px] rounded-full blur-[150px] pointer-events-none transition-opacity duration-700 ${
-          isDark ? "bg-gradient-to-tr from-amber-700/30 via-amber-500/20 to-transparent opacity-90" : isContrast ? "opacity-0" : "bg-gradient-to-tr from-amber-600/10 via-amber-400/6 to-transparent opacity-60"
-        }`} />
+        {/* =========================================================================
+            DYNAMIC 3D VECTOR STREAMS:
+            - THEME TỐI: SÓNG NƯỚC 3D CUỒN CUỘN CHẢY LIÊN TỤC (THEO TỪNG SLIDE)
+            - THEME SÁNG: LUỒNG GIÓ KHÍ ĐỘNG HỌC MỀM MẠI UỐN LƯỢN (AERODYNAMIC SILK WIND)
+            - THEME TƯƠNG PHẢN: MA TRẬN NĂNG LƯỢNG CYBER OBSIDIAN & ELECTRIC GOLD
+            ========================================================================= */}
+        <svg
+          className="absolute top-0 inset-x-0 w-full h-[1200px] pointer-events-none"
+          viewBox="0 0 1440 1100"
+          preserveAspectRatio="none"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <filter id="fluidGlow3D" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
 
-        {/* SVG Perspective Floor Grid */}
-        <svg className="absolute bottom-0 left-0 right-0 w-full h-[450px] opacity-[0.25]" xmlns="http://www.w3.org/2000/svg">
+          <filter id="specularGleam" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
           <defs>
-            <linearGradient id="ceo-hero-grid-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#D97706" stopOpacity="0" />
-              <stop offset="60%" stopColor="#F59E0B" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#FBBF24" stopOpacity="0.9" />
+            {/* 1. Dark Theme: Surging 3D Liquid Crystal Water Stream */}
+            <linearGradient id="liquidWaterStream" x1="0%" y1="20%" x2="100%" y2="80%">
+              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
+              <stop offset="25%" stopColor="#0284C7" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="#0369A1" stopOpacity="0.95" />
+              <stop offset="75%" stopColor="#38BDF8" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#BAE6FD" stopOpacity="0.5" />
             </linearGradient>
-            <pattern id="ceo-hero-iso" width="48" height="48" patternUnits="userSpaceOnUse">
-              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="url(#ceo-hero-grid-fade)" strokeWidth="0.9" />
-            </pattern>
+
+            <linearGradient id="liquidSpecularSpine" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
+              <stop offset="20%" stopColor="#FFFFFF" stopOpacity="0.98" />
+              <stop offset="50%" stopColor="#F0F9FF" stopOpacity="1" />
+              <stop offset="80%" stopColor="#FFFFFF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.3" />
+            </linearGradient>
+
+            <linearGradient id="liquidWaterBranch" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.85" />
+              <stop offset="50%" stopColor="#0284C7" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="#075985" stopOpacity="0.25" />
+            </linearGradient>
+
+            {/* 2. Light Theme: Delicate Aerodynamic Silk Wind Streamlines (Luồng Gió Khí Động Học Nhẹ Nhàng) */}
+            <linearGradient id="silkWindGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#D8B282" stopOpacity="0" />
+              <stop offset="20%" stopColor="#D8B282" stopOpacity="0.6" />
+              <stop offset="50%" stopColor="#8C653B" stopOpacity="0.8" />
+              <stop offset="80%" stopColor="#F6E1C3" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#D8B282" stopOpacity="0" />
+            </linearGradient>
+
+            <linearGradient id="silkWindGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FFF" stopOpacity="0" />
+              <stop offset="30%" stopColor="#FFFFFF" stopOpacity="0.95" />
+              <stop offset="65%" stopColor="#F6E1C3" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#FFF" stopOpacity="0" />
+            </linearGradient>
+
+            <linearGradient id="silkWindGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#A8824B" stopOpacity="0" />
+              <stop offset="40%" stopColor="#D8B282" stopOpacity="0.5" />
+              <stop offset="70%" stopColor="#8C653B" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#D8B282" stopOpacity="0" />
+            </linearGradient>
+
+            {/* 3. High Contrast Theme: Electric Neon Gold & Quantum Cyan Stream */}
+            <linearGradient id="contrastElectricStream" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.9" />
+              <stop offset="50%" stopColor="#FACC15" stopOpacity="1" />
+              <stop offset="100%" stopColor="#EAB308" stopOpacity="0.8" />
+            </linearGradient>
+
+            {/* 3D Spherical Droplet Radial Gradient */}
+            <radialGradient id="waterBubble3D" cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
+              <stop offset="22%" stopColor="#BAE6FD" stopOpacity="0.85" />
+              <stop offset="60%" stopColor="#0284C7" stopOpacity="0.75" />
+              <stop offset="90%" stopColor="#0369A1" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#082F49" stopOpacity="0.95" />
+            </radialGradient>
           </defs>
-          <rect width="100%" height="100%" fill="url(#ceo-hero-iso)" />
+
+          {/* ─────────────────────────────────────────────────────────────
+              RENDER THEME-SPECIFIC DYNAMIC FLOW (SÓNG NƯỚC / LUỒNG GIÓ / CYBER)
+              TẤT CẢ ĐƯỢC ĐẶT Ở CHÂN ĐÁY (Y >= 760) ĐỂ KHÔNG BAO GIỜ CHE TEXT
+              ───────────────────────────────────────────────────────────── */}
+          {themeMode === "light" ? (
+            /* THEME SÁNG: CÁC LUỒNG GIÓ KHÍ ĐỘNG HỌC MỀM MẠI, DẢI LỤA THANH THOÁT KHÔNG CHE CHỮ */
+            <g className="animate-wave-1">
+              {/* Primary Silk Wind Ribbon (Thanh mảnh, uốn lượn tự nhiên) */}
+              <path
+                d="M -120,810 C 220,770 480,740 780,775 C 1080,810 1320,770 1560,790"
+                stroke="url(#silkWindGrad1)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                opacity="0.75"
+              />
+              {/* Core Fast Breeze Filament (Vệt gió nhanh đứt đoạn) */}
+              <path
+                d="M -80,808 C 240,768 500,738 800,773 C 1100,808 1340,768 1560,788"
+                stroke="url(#silkWindGrad2)"
+                strokeWidth="1.5"
+                strokeDasharray="24 14 6 14"
+                strokeLinecap="round"
+                opacity="0.9"
+              />
+              {/* Upper Feathered Wind Stream */}
+              <path
+                d="M 60,750 C 380,710 680,725 980,755 C 1240,780 1420,745 1560,760"
+                stroke="url(#silkWindGrad3)"
+                strokeWidth="1.8"
+                strokeDasharray="32 18"
+                strokeLinecap="round"
+                opacity="0.6"
+              />
+              {/* Secondary Soft Ambient Breeze */}
+              <path
+                d="M -100,860 C 260,820 600,830 920,800 C 1200,775 1400,825 1560,835"
+                stroke="url(#silkWindGrad1)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                opacity="0.45"
+              />
+              {/* Dynamic Wind Swirl Currents (Xoáy gió nhỏ mềm mại) */}
+              <path
+                d="M 420,740 C 470,725 510,735 500,755 C 485,770 440,765 460,745"
+                stroke="url(#silkWindGrad1)"
+                strokeWidth="1.2"
+                fill="none"
+                opacity="0.5"
+              />
+              <path
+                d="M 1040,765 C 1090,750 1130,760 1120,780 C 1105,795 1060,790 1080,770"
+                stroke="url(#silkWindGrad1)"
+                strokeWidth="1.2"
+                fill="none"
+                opacity="0.45"
+              />
+              {/* Floating Golden Breeze Particles in the Wind Flow */}
+              {[
+                { cx: 280, cy: 780, r: 2 },
+                { cx: 480, cy: 750, r: 2.5 },
+                { cx: 720, cy: 765, r: 3 },
+                { cx: 960, cy: 785, r: 2.5 },
+                { cx: 1220, cy: 770, r: 3 },
+                { cx: 1420, cy: 780, r: 2 },
+              ].map((dot, dIdx) => (
+                <g key={dIdx} className="animate-pulse" style={{ animationDuration: `${1.8 + dIdx * 0.3}s` }}>
+                  <circle cx={dot.cx} cy={dot.cy} r={dot.r} fill="#D8B282" opacity="0.7" />
+                  <circle cx={dot.cx} cy={dot.cy} r={dot.r * 0.4} fill="#FFFFFF" />
+                </g>
+              ))}
+            </g>
+          ) : themeMode === "contrast" ? (
+            /* THEME TƯƠNG PHẢN CAO: CYBER OBSIDIAN & QUANTUM ELECTRIC VEINS AT BASE */
+            <g className="animate-wave-1">
+              <path
+                d="M -100,790 C 260,740 580,720 860,760 C 1140,790 1360,750 1560,780"
+                stroke="url(#contrastElectricStream)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                filter="url(#fluidGlow3D)"
+              />
+              <path
+                d="M -100,788 C 260,738 580,718 860,758 C 1140,788 1360,748 1560,778"
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              {/* Quantum nodes */}
+              <circle cx="860" cy="760" r="6" fill="#FACC15" filter="url(#fluidGlow3D)" />
+              <circle cx="860" cy="760" r="2.5" fill="#FFFFFF" />
+              <circle cx="1140" cy="790" r="5" fill="#38BDF8" filter="url(#fluidGlow3D)" />
+              <circle cx="1140" cy="790" r="2" fill="#FFFFFF" />
+            </g>
+          ) : (
+            /* THEME TỐI: SÓNG NƯỚC 3D CUỒN CUỘN CHẢY LIÊN TỤC KHÔNG ĐỨT ĐOẠN Ở CHÂN HORIZON (KHÔNG CHE CHỮ) */
+            <g>
+              <g className="animate-wave-1">
+                {/* Volumetric Refraction Aura */}
+                <path
+                  d={
+                    heroSlide === 1
+                      ? "M -120,800 C 240,750 580,740 880,780 C 1160,820 1380,780 1560,800"
+                      : heroSlide === 2
+                      ? "M -120,810 C 260,760 600,730 900,770 C 1180,810 1400,770 1560,790"
+                      : "M -120,800 C 250,755 590,735 890,775 C 1170,815 1390,775 1560,795"
+                  }
+                  stroke="#0284C7"
+                  strokeWidth="16"
+                  strokeLinecap="round"
+                  opacity="0.2"
+                  filter="url(#fluidGlow3D)"
+                />
+
+                {/* Main 3D Liquid Tube */}
+                <path
+                  d={
+                    heroSlide === 1
+                      ? "M -120,800 C 240,750 580,740 880,780 C 1160,820 1380,780 1560,800"
+                      : heroSlide === 2
+                      ? "M -120,810 C 260,760 600,730 900,770 C 1180,810 1400,770 1560,790"
+                      : "M -120,800 C 250,755 590,735 890,775 C 1170,815 1390,775 1560,795"
+                  }
+                  stroke="url(#liquidWaterStream)"
+                  strokeWidth="9"
+                  strokeLinecap="round"
+                  filter="url(#fluidGlow3D)"
+                />
+
+                {/* Inner Clear Liquid Channel */}
+                <path
+                  d={
+                    heroSlide === 1
+                      ? "M -120,800 C 240,750 580,740 880,780 C 1160,820 1380,780 1560,800"
+                      : heroSlide === 2
+                      ? "M -120,810 C 260,760 600,730 900,770 C 1180,810 1400,770 1560,790"
+                      : "M -120,800 C 250,755 590,735 890,775 C 1170,815 1390,775 1560,795"
+                  }
+                  stroke="#7DD3FC"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  opacity="0.7"
+                />
+
+                {/* High-Gloss Specular White Core Spine */}
+                <path
+                  d={
+                    heroSlide === 1
+                      ? "M -120,798 C 240,748 580,738 880,778 C 1160,818 1380,778 1560,798"
+                      : heroSlide === 2
+                      ? "M -120,808 C 260,758 600,728 900,768 C 1180,808 1400,768 1560,788"
+                      : "M -120,798 C 250,753 590,733 890,773 C 1170,813 1390,773 1560,793"
+                  }
+                  stroke="url(#liquidSpecularSpine)"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  filter="url(#specularGleam)"
+                />
+              </g>
+
+              {/* Secondary Branching Tendril at Base */}
+              <g className="animate-wave-2">
+                <path
+                  d="M 480,750 C 720,785 960,825 1240,800 C 1380,785 1480,800 1560,810"
+                  stroke="url(#liquidWaterBranch)"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  opacity="0.5"
+                  filter="url(#fluidGlow3D)"
+                />
+                <path
+                  d="M 480,750 C 720,785 960,825 1240,800 C 1380,785 1480,800 1560,810"
+                  stroke="#FFFFFF"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  opacity="0.8"
+                />
+              </g>
+
+              {/* 3D Spherical Water Bubbles & Droplets along the base river */}
+              <g className="animate-water-current">
+                <g transform="translate(380, 765)">
+                  <circle cx="0" cy="0" r="6" fill="url(#waterBubble3D)" stroke="#BAE6FD" strokeWidth="0.8" filter="url(#specularGleam)" />
+                  <ellipse cx="-1.8" cy="-1.8" rx="2" ry="1.2" fill="#FFFFFF" opacity="0.95" />
+                </g>
+                <g transform="translate(620, 745)">
+                  <circle cx="0" cy="0" r="7" fill="url(#waterBubble3D)" stroke="#BAE6FD" strokeWidth="0.9" filter="url(#specularGleam)" />
+                  <ellipse cx="-2.2" cy="-2.2" rx="2.5" ry="1.5" fill="#FFFFFF" opacity="0.95" />
+                </g>
+                <g transform="translate(880, 780)">
+                  <circle cx="0" cy="0" r="7.5" fill="url(#waterBubble3D)" stroke="#E0F2FE" strokeWidth="0.9" filter="url(#specularGleam)" />
+                  <ellipse cx="-2.5" cy="-2.5" rx="3" ry="1.6" fill="#FFFFFF" opacity="0.95" />
+                </g>
+                <g transform="translate(1180, 815)">
+                  <circle cx="0" cy="0" r="6.5" fill="url(#waterBubble3D)" stroke="#E0F2FE" strokeWidth="0.8" filter="url(#specularGleam)" />
+                  <ellipse cx="-2" cy="-2" rx="2.4" ry="1.4" fill="#FFFFFF" opacity="0.95" />
+                </g>
+                <g transform="translate(1380, 785)">
+                  <circle cx="0" cy="0" r="6" fill="url(#waterBubble3D)" stroke="#BAE6FD" strokeWidth="0.8" filter="url(#specularGleam)" />
+                  <ellipse cx="-1.8" cy="-1.8" rx="2.2" ry="1.3" fill="#FFFFFF" opacity="0.95" />
+                </g>
+              </g>
+            </g>
+          )}
         </svg>
 
-        {/* Floating golden star dust bokeh */}
-        <div className="absolute top-[18%] left-[22%] w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_18px_#FCD34D] animate-pulse" />
-        <div className="absolute top-[35%] right-[28%] w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_22px_#FBBF24] animate-pulse" style={{ animationDuration: "3s" }} />
-        <div className="absolute top-[52%] left-[15%] w-2 h-2 rounded-full bg-amber-200 shadow-[0_0_12px_#FDE68A] animate-pulse" style={{ animationDuration: "4s" }} />
+        {/* Ambient Warm Golden & Cyan Halos */}
+        <div className="absolute top-24 right-1/3 w-[600px] h-[600px] rounded-full blur-[180px] pointer-events-none bg-gradient-to-br from-[#38BDF8]/15 via-[#D8B282]/20 to-transparent" />
       </div>
 
-      {/* --- NAVBAR --- */}
+      {/* --- NAVBAR (FIXED TOP NEVER DRIFTING) --- */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 border-b backdrop-blur-2xl ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b backdrop-blur-2xl ${
           themeClass(
-            "border-amber-500/25 bg-[#06080F]/90 shadow-[0_4px_30px_rgba(0,0,0,0.85)]",
-            "border-amber-900/10 bg-[#FFFFFF]/95 shadow-md",
-            "border-white/20 bg-black/98"
+            "border-[#D8B282]/25 bg-[#02040A]/95 shadow-[0_4px_30px_rgba(0,0,0,0.9)]",
+            "border-[#D8B282]/30 bg-[#FAF8F5]/98 shadow-[0_4px_20px_rgba(140,101,59,0.08)]",
+            "border-yellow-400/80 bg-black/98 shadow-[0_4px_30px_rgba(250,204,21,0.3)]"
           )
         }`}
       >
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between px-4 sm:px-8 lg:px-10 py-3.5">
-          {/* LOGO & CLB NAME */}
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between px-4 sm:px-8 lg:px-10 py-3">
+          {/* Logo & CLB Title */}
           <Link to="/landing/ceo1983" className="flex items-center gap-3 group">
             <div
-              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border flex items-center justify-center font-serif font-black text-xl sm:text-2xl shrink-0 shadow-sm transition-all duration-300 group-hover:scale-105 ${
+              className={`w-10 h-10 rounded-xl border flex items-center justify-center font-serif font-black text-lg shrink-0 shadow-sm transition-all duration-300 group-hover:scale-105 ${
                 themeClass(
-                  "border-[#F7D896]/70 bg-[linear-gradient(135deg,#2D2619_0%,#19150E_100%)] text-[#F7D896] shadow-[0_0_25px_rgba(247,216,150,0.35)]",
-                  "border-[#C5A25D] bg-[linear-gradient(145deg,#FFFFFF,#F7F2EA)] text-[#B18B44] shadow-[0_4px_12px_rgba(177,139,68,0.2)]",
-                  "border-white bg-zinc-900 text-white"
+                  "border-[#F6E1C3] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 shadow-[0_0_20px_rgba(216,178,130,0.4)]",
+                  "border-[#D8B282] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#8C653B_100%)] text-slate-950 shadow-[0_2px_10px_rgba(140,101,59,0.2)]",
+                  "border-yellow-400 bg-black text-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.6)]"
                 )
               }`}
               style={{ fontFamily: "'Cinzel', Georgia, serif" }}
@@ -992,1601 +1478,3179 @@ export function Ceo1983Landing() {
               1983
             </div>
             <div className="flex flex-col text-left justify-center">
-              <span
-                className={`text-[9px] sm:text-[10px] font-bold tracking-[0.18em] uppercase transition-colors ${
-                  themeClass("text-amber-300/90 group-hover:text-amber-200", "text-[#64748B] group-hover:text-[#0F172A]", "text-white/80")
-                }`}
-              >
+              <span className={`text-[8.5px] font-medium tracking-[0.18em] uppercase transition-colors ${themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-400")}`}>
                 {t.navBadge}
               </span>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-1.5">
                 <span
-                  className={`text-[15px] sm:text-[17px] font-black tracking-tight uppercase leading-none transition-colors ${
+                  className={`text-sm sm:text-[15px] font-bold tracking-tight leading-tight ${
                     themeClass(
-                      "text-white group-hover:text-[#F7D896]",
-                      "text-[#0F172A] group-hover:text-[#B18B44]",
-                      "text-white"
+                      "text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]",
+                      "text-[#181512]",
+                      "text-yellow-300 font-bold"
                     )
                   }`}
                 >
                   CLB CEO 1983
                 </span>
-                <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full border border-amber-400/60 text-amber-300 bg-amber-500/20 tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                <span
+                  className={`text-[8px] font-mono font-medium uppercase px-2 py-0.5 rounded-full border tracking-wider ${
+                    themeClass(
+                      "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15 shadow-[0_0_8px_rgba(216,178,130,0.2)]",
+                      "border-[#D8B282] text-[#8C653B] bg-[#F6E1C3]/30",
+                      "border-yellow-400 text-yellow-300 bg-yellow-400/20"
+                    )
+                  }`}
+                >
                   {t.navVip}
                 </span>
               </div>
             </div>
           </Link>
 
-          {/* NAV LINKS */}
+          {/* Nav Links - Refined, elegant font weight and airy spacing */}
           <nav
-            className={`hidden xl:flex items-center gap-6 text-[13.5px] font-bold tracking-tight ${
-              themeClass("text-slate-200", "text-[#334155]", "text-slate-200")
+            className={`hidden xl:flex items-center gap-7 2xl:gap-8 text-[12.5px] font-medium tracking-normal ${
+              themeClass("text-slate-300", "text-[#5A4F43]", "text-yellow-200")
             }`}
           >
-            <a href="#about" className="hover:text-[#F7D896] transition-colors py-1">
-              {t.navAbout}
+            <a href="#leadership" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+              {t.navLeadership}
             </a>
-            <a href="#matrix" className="hover:text-[#F7D896] transition-colors py-1">
-              {t.navMatrix}
+            <a href="#timeline" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+              {t.navTimeline}
             </a>
-            <a href="#ecosystem" className="hover:text-[#F7D896] transition-colors py-1">
+            <a href="#ecosystem" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
               {t.navEcosystem}
             </a>
-            <a href="#radar-ecosystem" className="hover:text-[#F7D896] transition-colors py-1">
-              B蘯｣n ﾄ雪ｻ� Liﾃｪn Minh
-            </a>
-            <a href="#core-values" className="hover:text-[#F7D896] transition-colors py-1">
+            <a href="#core-values" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
               {t.navCore}
             </a>
-            <a href="#activities" className="hover:text-[#F7D896] transition-colors py-1">
-              {t.navActivities}
-            </a>
-            <a href="#roadmap" className="hover:text-[#F7D896] transition-colors py-1">
+            <a href="#roadmap" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
               {t.navRoadmap}
-            </a>
-            <a href="#leadership" className="hover:text-[#F7D896] transition-colors py-1">
-              {t.navLeadership}
             </a>
           </nav>
 
-          {/* RIGHT CONTROLS */}
-          <div className="flex items-center gap-2 sm:gap-3.5">
+          {/* Right Controls */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <LangSwitcher themeMode={themeMode} />
 
-            {/* 3-Mode Theme Switcher Capsule (Obsidian, Ivory, Onyx / Tương phản) */}
+            {/* 3-WAY THEME TOGGLE */}
             <div
-              className={`flex items-center rounded-full p-1 border transition-colors duration-300 ${
-                themeClass("border-amber-500/30 bg-[#141824]/95", "border-slate-300 bg-[#F1F5F9]", "border-white/40 bg-zinc-900")
+              className={`flex items-center rounded-full p-0.5 border transition-colors duration-300 ${
+                themeClass("border-[#D8B282]/30 bg-[#0B1224]/90", "border-[#D8B282]/40 bg-[#EDE4D8]", "border-yellow-400/80 bg-zinc-950")
               }`}
             >
               <button
                 type="button"
                 onClick={() => setThemeMode("dark")}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  themeMode === "dark" ? "bg-gradient-to-r from-[#F7D896] to-[#E2B755] text-slate-950 font-black shadow-md scale-105" : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-white/70")
+                aria-label="Chế độ Tối"
+                title="Giao diện Tối"
+                className={`p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  themeMode === "dark"
+                    ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 font-black shadow-md scale-105"
+                    : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-yellow-300")
                 }`}
               >
-                {t.modeDark}
+                <Moon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.modeDark}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setThemeMode("light")}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  themeMode === "light" ? "bg-white text-slate-950 shadow-md font-black scale-105" : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-white/70")
+                aria-label="Chế độ Sáng"
+                title="Giao diện Sáng"
+                className={`p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  themeMode === "light"
+                    ? "bg-white text-slate-950 shadow-md font-black scale-105"
+                    : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-yellow-300")
                 }`}
               >
-                {t.modeLight}
+                <Sun className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.modeLight}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setThemeMode("contrast")}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  themeMode === "contrast" ? "bg-white text-black font-black shadow-md scale-105 border border-white" : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-white/70")
+                aria-label="Chế độ Tương phản cao"
+                title="Tương phản cao"
+                className={`p-1.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  themeMode === "contrast"
+                    ? "bg-yellow-400 text-black shadow-md font-black scale-105"
+                    : themeClass("text-slate-300 hover:text-white", "text-slate-600 hover:text-black", "text-yellow-300")
                 }`}
               >
-                {t.modeContrast}
+                <Contrast className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.modeContrast}</span>
               </button>
             </div>
 
-            <button
-              onClick={handleJoinClick}
-              className="shine-sweep hidden sm:inline-flex px-5 py-2.5 rounded-full text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] shadow-[0_4px_20px_rgba(226,183,85,0.45)] hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
-            >
-              {t.navJoin}
-            </button>
-
-            {/* Mobile Hamburger Button */}
+            {/* CTA Button */}
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 rounded-xl border border-amber-400/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
-              aria-label="Toggle navigation"
+              onClick={handleJoinClick}
+              className={`hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full font-black text-xs tracking-wider uppercase transition-all duration-300 cursor-pointer shadow-lg active:scale-95 ${
+                themeClass(
+                  "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 hover:shadow-[0_0_30px_rgba(216,178,130,0.6)] hover:brightness-110",
+                  "bg-[#181512] text-[#F6E1C3] hover:bg-slate-900 border border-[#D8B282]/40 shadow-sm",
+                  "bg-yellow-400 text-black font-black hover:bg-yellow-300 shadow-[0_0_25px_rgba(250,204,21,0.6)]"
+                )
+              }`}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <span>{t.navJoin}</span>
+            </button>
+
+            {/* Mobile Menu Trigger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((p) => !p)}
+              className={`xl:hidden p-2 rounded-xl transition-colors ${
+                themeClass("text-slate-200 hover:text-white", "text-slate-700 hover:text-black", "text-yellow-300")
+              }`}
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="xl:hidden border-t border-amber-500/20 bg-[#070913]/98 backdrop-blur-3xl px-6 py-5 space-y-3.5 text-left animate-in fade-in slide-in-from-top-3 duration-200">
-            <a
-              href="#about"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
+        {/* Mobile Menu Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`xl:hidden border-t px-6 py-5 space-y-4 shadow-2xl ${
+                themeClass("border-[#D8B282]/20 bg-[#02040A]/98", "border-[#D8B282]/30 bg-[#FAF8F5]/98", "border-yellow-400 bg-black")
+              }`}
             >
-              {t.navAbout}
-            </a>
-            <a
-              href="#matrix"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navMatrix}
-            </a>
-            <a
-              href="#ecosystem"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navEcosystem}
-            </a>
-            <a
-              href="#radar-ecosystem"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              B蘯｣n ﾄ雪ｻ� Liﾃｪn Minh
-            </a>
-            <a
-              href="#core-values"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navCore}
-            </a>
-            <a
-              href="#activities"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navActivities}
-            </a>
-            <a
-              href="#roadmap"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navRoadmap}
-            </a>
-            <a
-              href="#leadership"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-slate-200 hover:text-[#F7D896] py-1.5"
-            >
-              {t.navLeadership}
-            </a>
-
-            <div className="pt-3 border-t border-white/10">
+              <nav className={`flex flex-col space-y-3 font-semibold ${themeClass("text-slate-200", "text-slate-800", "text-yellow-300")}`}>
+                <a href="#leadership" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#F6E1C3] py-1">
+                  {t.navLeadership}
+                </a>
+                <a href="#timeline" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#F6E1C3] py-1">
+                  {t.navTimeline}
+                </a>
+                <a href="#ecosystem" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#F6E1C3] py-1">
+                  {t.navEcosystem}
+                </a>
+                <a href="#core-values" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#F6E1C3] py-1">
+                  {t.navCore}
+                </a>
+                <a href="#roadmap" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#F6E1C3] py-1">
+                  {t.navRoadmap}
+                </a>
+              </nav>
               <button
+                type="button"
                 onClick={handleJoinClick}
-                className="shine-sweep w-full py-3 rounded-full text-sm font-black text-slate-950 bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] shadow-lg"
+                className="w-full py-3 rounded-full font-black text-xs uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-lg"
               >
                 {t.navJoin}
               </button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* --- HERO CONTENT --- */}
-      <main id="about" className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 pt-10 lg:pt-16 pb-16 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-10">
-        {/* C盻狼 TEXT (Bﾃｪn trﾃ｡i: 55%) */}
-        <div className="lg:w-[55%] text-left space-y-6">
-          {/* HANOIBA Affiliation Badge */}
-          <div
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-bold border transition-colors duration-500 ${
-              themeClass(
-                "border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.25)]",
-                "border-amber-500/50 text-[#92400E] bg-[#FEF3C7]/90 shadow-xs",
-                "border-white/40 text-white bg-white/10"
-              )
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5 text-[#F7D896]" />
-            <span>{t.heroHanoiba}</span>
-          </div>
-
-          {/* TIﾃ涯 ﾄ雪ｻ HERO MAJESTIC Cﾃ� ﾄ雪ｻ蝕 - KHﾃ年G B盻� M蘯､T D蘯､U TI蘯ｾNG VI盻� */}
-          <h1
-            className={`text-4xl sm:text-5xl lg:text-[54px] xl:text-[62px] font-black tracking-tight leading-[1.22] uppercase transition-all duration-500 overflow-visible pb-2.5 pt-0.5 ${
-              themeClass(
-                "text-white drop-shadow-[0_4px_25px_rgba(0,0,0,0.9)]",
-                "text-[#0F172A] drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
-                "text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.2)]"
-              )
-            }`}
-          >
-            <span className="block whitespace-normal sm:whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-[#FFFFFF] via-[#FFF8E7] to-[#FCE19F] pb-1">
-              {t.heroTitle1}
-            </span>
-            <span className="block mt-1">
-              <span className={themeClass("text-transparent bg-clip-text bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#FBBF24] pb-1 inline-block", "text-transparent bg-clip-text bg-gradient-to-r from-[#B45309] via-[#D97706] to-[#92400E]", "text-white")}>
-                {t.heroTitle2} {t.heroTitle3 ? t.heroTitle3 : ""}
-              </span>
-            </span>
-          </h1>
-
-          <p
-            className={`text-base sm:text-lg max-w-xl leading-relaxed font-normal transition-colors duration-500 ${
-              themeClass("text-slate-100", "text-[#334155]", "text-slate-100")
-            }`}
-          >
-            {t.heroDesc}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3.5 pt-2">
-            <button
-              onClick={handleJoinClick}
-              className={`shine-sweep px-8 py-4 rounded-full font-extrabold text-sm sm:text-base transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xl ${
-                themeClass(
-                  "bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] hover:from-[#FFF0C7] hover:to-[#E2B755] text-slate-950 font-black shadow-[0_4px_25px_rgba(226,183,85,0.45)] hover:shadow-[0_6px_35px_rgba(226,183,85,0.65)]",
-                  "bg-gradient-to-r from-[#1E293B] to-[#0F172A] text-white shadow-slate-900/20 hover:from-black hover:to-black",
-                  "bg-white text-black font-extrabold shadow-lg"
-                )
-              }`}
-            >
-              {t.heroJoinBtn}
-            </button>
-
-            {/* Nút Xem Video KYC 2 Phút với hiệu ứng Rung/Pulse sang trọng */}
-            <button
-              type="button"
-              onClick={() => setVideoModalOpen(true)}
-              className="video-btn-shake px-6 py-4 rounded-full font-black text-sm sm:text-base border border-amber-400/80 bg-gradient-to-r from-[#2A2012]/95 via-[#3D2E14]/90 to-[#1F170B]/95 text-[#F7D896] hover:text-white hover:border-amber-300 hover:bg-[#3D2E14] transition-all inline-flex items-center gap-2.5 shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-pointer backdrop-blur-xl"
-            >
-              <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-md">
-                <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-              </span>
-              <span>Xem Video (2 phút)</span>
-            </button>
-
-            <Link
-              to="/m"
-              search={{ slug: "ceo1983" }}
-              className={`px-6 py-4 rounded-full font-bold text-sm sm:text-base border transition-all inline-flex items-center gap-2 hover:scale-105 ${
-                themeClass(
-                  "border-amber-400/50 bg-[#111420]/80 text-white hover:bg-white/10 backdrop-blur-md shadow-md hover:border-[#F7D896]",
-                  "border-slate-300 bg-white text-[#0F172A] hover:bg-slate-50 shadow-xs",
-                  "border-white/40 text-white hover:bg-white/10"
-                )
-              }`}
-            >
-              <Smartphone className="w-4 h-4 text-[#F7D896]" />
-              <span>{t.heroOpenApp}</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* C盻狼 TH蘯ｺ VIP 3D (Bﾃｪn ph蘯｣i: 45% trﾃｪn b盻� Mica kﾃｭnh m盻� phﾃ｡t sﾃ｡ng) */}
-        <div className="lg:w-[45%] flex flex-col items-center justify-center relative pt-4" style={{ perspective: "1400px" }}>
-          <div className="relative w-[440px] max-w-full flex flex-col items-center">
-            {/* B盻� ﾄ黛ｻ｡ Mica t蘯ｧng ﾄ妥｡y v盻嬖 ﾃ｡nh sﾃ｡ng t盻渋 ra */}
-            <div
-              className={`absolute -bottom-10 w-[490px] max-w-[112%] h-[70px] rounded-3xl backdrop-blur-2xl border transition-all duration-500 ${
-                themeClass(
-                  "bg-gradient-to-b from-white/10 to-white/5 border-white/15 shadow-[0_30px_70px_rgba(0,0,0,0.85),0_0_50px_rgba(197,162,93,0.25)]",
-                  "bg-gradient-to-b from-slate-900/5 to-slate-900/10 border-amber-900/10 shadow-[0_20px_50px_rgba(0,0,0,0.08),0_0_30px_rgba(180,83,9,0.1)]",
-                  "bg-zinc-900 border-white/20"
-                )
-              }`}
-            />
-            {/* B盻� ﾄ黛ｻ｡ Mica t蘯ｧng trﾃｪn */}
-            <div
-              className={`absolute -bottom-4 w-[450px] max-w-[104%] h-[40px] rounded-t-2xl backdrop-blur-3xl border-t border-x transition-all duration-500 ${
-                themeClass(
-                  "bg-gradient-to-b from-white/15 to-white/5 border-t-amber-300/40 border-x-white/20 shadow-inner",
-                  "bg-gradient-to-b from-white/90 to-white/50 border-t-[#C5A25D]/50 border-x-slate-200 shadow-sm",
-                  "bg-zinc-800 border-white/20"
-                )
-              }`}
-            />
-
-            {/* Th蘯ｻ Titanium Black & Gold 3D VIP Pass (Tﾆｰﾆ｡ng tﾃ｡c L蘯ｭt 2 M蘯ｷt) */}
-            <div
-              className="shine-sweep relative z-10 w-[440px] max-w-full h-[270px] rounded-2xl p-6.5 shadow-[0_30px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(232,201,134,0.35)] border border-[#E8C986]/70 cursor-pointer group text-left flex flex-col justify-between transition-all duration-500 select-none hover:scale-[1.02] hover:shadow-[0_35px_80px_rgba(232,201,134,0.45)]"
-              style={{
-                background: "radial-gradient(ellipse at 20% 20%, #222634 0%, #12141C 55%, #08090C 100%)",
-                transformStyle: "preserve-3d",
-              }}
-              onClick={() => setCardFlipped(!cardFlipped)}
-            >
-              {/* V盻㏄ xﾆｰ盻嫩 kim lo蘯｡i ch蘯｣i & vi盻］ vﾃ｡t 3D */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(232,201,134,0.18)_0%,transparent_50%)] rounded-2xl pointer-events-none" />
-
-              {!cardFlipped ? (
-                /* M蘯ｶT TRﾆｯ盻咾 (FRONT - BESPOKE TITANIUM BLACK & GOLD) */
-                <>
-                  <div className="flex justify-between items-start relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl border border-[#E8C986]/60 flex items-center justify-center text-lg bg-gradient-to-br from-[#3D3528] to-[#1F1B14] shadow-md shadow-amber-900/30">
-                        �👑
-                      </div>
-                      <div>
-                        <p className="text-[#9DA3AE] text-[10.5px] font-bold tracking-wider uppercase font-mono">CLB CEO 1983</p>
-                        <p className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFF2D6] via-[#E8C986] to-[#C49338] text-xs font-black tracking-widest uppercase">{t.cardVipPass}</p>
-                      </div>
-                    </div>
-                    <div className="px-3 py-1.5 border border-[#E8C986]/50 rounded-full text-[#E8C986] text-[10.5px] font-black flex items-center gap-1.5 bg-[#E8C986]/10 backdrop-blur-md shadow-sm">
-                      <Zap className="w-3.5 h-3.5 text-[#E8C986] fill-current animate-pulse" />
-                      <span>{t.cardNfcTouch}</span>
-                    </div>
-                  </div>
-
-                  {/* EMV Chip & Details */}
-                  <div className="my-auto relative z-10 flex items-center justify-between">
-                    <div>
-                      <p className="text-[#A1A1AA] font-bold text-[10px] uppercase tracking-[0.2em] mb-1">
-                        {t.cardExecMember}
-                      </p>
-                      <h3 className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF3D6] to-[#E8C986] text-2xl font-black uppercase tracking-wide drop-shadow-sm">
-                        {t.cardMemberName}
-                      </h3>
-                      <p className="text-[#D4AF37] text-[11px] font-mono mt-1 font-bold tracking-wider">{t.cardIdLabel}</p>
-                    </div>
-
-                    {/* 3D Gold Contactless EMV Smart Chip */}
-                    <div className="w-12 h-9 rounded-lg border border-[#E8C986] bg-gradient-to-br from-[#FFE7A3] via-[#D8B282] to-[#8C6A28] p-1 flex flex-col justify-between shadow-md shrink-0">
-                      <div className="w-full h-1.5 border-b border-black/30 flex justify-between">
-                        <div className="w-2 h-full border-r border-black/30" />
-                        <div className="w-2 h-full border-l border-black/30" />
-                      </div>
-                      <div className="w-full h-1.5 border-t border-black/30 flex justify-between">
-                        <div className="w-2 h-full border-r border-black/30" />
-                        <div className="w-2 h-full border-l border-black/30" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-white/10 pt-3 flex justify-between items-center text-[#9DA3AE] text-[10.5px] font-semibold relative z-10">
-                    <span className="flex items-center gap-1.5 text-white/90">
-                      <Wallet className="w-3.5 h-3.5 text-[#E8C986]" />
-                      <span>{t.cardWallet}</span>
-                    </span>
-                    <span className="font-mono text-[9.5px] tracking-wider bg-[#E8C986]/15 border border-[#E8C986]/30 px-2.5 py-0.5 rounded-full text-[#E8C986] font-bold">
-                      {t.cardTapHint}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                /* M蘯ｶT SAU (BACK - CHIP & SECURITY QR) */
-                <>
-                  <div className="flex justify-between items-center relative z-10 border-b border-white/10 pb-2">
-                    <div className="flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-[#E8C986]" />
-                      <span className="text-[#E8C986] font-black text-[11px] tracking-wide uppercase font-mono">
-                        HANOIBA AFFILIATION SEAL
-                      </span>
-                    </div>
-                    <span className="text-[#9DA3AE] font-mono text-[9px]">ENCRYPTED NFC SLIX2</span>
-                  </div>
-
-                  {/* Magnetic Stripe */}
-                  <div className="w-full h-8 bg-gradient-to-r from-[#18181B] via-[#27272A] to-[#18181B] border-y border-white/10 -mx-6.5 my-auto flex items-center px-6">
-                    <span className="text-[9px] font-mono text-white/40 tracking-[0.3em]">||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 relative z-10">
-                    <div className="bg-white p-2 rounded-xl shadow-md border border-[#E8C986]/50 shrink-0">
-                      <div className="w-16 h-16 grid grid-cols-4 grid-rows-4 gap-1 p-1 bg-black rounded">
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-transparent" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-transparent" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-transparent" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-transparent" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-white rounded-xs" />
-                        <div className="bg-transparent" />
-                        <div className="bg-white rounded-xs" />
-                      </div>
-                    </div>
-                    <div className="text-left text-white flex-1">
-                      <p className="text-[11.5px] font-black uppercase text-[#E8C986]">{t.cardMemberAlt}</p>
-                      <p className="text-[10px] text-white/80 font-medium mt-0.5">
-                        Phﾃｳ Ch盻ｧ T盻議h Chi蘯ｿn Lﾆｰ盻｣c & Cﾃｴng Ngh盻�
-                      </p>
-                      <p className="text-[9px] font-mono text-white/50 mt-1.5">
-                        NXP ICODE SLIX2 窶｢ 13.56MHz NFC
-                      </p>
-                      <span className="inline-block text-[9px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-full mt-1.5 shadow-sm">
-                        笨� VERIFIED C-LEVEL
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-white/10 pt-2 flex justify-between items-center text-white/60 text-[9.5px] font-bold relative z-10">
-                    <span>ViOne Digital Enterprise ID Pass</span>
-                    <span className="font-mono text-[9px] bg-white/10 px-2.5 py-0.5 rounded-full text-white font-bold">
-                      {t.cardTapHint}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <p
-            className={`text-xs mt-12 flex items-center gap-1.5 font-medium ${
-              themeClass("text-white/70", "text-slate-500", "text-slate-400")
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#E8C986]" />
-            <span>{t.cardPedestalDesc}</span>
-          </p>
-        </div>
-      </main>
-
-      {/* --- STATS SECTION (BENTO TICKER) --- */}
-      <div className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 pb-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          {[
-            { num: t.stat1Num, text: t.stat1Title, desc: t.stat1Desc, icon: <Users className="w-5 h-5 text-[#C5A25D]" /> },
-            { num: t.stat2Num, text: t.stat2Title, desc: t.stat2Desc, icon: <TrendingUp className="w-5 h-5 text-[#C5A25D]" /> },
-            { num: t.stat3Num, text: t.stat3Title, desc: t.stat3Desc, icon: <BarChart3 className="w-5 h-5 text-[#C5A25D]" /> },
-            { num: t.stat4Num, text: t.stat4Title, desc: t.stat4Desc, icon: <BadgeCheck className="w-5 h-5 text-[#C5A25D]" /> },
-          ].map((stat, idx) => (
-            <div
-              key={idx}
-              className={`p-6 sm:p-7 rounded-2xl border backdrop-blur-md transition-all duration-300 hover:-translate-y-1.5 ${
-                themeClass(
-                  "bg-[#11131B]/90 border-white/10 shadow-xl hover:border-[#C5A25D]/60 hover:shadow-[0_10px_30px_rgba(197,162,93,0.18)]",
-                  "bg-white border-amber-900/15 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-amber-700/30 hover:shadow-md",
-                  "bg-zinc-900 border-white/20"
-                )
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="p-2 rounded-lg bg-[#C5A25D]/10 border border-[#C5A25D]/20">
-                  {stat.icon}
-                </span>
-                <span className="text-[10px] font-mono font-bold uppercase text-[#C5A25D] bg-[#C5A25D]/10 px-2 py-0.5 rounded">
-                  VERIFIED
-                </span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] leading-none mb-1.5">
-                {stat.num}
-              </h3>
-              <p className={`text-xs font-bold ${themeClass("text-white/95", "text-[#0F172A]", "text-white")}`}>
-                {stat.text}
-              </p>
-              <p className={`text-[11px] mt-1 ${themeClass("text-white/60", "text-slate-500", "text-slate-400")}`}>
-                {stat.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* =======================================
-          SECTION 2: STRATEGIC TRANSFORMATION MATRIX
+          SECTION 1: HERO MULTI-SLIDE SHOWCASE (EXACT MATCH TO REFERENCE MOCKUP)
           ======================================= */}
-      <section
-        id="matrix"
-        className={`py-24 px-6 md:px-16 border-t relative overflow-hidden transition-colors ${
-          themeClass("bg-[#080A12] border-white/5", "bg-[#FAF8F5] border-slate-200", "bg-black border-white/20")
-        }`}
-      >
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A25D]/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A25D]/40 to-transparent" />
-
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          <img
-            src="/landing/ceo1983-mastermind-bg.jpg"
-            alt="Matrix Background"
-            className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-              isDark ? "opacity-35 mix-blend-luminosity" : isContrast ? "opacity-20" : "opacity-15 mix-blend-multiply"
-            }`}
-          />
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[750px] h-[400px] bg-amber-500/15 rounded-full blur-[160px]" />
-          <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[650px] h-[400px] bg-amber-700/10 rounded-full blur-[170px]" />
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-              <span>{t.matrixTag}</span>
-            </div>
-            <h2
-              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
-                themeClass(
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                  "text-[#0F172A]",
-                  "text-white"
-                )
-              }`}
-            >
-              {t.matrixTitle1} <br />
-              {t.matrixTitle2}
-            </h2>
-            <p
-              className={`mt-4 text-base sm:text-lg leading-relaxed ${
-                themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-              }`}
-            >
-              {t.matrixDesc}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Flame className="w-6 h-6 text-[#F7D896]" />,
-                tag: "C-LEVEL SOLITUDE",
-                before: t.mItem1B,
-                after: t.mItem1A,
-              },
-              {
-                icon: <Cpu className="w-6 h-6 text-[#F7D896]" />,
-                tag: "NETWORKING FATIGUE",
-                before: t.mItem2B,
-                after: t.mItem2A,
-              },
-              {
-                icon: <Network className="w-6 h-6 text-[#F7D896]" />,
-                tag: "SUPPLY CHAIN RISK",
-                before: t.mItem3B,
-                after: t.mItem3A,
-              },
-            ].map((card, idx) => (
-              <div
-                key={idx}
-                className={`p-7 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 ${
-                  themeClass(
-                    "bg-[#111420]/90 border-white/10 shadow-2xl hover:border-[#F7D896]/50 backdrop-blur-md",
-                    "bg-white border-amber-900/15 shadow-[0_8px_30px_rgba(0,0,0,0.05)] hover:border-amber-700/30",
-                    "bg-zinc-950 border-white/20"
-                  )
+      <SectionFlip3D id="hero">
+        <section className="relative z-10 pt-24 sm:pt-28 pb-20 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-10 overflow-hidden">
+        {/* Slide Selector Capsule Pills (Clean Luxury Tabs without hardcoded SLIDE text) */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-8">
+          {heroSlides.map((slide, sIdx) => {
+            const isActive = heroSlide === sIdx;
+            return (
+              <button
+                key={sIdx}
+                type="button"
+                onClick={() => changeSlide(sIdx)}
+                className={`relative px-4 sm:px-6 py-2.5 rounded-full text-xs font-bold tracking-wider transition-all duration-300 overflow-hidden cursor-pointer flex items-center gap-2 ${
+                  isActive
+                    ? themeClass(
+                        "bg-[#0D162B] text-[#F6E1C3] border border-[#D8B282] shadow-[0_0_25px_rgba(216,178,130,0.4)] scale-105",
+                        "bg-white text-[#8C653B] border border-[#D8B282] shadow-[0_4px_20px_rgba(140,101,59,0.18)] scale-105",
+                        "bg-yellow-400 text-black border border-yellow-300 scale-105"
+                      )
+                    : themeClass(
+                        "bg-[#060B18]/80 text-slate-400 border border-[#D8B282]/20 hover:border-[#D8B282]/50 hover:text-white",
+                        "bg-[#EDE4D8]/70 text-slate-600 border border-[#D8B282]/30 hover:border-[#D8B282] hover:text-black",
+                        "bg-zinc-900 text-yellow-200 border border-yellow-400/40"
+                      )
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="p-3 rounded-xl bg-[#C5A25D]/20 border border-[#F7D896]/40 text-[#F7D896]">
-                      {card.icon}
-                    </div>
-                    <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-amber-400/50 text-[#F7D896] bg-amber-500/15">
-                      {card.tag}
-                    </span>
-                  </div>
+                <span className={`${isActive ? "text-[#D8B282]" : "text-slate-400"}`}>
+                  {slide.icon}
+                </span>
+                <span className="relative z-10 font-mono tracking-normal">
+                  {slide.badge}
+                </span>
 
-                  {/* Common Problem */}
-                  <div className={`p-4 rounded-2xl border mb-4 ${themeClass("bg-rose-950/30 border-rose-500/30 text-rose-100", "bg-rose-50 border-rose-200 text-rose-900", "bg-zinc-900 border-white/10 text-white")}`}>
-                    <div className="flex items-center gap-1.5 text-[10.5px] font-mono font-bold uppercase text-rose-400 mb-1">
-                      <X className="w-3.5 h-3.5" />
-                      <span>{t.matrixColBefore}</span>
-                    </div>
-                    <p className="text-xs leading-relaxed opacity-95">{card.before}</p>
-                  </div>
+                {isActive && !isSlidePaused && (
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 6.5, ease: "linear" }}
+                    className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] z-0"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-                  {/* CEO 1983 Exclusive Advantage */}
-                  <div className={`p-4 rounded-2xl border ${themeClass("bg-emerald-950/35 border-emerald-500/40 text-[#F8F7F3]", "bg-amber-50 border-amber-200 text-slate-900", "bg-zinc-900 border-[#C5A25D]/40 text-white")}`}>
-                    <div className="flex items-center gap-1.5 text-[10.5px] font-mono font-bold uppercase text-[#F7D896] mb-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{t.matrixColAfter}</span>
-                    </div>
-                    <p className="text-xs leading-relaxed font-medium">{card.after}</p>
-                  </div>
+        {/* Dynamic Multi-Slide Content Presentation with Distinct Custom Layouts */}
+        <AnimatePresence mode="wait" custom={slideDirection}>
+          {heroSlide === 0 && (
+            /* SLIDE 1: TITANIUM VIP NFC PASS (Layout 7/5 with 3 Highlight Feature Badges & Aquatic Waves) */
+            <motion.div
+              key="slide-card"
+              custom={slideDirection}
+              initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
+              transition={{ duration: 0.45, ease: "easeInOut" }}
+              onMouseEnter={() => setIsSlidePaused(true)}
+              onMouseLeave={() => setIsSlidePaused(false)}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center"
+            >
+              {/* Left Column (7 cols) */}
+              <div className="lg:col-span-7 text-left space-y-6">
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase font-mono border backdrop-blur-md shadow-sm ${
+                    themeClass(
+                      "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15",
+                      "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30",
+                      "border-yellow-400 text-yellow-300 bg-yellow-400/20"
+                    )
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#D8B282]" />
+                  <span>{heroSlides[0].tag}</span>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-bold text-[#F7D896]">
-                  <span>ﾄ雪ｺｷc quy盻］ ﾄ黛ｻ冂 b蘯｣n 1983</span>
-                  <ArrowRight className="w-4 h-4" />
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.12]">
+                  <span className={`block font-extrabold ${themeClass("text-white", "text-[#09152B]", "text-white")}`}>
+                    {heroSlides[0].title1}
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#09152B] via-[#7C5824] to-[#B8860B]",
+                        "text-yellow-300"
+                      )
+                    }`}
+                  >
+                    {heroSlides[0].title2}
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#7C5824] via-[#9E6B28] to-[#5C3B0E]",
+                        "text-yellow-400"
+                      )
+                    }`}
+                  >
+                    {heroSlides[0].title3}
+                  </span>
+                </h1>
+
+                <p
+                  className={`text-base sm:text-lg leading-relaxed font-medium max-w-2xl ${
+                    themeClass("text-slate-200", "text-[#1E293B]", "text-yellow-100")
+                  }`}
+                >
+                  {heroSlides[0].desc}
+                </p>
+
+                {/* 3 Luxury Highlight Feature Pills */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  {heroSlides[0].highlights?.map((hl, hlIdx) => (
+                    <div
+                      key={hlIdx}
+                      className={`p-3 rounded-2xl border backdrop-blur-md flex items-center gap-3 ${
+                        themeClass(
+                          "bg-[#0D162B]/80 border-[#D8B282]/30 shadow-md",
+                          "bg-white/90 border-[#D8B282]/40 shadow-sm",
+                          "bg-zinc-900 border-yellow-400/40"
+                        )
+                      }`}
+                    >
+                      <div className="p-2 rounded-xl bg-[#D8B282]/20 shrink-0">
+                        {hl.icon}
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className={`text-xs font-bold leading-tight ${themeClass("text-white", "text-slate-900", "text-yellow-300")}`}>
+                          {hl.label}
+                        </p>
+                        <p className={`text-[10px] truncate ${themeClass("text-slate-400", "text-slate-600", "text-yellow-100")}`}>
+                          {hl.desc}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-4 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className="px-8 py-4 rounded-full font-black text-sm tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-[0_0_35px_rgba(216,178,130,0.5)] hover:shadow-[0_0_50px_rgba(216,178,130,0.8)] hover:scale-105 active:scale-98 transition-all cursor-pointer"
+                  >
+                    {t.heroJoinBtn}
+                  </button>
+
+                  <Link
+                    to="/connect-app"
+                    className={`inline-flex items-center gap-2 px-6 py-4 rounded-full font-bold text-sm border transition-all ${
+                      themeClass(
+                        "text-slate-100 bg-[#0B1224]/90 border-[#D8B282]/30 hover:border-[#D8B282] hover:text-white hover:bg-[#121B2F]",
+                        "text-[#181512] bg-white border-[#D8B282]/40 hover:border-[#D8B282] hover:bg-[#F5EFE6] shadow-sm",
+                        "text-yellow-300 bg-black border-yellow-400 hover:bg-yellow-400/20"
+                      )
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 text-[#D8B282]" />
+                    <span>{t.heroOpenApp}</span>
+                  </Link>
+                </div>
+
+                {/* Slide Nav Arrows */}
+                <div className={`flex items-center gap-3 pt-2 text-xs font-mono ${themeClass("text-slate-400", "text-slate-600", "text-yellow-200")}`}>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(2)}
+                    className={`p-2 rounded-full border transition-colors ${
+                      themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                    }`}
+                    aria-label="Slide trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-bold">01 / 03</span>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(1)}
+                    className={`p-2 rounded-full border transition-colors ${
+                      themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                    }`}
+                    aria-label="Slide tiếp theo"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
+              {/* Right Column (5 cols): 3D Card on Fluid Animated Water Ripples */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="relative w-full max-w-[460px] group perspective-[1200px] flex items-center justify-center">
+                  {/* Floating Halo Under Card */}
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-80 h-16 bg-[#38BDF8]/20 rounded-full blur-2xl pointer-events-none" />
+
+                  {/* Concentric Animated Aquatic Water Ripples under the Card */}
+                  <div className="absolute inset-[-75px] sm:inset-[-110px] pointer-events-none z-0 flex items-center justify-center animate-wave-1">
+                    <svg viewBox="0 0 500 380" fill="none" className="w-full h-full">
+                      {/* Water Wave Ripple 1 (Cyan Glow) */}
+                      <ellipse
+                        cx="250"
+                        cy="190"
+                        rx="235"
+                        ry="115"
+                        transform="rotate(-15 250 190)"
+                        stroke="url(#heroWaterRipple1)"
+                        strokeWidth="2.8"
+                        strokeLinecap="round"
+                        className="opacity-90"
+                      />
+
+                      {/* Water Wave Ripple 2 (Gold Wave) */}
+                      <ellipse
+                        cx="250"
+                        cy="190"
+                        rx="195"
+                        ry="90"
+                        transform="rotate(18 250 190)"
+                        stroke="url(#heroWaterRipple2)"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        className="opacity-85"
+                      />
+
+                      {/* Water Wave Ripple 3 (Inner Fluid Aqua Current) */}
+                      <ellipse
+                        cx="250"
+                        cy="190"
+                        rx="155"
+                        ry="68"
+                        transform="rotate(-5 250 190)"
+                        stroke="#67E8F9"
+                        strokeWidth="1.8"
+                        strokeDasharray="8 14"
+                        className="animate-water-current opacity-80"
+                      />
+
+                      {/* Water Wave Ripple 4 (Soft Shimmer) */}
+                      <ellipse
+                        cx="250"
+                        cy="190"
+                        rx="120"
+                        ry="50"
+                        transform="rotate(10 250 190)"
+                        stroke="#F6E1C3"
+                        strokeWidth="1.2"
+                        strokeOpacity="0.45"
+                      />
+
+                      <defs>
+                        <linearGradient id="heroWaterRipple1" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#38BDF8" stopOpacity="1" />
+                          <stop offset="35%" stopColor="#818CF8" stopOpacity="0.95" />
+                          <stop offset="70%" stopColor="#67E8F9" stopOpacity="0.9" />
+                          <stop offset="100%" stopColor="#0284C7" stopOpacity="0.3" />
+                        </linearGradient>
+                        <linearGradient id="heroWaterRipple2" x1="1" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#FFF5E6" stopOpacity="1" />
+                          <stop offset="40%" stopColor="#F6E1C3" stopOpacity="0.95" />
+                          <stop offset="75%" stopColor="#D8B282" stopOpacity="0.9" />
+                          <stop offset="100%" stopColor="#8C653B" stopOpacity="0.3" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    {/* Orbiting Water Droplets / Beacons */}
+                    <div className="absolute top-6 right-10 w-4 h-4 rounded-full bg-cyan-300 blur-[0.5px] shadow-[0_0_20px_#38BDF8] animate-ping" />
+                    <div className="absolute bottom-8 left-8 w-4 h-4 rounded-full bg-amber-200 blur-[0.5px] shadow-[0_0_20px_#F6E1C3] animate-pulse" />
+                    <div className="absolute top-1/2 left-0 w-3 h-3 rounded-full bg-white blur-[0.5px] shadow-[0_0_15px_#FFFFFF] animate-ping" style={{ animationDuration: "1.8s" }} />
+                    <div className="absolute bottom-1/4 right-2 w-3.5 h-3.5 rounded-full bg-indigo-400 blur-[0.5px] shadow-[0_0_18px_#818CF8] animate-pulse" />
+                  </div>
+
+                  {/* 3D Flip Card */}
+                  <motion.div
+                    onClick={() => setCardFlipped((p) => !p)}
+                    animate={{ rotateY: cardFlipped ? 180 : 0 }}
+                    transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
+                    className="relative z-10 w-full aspect-[1.58/1] rounded-3xl cursor-pointer preserve-3d shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_40px_rgba(216,178,130,0.4)] border border-[#F6E1C3]/80 hover:scale-[1.03] transition-transform duration-300"
+                  >
+                    {/* Front Face — Radial Brushed Champagne Gold Metal Finish */}
+                    <div
+                      className="absolute inset-0 w-full h-full rounded-3xl p-6 backface-hidden flex flex-col justify-between overflow-hidden border border-[#D8B282] shadow-inner"
+                      style={{
+                        background:
+                          "radial-gradient(circle at 45% 45%, #FFF0DC 0%, #F5D7A9 28%, #D4A767 60%, #9C6F35 100%)",
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
+                        style={{
+                          background:
+                            "conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0.7) 0deg, rgba(0,0,0,0.3) 45deg, rgba(255,255,255,0.8) 90deg, rgba(0,0,0,0.4) 135deg, rgba(255,255,255,0.7) 180deg, rgba(0,0,0,0.3) 225deg, rgba(255,255,255,0.8) 270deg, rgba(0,0,0,0.4) 315deg, rgba(255,255,255,0.7) 360deg)",
+                        }}
+                      />
+
+                      {/* Giant Watermark Embossed 1983 Globe */}
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-44 h-44 rounded-full opacity-35 pointer-events-none flex items-center justify-center border-2 border-slate-950/40">
+                        <div className="absolute inset-2 rounded-full border border-slate-950/30" />
+                        <div className="absolute inset-x-0 top-1/2 h-[1px] bg-slate-950/40" />
+                        <div className="absolute inset-y-0 left-1/2 w-[1px] bg-slate-950/40" />
+                        <div className="absolute inset-y-0 left-1/4 w-[1px] rounded-full border-l border-slate-950/30" />
+                        <div className="absolute inset-y-0 right-1/4 w-[1px] rounded-full border-r border-slate-950/30" />
+                        <span className="font-serif font-black text-4xl text-slate-950/60 tracking-tighter" style={{ fontFamily: "'Cinzel', Georgia, serif" }}>
+                          1983
+                        </span>
+                      </div>
+
+                      {/* Card Top Row */}
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full border border-slate-950/70 bg-gradient-to-br from-white/40 to-black/10 flex items-center justify-center font-serif font-black text-slate-950 text-xs shadow-xs">
+                            1983
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[10px] font-mono font-black tracking-widest text-slate-950 uppercase">
+                              CEO 1983 CLUB
+                            </p>
+                            <p className="text-[8px] text-slate-900 uppercase font-bold tracking-wider">
+                              HANOIBA ALLIANCE
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="text-[9px] font-mono font-bold text-slate-900/80 tracking-wider">
+                          505 M7E. TNIK
+                        </span>
+                      </div>
+
+                      {/* Card Middle: Gold Smart Chip */}
+                      <div className="my-auto py-2 relative z-10 text-left">
+                        <div className="w-12 h-9 rounded-lg bg-gradient-to-tr from-[#FFF7EA] via-[#E9C38E] to-[#976A30] border border-slate-950/50 shadow-sm relative overflow-hidden flex items-center justify-center">
+                          <div className="w-7 h-5 rounded-md border border-slate-950/40 grid grid-cols-3 grid-rows-2 divide-x divide-y divide-slate-950/40" />
+                        </div>
+                      </div>
+
+                      {/* Card Bottom Row */}
+                      <div className="flex items-end justify-between relative z-10 pt-2 border-t border-slate-950/20 text-left">
+                        <div>
+                          <p className="text-[8.5px] font-mono text-slate-950 font-black tracking-widest uppercase">
+                            TITANIUM VIP PASS
+                          </p>
+                          <p className="text-sm sm:text-base font-black text-slate-950 tracking-wider">
+                            DOANH NHÂN QUÝ HỢI
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9.5px] font-mono font-black text-slate-950">ID: 1983-MM-8989</span>
+                          <p className="text-[7.5px] font-mono font-bold text-slate-900/75 uppercase mt-0.5">
+                            CHẠM ĐỂ KẾT NỐI SAU 1S
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Back Face */}
+                    <div className="absolute inset-0 w-full h-full rounded-3xl p-6 bg-gradient-to-br from-[#0B1020] via-[#050814] to-[#02050E] rotate-y-180 backface-hidden flex flex-col justify-between overflow-hidden border border-[#D8B282]/50 text-left">
+                      <div className="flex items-center justify-between border-b border-[#D8B282]/20 pb-3">
+                        <span className="text-[10px] font-mono text-[#F6E1C3] font-bold uppercase">
+                          DIGITAL VIP IDENTITY
+                        </span>
+                        <Wallet className="w-4 h-4 text-[#D8B282]" />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-white">{t.cardWallet}</p>
+                        <p className="text-[10px] text-slate-300 leading-snug">
+                          Chạm 1-lần vào điện thoại thông minh để trao đổi hồ sơ doanh nghiệp đã được HanoiBA bảo chứng.
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#D8B282]/20 flex items-center justify-between text-[9px] font-mono text-[#D8B282]">
+                        <span>ENCRYPTED ID: 8888</span>
+                        <span>CLB DOANH NHÂN 1983</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <p
+                    className={`text-center text-[11px] font-mono mt-4 tracking-wider relative z-10 ${themeClass(
+                      "text-[#D8B282]",
+                      "text-[#8C653B]",
+                      "text-yellow-300"
+                    )}`}
+                  >
+                    {t.cardTapHint}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {heroSlide === 1 && (
+            /* SLIDE 2: 200+ C-LEVEL DIRECTORY (Organic 3D Constellation of Verified Leaders - Không ô vuông chữ nhật thô) */
+            <motion.div
+              key="slide-network"
+              custom={slideDirection}
+              initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
+              transition={{ duration: 0.45, ease: "easeInOut" }}
+              onMouseEnter={() => setIsSlidePaused(true)}
+              onMouseLeave={() => setIsSlidePaused(false)}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+            >
+              {/* Left Column (5 cols) - Concise Punchy Text */}
+              <div className="lg:col-span-5 text-left space-y-5">
+                <div
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase font-mono border backdrop-blur-md shadow-sm ${
+                    themeClass(
+                      "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15",
+                      "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30",
+                      "border-yellow-400 text-yellow-300 bg-yellow-400/20"
+                    )
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-[#D8B282]" />
+                  <span>{heroSlides[1].tag}</span>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.12]">
+                  <span className={`block font-extrabold ${themeClass("text-white", "text-[#09152B]", "text-white")}`}>
+                    MẠNG LƯỚI 200+
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#09152B] via-[#7C5824] to-[#B8860B]",
+                        "text-yellow-300"
+                      )
+                    }`}
+                  >
+                    CHỦ TỊCH & CEO
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#7C5824] via-[#9E6B28] to-[#5C3B0E]",
+                        "text-yellow-400"
+                      )
+                    }`}
+                  >
+                    QUÝ HỢI 1983
+                  </span>
+                </h1>
+
+                <p
+                  className={`text-sm sm:text-base leading-relaxed font-medium ${
+                    themeClass("text-slate-300", "text-[#334155]", "text-yellow-100")
+                  }`}
+                >
+                  Liên minh lãnh đạo doanh nghiệp cùng tuổi, thẩm định nghiêm ngặt và bảo chứng uy tín 100% từ HanoiBA.
+                </p>
+
+                {/* 3 Compact Trust Badges */}
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {[
+                    { label: "100% C-Level", desc: "Chủ tịch & TGĐ", icon: <Crown className="w-3.5 h-3.5 text-[#F6E1C3]" /> },
+                    { label: ">20 Tỷ / Năm", desc: "Doanh thu chuẩn", icon: <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" /> },
+                    { label: "Deal Kín 1:1", desc: "Hợp tác sâu", icon: <Zap className="w-3.5 h-3.5 text-[#D8B282]" /> },
+                  ].map((b, bIdx) => (
+                    <div
+                      key={bIdx}
+                      className={`p-2.5 rounded-2xl border backdrop-blur-md text-left ${
+                        themeClass(
+                          "bg-[#0D162B]/80 border-[#D8B282]/30",
+                          "bg-white/90 border-[#D8B282]/40 shadow-xs",
+                          "bg-zinc-900 border-yellow-400/40"
+                        )
+                      }`}
+                    >
+                      <div className="mb-1">{b.icon}</div>
+                      <p className={`text-[11px] font-black truncate ${themeClass("text-white", "text-slate-900", "text-yellow-300")}`}>
+                        {b.label}
+                      </p>
+                      <p className={`text-[9.5px] truncate ${themeClass("text-slate-400", "text-slate-600", "text-yellow-100")}`}>
+                        {b.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Link & Nav */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <a
+                    href="#leadership"
+                    className="px-6 py-3 rounded-full font-black text-xs tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-md hover:brightness-110 hover:scale-105 active:scale-98 transition-all inline-flex items-center gap-2"
+                  >
+                    <span>Xem Danh Bạ</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className={`px-5 py-3 rounded-full font-bold text-xs border transition-all ${
+                      themeClass(
+                        "text-slate-200 bg-[#0B1224]/80 border-[#D8B282]/30 hover:border-[#D8B282]",
+                        "text-slate-900 bg-white border-[#D8B282]/40 hover:border-[#D8B282]",
+                        "text-yellow-300 bg-black border-yellow-400"
+                      )
+                    }`}
+                  >
+                    Ứng Tuyển Gia Nhập
+                  </button>
+                </div>
+
+                {/* Slide Nav Arrows */}
+                <div className={`flex items-center gap-3 pt-1 text-xs font-mono ${themeClass("text-slate-400", "text-slate-600", "text-yellow-200")}`}>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(0)}
+                    className={`p-2 rounded-full border transition-colors ${
+                      themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                    }`}
+                    aria-label="Slide trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-bold">02 / 03</span>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(2)}
+                    className={`p-2 rounded-full border transition-colors ${
+                      themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                    }`}
+                    aria-label="Slide tiếp theo"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column (7 cols): ORGANIC 3D CONSTELLATION OF C-LEVEL LEADERS (THIẾT KẾ VIÊN NHỘNG TINH HOA 3D) */}
+              <div className="lg:col-span-7">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {leaders.slice(0, 4).map((lead, lIdx) => (
+                    <motion.div
+                      key={lIdx}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                      className={`relative p-4 rounded-3xl border backdrop-blur-xl transition-all text-left shadow-lg group overflow-hidden flex items-center gap-3.5 ${
+                        themeClass(
+                          "bg-gradient-to-r from-[#0E1A33]/90 via-[#091224]/90 to-[#040814]/95 border-[#D8B282]/40 shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:border-[#F6E1C3]",
+                          "bg-white/95 border-[#D8B282]/50 shadow-[0_8px_25px_rgba(140,101,59,0.12)] hover:border-[#8C653B]",
+                          "bg-black border-yellow-400 text-yellow-300"
+                        )
+                      }`}
+                    >
+                      {/* Top Specular Arc */}
+                      <div className="absolute top-0 inset-x-6 h-[1.5px] bg-gradient-to-r from-transparent via-[#F6E1C3]/70 to-transparent" />
+
+                      {/* 3D Spherical Avatar */}
+                      <div className="relative shrink-0">
+                        <div className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-[0_0_15px_rgba(216,178,130,0.4)]">
+                          <img
+                            src={lead.avatar}
+                            alt={lead.name}
+                            className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        </div>
+                        {/* Verified Status Dot */}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#0B1224] flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                        </div>
+                      </div>
+
+                      {/* Info & Badges */}
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-sm font-black truncate ${themeClass("text-white", "text-slate-900", "text-white")}`}>
+                            {lead.name}
+                          </p>
+                          <BadgeCheck className="w-3.5 h-3.5 text-[#D8B282] shrink-0" />
+                        </div>
+                        <p className="text-[10.5px] text-[#D8B282] font-mono font-bold truncate">
+                          {lead.badge}
+                        </p>
+                        <p className={`text-[9.5px] truncate ${themeClass("text-slate-300", "text-slate-600", "text-yellow-100")}`}>
+                          {lead.company}
+                        </p>
+                        <div className="pt-0.5">
+                          <span className="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-[#D8B282]/15 text-[#F6E1C3] border border-[#D8B282]/30">
+                            QUÝ HỢI 1983 • 100% VETTED
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {heroSlide === 2 && (
+            /* SLIDE 3: 4K KYC VIDEO BRIEFING TERMINAL & TITANIUM PASS (Chuyển video KYC vào Slide 3 Hero Section) */
+            <motion.div
+              key="slide-kyc-video"
+              custom={slideDirection}
+              initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
+              transition={{ duration: 0.45, ease: "easeInOut" }}
+              onMouseEnter={() => setIsSlidePaused(true)}
+              onMouseLeave={() => setIsSlidePaused(false)}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center"
+            >
+              {/* Left Column (5 cols) - KYC Overview & Navigation */}
+              <div className="lg:col-span-5 text-left space-y-4">
+                <div
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase font-mono border backdrop-blur-md shadow-sm ${
+                    themeClass(
+                      "border-cyan-400/50 text-cyan-300 bg-cyan-950/30",
+                      "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30",
+                      "border-yellow-400 text-yellow-300 bg-yellow-400/20"
+                    )
+                  }`}
+                >
+                  <Film className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{heroSlides[2].tag}</span>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.12]">
+                  <span className={`block font-extrabold ${themeClass("text-white", "text-[#09152B]", "text-white")}`}>
+                    THẨM ĐỊNH MINH BẠCH
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-[#F6E1C3] to-[#D8B282]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#09152B] via-[#7C5824] to-[#B8860B]",
+                        "text-yellow-300"
+                      )
+                    }`}
+                  >
+                    QUY TRÌNH KYC 100%
+                  </span>
+                  <span
+                    className={`block mt-1 ${
+                      themeClass(
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]",
+                        "text-transparent bg-clip-text bg-gradient-to-r from-[#7C5824] via-[#9E6B28] to-[#5C3B0E]",
+                        "text-yellow-400"
+                      )
+                    }`}
+                  >
+                    CẤP THẺ TITANIUM
+                  </span>
+                </h1>
+
+                <p
+                  className={`text-sm sm:text-base leading-relaxed font-medium ${
+                    themeClass("text-slate-300", "text-[#334155]", "text-yellow-100")
+                  }`}
+                >
+                  Trực quan hóa quy trình thẩm định 3 vòng nghiêm ngặt, đối soát tư cách pháp nhân và cấp thẻ Titanium VIP Pass kích hoạt Deal Room kín &gt;5.000 Tỷ VNĐ.
+                </p>
+
+                {/* 3 Interactive Chapter Pills */}
+                <div className="space-y-1.5 pt-1">
+                  {kycVideoSources.map((chapter, cIdx) => {
+                    const isSel = selectedKycVideo === cIdx;
+                    return (
+                      <button
+                        key={cIdx}
+                        type="button"
+                        onClick={() => setSelectedKycVideo(cIdx)}
+                        className={`w-full p-2.5 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between gap-2 cursor-pointer ${
+                          isSel
+                            ? themeClass(
+                                "bg-[#0D1E3A] border-[#F6E1C3] shadow-[0_0_15px_rgba(216,178,130,0.3)]",
+                                "bg-white border-[#8C653B] shadow-sm",
+                                "bg-zinc-900 border-yellow-400"
+                              )
+                            : themeClass(
+                                "bg-[#080E1C]/70 border-[#D8B282]/20 hover:border-[#D8B282]/50",
+                                "bg-[#FAF8F5] border-[#D8B282]/30 hover:border-[#D8B282]",
+                                "bg-black border-zinc-800"
+                              )
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-mono font-bold ${
+                              isSel
+                                ? "bg-[#D8B282] text-slate-950 font-black"
+                                : "bg-white/10 text-slate-400"
+                            }`}
+                          >
+                            {cIdx + 1}
+                          </div>
+                          <p
+                            className={`text-xs font-bold truncate ${
+                              isSel
+                                ? themeClass("text-[#F6E1C3]", "text-[#8C653B]", "text-yellow-300")
+                                : themeClass("text-slate-300", "text-slate-700", "text-slate-300")
+                            }`}
+                          >
+                            {chapter.title}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#D8B282] font-bold shrink-0">
+                          {chapter.time}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Actions & Slide Nav */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className="px-6 py-3 rounded-full font-black text-xs tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-md hover:brightness-110 hover:scale-105 active:scale-98 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <span>Đăng Ký Thẩm Định KYC</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className={`flex items-center gap-2 text-xs font-mono ${themeClass("text-slate-400", "text-slate-600", "text-yellow-200")}`}>
+                    <button
+                      type="button"
+                      onClick={() => changeSlide(1)}
+                      className={`p-2 rounded-full border transition-colors ${
+                        themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                      }`}
+                      aria-label="Slide trước"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-bold">03 / 03</span>
+                    <button
+                      type="button"
+                      onClick={() => changeSlide(0)}
+                      className={`p-2 rounded-full border transition-colors ${
+                        themeClass("border-[#D8B282]/30 bg-[#0A1020] hover:text-white hover:border-[#D8B282]", "border-[#D8B282]/40 bg-white hover:text-black hover:border-[#D8B282] shadow-xs", "border-yellow-400 bg-black text-yellow-300")
+                      }`}
+                      aria-label="Slide tiếp theo"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column (7 cols): LUXURY 4K KYC VIDEO PLAYER CONSOLE */}
+              <div className="lg:col-span-7">
+                <div
+                  className={`rounded-3xl border-2 p-3 sm:p-4 shadow-2xl backdrop-blur-2xl text-left relative overflow-hidden ${
+                    themeClass(
+                      "border-[#D8B282]/50 bg-gradient-to-b from-[#0B152B]/98 via-[#060D1E]/95 to-[#02050E] shadow-[0_20px_60px_rgba(0,0,0,0.85)]",
+                      "border-[#D8B282]/60 bg-white/95 shadow-xl",
+                      "border-yellow-400 bg-black text-yellow-300"
+                    )
+                  }`}
+                >
+                  {/* Player Top Bezel Bar */}
+                  <div className="flex items-center justify-between pb-2.5 px-2 border-b border-[#D8B282]/20">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${themeClass("text-white", "text-slate-900", "text-yellow-300")}`}>
+                        LIVE KYC BRIEFING • 4K ULTRA HD
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full bg-[#D8B282]/15 border border-[#D8B282]/35 text-[9.5px] font-mono text-[#F6E1C3] font-bold">
+                        {kycVideoSources[selectedKycVideo].badge}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setKycVideoMuted((m) => !m)}
+                        className={`p-1.5 rounded-lg border transition-colors ${
+                          themeClass("bg-white/5 border-white/10 text-white hover:bg-white/10", "bg-black/5 border-black/10 text-black", "bg-zinc-800 text-yellow-300")
+                        }`}
+                        title={kycVideoMuted ? "Bật âm thanh" : "Tắt âm thanh"}
+                      >
+                        {kycVideoMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#D8B282]" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Video Stage Frame */}
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black mt-3 border border-[#D8B282]/30 shadow-inner group">
+                    <video
+                      key={kycVideoSources[selectedKycVideo].src}
+                      ref={kycVideoRef}
+                      src={kycVideoSources[selectedKycVideo].src}
+                      poster={(kycVideoSources[selectedKycVideo] as any).poster || "/landing/ceo1983_news_studio.jpg"}
+                      autoPlay
+                      loop
+                      playsInline
+                      muted={kycVideoMuted}
+                      className="w-full h-full object-cover"
+                      onPlay={() => setKycVideoPlaying(true)}
+                      onPause={() => setKycVideoPlaying(false)}
+                    />
+
+                    {/* Subtle Gradient Overlay for HUD Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    {/* Center Play/Pause Overlay Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (kycVideoRef.current) {
+                          if (kycVideoPlaying) {
+                            kycVideoRef.current.pause();
+                            setKycVideoPlaying(false);
+                          } else {
+                            kycVideoRef.current.play();
+                            setKycVideoPlaying(true);
+                          }
+                        }
+                      }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-r from-[#F6E1C3] to-[#D8B282] text-slate-950 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                        {kycVideoPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+                      </div>
+                    </button>
+
+                    {/* Bottom HUD Overlay on Video */}
+                    <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-xs pointer-events-none">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-black/80 border border-white/20 text-[10px] font-mono font-bold text-white backdrop-blur-md">
+                          {kycVideoSources[selectedKycVideo].title}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-[9.5px] font-mono text-emerald-300 font-bold backdrop-blur-md">
+                        VERIFIED E2E
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description Box under Video */}
+                  <div className="mt-3 p-3 rounded-2xl bg-black/40 border border-[#D8B282]/20 flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <p className={`text-xs leading-relaxed ${themeClass("text-slate-300", "text-slate-700", "text-yellow-100")}`}>
+                      {kycVideoSources[selectedKycVideo].desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* =======================================================================
+            DYNAMIC HERO BOTTOM SECTION: COMPLETELY TRANSFORMING LAYOUT PER SLIDE
+            Slide 1: 4 Hanging Circular Frosted Glow Bulbs (Thẻ VIP Pass & Kết Nối)
+            Slide 2: Streamlined 4-Pillar Executive Vetting Strip (Mạng Lưới C-Level)
+            Slide 3: 3-Step KYC Onboarding Pathway (Quy trình Thẩm định & Cấp thẻ)
+            ======================================================================= */}
+        <AnimatePresence mode="wait">
+          {heroSlide === 0 && (
+            /* SLIDE 1 BOTTOM: 4 LUXURY HANGING CIRCULAR FROSTED GLOW BULBS */
+            <motion.div
+              key="hero-bottom-bulbs"
+              initial={{ opacity: 0, y: 35, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -25, scale: 0.96 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="mt-20 relative z-20"
+            >
+              {/* Top Horizontal Ceiling Suspension Rail */}
+              <div className="relative w-full max-w-5xl mx-auto flex items-center justify-between px-8 sm:px-16 pointer-events-none mb-[-2px]">
+                <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#D8B282]/60 to-transparent" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-6 lg:gap-8 items-start max-w-7xl mx-auto">
+                {/* Sphere 1: 200+ CEO Đồng Niên */}
+                <motion.div
+                  initial={{ y: -25, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.05 }}
+                  className="flex flex-col items-center group relative"
+                >
+                  <div className="w-5 h-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-[0_0_10px_rgba(216,178,130,0.8)] z-10 shrink-0" />
+                  <div className="relative w-[2px] h-10 sm:h-14 bg-gradient-to-b from-[#F6E1C3] via-[#D8B282]/70 to-[#D8B282] shrink-0">
+                    <div className="absolute top-1 left-[-1px] w-[4px] h-[8px] rounded-full bg-white/90 blur-[0.5px] animate-bounce" />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center shrink-0">
+                    <div className="w-10 h-3 rounded-t-lg bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-md border-b border-black/30" />
+                    <div className="w-12 h-1 bg-[#F6E1C3] rounded-full blur-[1px] shadow-[0_0_12px_#F6E1C3]" />
+                  </div>
+                  <div className="absolute top-16 -inset-x-4 h-64 bg-gradient-to-b from-[#D8B282]/25 via-[#D8B282]/5 to-transparent blur-3xl pointer-events-none rounded-full" />
+                  
+                  <motion.div
+                    whileHover={{ y: -6, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-56 h-56 sm:w-60 sm:h-60 rounded-full aspect-square relative p-6 border-2 backdrop-blur-2xl shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center text-center ${
+                      themeClass(
+                        "border-[#F6E1C3]/60 bg-radial from-[#F6E1C3]/20 via-[#0D182E]/92 to-[#030612]/95 shadow-[0_0_50px_rgba(216,178,130,0.4),inset_0_0_30px_rgba(255,255,255,0.25)] hover:border-[#F6E1C3] hover:shadow-[0_0_75px_rgba(216,178,130,0.75),inset_0_0_40px_rgba(255,255,255,0.4)]",
+                        "border-[#D8B282]/70 bg-radial from-white/90 via-[#FDF9F2]/95 to-[#EDE4D8] shadow-[0_10px_35px_rgba(140,101,59,0.25),inset_0_0_20px_rgba(255,255,255,0.8)] hover:border-[#8C653B]",
+                        "border-yellow-300 bg-black text-yellow-300 shadow-[0_0_40px_rgba(250,204,21,0.5)]"
+                      )
+                    }`}
+                  >
+                    <div className="absolute inset-3 rounded-full border border-[#D8B282]/30 border-dashed animate-spin-slow pointer-events-none" />
+                    <div className="w-8 h-8 rounded-full bg-[#D8B282]/25 border border-[#D8B282]/60 flex items-center justify-center shadow-md mb-1.5 group-hover:scale-110 transition-transform relative z-10">
+                      <Users className="w-4 h-4 text-[#F6E1C3]" />
+                    </div>
+                    <p className={`text-3xl sm:text-4xl font-black font-serif tracking-tight leading-none drop-shadow-[0_0_15px_rgba(216,178,130,0.5)] relative z-10 ${
+                      themeClass("text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]", "text-transparent bg-clip-text bg-gradient-to-r from-[#181512] via-[#8C653B] to-[#C29B69]", "text-yellow-300")
+                    }`}>
+                      {t.stat1Num}
+                    </p>
+                    <p className={`text-xs sm:text-sm font-black mt-1 uppercase tracking-wider leading-tight relative z-10 ${themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                      {t.stat1Title}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 leading-tight font-normal max-w-[130px] relative z-10 ${themeClass("text-slate-200", "text-[#5A4F43]", "text-yellow-100")}`}>
+                      {t.stat1Desc}
+                    </p>
+                    <span className="mt-2 text-[8px] font-mono font-bold tracking-widest text-[#D8B282] uppercase px-2 py-0.5 rounded-full bg-[#D8B282]/15 border border-[#D8B282]/30 relative z-10">
+                      VERIFIED 100%
+                    </span>
+                  </motion.div>
+                  <div className="w-1.5 h-3.5 bg-gradient-to-b from-[#D8B282] via-[#F6E1C3] to-transparent rounded-b-full shadow-[0_0_10px_#D8B282] mt-0.5 opacity-90" />
+                </motion.div>
+
+                {/* Sphere 2: >5.000 Tỷ VND Giao Thương */}
+                <motion.div
+                  initial={{ y: -25, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.12 }}
+                  className="flex flex-col items-center group relative"
+                >
+                  <div className="w-5 h-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-[0_0_10px_rgba(216,178,130,0.8)] z-10 shrink-0" />
+                  <div className="relative w-[2px] h-14 sm:h-18 bg-gradient-to-b from-[#F6E1C3] via-[#D8B282]/70 to-[#D8B282] shrink-0">
+                    <div className="absolute top-2 left-[-1px] w-[4px] h-[8px] rounded-full bg-white/90 blur-[0.5px] animate-bounce" />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center shrink-0">
+                    <div className="w-10 h-3 rounded-t-lg bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-md border-b border-black/30" />
+                    <div className="w-12 h-1 bg-[#F6E1C3] rounded-full blur-[1px] shadow-[0_0_12px_#F6E1C3]" />
+                  </div>
+                  <div className="absolute top-20 -inset-x-4 h-64 bg-gradient-to-b from-[#D8B282]/25 via-[#D8B282]/5 to-transparent blur-3xl pointer-events-none rounded-full" />
+                  
+                  <motion.div
+                    whileHover={{ y: -6, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-56 h-56 sm:w-60 sm:h-60 rounded-full aspect-square relative p-6 border-2 backdrop-blur-2xl shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center text-center ${
+                      themeClass(
+                        "border-[#F6E1C3]/60 bg-radial from-[#F6E1C3]/20 via-[#0D182E]/92 to-[#030612]/95 shadow-[0_0_50px_rgba(216,178,130,0.4),inset_0_0_30px_rgba(255,255,255,0.25)] hover:border-[#F6E1C3] hover:shadow-[0_0_75px_rgba(216,178,130,0.75),inset_0_0_40px_rgba(255,255,255,0.4)]",
+                        "border-[#D8B282]/70 bg-radial from-white/90 via-[#FDF9F2]/95 to-[#EDE4D8] shadow-[0_10px_35px_rgba(140,101,59,0.25),inset_0_0_20px_rgba(255,255,255,0.8)] hover:border-[#8C653B]",
+                        "border-yellow-300 bg-black text-yellow-300 shadow-[0_0_40px_rgba(250,204,21,0.5)]"
+                      )
+                    }`}
+                  >
+                    <div className="absolute inset-3 rounded-full border border-[#D8B282]/30 border-dashed animate-spin-slow pointer-events-none" style={{ animationDirection: "reverse" }} />
+                    <div className="w-8 h-8 rounded-full bg-[#D8B282]/25 border border-[#D8B282]/60 flex items-center justify-center shadow-md mb-1.5 group-hover:scale-110 transition-transform relative z-10">
+                      <TrendingUp className="w-4 h-4 text-[#F6E1C3]" />
+                    </div>
+                    <p className={`text-3xl sm:text-4xl font-black font-serif tracking-tight leading-none drop-shadow-[0_0_15px_rgba(216,178,130,0.5)] relative z-10 ${
+                      themeClass("text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]", "text-transparent bg-clip-text bg-gradient-to-r from-[#181512] via-[#8C653B] to-[#C29B69]", "text-yellow-300")
+                    }`}>
+                      {t.stat2Num}
+                    </p>
+                    <p className={`text-xs sm:text-sm font-black mt-1 uppercase tracking-wider leading-tight relative z-10 ${themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                      {t.stat2Title}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 leading-tight font-normal max-w-[130px] relative z-10 ${themeClass("text-slate-200", "text-[#5A4F43]", "text-yellow-100")}`}>
+                      {t.stat2Desc}
+                    </p>
+                    <span className="mt-2 text-[8px] font-mono font-bold tracking-widest text-[#D8B282] uppercase px-2 py-0.5 rounded-full bg-[#D8B282]/15 border border-[#D8B282]/30 relative z-10">
+                      CLOSED-LOOP
+                    </span>
+                  </motion.div>
+                  <div className="w-1.5 h-3.5 bg-gradient-to-b from-[#D8B282] via-[#F6E1C3] to-transparent rounded-b-full shadow-[0_0_10px_#D8B282] mt-0.5 opacity-90" />
+                </motion.div>
+
+                {/* Sphere 3: +35% Tăng Trưởng B2B */}
+                <motion.div
+                  initial={{ y: -25, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.18 }}
+                  className="flex flex-col items-center group relative"
+                >
+                  <div className="w-5 h-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-[0_0_10px_rgba(216,178,130,0.8)] z-10 shrink-0" />
+                  <div className="relative w-[2px] h-10 sm:h-14 bg-gradient-to-b from-[#F6E1C3] via-[#D8B282]/70 to-[#D8B282] shrink-0">
+                    <div className="absolute top-1 left-[-1px] w-[4px] h-[8px] rounded-full bg-white/90 blur-[0.5px] animate-bounce" />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center shrink-0">
+                    <div className="w-10 h-3 rounded-t-lg bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-md border-b border-black/30" />
+                    <div className="w-12 h-1 bg-[#F6E1C3] rounded-full blur-[1px] shadow-[0_0_12px_#F6E1C3]" />
+                  </div>
+                  <div className="absolute top-16 -inset-x-4 h-64 bg-gradient-to-b from-[#D8B282]/25 via-[#D8B282]/5 to-transparent blur-3xl pointer-events-none rounded-full" />
+                  
+                  <motion.div
+                    whileHover={{ y: -6, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-56 h-56 sm:w-60 sm:h-60 rounded-full aspect-square relative p-6 border-2 backdrop-blur-2xl shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center text-center ${
+                      themeClass(
+                        "border-[#F6E1C3]/60 bg-radial from-[#F6E1C3]/20 via-[#0D182E]/92 to-[#030612]/95 shadow-[0_0_50px_rgba(216,178,130,0.4),inset_0_0_30px_rgba(255,255,255,0.25)] hover:border-[#F6E1C3] hover:shadow-[0_0_75px_rgba(216,178,130,0.75),inset_0_0_40px_rgba(255,255,255,0.4)]",
+                        "border-[#D8B282]/70 bg-radial from-white/90 via-[#FDF9F2]/95 to-[#EDE4D8] shadow-[0_10px_35px_rgba(140,101,59,0.25),inset_0_0_20px_rgba(255,255,255,0.8)] hover:border-[#8C653B]",
+                        "border-yellow-300 bg-black text-yellow-300 shadow-[0_0_40px_rgba(250,204,21,0.5)]"
+                      )
+                    }`}
+                  >
+                    <div className="absolute inset-3 rounded-full border border-[#D8B282]/30 border-dashed animate-spin-slow pointer-events-none" />
+                    <div className="w-8 h-8 rounded-full bg-[#D8B282]/25 border border-[#D8B282]/60 flex items-center justify-center shadow-md mb-1.5 group-hover:scale-110 transition-transform relative z-10">
+                      <BarChart3 className="w-4 h-4 text-[#F6E1C3]" />
+                    </div>
+                    <p className={`text-3xl sm:text-4xl font-black font-serif tracking-tight leading-none drop-shadow-[0_0_15px_rgba(216,178,130,0.5)] relative z-10 ${
+                      themeClass("text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]", "text-transparent bg-clip-text bg-gradient-to-r from-[#181512] via-[#8C653B] to-[#C29B69]", "text-yellow-300")
+                    }`}>
+                      {t.stat3Num}
+                    </p>
+                    <p className={`text-xs sm:text-sm font-black mt-1 uppercase tracking-wider leading-tight relative z-10 ${themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                      {t.stat3Title}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 leading-tight font-normal max-w-[130px] relative z-10 ${themeClass("text-slate-200", "text-[#5A4F43]", "text-yellow-100")}`}>
+                      {t.stat3Desc}
+                    </p>
+                    <span className="mt-2 text-[8px] font-mono font-bold tracking-widest text-[#D8B282] uppercase px-2 py-0.5 rounded-full bg-[#D8B282]/15 border border-[#D8B282]/30 relative z-10">
+                      ANNUAL ROI
+                    </span>
+                  </motion.div>
+                  <div className="w-1.5 h-3.5 bg-gradient-to-b from-[#D8B282] via-[#F6E1C3] to-transparent rounded-b-full shadow-[0_0_10px_#D8B282] mt-0.5 opacity-90" />
+                </motion.div>
+
+                {/* Sphere 4: 100% Thẩm Định Minh Bạch */}
+                <motion.div
+                  initial={{ y: -25, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.24 }}
+                  className="flex flex-col items-center group relative"
+                >
+                  <div className="w-5 h-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-[0_0_10px_rgba(216,178,130,0.8)] z-10 shrink-0" />
+                  <div className="relative w-[2px] h-14 sm:h-18 bg-gradient-to-b from-[#F6E1C3] via-[#D8B282]/70 to-[#D8B282] shrink-0">
+                    <div className="absolute top-2 left-[-1px] w-[4px] h-[8px] rounded-full bg-white/90 blur-[0.5px] animate-bounce" />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center shrink-0">
+                    <div className="w-10 h-3 rounded-t-lg bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-md border-b border-black/30" />
+                    <div className="w-12 h-1 bg-[#F6E1C3] rounded-full blur-[1px] shadow-[0_0_12px_#F6E1C3]" />
+                  </div>
+                  <div className="absolute top-20 -inset-x-4 h-64 bg-gradient-to-b from-[#D8B282]/25 via-[#D8B282]/5 to-transparent blur-3xl pointer-events-none rounded-full" />
+                  
+                  <motion.div
+                    whileHover={{ y: -6, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-56 h-56 sm:w-60 sm:h-60 rounded-full aspect-square relative p-6 border-2 backdrop-blur-2xl shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center text-center ${
+                      themeClass(
+                        "border-[#F6E1C3]/60 bg-radial from-[#F6E1C3]/20 via-[#0D182E]/92 to-[#030612]/95 shadow-[0_0_50px_rgba(216,178,130,0.4),inset_0_0_30px_rgba(255,255,255,0.25)] hover:border-[#F6E1C3] hover:shadow-[0_0_75px_rgba(216,178,130,0.75),inset_0_0_40px_rgba(255,255,255,0.4)]",
+                        "border-[#D8B282]/70 bg-radial from-white/90 via-[#FDF9F2]/95 to-[#EDE4D8] shadow-[0_10px_35px_rgba(140,101,59,0.25),inset_0_0_20px_rgba(255,255,255,0.8)] hover:border-[#8C653B]",
+                        "border-yellow-300 bg-black text-yellow-300 shadow-[0_0_40px_rgba(250,204,21,0.5)]"
+                      )
+                    }`}
+                  >
+                    <div className="absolute inset-3 rounded-full border border-[#D8B282]/30 border-dashed animate-spin-slow pointer-events-none" style={{ animationDirection: "reverse" }} />
+                    <div className="w-8 h-8 rounded-full bg-[#D8B282]/25 border border-[#D8B282]/60 flex items-center justify-center shadow-md mb-1.5 group-hover:scale-110 transition-transform relative z-10">
+                      <ShieldCheck className="w-4 h-4 text-[#F6E1C3]" />
+                    </div>
+                    <p className={`text-3xl sm:text-4xl font-black font-serif tracking-tight leading-none drop-shadow-[0_0_15px_rgba(216,178,130,0.5)] relative z-10 ${
+                      themeClass("text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]", "text-transparent bg-clip-text bg-gradient-to-r from-[#181512] via-[#8C653B] to-[#C29B69]", "text-yellow-300")
+                    }`}>
+                      {t.stat4Num}
+                    </p>
+                    <p className={`text-xs sm:text-sm font-black mt-1 uppercase tracking-wider leading-tight relative z-10 ${themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                      {t.stat4Title}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 leading-tight font-normal max-w-[130px] relative z-10 ${themeClass("text-slate-200", "text-[#5A4F43]", "text-yellow-100")}`}>
+                      {t.stat4Desc}
+                    </p>
+                    <span className="mt-2 text-[8px] font-mono font-bold tracking-widest text-[#D8B282] uppercase px-2 py-0.5 rounded-full bg-[#D8B282]/15 border border-[#D8B282]/30 relative z-10">
+                      HANOIBA VETTED
+                    </span>
+                  </motion.div>
+                  <div className="w-1.5 h-3.5 bg-gradient-to-b from-[#D8B282] via-[#F6E1C3] to-transparent rounded-b-full shadow-[0_0_10px_#D8B282] mt-0.5 opacity-90" />
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {heroSlide === 1 && (
+            /* SLIDE 2 BOTTOM: STREAMLINED 4-PILLAR EXECUTIVE VETTING STRIP (BẢO CHỨNG C-LEVEL TINH GỌN KHÔNG CỒNG KỀNH) */
+            <motion.div
+              key="hero-bottom-pillars"
+              initial={{ opacity: 0, y: 25, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.98 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="mt-14 relative z-20 max-w-7xl mx-auto px-2"
+            >
+              {/* Header Label Bar */}
+              <div className="flex items-center justify-between px-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#D8B282]">
+                    TIÊU CHUẨN THẨM ĐỊNH BAN LÃNH ĐẠO C-LEVEL • HANOIBA 1983
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
+                  4/4 TRỤ CỘT BẢO CHỨNG
+                </span>
+              </div>
+
+              {/* 4 Compact Vetting Ribbon Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {[
+                  {
+                    num: "01",
+                    title: "Tiêu Chuẩn Chủ Tịch",
+                    metric: ">20 Tỷ / Năm",
+                    badge: "DOANH THU",
+                    icon: <Crown className="w-4 h-4 text-[#F6E1C3]" />,
+                  },
+                  {
+                    num: "02",
+                    title: "Bảo Chứng HanoiBA",
+                    metric: "100% Vetted",
+                    badge: "PHÁP LÝ & UY TÍN",
+                    icon: <ShieldCheck className="w-4 h-4 text-cyan-400" />,
+                  },
+                  {
+                    num: "03",
+                    title: "Mastermind C-Level",
+                    metric: "1 Buổi / Tháng",
+                    badge: "CHIẾN LƯỢC KÍN",
+                    icon: <Zap className="w-4 h-4 text-emerald-400" />,
+                  },
+                  {
+                    num: "04",
+                    title: "Cam Kết Tương Trợ",
+                    metric: "Zero Spam",
+                    badge: "VĂN HÓA ĐỒNG NIÊN",
+                    icon: <Handshake className="w-4 h-4 text-[#D8B282]" />,
+                  },
+                ].map((pillar, pIdx) => (
+                  <motion.div
+                    key={pIdx}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className={`p-4 rounded-2xl border backdrop-blur-xl transition-all flex items-center justify-between gap-3 shadow-md ${
+                      themeClass(
+                        "border-[#D8B282]/35 bg-gradient-to-r from-[#0B152B]/95 to-[#050B18]/95 shadow-[0_8px_25px_rgba(0,0,0,0.6)] hover:border-[#F6E1C3]",
+                        "border-[#D8B282]/50 bg-white/95 shadow-sm hover:border-[#8C653B]",
+                        "border-yellow-400 bg-black text-yellow-300"
+                      )
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-xl bg-white/5 border border-white/10 shrink-0">
+                        {pillar.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-[10px] font-mono font-bold text-[#D8B282]`}>
+                          TRỤ CỘT #{pillar.num} • {pillar.badge}
+                        </p>
+                        <h4 className={`text-xs font-black truncate ${themeClass("text-white", "text-slate-900", "text-white")}`}>
+                          {pillar.title}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]">
+                        {pillar.metric}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {heroSlide === 2 && (
+            /* SLIDE 3 BOTTOM: 3-STEP KYC ONBOARDING GLASS PATHWAY (Quy trình thẩm định minh bạch 3 bước) */
+            <motion.div
+              key="hero-bottom-kyc-pathway"
+              initial={{ opacity: 0, y: 25, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.98 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="mt-14 relative z-20 max-w-7xl mx-auto px-2"
+            >
+              {/* Header Label Bar */}
+              <div className="flex items-center justify-between px-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#D8B282]">
+                    LỘ TRÌNH THẨM ĐỊNH & CẤP THẺ TITANIUM VIP PASS (3 BƯỚC)
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-emerald-400 hidden sm:inline">
+                  THỜI GIAN PHÊ DUYỆT: 24 - 48H
+                </span>
+              </div>
+
+              {/* 3 Step Pathway Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                {[
+                  {
+                    step: "01",
+                    title: "Nộp Hồ Sơ Doanh Nghiệp",
+                    desc: "Cung cấp mã số thuế, báo cáo doanh thu >20 tỷ/năm và xác thực danh tính C-Level.",
+                    status: "BƯỚC 1 • ĐỐI SOÁT",
+                    icon: <Building2 className="w-4 h-4 text-cyan-400" />,
+                  },
+                  {
+                    step: "02",
+                    title: "Thẩm Định & Phỏng Vấn",
+                    desc: "Ban kiểm duyệt HanoiBA xác thực năng lực pháp lý và gặp gỡ trực tiếp trao đổi 1:1.",
+                    status: "BƯỚC 2 • BẢO CHỨNG",
+                    icon: <ShieldCheck className="w-4 h-4 text-[#F6E1C3]" />,
+                  },
+                  {
+                    step: "03",
+                    title: "Cấp Thẻ Titanium NFC",
+                    desc: "Trao thẻ Titanium định danh VIP Pass, kích hoạt tài khoản sàn Deal Room >5.000 Tỷ VNĐ.",
+                    status: "BƯỚC 3 • KẾT NỐI",
+                    icon: <Crown className="w-4 h-4 text-emerald-400" />,
+                  },
+                ].map((st, sIdx) => (
+                  <motion.div
+                    key={sIdx}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    className={`p-5 rounded-3xl border backdrop-blur-xl transition-all flex flex-col justify-between ${
+                      themeClass(
+                        "border-[#D8B282]/40 bg-gradient-to-br from-[#0C1A36]/90 via-[#071022]/90 to-[#030610]/95 shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:border-[#F6E1C3]",
+                        "border-[#D8B282]/50 bg-white/95 shadow-sm hover:border-[#8C653B]",
+                        "border-yellow-400 bg-black text-yellow-300"
+                      )
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D8B282]/15 text-[#F6E1C3] border border-[#D8B282]/30">
+                          {st.status}
+                        </span>
+                        <div className="p-2 rounded-xl bg-white/5 border border-white/10">
+                          {st.icon}
+                        </div>
+                      </div>
+                      <h4 className={`text-sm font-black ${themeClass("text-white", "text-slate-900", "text-white")}`}>
+                        {st.title}
+                      </h4>
+                      <p className={`text-xs mt-1.5 leading-relaxed ${themeClass("text-slate-300", "text-slate-600", "text-yellow-100")}`}>
+                        {st.desc}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-2.5 border-t border-[#D8B282]/20 flex items-center justify-between text-[10px] font-mono text-[#D8B282] font-bold">
+                      <span>BƯỚC {st.step}</span>
+                      <span>TIÊU CHUẨN ISO ●</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        </section>
+      </SectionFlip3D>
 
       {/* =======================================
-          SECTION 3: H盻� SINH THﾃ！ 4 TR盻､ C盻狼 (BENTO GRID)
+          SECTION 2: BAN LÃNH ĐẠO & CỐ VẤN CHIẾN LƯỢC (OCEAN WAVE & FLOATING CRYSTAL BUBBLES - MATCHING MOCKUP)
           ======================================= */}
-      <section
-        id="ecosystem"
-        className={`py-24 px-6 md:px-16 border-t relative overflow-hidden transition-colors ${
-          themeClass("bg-[#06080F] border-white/5", "bg-[#FFFFFF] border-slate-200", "bg-black border-white/20")
+      <SectionSlideLeft id="leadership">
+        <section
+          className={`py-24 md:py-32 relative overflow-hidden border-t transition-colors duration-500 ${
+          themeClass(
+            "border-[#D8B282]/25 bg-gradient-to-b from-[#02040A] via-[#040C20] to-[#02040A]",
+            "border-[#D8B282]/30 bg-gradient-to-b from-[#FAF8F5] via-[#F4EFE6] to-[#FAF8F5]",
+            "border-yellow-400 bg-black"
+          )
         }`}
       >
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          <img
-            src="/landing/business-ecosystem-bg.jpg"
-            alt="Ecosystem Background"
-            className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-              isDark ? "opacity-30 mix-blend-screen" : isContrast ? "opacity-15" : "opacity-12 mix-blend-multiply"
-            }`}
-          />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] bg-amber-500/15 rounded-full blur-[180px]" />
-        </div>
+        {/* Luxury Gold Grid Background GIF */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen"
+          style={{
+            backgroundImage: "url('/landing/luxury-gold-grid.gif')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-              <span>{t.ecoTag}</span>
-            </div>
-            <h2
-              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header Matching Mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-3xl mx-auto mb-14"
+          >
+            {/* Top Pill Capsule */}
+            <div
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase font-mono border backdrop-blur-md shadow-md mb-4 ${
                 themeClass(
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                  "text-[#0F172A]",
-                  "text-white"
+                  "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15 shadow-[0_0_20px_rgba(216,178,130,0.2)]",
+                  "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30 shadow-sm",
+                  "border-yellow-400 text-yellow-300 bg-yellow-400/20"
                 )
               }`}
             >
-              {t.ecoTitle1} <br />
-              {t.ecoTitle2}
+              <Compass className="w-3.5 h-3.5 text-[#D8B282] animate-spin-slow" />
+              <span>CHƯƠNG TRÌNH ĐẦU TÀU NHIỆM KỲ 2025 – 2028</span>
+            </div>
+
+            {/* Main Title */}
+            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-tight ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
+              BAN LÃNH ĐẠO & CỐ VẤN <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]">
+                CHIẾN LƯỢC
+              </span>
             </h2>
-            <p
-              className={`mt-4 text-base sm:text-lg leading-relaxed ${
-                themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-              }`}
-            >
-              {t.ecoDesc}
+
+            <p className={`mt-3 text-sm sm:text-base leading-relaxed ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+              Những thuyền trưởng bản lĩnh dẫn dắt liên minh doanh nghiệp 1983 kiến tạo chuẩn mực giao thương và chia sẻ giá trị bền vững.
             </p>
-          </div>
 
-          {/* BENTO GRID 4 TR盻､ C盻狼 */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-            {/* Pillar 1: Mastermind & Business Tours (Col-Span 7) */}
-            <div
-              className={`md:col-span-7 p-8 sm:p-10 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:border-[#F7D896]/50 ${
-                themeClass(
-                  "bg-[#111420]/90 border-white/10 shadow-2xl backdrop-blur-md",
-                  "bg-[#FAF8F5] border-amber-900/15 shadow-xl",
-                  "bg-zinc-950 border-white/20 text-white"
-                )
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/25 border border-[#F7D896] flex items-center justify-center text-[#F7D896] font-bold">
-                      01
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#F7D896]">
-                      {t.p1Tag}
-                    </span>
+            <p className={`text-xs font-mono mt-3 inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border ${
+              themeClass("border-[#D8B282]/30 bg-black/40 text-[#D8B282]", "border-[#D8B282]/40 bg-white/70 text-[#8C653B]", "border-yellow-400 bg-zinc-900 text-yellow-300")
+            }`}>
+              <span className="w-2 h-2 rounded-full bg-[#D8B282] animate-ping" />
+              <span>Chạm vào bong bóng avatar nổi trên sóng để xem hồ sơ chiến lược</span>
+            </p>
+          </motion.div>
+
+          {/* Oceanic Floating Stage with Crystal Glass Bubbles & Realistic Caustic Waves */}
+          <div
+            className={`relative w-full min-h-[620px] lg:min-h-[680px] rounded-3xl border overflow-hidden p-6 sm:p-10 flex flex-col justify-between shadow-[0_25px_80px_rgba(0,0,0,0.85)] ${
+              themeClass("border-[#D8B282]/40 bg-[#061224]/90 backdrop-blur-2xl", "border-[#D8B282]/40 bg-[#F5EFE4] backdrop-blur-2xl", "border-yellow-400 bg-black")
+            }`}
+          >
+            {/* High-Resolution Oceanic Wave Layer with Caustics & Sunbeams */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+              <img
+                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=80"
+                alt="Ocean Waves"
+                className="w-full h-full object-cover opacity-25 brightness-75 contrast-125 saturate-150 scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#040C1E] via-[#040C1E]/60 to-transparent" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#D8B28218,transparent_70%)]" />
+
+              {/* Multi-Layered SVG Caustic Wave Animation */}
+              <svg className="absolute bottom-16 left-0 w-[200%] h-[280px] animate-[floatingWave_8s_ease-in-out_infinite] opacity-40" viewBox="0 0 2880 280" fill="none" preserveAspectRatio="none">
+                <path
+                  d="M0,140 C320,220,640,60,960,140 C1280,220,1600,60,1920,140 C2240,220,2560,60,2880,140 L2880,280 L0,280 Z"
+                  fill="url(#deepWaveGrad2)"
+                />
+                <defs>
+                  <linearGradient id="deepWaveGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#0284C7" stopOpacity="0.7" />
+                    <stop offset="50%" stopColor="#0369A1" stopOpacity="0.85" />
+                    <stop offset="100%" stopColor="#0B132B" stopOpacity="0.95" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              <svg className="absolute bottom-12 left-0 w-[200%] h-[240px] animate-[floatingWave_6s_ease-in-out_infinite_reverse] opacity-60" viewBox="0 0 2880 240" fill="none" preserveAspectRatio="none">
+                <path
+                  d="M0,100 C280,180,560,20,840,100 C1120,180,1400,20,1680,100 C1960,180,2240,20,2520,100 L2880,100 L2880,240 L0,240 Z"
+                  fill="url(#goldWaveGrad2)"
+                />
+                <defs>
+                  <linearGradient id="goldWaveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#D8B282" stopOpacity="0.4" />
+                    <stop offset="50%" stopColor="#F6E1C3" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#8C653B" stopOpacity="0.4" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            {/* Floating 6 Crystal Glass Avatar Spheres on Water Crest (Exact Mockup Layout) */}
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 items-end justify-items-center pt-8 pb-8">
+              {leaders.map((leader, index) => {
+                const isActive = activeLeaderIdx === index;
+                return (
+                  <div key={index} className="flex flex-col items-center group relative cursor-pointer">
+                    {/* Upper Frosted Pill Nameplate Above Bubble */}
+                    <motion.div
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{ duration: 3.5, repeat: Infinity, delay: leader.floatDelay }}
+                      className={`mb-3 px-3 py-1.5 rounded-xl text-center backdrop-blur-md border transition-all duration-300 shadow-md ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 border-white ring-2 ring-[#D8B282] scale-105 z-30 shadow-[0_0_20px_rgba(216,178,130,0.6)]"
+                          : themeClass("bg-[#071328]/85 text-[#F6E1C3] border-[#D8B282]/40 group-hover:border-[#D8B282]", "bg-white/90 text-[#181512] border-[#D8B282]/50 group-hover:border-[#8C653B]", "bg-black text-yellow-300 border-yellow-400")
+                      }`}
+                    >
+                      <p className={`text-[11.5px] font-bold truncate max-w-[120px] leading-tight ${isActive ? "text-slate-950 font-black" : themeClass("text-white", "text-[#181512]", "text-white")}`}>
+                        {leader.name}
+                      </p>
+                      <p className={`text-[9px] font-mono uppercase tracking-wider truncate max-w-[115px] ${isActive ? "text-slate-900 font-extrabold" : themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-300")}`}>
+                        {leader.badge}
+                      </p>
+                    </motion.div>
+
+                    {/* Crystal Glass Bubble Orb with Caustic Refraction */}
+                    <button
+                      type="button"
+                      onClick={() => selectLeader(index)}
+                      className={`relative rounded-full p-2 transition-all duration-300 cursor-pointer focus:outline-none ${
+                        isActive
+                          ? "scale-115 z-20"
+                          : "hover:scale-108 opacity-95 hover:opacity-100 z-10"
+                      }`}
+                      style={{
+                        animation: `waterBobbing 4.5s ease-in-out infinite`,
+                        animationDelay: `${leader.floatDelay}s`,
+                      }}
+                    >
+                      {/* Crystal Sphere Glass Outer Shell */}
+                      <div className={`relative w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full p-[3px] transition-all duration-300 ${
+                        isActive
+                          ? "bg-gradient-to-tr from-[#F6E1C3] via-[#D8B282] to-[#FFFFFF] shadow-[0_0_45px_rgba(216,178,130,0.9),inset_0_0_20px_rgba(255,255,255,0.7)] ring-4 ring-[#D8B282]"
+                          : "bg-gradient-to-tr from-[#38BDF8]/40 via-[#D8B282]/40 to-white/60 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_0_15px_rgba(255,255,255,0.4)] hover:shadow-[0_0_30px_rgba(216,178,130,0.5)]"
+                      }`}>
+                        {/* Leader Avatar Inside Sphere */}
+                        <img
+                          src={leader.avatar}
+                          alt={leader.name}
+                          className="w-full h-full rounded-full object-cover shadow-inner group-hover:brightness-110 transition-all"
+                        />
+
+                        {/* Top Curved Glass Glare Specular Highlight */}
+                        <div className="absolute top-1.5 left-3 right-3 h-5 rounded-t-full bg-gradient-to-b from-white/70 via-white/20 to-transparent pointer-events-none" />
+                        
+                        {/* Bottom Iridescent Caustic Rim */}
+                        <div className="absolute bottom-1 left-3 right-3 h-3 rounded-b-full bg-gradient-to-t from-[#38BDF8]/40 to-transparent pointer-events-none" />
+                      </div>
+
+                      {/* Seafoam Splash Droplets Underneath Sphere */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center justify-center gap-0.5 pointer-events-none">
+                        <span className="w-2 h-2 rounded-full bg-white/70 animate-ping opacity-80" />
+                        <span className="w-3.5 h-1.5 rounded-full bg-[#38BDF8]/60 blur-[1px]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                      </div>
+                    </button>
                   </div>
-                  <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-[#F7D896] px-2.5 py-1 rounded-full border border-amber-400/40">
-                    C-LEVEL CLOSED-DOOR
-                  </span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black mb-4">
-                  {t.p1Title}
-                </h3>
-                <p
-                  className={`text-sm sm:text-base leading-relaxed mb-6 ${
-                    themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
+                );
+              })}
+            </div>
+
+            {/* Pagination / Carousel Indicator Dots Under the Waves */}
+            <div className="relative z-10 flex items-center justify-center gap-2 py-2">
+              {leaders.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  type="button"
+                  onClick={() => selectLeader(dotIdx)}
+                  className={`h-2 transition-all duration-300 rounded-full cursor-pointer ${
+                    activeLeaderIdx === dotIdx
+                      ? "w-8 bg-gradient-to-r from-[#F6E1C3] to-[#D8B282] shadow-[0_0_12px_rgba(216,178,130,0.8)]"
+                      : "w-2 bg-white/30 hover:bg-white/60"
                   }`}
-                >
-                  {t.p1Desc}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6 border-t border-white/10">
-                <div className={`p-4 rounded-xl border ${themeClass("bg-white/5 border-white/10", "bg-white border-amber-900/10 shadow-xs", "bg-zinc-900 border-white/20")}`}>
-                  <p className="text-xs font-bold text-[#F7D896]">{t.p1Item1}</p>
-                  <p className={`text-[11px] mt-0.5 ${themeClass("text-slate-300", "text-slate-500", "text-slate-400")}`}>{t.p1Sub1}</p>
-                </div>
-                <div className={`p-4 rounded-xl border ${themeClass("bg-white/5 border-white/10", "bg-white border-amber-900/10 shadow-xs", "bg-zinc-900 border-white/20")}`}>
-                  <p className="text-xs font-bold text-[#F7D896]">{t.p1Item2}</p>
-                  <p className={`text-[11px] mt-0.5 ${themeClass("text-slate-300", "text-slate-500", "text-slate-400")}`}>{t.p1Sub2}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Pillar 2: Closed-Loop B2B Supply Chain (Col-Span 5) */}
-            <div
-              className={`md:col-span-5 p-8 sm:p-10 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:border-[#F7D896]/50 ${
-                themeClass(
-                  "bg-[#111420]/90 border-white/10 shadow-2xl backdrop-blur-md",
-                  "bg-[#FAF8F5] border-amber-900/15 shadow-xl",
-                  "bg-zinc-950 border-white/20 text-white"
-                )
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/25 border border-[#F7D896] flex items-center justify-center text-[#F7D896] font-bold">
-                      02
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#F7D896]">
-                      {t.p2Tag}
-                    </span>
-                  </div>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black mb-4">
-                  {t.p2Title}
-                </h3>
-                <p
-                  className={`text-sm leading-relaxed mb-6 ${
-                    themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-                  }`}
-                >
-                  {t.p2Desc}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-6 border-t border-white/10">
-                <div className={`p-4 rounded-xl border ${themeClass("bg-white/5 border-white/10", "bg-white border-amber-900/10 shadow-xs", "bg-zinc-900 border-white/20")}`}>
-                  <p className="text-xs font-bold text-[#F7D896]">{t.p2Item1}</p>
-                  <p className={`text-[11px] mt-0.5 ${themeClass("text-slate-300", "text-slate-500", "text-slate-400")}`}>{t.p2Sub1}</p>
-                </div>
-                <div className={`p-4 rounded-xl border ${themeClass("bg-white/5 border-white/10", "bg-white border-amber-900/10 shadow-xs", "bg-zinc-900 border-white/20")}`}>
-                  <p className="text-xs font-bold text-[#F7D896]">{t.p2Item2}</p>
-                  <p className={`text-[11px] mt-0.5 ${themeClass("text-slate-300", "text-slate-500", "text-slate-400")}`}>{t.p2Sub2}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Pillar 3: Titanium NFC VIP Pass (Col-Span 5) */}
-            <div
-              className={`md:col-span-5 p-8 sm:p-10 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:border-[#F7D896]/50 ${
-                themeClass(
-                  "bg-[#111420]/90 border-white/10 shadow-2xl backdrop-blur-md",
-                  "bg-[#FAF8F5] border-amber-900/15 shadow-xl",
-                  "bg-zinc-950 border-white/20 text-white"
-                )
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/25 border border-[#F7D896] flex items-center justify-center text-[#F7D896] font-bold">
-                      03
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#F7D896]">
-                      {t.p3Tag}
-                    </span>
-                  </div>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black mb-4">
-                  {t.p3Title}
-                </h3>
-                <p
-                  className={`text-sm leading-relaxed mb-6 ${
-                    themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-                  }`}
-                >
-                  {t.p3Desc}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-6 border-t border-white/10">
-                <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p3Badge1}
-                </span>
-                <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p3Badge2}
-                </span>
-                <span className={`px-3 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p3Badge3}
-                </span>
-              </div>
-            </div>
-
-            {/* Pillar 4: AI Matchmaking & Encrypted Deal Room (Col-Span 7) */}
-            <div
-              className={`md:col-span-7 p-8 sm:p-10 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:border-[#F7D896]/50 ${
-                themeClass(
-                  "bg-[#111420]/90 border-white/10 shadow-2xl backdrop-blur-md",
-                  "bg-[#FAF8F5] border-amber-900/15 shadow-xl",
-                  "bg-zinc-950 border-white/20 text-white"
-                )
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/25 border border-[#F7D896] flex items-center justify-center text-[#F7D896] font-bold">
-                      04
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#F7D896]">
-                      {t.p4Tag}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/40">
-                    AI POWERED
-                  </span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black mb-4">
-                  {t.p4Title}
-                </h3>
-                <p
-                  className={`text-sm sm:text-base leading-relaxed mb-6 ${
-                    themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-                  }`}
-                >
-                  {t.p4Desc}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-6 border-t border-white/10">
-                <span className={`px-3.5 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p4Badge1}
-                </span>
-                <span className={`px-3.5 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p4Badge2}
-                </span>
-                <span className={`px-3.5 py-1.5 rounded-full border text-xs font-bold ${themeClass("border-[#C5A25D]/50 text-[#F7D896] bg-amber-500/15", "border-[#B18B44]/40 text-[#92400E] bg-[#FEF3C7]/60", "border-white text-white")}`}>
-                  {t.p4Badge3}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Breakthrough 3D Interactive Slide Showcase */}
-          <div className="mt-16">
-            <LandingInteractiveShowcase />
-          </div>
-        </div>
-      </section>
-
-      {/* =======================================
-          SECTION 3.5: H盻� SINH THﾃ！ ﾄ雪ｻ誰G NIﾃ劾 RADAR CONSTELLATION MAP
-          ======================================= */}
-      <section
-        id="radar-ecosystem"
-        className="py-24 md:py-32 relative overflow-hidden transition-colors duration-500 border-t border-amber-500/20 bg-[#030611] text-white ceo-orbit-container"
-      >
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#F7D896]/60 to-transparent z-20" />
-        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#F7D896]/60 to-transparent z-20" />
-
-        {/* HIGH-TECH GOLDEN NEBULA & CONSTELLATION MESH BACKGROUND */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          <img
-            src="/landing/ceo1983-radar-bg.jpg"
-            alt="Radar Nebula Constellation"
-            className="w-full h-full object-cover object-center opacity-45 mix-blend-screen"
-          />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-gradient-to-tr from-amber-500/20 via-yellow-600/15 to-transparent blur-[180px]" />
-          <div className="absolute top-10 left-10 w-[400px] h-[400px] rounded-full bg-amber-400/10 blur-[120px]" />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            
-            {/* Left Column: Heading & Description */}
-            <div className="lg:col-span-4 text-left space-y-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-amber-300 bg-amber-500/25 backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>H盻� SINH THﾃ！ K蘯ｾT N盻蝕 ﾄ雪ｻ誰G NIﾃ劾</span>
-              </div>
-
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.22] text-white drop-shadow-[0_4px_25px_rgba(0,0,0,0.9)] overflow-visible pb-2 pt-0.5">
-                Cﾃｹng nhau t蘯｡o ra <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#FBBF24] inline-block pb-1">
-                  giﾃ｡ tr盻� l盻嬾 hﾆ｡n
-                </span>
-              </h2>
-
-              <p className="text-sm sm:text-base leading-relaxed font-normal text-slate-200">
-                CLB CEO 1983 k蘯ｿt n盻訴 cﾃ｡c Ch盻ｧ t盻議h, Founder, t蘯ｭp ﾄ双ﾃ�n s蘯｣n xu蘯･t, chuyﾃｪn gia c盻� v蘯･n vﾃ� cﾆ｡ quan xﾃｺc ti蘯ｿn thﾆｰﾆ｡ng m蘯｡i trong m盻冲 liﾃｪn minh m盻�, cﾃｹng chia s蘯ｻ tri th盻ｩc, dﾃｲng ti盻］ vﾃ� cﾆ｡ h盻冓 kinh doanh b盻］ v盻ｯng.
-              </p>
-
-              <div className="pt-2 flex items-center gap-4">
-                <a
-                  href="#matrix"
-                  className="inline-flex items-center gap-2 text-sm font-extrabold text-[#F7D896] hover:text-amber-200 transition-colors group cursor-pointer"
-                >
-                  <span>Xem chi ti蘯ｿt liﾃｪn minh</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform text-amber-400" />
-                </a>
-              </div>
-            </div>
-
-            {/* Central Rotating Orbit Radar (Generous & Spaced Geometry) */}
-            <div className="lg:col-span-5 relative flex items-center justify-center min-h-[480px] sm:min-h-[520px]">
-              
-              {/* Concentric Orbit Track Rings with Gold Glow */}
-              <div className="absolute w-[460px] h-[460px] rounded-full border border-amber-400/30 pointer-events-none shadow-[0_0_40px_rgba(245,158,11,0.12)]" />
-              <div className="absolute w-[300px] h-[300px] rounded-full border border-amber-400/40 border-dashed pointer-events-none shadow-[0_0_25px_rgba(245,158,11,0.1)]" />
-              <div className="absolute w-[170px] h-[170px] rounded-full border border-amber-400/50 pointer-events-none" />
-
-              {/* Central Hexagon Core */}
-              <div className="relative z-30 w-22 h-22 sm:w-26 sm:h-26 rounded-3xl flex flex-col items-center justify-center p-2 text-center border-2 border-amber-300 bg-gradient-to-br from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 shadow-[0_0_50px_rgba(247,216,150,0.8)] group hover:scale-110 transition-transform cursor-pointer">
-                <Crown className="w-6 h-6 fill-current mb-0.5 text-slate-950" />
-                <span className="text-[10px] sm:text-[11.5px] font-black leading-tight tracking-tight uppercase text-slate-950">
-                  CLB CEO<br />1983
-                </span>
-                <div className="absolute -inset-2 rounded-3xl border border-amber-400/60 animate-ping pointer-events-none opacity-30" />
-              </div>
-
-              {/* INNER ORBIT RING (Clockwise Rotation, Radius: 150px) */}
-              <div className="absolute inset-0 m-auto w-[300px] h-[300px] rounded-full pointer-events-none ceo-orbit-spin-slow z-20">
-                {[
-                  { name: "Ch盻ｧ t盻議h & Founder", icon: <Users className="w-3.5 h-3.5 text-amber-300" />, x: 0, y: -150 },
-                  { name: "T蘯ｭp ﾄ双ﾃ�n S蘯｣n xu蘯･t", icon: <Building2 className="w-3.5 h-3.5 text-amber-300" />, x: 150, y: 0 },
-                  { name: "ﾄ脆｡n v盻� Xu蘯･t kh蘯ｩu", icon: <Globe2 className="w-3.5 h-3.5 text-amber-300" />, x: 0, y: 150 },
-                  { name: "ﾄ雪ｻ訴 tﾃ｡c Cﾃｴng ngh盻�", icon: <Handshake className="w-3.5 h-3.5 text-amber-300" />, x: -150, y: 0 },
-                ].map((node, i) => (
-                  <div
-                    key={i}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: "50%",
-                      top: "50%",
-                      marginLeft: `${node.x}px`,
-                      marginTop: `${node.y}px`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  >
-                    <div className="pointer-events-auto flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-[11px] sm:text-xs font-bold transition-all cursor-pointer backdrop-blur-2xl bg-[#090E1C]/95 border-amber-400/60 hover:border-amber-300 text-white hover:bg-[#141E34] shadow-[0_6px_30px_rgba(0,0,0,0.95)] hover:scale-110 ceo-orbit-counter-slow">
-                      <span className="p-1 rounded-full bg-amber-500/25 text-amber-300">{node.icon}</span>
-                      <span className="whitespace-nowrap font-medium text-slate-100">{node.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* OUTER ORBIT RING (Counter-Clockwise Rotation, Radius: 230px, Staggered 45ﾂｰ) */}
-              <div className="absolute inset-0 m-auto w-[460px] h-[460px] rounded-full pointer-events-none ceo-orbit-spin-reverse-slow z-10">
-                {[
-                  { name: "Shark Mentors", icon: <GraduationCap className="w-3.5 h-3.5 text-amber-300" />, x: 163, y: -163 },
-                  { name: "Qu盻ｹ ﾄ雪ｺｧu tﾆｰ ﾄ雪ｻ渡g niﾃｪn", icon: <Coins className="w-3.5 h-3.5 text-amber-300" />, x: 163, y: 163 },
-                  { name: "H盻冓 Doanh nhﾃ｢n HanoiBA", icon: <Landmark className="w-3.5 h-3.5 text-amber-300" />, x: -163, y: 163 },
-                  { name: "Xﾃｺc ti蘯ｿn Thﾆｰﾆ｡ng m蘯｡i", icon: <Briefcase className="w-3.5 h-3.5 text-amber-300" />, x: -163, y: -163 },
-                ].map((node, i) => (
-                  <div
-                    key={i}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: "50%",
-                      top: "50%",
-                      marginLeft: `${node.x}px`,
-                      marginTop: `${node.y}px`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  >
-                    <div className="pointer-events-auto flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-[11px] sm:text-xs font-bold transition-all cursor-pointer backdrop-blur-2xl bg-[#070B18]/95 border-amber-400/50 hover:border-amber-300 text-white hover:bg-[#121A2E] shadow-[0_8px_35px_rgba(0,0,0,0.98)] hover:scale-110 ceo-orbit-counter-reverse">
-                      <span className="p-1 rounded-full bg-amber-500/25 text-amber-300">{node.icon}</span>
-                      <span className="whitespace-nowrap font-medium text-slate-100">{node.name}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Column: 3-Tier Slogan in Glowing Bento Cards */}
-            <div className="lg:col-span-3 text-left space-y-3.5">
-              {[
-                { title: "NHI盻U K蘯ｾT N盻蝕 Hﾆ�N", desc: "M蘯｡ng lﾆｰ盻嬖 C-Level ﾄ黛ｻ渡g niﾃｪn quy mﾃｴ & ch蘯･t lﾆｰ盻｣ng" },
-                { title: "NHI盻U Cﾆ� H盻露 Hﾆ�N", desc: "Ti蘯ｿp c蘯ｭn thﾆｰﾆ｡ng v盻･ B2B & chu盻擁 cung 盻ｩng khﾃｩp kﾃｭn" },
-                { title: "NHI盻U GIﾃ� TR盻� Hﾆ�N", desc: "Tﾆｰﾆ｡ng tr盻｣ khﾃｴng v盻･ l盻｣i & vﾆｰﾆ｡n t蘯ｧm th盻� trﾆｰ盻拵g l盻嬾" },
-              ].map((slogan, sIdx) => (
-                <div
-                  key={sIdx}
-                  className="p-4 rounded-2xl border border-amber-500/30 bg-[#090E1C]/85 backdrop-blur-md shadow-lg hover:border-amber-400/60 transition-all"
-                >
-                  <p className="font-mono font-black text-sm sm:text-base tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#FBBF24]">
-                    {slogan.title}
-                  </p>
-                  <p className="text-[11.5px] text-slate-200 mt-1 leading-snug">
-                    {slogan.desc}
-                  </p>
-                </div>
+                  aria-label={`Slide ${dotIdx + 1}`}
+                />
               ))}
             </div>
 
-          </div>
-        </div>
-      </section>
-
-      {/* =======================================
-          SECTION 4: 4 GIﾃ� TR盻� C盻慎 Lﾃ肘 (BENTO LUXURY CARDS)
-          ======================================= */}
-      <section
-        id="core-values"
-        className={`py-24 px-6 md:px-16 border-t relative overflow-hidden transition-colors ${
-          themeClass("bg-[#06080F] border-amber-500/20", "bg-[#FAF8F5] border-slate-200", "bg-black border-white/20")
-        }`}
-      >
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          <div className="absolute top-1/3 left-1/4 w-[650px] h-[380px] bg-amber-500/12 rounded-full blur-[170px]" />
-          <div className="absolute bottom-10 right-1/4 w-[550px] h-[350px] bg-yellow-600/12 rounded-full blur-[160px]" />
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.25)] mb-3">
-              <span>{t.coreTag}</span>
-            </div>
-            <h2
-              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
-                themeClass(
-                  "text-white drop-shadow-[0_4px_25px_rgba(0,0,0,0.9)]",
-                  "text-[#0F172A]",
-                  "text-white"
-                )
-              }`}
-            >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896]">
-                {t.coreTitle}
-              </span>
-            </h2>
-            <p className={`mt-3 text-sm sm:text-base leading-relaxed ${themeClass("text-slate-200", "text-slate-600", "text-slate-200")}`}>
-              Nh盻ｯng giﾃ｡ tr盻� n盻］ t蘯｣ng ﾄ黛ｻ杵h hﾃｬnh tﾆｰ cﾃ｡ch h盻冓 viﾃｪn vﾃ� s盻ｱ phﾃ｡t tri盻ハ b盻］ v盻ｯng c盻ｧa c盻冢g ﾄ黛ｻ渡g CEO 1983.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {[
-              { num: "01", icon: <ShieldCheck className="w-6 h-6 text-[#F7D896]" />, title: t.core1Title, desc: t.core1Desc },
-              { num: "02", icon: <GraduationCap className="w-6 h-6 text-[#F7D896]" />, title: t.core2Title, desc: t.core2Desc },
-              { num: "03", icon: <Sparkles className="w-6 h-6 text-[#F7D896]" />, title: t.core3Title, desc: t.core3Desc },
-              { num: "04", icon: <TrendingUp className="w-6 h-6 text-[#F7D896]" />, title: t.core4Title, desc: t.core4Desc },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className={`p-8 sm:p-10 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 relative overflow-hidden group ${
+            {/* Bottom Leader Profile Showcase Bar (Matching Image 2 Spotlight Bar) */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeLeaderIdx}
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                transition={{ duration: 0.35 }}
+                className={`mt-4 p-5 sm:p-7 rounded-3xl border shadow-2xl relative overflow-hidden z-20 backdrop-blur-2xl ${
                   themeClass(
-                    "bg-[#0E121E]/95 border-white/10 shadow-2xl hover:border-amber-400/60 hover:shadow-[0_10px_35px_rgba(245,158,11,0.25)] backdrop-blur-xl",
-                    "bg-white border-amber-900/15 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-amber-700/30 hover:shadow-xl",
-                    "bg-zinc-950 border-white/20"
+                    "border-[#D8B282]/50 bg-gradient-to-r from-[#07162C]/95 via-[#0A1A36]/90 to-[#040D1D]/95 shadow-[0_20px_60px_rgba(0,0,0,0.9)]",
+                    "border-[#D8B282]/50 bg-white/95 shadow-[0_15px_45px_rgba(140,101,59,0.15)]",
+                    "border-yellow-400 bg-black"
                   )
                 }`}
               >
-                {/* Large Metallic Watermark Number in Top-Right */}
-                <span className="absolute top-6 right-8 text-5xl sm:text-6xl font-black font-mono tracking-tighter text-amber-400/20 group-hover:text-amber-400/40 transition-colors pointer-events-none">
-                  {item.num}
-                </span>
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8B282] to-transparent" />
 
-                <div>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/25 to-yellow-600/15 border border-amber-400/50 text-amber-300 shadow-sm">
-                      {item.icon}
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                  {/* Left: Framed Avatar with Floating Bubbles */}
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-2xl p-[2.5px] bg-gradient-to-tr from-[#F6E1C3] via-[#D8B282] to-[#8C653B] shadow-xl">
+                      <img
+                        src={leaders[activeLeaderIdx].avatar}
+                        alt={leaders[activeLeaderIdx].name}
+                        className="w-full h-full rounded-[14px] object-cover"
+                      />
+                      {/* Floating mini glass bubble decoration */}
+                      <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-gradient-to-tr from-[#38BDF8] to-white/80 p-0.5 shadow-md flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      </div>
+                    </div>
+
+                    <div className="text-left space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-lg sm:text-xl font-black ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
+                          {leaders[activeLeaderIdx].name}
+                        </h3>
+                        <Volume2 className="w-4 h-4 text-[#D8B282] cursor-pointer hover:scale-110 transition-transform" />
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold text-[#D8B282]">
+                        {leaders[activeLeaderIdx].role}
+                      </p>
+                      <p className={`text-[11.5px] font-normal leading-tight ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+                        {leaders[activeLeaderIdx].company}
+                      </p>
                     </div>
                   </div>
 
-                  <h3
-                    className={`text-2xl font-black mb-3 ${
-                      themeClass("text-white", "text-[#0F172A]", "text-white")
-                    }`}
-                  >
-                    {item.title}
-                  </h3>
-                  <p
-                    className={`leading-relaxed text-sm sm:text-base font-normal ${
-                      themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-                    }`}
-                  >
-                    {item.desc}
-                  </p>
-                </div>
+                  {/* Center: Frosted Quote Capsule */}
+                  <div className="flex-1 max-w-xl text-left">
+                    <div
+                      className={`p-3.5 sm:p-4 rounded-2xl border text-xs sm:text-sm leading-relaxed italic backdrop-blur-md ${
+                        themeClass(
+                          "bg-black/40 border-[#D8B282]/30 text-[#F6E1C3]",
+                          "bg-[#FAF8F5] border-[#D8B282]/40 text-[#5A4F43]",
+                          "bg-zinc-900 border-yellow-400 text-yellow-200"
+                        )
+                      }`}
+                    >
+                      "{leaders[activeLeaderIdx].quote}"
+                    </div>
+                  </div>
 
-                <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-bold text-amber-400">
-                  <span className="tracking-wider uppercase font-mono">Tﾃｴn ch盻� Quﾃｽ H盻｣i 1983</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                  {/* Right: Gold Gradient CTA Button */}
+                  <div className="flex flex-col items-center lg:items-end justify-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleJoinClick}
+                      className="px-7 py-3.5 rounded-full font-black text-xs sm:text-sm tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-[0_0_30px_rgba(216,178,130,0.6)] hover:shadow-[0_0_45px_rgba(216,178,130,0.85)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Kết Nối Doanh Nghiệp →
+                    </button>
+                    <span className={`text-[10.5px] font-mono ${themeClass("text-slate-400", "text-slate-600", "text-yellow-200")}`}>
+                      Đầu tàu liên minh doanh nghiệp 1983
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
-      </section>
+        </section>
+      </SectionSlideLeft>
 
       {/* =======================================
-          SECTION 5: EXECUTIVE ACTIVITIES & TOURS
+          SECTION 3: QUẦN THỂ CAO ỐC TĂNG TRƯỞNG (6 STRATEGIC TOWERS WITH DUAL-SIDE SLIDING ANIMATION & RICH SKYLINE ATMOSPHERE)
           ======================================= */}
-      <section
-        id="activities"
-        className={`py-24 px-6 md:px-16 transition-colors border-t relative overflow-hidden ${
-          themeClass("bg-[#06080F] border-white/5", "bg-[#FFFFFF] border-slate-200", "bg-black border-white/20")
-        }`}
-      >
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          <img
-            src="/landing/business-hero-stage.jpg"
-            alt="Activities Backdrop"
-            className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-              isDark ? "opacity-20 mix-blend-screen" : isContrast ? "opacity-10" : "opacity-8 mix-blend-multiply"
-            }`}
-          />
-          <div className="absolute top-1/3 left-0 w-[600px] h-[350px] bg-amber-500/12 rounded-full blur-[150px]" />
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-left mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-              <span>{t.actTag}</span>
-            </div>
-            <h2
-              className={`text-3xl md:text-5xl font-black uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
-                themeClass(
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                  "text-[#0F172A]",
-                  "text-white"
-                )
-              }`}
-            >
-              {t.actTitle}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-            {/* Large Feature */}
-            <div className="group relative h-[480px] rounded-3xl overflow-hidden bg-[#111420] shadow-2xl border border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-[#06080F]/60 to-transparent z-10" />
+      <SectionSlideRight id="timeline">
+        <section
+          className={`py-20 md:py-28 relative overflow-hidden border-t transition-colors duration-500 ${
+            themeClass(
+              "border-[#D8B282]/25 bg-gradient-to-b from-[#020510] via-[#050B1C] to-[#02040A]",
+              "border-[#D8B282]/30 bg-gradient-to-b from-[#FAF7F2] via-[#F3EDE2] to-[#FAF8F5]",
+              "border-yellow-400 bg-black"
+            )
+          }`}
+        >
+          {/* Multi-Layer Atmospheric Background Environments (PHẦN CHÌM - OUTER ATMOSPHERE) */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            {/* Themed Real Skyline Perspective Image Backdrop with Collective United Hands */}
+            <div className="absolute inset-0 w-full h-full">
               <img
-                src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1200&auto=format&fit=crop&q=80"
-                alt="Shark Phu Talkshow"
-                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
+                src="/landing/skyline_united_hands.jpg"
+                alt="Collective United Hands Supporting Skyline"
+                className={`w-full h-full object-cover object-center transition-all duration-700 scale-105 ${
+                  themeMode === "light"
+                    ? "opacity-45 filter brightness-115 contrast-110"
+                    : themeMode === "contrast"
+                    ? "opacity-80 filter contrast-145 brightness-95"
+                    : "opacity-65 filter brightness-100 contrast-125"
+                }`}
               />
-              <div className="absolute bottom-0 left-0 p-8 sm:p-10 z-20 text-left">
-                <span className="px-3 py-1 bg-[#F7D896] text-black text-xs font-black rounded mb-4 inline-block">
-                  {t.act1Tag}
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-snug">
-                  {t.act1Title}
-                </h3>
-                <p className="text-slate-200 text-sm sm:text-base leading-relaxed font-normal">
-                  {t.act1Desc}
-                </p>
-              </div>
             </div>
 
-            {/* 2 Small Features */}
-            <div className="flex flex-col gap-8">
-              <div className="group relative h-[224px] rounded-3xl overflow-hidden bg-[#111420] shadow-xl border border-white/10">
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-[#06080F]/50 to-transparent z-10" />
-                <img
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80"
-                  alt="Flexfit & AMG Site Visit"
-                  className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute bottom-0 left-0 p-6 z-20 text-left">
-                  <span className="text-[11px] font-bold text-[#F7D896] uppercase tracking-wider block mb-1">
-                    {t.act2Tag}
-                  </span>
-                  <h3 className="text-xl font-bold text-white">{t.act2Title}</h3>
-                  <p className="text-xs text-slate-200 mt-1">{t.act2Desc}</p>
-                </div>
-              </div>
-
-              <div className="group relative h-[224px] rounded-3xl overflow-hidden bg-[#111420] shadow-xl border border-white/10">
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-[#06080F]/50 to-transparent z-10" />
-                <img
-                  src="https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80"
-                  alt="Tax and Finance Forum"
-                  className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute bottom-0 left-0 p-6 z-20 text-left">
-                  <span className="text-[11px] font-bold text-[#F7D896] uppercase tracking-wider block mb-1">
-                    {t.act3Tag}
-                  </span>
-                  <h3 className="text-xl font-bold text-white">{t.act3Title}</h3>
-                  <p className="text-xs text-slate-200 mt-1">{t.act3Desc}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =======================================
-          SECTION 6: 4-STEP ADMISSION ROADMAP
-          ======================================= */}
-      <section
-        id="roadmap"
-        className={`py-24 px-6 md:px-16 border-t relative overflow-hidden transition-colors ${
-          themeClass("bg-[#080A12] border-white/5", "bg-[#FAF8F5] border-slate-200", "bg-black border-white/20")
-        }`}
-      >
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-              <span>{t.roadmapTag}</span>
-            </div>
-            <h2
-              className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
+            {/* Outer Atmosphere Gradient Overlays for Seamless Edge Blending */}
+            <div
+              className={`absolute inset-0 transition-colors duration-500 ${
                 themeClass(
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                  "text-[#0F172A]",
-                  "text-white"
+                  "bg-gradient-to-b from-[#020510]/85 via-[#050B1C]/75 to-[#02040A]/95",
+                  "bg-gradient-to-b from-[#FAF7F2]/85 via-[#F3EDE2]/70 to-[#FAF8F5]/90",
+                  "bg-gradient-to-b from-black/90 via-black/80 to-black/95"
+                )
+              }`}
+            />
+
+            {/* Ambient Horizon Light Spotlights & Radial Flares */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[950px] h-[480px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(216,178,130,0.22),transparent_70%)] blur-[95px]" />
+            <div className="absolute bottom-10 left-10 w-[450px] h-[320px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.15),transparent_70%)] blur-[85px]" />
+            <div className="absolute bottom-10 right-10 w-[450px] h-[320px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(216,178,130,0.18),transparent_70%)] blur-[85px]" />
+
+            {/* Outer Architectural Perspective Grid Floor */}
+            <div
+              className="absolute inset-0 opacity-40 pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${themeMode === "light" ? "rgba(140,101,59,0.18)" : "rgba(216,178,130,0.14)"} 1px, transparent 1px), linear-gradient(to bottom, ${themeMode === "light" ? "rgba(140,101,59,0.18)" : "rgba(216,178,130,0.14)"} 1px, transparent 1px)`,
+                backgroundSize: "44px 44px",
+                maskImage: "radial-gradient(ellipse at 50% 60%, black 40%, transparent 80%)",
+                WebkitMaskImage: "radial-gradient(ellipse at 50% 60%, black 40%, transparent 80%)",
+              }}
+            />
+
+            {/* Outer Blueprint Horizon Scan Lines */}
+            <div
+              className={`absolute bottom-0 left-0 right-0 h-48 pointer-events-none ${
+                themeClass(
+                  "bg-gradient-to-t from-[#020510] via-[#020510]/80 to-transparent",
+                  "bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent",
+                  "bg-gradient-to-t from-black via-black/80 to-transparent"
+                )
+              }`}
+            />
+          </div>
+
+          <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Outer Architectural Container (PHẦN NỔI - INNER STAGE CONTAINER) */}
+            <div
+              className={`relative p-5 sm:p-8 lg:p-10 rounded-[36px] border overflow-hidden shadow-[0_25px_90px_rgba(0,0,0,0.85)] ${
+                themeClass(
+                  "border-[#D8B282]/50 bg-[#070D1E]/80 backdrop-blur-2xl shadow-[0_30px_90px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(246,225,195,0.3)]",
+                  "border-[#D8B282]/60 bg-[#FFFDF9]/85 backdrop-blur-2xl shadow-[0_25px_70px_rgba(140,101,59,0.18),inset_0_1px_0_rgba(255,255,255,0.9)]",
+                  "border-yellow-400 bg-black/90 backdrop-blur-2xl shadow-[0_30px_90px_rgba(250,204,21,0.2)]"
                 )
               }`}
             >
-              {t.roadmapTitle}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-            {[
-              { step: "01", icon: <FileCheck className="w-6 h-6 text-[#F7D896]" />, title: t.roadmap1Title, desc: t.roadmap1Desc },
-              { step: "02", icon: <ShieldCheck className="w-6 h-6 text-[#F7D896]" />, title: t.roadmap2Title, desc: t.roadmap2Desc },
-              { step: "03", icon: <Award className="w-6 h-6 text-[#F7D896]" />, title: t.roadmap3Title, desc: t.roadmap3Desc },
-              { step: "04", icon: <Network className="w-6 h-6 text-[#F7D896]" />, title: t.roadmap4Title, desc: t.roadmap4Desc },
-            ].map((st, idx) => (
-              <div
-                key={idx}
-                className={`p-7 rounded-3xl border flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 relative ${
-                  themeClass(
-                    "bg-[#111420]/90 border-white/10 shadow-xl hover:border-amber-400/60 backdrop-blur-md",
-                    "bg-white border-amber-900/15 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:border-amber-700/30",
-                    "bg-zinc-950 border-white/20"
-                  )
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-3xl font-black font-mono text-[#F7D896]/70">{st.step}</span>
-                    <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/30 text-amber-300">
-                      {st.icon}
-                    </div>
-                  </div>
-                  <h3 className={`text-lg font-black mb-2 ${themeClass("text-white", "text-[#0F172A]", "text-white")}`}>
-                    {st.title}
-                  </h3>
-                  <p className={`text-xs leading-relaxed ${themeClass("text-slate-200", "text-[#475569]", "text-slate-300")}`}>
-                    {st.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =======================================
-          SECTION 7: LEADERSHIP & BOARD
-          ======================================= */}
-      <section
-        id="leadership"
-        className={`py-24 px-6 md:px-16 text-center border-t relative overflow-hidden transition-colors ${
-          themeClass("bg-[#06080F] border-white/5", "bg-[#FAF8F5] border-slate-200", "bg-black border-white/20")
-        }`}
-      >
-        <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-          <img
-            src="/landing/business-cta-bg.jpg"
-            alt="Leadership Backdrop"
-            className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-              isDark ? "opacity-25 mix-blend-screen" : isContrast ? "opacity-12" : "opacity-10 mix-blend-multiply"
-            }`}
-          />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[400px] bg-amber-500/12 rounded-full blur-[160px]" />
-        </div>
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-            <span>{t.leadTag}</span>
-          </div>
-          <h2
-            className={`text-3xl md:text-5xl font-black mb-16 uppercase tracking-tight leading-[1.22] overflow-visible pb-2 pt-0.5 ${
-              themeClass(
-                "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                "text-[#0F172A]",
-                "text-white"
-              )
-            }`}
-          >
-            {t.leadTitle}
-          </h2>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 mb-24">
-            {leaders.map((person, idx) => (
-              <div key={idx} className="flex flex-col items-center group text-center">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mb-4 border-2 border-white/10 ring-2 ring-[#F7D896]/50 overflow-hidden group-hover:ring-[#F7D896] transition-all duration-300 shadow-xl">
+              {/* Inner Stage Background: High-Def Theme Skyline + Perspective Floor & Horizon Ray */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                {/* Inner Themed City Skyline Backdrop with Collective United Hands */}
+                <div className="absolute inset-0 w-full h-full">
                   <img
-                    src={person.avatar}
-                    alt={person.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    src="/landing/skyline_united_hands.jpg"
+                    alt="Collective United Hands Supporting Skyline"
+                    className={`w-full h-full object-cover object-bottom transition-all duration-700 ${
+                      themeMode === "light"
+                        ? "opacity-40 filter brightness-110 contrast-110"
+                        : themeMode === "contrast"
+                        ? "opacity-60 filter contrast-145"
+                        : "opacity-50 filter brightness-95 contrast-125"
+                    }`}
                   />
                 </div>
-                <h4
-                  className={`font-black text-base sm:text-lg group-hover:text-[#F7D896] transition-colors leading-snug ${
-                    themeClass("text-white", "text-[#0F172A]", "text-white")
+
+                {/* Stage Ambient Glow & Ground Runway Lighting */}
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-72 ${
+                    themeClass(
+                      "bg-gradient-to-t from-[#09152B]/95 via-[#070D1E]/70 to-transparent",
+                      "bg-gradient-to-t from-[#F5EADB]/90 via-[#FFFDF9]/60 to-transparent",
+                      "bg-gradient-to-t from-black via-black/80 to-transparent"
+                    )
                   }`}
-                >
-                  {person.name}
-                </h4>
-                <p className="text-[#F7D896] text-xs font-bold mt-1 leading-tight">{person.role}</p>
-                <p
-                  className={`text-[11px] mt-1 max-w-[170px] ${
-                    themeClass("text-slate-300", "text-[#64748B]", "text-slate-400")
-                  }`}
-                >
-                  {person.company}
-                </p>
+                />
+
+                {/* 3D Isometric Perspective Stage Grid Floor (Nổi & Chìm) */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-80 pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${themeMode === "light" ? "rgba(140,101,59,0.25)" : "rgba(216,178,130,0.25)"} 1px, transparent 1px), linear-gradient(to bottom, ${themeMode === "light" ? "rgba(140,101,59,0.25)" : "rgba(216,178,130,0.25)"} 1px, transparent 1px)`,
+                    backgroundSize: "36px 36px",
+                    transform: "perspective(450px) rotateX(48deg)",
+                    transformOrigin: "bottom center",
+                    maskImage: "linear-gradient(to top, black 50%, transparent 100%)",
+                    WebkitMaskImage: "linear-gradient(to top, black 50%, transparent 100%)",
+                  }}
+                />
+
+                {/* Center Runway Gold Glow Beam under Towers */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] h-12 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(216,178,130,0.35),transparent_75%)] blur-[25px]" />
               </div>
-            ))}
+
+              {/* Header inside Container */}
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-5 border-b border-[#D8B282]/30">
+                <div className="text-left space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_12px_#34D399]" />
+                    <span className={`text-xs font-mono font-bold uppercase tracking-widest ${themeClass("text-[#D8B282]", "text-[#7C5824] font-black", "text-yellow-400")}`}>
+                      FUTURISTIC SKYLINE ARCHITECTURE • 2021 — 2038+
+                    </span>
+                  </div>
+                  <h2 className={`text-xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight ${themeClass("text-white", "text-[#09152B]", "text-yellow-300")}`}>
+                    Quần Thể Cao Ốc Tăng Trưởng Quy Mô Doanh Nghiệp
+                  </h2>
+                </div>
+
+                {/* TOP-RIGHT TELEMETRY HUD BOX (EXPONENTIAL GROWTH METRIC - KHỚP CHUẨN ẢNH 2) */}
+                <div
+                  className={`p-3.5 sm:p-4 rounded-2xl border-2 backdrop-blur-xl shadow-2xl shrink-0 self-start sm:self-auto relative overflow-hidden flex flex-col gap-2 ${
+                    themeClass(
+                      "border-[#D8B282]/60 bg-[#09152B]/90 shadow-[0_10px_35px_rgba(216,178,130,0.3)]",
+                      "border-[#D8B282] bg-white shadow-md",
+                      "border-yellow-400 bg-black text-yellow-300"
+                    )
+                  }`}
+                >
+                  {/* Top Sci-Fi Corner Brackets */}
+                  <div className="absolute top-1 left-1 w-2 h-2 border-t-2 border-l-2 border-[#D8B282]" />
+                  <div className="absolute top-1 right-1 w-2 h-2 border-t-2 border-r-2 border-[#D8B282]" />
+                  <div className="absolute bottom-1 left-1 w-2 h-2 border-b-2 border-l-2 border-[#D8B282]" />
+                  <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-[#D8B282]" />
+
+                  {/* Header Title */}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[10.5px] font-mono font-black tracking-widest text-[#D8B282] uppercase">
+                      EXPONENTIAL GROWTH METRIC
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  </div>
+
+                  {/* HUD Dashboard Graphic: 50% Circular Radial Meter + Vertical Equalizer Chart */}
+                  <div className="flex items-center gap-4">
+                    {/* Left: 50% Circular Radial Progress Meter */}
+                    <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                      <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
+                        <circle cx="22" cy="22" r="17" fill="none" stroke="rgba(216,178,130,0.2)" strokeWidth="3.5" />
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r="17"
+                          fill="none"
+                          stroke="url(#hudMeterGrad)"
+                          strokeWidth="3.5"
+                          strokeDasharray="106.8"
+                          strokeDashoffset="53.4"
+                          strokeLinecap="round"
+                        />
+                        <defs>
+                          <linearGradient id="hudMeterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#FFF5E6" />
+                            <stop offset="100%" stopColor="#D8B282" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className={`text-xs font-black font-mono ${themeClass("text-white", "text-slate-900", "text-yellow-300")}`}>
+                          50%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right: Vertical Equalizer Bar Chart with 14 Animated Bars */}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-end gap-1 h-10 px-1 border-b border-[#D8B282]/30 pb-0.5">
+                        {[22, 38, 48, 62, 85, 58, 92, 74, 98, 68, 88, 100, 78, 92].map((val, bIdx) => (
+                          <motion.div
+                            key={bIdx}
+                            initial={{ height: 6 }}
+                            animate={{ height: `${val}%` }}
+                            transition={{
+                              duration: 1.2,
+                              repeat: Infinity,
+                              repeatType: "reverse",
+                              delay: bIdx * 0.08,
+                              ease: "easeInOut",
+                            }}
+                            className="w-1.5 rounded-t-xs bg-gradient-to-t from-[#8C653B] via-[#D8B282] to-[#FFF5E6] shadow-[0_0_4px_rgba(216,178,130,0.6)]"
+                          />
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[8px] font-mono text-slate-400 px-0.5">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                        <span>150%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* =========================================================================
+                  6 3D ARCHITECTURAL SKYSCRAPERS (3 CHIỀU CAO - RỘNG - SÂU - KHỚP CHUẨN ẢNH 2)
+                  Mỗi tòa tháp gồm: Mặt tiền 3D, Mặt hông đổ bóng viễn cận (Depth), Mái Penthouse (Width)
+                  ========================================================================= */}
+              <div
+                className="relative z-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 items-end gap-3 sm:gap-4 pt-20 pb-6 min-h-[540px] lg:min-h-[600px] overflow-visible"
+                style={{ perspective: "1200px" }}
+              >
+                {/* Ground Reflective Promenade Baseline */}
+                <div className="absolute bottom-6 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8B282]/60 to-transparent blur-[0.5px] pointer-events-none" />
+
+                {/* ─── TOWER 1 (2021 - THÁP KHỞI NGUYÊN) — SLIDE IN FROM LEFT ─── */}
+                <motion.div
+                  initial={{ x: -280, y: 30, opacity: 0, scale: 0.85, rotateY: 18 }}
+                  whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 130, damping: 15, delay: 0.12 }}
+                  onClick={() => setActiveMilestone(0)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative"
+                >
+                  {/* Floating Badges */}
+                  <div className="mb-3 flex flex-col items-center relative z-20">
+                    <span className={`px-3.5 py-1 rounded-full text-[11px] font-mono font-bold border shadow-md whitespace-nowrap ${
+                      themeClass(
+                        "bg-[#0B152B]/95 text-[#F6E1C3] border-[#D8B282]/70 shadow-[0_0_14px_rgba(216,178,130,0.35)]",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      50+ CEO C-Level
+                    </span>
+                  </div>
+
+                  {/* 3D Isometric Building Model Container */}
+                  <div className="relative w-full max-w-[140px] h-[230px] flex items-end justify-center">
+                    {/* Front Facade + Seamless Depth Wrapper */}
+                    <div className="relative w-full h-full flex items-end">
+                      {/* FRONT FACADE (MẶT TIỀN KÍNH KIẾN TRÚC) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-sm border-2 overflow-hidden transition-all duration-300 z-10 ${
+                          activeMilestone === 0
+                            ? "border-[#F6E1C3] shadow-[0_0_35px_rgba(216,178,130,0.7)] brightness-115 scale-[1.02]"
+                            : "border-[#D8B282]/50 opacity-90 group-hover:opacity-100 group-hover:border-[#D8B282]"
+                        } ${
+                          themeClass(
+                            "bg-gradient-to-t from-[#09152B] via-[#0E2042] to-[#18366E]",
+                            "bg-gradient-to-t from-[#D2BA93] via-[#EDE0CF] to-[#FFFFFF] border-[#8C653B]/70 shadow-lg",
+                            "bg-gradient-to-t from-black to-zinc-900"
+                          )
+                        }`}
+                      >
+                        {/* 3D Roof Penthouse Cap */}
+                        <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#FFF5E6] via-[#D8B282] to-[#8C653B] border-b border-[#D8B282]/40" />
+
+                        {/* Slender Vertical Glass Mullions */}
+                        <div className="absolute inset-y-0 left-1/3 w-[1px] bg-gradient-to-b from-transparent via-[#D8B282]/30 to-transparent" />
+                        <div className="absolute inset-y-0 right-1/3 w-[1px] bg-gradient-to-b from-transparent via-[#D8B282]/30 to-transparent" />
+
+                        {/* Window Matrix Grid */}
+                        <div className="absolute inset-0 pt-3 p-1 grid grid-rows-8 gap-1">
+                          {Array.from({ length: 8 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-around px-1 ${themeClass("border-[#D8B282]/20", "border-[#8C653B]/20", "border-yellow-400/20")}`}>
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/60 shadow-[0_0_3px_#D8B282]", "bg-[#7C5824]/60", "bg-yellow-300")}`} />
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/60 shadow-[0_0_3px_#D8B282]", "bg-[#7C5824]/60", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+                        {/* Ground Entrance Lobby */}
+                        <div className="absolute bottom-0 inset-x-2 h-4 bg-[#D8B282]/30 border-t border-[#D8B282] rounded-t-xs flex items-center justify-center">
+                          <span className="w-2 h-2.5 bg-white/70 rounded-t-xs" />
+                        </div>
+                      </div>
+
+                      {/* RIGHT DEPTH FACET (MẶT HÔNG 3D LIỀN MẠCH - KHÔNG HỞ) */}
+                      <div
+                        className={`w-3.5 sm:w-4 h-[calc(100%-4px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#D8B282]/40 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#060D1E] via-[#040814] to-[#02040A]",
+                            "bg-gradient-to-b from-[#9C7A4E] via-[#7A5B32] to-[#5A3F1E]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-3 p-0.5 grid grid-rows-8 gap-1 opacity-50">
+                          {Array.from({ length: 8 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/25" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Base Plinth */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold border shadow-sm ${
+                      themeClass(
+                        "bg-[#02050E] text-[#D8B282] border-[#D8B282]/60",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      2021 • Khởi Nguyên
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ─── TOWER 2 (2023 - THÁP HỘI TỤ) ─── */}
+                <motion.div
+                  initial={{ x: -200, y: 25, opacity: 0, scale: 0.88, rotateY: 14 }}
+                  whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 135, damping: 15, delay: 0.2 }}
+                  onClick={() => setActiveMilestone(1)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative"
+                >
+                  {/* Floating Pill Badge: Single Clean Metric */}
+                  <div className="mb-3 text-center relative z-20 flex flex-col items-center">
+                    <span className={`px-3.5 py-1 rounded-full text-[11px] font-mono font-bold border-2 shadow-lg block whitespace-nowrap ${
+                      themeClass(
+                        "bg-[#0C1A36]/95 text-[#F6E1C3] border-[#D8B282] shadow-[0_0_15px_rgba(216,178,130,0.5)]",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      1.200 Tỷ VNĐ
+                    </span>
+                  </div>
+
+                  {/* 3D Isometric Building Model Container */}
+                  <div className="relative w-full max-w-[140px] h-[280px] flex items-end justify-center">
+                    <div className="relative w-full h-full flex items-end">
+                      {/* FRONT FACADE (MẶT TIỀN THÁP HỘI TỤ) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-sm border-2 overflow-hidden transition-all duration-300 z-10 ${
+                          activeMilestone === 1
+                            ? "border-[#F6E1C3] shadow-[0_0_40px_rgba(216,178,130,0.7)] brightness-115 scale-[1.02]"
+                            : "border-[#D8B282]/50 opacity-90 group-hover:opacity-100 group-hover:border-[#D8B282]"
+                        } ${
+                          themeClass(
+                            "bg-gradient-to-t from-[#0A1832] via-[#102752] to-[#1C3E7C]",
+                            "bg-gradient-to-t from-[#CDB289] via-[#EADBCA] to-[#FFFFFF] border-[#8C653B]/70 shadow-xl",
+                            "bg-gradient-to-t from-black to-zinc-900"
+                          )
+                        }`}
+                      >
+                        {/* Roof Penthouse Crown */}
+                        <div className="absolute top-0 inset-x-0 h-2.5 bg-gradient-to-r from-[#FFF5E6] via-[#D8B282] to-[#8C653B] border-b border-[#D8B282]/40" />
+
+                        {/* Vertical LED Accent Mullions */}
+                        <div className="absolute inset-y-0 left-1/3 w-[1px] bg-gradient-to-b from-transparent via-[#F6E1C3]/60 to-transparent" />
+                        <div className="absolute inset-y-0 right-1/3 w-[1px] bg-gradient-to-b from-transparent via-[#F6E1C3]/60 to-transparent" />
+
+                        {/* 10-Floor Window Grid */}
+                        <div className="absolute inset-0 pt-3.5 p-1 grid grid-rows-10 gap-1">
+                          {Array.from({ length: 10 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-around px-1 ${themeClass("border-[#D8B282]/25", "border-[#8C653B]/25", "border-yellow-400/25")}`}>
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/70 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/70", "bg-yellow-300")}`} />
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/70 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/70", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Ground Grand Portal */}
+                        <div className="absolute bottom-0 inset-x-2 h-5 bg-[#D8B282]/35 border-t border-[#D8B282] rounded-t-xs flex items-center justify-center">
+                          <span className="w-2.5 h-3 bg-white/80 rounded-t-xs shadow-[0_0_6px_#FFF]" />
+                        </div>
+                      </div>
+
+                      {/* RIGHT DEPTH FACET (MẶT HÔNG 3D) */}
+                      <div
+                        className={`w-3.5 sm:w-4.5 h-[calc(100%-5px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#D8B282]/45 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#081224] via-[#050C1A] to-[#02050E]",
+                            "bg-gradient-to-b from-[#A58252] via-[#856338] to-[#5C4120]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-3.5 p-0.5 grid grid-rows-10 gap-1 opacity-55">
+                          {Array.from({ length: 10 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/30" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Base Label */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold border shadow-sm ${
+                      themeClass(
+                        "bg-[#09152B]/90 text-[#F6E1C3] border-[#D8B282]/50 shadow-md",
+                        "bg-white text-[#09152B] border-[#D8B282] shadow-sm font-bold",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      2023 • Tháp Hội Tụ
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ─── TOWER 3 (2024 - THÁP BẮC - NAM - MÁI DỐC KIẾN TRÚC KÍNH) ─── */}
+                <motion.div
+                  initial={{ x: -120, y: 20, opacity: 0, scale: 0.9, rotateY: 10 }}
+                  whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 140, damping: 15, delay: 0.28 }}
+                  onClick={() => setActiveMilestone(2)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative"
+                >
+                  {/* Floating Pill Badge: Single Clean Metric */}
+                  <div className="mb-3 text-center relative z-20 flex flex-col items-center">
+                    <span className={`px-3.5 py-1 rounded-full text-[11px] font-mono font-bold border-2 shadow-lg block whitespace-nowrap ${
+                      themeClass(
+                        "bg-[#0C1A36]/95 text-[#F6E1C3] border-[#D8B282] shadow-[0_0_15px_rgba(216,178,130,0.5)]",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      500+ Doanh Nghiệp
+                    </span>
+                  </div>
+
+                  {/* 3D Isometric Building Model Container */}
+                  <div className="relative w-full max-w-[140px] h-[340px] flex items-end justify-center">
+                    <div className="relative w-full h-full flex items-end">
+                      {/* FRONT FACADE (MẶT TIỀN THÁP BẮC - NAM) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-sm border-2 overflow-hidden transition-all duration-300 z-10 ${
+                          activeMilestone === 2
+                            ? "border-[#F6E1C3] shadow-[0_0_40px_rgba(216,178,130,0.7)] brightness-115 scale-[1.02]"
+                            : "border-[#D8B282]/50 opacity-90 group-hover:opacity-100 group-hover:border-[#D8B282]"
+                        } ${
+                          themeClass(
+                            "bg-gradient-to-t from-[#091630] via-[#0E244E] to-[#183A78]",
+                            "bg-gradient-to-t from-[#C5A77C] via-[#E8D4BF] to-[#FFFFFF] border-[#8C653B]/70 shadow-xl",
+                            "bg-gradient-to-t from-black to-zinc-900"
+                          )
+                        }`}
+                      >
+                        {/* Sloped Penthouse Glass Roof */}
+                        <div
+                          className="absolute top-0 inset-x-0 h-6 bg-gradient-to-r from-[#FFF5E6] via-[#D8B282] to-[#8C653B] border-b border-[#D8B282]/40"
+                          style={{ clipPath: "polygon(0 40%, 100% 0, 100% 100%, 0 100%)" }}
+                        />
+
+                        {/* 12-Floor Window Grid */}
+                        <div className="absolute inset-0 pt-7 p-1 grid grid-rows-12 gap-0.5">
+                          {Array.from({ length: 12 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-around px-1 ${themeClass("border-[#D8B282]/25", "border-[#8C653B]/25", "border-yellow-400/25")}`}>
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/70 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/70", "bg-yellow-300")}`} />
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/70 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/70", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Ground Canopy */}
+                        <div className="absolute bottom-0 inset-x-1.5 h-5 bg-[#D8B282]/35 border-t border-[#D8B282] rounded-t-xs" />
+                      </div>
+
+                      {/* RIGHT DEPTH FACET (MẶT HÔNG 3D MÁI DỐC) */}
+                      <div
+                        className={`w-3.5 sm:w-4.5 h-[calc(100%-6px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#D8B282]/45 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#081224] via-[#050C1A] to-[#02050E]",
+                            "bg-gradient-to-b from-[#A58252] via-[#856338] to-[#5C4120]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-7 p-0.5 grid grid-rows-12 gap-0.5 opacity-55">
+                          {Array.from({ length: 12 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/30" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Base Label */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold border shadow-sm ${
+                      themeClass(
+                        "bg-[#09152B]/90 text-[#F6E1C3] border-[#D8B282]/50 shadow-md",
+                        "bg-white text-[#09152B] border-[#D8B282] shadow-sm font-bold",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      2024 • Tháp Bắc - Nam
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ─── TOWER 4 (2025 - ĐẠI THÁP BỨT PHÁ - DUBAI BURJ SPIRE - TRỌNG TÂM KIẾN TRÚC) ─── */}
+                <motion.div
+                  initial={{ y: 220, opacity: 0, scale: 0.85 }}
+                  whileInView={{ y: 0, opacity: 1, scale: 1 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 150, damping: 16, delay: 0.1 }}
+                  onClick={() => setActiveMilestone(3)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative z-30"
+                >
+                  {/* DAZZLING STARBURST SUN FLARE BEACON ON TOP OF BURJ KHALIFA SPIRE */}
+                  <div className="relative mb-3 flex flex-col items-center">
+                    {/* Pulsing Sun Halo & Radial Rays */}
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-36 h-36 pointer-events-none flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-[radial-gradient(ellipse_at_center,#FFFFFF_0%,#F6E1C3_40%,#D8B282_70%,transparent_100%)] blur-[10px] animate-pulse" />
+                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,245,230,0.9),transparent_65%)] blur-[16px]" />
+                    </div>
+
+                    {/* SVG 8-Point Starburst Sunflare */}
+                    <div className="w-14 h-14 relative z-20 drop-shadow-[0_0_25px_rgba(255,245,230,1)] animate-spin-slow" style={{ animationDuration: "18s" }}>
+                      <svg viewBox="0 0 100 100" fill="none" className="w-full h-full">
+                        <polygon points="50,0 54,42 96,46 56,54 50,100 44,54 4,46 46,42" fill="url(#sunburstGradSpire)" />
+                        <polygon points="18,18 45,45 82,18 55,55 82,82 55,55 18,82 45,45" fill="url(#sunburstGradSpire)" opacity="0.85" />
+                        <circle cx="50" cy="50" r="9" fill="#FFFFFF" />
+                        <defs>
+                          <linearGradient id="sunburstGradSpire" x1="0" y1="0" x2="100" y2="100">
+                            <stop offset="0%" stopColor="#FFFFFF" />
+                            <stop offset="40%" stopColor="#FFF5E6" />
+                            <stop offset="70%" stopColor="#F6E1C3" />
+                            <stop offset="100%" stopColor="#D8B282" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+
+                    {/* Milestone Badge: >5.000 Tỷ VNĐ */}
+                    <span className="px-4 py-1 rounded-full text-[11.5px] font-mono font-bold bg-gradient-to-r from-[#FFF5E6] via-[#F6E1C3] to-[#D8B282] text-slate-950 shadow-[0_0_20px_rgba(216,178,130,0.9)] whitespace-nowrap -mt-1 relative z-20">
+                      &gt;5.000 Tỷ VNĐ
+                    </span>
+                  </div>
+
+                  {/* 3D DUBAI BURJ KHALIFA TOWERING STEPPED SPIRE ARCHITECTURE */}
+                  <div className="relative w-full max-w-[150px] h-[450px] flex items-end justify-center">
+                    {/* Top Needle Spire Mast & Aircraft Warning Beacon */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center z-30 pointer-events-none">
+                      <span className="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_10px_#EF4444] animate-ping mb-0.5" />
+                      <div className="w-[2.5px] h-10 bg-gradient-to-b from-white via-[#F6E1C3] to-[#D8B282] shadow-[0_0_6px_#FFF]" />
+                      <div className="w-3.5 h-3 bg-gradient-to-r from-[#FFF5E6] to-[#8C653B] rounded-t-xs border-t border-white" />
+                      <div className="w-6 h-3 bg-gradient-to-r from-[#FFF5E6] to-[#8C653B] rounded-t-xs border-t border-white shadow-sm" />
+                    </div>
+
+                    {/* Stepped Building Prism Facade */}
+                    <div className="relative w-full h-[395px] flex items-end">
+                      {/* FRONT FACADE (GIẬT CẤP ĐA TẦNG KIỂU DUBAI BURJ SPIRE) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-md border-2 overflow-hidden transition-all duration-300 z-10 shadow-[0_0_50px_rgba(216,178,130,0.7)] scale-[1.03] ${
+                          themeClass(
+                            "border-[#F6E1C3] bg-gradient-to-t from-[#0B1A38] via-[#122B5C] to-[#1E428C]",
+                            "border-2 border-[#7C5824] bg-gradient-to-t from-[#B89462] via-[#E2CBAD] to-[#FFFFFF] shadow-[0_12px_35px_rgba(140,101,59,0.35)]",
+                            "border-yellow-300 bg-gradient-to-t from-black via-zinc-900 to-yellow-950/40"
+                          )
+                        }`}
+                      >
+                        {/* Stepped Setback Terraces */}
+                        <div className="absolute top-6 inset-x-0 h-2 border-b border-[#F6E1C3]/80 bg-gradient-to-r from-transparent via-[#F6E1C3]/30 to-transparent" />
+                        <div className="absolute top-18 inset-x-0 h-2 border-b border-[#F6E1C3]/80 bg-gradient-to-r from-transparent via-[#F6E1C3]/30 to-transparent" />
+                        <div className="absolute top-32 inset-x-0 h-2 border-b border-[#F6E1C3]/80 bg-gradient-to-r from-transparent via-[#F6E1C3]/30 to-transparent" />
+
+                        {/* Central Illuminated LED Column */}
+                        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-3 bg-gradient-to-r from-transparent via-[#FFF5E6]/70 to-transparent flex flex-col justify-around items-center z-10 pointer-events-none">
+                          <span className="w-1.5 h-3 rounded-full bg-[#FFFFFF] shadow-[0_0_10px_#FFF] animate-pulse" />
+                          <span className="w-1.5 h-3 rounded-full bg-[#F6E1C3] shadow-[0_0_8px_#F6E1C3] animate-pulse" />
+                          <span className="w-1.5 h-3 rounded-full bg-[#D8B282] shadow-[0_0_8px_#D8B282] animate-pulse" />
+                          <span className="w-1.5 h-3 rounded-full bg-[#FFFFFF] shadow-[0_0_10px_#FFF] animate-pulse" />
+                        </div>
+
+                        {/* 16-Floor Window Matrix Grid */}
+                        <div className="absolute inset-0 pt-3 p-1 grid grid-rows-16 gap-0.5">
+                          {Array.from({ length: 16 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-between px-1.5 ${themeClass("border-[#D8B282]/35", "border-[#8C653B]/35", "border-yellow-400/35")}`}>
+                              <span className={`w-3 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/90 shadow-[0_0_5px_#D8B282]", "bg-[#7C5824]/90", "bg-yellow-300")}`} />
+                              <span className={`w-3 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/90 shadow-[0_0_5px_#D8B282]", "bg-[#7C5824]/90", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Grand High-Rise Base Portal */}
+                        <div className="absolute bottom-0 inset-x-2 h-6 bg-[#F6E1C3]/40 border-t-2 border-[#F6E1C3] rounded-t-xs flex items-center justify-center z-10">
+                          <span className="w-3.5 h-4 bg-white rounded-t-xs shadow-[0_0_8px_#FFF]" />
+                        </div>
+                      </div>
+
+                      {/* RIGHT DEPTH FACET (MẶT HÔNG 3D LIỀN KHÍT) */}
+                      <div
+                        className={`w-4 sm:w-5 h-[calc(100%-6px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#F6E1C3]/60 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#0B1832] via-[#060E1E] to-[#02050E]",
+                            "bg-gradient-to-b from-[#9E7848] via-[#7D5B30] to-[#543A1C]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-3 p-0.5 grid grid-rows-16 gap-0.5 opacity-65">
+                          {Array.from({ length: 16 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/35" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Highlighted Gold Base Label */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className="px-3.5 py-1 rounded-md text-[11px] font-mono font-bold bg-gradient-to-r from-[#FFF5E6] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-[0_0_18px_rgba(216,178,130,0.85)] whitespace-nowrap">
+                      2025 • Đại Tháp Bứt Phá
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ─── TOWER 5 (2026-2028 - THÁP VƯƠN TẦM) ─── */}
+                <motion.div
+                  initial={{ x: 180, y: 20, opacity: 0, scale: 0.9, rotateY: -12 }}
+                  whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 140, damping: 15, delay: 0.28 }}
+                  onClick={() => setActiveMilestone(4)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative"
+                >
+                  {/* Floating Pill Badge: Single Clean Metric */}
+                  <div className="mb-3 text-center relative z-20 flex flex-col items-center">
+                    <span className={`px-3.5 py-1 rounded-full text-[11px] font-mono font-bold border-2 shadow-lg block whitespace-nowrap ${
+                      themeClass(
+                        "bg-[#0C1A36]/95 text-[#F6E1C3] border-[#D8B282] shadow-[0_0_15px_rgba(216,178,130,0.5)]",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      1.000+ Hội Viên
+                    </span>
+                  </div>
+
+                  {/* 3D Isometric Building Model Container */}
+                  <div className="relative w-full max-w-[140px] h-[360px] flex items-end justify-center">
+                    <div className="relative w-full h-full flex items-end">
+                      {/* FRONT FACADE (MẶT TIỀN THÁP VƯƠN TẦM) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-sm border-2 overflow-hidden transition-all duration-300 z-10 ${
+                          activeMilestone === 4
+                            ? "border-[#F6E1C3] shadow-[0_0_40px_rgba(216,178,130,0.7)] brightness-115 scale-[1.02]"
+                            : "border-[#D8B282]/50 opacity-90 group-hover:opacity-100 group-hover:border-[#D8B282]"
+                        } ${
+                          themeClass(
+                            "bg-gradient-to-t from-[#081328] via-[#0E2248] to-[#18366E]",
+                            "bg-gradient-to-t from-[#C5A77C] via-[#E8D4BF] to-[#FFFFFF] border-[#8C653B]/70 shadow-xl",
+                            "bg-gradient-to-t from-black to-zinc-900"
+                          )
+                        }`}
+                      >
+                        {/* Crown Parapet Deck */}
+                        <div className="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-[#FFF5E6] via-[#D8B282] to-[#8C653B] border-b border-[#D8B282]/40" />
+
+                        {/* 13-Floor Window Grid */}
+                        <div className="absolute inset-0 pt-4 p-1 grid grid-rows-13 gap-0.5">
+                          {Array.from({ length: 13 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-around px-1 ${themeClass("border-[#D8B282]/25", "border-[#8C653B]/25", "border-yellow-400/25")}`}>
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/65 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/65", "bg-yellow-300")}`} />
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/65 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/65", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Ground Entrance */}
+                        <div className="absolute bottom-0 inset-x-2 h-5 bg-[#D8B282]/35 border-t border-[#D8B282] rounded-t-xs" />
+                      </div>
+
+                      {/* RIGHT DEPTH FACET (MẶT HÔNG 3D) */}
+                      <div
+                        className={`w-3.5 sm:w-4.5 h-[calc(100%-5px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#D8B282]/45 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#081224] via-[#050C1A] to-[#02050E]",
+                            "bg-gradient-to-b from-[#A58252] via-[#856338] to-[#5C4120]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-4 p-0.5 grid grid-rows-13 gap-0.5 opacity-55">
+                          {Array.from({ length: 13 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/30" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Base Label */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold border shadow-sm ${
+                      themeClass(
+                        "bg-[#09152B]/90 text-[#F6E1C3] border-[#D8B282]/50 shadow-md",
+                        "bg-white text-[#09152B] border-[#D8B282] shadow-sm font-bold",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      2026 • Tháp Vươn Tầm
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ─── TOWER 6 (2030+ - ĐẠI THÁP KỲ LÂN) — SLIDE IN FROM RIGHT ─── */}
+                <motion.div
+                  initial={{ x: 280, y: 30, opacity: 0, scale: 0.85, rotateY: -18 }}
+                  whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
+                  viewport={{ once: false, amount: 0.2 }}
+                  transition={{ type: "spring", stiffness: 130, damping: 15, delay: 0.38 }}
+                  onClick={() => setActiveMilestone(5)}
+                  className="flex flex-col items-center group cursor-pointer w-full relative"
+                >
+                  {/* Floating Crown Badge */}
+                  <div className="mb-3 text-center relative z-20 flex flex-col items-center">
+                    <span className={`px-3.5 py-1 rounded-full text-[11px] font-mono font-bold border shadow-md block whitespace-nowrap ${
+                      themeClass(
+                        "bg-gradient-to-r from-[#0C1A36] to-[#060D1E] text-[#F6E1C3] border-[#D8B282] shadow-[0_0_12px_rgba(216,178,130,0.5)]",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      10.000+ Tỷ VNĐ
+                    </span>
+                  </div>
+
+                  {/* 3D Isometric Building Model Container */}
+                  <div className="relative w-full max-w-[140px] h-[390px] flex items-end justify-center">
+                    <div className="relative w-full h-full flex items-end">
+                      {/* FRONT FACADE (MẶT TIỀN 16 TẦNG) */}
+                      <div
+                        className={`relative flex-1 h-full rounded-t-sm border-2 overflow-hidden transition-all duration-300 z-10 ${
+                          activeMilestone === 5
+                            ? "border-[#F6E1C3] shadow-[0_0_40px_rgba(216,178,130,0.7)] brightness-115 scale-[1.02]"
+                            : "border-[#D8B282]/50 opacity-90 group-hover:opacity-100 group-hover:border-[#D8B282]"
+                        } ${
+                          themeClass(
+                            "bg-gradient-to-t from-[#081328] via-[#0E2248] to-[#18366E]",
+                            "bg-gradient-to-t from-[#CDB289] via-[#EADBCA] to-[#FFFFFF] border-[#8C653B]/70 shadow-xl",
+                            "bg-gradient-to-t from-black to-zinc-900"
+                          )
+                        }`}
+                      >
+                        {/* Pinnacle Crystal Crown */}
+                        <div className="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-[#FFFFFF] via-[#D8B282] to-[#8C653B] border-b border-[#D8B282]/40" />
+
+                        {/* 16-Floor Window Matrix Grid */}
+                        <div className="absolute inset-0 pt-4 p-1 grid grid-rows-16 gap-0.5">
+                          {Array.from({ length: 16 }).map((_, f) => (
+                            <div key={f} className={`border-b flex items-center justify-around px-1 ${themeClass("border-[#D8B282]/25", "border-[#8C653B]/25", "border-yellow-400/25")}`}>
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/65 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/65", "bg-yellow-300")}`} />
+                              <span className={`w-2.5 h-1.5 rounded-xs ${themeClass("bg-[#F6E1C3]/65 shadow-[0_0_4px_#D8B282]", "bg-[#7C5824]/65", "bg-yellow-300")}`} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* RIGHT DEPTH FACET */}
+                      <div
+                        className={`w-3.5 sm:w-4.5 h-[calc(100%-5px)] mb-0.5 rounded-tr-xs border-y-2 border-r-2 border-[#D8B282]/45 z-0 ${
+                          themeClass(
+                            "bg-gradient-to-b from-[#081224] via-[#050C1A] to-[#02050E]",
+                            "bg-gradient-to-b from-[#A58252] via-[#856338] to-[#5C4120]",
+                            "bg-black"
+                          )
+                        }`}
+                      >
+                        <div className="h-full pt-4 p-0.5 grid grid-rows-16 gap-0.5 opacity-55">
+                          {Array.from({ length: 16 }).map((_, f) => (
+                            <div key={f} className="border-b border-[#D8B282]/30" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Base Plinth with "2030+" & Label */}
+                  <div className="w-full mt-3 flex flex-col items-center">
+                    <span className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold border shadow-sm ${
+                      themeClass(
+                        "bg-[#02050E] text-[#D8B282] border-[#D8B282]/60",
+                        "bg-white text-[#8C653B] border-[#D8B282] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400"
+                      )
+                    }`}>
+                      2038+ • Tháp Kỳ Lân
+                    </span>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* BOTTOM SPOTLIGHT GLASS CARD (INTERACTIVE DETAIL PANEL) */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeMilestone}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.35 }}
+                  className={`mt-6 p-6 sm:p-8 rounded-3xl border relative overflow-hidden shadow-2xl backdrop-blur-2xl ${
+                    themeClass(
+                      "border-[#D8B282]/50 bg-gradient-to-r from-[#071328]/95 via-[#0A1A36]/90 to-[#040D1D]/95 shadow-[0_20px_60px_rgba(0,0,0,0.9)]",
+                      "border-[#D8B282]/60 bg-white shadow-[0_15px_45px_rgba(140,101,59,0.15)]",
+                      "border-yellow-400 bg-black"
+                    )
+                  }`}
+                >
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8B282] to-transparent" />
+
+                  <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                    {/* Left Details */}
+                    <div className="space-y-2 text-left flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-3 py-0.5 rounded-full text-xs font-mono font-black border shadow-sm ${
+                          themeClass(
+                            "bg-[#D8B282]/25 text-[#F6E1C3] border-[#D8B282]/50",
+                            "bg-[#181512] text-[#F6E1C3] border-[#D8B282]",
+                            "bg-yellow-400 text-black border-yellow-300"
+                          )
+                        }`}>
+                          {skyscrapers[activeMilestone].year} • {skyscrapers[activeMilestone].tag}
+                        </span>
+                        <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded border ${
+                          themeClass(
+                            "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+                            "text-emerald-800 bg-emerald-100/90 border-emerald-400 font-extrabold",
+                            "text-yellow-300 bg-yellow-400/20 border-yellow-400"
+                          )
+                        }`}>
+                          {skyscrapers[activeMilestone].subMetric}
+                        </span>
+                      </div>
+
+                      <h3 className={`text-xl sm:text-2xl font-black ${themeClass("text-white", "text-[#09152B]", "text-yellow-300")}`}>
+                        {skyscrapers[activeMilestone].name} — Quy mô: {skyscrapers[activeMilestone].metric}
+                      </h3>
+
+                      <p className={`text-xs sm:text-sm leading-relaxed max-w-3xl ${themeClass("text-slate-300", "text-[#1E293B] font-medium", "text-yellow-100")}`}>
+                        {skyscrapers[activeMilestone].desc}
+                      </p>
+                    </div>
+
+                    {/* Right 3D Chart Pedestal & CTA Button */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="w-16 h-14 relative hidden sm:block">
+                        <svg viewBox="0 0 64 56" fill="none" className="w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
+                          <polygon points="32,4 58,18 32,32 6,18" fill="url(#chartPlinthTop)" />
+                          <polygon points="6,18 32,32 32,52 6,38" fill="url(#chartPlinthLeft)" />
+                          <polygon points="58,18 32,32 32,52 58,38" fill="url(#chartPlinthRight)" />
+                          <rect x="18" y="14" width="5" height="12" rx="1" fill="#38BDF8" />
+                          <rect x="26" y="10" width="5" height="16" rx="1" fill="#818CF8" />
+                          <rect x="34" y="6" width="5" height="20" rx="1" fill="#F6E1C3" />
+                          <defs>
+                            <linearGradient id="chartPlinthTop" x1="6" y1="4" x2="58" y2="32">
+                              <stop stopColor="#38BDF8" stopOpacity="0.8" />
+                              <stop offset="1" stopColor="#D8B282" stopOpacity="0.9" />
+                            </linearGradient>
+                            <linearGradient id="chartPlinthLeft" x1="6" y1="18" x2="32" y2="52">
+                              <stop stopColor="#0B1A38" />
+                              <stop offset="1" stopColor="#030816" />
+                            </linearGradient>
+                            <linearGradient id="chartPlinthRight" x1="58" y1="18" x2="32" y2="52">
+                              <stop stopColor="#1E3A6E" />
+                              <stop offset="1" stopColor="#0B1A38" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleJoinClick}
+                        className="px-7 py-3.5 rounded-full font-black text-xs sm:text-sm tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-[0_0_30px_rgba(216,178,130,0.6)] hover:shadow-[0_0_45px_rgba(216,178,130,0.85)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      >
+                        Gia Nhập Lộ Trình →
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Bottom Tab Capsule: "Lê Hoàng Long • Ban Lãnh Đạo CLB CEO 1983" */}
+              <div className="mt-4 flex justify-center">
+                <div
+                  className={`px-8 py-1.5 rounded-t-2xl border-t border-x text-xs font-mono font-bold tracking-widest uppercase shadow-md ${
+                    themeClass("border-[#D8B282]/40 bg-[#0A152D] text-[#F6E1C3]", "border-[#D8B282]/50 bg-white text-[#8C653B]", "border-yellow-400 bg-black text-yellow-300")
+                  }`}
+                >
+                  Lê Hoàng Long • Ban Lãnh Đạo CLB CEO 1983
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </SectionSlideRight>
+
+      {/* =======================================
+          SECTION 4: PLANETARY ECOSYSTEM (CONSTELLATION ORBIT WITH 3D CUT-CRYSTAL DIAMOND CENTERPIECE - EXACT MATCH TO IMAGE 2)
+          ======================================= */}
+      <SectionFlip3D id="ecosystem">
+        <section
+          className={`py-20 md:py-28 relative overflow-hidden border-t transition-colors duration-500 ${
+            themeClass(
+              "border-[#D8B282]/25 bg-gradient-to-b from-[#040815] via-[#02040A] to-[#040815]",
+              "border-[#D8B282]/30 bg-gradient-to-b from-[#FAF8F5] via-[#F4EFE6] to-[#FAF8F5]",
+              "border-yellow-400 bg-black"
+            )
+          }`}
+        >
+          {/* Luxury Gold Silk Aurora GIF Overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-25 mix-blend-screen"
+            style={{
+              backgroundImage: "url('/landing/ceo1983-gold-aurora.gif')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+              {/* Left Column: Heading & Description (Exact Match Image 2) */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: false, amount: 0.2 }}
+                transition={{ duration: 0.6 }}
+                className="lg:col-span-4 text-left space-y-4"
+              >
+                <span className={`text-[11px] font-mono font-bold tracking-[0.2em] uppercase ${themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-400")}`}>
+                  {t.ecoTag}
+                </span>
+
+                <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase leading-[1.12] tracking-tight ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
+                  CÙNG NHAU TẠO RA <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]">
+                    GIÁ TRỊ LỚN HƠN
+                  </span>
+                </h2>
+
+                <p className={`text-sm sm:text-base leading-relaxed font-normal ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+                  {t.ecoDesc}
+                </p>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold border transition-all cursor-pointer shadow-lg group ${
+                      themeClass(
+                        "bg-[#0B152B] text-[#F6E1C3] border-[#D8B282]/50 hover:border-[#D8B282] hover:bg-[#122142]",
+                        "bg-white text-[#181512] border-[#D8B282]/60 hover:bg-[#FAF6F0] shadow-sm",
+                        "bg-black text-yellow-300 border-yellow-400 hover:bg-yellow-400/20"
+                      )
+                    }`}
+                  >
+                    <span>{t.ecoBtn}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform text-[#D8B282]" />
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Center Column: 3D Faceted Crystal Gemstone Diamond with 8 Equidistant Satellites */}
+              <div
+                className="lg:col-span-5 flex justify-center items-center relative py-6"
+                onMouseEnter={() => setOrbitPaused(true)}
+                onMouseLeave={() => setOrbitPaused(false)}
+              >
+                <div className="absolute w-80 h-80 rounded-full bg-[#D8B282]/20 blur-[120px] pointer-events-none" />
+
+                <div className="relative w-[360px] h-[360px] sm:w-[440px] sm:h-[440px] flex items-center justify-center">
+                  {/* 3 Concentric Gold Luminous Orbit Rings with Particle Streaks */}
+                  <div className={`absolute inset-0 rounded-full border border-dashed ${themeClass("border-[#D8B282]/25", "border-[#D8B282]/35", "border-yellow-400/35")}`} />
+                  <div className={`absolute inset-10 rounded-full border ${themeClass("border-[#D8B282]/35", "border-[#D8B282]/45", "border-yellow-400/45")}`} />
+                  <div className={`absolute inset-20 rounded-full border border-dotted ${themeClass("border-[#D8B282]/45", "border-[#D8B282]/55", "border-yellow-400/55")}`} />
+
+                  {/* 8 Equidistant Rotating Satellites (360° / 8 = 45° Symmetrical Distribution) */}
+                  <div className={`absolute inset-0 rounded-full animate-orbit-spin ${orbitPaused ? "paused-spin" : ""}`}>
+                    {constellationSatellites.map((sat, sIdx) => {
+                      const radius = 185;
+                      const angle = (sIdx * 360) / constellationSatellites.length;
+                      const rad = (angle * Math.PI) / 180;
+                      const x = Math.cos(rad) * radius;
+                      const y = Math.sin(rad) * radius;
+                      const isSelected = activeSatellite === sIdx || (activeSatellite === null && sIdx === 2); // Doanh nghiệp active by default
+
+                      return (
+                        <div
+                          key={sat.id}
+                          onClick={() => setActiveSatellite(sIdx)}
+                          className="absolute cursor-pointer -translate-x-1/2 -translate-y-1/2 group"
+                          style={{
+                            left: `calc(50% + ${x}px)`,
+                            top: `calc(50% + ${y}px)`,
+                          }}
+                        >
+                          <div className={`animate-orbit-reverse ${orbitPaused ? "paused-spin" : ""}`}>
+                            <div
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 ${
+                                isSelected
+                                  ? "bg-gradient-to-r from-[#18130B] via-[#2A1F10] to-[#18130B] text-[#F6E1C3] border-[#D8B282] ring-2 ring-[#D8B282]/80 shadow-[0_0_25px_rgba(216,178,130,0.9)] scale-110"
+                                  : themeClass(
+                                      "bg-[#090F20]/95 text-white border-[#D8B282]/50 hover:border-[#F6E1C3] shadow-lg",
+                                      "bg-white/95 text-[#181512] border-[#D8B282]/60 hover:border-[#8C653B] shadow-md",
+                                      "bg-black text-yellow-200 border-yellow-400"
+                                    )
+                              }`}
+                            >
+                              <span className={`p-1 rounded-full ${isSelected ? "bg-[#D8B282] text-slate-950" : "bg-[#D8B282]/20 text-[#D8B282]"}`}>
+                                {sat.icon}
+                              </span>
+                              <span className="text-xs font-bold whitespace-nowrap">{sat.name}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* CENTRAL 3D FACETED CRYSTAL GEMSTONE DIAMOND (EXACT MATCH IMAGE 2) */}
+                  <div className="relative z-20 w-32 h-32 sm:w-36 sm:h-36 rounded-full p-2 bg-gradient-to-tr from-[#F6E1C3]/40 via-[#D8B282]/30 to-transparent flex items-center justify-center shadow-[0_0_50px_rgba(216,178,130,0.6)] group">
+                    <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-[#D8B282] shadow-inner">
+                      {/* Crystal Diamond Sphere Texture */}
+                      <img
+                        src="/crystal_gemstone_diamond.jpg"
+                        alt="Crystal Faceted Diamond"
+                        className="w-full h-full object-cover scale-115 animate-spin-slow group-hover:scale-125 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-[#D8B282]/10 mix-blend-overlay" />
+
+                      {/* CEO 1983 Emblem In Nucleus */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[2px] p-2 text-center">
+                        <Crown className="w-6 h-6 text-[#FFF5E6] mb-0.5 animate-pulse drop-shadow-md fill-current" />
+                        <span className="text-[8.5px] font-mono font-black tracking-widest text-[#F6E1C3] uppercase leading-none drop-shadow">CEO</span>
+                        <span className="text-[8.5px] font-mono font-black tracking-widest text-white uppercase leading-tight drop-shadow">
+                          1983
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: 3 Slogans + Floating Spotlight Card (Exact Match Image 2) */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: false, amount: 0.2 }}
+                transition={{ duration: 0.6 }}
+                className={`lg:col-span-3 text-left lg:border-l lg:pl-8 space-y-6 ${themeClass("border-[#D8B282]/30", "border-[#D8B282]/40", "border-yellow-400/40")}`}
+              >
+                <div className="space-y-4 font-mono font-black text-xs sm:text-sm tracking-wider">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-1 rounded bg-[#D8B282]/20 text-[#D8B282]">⛶</span>
+                    <p className={`hover:text-[#D8B282] transition-colors cursor-default ${themeClass("text-white", "text-[#181512]", "text-yellow-200")}`}>
+                      {t.ecoRight1}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-1 rounded bg-[#D8B282]/20 text-[#D8B282]">⚙</span>
+                    <p className={`hover:text-[#D8B282] transition-colors cursor-default ${themeClass("text-white", "text-[#181512]", "text-yellow-200")}`}>
+                      {t.ecoRight2}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-1 rounded bg-[#D8B282]/20 text-[#D8B282]">🤝</span>
+                    <p className={`hover:text-[#D8B282] transition-colors cursor-default ${themeClass("text-white", "text-[#181512]", "text-yellow-200")}`}>
+                      {t.ecoRight3}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-20 h-[2px] bg-gradient-to-r from-[#D8B282] to-transparent" />
+
+                {/* Floating Frosted Spotlight Card for Selected Satellite matching Image 2 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-4 rounded-2xl border text-xs shadow-xl backdrop-blur-md ${
+                    themeClass(
+                      "bg-gradient-to-br from-[#0D182E]/95 via-[#080E1C]/90 to-[#04070E] border-[#D8B282]/60 text-slate-200 shadow-[0_10px_30px_rgba(0,0,0,0.8)]",
+                      "bg-white/95 border-[#D8B282]/60 text-[#4A3F35] shadow-[0_10px_30px_rgba(140,101,59,0.12)]",
+                      "bg-zinc-900 border-yellow-400 text-yellow-100"
+                    )
+                  }`}
+                >
+                  <p className="font-black text-sm text-[#D8B282]">
+                    {constellationSatellites[activeSatellite ?? 2].name}
+                  </p>
+                  <p className={`text-xs mt-1.5 leading-relaxed ${themeClass("text-slate-300", "text-[#5A4F43]", "text-yellow-100")}`}>
+                    {constellationSatellites[activeSatellite ?? 2].desc}
+                  </p>
+                </motion.div>
+              </motion.div>
+            </div>
+
+            {/* SECTION 5: INTERACTIVE DIGITAL CARD SHOWCASE (MATCHING IMAGE 3) */}
+            <div className="mt-20">
+              <LandingInteractiveShowcase themeMode={themeMode} />
+            </div>
+          </div>
+        </section>
+      </SectionFlip3D>
+
+      {/* =======================================
+          SECTION 5: 4 CORE VALUES (YACHT CONVOY) & 4 STEPS VIP ADMISSION
+          ======================================= */}
+      <SectionSlideLeft id="core-values">
+        <section
+          className={`py-24 md:py-32 relative overflow-hidden border-t transition-colors duration-500 ${
+            themeClass(
+              "border-[#D8B282]/25 bg-[#02040A]",
+              "border-[#D8B282]/30 bg-[#FAF8F5]",
+              "border-yellow-400 bg-black"
+            )
+          }`}
+        >
+          {/* Neoclassical Golden Columns & Mandala Foundation Background for Core Values */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none">
+            <img
+              src="/landing/ceo1983_core_values_bg.jpg"
+              alt="4 Neoclassical Pillars of Excellence"
+              className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
+                themeClass(
+                  "opacity-35 mix-blend-screen brightness-90 contrast-125 filter",
+                  "opacity-20 mix-blend-multiply contrast-110 filter",
+                  "opacity-15 mix-blend-screen contrast-150"
+                )
+              }`}
+            />
+            {/* Gradient Vignettes for Perfect Legibility in all 3 Theme Modes */}
+            <div
+              className={`absolute inset-0 transition-colors duration-500 ${
+                themeClass(
+                  "bg-gradient-to-b from-[#02040A] via-transparent to-[#02040A]",
+                  "bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/60 to-[#FAF8F5]/95",
+                  "bg-gradient-to-b from-black via-black/80 to-black"
+                )
+              }`}
+            />
+            {/* Subtle radial center spotlight */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(216,178,130,0.12)_0%,transparent_70%)] pointer-events-none" />
           </div>
 
-          {/* Call to Action Box (Luxury Ingot Card) */}
-          <div
-            className={`p-10 sm:p-16 rounded-3xl border text-center relative overflow-hidden backdrop-blur-xl ${
-              themeClass(
-                "bg-gradient-to-b from-[#161926] to-[#0D0F17] border-amber-400/50 shadow-[0_20px_60px_rgba(0,0,0,0.7)]",
-                "bg-white border-amber-900/15 shadow-[0_20px_60px_rgba(0,0,0,0.08)]",
-                "bg-zinc-950 border-white/30"
-              )
-            }`}
-          >
-            <div className="max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-widest uppercase font-mono border border-amber-400/60 text-[#F7D896] bg-amber-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(197,162,93,0.2)] mb-3">
-                <span>{t.ctaBoxTag}</span>
-              </div>
-              <h2
-                className={`text-3xl sm:text-5xl font-black mb-6 leading-[1.22] tracking-tight uppercase overflow-visible pb-2 pt-0.5 ${
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Core Values Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ duration: 0.6 }}
+              className="text-center max-w-3xl mx-auto mb-14"
+            >
+              <div
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase font-mono border backdrop-blur-md shadow-md mb-3 ${
                   themeClass(
-                    "text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFF8E7] to-[#F7D896] drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]",
-                    "text-[#0F172A]",
-                    "text-white"
+                    "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15",
+                    "border-[#D8B282]/60 text-[#8C653B] bg-[#F6E1C3]/30",
+                    "border-yellow-400 text-yellow-300 bg-yellow-400/20"
                   )
                 }`}
               >
-                {t.ctaBoxTitle1} <br />
-                <span className="text-transparent bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#FBBF24] bg-clip-text">
-                  {t.ctaBoxTitle2}
-                </span>
+                <span>{t.coreTag}</span>
+              </div>
+              <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
+                {t.coreTitle}
               </h2>
-              <p
-                className={`text-sm sm:text-base mb-10 max-w-xl mx-auto leading-relaxed ${
-                  themeClass("text-slate-200", "text-[#475569]", "text-slate-300")
-                }`}
-              >
-                {t.ctaBoxDesc}
+              <p className={`mt-3 text-sm sm:text-base leading-relaxed ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+                {t.coreDesc}
               </p>
+            </motion.div>
 
-              <button
-                onClick={handleJoinClick}
-                className="shine-sweep px-10 py-4 sm:py-5 rounded-full font-black text-base sm:text-lg bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] hover:from-[#FFF0C7] hover:to-[#E2B755] text-slate-950 hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_4px_30px_rgba(226,183,85,0.5)] cursor-pointer inline-flex items-center gap-2"
-              >
-                <span>{t.ctaBoxBtn}</span>
-              </button>
-            </div>
+            {/* 1. Core Values Convoy with Luxury Flagship Superyacht pulling from Left on Scroll */}
+            <CoreValuesYachtConvoy themeMode={themeMode} t={t} />
+
+            {/* 2. 4 Steps VIP Pass Admission Roadmap with Step-by-Step Progressive Laser Animation */}
+            <VipPass4StepsProgressiveFlow themeMode={themeMode} t={t} />
+
+            {/* Luxury Executive CTA Box (Background Biển Đêm & Hải Đăng Soi Sáng Tàu Đơn Độc) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 25 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ duration: 0.6 }}
+              className={`mt-20 p-8 sm:p-14 rounded-[36px] border-2 text-center relative overflow-hidden shadow-2xl ${
+                themeClass(
+                  "border-[#F6E1C3]/80 bg-[#060D1E] shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_50px_rgba(216,178,130,0.3)]",
+                  "border-[#D8B282]/80 bg-[#FAF8F5] shadow-[0_20px_50px_rgba(140,101,59,0.25)]",
+                  "border-yellow-400 bg-black text-yellow-300"
+                )
+              }`}
+            >
+              {/* Solitary Ocean Beacon Background Image Overlay */}
+              <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden opacity-55 mix-blend-screen scale-105 animate-pulse" style={{ animationDuration: "10s" }}>
+                <img
+                  src="/ocean_solitary_beacon.jpg"
+                  alt="Ocean Lighthouse Solitary Beacon"
+                  className="w-full h-full object-cover object-center filter brightness-110 contrast-125"
+                />
+              </div>
+
+              {/* Gradient Vignette so text is 100% crystal clear and high-contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#040814] via-[#081226]/85 to-[#040814]/90 pointer-events-none" />
+
+              {/* Glowing Warm Halos */}
+              <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-[#D8B282]/30 blur-[120px] pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#38BDF8]/20 blur-[120px] pointer-events-none" />
+
+              <div className="relative z-10 max-w-3xl mx-auto space-y-4">
+                <span className="text-xs font-mono font-black uppercase text-[#F6E1C3] tracking-widest px-4 py-1.5 rounded-full bg-[#D8B282]/25 border border-[#F6E1C3]/50 shadow-[0_0_15px_rgba(216,178,130,0.4)] inline-block">
+                  {t.ctaBoxTag}
+                </span>
+                <h3 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase leading-tight text-white drop-shadow-md">
+                  {t.ctaBoxTitle1} <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFF5E6] via-[#F6E1C3] to-[#D8B282] drop-shadow-[0_0_20px_rgba(216,178,130,0.6)]">
+                    {t.ctaBoxTitle2}
+                  </span>
+                </h3>
+                <p className="text-sm sm:text-base leading-relaxed max-w-2xl mx-auto text-slate-200 drop-shadow-sm font-medium">
+                  {t.ctaBoxDesc}
+                </p>
+                <div className="pt-4">
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className="px-10 py-4 sm:px-12 sm:py-5 rounded-full font-black text-sm tracking-wider uppercase bg-gradient-to-r from-[#FFF0DC] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-[0_0_50px_rgba(216,178,130,0.7)] hover:shadow-[0_0_70px_rgba(216,178,130,0.95)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    {t.ctaBoxBtn}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
+      </SectionSlideLeft>
 
       {/* --- FOOTER --- */}
       <footer
-        className={`py-12 px-6 sm:px-8 border-t text-center text-xs transition-colors ${
-          themeClass("bg-[#050608] border-white/5 text-white/50", "bg-[#F1F5F9] border-slate-200 text-slate-600", "bg-black border-white/20 text-slate-400")
+        className={`py-8 border-t text-center text-xs transition-colors duration-500 ${
+          themeClass(
+            "border-[#D8B282]/20 bg-[#01030A] text-slate-400",
+            "border-[#D8B282]/30 bg-[#FAF8F5] text-[#5A4F43]",
+            "border-yellow-400/40 bg-black text-yellow-200"
+          )
         }`}
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded border border-[#C5A25D] flex items-center justify-center font-serif text-[#C5A25D] font-bold text-xs">
-              �👑
-            </div>
-            <span className="font-bold">{t.navBadge} CLB CEO 1983</span>
-          </div>
-          <div>
-            © {new Date().getFullYear()} {t.footerCopy}
+        <div className="max-w-[1440px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>{t.footerCopy}</p>
+          <div className={`flex items-center gap-4 ${themeClass("text-slate-300", "text-[#181512]", "text-yellow-300")}`}>
+            <a href="#leadership" className="hover:text-[#D8B282] transition-colors">Ban Lãnh Đạo</a>
+            <span>•</span>
+            <a href="#ecosystem" className="hover:text-[#D8B282] transition-colors">Hệ Sinh Thái</a>
+            <span>•</span>
+            <a href="#roadmap" className="hover:text-[#D8B282] transition-colors">Quy Trình VIP</a>
           </div>
         </div>
       </footer>
 
-      {/* --- VIDEO KYC 4K DEMO MODAL --- */}
-      {videoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-          <div
-            className={`relative w-full max-w-4xl rounded-3xl p-6 sm:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.95)] border text-left flex flex-col gap-5 ${
-              themeClass("bg-[#090C16] border-amber-400/50 text-white", "bg-white border-amber-900/20 text-[#0F172A]", "bg-zinc-950 border-white text-white")
-            }`}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setVideoModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer z-20"
-              aria-label="Đóng video"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            {/* Header */}
-            <div className="flex items-center gap-3 pr-10">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/60 text-amber-300 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
-                <Film className="w-5 h-5 text-amber-300" />
-              </div>
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-mono font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/40 mb-1">
-                  <span>🎬 OFFICIAL KYC SHOWCASE</span>
-                </div>
-                <h3 className="text-lg sm:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-[#FFF8E7] to-[#F7D896]">
-                  Trải Nghiệm Hệ Sinh Thái Số Hóa Doanh Nhân CEO 1983
-                </h3>
-              </div>
-            </div>
-
-            {/* 16:9 Video Player Container with Luxury Border */}
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.2)] group">
-              <video
-                src="/landing/video_vione_kyc.mp4"
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-                poster="/landing/ceo1983-hero-bg.jpg"
-              >
-                Trình duyệt của bạn không hỗ trợ thẻ video.
-              </video>
-            </div>
-
-            {/* Feature Highlights & CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-white/10">
-              <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-300 font-medium">
-                <span className="flex items-center gap-1 text-amber-300">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" /> Định Danh NFC 1-Chạm
-                </span>
-                <span className="flex items-center gap-1 text-amber-300">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" /> Giao Thương B2B
-                </span>
-                <span className="hidden md:flex items-center gap-1 text-amber-300">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400" /> Mastermind Tour
-                </span>
-              </div>
-
-              <button
-                onClick={() => {
-                  setVideoModalOpen(false);
-                  handleJoinClick();
-                }}
-                className="shine-sweep w-full sm:w-auto px-6 py-3 rounded-full font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] shadow-[0_4px_20px_rgba(226,183,85,0.45)] hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
-              >
-                ĐĂNG KÝ GIA NHẬP CLB VIP →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* --- APPLICATION MODAL --- */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div
-            className={`relative w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl text-left border ${
-              themeClass("bg-[#14151C] border-[#C5A25D]/40 text-white", "bg-white border-amber-900/20 text-[#0F172A]", "bg-zinc-950 border-white text-white")
-            }`}
-          >
-            <button
-              onClick={() => setModalOpen(false)}
-              className={`absolute top-5 right-5 p-2 rounded-full transition-colors cursor-pointer ${
-                themeClass("text-slate-400 hover:text-white hover:bg-white/10", "text-slate-500 hover:text-black hover:bg-slate-100", "text-white")
+      <AnimatePresence>
+        {modalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className={`relative w-full max-w-lg rounded-3xl border p-6 sm:p-8 shadow-2xl text-left ${
+                themeClass(
+                  "border-[#D8B282]/60 bg-[#0B1224] text-white",
+                  "border-[#D8B282]/60 bg-[#FAF8F5] text-[#181512]",
+                  "border-yellow-400 bg-black text-yellow-300"
+                )
               }`}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className={`absolute top-5 right-5 p-2 rounded-full transition-colors ${
+                  themeClass("text-slate-400 hover:text-white bg-white/5", "text-slate-600 hover:text-black bg-black/5", "text-yellow-400 bg-yellow-400/10")
+                }`}
+                aria-label="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            {submitted ? (
-              <div className="py-12 text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold">{t.formSuccessTitle}</h3>
-                <p className="text-sm text-slate-400 mt-2 max-w-xs">{t.formSuccessDesc}</p>
+              <div className="mb-6">
+                <span className="text-[10px] font-mono font-bold text-[#D8B282] uppercase">HANOIBA ALLIANCE</span>
+                <h3 className={`text-xl sm:text-2xl font-black mt-0.5 ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
+                  {t.modalTitle}
+                </h3>
+                <p className={`text-xs mt-1 ${themeClass("text-slate-300", "text-[#5A4F43]", "text-yellow-100")}`}>
+                  {t.modalSubtitle}
+                </p>
               </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="w-5 h-5 text-[#C5A25D]" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#C5A25D]">
-                    CEO 1983 VIP ADMISSION
-                  </span>
-                </div>
-                <h3 className="text-2xl font-black mb-1">{t.modalTitle}</h3>
-                <p className={`text-xs mb-6 ${themeClass("text-slate-400", "text-slate-500", "text-slate-400")}`}>{t.modalSubtitle}</p>
 
+              {submitted ? (
+                <div className="py-8 text-center space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h4 className={`text-lg font-bold ${themeClass("text-white", "text-[#181512]", "text-white")}`}>{t.formSuccessTitle}</h4>
+                  <p className={`text-xs ${themeClass("text-slate-300", "text-[#5A4F43]", "text-yellow-100")}`}>{t.formSuccessDesc}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitted(false);
+                      setModalOpen(false);
+                    }}
+                    className="mt-4 px-6 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950"
+                  >
+                    Hoàn tất
+                  </button>
+                </div>
+              ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold mb-1">{t.formName}</label>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formName}</label>
                     <input
-                      required
                       type="text"
+                      required
                       placeholder={t.formNamePlh}
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${
                         themeClass(
-                          "bg-white/5 border-white/15 focus:border-[#C5A25D] text-white",
-                          "bg-slate-50 border-slate-200 focus:border-[#B18B44] text-slate-900"
+                          "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
+                          "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",
+                          "bg-zinc-900 border-yellow-400 text-yellow-300 placeholder:text-yellow-600"
                         )
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold mb-1">{t.formPhone}</label>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formPhone}</label>
                     <input
-                      required
                       type="tel"
+                      required
                       placeholder={t.formPhonePlh}
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${
                         themeClass(
-                          "bg-white/5 border-white/15 focus:border-[#C5A25D] text-white",
-                          "bg-slate-50 border-slate-200 focus:border-[#B18B44] text-slate-900"
+                          "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
+                          "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",
+                          "bg-zinc-900 border-yellow-400 text-yellow-300 placeholder:text-yellow-600"
                         )
                       }`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold mb-1">{t.formCompany}</label>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formCompany}</label>
                     <input
-                      required
                       type="text"
+                      required
                       placeholder={t.formCompanyPlh}
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${
                         themeClass(
-                          "bg-white/5 border-white/15 focus:border-[#C5A25D] text-white",
-                          "bg-slate-50 border-slate-200 focus:border-[#B18B44] text-slate-900"
+                          "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
+                          "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",
+                          "bg-zinc-900 border-yellow-400 text-yellow-300 placeholder:text-yellow-600"
                         )
                       }`}
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold mb-1">{t.formRevenue}</label>
-                      <select
-                        value={formData.revenue}
-                        onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                        className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                          themeClass(
-                            "bg-[#1C1D24] border-white/15 focus:border-[#C5A25D] text-white",
-                            "bg-slate-50 border-slate-200 focus:border-[#B18B44] text-slate-900"
-                          )
-                        }`}
-                      >
-                        <option value="under-10">{t.formRev1}</option>
-                        <option value="10-50">{t.formRev2}</option>
-                        <option value="50-200">{t.formRev3}</option>
-                        <option value="above-200">{t.formRev4}</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formRevenue}</label>
+                    <select
+                      value={formData.revenue}
+                      onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${
+                        themeClass(
+                          "bg-[#0B1224] border-[#D8B282]/30 text-white",
+                          "bg-white border-[#D8B282]/40 text-[#181512] shadow-xs",
+                          "bg-zinc-900 border-yellow-400 text-yellow-300"
+                        )
+                      }`}
+                    >
+                      <option value="under-10">{t.formRev1}</option>
+                      <option value="10-50">{t.formRev2}</option>
+                      <option value="50-200">{t.formRev3}</option>
+                      <option value="above-200">{t.formRev4}</option>
+                    </select>
+                  </div>
 
-                    <div>
-                      <label className="block text-xs font-bold mb-1">{t.formIndustry}</label>
-                      <input
-                        required
-                        type="text"
-                        placeholder={t.formIndustryPlh}
-                        value={formData.industry}
-                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                        className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                          themeClass(
-                            "bg-white/5 border-white/15 focus:border-[#C5A25D] text-white",
-                            "bg-slate-50 border-slate-200 focus:border-[#B18B44] text-slate-900"
-                          )
-                        }`}
-                      />
-                    </div>
+                  <div>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formIndustry}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t.formIndustryPlh}
+                      value={formData.industry}
+                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${
+                        themeClass(
+                          "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
+                          "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",
+                          "bg-zinc-900 border-yellow-400 text-yellow-300 placeholder:text-yellow-600"
+                        )
+                      }`}
+                    />
                   </div>
 
                   <button
-                    disabled={submitting}
                     type="submit"
-                    className="shine-sweep w-full py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow-lg disabled:opacity-50 mt-4"
+                    disabled={submitting}
+                    className="w-full py-3.5 rounded-full font-black text-xs uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-lg hover:brightness-110 disabled:opacity-50 transition-all cursor-pointer mt-2"
                   >
                     {submitting ? t.formSubmitting : t.formSubmit}
                   </button>
                 </form>
-              </div>
-            )}
+              )}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+/** Hexagonal Logo Icon for Central Nucleus */
+function HexagonLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
   );
 }

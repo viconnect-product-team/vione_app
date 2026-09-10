@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n";
 import { VSheetContext } from "@/hooks/use-v-sheet";
 import { useConnectAppRealtimeNotifications } from "@/hooks/use-connect-app-realtime-notifications";
 import authBg from "@/assets/connect-auth-bg.jpg";
+import authLightBg from "@/assets/connect-auth-light-bg.jpg";
 import { BusinessConnectBottomNav } from "./BusinessConnectBottomNav";
 import { VActionSheet } from "./VActionSheet";
 
@@ -16,14 +17,21 @@ import { useTheme } from "@/lib/theme";
 
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
   useConnectAppRealtimeNotifications();
-  const { theme } = useTheme();
+  let isLight = false;
+  let isContrast = false;
+  try {
+    const themeCtx = useTheme();
+    isLight = themeCtx.theme === "light";
+    isContrast = themeCtx.theme === "contrast";
+  } catch {
+    isLight = false;
+    isContrast = false;
+  }
   const [vOpen, setVOpen] = useState(false);
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
 
-  const isLight = theme === "light";
-  const isContrast = theme === "contrast";
-  const bgMain = isLight ? "#F8FAFC" : isContrast ? "#000000" : "#050c15";
+  const bgMain = isLight ? "#FAF7F2" : isContrast ? "#000000" : "#050c15";
 
   return (
     <VSheetContext.Provider value={vControls}>
@@ -33,7 +41,23 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
         style={{ background: bgMain }}
         aria-hidden="true"
       >
-        {!isLight && !isContrast && (
+        {isLight ? (
+          <>
+            <img
+              src={authLightBg}
+              alt=""
+              width={1024}
+              height={640}
+              className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-40 mix-blend-multiply"
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: `radial-gradient(130% 75% at 50% 15%, rgba(249,231,196,0.5) 0%, transparent 60%), radial-gradient(100% 60% at 50% 90%, rgba(212,175,55,0.08) 0%, ${bgMain} 80%)`,
+              }}
+            />
+          </>
+        ) : !isContrast ? (
           <>
             <img
               src={authBg}
@@ -49,7 +73,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
               }}
             />
           </>
-        )}
+        ) : null}
       </div>
 
       {/* data-motion="forced" explicitly overrides reduced-motion inside the BC shell */}

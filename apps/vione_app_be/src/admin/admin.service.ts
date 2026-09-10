@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 
 export const DEMO_LEAD_STATUSES = [
   'new',
@@ -10,8 +11,48 @@ export const DEMO_LEAD_STATUSES = [
 ] as const;
 
 @Injectable()
-export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+export class AdminService implements OnModuleInit {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: ConnectAppGateway,
+  ) {}
+
+  async onModuleInit() {
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.notifications (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          code text UNIQUE,
+          title text NOT NULL,
+          body text,
+          audience text DEFAULT 'all',
+          channel text DEFAULT 'inapp',
+          status text DEFAULT 'sent',
+          sent_at timestamptz DEFAULT now(),
+          reach integer DEFAULT 0,
+          association_id uuid,
+          app_scope text DEFAULT 'crm',
+          target_app text DEFAULT 'crm',
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        );
+      `);
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'vione_app';
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'vione_app';
+      `).catch(() => {});
+    } catch (e) {
+      console.warn('Could not ensure notifications table:', e);
+    }
+  }
 
   async listDemoLeads(query: {
     status?: string;
@@ -344,4 +385,278 @@ export class AdminService {
     const created = await this.getInvoiceById(id);
     return created.invoice;
   }
+
+  // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
+
+  async listNotifications(userId: string, associationId?: string, appScope?: string) {
+    const notifs: any[] = [];
+    const seenMap = new Set<string>();
+    const filterScope = appScope && appScope !== 'all' ? appScope : null;
+
+    // 1. Query broadcast notifications from public.notifications
+    try {
+      let rows: any[] = [];
+      if (filterScope) {
+        rows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at
+          FROM public.notifications
+          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
+            AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+          ORDER BY created_at DESC
+          LIMIT 60
+        `.catch(() => []);
+      } else {
+        rows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at
+          FROM public.notifications
+          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
+          ORDER BY created_at DESC
+          LIMIT 60
+        `.catch(() => []);
+      }
+
+      for (const r of rows) {
+        const item = {
+          id: r.code || r.id,
+          title: r.title,
+          body: r.body || '',
+          audience: r.audience || 'all',
+          channel: r.channel || 'inapp',
+          appScope: r.app_scope || r.target_app || 'crm',
+          targetApp: r.target_app || r.app_scope || 'crm',
+          sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
+          reach: r.reach || 0,
+          status: r.status || 'sent',
+        };
+        const key = `${item.title}:${item.body}`;
+        if (!seenMap.has(key)) {
+          seenMap.add(key);
+          notifs.push(item);
+        }
+      }
+    } catch (e) {
+      console.warn('Error querying public.notifications:', e);
+    }
+
+    // 2. Query personal business notifications for this admin
+    try {
+      if (userId) {
+        let bzRows: any[] = [];
+        if (filterScope) {
+          bzRows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+            FROM public.business_notifications
+            WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+              AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+            ORDER BY created_at DESC
+            LIMIT 40
+          `.catch(() => []);
+        } else {
+          bzRows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+            FROM public.business_notifications
+            WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+            ORDER BY created_at DESC
+            LIMIT 40
+          `.catch(() => []);
+        }
+
+        for (const bz of bzRows) {
+          const safe = bz.safe_display_data || {};
+          const title = safe.title || bz.title_key || 'Thông báo quản trị';
+          const body = safe.body || bz.body_key || '';
+          const key = `${title}:${body}`;
+          const scope = bz.app_scope || bz.target_app || (bz.source_domain === 'association' ? 'crm' : 'vione_app');
+          if (!seenMap.has(key)) {
+            seenMap.add(key);
+            notifs.push({
+              id: bz.id,
+              title,
+              body,
+              audience: 'staff',
+              channel: 'inapp',
+              appScope: scope,
+              targetApp: scope,
+              sentAt: bz.created_at ? new Date(bz.created_at).toISOString() : new Date().toISOString(),
+              reach: 1,
+              status: 'sent',
+              targetRoute: bz.action_target?.route || bz.action_target?.targetRoute || '/members?status=pending',
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error querying business_notifications:', e);
+    }
+
+    // 3. Fallback check: If there are pending members in public.members, ensure they appear in notifications (scope: crm)
+    if (!filterScope || filterScope === 'crm') {
+      try {
+        const pendingMembers = await this.prisma.$queryRaw<any[]>`
+          SELECT id, name, contact, phone, email, about, joined_at, created_at
+          FROM public.members
+          WHERE status = 'pending'
+          ORDER BY created_at DESC
+          LIMIT 20
+        `.catch(() => []);
+
+        for (const m of pendingMembers) {
+          const title = `Đăng ký hội viên mới: ${m.contact || m.name} - ${m.name}`;
+          const body = `Ứng viên ${m.contact || m.name} (${m.phone || m.email || 'CLB CEO 1983'}) vừa nộp hồ sơ xin gia nhập. Bấm để duyệt ngay.`;
+          const key = `${title}:${body}`;
+          if (!seenMap.has(key)) {
+            seenMap.add(key);
+            notifs.push({
+              id: `PENDING-MB-${m.id}`,
+              title,
+              body,
+              audience: 'staff',
+              channel: 'inapp',
+              appScope: 'crm',
+              targetApp: 'crm',
+              sentAt: m.created_at ? new Date(m.created_at).toISOString() : (m.joined_at ? new Date(m.joined_at).toISOString() : new Date().toISOString()),
+              reach: 1,
+              status: 'sent',
+              targetRoute: '/members?status=pending',
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Error querying pending members:', e);
+      }
+    }
+
+    // 4. Sort all notifications by sentAt DESC
+    return notifs.sort((a, b) => new Date(b.sentAt || 0).getTime() - new Date(a.sentAt || 0).getTime());
+  }
+
+  async createNotification(userId: string, data: any) {
+    const code = `NTF-${Date.now().toString(36).toUpperCase()}`;
+    const now = new Date();
+    const title = String(data.title || '').trim();
+    const body = String(data.body || '').trim();
+    const audience = String(data.audience || 'all');
+    const channel = String(data.channel || 'inapp');
+    const appScope = String(data.appScope || data.targetApp || 'crm');
+    const status = String(data.status || 'sent');
+    const assocId = data.associationId || null;
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), ${code}, ${title}, ${body}, ${audience}, ${channel},
+        ${status}, ${status === 'sent' ? now : null}, 0, ${assocId}::uuid,
+        ${appScope}, ${appScope}, ${now}, ${now}
+      )
+    `;
+
+    if (status === 'sent') {
+      this.gateway.emitToAll('notification:new', {
+        id: code,
+        title,
+        body,
+        audience,
+        appScope,
+        targetApp: appScope,
+        sentAt: now.toISOString(),
+      });
+      this.gateway.emitToAll('notification:count', {});
+    }
+
+    return {
+      id: code,
+      title,
+      body,
+      audience,
+      channel,
+      appScope,
+      targetApp: appScope,
+      sentAt: status === 'sent' ? now.toISOString() : null,
+      reach: 0,
+      status,
+    };
+  }
+
+  async updateNotification(id: string, data: any) {
+    const updates: string[] = ['updated_at = NOW()'];
+    if (data.title) updates.push(`title = '${String(data.title).replace(/'/g, "''")}'`);
+    if (data.body !== undefined) updates.push(`body = '${String(data.body || '').replace(/'/g, "''")}'`);
+    if (data.audience) updates.push(`audience = '${String(data.audience)}'`);
+    if (data.channel) updates.push(`channel = '${String(data.channel)}'`);
+    if (data.appScope || data.targetApp) {
+      const scope = String(data.appScope || data.targetApp);
+      updates.push(`app_scope = '${scope}'`);
+      updates.push(`target_app = '${scope}'`);
+    }
+    if (data.status) {
+      updates.push(`status = '${String(data.status)}'`);
+      if (data.status === 'sent') updates.push(`sent_at = NOW()`);
+    }
+
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.notifications
+      SET ${updates.join(', ')}
+      WHERE code = '${id}' OR id::text = '${id}'
+    `);
+
+    return { id, ...data };
+  }
+
+  async sendNotification(id: string) {
+    const now = new Date();
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.notifications
+      SET status = 'sent', sent_at = NOW(), updated_at = NOW()
+      WHERE code = '${id}' OR id::text = '${id}'
+    `);
+
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT id, code, title, body, audience, channel, status, sent_at, reach, app_scope, target_app
+      FROM public.notifications
+      WHERE code = '${id}' OR id::text = '${id}'
+      LIMIT 1
+    `).catch(() => []);
+
+    const notif = rows[0] || { id, status: 'sent', sentAt: now.toISOString() };
+    const appScope = notif.app_scope || notif.target_app || 'crm';
+
+    this.gateway.emitToAll('notification:new', {
+      id: notif.code || notif.id,
+      title: notif.title,
+      body: notif.body,
+      appScope,
+      targetApp: appScope,
+      sentAt: now.toISOString(),
+    });
+    this.gateway.emitToAll('notification:count', {});
+
+    return {
+      id: notif.code || notif.id,
+      title: notif.title,
+      body: notif.body || '',
+      audience: notif.audience || 'all',
+      channel: notif.channel || 'inapp',
+      appScope,
+      targetApp: appScope,
+      sentAt: now.toISOString(),
+      reach: notif.reach || 0,
+      status: 'sent',
+    };
+  }
+
+  async deleteNotification(id: string) {
+    await this.prisma.$executeRawUnsafe(`
+      DELETE FROM public.notifications
+      WHERE code = '${id}' OR id::text = '${id}'
+    `).catch(() => null);
+
+    await this.prisma.$executeRawUnsafe(`
+      DELETE FROM public.business_notifications
+      WHERE id::text = '${id}'
+    `).catch(() => null);
+
+    return { ok: true };
+  }
 }
+

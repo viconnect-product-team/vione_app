@@ -3,13 +3,16 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminService } from './admin.service';
+
 
 export class UpdateDemoLeadDto {
   status?: string;
@@ -94,5 +97,47 @@ export class AdminController {
   ) {
     return this.adminService.addInvoiceReminder(id, body);
   }
+
+  // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
+
+  @Get('notifications')
+  async listNotifications(
+    @Request() req,
+    @Query('associationId') associationId?: string,
+    @Query('appScope') appScope?: string,
+  ) {
+    return this.adminService.listNotifications(req.user.id, associationId, appScope);
+  }
+
+  @Post('notifications')
+  async createNotification(
+    @Request() req,
+    @Body() body: any,
+  ) {
+    return this.adminService.createNotification(req.user.id, body);
+  }
+
+  @Patch('notifications/:id')
+  async updateNotification(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.adminService.updateNotification(id, body);
+  }
+
+  @Post('notifications/:id/send')
+  async sendNotification(
+    @Param('id') id: string,
+  ) {
+    return this.adminService.sendNotification(id);
+  }
+
+  @Delete('notifications/:id')
+  async deleteNotification(
+    @Param('id') id: string,
+  ) {
+    return this.adminService.deleteNotification(id);
+  }
 }
+
 

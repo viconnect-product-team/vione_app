@@ -1,3 +1,4 @@
+import "@/lib/utils";
 import {
   Outlet,
   Link,
@@ -216,7 +217,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   })})();`;
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />

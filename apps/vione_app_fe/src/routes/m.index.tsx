@@ -95,7 +95,13 @@ function Home() {
 
         <div className="relative z-10">
           {/* Brand header + Theme & Lang Controls */}
-          <header className="flex items-center justify-between border-b border-[var(--vba-border-soft)]/40 bg-[var(--vba-bg)]/80 px-4 py-3.5 backdrop-blur-md">
+          <header
+            className="flex items-center justify-between border-b border-[var(--vba-border-soft)]/40 bg-[var(--vba-bg)]/80 px-4 backdrop-blur-md"
+            style={{
+              paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
+              minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + var(--bc-mobile-header-h, 56px))",
+            }}
+          >
             <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--vba-gold)]/40 bg-[var(--vba-surface)] p-1 shadow-md">
                 <img

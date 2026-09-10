@@ -257,20 +257,20 @@ export function PostMomentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-[520px] max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl border border-[var(--bc-mobile-border-gold,#D8B282)]/40 bg-[var(--bc-mobile-surface,#0F1420)] text-white shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden">
+      <div className="bc-app w-full max-w-[520px] max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-text)] shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--bc-mobile-border)] px-5 py-4">
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs">
               <Sparkles className="h-4 w-4" />
             </span>
-            <h2 className="text-base font-bold text-white">Tạo khoảnh khắc</h2>
+            <h2 className="text-base font-bold text-[var(--bc-mobile-text)]">Ghi nhớ khoảnh khắc</h2>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={submitting}
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+            className="grid h-8 w-8 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -283,46 +283,46 @@ export function PostMomentModal({
             <img
               src={avatarOrDemo(null, viewerUserId || "me")}
               alt=""
-              className="h-11 w-11 rounded-full object-cover border border-[#D8B282]/50 shadow-sm"
+              className="h-11 w-11 rounded-full object-cover border border-[var(--bc-mobile-accent)]/50 shadow-sm"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-sm text-white">Bạn</span>
+                <span className="font-bold text-sm text-[var(--bc-mobile-text)]">Bạn</span>
                 {currentFeeling && (
-                  <span className="text-xs text-[#E8C986] flex items-center gap-1">
+                  <span className="text-xs text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#E8C986] flex items-center gap-1">
                     đang {currentFeeling.emoji} <strong>{currentFeeling.label}</strong>
                     <button
                       type="button"
                       onClick={() => setSelectedFeeling(null)}
-                      className="text-white/40 hover:text-white ml-0.5 cursor-pointer"
+                      className="text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] ml-0.5 cursor-pointer"
                     >
                       ×
                     </button>
                   </span>
                 )}
                 {taggedPersons.length > 0 && (
-                  <span className="text-xs text-[#9DA3AE]">
+                  <span className="text-xs text-[var(--bc-mobile-muted)]">
                     cùng với{" "}
-                    <strong className="text-[#E8C986]">
+                    <strong className="text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#E8C986]">
                       {taggedPersons[0].name}
                       {taggedPersons.length > 1 ? ` và ${taggedPersons.length - 1} người khác` : ""}
                     </strong>
                     <button
                       type="button"
                       onClick={() => setTaggedPersons([])}
-                      className="text-white/40 hover:text-white ml-1 cursor-pointer"
+                      className="text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] ml-1 cursor-pointer"
                     >
                       ×
                     </button>
                   </span>
                 )}
                 {location && (
-                  <span className="text-xs text-[#9DA3AE] flex items-center gap-0.5">
-                    tại <strong className="text-[#E8C986]">{location}</strong>
+                  <span className="text-xs text-[var(--bc-mobile-muted)] flex items-center gap-0.5">
+                    tại <strong className="text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#E8C986]">{location}</strong>
                     <button
                       type="button"
                       onClick={() => setLocation("")}
-                      className="text-white/40 hover:text-white ml-0.5 cursor-pointer"
+                      className="text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] ml-0.5 cursor-pointer"
                     >
                       ×
                     </button>
@@ -332,31 +332,32 @@ export function PostMomentModal({
 
               {/* Privacy Selector Dropdown */}
               <div className="mt-1 flex items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-white/80 relative">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--bc-mobile-text)] relative">
                   {visibility === "public" ? (
                     <>
-                      <Globe className="h-3 w-3 text-[#D8B282]" />
+                      <Globe className="h-3 w-3 text-sky-500" />
                       <span>Công khai</span>
                     </>
                   ) : visibility === "friends" ? (
                     <>
-                      <UserCheck className="h-3 w-3 text-[#D8B282]" />
+                      <UserCheck className="h-3 w-3 text-emerald-500" />
                       <span>Mạng lưới</span>
                     </>
                   ) : (
                     <>
-                      <Lock className="h-3 w-3 text-[#D8B282]" />
-                      <span>Chỉ mình tôi</span>
+                      <Lock className="h-3 w-3 text-amber-500" />
+                      <span>Chỉ mình tôi (Private)</span>
                     </>
                   )}
                   <select
                     value={visibility}
                     onChange={(e) => setVisibility(e.target.value as any)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    aria-label="Chọn quyền riêng tư"
                   >
-                    <option value="friends" className="bg-[#121824] text-white">👥 Mạng lưới kết nối</option>
-                    <option value="public" className="bg-[#121824] text-white">🌍 Công khai toàn hệ sinh thái</option>
-                    <option value="private" className="bg-[#121824] text-white">🔒 Chỉ mình tôi (Ghi chú riêng tư)</option>
+                    <option value="friends" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">👥 Mạng lưới kết nối</option>
+                    <option value="public" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">🌍 Công khai toàn hệ sinh thái</option>
+                    <option value="private" className="bg-white dark:bg-[#121824] text-slate-900 dark:text-white">🔒 Chỉ mình tôi (Ghi chú riêng tư)</option>
                   </select>
                 </div>
               </div>
@@ -364,14 +365,16 @@ export function PostMomentModal({
           </div>
 
           {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={handleContentChange}
-            placeholder="Bạn đang nghĩ gì? Chia sẻ khoảnh khắc, cơ hội hợp tác kinh doanh hôm nay..."
-            disabled={submitting}
-            className="w-full min-h-[110px] bg-transparent text-sm sm:text-base text-white placeholder:text-white/35 outline-none resize-none leading-relaxed"
-          />
+          <div className="relative rounded-2xl bg-[var(--bc-mobile-surface-2)]/60 border border-[var(--bc-mobile-border)] p-3">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Bạn đang nghĩ gì? Chia sẻ khoảnh khắc, cơ hội hợp tác kinh doanh hôm nay..."
+              disabled={submitting}
+              className="w-full min-h-[110px] bg-transparent text-sm sm:text-base text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] outline-none resize-none leading-relaxed border-none p-0"
+            />
+          </div>
 
           {/* Photos Preview Grid */}
           {photos.length > 0 && (
@@ -621,11 +624,11 @@ export function PostMomentModal({
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Đang đăng khoảnh khắc...</span>
+                <span>Đang lưu khoảnh khắc...</span>
               </>
             ) : (
               <>
-                <span>Đăng khoảnh khắc</span>
+                <span>Lưu ghi nhớ khoảnh khắc</span>
                 <Sparkles className="h-4 w-4" />
               </>
             )}

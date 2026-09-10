@@ -5,7 +5,6 @@
 // Person Detail; the quiet ✕ dismisses (snooze). Own query — Home never
 // blocks on intelligence; errors collapse to a quiet inline retry.
 
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -45,79 +44,63 @@ function SuggestionRow({
   const t = useT();
   const [hidden, setHidden] = useState(false);
   const name = rec.person.displayName?.trim() || "—";
-  const meta = [rec.person.industryLabel, rec.person.areaLabel].filter(Boolean).join(" · ");
+  const suggestionText = rec.aiSuggestion ?? t("bc.mobile.intel.reconnect.suggestion");
+  const reasonText = t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason.days });
 
   if (hidden) return null;
 
   return (
-    <li className="relative min-w-0 rounded-2xl bc-translucent-card p-2.5 sm:p-3 flex flex-col justify-between">
-
-      {/* Avatar + tên + meta */}
-      <Link
-        to="/connect-app/network/$personId"
-        params={{ personId: rec.person.personId }}
-        aria-label={t("bc.mobile.intel.open", { name })}
-        onClick={() => {
-          trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_OPENED", { surface: "home" });
-          recordIntelInteraction("recommendation_opened", "reconnect");
-        }}
-        className={`block rounded-xl ${FOCUS}`}
-      >
-        <span className="flex items-center gap-2 sm:gap-2.5">
-          {/* Avatar — luôn hiện: ảnh thật hoặc chữ cái */}
+    <li className="relative min-w-0 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3 shadow-xs">
+      <div className="flex items-start justify-between gap-2.5">
+        <Link
+          to="/connect-app/network/$personId"
+          params={{ personId: rec.person.personId }}
+          aria-label={t("bc.mobile.intel.open", { name })}
+          onClick={() => {
+            trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_OPENED", { surface: "home" });
+            recordIntelInteraction("recommendation_opened", "reconnect");
+          }}
+          className={`flex min-w-0 flex-1 items-start gap-3 rounded-xl ${FOCUS}`}
+        >
           {rec.person.avatarUrl ? (
             <img
               src={rec.person.avatarUrl}
               alt=""
               loading="lazy"
-              onError={(e) => {
-                // Fallback về initials khi ảnh lỗi
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-                const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
-                if (sibling) sibling.style.display = "flex";
-              }}
-              className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-full object-cover"
+              className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
             />
-          ) : null}
-          <span
-            aria-hidden="true"
-            style={{ display: rec.person.avatarUrl ? "none" : "flex" }}
-            className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[12px] sm:text-[13px] font-semibold text-[var(--bc-mobile-muted)]"
-          >
-            {initialsOf(rec.person.displayName)}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[14px] sm:text-[15px] font-semibold text-[var(--bc-mobile-text)]">
+          ) : (
+            <span
+              aria-hidden="true"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-semibold text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border)]"
+            >
+              {initialsOf(rec.person.displayName)}
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold text-[var(--bc-mobile-text)]">
               {name}
             </span>
-            {meta ? (
-              <span className="mt-0.5 block truncate text-[11.5px] sm:text-[12.5px] text-[var(--bc-mobile-muted)]">
-                {meta}
-              </span>
-            ) : null}
-          </span>
-        </span>
-
-      </Link>
-
-      {/* CTA buttons — cân đối tuyệt đối trên cả mobile và web */}
-      <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:gap-2">
-        <Link
-          to="/connect-app/network/$personId"
-          params={{ personId: rec.person.personId }}
-          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-semibold text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface)] hover:border-[var(--bc-mobile-accent)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
-        >
-          <span className="truncate">{t("bc.mobile.intel.card.message") || "Xem hồ sơ"}</span>
+            <p className="mt-0.5 text-[13px] leading-snug text-[var(--bc-mobile-text)]">
+              {suggestionText}
+            </p>
+            <p className="mt-1 text-[11.5px] text-[var(--bc-mobile-accent)]">
+              {reasonText}
+            </p>
+          </div>
         </Link>
+
         <button
           type="button"
+          aria-label={t("bc.mobile.intel.dismiss")}
+          disabled={dismissPending}
           onClick={() => {
             setHidden(true);
             onDismiss();
           }}
-          className={`flex h-8 sm:h-9 min-w-0 items-center justify-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-1.5 sm:px-2.5 text-[11px] sm:text-[12px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:bg-[var(--bc-mobile-surface)] hover:text-[var(--bc-mobile-text)] active:scale-[0.98] whitespace-nowrap overflow-hidden text-ellipsis leading-none ${FOCUS}`}
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--bc-mobile-muted)] hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] transition-colors disabled:opacity-50 ${FOCUS}`}
         >
-          <span className="truncate">Ẩn hồ sơ</span>
+          <X aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
         </button>
       </div>
     </li>
@@ -174,20 +157,24 @@ export function RelationshipSuggestions() {
   // Viewer area (own identity city) — powers the truthful "near me" filter.
   // Uses fetchNestApi directly (bypass requireSupabaseAuth middleware).
   const viewerUserId = useViewerUserId();
-  const identity = useQuery({
-    queryKey: ["bc-mobile", "intel", "viewer-area", viewerUserId ?? "anon"],
-    enabled: Boolean(viewerUserId),
-    staleTime: 300_000,
-    queryFn: async () => {
-      try {
-        const payload = await fetchNestApi<any>("/connect-app/me/identity");
-        return payload?.identity ?? null;
-      } catch {
-        return null;
-      }
-    },
-  });
-  const viewerArea = normalizeArea(identity.data?.city ?? null);
+  const [viewerCity, setViewerCity] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewerUserId) return;
+    let active = true;
+    fetchNestApi<any>("/connect-app/me/identity")
+      .then((payload) => {
+        if (active) {
+          setViewerCity(payload?.identity?.city ?? null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [viewerUserId]);
+
+  const viewerArea = normalizeArea(viewerCity);
 
   const [industry, setIndustry] = useState<string>("all");
   const [distance, setDistance] = useState<DistanceFilter>("all");
@@ -321,20 +308,7 @@ export function RelationshipSuggestions() {
   );
 
   if (recommendations.length === 0) {
-    return (
-      <section aria-labelledby="bc-rel-intel-title" className="mt-6">
-        {header}
-        <p className="mt-2 text-[13px] text-[var(--bc-mobile-muted)]">
-          {t("bc.mobile.intel.home.empty")}
-        </p>
-        <Link
-          to="/connect-app/network"
-          className={`mt-3 inline-flex min-h-[44px] items-center rounded-full border border-[var(--bc-mobile-border-gold)] px-4 text-[13px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] ${FOCUS}`}
-        >
-          {t("bc.mobile.intel.home.empty.cta")}
-        </Link>
-      </section>
-    );
+    return null;
   }
 
   return (
@@ -364,7 +338,7 @@ export function RelationshipSuggestions() {
           ) : null}
           {viewerArea ? (
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#D4C3A3]/70">
+              <span className="shrink-0 w-[96px] text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.intel.filter.distance")}
               </span>
               {(["all", "near", "far"] as const).map((value) => (
@@ -402,8 +376,8 @@ export function RelationshipSuggestions() {
           </button>
         </div>
       ) : null}
-      <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
-        {filtered.slice(0, 5).map((rec) => (
+      <ul aria-label={t("bc.mobile.intel.list.label")} className="mt-3 space-y-2.5">
+        {filtered.slice(0, 3).map((rec) => (
           <SuggestionRow
             key={rec.id}
             rec={rec}

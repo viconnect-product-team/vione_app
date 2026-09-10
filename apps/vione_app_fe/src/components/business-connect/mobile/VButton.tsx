@@ -25,7 +25,7 @@ export function VButton({
       aria-label={t("bc.mobile.v.open")}
       aria-disabled={disabled ?? undefined}
       className={cn(
-        "group relative grid h-[56px] w-[56px] min-h-[52px] min-w-[52px] place-items-center rounded-full",
+        "group relative grid h-[58px] w-[58px] min-h-[52px] min-w-[52px] place-items-center rounded-full",
         "bg-gradient-to-tr from-[#C29B69] via-[#F6E1C3] to-[#D8B282]",
         "border-2 border-[#FFF2DC] dark:border-[#524128]",
         "shadow-[0_4px_20px_rgba(216,178,130,0.55),0_0_12px_rgba(246,225,195,0.35)]",

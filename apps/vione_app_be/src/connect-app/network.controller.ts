@@ -12,6 +12,20 @@ export class NetworkController {
     return this.connectAppService.listConnections(req.user.id);
   }
 
+  @Get('person-journey')
+  async getPersonJourney(
+    @Request() req,
+    @Query('personId') personId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.connectAppService.getPersonJourney(req.user.id, {
+      personId,
+      cursor: cursor || null,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
+  }
+
   @Post('connections/resolve')
   async resolvePublicCounterparts(@Body('userIds') userIds: string[]) {
     return this.connectAppService.resolvePublicCounterparts(userIds);

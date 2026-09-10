@@ -254,6 +254,82 @@ Tất cả thông báo từ Web CRM tới Mobile đều được gắn thuộc t
   - Công thức: `const days = Math.max(1, Math.floor((now.getTime() - lastInteractionTime) / (1000 * 60 * 60 * 24)));`.
   - Sinh ra câu nhắc nhở AI chính xác: *"AI nhắc nhở: Đã X ngày chưa tương tác cùng [Tên đối tác]..."*.
 
+## 15. Luồng Đăng Ký Hội Viên CLB & Bắn Thông Báo Hai Chiều (Landing -> Web CRM Bell Icon -> Member App)
 
+### 15.1. Khi Khách / Doanh Nhân Nộp Đơn Gia Nhập CLB trên Landing Page (`/landing/ceo1983` hoặc `/landing/business-connect`)
+1. **Frontend Landing (`submitClubApplication`)**:
+   - Gửi payload đăng ký lên endpoint backend `POST /api/connect-app/club-application`.
+2. **Backend Gateway & Dispatcher (`notifyAssociationAdmins` trong `connect-app.service.ts`)**:
+   - Truy vấn toàn bộ danh sách quản trị viên có thẩm quyền:
+     - Quản trị viên hiệp hội trong bảng `public.memberships` (vai trò `admin`, `president`, `vice_president`, `secretary`).
+     - Quản trị viên cấp nền tảng / tenant trong bảng `public.user_roles` (`platform_admin`, `tenant_admin`, `admin`).
+     - Tài khoản quản trị trong `public.vione_users` (có email chứa `%admin%` như `admin2@connect.vn`, `admin@connect.vn`).
+   - Lưu thông báo đồng thời vào:
+     - `public.notifications` (hệ thống thông báo toàn CRM).
+     - `public.business_notifications` (thông báo in-app định danh cho từng `user_id` quản trị).
+   - Phát sóng sự kiện WebSocket (`emitToAll` và `emitToRoom` `assoc:<associationId>` / `user:<adminId>`) với `targetRoute: "/members?status=pending"`.
+3. **Web CRM Topbar Bell Icon (`NotificationCenter.tsx` + `listNotificationsFn`)**:
+   - Khi Admin (`admin2@connect.vn` hoặc bất kỳ tài khoản có quyền duyệt) đăng nhập vào Web CRM (`/members`), icon chuông thông báo lập tức hiển thị badge đỏ và danh sách thông báo:
+     *"Đăng ký gia nhập CLB CEO 1983: [Họ Tên] - [Tên Doanh Nghiệp]"*.
+   - Bấm vào thông báo sẽ tự động đánh dấu đã đọc và chuyển hướng thẳng đến bảng Quản lý hội viên lọc theo `status=pending` (`/members?status=pending`), sẵn sàng thao tác duyệt.
 
+### 15.2. Khi Admin Phê Duyệt hoặc Từ Chối Hội Viên trên Web CRM (`/members`)
+1. **Backend Approval Workflow (`updateMember` trong `members.service.ts`)**:
+   - Khi Admin chuyển trạng thái hội viên thành `active` (hoặc `rejected`), backend tự động tìm `user_id` tương ứng của hội viên đó.
+   - Bắn thông báo kết quả vào `public.business_notifications` cho tài khoản hội viên:
+     - Duyệt thành công: *"Hồ sơ gia nhập CLB của bạn đã được phê duyệt chính thức. Chào mừng bạn gia nhập mạng lưới liên minh C-Level!"*.
+     - Gắn `targetRoute: "/m"` hoặc `/connect-app/me`.
+   - Phát sóng WebSocket `user:<applicantUserId>` để cập nhật tức thì.
+2. **Mobile Member App (`/m` hoặc `/connect-app`)**:
+   - Người dùng đăng nhập vào app sẽ nhận được thông báo in-app báo đã được duyệt thành viên chính thức.
 
+---
+
+## 16. Tiêu Chuẩn 3 Chế Độ Giao Diện & Độ Tương Phản Cao Chế Độ Sáng (Landing High-Contrast Light Mode Standards)
+
+### 16.1. Quy Chuẩn Nhãn 3 Theme (Theme Switcher Mode Labels)
+Nhãn chuyển đổi theme phải tuân thủ nghiêm ngặt ngôn ngữ hiển thị:
+- **Tiếng Việt (`vi`)**:
+  - `modeDark`: **Tối**
+  - `modeLight`: **Sáng**
+  - `modeContrast`: **Tương phản cao**
+- **Tiếng Anh (`en`)**:
+  - `modeDark`: **Dark**
+  - `modeLight`: **Light**
+  - `modeContrast`: **High Contrast**
+- **Tiếng Trung (`zh`)**:
+  - `modeDark`: **暗色**
+  - `modeLight`: **亮色**
+  - `modeContrast`: **高对比度**
+- **Tiếng Nhật (`ja`)**:
+  - `modeDark`: **ダーク**
+  - `modeLight`: **ライト**
+  - `modeContrast`: **高コントラスト**
+- **Tiếng Hàn (`ko`)**:
+  - `modeDark`: **다크**
+  - `modeLight`: **라이트**
+  - `modeContrast`: **고대비**
+
+### 16.2. Tiêu Chuẩn Độ Tương Phản Chế Độ Sáng (Light Mode High-Contrast Rule)
+- **CẤM** sử dụng gradient chữ màu trắng/vàng kem (`from-white`, `from-[#FFFFFF]`, `via-[#FFF8E7]`, `to-[#FCE19F]`) cố định mà không bọc `themeClass`. Ở chế độ Sáng, chữ màu trắng trên nền sáng sẽ bị mờ/tàng hình.
+- **Tiêu chuẩn màu ở Chế độ Sáng (Light Mode / Sáng)**:
+  - Tiêu đề chính (H1/H2/H3): Sử dụng màu đen than đậm `#0F172A` (`text-[#0F172A]`) hoặc gradient than chì sâu (`from-[#0F172A] via-[#1E293B] to-[#334155]`).
+  - Điểm nhấn vàng đồng / highlight: Chuyển sang màu hổ phách đậm sắc nét (`from-[#B45309] via-[#D97706] to-[#92400E]`).
+  - Nội dung mô tả / phụ đề: Sử dụng `text-[#334155]` hoặc `text-[#475569]`.
+  - Nền thẻ / Bento cards: Sử dụng nền trắng tinh khiết `#FFFFFF` hoặc ngà sang `#FAF8F5`, viền vi tế `border-amber-900/15`, đổ bóng êm `shadow-[0_8px_30px_rgba(0,0,0,0.06)]`.
+
+---
+
+## 17. Phân Định Background Riêng Biệt Cho Landing CEO 1983 và Business Connect SaaS (Anti-Plagiarism & Brand Exclusivity)
+
+- **Landing CLB CEO 1983 (`/landing/ceo1983`)**:
+  - Sở hữu bộ ảnh nền đặc quyền phong cách Hoàng Gia VIP 24K Gold, lụa đen và huy hiệu lãnh đạo:
+    - Chế độ Tối (Dark): `/landing/ceo1983-hero-dark.jpg`
+    - Chế độ Sáng (Light): `/landing/ceo1983-hero-light.jpg`
+    - Chế độ Tương phản (Contrast): `/landing/ceo1983-contrast.jpg`
+- **Landing ViOne Business Connect SaaS (`/landing/business-connect`)**:
+  - Sở hữu bộ ảnh nền công nghệ Cyber Tech Grid, mạng lưới Blueprint SaaS và giao thương B2B:
+    - Chế độ Tối (Dark): `/landing/business-saas-dark.jpg`
+    - Chế độ Sáng (Light): `/landing/business-saas-light.jpg`
+    - Chế độ Tương phản (Contrast): `/landing/business-cta-bg.jpg`
+- **Tuyệt đối không dùng chung background giữa 2 landing page** để đảm bảo tính độc bản thương hiệu và bản quyền thiết kế.

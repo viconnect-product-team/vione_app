@@ -29,6 +29,7 @@ import {
   Play,
 } from "lucide-react";
 import { toast } from "sonner";
+import { safeRandomUUID } from "@/lib/utils";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/use-role";
@@ -238,7 +239,7 @@ function AiAssistantPage() {
       const wf = getWorkflow(workflowId);
       if (!wf) return;
       const run = advanceRun(
-        initWorkflowRun(wf, { rank, hasAssociation: true }, crypto.randomUUID()),
+        initWorkflowRun(wf, { rank, hasAssociation: true }, safeRandomUUID()),
       );
       setActiveRun(run);
       toast.success(`Đã tạo quy trình: ${wf.name}`);
@@ -314,9 +315,9 @@ function AiAssistantPage() {
       setActiveCapability(capId);
       setUsingContext(resolved.isFollowUp && resolved.confidence >= 0.5);
 
-      const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: trimmed };
+      const userMsg: ChatMessage = { id: safeRandomUUID(), role: "user", content: trimmed };
       const pendingMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         role: "assistant",
         content: "",
         pending: true,

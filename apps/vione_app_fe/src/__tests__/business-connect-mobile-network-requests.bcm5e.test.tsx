@@ -17,7 +17,9 @@ import { expectNoAxeViolations } from "./helpers/business-connect-test-harness";
 import { requestCountLabel } from "@/hooks/use-network-requests";
 import type { GlobalConnectionDTO } from "@/lib/global-network/types";
 
-afterEach(cleanup);
+vi.mock("@/hooks/use-viewer-user-id", () => ({
+  useViewerUserId: () => "viewer-1",
+}));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {

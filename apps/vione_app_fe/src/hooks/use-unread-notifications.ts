@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouterState } from "@tanstack/react-router";
 import { listNotificationsFn } from "@/lib/notifications.functions";
+import { getConnectAppSocket } from "./use-connect-app-socket";
+
 
 export const SEEN_KEY = "vba.notif.lastSeenAt";
 
@@ -60,9 +62,28 @@ export function useUnreadNotifications() {
     // Re-sync when another instance marks notifications as seen.
     const onSeen = () => setCount(0);
     window.addEventListener("notifications-seen", onSeen);
-    return () => window.removeEventListener("notifications-seen", onSeen);
+    window.addEventListener("connect-app:notification", refresh);
+
+    const socket = getConnectAppSocket();
+    const onSocketEvent = () => {
+      void refresh();
+    };
+    socket.on("notification:new", onSocketEvent);
+    socket.on("notification:count", onSocketEvent);
+    socket.on("notification:unread_count", onSocketEvent);
+    socket.on("notification", onSocketEvent);
+
+    return () => {
+      window.removeEventListener("notifications-seen", onSeen);
+      window.removeEventListener("connect-app:notification", refresh);
+      socket.off("notification:new", onSocketEvent);
+      socket.off("notification:count", onSocketEvent);
+      socket.off("notification:unread_count", onSocketEvent);
+      socket.off("notification", onSocketEvent);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // Mark as seen when the user opens the notifications page.
   useEffect(() => {

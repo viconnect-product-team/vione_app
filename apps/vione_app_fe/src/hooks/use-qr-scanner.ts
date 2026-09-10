@@ -66,6 +66,8 @@ export function useQrScanner(opts: {
   onDetectRef.current = onDetect;
   const [status, setStatus] = useState<ScannerStatus>("idle");
   const [hasTorch, setHasTorch] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const retry = () => setRetryNonce((n) => n + 1);
 
   useEffect(() => {
     if (!active) {
@@ -102,13 +104,27 @@ export function useQrScanner(opts: {
     };
 
     async function getCameraStream(): Promise<MediaStream> {
-      // 1. Ideal full HD or HD stream with environment camera
+      const getMedia = (c: MediaStreamConstraints) => {
+        if (navigator?.mediaDevices?.getUserMedia) {
+          return navigator.mediaDevices.getUserMedia(c);
+        }
+        const legacy =
+          (navigator as any)?.getUserMedia ||
+          (navigator as any)?.webkitGetUserMedia ||
+          (navigator as any)?.mozGetUserMedia;
+        if (legacy) {
+          return new Promise<MediaStream>((res, rej) => legacy.call(navigator, c, res, rej));
+        }
+        return Promise.reject(new Error("No camera support"));
+      };
+
+      // 1. Mobile-friendly ideal 720p without rigid min bounds (prevents OverconstrainedError in portrait orientation)
       try {
-        return await navigator.mediaDevices.getUserMedia({
+        return await getMedia({
           video: {
             facingMode: { ideal: facingMode },
-            width: { ideal: 1920, min: 640 },
-            height: { ideal: 1080, min: 480 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
           },
           audio: false,
         });
@@ -118,7 +134,7 @@ export function useQrScanner(opts: {
 
       // 2. Simple facingMode
       try {
-        return await navigator.mediaDevices.getUserMedia({
+        return await getMedia({
           video: { facingMode },
           audio: false,
         });
@@ -127,14 +143,20 @@ export function useQrScanner(opts: {
       }
 
       // 3. Fallback to any camera
-      return await navigator.mediaDevices.getUserMedia({
+      return await getMedia({
         video: true,
         audio: false,
       });
     }
 
     async function start() {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      const hasMedia =
+        typeof navigator !== "undefined" &&
+        (navigator.mediaDevices?.getUserMedia ||
+          (navigator as any)?.getUserMedia ||
+          (navigator as any)?.webkitGetUserMedia);
+
+      if (!hasMedia) {
         setStatus("unsupported");
         return;
       }
@@ -163,31 +185,37 @@ export function useQrScanner(opts: {
         setHasTorch(Boolean(caps?.torch));
       }
 
-      const video = videoRef.current;
-      if (video) {
-        video.srcObject = stream;
-        video.setAttribute("playsinline", "true");
-        video.setAttribute("webkit-playsinline", "true");
-        video.muted = true;
-        video.autoplay = true;
-        try {
-          await video.play();
-        } catch {
-          /* autoplay guard */
+      const bindStreamToVideo = async () => {
+        const video = videoRef.current;
+        if (!video || !stream) return false;
+        if (video.srcObject !== stream) {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", "true");
+          video.setAttribute("webkit-playsinline", "true");
+          video.muted = true;
+          video.autoplay = true;
+          try {
+            await video.play();
+          } catch {
+            /* autoplay guard */
+          }
         }
-      }
+        return video.videoWidth > 0 && video.readyState >= 2;
+      };
 
-      // Wait for video stream to initialize
+      await bindStreamToVideo();
+
+      // Wait for video stream to initialize and keep binding if element mounted later
       const waitForVideo = async (maxWaitMs = 3000): Promise<boolean> => {
         const startT = Date.now();
         while (Date.now() - startT < maxWaitMs) {
           if (stopped) return false;
-          if (videoRef.current && videoRef.current.videoWidth > 0 && videoRef.current.readyState >= 2) {
-            return true;
-          }
-          await new Promise((r) => setTimeout(r, 40));
+          const isReady = await bindStreamToVideo();
+          if (isReady) return true;
+          await new Promise((r) => setTimeout(r, 50));
         }
-        return !!videoRef.current;
+        await bindStreamToVideo();
+        return true;
       };
 
       await waitForVideo();
@@ -312,7 +340,7 @@ export function useQrScanner(opts: {
       if (stream) stream.getTracks().forEach((t) => t.stop());
       trackRef.current = null;
     };
-  }, [active, facingMode]);
+  }, [active, facingMode, retryNonce]);
 
   // Torch / flashlight control
   useEffect(() => {
@@ -343,6 +371,6 @@ export function useQrScanner(opts: {
     return res;
   };
 
-  return { videoRef, status, hasTorch, scanImageFile };
+  return { videoRef, status, hasTorch, scanImageFile, retry };
 }
 

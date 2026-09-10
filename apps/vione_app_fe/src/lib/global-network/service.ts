@@ -57,12 +57,14 @@ function cleanReason(v: string | undefined): string | undefined {
   return t.length ? t : undefined;
 }
 
+import { safeRandomUUID } from "@/lib/utils";
+
 /** Server-side mutation key: use caller key if provided, else deterministic new. */
 function resolveMutationKey(key: string | undefined): string {
   if (typeof key === "string" && key.trim().length >= 8 && key.length <= 200) {
     return key.trim();
   }
-  return crypto.randomUUID();
+  return safeRandomUUID();
 }
 
 function parseMutationResult(json: unknown): GlobalConnectionMutationResult {

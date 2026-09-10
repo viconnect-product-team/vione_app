@@ -37,8 +37,8 @@ export class DmController {
     @Body('personId') personId?: string,
   ) {
     let cleanId = counterpartUserId;
-    if (personId && personId.startsWith('u:')) {
-      cleanId = personId.substring(2);
+    if (personId) {
+      cleanId = personId.startsWith('u:') ? personId.substring(2) : personId;
     }
     if (!cleanId) {
       throw new BadRequestException('counterpart_user_id_required');

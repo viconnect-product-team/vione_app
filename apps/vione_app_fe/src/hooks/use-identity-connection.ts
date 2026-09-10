@@ -13,10 +13,10 @@ export const identityConnectionKeys = {
   state: (token: string) => [...identityConnectionKeys.root, "state", token] as const,
 };
 
+import { safeRandomUUID } from "@/lib/utils";
+
 function newMutationKey(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return safeRandomUUID();
 }
 
 export function useIdentityConnection(token: string, enabled: boolean) {

@@ -8,6 +8,7 @@
 import { buildCandidateFromModel } from "./card-scan.extract";
 import { runCardOcrVision } from "./card-scan.server";
 import { ocrModelOutputSchema, type CardScanResponse } from "./card-scan.types";
+import { safeRandomUUID } from "@/lib/utils";
 
 /** Validates raw model JSON and builds the candidate — pure given `raw`. */
 export function candidateFromRawModelOutput(raw: unknown, scanId: string): CardScanResponse {
@@ -21,5 +22,5 @@ export function candidateFromRawModelOutput(raw: unknown, scanId: string): CardS
 /** Full OCR pass: image in → candidate (or truthful failure code) out. */
 export async function scanBusinessCardImage(imageDataUrl: string): Promise<CardScanResponse> {
   const raw = await runCardOcrVision(imageDataUrl);
-  return candidateFromRawModelOutput(raw, crypto.randomUUID());
+  return candidateFromRawModelOutput(raw, safeRandomUUID());
 }

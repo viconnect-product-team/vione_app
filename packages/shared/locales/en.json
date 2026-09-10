@@ -6088,7 +6088,7 @@
   "bc.mobile.moment.error.notFound": "This moment no longer exists.",
   "bc.mobile.moment.error.update": "Could not update the moment. Please try again.",
   "bc.mobile.moment.error.delete": "Could not delete the moment. Please try again.",
-  "bc.mobile.intel.home.title": "Suggested connections for you",
+  "bc.mobile.intel.home.title": "Today's suggestions",
   "bc.mobile.intel.home.viewAll": "View all",
   "bc.mobile.intel.home.empty": "No suggestions today. Grow your network.",
   "bc.mobile.intel.home.empty.cta": "Explore network",

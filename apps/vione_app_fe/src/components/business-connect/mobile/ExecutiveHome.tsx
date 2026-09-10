@@ -14,6 +14,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Bell,
   CalendarDays,
   ChevronRight,
   CircleCheck,
@@ -27,12 +28,11 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HomeNotificationsMenu } from "./HomeNotificationsMenu";
 import { hasTKey, useFmt, useLang, useT, type TKey } from "@/lib/i18n";
 import { getVNTimeGreeting } from "@/lib/utils";
 import {
-  getGreetingDaypart,
   useBusinessConnectHome,
   type BcMobileHomeIdentity,
   type BcMobileTodayItem,
@@ -42,13 +42,11 @@ import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { useMyIdentity } from "@/hooks/use-my-identity";
 import { useVSheet } from "@/hooks/use-v-sheet";
 import { useTodayPreferences } from "@/hooks/use-today-preferences";
-import { useUnreadDmCount } from "@/hooks/use-bc-dm";
 import {
   applyTodayPreferences,
   isDefaultTodayPreferences,
 } from "@/lib/business-connect/mobile/today-preferences";
 
-import { useQuery } from "@tanstack/react-query";
 import { fetchNestApi } from "@/lib/api-client";
 import { RelationshipSuggestions } from "./RelationshipSuggestions";
 import { ViOneLogo } from "./ViOneLogo";
@@ -100,12 +98,20 @@ export function ExecutiveHome() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [scheduleTab, setScheduleTab] = useState<"today" | "upcoming">("today");
 
-  // Kéo cả CRM events để đảm bảo dual-source cho sự kiện hôm nay & sắp tới
-  const { data: crmEventsData } = useQuery<any>({
-    queryKey: ["crm-events-home"],
-    staleTime: 5 * 60_000,
-    queryFn: () => fetchNestApi("/events?limit=20"),
-  });
+  // Kéo cả CRM events để đảm bảo dual-source cho sự kiện hôm nay & sắp tới (an toàn không throw khi thiếu QueryClientProvider)
+  const [crmEventsData, setCrmEventsData] = useState<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchNestApi("/events?limit=20")
+      .then((res) => {
+        if (active) setCrmEventsData(res);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const crmList: CrmEvent[] = Array.isArray(crmEventsData)
     ? crmEventsData
@@ -136,15 +142,7 @@ export function ExecutiveHome() {
     });
 
   const rawPool = data?.today.pool ?? data?.today.items ?? [];
-  // Lọc strictly các mục hôm nay
-  const todayOnlyPool = rawPool.filter((item) => {
-    if (item.startsAt || item.dueAt) {
-      return isEventToday(item);
-    }
-    return true;
-  });
-
-  const mergedTodayPool = [...todayOnlyPool];
+  const mergedTodayPool = [...rawPool];
   for (const crmItem of crmTodayItems) {
     if (!mergedTodayPool.some((p) => p.id === crmItem.id || (p.titleKey && p.titleKey === crmItem.titleKey))) {
       mergedTodayPool.unshift(crmItem);
@@ -171,24 +169,27 @@ export function ExecutiveHome() {
     });
 
   const unread = data?.unreadNotificationCount ?? null;
-  const unreadDmCount = useUnreadDmCount();
 
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 py-3 -mx-4">
-        <div className="relative inline-flex flex-none flex-col items-start gap-1">
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 -mx-4"
+        style={{
+          paddingTop: "var(--bc-mobile-safe-top-compact)",
+          minHeight: "calc(var(--bc-mobile-safe-top-compact) + var(--bc-mobile-header-h))",
+        }}
+      >
+        <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <HomeNotificationsMenu unreadCount={unread} />
+          <NotificationsLink unreadCount={unread} />
         </div>
       </header>
-
-      <div aria-hidden="true" style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }} />
 
       <main id="bc-mobile-home" className="contents">
         {home.isPending || (!data && !home.isError) ? (
@@ -201,90 +202,79 @@ export function ExecutiveHome() {
 
             <section
               aria-labelledby="bc-home-today"
-              className="relative mt-6 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm transition-all hover:border-[var(--bc-mobile-border-gold)]"
+              className="mt-8"
             >
-              {/* Header & 2 Tabs Switcher */}
-              <div className="relative z-10 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+              {/* Header */}
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--bc-mobile-muted)]">
+                    {scheduleTab === "today" ? t("bc.mobile.home.today.label") : "Lịch trình sắp tới"}
+                  </div>
+                  <h2
+                    id="bc-home-today"
+                    className="text-[20px] font-semibold text-[var(--bc-mobile-text)]"
+                  >
+                    {scheduleTab === "today" ? <TodayDate /> : "Sự kiện sắp diễn ra"}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {scheduleTab === "today" && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomizeOpen(true)}
+                      aria-label={t("bc.mobile.home.today.customize.open")}
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+                    </button>
+                  )}
+
+                  <Link
+                    to="/connect-app/calendar"
+                    className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none"
+                  >
+                    {t("bc.mobile.home.today.viewCalendar")}
+                    <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Segmented Tab Bar */}
+              <div className="mt-3 flex items-center rounded-xl bg-slate-100 dark:bg-black/40 p-1 border border-[var(--bc-mobile-border)]">
+                <button
+                  type="button"
+                  onClick={() => setScheduleTab("today")}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+                    scheduleTab === "today"
+                      ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-bold"
+                      : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  }`}
+                >
+                  Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScheduleTab("upcoming")}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    scheduleTab === "upcoming"
+                      ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-bold"
+                      : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  }`}
+                >
+                  <span>Sắp tới</span>
+                  {upcomingEvents.length > 0 && (
                     <span
-                      aria-hidden="true"
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                        scheduleTab === "upcoming"
+                          ? "bg-[#050c15]/20 text-[#050c15] font-bold"
+                          : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
+                      }`}
                     >
-                      <CalendarDays className="h-4.5 w-4.5" strokeWidth={1.8} />
+                      {upcomingEvents.length}
                     </span>
-
-                    <div className="min-w-0">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--bc-mobile-muted)] leading-[15px]">
-                        {scheduleTab === "today" ? t("bc.mobile.home.today.label") : "Lịch trình sắp tới"}
-                      </div>
-                      <h2
-                        id="bc-home-today"
-                        className="mt-0.5 truncate text-[15px] font-bold text-[var(--bc-mobile-text)] leading-6"
-                      >
-                        {scheduleTab === "today" ? <TodayDate /> : "Sự kiện sắp diễn ra"}
-                      </h2>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {scheduleTab === "today" && (
-                      <button
-                        type="button"
-                        onClick={() => setCustomizeOpen(true)}
-                        aria-label={t("bc.mobile.home.today.customize.open")}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] hover:bg-black/5 dark:hover:bg-[#ffffff0d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                      >
-                        <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
-                      </button>
-                    )}
-
-                    <Link
-                      to="/connect-app/calendar"
-                      className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none"
-                    >
-                      {t("bc.mobile.home.today.viewCalendar")}
-                      <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Segmented Tab Bar */}
-                <div className="flex items-center rounded-xl bg-slate-100 dark:bg-black/40 p-1 border border-[var(--bc-mobile-border)]">
-                  <button
-                    type="button"
-                    onClick={() => setScheduleTab("today")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
-                      scheduleTab === "today"
-                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-xs font-bold"
-                        : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
-                    }`}
-                  >
-                    Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScheduleTab("upcoming")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      scheduleTab === "upcoming"
-                        ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-xs font-bold"
-                        : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
-                    }`}
-                  >
-                    <span>Sắp tới</span>
-                    {upcomingEvents.length > 0 && (
-                      <span
-                        className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
-                          scheduleTab === "upcoming"
-                            ? "bg-[#050c15]/20 text-[#050c15] font-bold"
-                            : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
-                        }`}
-                      >
-                        {upcomingEvents.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                  )}
+                </button>
               </div>
 
               {/* Nội dung Tab HÔM NAY */}
@@ -301,14 +291,12 @@ export function ExecutiveHome() {
                   ) : todayPool.length === 0 || todayItems.length === 0 ? (
                     <TodayEmpty
                       onOpenV={openV}
-                      onViewUpcoming={() => setScheduleTab("upcoming")}
-                      upcomingCount={upcomingEvents.length}
                     />
                   ) : (
                     <>
-                      <ul className="mt-5 space-y-5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
+                      <ul className="mt-1 divide-y divide-[var(--bc-mobile-border)]">
                         {todayItems.map((item) => (
-                          <TodayTimelineRow key={item.id} item={item} />
+                          <TodayItem key={item.id} item={item} />
                         ))}
                       </ul>
                       <TodayPrimaryAction items={todayItems} onOpenV={openV} />
@@ -322,10 +310,10 @@ export function ExecutiveHome() {
                 <div className="mt-3">
                   {upcomingEvents.length === 0 ? (
                     <div className="py-8 text-center">
-                      <p className="text-sm font-medium text-[#94A3B8]">Chưa có sự kiện hoặc lịch trình sắp tới</p>
+                      <p className="text-sm font-medium text-[var(--bc-mobile-muted)]">Chưa có sự kiện hoặc lịch trình sắp tới</p>
                       <Link
                         to="/connect-app/calendar"
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-[#D8B282] hover:underline"
+                        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--bc-mobile-accent)] hover:underline"
                       >
                         Xem lịch hoạt động
                         <ChevronRight className="h-3 w-3" />
@@ -333,7 +321,7 @@ export function ExecutiveHome() {
                     </div>
                   ) : (
                     <>
-                      <ul className="mt-4 space-y-3.5 border-l border-[#D8B282]/30 pl-4">
+                      <ul className="mt-4 space-y-3.5 border-l border-[var(--bc-mobile-border-gold)] pl-4">
                         {upcomingEvents.slice(0, 5).map((ev) => (
                           <UpcomingEventTimelineRow key={ev.id} event={ev} />
                         ))}
@@ -341,13 +329,13 @@ export function ExecutiveHome() {
 
                       <Link
                         to="/connect-app/calendar"
-                        className="mt-4 flex min-h-[42px] w-full items-center justify-between rounded-xl px-4 py-2.5 border border-[#D8B282]/25 bg-white/[0.02] backdrop-blur-md transition-all hover:bg-white/[0.05] hover:border-[#D8B282]/50 text-xs font-medium text-[#CBD5E1]"
+                        className="mt-4 flex min-h-[42px] w-full items-center justify-between rounded-xl px-4 py-2.5 border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] transition-all hover:border-[var(--bc-mobile-border-gold)] text-xs font-medium text-[var(--bc-mobile-text)]"
                       >
-                        <span className="flex items-center gap-2 text-[#D4C3A3]">
-                          <CalendarDays className="h-4 w-4 text-[#D8B282]" />
+                        <span className="flex items-center gap-2 text-[var(--bc-mobile-text)]">
+                          <CalendarDays className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
                           <span>Xem tất cả ({upcomingEvents.length}) sự kiện trong lịch</span>
                         </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-[#D8B282]" />
+                        <ChevronRight className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" />
                       </Link>
                     </>
                   )}
@@ -389,6 +377,33 @@ function TodayDate() {
   );
 }
 
+function NotificationsLink({ unreadCount }: { unreadCount: number | null }) {
+  const t = useT();
+  const hasUnread = typeof unreadCount === "number" && unreadCount > 0;
+  const label = hasUnread
+    ? t("bc.mobile.home.notifications.unread", { count: unreadCount })
+    : t("bc.mobile.home.notifications");
+  const display = typeof unreadCount === "number" && unreadCount > 9 ? "9+" : unreadCount;
+
+  return (
+    <Link
+      to="/connect-app/inbox"
+      aria-label={label}
+      className="relative grid h-11 w-11 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+    >
+      <Bell aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+      {hasUnread ? (
+        <span
+          aria-hidden="true"
+          className="absolute right-1 top-1 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--bc-mobile-accent)] px-1 text-[10px] font-bold leading-none text-[var(--bc-mobile-bg)]"
+        >
+          {display}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
 function QuickActions() {
   const t = useT();
   const items = [
@@ -410,7 +425,7 @@ function QuickActions() {
   ];
 
   return (
-    <section aria-label={t("bc.mobile.home.quick.title")} className="mt-5 grid grid-cols-3 gap-2">
+    <nav aria-label={t("bc.mobile.home.quick.title")} className="mt-5 grid grid-cols-3 gap-2">
       {items.map(({ to, Icon, label }) => (
         <Link
           key={to}
@@ -425,7 +440,7 @@ function QuickActions() {
           </span>
         </Link>
       ))}
-    </section>
+    </nav>
   );
 }
 
@@ -495,37 +510,26 @@ function TodayTimelineRow({ item }: { item: BcMobileTodayItem }) {
   );
 }
 
-/** CTA vàng của thẻ HÔM NAY — chỉ hiện khi có mục thật để mở. */
+/** Primary V CTA row when Today is populated */
 function TodayPrimaryAction({
-  items,
+  items: _items,
   onOpenV,
 }: {
   items: BcMobileTodayItem[];
   onOpenV: () => void;
 }) {
   const t = useT();
-  const target = items.find(
-    (i) => i.kind === "meeting" && i.action.canRoute && i.action.targetRoute,
-  );
-  if (!target) return <VPrimaryAction onOpenV={onOpenV} />;
   return (
-    <Link
-      to={target.action.targetRoute as any}
-      params={(target.action.targetParams ?? {}) as any}
-      search={(target.action.targetSearch ?? {}) as any}
-      className="mt-5 flex min-h-[48px] w-full items-center justify-between rounded-xl px-4 py-3 border border-[#D8B282]/30 bg-white/[0.03] backdrop-blur-md transition-all hover:bg-white/[0.06] hover:border-[#D8B282]/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] active:scale-98"
-    >
-      <span
-        aria-hidden="true"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] p-1 shadow-[0_2px_8px_rgba(201,158,74,0.3)]"
+    <div className="mt-4 text-center">
+      <button
+        type="button"
+        onClick={onOpenV}
+        className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
-        <VIconMark size={18} />
-      </span>
-      <span className="font-semibold text-sm bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent text-center">
-        {t("bc.mobile.home.today.join")}
-      </span>
-      <ArrowRight aria-hidden="true" className="h-4 w-4 text-[#D8B282]" strokeWidth={2} />
-    </Link>
+        <VMarker />
+        <span>{t("bc.mobile.home.v.open")}</span>
+      </button>
+    </div>
   );
 }
 
@@ -544,37 +548,10 @@ function InsightCard() {
   const parts = headline.split(/(\d+)/);
 
   return (
-    <section
+    <div
       aria-labelledby="bc-home-insight"
       className="relative mt-5 overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-5 shadow-sm transition-all hover:border-[var(--bc-mobile-border-gold)]"
     >
-
-      {/* Concentric circles SVG background at bottom right */}
-      <div className="absolute bottom-0 right-0 pointer-events-none opacity-40 z-0 translate-x-[20px] translate-y-[20px]">
-        <svg width="161" height="158" viewBox="0 0 161 158" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g opacity="0.5">
-            <rect x="0.5" y="0.5" width="232" height="232" rx="116" stroke="#D8B282" strokeOpacity="0.2" />
-            <rect x="26.5" y="26.5" width="180" height="180" rx="90" stroke="#D8B282" strokeOpacity="0.4" />
-            <rect x="52.5" y="52.5" width="128" height="128" rx="64" stroke="#D8B282" strokeOpacity="0.6" strokeDasharray="3 2" />
-            <foreignObject x="72.5" y="72.5" width="88" height="88">
-              <div
-                style={{
-                  backdropFilter: "blur(6px)",
-                  height: "100%",
-                  width: "100%",
-                }}
-              />
-            </foreignObject>
-            <g data-figma-bg-blur-radius="12">
-              <rect x="84.5" y="84.5" width="64" height="64" rx="32" fill="#3C332C" fillOpacity="0.8" />
-              <rect x="85" y="85" width="63" height="63" rx="31.5" stroke="#D8B282" strokeOpacity="0.3" />
-              {/* Users icon inside center circle */}
-              <path d="M108.25 104.5C109.656 104.531 110.734 105.156 111.484 106.375C112.172 107.625 112.172 108.875 111.484 110.125C110.734 111.344 109.656 111.969 108.25 112C106.844 111.969 105.766 111.344 105.016 110.125C104.328 108.875 104.328 107.625 105.016 106.375C105.766 105.156 106.844 104.531 108.25 104.5ZM125.5 104.5C126.906 104.531 127.984 105.156 128.734 106.375C129.422 107.625 129.422 108.875 128.734 110.125C127.984 111.344 126.906 111.969 125.5 112C124.094 111.969 123.016 111.344 122.266 110.125C121.578 108.875 121.578 107.625 122.266 106.375C123.016 105.156 124.094 104.531 125.5 104.5ZM101.5 118.516C101.531 117.078 102.016 115.891 102.953 114.953C103.891 114.016 105.078 113.531 106.516 113.5H108.484C109.234 113.5 109.938 113.656 110.594 113.969C110.531 114.312 110.5 114.656 110.5 115C110.562 116.844 111.234 118.344 112.516 119.5H102.484C101.891 119.438 101.562 119.109 101.5 118.516ZM120.484 119.5C121.766 118.344 122.438 116.844 122.5 115C122.5 114.656 122.469 114.312 122.406 113.969C123.062 113.656 123.766 113.5 124.516 113.5H126.484C127.922 113.531 129.109 114.016 130.047 114.953C130.984 115.891 131.469 117.078 131.5 118.516C131.438 119.109 131.109 119.438 130.516 119.5H120.484ZM112 115C112 114.188 112.203 113.438 112.609 112.75C113.016 112.062 113.562 111.516 114.25 111.109C114.969 110.703 115.719 110.5 116.5 110.5C117.281 110.5 118.031 110.703 118.75 111.109C119.438 111.516 119.984 112.062 120.391 112.75C120.797 113.438 121 114.188 121 115C121 115.812 120.797 116.562 120.391 117.25C119.984 117.938 119.438 118.484 118.75 118.891C118.031 119.297 117.281 119.5 116.5 119.5C115.719 119.5 114.969 119.297 114.25 118.891C113.562 118.484 113.016 117.938 112.609 117.25C112.203 116.562 112 115.812 112 115ZM107.5 127.234C107.531 125.484 108.141 124.016 109.328 122.828C110.516 121.641 111.984 121.031 113.734 121H119.266C121.016 121.031 122.484 121.641 123.672 122.828C124.859 124.016 125.469 125.484 125.5 127.234C125.438 128.016 125.016 128.438 124.234 128.5H108.766C107.984 128.438 107.562 128.016 107.5 127.234Z" fill="#D8B282" />
-            </g>
-          </g>
-        </svg>
-      </div>
-
       <div className="relative z-10 flex items-center gap-2">
         <Sparkles
           aria-hidden="true"
@@ -611,7 +588,7 @@ function InsightCard() {
         {isEmpty ? t("bc.mobile.home.insight.emptyCta") : t("bc.mobile.home.insight.cta")}
         <ArrowRight aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
       </Link>
-    </section>
+    </div>
   );
 }
 
@@ -637,82 +614,50 @@ function Greeting({
 }: {
   identity: BcMobileHomeIdentity;
 }) {
-  const name = identity.displayName ?? identity.email ?? null;
-  const initials = initialsOf(identity);
+  const name = identity.displayName ?? identity.email ?? "Thành viên";
   const viewerUserId = useViewerUserId();
   const mine = useMyIdentity({ enabled: Boolean(viewerUserId) });
   const profileIdentity = mine.data?.identity ?? null;
+  const initials = initialsOf(profileIdentity || identity);
   const avatarUrl = profileIdentity?.avatarUrl ?? identity.avatarUrl ?? null;
   const role = [profileIdentity?.jobTitle, profileIdentity?.companyName]
     .filter((p): p is string => Boolean(p && p.trim()))
     .join(" · ");
-  const t = useT();
 
   return (
     <div className="relative mt-4">
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-10 -top-12 h-56 w-56 rounded-full opacity-40 blur-2xl"
-        style={{
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--bc-mobile-accent) 35%, transparent) 0%, transparent 70%)",
-        }}
-      />
-
-      {/* Row 3: User profile summary horizontally aligned */}
-      <section
-        className="flex w-full flex-col items-start px-0 pt-0 pb-2"
-        aria-label="User profile summary"
-      >
-        <div className="relative flex w-full items-center gap-4 self-stretch">
-          <div
-            className="relative flex h-14 w-14 shrink-0 justify-center overflow-hidden rounded-full border-2 border-solid p-0.5 bg-[var(--bc-mobile-bg)]"
-            style={{ borderColor: "rgba(171, 109, 60, 0.5)" }}
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt=""
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="grid h-full w-full place-items-center rounded-full bg-[var(--bc-mobile-surface)] text-[18px] font-semibold text-[var(--bc-mobile-accent)]">
-                {initials ?? <User className="h-5 w-5" strokeWidth={1.6} />}
-              </span>
-            )}
-          </div>
-          <div className="relative inline-flex flex-[0_0_auto] flex-col items-start justify-center min-w-0 flex-1">
-            <div className="relative flex w-full flex-[0_0_auto] flex-col items-start pb-0.5">
-              <div className="relative flex w-full flex-[0_0_auto] items-center gap-2">
-                <h2 className="relative flex w-fit items-center whitespace-nowrap text-lg font-bold leading-7 tracking-tight text-[var(--bc-mobile-text)]">
-                  {name}
-                </h2>
-                <span
-                  className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)" }}
-                  aria-label="Verified member"
-                >
-                  <VIconMark size={14} />
-                </span>
-              </div>
-            </div>
-            {role ? (
-              <div className="relative flex w-full flex-[0_0_auto] flex-col items-start">
-                <p className="relative mt-[-1px] flex w-fit items-center whitespace-nowrap text-xs font-normal leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
-                  {role}
-                </p>
-              </div>
-            ) : null}
-            <div className="mt-2 inline-flex items-start">
-              <span className="relative inline-flex flex-[0_0_auto] flex-col items-start self-stretch rounded-full border border-solid border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] px-3 py-0.5">
-                <span className="relative flex w-fit items-center whitespace-nowrap text-[10px] font-semibold leading-[15px] tracking-[0.5px] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent">
-                  EXECUTIVE MEMBER
-                </span>
-              </span>
-            </div>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="mt-0.5 truncate text-[26px] font-semibold tracking-tight text-[var(--bc-mobile-text)]">
+            {name}
+          </h1>
+          {role ? (
+            <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
+              {role}
+            </p>
+          ) : null}
         </div>
-      </section>
+
+        <Link
+          to="/connect-app/me"
+          aria-label="Hồ sơ cá nhân"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+        >
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt=""
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              className="grid h-10 w-10 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-semibold text-[var(--bc-mobile-ivory)]"
+            >
+              {initials ?? <User className="h-5 w-5" strokeWidth={1.6} />}
+            </span>
+          )}
+        </Link>
+      </div>
     </div>
   );
 }
@@ -827,50 +772,27 @@ function UpcomingEventTimelineRow({ event }: { event: CrmEvent }) {
 
 function TodayEmpty({
   onOpenV,
-  onViewUpcoming,
-  upcomingCount,
 }: {
   onOpenV: () => void;
-  onViewUpcoming?: () => void;
-  upcomingCount?: number;
 }) {
   const t = useT();
   return (
-    <div className="mt-6 flex flex-col items-center px-2 pb-2 text-center">
-      <span
-        aria-hidden="true"
-        className="grid h-12 w-12 place-items-center rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
+    <div className="mt-8 flex flex-col items-center px-2 pb-4 text-center">
+      <CircleCheck aria-hidden="true" className="h-7 w-7 text-[var(--bc-mobile-accent)]" strokeWidth={1.5} />
+      <p className="mt-3 text-[15px] font-medium text-[var(--bc-mobile-text)]">
+        {t("bc.mobile.home.empty.title")}
+      </p>
+      <p className="mx-auto mt-1 max-w-[32ch] text-[13px] leading-relaxed text-[var(--bc-mobile-muted)]">
+        {t("bc.mobile.home.empty.body")}
+      </p>
+      <button
+        type="button"
+        onClick={onOpenV}
+        className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-lg px-3 text-[14px] font-medium text-[var(--bc-mobile-accent)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
       >
-        <CircleCheck className="h-5 w-5" strokeWidth={1.5} />
-      </span>
-      <p className="mt-3 text-[15px] font-bold text-[var(--bc-mobile-text)]">
-        Hôm nay bạn không có lịch trình nào
-      </p>
-      <p className="mx-auto mt-1 max-w-[32ch] text-[12.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
-        Tất cả lịch họp và sự kiện hôm nay đã hoàn tất hoặc chưa có lịch mới.
-      </p>
-
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 w-full">
-        {onViewUpcoming && upcomingCount && upcomingCount > 0 ? (
-          <button
-            type="button"
-            onClick={onViewUpcoming}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-accent-soft)] px-4 text-[13px] font-bold text-[var(--bc-mobile-accent)] transition-all hover:border-[var(--bc-mobile-border-gold)] active:scale-98 cursor-pointer shadow-xs"
-          >
-            <CalendarDays className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
-            <span>Xem sự kiện sắp tới ({upcomingCount})</span>
-          </button>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={onOpenV}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-slate-50 dark:bg-white/[0.03] backdrop-blur-sm px-4 text-[13px] font-semibold text-[var(--bc-mobile-accent)] transition-all hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-[var(--bc-mobile-border-gold)] focus-visible:outline-none active:scale-98 cursor-pointer"
-        >
-          <VMarker />
-          <span>{t("bc.mobile.home.empty.cta")}</span>
-        </button>
-      </div>
+        <VMarker />
+        <span>{t("bc.mobile.home.empty.cta")}</span>
+      </button>
     </div>
   );
 }

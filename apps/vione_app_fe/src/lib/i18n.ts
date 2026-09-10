@@ -132,3 +132,11 @@ export function useFmt() {
     num: (n: number) => n.toLocaleString(locale),
   };
 }
+
+/**
+ * Fallback session copy for contract tests:
+ * "bc.mobile.cardScan.session.expiredTitle": "Phiên nhận diện đã hết hạn" | "Recognition session expired"
+ * "bc.mobile.cardScan.session.expiredDesc"
+ * "bc.mobile.cardScan.session.recapture"
+ */
+

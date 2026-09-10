@@ -7,44 +7,7 @@ import { ConnectAppService } from './connect-app.service';
 export class CustomerController {
   constructor(private readonly connectAppService: ConnectAppService) {}
 
-  @Get()
-  async listBcCustomers(@Request() req) {
-    return this.connectAppService.listBcCustomers(req.user.id);
-  }
-
-  @Post()
-  async createBcCustomer(@Request() req, @Body() data: any) {
-    return this.connectAppService.createBcCustomer(req.user.id, data);
-  }
-
-  @Patch(':customerId')
-  async updateBcCustomer(
-    @Request() req,
-    @Param('customerId') customerId: string,
-    @Body() data: any,
-  ) {
-    return this.connectAppService.updateBcCustomer(req.user.id, { ...data, customerId });
-  }
-
-  @Delete(':customerId')
-  async deleteBcCustomer(@Request() req, @Param('customerId') customerId: string) {
-    return this.connectAppService.deleteBcCustomer(req.user.id, customerId);
-  }
-
-  @Get(':customerId/logs')
-  async listBcCustomerLogs(@Request() req, @Param('customerId') customerId: string) {
-    return this.connectAppService.listBcCustomerLogs(req.user.id, customerId);
-  }
-
-  @Post(':customerId/logs')
-  async addBcCustomerLog(
-    @Request() req,
-    @Param('customerId') customerId: string,
-    @Body() data: any,
-  ) {
-    return this.connectAppService.addBcCustomerLog(req.user.id, { ...data, customerId });
-  }
-
+  // --- Static tags routes MUST come before :customerId wildcard routes ---
   @Get('tags')
   async listBcCustomerTags(@Request() req) {
     return this.connectAppService.listBcCustomerTags(req.user.id);
@@ -69,6 +32,47 @@ export class CustomerController {
     return this.connectAppService.deleteBcCustomerTag(req.user.id, tagId);
   }
 
+  // --- Static needs routes MUST come before :customerId wildcard routes ---
+  @Patch('needs/:needId')
+  async updateBcCustomerNeed(
+    @Request() req,
+    @Param('needId') needId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.updateBcCustomerNeed(req.user.id, { ...data, needId });
+  }
+
+  @Delete('needs/:needId')
+  async deleteBcCustomerNeed(@Request() req, @Param('needId') needId: string) {
+    return this.connectAppService.deleteBcCustomerNeed(req.user.id, needId);
+  }
+
+  // --- Base collection routes ---
+  @Get()
+  async listBcCustomers(@Request() req) {
+    return this.connectAppService.listBcCustomers(req.user.id);
+  }
+
+  @Post()
+  async createBcCustomer(@Request() req, @Body() data: any) {
+    return this.connectAppService.createBcCustomer(req.user.id, data);
+  }
+
+  // --- Sub-resources on :customerId ---
+  @Get(':customerId/logs')
+  async listBcCustomerLogs(@Request() req, @Param('customerId') customerId: string) {
+    return this.connectAppService.listBcCustomerLogs(req.user.id, customerId);
+  }
+
+  @Post(':customerId/logs')
+  async addBcCustomerLog(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.addBcCustomerLog(req.user.id, { ...data, customerId });
+  }
+
   @Put(':customerId/tags')
   async setBcCustomerTags(
     @Request() req,
@@ -90,20 +94,6 @@ export class CustomerController {
     @Body() data: any,
   ) {
     return this.connectAppService.addBcCustomerNeed(req.user.id, { ...data, customerId });
-  }
-
-  @Patch('needs/:needId')
-  async updateBcCustomerNeed(
-    @Request() req,
-    @Param('needId') needId: string,
-    @Body() data: any,
-  ) {
-    return this.connectAppService.updateBcCustomerNeed(req.user.id, { ...data, needId });
-  }
-
-  @Delete('needs/:needId')
-  async deleteBcCustomerNeed(@Request() req, @Param('needId') needId: string) {
-    return this.connectAppService.deleteBcCustomerNeed(req.user.id, needId);
   }
 
   // --- AI Tag Suggestions ---
@@ -138,5 +128,20 @@ export class CustomerController {
     @Param('customerId') customerId: string,
   ) {
     return this.connectAppService.listCustomerTagSuggestFeedback(req.user.id, customerId);
+  }
+
+  // --- Parametrized single customer mutation routes ---
+  @Patch(':customerId')
+  async updateBcCustomer(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() data: any,
+  ) {
+    return this.connectAppService.updateBcCustomer(req.user.id, { ...data, customerId });
+  }
+
+  @Delete(':customerId')
+  async deleteBcCustomer(@Request() req, @Param('customerId') customerId: string) {
+    return this.connectAppService.deleteBcCustomer(req.user.id, customerId);
   }
 }

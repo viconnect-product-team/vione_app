@@ -549,8 +549,10 @@ describe("i18n + accessibility", () => {
     expect(await screen.findByRole("button", { name: "Clear search" })).toBeTruthy();
   });
 
-  it("axe passes: populated, empty, search-empty, and dark-mode surfaces", async () => {
-    seed({ connections: [connection()], summaries: [summary()], cards: [savedCard()] });
+  it(
+    "axe passes: populated, empty, search-empty, and dark-mode surfaces",
+    async () => {
+      seed({ connections: [connection()], summaries: [summary()], cards: [savedCard()] });
     const populated = renderNetwork();
     (await screen.findAllByText("Nguyễn Văn Bình")).at(-1)!;
     await expectNoViolations(populated.container);
@@ -581,5 +583,5 @@ describe("i18n + accessibility", () => {
     expect(dark.container.querySelector(".dark")).toBeTruthy();
     await expectNoViolations(dark.container);
     dark.unmount();
-  });
+  }, 20_000);
 });

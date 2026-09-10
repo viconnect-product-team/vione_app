@@ -89,30 +89,24 @@ export function LangSwitcher({
   const triggerBtnClass = isContrast
     ? "border-white/50 bg-black text-white hover:bg-zinc-900"
     : isDark
-    ? "border-[#B18B44]/50 bg-[#232528] text-[#F8F7F3] hover:bg-[#2F3136] hover:border-[#E8C986]"
-    : isExplicitLight
-    ? "border-[#C5A25D]/50 bg-[#FDFCF7] text-[#191A1C] hover:bg-white hover:border-[#B18B44]"
-    : "border-amber-300/40 bg-white/95 text-slate-800 hover:bg-amber-500/10 hover:border-amber-400 dark:border-amber-500/30 dark:bg-[#0e1726]/95 dark:text-slate-100 dark:hover:bg-white/10";
+    ? "border-amber-500/40 bg-[#161B28] text-slate-100 hover:bg-white/10 hover:border-amber-400"
+    : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-amber-500 shadow-xs";
 
   const dropdownMenuClass = isContrast
     ? "border-white bg-black text-white shadow-2xl"
     : isDark
-    ? "border-[#B18B44]/40 bg-[#191A1D]/98 text-white shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
-    : isExplicitLight
-    ? "border-[#C5A25D]/40 bg-[#FFFFFF]/98 text-[#191A1C] shadow-[0_20px_40px_rgba(0,0,0,0.12)] backdrop-blur-2xl"
-    : "border-amber-200/80 bg-white shadow-[0_16px_40px_rgba(0,0,0,0.16)] backdrop-blur-xl dark:border-amber-500/30 dark:bg-[#0d1527] dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)]";
+    ? "border-amber-500/30 bg-[#0E1320]/98 text-white shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+    : "border-slate-200 bg-white text-slate-900 shadow-[0_16px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl";
 
   const activeItemClass = isContrast
     ? "bg-white text-black font-extrabold shadow-sm"
-    : "bg-[linear-gradient(135deg,#F4D699_0%,#D0A95C_40%,#B18B44_80%,#9A742F_100%)] text-[#191A1C] font-black shadow-sm";
+    : "bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black shadow-xs";
 
   const inactiveItemClass = isContrast
     ? "text-slate-300 hover:bg-zinc-800 hover:text-white"
     : isDark
     ? "text-slate-300 hover:bg-white/10 hover:text-[#E8C986]"
-    : isExplicitLight
-    ? "text-slate-700 hover:bg-[#FAF6F0] hover:text-[#B18B44]"
-    : "text-slate-700 hover:bg-amber-50 hover:text-amber-800 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-amber-200";
+    : "text-slate-700 hover:bg-amber-500/10 hover:text-amber-800";
 
   return (
     <div className={`relative inline-block ${className}`} ref={ref}>

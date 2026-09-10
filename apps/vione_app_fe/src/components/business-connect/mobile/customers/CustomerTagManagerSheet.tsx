@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import type { TKey } from "@/lib/i18n";
 import { useCustomerTags, useCustomers } from "@/hooks/use-customers";
@@ -50,6 +51,39 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
   const namesOf = (ids: string[]) =>
     ids.map((id: any) => tags.find((tg) => tg.id === id)?.name).filter((n): n is string => Boolean(n));
 
+  const handleCreateTag = async () => {
+    const val = newName.trim();
+    if (!val) return;
+    try {
+      await create.mutateAsync(val);
+      setNewName("");
+      toast.success(`Đã tạo nhóm nhãn "${val}"`);
+    } catch (err) {
+      toast.error("Không thể tạo nhãn, vui lòng thử lại");
+    }
+  };
+
+  const handleRenameTag = async (tagId: string) => {
+    const val = editingName.trim();
+    if (!val) return;
+    try {
+      await rename.mutateAsync({ tagId, name: val });
+      setEditingId(null);
+      toast.success(`Đã đổi tên nhãn thành "${val}"`);
+    } catch (err) {
+      toast.error("Không thể đổi tên nhãn");
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string, tagName: string) => {
+    try {
+      await remove.mutateAsync(tagId);
+      toast.success(`Đã xóa nhóm nhãn "${tagName}"`);
+    } catch (err) {
+      toast.error("Không thể xóa nhóm nhãn");
+    }
+  };
+
   const applyAssignment = async () => {
     if (!assignTag) return;
     setSaving(true);
@@ -63,7 +97,10 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
           : namesOf(c.tagIds.filter((id) => id !== assignTag.id));
         await setTags.mutateAsync({ customerId: c.id, names: next });
       }
+      toast.success(`Đã cập nhật gán nhãn "${assignTag.name}"`);
       setAssignTagId(null);
+    } catch (err) {
+      toast.error("Lỗi khi gán nhóm nhãn");
     } finally {
       setSaving(false);
     }
@@ -74,14 +111,14 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label={t("bc.mobile.customers.tagManager.title" as TKey)}
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60"
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm"
       onClick={() => {
         if (!saving) onClose();
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-[#D8B282]/25 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-2xl"
+        className="bc-app max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] backdrop-blur-xl p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-2xl"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-[17px] font-semibold text-[var(--bc-mobile-text)]">
@@ -179,21 +216,21 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && newName.trim()) {
                     e.preventDefault();
-                    void create.mutateAsync(newName.trim()).then(() => setNewName(""));
+                    void handleCreateTag();
                   }
                 }}
                 aria-label={t("bc.mobile.customers.tagManager.create" as TKey)}
                 placeholder={t("bc.mobile.customers.tags.addPlaceholder")}
-                className="h-12 min-w-0 flex-1 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[15px] text-[var(--bc-mobile-text)] outline-none"
+                className="h-12 min-w-0 flex-1 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[15px] text-[var(--bc-mobile-text)] outline-none placeholder:text-[var(--bc-mobile-muted)]"
               />
               <button
                 type="button"
                 disabled={create.isPending || !newName.trim()}
-                onClick={() => void create.mutateAsync(newName.trim()).then(() => setNewName(""))}
+                onClick={() => void handleCreateTag()}
                 aria-label={t("bc.mobile.customers.tagManager.create" as TKey)}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent)] disabled:opacity-50"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-accent)] text-slate-950 hover:brightness-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
               >
-                <Plus className="h-5 w-5" strokeWidth={2} />
+                <Plus className="h-5 w-5" strokeWidth={2.2} />
               </button>
             </div>
 
@@ -213,20 +250,23 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
                         <input
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && editingName.trim()) {
+                              e.preventDefault();
+                              void handleRenameTag(tag.id);
+                            }
+                          }}
                           aria-label={t("bc.mobile.customers.tagManager.rename" as TKey)}
                           className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-3 text-[14.5px] text-[var(--bc-mobile-text)] outline-none"
                         />
                         <button
                           type="button"
                           disabled={rename.isPending || !editingName.trim()}
-                          onClick={async () => {
-                            await rename.mutateAsync({ tagId: tag.id, name: editingName.trim() });
-                            setEditingId(null);
-                          }}
+                          onClick={() => void handleRenameTag(tag.id)}
                           aria-label={t("bc.mobile.customers.tagManager.rename" as TKey)}
-                          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent)] disabled:opacity-50"
+                          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-accent)] text-slate-950 disabled:opacity-50 cursor-pointer"
                         >
-                          <Check className="h-4 w-4" strokeWidth={2} />
+                          <Check className="h-4 w-4" strokeWidth={2.4} />
                         </button>
                       </div>
                     ) : (
@@ -242,7 +282,7 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
                         <button
                           type="button"
                           onClick={() => setAssignTagId(tag.id)}
-                          className="min-h-9 shrink-0 rounded-lg border border-[var(--bc-mobile-accent)] px-3 text-[12.5px] font-semibold text-[var(--bc-mobile-accent)]"
+                          className="min-h-9 shrink-0 rounded-lg border border-[var(--bc-mobile-accent)] px-3 text-[12.5px] font-semibold text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-accent)]/15 transition-colors cursor-pointer"
                         >
                           {t("bc.mobile.customers.tagManager.assign" as TKey)}
                         </button>
@@ -253,16 +293,16 @@ export function CustomerTagManagerSheet({ onClose }: { onClose: () => void }) {
                             setEditingName(tag.name);
                           }}
                           aria-label={t("bc.mobile.customers.tagManager.rename" as TKey)}
-                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors cursor-pointer"
                         >
                           <Pencil className="h-4 w-4" strokeWidth={1.8} />
                         </button>
                         <button
                           type="button"
                           disabled={remove.isPending}
-                          onClick={() => void remove.mutateAsync(tag.id)}
+                          onClick={() => void handleDeleteTag(tag.id, tag.name)}
                           aria-label={t("bc.mobile.customers.tagManager.delete" as TKey)}
-                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] disabled:opacity-50"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" strokeWidth={1.8} />
                         </button>

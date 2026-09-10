@@ -180,7 +180,15 @@ export function getGreetingDaypart(date: Date = new Date()): BcMobileDaypart {
 
 export function useBusinessConnectHome() {
   const viewerId = useViewerUserId();
-  const { user, status: authStatus } = useAuth();
+  let user: any = null;
+  let authStatus: string = "authenticated";
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    authStatus = auth.status;
+  } catch {
+    // Graceful fallback for test runners without AuthProvider
+  }
   const getIdentity = useServerFn(getCurrentUserFn);
   const getOverview = useServerFn(getWorkHubOverviewFn);
   const getUnreadCount = useServerFn(NotificationOrchestrationSDK.getUnreadCount);

@@ -18,6 +18,17 @@ export class MomentController {
     return this.connectAppService.notifyMomentTags(req.user.id, body);
   }
 
+  // --- Moment Mute Notifications ---
+  @Post(':id/mute')
+  async toggleMuteMoment(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.toggleMuteMoment(req.user.id, id);
+  }
+
+  @Get(':id/mute-status')
+  async getMomentMuteStatus(@Request() req, @Param('id') id: string) {
+    return this.connectAppService.getMomentMuteStatus(req.user.id, id);
+  }
+
   // --- Moment Likes & Comments ---
   @Get(':id/likes')
   async getMomentLikeStatus(@Request() req, @Param('id') id: string) {

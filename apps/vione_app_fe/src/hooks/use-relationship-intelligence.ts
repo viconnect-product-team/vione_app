@@ -8,10 +8,7 @@
 // middleware which fails in standalone NestJS env.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getTodayRecommendationsDirect,
-  dismissRecommendationDirect,
-} from "@/lib/business-connect/mobile/relationship-intelligence.functions";
+import { RelationshipIntelSDK } from "@/lib/business-connect/mobile/relationship-intelligence.sdk";
 import { trackRelationshipIntel } from "@/lib/business-connect/mobile/relationship-intelligence.telemetry";
 import type { RelationshipWordingLocale } from "@/lib/business-connect/mobile/relationship-intelligence.types";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
@@ -35,8 +32,8 @@ export function useTodayRelationshipRecommendations(
     staleTime: 60_000,
     queryFn: () => {
       trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_REQUESTED", { surface: "home" });
-      const safeLocale = (locale === "vi" || locale === "en") ? locale : undefined;
-      return getTodayRecommendationsDirect(safeLocale);
+      const safeLocale = (locale === "vi" || locale === "en") ? locale : "vi";
+      return RelationshipIntelSDK.today(safeLocale);
     },
   });
   return {
@@ -52,21 +49,15 @@ export function usePersonRelationshipRecommendation(
   locale: RelationshipWordingLocale,
   enabled = true,
 ) {
-  // Person-level recommendation not critical for mobile Home; keep stub
   const viewerId = useViewerUserId();
   const key = relationshipIntelKeys.person(viewerId ?? "viewer-pending", personId);
   const query = useQuery({
     queryKey: key,
     enabled: enabled && viewerId !== null,
     staleTime: 60_000,
-    queryFn: async () => {
-      // Returns empty if not available — non-blocking
-      try {
-        const { fetchNestApi } = await import("@/lib/api-client");
-        return fetchNestApi<any>(`/connect-app/network/recommendations/person/${personId}`);
-      } catch {
-        return { recommendation: null };
-      }
+    queryFn: () => {
+      const safeLocale = (locale === "vi" || locale === "en") ? locale : "vi";
+      return RelationshipIntelSDK.person(personId, safeLocale);
     },
   });
   return {
@@ -81,7 +72,7 @@ export function useDismissRelationshipRecommendation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ personId, type }: { personId: string; type: "reconnect" }) =>
-      dismissRecommendationDirect(personId),
+      RelationshipIntelSDK.dismiss(personId, type),
     onSuccess: () => {
       trackRelationshipIntel("RELATIONSHIP_RECOMMENDATION_DISMISSED", {});
       void queryClient.invalidateQueries({ queryKey: relationshipIntelKeys.root });

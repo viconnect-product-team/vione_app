@@ -47,15 +47,16 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
 - **Default Theme Standard**:
   - ViOne App (`/connect-app/*`), Association Apps, and Web CRM must default to Dark Mode (`dark`).
 - **Realtime Nurture Intelligence ("Cần giữ kết nối")**:
-  - Days since last contact must always be computed from real DB interaction timestamps (`last_moment_at`, `last_message_at`, `uc.updated_at` / `uc.created_at`). Never mock or hardcode day values.
-- **Realtime WebSocket & Actionable Notification Rules**:
-  - Every connection request, acceptance/rejection, moment tag, and association event (new member registration, fee payment) must trigger WebSocket events through `ConnectAppGateway`.
-  - Every business notification from Web CRM to Mobile MUST provide a clear `targetRoute` (e.g. `/members?status=pending`, `/fees`, `/events`, `/connect-app/network`). Clicking a notification MUST automatically mark it as read and redirect to the target management view.
-  - Every connection notification must accurately transition to resolved state ("✓ Đã kết nối" or "✕ Đã từ chối") once acted upon, removing invitation action buttons and exposing chat/profile options.
-  - Every notification card on both Mobile and Web CRM MUST include a delete button (`Trash2`) calling the backend deletion endpoint.
-- **Luxury Gold UI Aesthetic**:
-  - Central floating navigation button (`VButton`) and key actions use the standard metallic champagne gold gradient (`#C29B69`, `#F6E1C3`, `#D8B282`).
-  - Active tab styles on bottom navigation must use subtle glow instead of coarse outlines.
+- **Club Application & Admin Approval Flow (Two-Way Notification Architecture)**:
+  - Guest/applicant submits club application on landing (`/landing/ceo1983` or `/landing/business-connect`) -> Dispatches to both `public.notifications` and `public.business_notifications` for all admins (`memberships` admin roles, `user_roles` platform/tenant admins, and admin users) with WebSocket broadcast and `targetRoute: "/members?status=pending"`.
+  - Admin logs into Web CRM -> Topbar bell icon shows badge and real-time notification -> Clicking directs to `/members?status=pending` for immediate one-click approval.
+  - Admin approves/rejects member in Web CRM -> In-app notification sent to the applicant's account in `public.business_notifications` -> Displayed in Member App (`/m` or `/connect-app`).
+- **Landing 3 Theme Modes & High-Contrast Standards**:
+  - Theme mode labels must strictly follow language: `vi`: Tối, Sáng, Tương phản cao; `en`: Dark, Light, High Contrast; `zh`: 暗色, 亮色, 高对比度; `ja`: ダーク, ライト, 高コントラスト; `ko`: 다크, 라이트, 고대비.
+  - Light mode (Sáng) must NEVER use white or light yellow gradients for text without dynamic `themeClass`. Headings must use high-contrast dark tones (`#0F172A`, `#B45309`).
+- **Distinct Background Assets**:
+  - CEO 1983 Landing and Business Connect SaaS Landing must never share background images. Each landing page has its own dedicated dark, light, and contrast background assets in `/landing/`.
+
 
 ## Troubleshooting & Bug Fixes Log
 *(Quy tắc: Bất kỳ lỗi/cấu hình sai nào phát sinh khi phát triển hoặc deploy phải được ghi nhận vào đây và MEMORY.md để AI/Dev tránh lặp lại)*

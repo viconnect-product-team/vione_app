@@ -1023,7 +1023,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
         </div>
       )}
 
-      <div className="sticky top-0 z-10 -mx-4 mb-4 space-y-3 bg-background/90 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+      <div className="sm:sticky sm:top-18 z-20 -mx-4 mb-4 space-y-3 bg-background/90 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-[var(--shadow-card)]">
             <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

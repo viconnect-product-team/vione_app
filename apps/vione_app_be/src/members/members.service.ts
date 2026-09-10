@@ -572,6 +572,64 @@ export class MembersService {
       WHERE id = ${id}
     `;
 
+    // If status was changed (e.g. pending -> active), dispatch in-app notification to the applicant/member
+    if (data.status !== undefined && data.status !== current.status) {
+      try {
+        let memberUserId = current.user_id;
+        if (!memberUserId && (email || current.email)) {
+          const u = await this.prisma.vione_users.findFirst({
+            where: { email: email || current.email },
+            select: { id: true },
+          }).catch(() => null);
+          if (u) memberUserId = u.id;
+        }
+        if (!memberUserId && (phone || current.phone)) {
+          const rawPhone = phone || current.phone;
+          const cleanPhone = String(rawPhone).replace(/\D/g, '');
+          const u = await this.prisma.$queryRaw<any[]>`
+            SELECT id FROM public.vione_users WHERE phone = ${rawPhone} OR phone = ${cleanPhone} LIMIT 1
+          `.catch(() => []);
+          if (u.length > 0) memberUserId = u[0].id;
+        }
+
+        if (memberUserId) {
+          const notifId = crypto.randomUUID();
+          const isApproved = status === 'active';
+          const notifTitle = isApproved
+            ? '🎉 Chúc mừng! Hồ sơ gia nhập CLB của bạn đã được phê duyệt!'
+            : status === 'pending'
+            ? 'Hồ sơ gia nhập CLB của bạn đang được xét duyệt'
+            : 'Thông báo kết quả duyệt hồ sơ gia nhập CLB';
+          const notifBody = isApproved
+            ? `Chúc mừng bạn đã chính thức trở thành hội viên của ${name || 'Hiệp hội'}. Thẻ VIP Số NFC và toàn bộ quyền lợi đã được kích hoạt trong App Hội Viên.`
+            : `Hồ sơ gia nhập của bạn đã được cập nhật trạng thái: ${status}. Vui lòng mở App Hội Viên hoặc liên hệ Ban thư ký để biết thêm chi tiết.`;
+
+          const safeData = JSON.stringify({
+            title: notifTitle,
+            body: notifBody,
+            status,
+            targetRoute: '/m',
+          });
+
+          await this.prisma.$executeRaw`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
+              priority, status, created_at, updated_at, dedupe_key
+            ) VALUES (
+              ${notifId}::uuid, ${memberUserId}::uuid, 'association', ${id},
+              'member_approval', ${isApproved ? 'member_approved' : 'member_status_changed'},
+              ${notifTitle}, ${notifBody},
+              ${safeData}::jsonb, 'navigate', 'Mở App Hội Viên', '{"route": "/m"}'::jsonb,
+              'high', 'delivered', now(), now(), ${`member_approval:${id}:${status}:${Date.now()}`}
+            )
+          `.catch((err) => console.warn('Could not insert member approval notification:', err));
+        }
+      } catch (err) {
+        console.warn('Error sending member status notification:', err);
+      }
+    }
+
     return this.getMemberById(userId, id);
   }
 

@@ -82,11 +82,13 @@ function assertTimeRange(startAt: string, endAt: string): void {
   }
 }
 
+import { safeRandomUUID } from "@/lib/utils";
+
 function resolveMutationKey(key: string | undefined): string {
   if (typeof key === "string" && key.trim().length >= 8 && key.length <= 200) {
     return key.trim();
   }
-  return crypto.randomUUID();
+  return safeRandomUUID();
 }
 
 function parseMutationResult(json: unknown): BusinessMeetingMutationResult {

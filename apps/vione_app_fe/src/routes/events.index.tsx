@@ -371,7 +371,7 @@ function EventsPage() {
       )}
 
       {/* Sticky search + controls */}
-      <div className="sticky top-2 z-10 mb-5 rounded-2xl border border-border bg-card/90 p-3 shadow-[var(--shadow-card)] backdrop-blur">
+      <div className="sm:sticky sm:top-18 z-20 mb-5 rounded-2xl border border-border bg-card/90 p-3 shadow-[var(--shadow-card)] backdrop-blur">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative w-full min-w-0 sm:min-w-[220px] sm:flex-1">
             <Search

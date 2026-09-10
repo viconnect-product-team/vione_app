@@ -23,6 +23,7 @@ import {
   QrCode,
   RefreshCw,
   Send,
+  ShieldCheck,
   Sparkles,
   UserCheck,
   UserPlus,
@@ -126,7 +127,7 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
   const nfc = useNfcScanner({ active: !resolvedResult && !resolving, onDetect: handleDetected });
 
   // Real-time camera QR scanner is active whenever mode === "qr"
-  const { videoRef, status: qrStatus, hasTorch, scanImageFile } = useQrScanner({
+  const { videoRef, status: qrStatus, hasTorch, scanImageFile, retry: retryCamera } = useQrScanner({
     active: mode === "qr" && !resolvedResult && !resolving,
     torch,
     facingMode,
@@ -311,24 +312,54 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                         <p className="font-medium text-[var(--bc-mobile-text)]">{t("bc.mobile.tapConnect.cameraStarting")}</p>
                       </div>
                     ) : qrStatus === "unsupported" ? (
-                      <div className="flex flex-col items-center gap-3">
+                      <div className="flex flex-col items-center gap-3 px-2">
                         <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--bc-mobile-accent)]/15 text-[var(--bc-mobile-accent)]">
                           <Camera className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className="font-semibold text-[var(--bc-mobile-text)]">Chụp ảnh mã QR</p>
-                          <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)]">
-                            Chụp ảnh mã QR bằng máy ảnh điện thoại để kết nối ngay
+                          <p className="font-semibold text-[var(--bc-mobile-text)]">
+                            {typeof window !== "undefined" && !window.isSecureContext
+                              ? "Yêu cầu kết nối HTTPS bảo mật"
+                              : "Chụp ảnh mã QR"}
+                          </p>
+                          <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)] max-w-[280px] leading-relaxed">
+                            {typeof window !== "undefined" && !window.isSecureContext
+                              ? "Trình duyệt chặn camera live tự động trên HTTP để bảo mật. Hãy mở qua HTTPS để quét trực tiếp trong nền, hoặc bấm chụp ảnh bằng máy ảnh điện thoại."
+                              : "Chụp ảnh mã QR bằng máy ảnh điện thoại để kết nối ngay"}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => captureInputRef.current?.click()}
-                          className="flex items-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] px-5 py-2.5 text-[13.5px] font-bold text-[#050c15] shadow-md active:scale-95 transition-transform cursor-pointer"
-                        >
-                          <Camera className="h-4 w-4" />
-                          <span>Chụp ảnh QR ngay</span>
-                        </button>
+                        <div className="flex flex-col items-center justify-center gap-2 pt-1 w-full max-w-[300px]">
+                          {typeof window !== "undefined" && !window.isSecureContext && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                window.location.href = window.location.href.replace("http:", "https:");
+                              }}
+                              className="w-full flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/15 px-4 py-2 text-[12.5px] font-bold text-emerald-400 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                            >
+                              <ShieldCheck className="h-4 w-4" />
+                              <span>Mở bằng HTTPS (Tự động quét live)</span>
+                            </button>
+                          )}
+                          <div className="flex items-center gap-2 w-full justify-center">
+                            <button
+                              type="button"
+                              onClick={() => retryCamera()}
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-3 py-2 text-[12px] font-bold text-[var(--bc-mobile-accent)] shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              <span>Thử mở Live</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => captureInputRef.current?.click()}
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-[var(--bc-mobile-accent)] px-3 py-2 text-[12px] font-bold text-[#050c15] shadow-md active:scale-95 transition-transform cursor-pointer"
+                            >
+                              <Camera className="h-4 w-4" />
+                              <span>Chụp ảnh QR</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">

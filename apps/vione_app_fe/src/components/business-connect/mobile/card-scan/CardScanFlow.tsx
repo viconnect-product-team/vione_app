@@ -188,6 +188,16 @@ export function CardScanFlow() {
     target?.focus();
   }, [stage]);
 
+  // Auto-start camera on initial mount for instant card capture experience
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (stage === "capture" && !liveOpen && !image) {
+        startCamera();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
   // The expiry alert takes focus when the session lapses mid-review.
   useEffect(() => {
     if (sessionExpired) resultHeadingRef.current?.focus();
@@ -265,14 +275,13 @@ export function CardScanFlow() {
       return;
     }
     try {
-      const r = await fetchNestApi<ScanDuplicateResolution>("/connect-app/card-scan/resolve", {
-        method: "POST",
-        body: JSON.stringify({
+      const r = await resolveFn({
+        data: {
           email: payload.email,
           phone: payload.phone,
           displayName: payload.displayName || null,
           companyName: payload.companyName,
-        }),
+        },
       });
       setResolution(r);
     } catch {
@@ -287,10 +296,7 @@ export function CardScanFlow() {
     setScanError(null);
     try {
       const result = await Promise.race([
-        fetchNestApi<any>("/connect-app/card-scan", {
-          method: "POST",
-          body: JSON.stringify({ imageDataUrl: image.dataUrl, clientToken: safeRandomUUID() }),
-        }),
+        scanFn({ data: { imageDataUrl: image.dataUrl, clientToken: safeRandomUUID() } }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("client-timeout")), CLIENT_TIMEOUT_MS),
         ),
@@ -340,9 +346,8 @@ export function CardScanFlow() {
     setSaveError(null);
     try {
       const payload = toScanSavePayload(draft);
-      const res = await fetchNestApi<any>("/connect-app/card-scan/save", {
-        method: "POST",
-        body: JSON.stringify({
+      const res = await saveFn({
+        data: {
           clientToken: clientTokenRef.current,
           scanId: candidate.scanId,
           displayName: payload.displayName,
@@ -356,7 +361,7 @@ export function CardScanFlow() {
           targetPersonId,
           confirmedNew: opts?.confirmedNew === true,
           fieldChoices: opts?.fieldChoices ?? null,
-        }),
+        },
       });
       if (res.ok) {
         setSaveOutcome({
@@ -659,7 +664,7 @@ export function CardScanFlow() {
 
       {stage === "capture" ? (
         <BusinessCardCapture
-          onCamera={startCamera}
+          onCaptured={(file) => void onFileSelected(file)}
           onLibrary={() => libraryInputRef.current?.click()}
           error={captureError}
           autoCapture={autoCapture}

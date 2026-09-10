@@ -262,7 +262,7 @@ describe("BC-Mobile — lapsed session", () => {
     becomeHiddenAndVisible();
     becomeHiddenAndVisible();
     becomeHiddenAndVisible();
-    expect(toastError).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
     expect(
       infoSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes("SESSION_EXPIRED")),
     ).toHaveLength(1);

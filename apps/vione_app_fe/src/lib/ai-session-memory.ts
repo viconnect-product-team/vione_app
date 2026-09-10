@@ -87,11 +87,10 @@ export type AiSessionMemory = {
   updatedAt: number;
 };
 
+import { safeRandomUUID } from "@/lib/utils";
+
 function newConversationId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `conv-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return safeRandomUUID();
 }
 
 export function emptyMemory(associationId: string | null = null): AiSessionMemory {

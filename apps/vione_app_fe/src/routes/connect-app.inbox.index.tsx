@@ -1,11 +1,13 @@
 // BC-Mobile-8A — Hộp thư nội bộ (danh sách cuộc trò chuyện).
 // Chỉ hiển thị cuộc trò chuyện có thật; không tạo danh sách gợi ý ảo.
 
+import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Loader2, MessageSquare } from "lucide-react";
 import { useLang, useT } from "@/lib/i18n";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
+import { MobileSearchBar } from "@/components/business-connect/mobile/MobileSearchBar";
 import { useDmThreads } from "@/hooks/use-bc-dm";
 import type { BcDmThreadSummary } from "@/lib/business-connect/mobile/dm.types";
 
@@ -93,6 +95,7 @@ function InboxPage() {
   const { lang } = useLang();
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   const query = useDmThreads();
+  const [searchTerm, setSearchTerm] = useState("");
   const result = query.data;
   const threads = Array.isArray(result)
     ? result
@@ -101,6 +104,28 @@ function InboxPage() {
       : [];
   const isError = query.isError || (result != null && typeof result === "object" && "ok" in result && !result.ok);
 
+  const normalize = (s: string) =>
+    (s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+      .trim();
+
+  const q = normalize(searchTerm);
+
+  const filteredThreads = useMemo(() => {
+    if (!q) return threads;
+    return threads.filter((thread) => {
+      const name = normalize(thread.displayName);
+      const company = normalize(thread.companyName || "");
+      const headline = normalize(thread.headline || "");
+      const msg = normalize(thread.lastMessagePreview || "");
+      return name.includes(q) || company.includes(q) || headline.includes(q) || msg.includes(q);
+    });
+  }, [threads, q]);
+
   return (
     <MobilePage>
       <BusinessConnectTopBar title={t("bc.mobile.inbox.title")} back />
@@ -108,6 +133,15 @@ function InboxPage() {
         <p className="text-[12.5px] leading-snug text-slate-500 dark:text-[var(--bc-mobile-muted)]">
           {t("bc.mobile.inbox.desc")}
         </p>
+
+        {/* Search bar for conversations and connected peers */}
+        <div className="w-full">
+          <MobileSearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Tìm người đã kết nối hoặc tin nhắn..."
+          />
+        </div>
 
         {query.isLoading ? (
           <div className="flex items-center gap-2 py-10 text-[13px] text-[var(--bc-mobile-muted)]">
@@ -137,9 +171,25 @@ function InboxPage() {
               {t("bc.mobile.inbox.empty.cta")}
             </Link>
           </div>
+        ) : filteredThreads.length === 0 ? (
+          <div className="grid justify-items-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-5 py-8 text-center">
+            <p className="text-[13.5px] font-medium text-[var(--bc-mobile-text)]">
+              Không tìm thấy cuộc trò chuyện phù hợp
+            </p>
+            <p className="text-[12px] text-[var(--bc-mobile-muted)]">
+              Thử tìm kiếm với tên hoặc từ khóa khác
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="mt-1 text-[12.5px] text-[var(--bc-mobile-accent)] hover:underline cursor-pointer"
+            >
+              Xóa tìm kiếm
+            </button>
+          </div>
         ) : (
           <ul className="grid gap-2">
-            {threads.map((thread) => (
+            {filteredThreads.map((thread) => (
               <li key={thread.threadId}>
                 <Link
                   to="/connect-app/inbox/$threadId"

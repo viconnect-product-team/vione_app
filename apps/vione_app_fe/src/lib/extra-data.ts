@@ -1,14 +1,19 @@
 // Shared mock data for remaining feature pages.
 
+export type NotificationScope = "crm" | "vione_app" | "association_app" | "all";
+
 export type Notification = {
   id: string;
   title: string;
   body: string;
   audience: "all" | "members" | "sponsors" | "staff";
   channel: "inapp" | "email" | "sms";
+  appScope?: NotificationScope;
+  targetApp?: NotificationScope;
   sentAt: string;
   reach: number;
   status: "sent" | "scheduled" | "draft";
+  targetRoute?: string;
 };
 
 export type NewsArticle = {

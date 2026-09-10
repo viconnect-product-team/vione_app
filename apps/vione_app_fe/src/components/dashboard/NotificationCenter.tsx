@@ -8,6 +8,8 @@ import type { Notification } from "@/lib/extra-data";
 import { listNotificationsFn, deleteNotificationFn } from "@/lib/notifications.functions";
 import { getLastSeen, markNotificationsSeen } from "@/hooks/use-unread-notifications";
 import { ListSkeleton, NoNotifications } from "@/components/dashboard/StateKit";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
+
 
 function startOfDay(ts: number) {
   const d = new Date(ts);
@@ -54,7 +56,7 @@ export function NotificationCenter() {
 
   const refresh = useCallback(async () => {
     try {
-      const rows = await list({});
+      const rows = await list({ data: { appScope: "crm" } as never });
       setItems(rows.filter((n) => n.status === "sent"));
       setSeen(getLastSeen());
     } catch {
@@ -68,13 +70,27 @@ export function NotificationCenter() {
     void refresh();
     const onSeen = () => setSeen(getLastSeen());
     window.addEventListener("notifications-seen", onSeen);
-    // Realtime notification listeners
     window.addEventListener("connect-app:notification", refresh);
+
+    const socket = getConnectAppSocket();
+    const onSocketNotif = () => {
+      void refresh();
+    };
+    socket.on("notification:new", onSocketNotif);
+    socket.on("notification:count", onSocketNotif);
+    socket.on("notification:unread_count", onSocketNotif);
+    socket.on("notification", onSocketNotif);
+
     return () => {
       window.removeEventListener("notifications-seen", onSeen);
       window.removeEventListener("connect-app:notification", refresh);
+      socket.off("notification:new", onSocketNotif);
+      socket.off("notification:count", onSocketNotif);
+      socket.off("notification:unread_count", onSocketNotif);
+      socket.off("notification", onSocketNotif);
     };
   }, [refresh]);
+
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -200,7 +216,12 @@ export function NotificationCenter() {
           </div>
           {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
           <div className="flex items-center justify-between mt-1">
-            <p className="text-[11px] text-muted-foreground">{rel(n.sentAt)}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+                {n.appScope === 'all' || n.targetApp === 'all' ? 'Toàn hệ thống' : 'CRM Quản trị'}
+              </span>
+              <p className="text-[11px] text-muted-foreground">{rel(n.sentAt)}</p>
+            </div>
             <span className="text-[10px] text-primary/80 font-medium group-hover:underline flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <span>Xem chi tiết</span>
               <ChevronRight className="h-3 w-3" />

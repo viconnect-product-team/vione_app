@@ -29,7 +29,7 @@ export function BusinessConnectTopBar({
   }
   return (
     <header
-      className="sticky top-0 z-20 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/90 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md"
       style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }}
     >
       <div style={{ height: "var(--bc-mobile-header-h)" }} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[var(--bc-mobile-header-gap)] px-2">

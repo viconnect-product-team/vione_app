@@ -76,8 +76,6 @@ export type BcMobilePersonResult =
 
 const PERSON_ID_RE =
   /^([ucg]):([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
-const PURE_UUID_RE =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export type ParsedPersonId = { kind: "connection" | "saved_card" | "guest_contact"; id: string };
 
@@ -88,9 +86,6 @@ export function parseBcMobilePersonId(raw: string): ParsedPersonId | null {
   if (m) {
     const kind = m[1] === "u" ? "connection" : m[1] === "c" ? "saved_card" : "guest_contact";
     return { kind, id: m[2]!.toLowerCase() };
-  }
-  if (PURE_UUID_RE.test(trimmed)) {
-    return { kind: "connection", id: trimmed.toLowerCase() };
   }
   return null;
 }
@@ -193,23 +188,24 @@ async function resolveConnectionPerson(
   personId: string,
   userId: string,
 ): Promise<BcMobilePersonResult> {
-  // 1. Authorization: user must not be blocked and not self.
-  const state = await GlobalNetworkSDK.connections.getState(userId).catch(() => ({
-    status: "none" as const,
-    blocked: false,
-    direction: null,
-    connectionId: null,
-  }));
-  if (state.blocked || state.direction === "self") {
+  // 1. Authorization: user must not be blocked, not self, and accepted.
+  const state = await GlobalNetworkSDK.connections.getState(userId);
+  if (state.blocked || state.direction === "self" || state.status !== "accepted") {
     return UNAVAILABLE;
   }
 
   // 2. Authoritative relationship edge (participant-scoped) if connection exists.
+  if (!state.connectionId) {
+    return UNAVAILABLE;
+  }
   let connection: any = null;
-  if (state.connectionId) {
-    connection = await GlobalNetworkSDK.connections
-      .getById(state.connectionId)
-      .catch(() => null);
+  try {
+    connection = await GlobalNetworkSDK.connections.getById(state.connectionId);
+  } catch {
+    return UNAVAILABLE;
+  }
+  if (!connection) {
+    return UNAVAILABLE;
   }
 
   // 3. Identity: privacy-safe public counterpart summary.
@@ -221,7 +217,7 @@ async function resolveConnectionPerson(
     person: {
       personId,
       kind: "connection",
-      displayName: s?.displayName ?? "Hội viên ViOne",
+      displayName: s?.displayName ?? null,
       avatarUrl: s?.avatarUrl ?? null,
       headline: s?.headline ?? null,
       companyName: s?.companyName ?? null,
@@ -230,9 +226,6 @@ async function resolveConnectionPerson(
         kind: "connected",
         connectedAt: connection?.respondedAt ?? null,
         requestedByViewer: connection?.requestedByCurrentUser ?? (state.direction === "outgoing"),
-        status: state.status,
-        connectionId: state.connectionId,
-        direction: state.direction,
       },
       contact: null, // filled by the caller when a slug exists
     },
@@ -243,30 +236,55 @@ async function resolveSavedCardPerson(
   personId: string,
   targetCardId: string,
 ): Promise<BcMobilePersonResult> {
-  // Owner-scoped search IS the authorization: the edge must exist for THIS
-  // viewer. Same call as the 2A list — the service defaults to non-archived
-  // and returns the viewer's bounded set.
-  const cards = await SavedCardSDK.search({});
+  const cards = await SavedCardSDK.search({}).catch(() => []);
   const hit = cards.find((c) => c.targetCardId === targetCardId);
-  if (!hit) return UNAVAILABLE;
-  return {
-    status: "ok",
-    person: {
-      personId,
-      kind: "saved_card",
-      displayName: hit.target?.displayName ?? null,
-      avatarUrl: hit.target?.avatarUrl ?? null,
-      headline: hit.target?.professionalTitle ?? null,
-      companyName: hit.target?.companyName ?? null,
-      primaryCardSlug: hit.target?.slug ?? null,
-      relationship: {
-        kind: "saved",
-        savedAt: hit.savedAt ?? null,
-        favorite: !!hit.favorite,
+  if (hit) {
+    return {
+      status: "ok",
+      person: {
+        personId,
+        kind: "saved_card",
+        displayName: hit.target?.displayName ?? null,
+        avatarUrl: hit.target?.avatarUrl ?? null,
+        headline: hit.target?.professionalTitle ?? null,
+        companyName: hit.target?.companyName ?? null,
+        primaryCardSlug: hit.target?.slug ?? null,
+        relationship: {
+          kind: "saved",
+          savedAt: hit.savedAt ?? null,
+          favorite: !!hit.favorite,
+        },
+        contact: null,
       },
-      contact: null,
-    },
-  };
+    };
+  }
+
+  // Fallback: direct card lookup
+  try {
+    const pub = await BusinessCardSDK.getPublic(targetCardId);
+    if (pub && pub.state === "public") {
+      return {
+        status: "ok",
+        person: {
+          personId,
+          kind: "saved_card",
+          displayName: pub.card.displayName ?? null,
+          avatarUrl: pub.card.avatarUrl ?? null,
+          headline: pub.card.professionalTitle ?? pub.card.headline ?? null,
+          companyName: pub.card.companyName ?? null,
+          primaryCardSlug: pub.card.slug ?? null,
+          relationship: {
+            kind: "saved",
+            savedAt: null,
+            favorite: false,
+          },
+          contact: buildPersonContact(pub.card),
+        },
+      };
+    }
+  } catch {}
+
+  return UNAVAILABLE;
 }
 
 async function loadContact(slug: string | null): Promise<BcMobilePersonContact | null> {

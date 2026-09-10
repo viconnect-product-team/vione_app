@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronRight, Plus, RefreshCw, Search, UserRound, X } from "lucide-react";
+import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { useCustomerTags, useCustomers } from "@/hooks/use-customers";
 import { useBusinessConnectNetwork } from "@/hooks/use-business-connect-network";
@@ -360,13 +361,23 @@ export function CustomersPanel() {
           busy={create.isPending}
           onClose={() => setPicking(false)}
           onPick={async (person) => {
-            const res = await create.mutateAsync({
-              personId: person.personId,
-              displayName: person.displayName,
-              companyName: person.companyName,
-            });
-            setPicking(false);
-            if (res.ok) setOpenId(res.customer.id);
+            try {
+              const res = await create.mutateAsync({
+                personId: person.personId,
+                displayName: person.displayName,
+                companyName: person.companyName,
+              });
+              setPicking(false);
+              const newCustomerId = (res as any)?.customer?.id || (res as any)?.id;
+              if (newCustomerId) {
+                setOpenId(newCustomerId);
+                toast.success("Đã thêm khách hàng thành công!");
+              } else {
+                toast.success("Đã thêm khách hàng vào danh sách!");
+              }
+            } catch (err: any) {
+              toast.error(err?.message || "Không thể thêm khách hàng. Vui lòng thử lại!");
+            }
           }}
         />
       ) : null}
@@ -516,7 +527,7 @@ function CustomerPersonPicker({
       role="dialog"
       aria-modal="true"
       aria-label={t("bc.mobile.customers.picker.title")}
-      className="fixed inset-0 z-50 flex items-end bg-black/60"
+      className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm"
       onClick={() => {
         if (!busy) onClose();
       }}
@@ -525,7 +536,7 @@ function CustomerPersonPicker({
       }}
     >
       <div
-        className="max-h-[82vh] w-full overflow-y-auto rounded-t-3xl border-t border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl p-5 shadow-2xl"
+        className="bc-app max-h-[82vh] w-full overflow-y-auto rounded-t-3xl border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] backdrop-blur-xl p-5 shadow-2xl"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 16px)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -543,7 +554,7 @@ function CustomerPersonPicker({
             onClick={onClose}
             disabled={busy}
             aria-label={t("bc.mobile.customers.close")}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)]"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] hover:bg-[var(--bc-mobile-surface-2)]"
           >
             <X className="h-5 w-5" strokeWidth={1.8} />
           </button>

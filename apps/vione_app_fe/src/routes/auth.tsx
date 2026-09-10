@@ -140,41 +140,37 @@ function AuthPage() {
 
   const isMobileAuth =
     mobileParam === "1" ||
-    isMobileScreen ||
-    shouldUseVioneAuth({
-      mobileParam: mobileParam === "1",
-      redirectPath: destPath,
-      directAuth: false,
-      remembered: hasRememberedVioneAppContext(),
-      standalone: isVioneStandaloneContext(),
-    });
-
-  useEffect(() => {
-    const detected = hasRememberedVioneAppContext() || isVioneStandaloneContext() || isMobileScreen;
-    if (detected || mobileParam === "1" || destPath.startsWith("/connect-app")) {
-      rememberVioneAppContext();
-    }
-  }, [destPath, mobileParam, isMobileScreen]);
+    searchPortal === "association" ||
+    searchPortal === "connect" ||
+    destPath.startsWith("/m") ||
+    destPath.startsWith("/connect-app");
 
   async function goPostLogin() {
     const target = safeRedirect(redirectTo);
     // If explicit target given other than login pages
-    if (target && target !== "/auth" && target !== "/login" && target !== "/m" && target !== "/connect-app") {
+    if (
+      target &&
+      target !== "/auth" &&
+      target !== "/login" &&
+      target !== "/connect-app/signin" &&
+      target !== "/m/login"
+    ) {
       navigate({ to: target, replace: true });
       return;
     }
 
-    if (appPortal === "association" || target === "/m") {
+    if (mobileParam === "1" || searchPortal === "association" || target?.startsWith("/m") || appPortal === "association") {
       navigate({ to: "/m", replace: true });
       return;
     }
 
-    if (isMobileAuth || appPortal === "connect") {
+    if (searchPortal === "connect" || target?.startsWith("/connect-app") || (isMobileAuth && appPortal === "connect")) {
       const dest = resolveVionePostLoginPath(safeRedirect(redirectTo), true);
       navigate({ to: dest || "/connect-app", replace: true });
       return;
     }
 
+    // Default for /auth login is Web CRM (/)
     navigate({ to: "/", replace: true });
   }
 

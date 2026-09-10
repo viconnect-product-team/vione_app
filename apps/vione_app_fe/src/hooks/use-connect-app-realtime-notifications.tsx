@@ -8,12 +8,17 @@ import { bcMobileHomeKeys } from "./use-business-connect-home";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 
 export function useConnectAppRealtimeNotifications() {
-  const qc = useQueryClient();
+  let qc: ReturnType<typeof useQueryClient> | null = null;
+  try {
+    qc = useQueryClient();
+  } catch {
+    qc = null;
+  }
   const viewerUserId = useViewerUserId();
   const socket = useConnectAppSocket();
 
   useEffect(() => {
-    if (!socket || !viewerUserId) return;
+    if (!socket || !viewerUserId || !qc) return;
 
     // Cache of recent notifications / connection event keys to strictly prevent double toasts
     const recentToastKeys = new Map<string, number>();
@@ -361,9 +366,31 @@ export function useConnectAppRealtimeNotifications() {
       invalidateEverything();
     };
 
+    const handleUnreadCount = (data: { unreadCount?: number; count?: number }) => {
+      const count = typeof data?.unreadCount === "number" ? data.unreadCount : typeof data?.count === "number" ? data.count : 0;
+      qc.setQueryData(notificationKeys.unreadCount(), { count });
+      if (viewerUserId) {
+        qc.setQueryData(bcMobileHomeKeys.home(viewerUserId), (old: any) => {
+          if (!old) return old;
+          return { ...old, unreadNotificationCount: count };
+        });
+      }
+      if (count === 0) {
+        try {
+          localStorage.setItem("vba.notif.lastSeenAt", String(Date.now()));
+        } catch {
+          // ignore
+        }
+        window.dispatchEvent(new Event("notifications-seen"));
+      }
+      invalidateEverything();
+    };
+
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:updated", handleNotificationUpdated);
     socket.on("notification:deleted", handleNotificationDeleted);
+    socket.on("notification:unread_count", handleUnreadCount);
+    socket.on("notification:count", handleUnreadCount);
     socket.on("nfc:tapped", handleNfcTapped);
     socket.on("connection:requested", handleConnectionRequested);
     socket.on("connection:accepted", handleConnectionAccepted);
@@ -374,6 +401,8 @@ export function useConnectAppRealtimeNotifications() {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:updated", handleNotificationUpdated);
       socket.off("notification:deleted", handleNotificationDeleted);
+      socket.off("notification:unread_count", handleUnreadCount);
+      socket.off("notification:count", handleUnreadCount);
       socket.off("nfc:tapped", handleNfcTapped);
       socket.off("connection:requested", handleConnectionRequested);
       socket.off("connection:accepted", handleConnectionAccepted);

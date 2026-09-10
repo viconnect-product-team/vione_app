@@ -125,10 +125,20 @@ export function MomentManageSheet({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastLoadedKeyRef = useRef<string>("");
 
   // Initialize data on open or when props change
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      lastLoadedKeyRef.current = "";
+      return;
+    }
+
+    const currentPhotosKey = (photoUrls?.length ? photoUrls : initialPhotos || []).join("|");
+    const loadKey = `${momentId || ""}:${occurredAt || ""}:${title || ""}:${placeLabel || ""}:${note || ""}:${initialVis || ""}:${targetPersonId || ""}:${currentPhotosKey}`;
+    if (lastLoadedKeyRef.current === loadKey) return;
+    lastLoadedKeyRef.current = loadKey;
+
     setContent(note || "");
     setLocation(placeLabel || "");
     setVisibility((initialVis as any) || "friends");
@@ -147,7 +157,7 @@ export function MomentManageSheet({
     }
 
     // Existing photos
-    const allExisting = photoUrls.length > 0 ? photoUrls : initialPhotos;
+    const allExisting = (photoUrls && photoUrls.length > 0) ? photoUrls : (initialPhotos || []);
     setExistingPhotos(allExisting);
     setNewPhotos([]);
 
@@ -159,7 +169,7 @@ export function MomentManageSheet({
     }
 
     setActiveSubView("none");
-  }, [open, momentId, occurredAt, title, placeLabel, note, photoUrls, initialPhotos, initialVis, targetPersonId, targetPersonName]);
+  }, [open, momentId, occurredAt, title, placeLabel, note, initialVis, targetPersonId, targetPersonName]);
 
   // Clean up blob URLs on unmount
   useEffect(() => {
@@ -310,22 +320,22 @@ export function MomentManageSheet({
         <div
           role="dialog"
           aria-modal="true"
-          className="bc-app relative flex flex-col w-full max-w-[540px] max-h-[92vh] rounded-t-3xl sm:rounded-3xl border border-[#D8B282]/30 bg-[linear-gradient(165deg,rgba(13,22,35,0.98)_0%,rgba(8,14,23,0.99)_100%)] text-white shadow-2xl overflow-hidden box-border"
+          className="bc-app relative flex flex-col w-full max-w-[540px] max-h-[92vh] rounded-t-3xl sm:rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-text)] shadow-2xl overflow-hidden box-border"
         >
           {/* Header */}
-          <div className="relative flex items-center justify-between px-5 py-4 border-b border-[#D8B282]/20">
+          <div className="relative flex items-center justify-between px-5 py-4 border-b border-[var(--bc-mobile-border)]">
             {activeSubView !== "none" ? (
               <button
                 type="button"
                 onClick={() => setActiveSubView("none")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D8B282] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F6E1C3] hover:underline cursor-pointer"
               >
                 ← Quay lại
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#D8B282]" />
-                <h2 className="text-base font-bold text-white tracking-wide">
+                <Sparkles className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
+                <h2 className="text-base font-bold text-[var(--bc-mobile-text)] tracking-wide">
                   Chỉnh sửa khoảnh khắc
                 </h2>
               </div>
@@ -334,7 +344,7 @@ export function MomentManageSheet({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-full text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
               aria-label="Đóng"
             >
               <X className="h-5 w-5" />
@@ -345,19 +355,19 @@ export function MomentManageSheet({
           {activeSubView === "tag" ? (
             <div className="flex-1 flex flex-col p-4 overflow-hidden min-h-[380px]">
               <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--bc-mobile-muted)]" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm đối tác theo tên, công ty..."
                   value={tagSearchTerm}
                   onChange={(e) => setTagSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-400 focus:outline-none focus:border-[#D8B282]"
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] focus:outline-none focus:border-[var(--bc-mobile-accent)]"
                 />
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {network.people.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-slate-400">
+                  <div className="py-8 text-center text-sm text-[var(--bc-mobile-muted)]">
                     Chưa tìm thấy đối tác nào phù hợp
                   </div>
                 ) : (
@@ -368,23 +378,23 @@ export function MomentManageSheet({
                         key={person.personId}
                         type="button"
                         onClick={() => toggleTagPerson(person)}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all text-left cursor-pointer ${
                           isSelected
-                            ? "bg-[#D8B282]/15 border-[#D8B282] text-white"
-                            : "bg-slate-900/40 border-slate-800 text-slate-300 hover:bg-slate-800/60"
+                            ? "bg-[var(--bc-mobile-accent)]/15 border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-text)]"
+                            : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:border-[var(--bc-mobile-accent)]/50"
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <img
                             src={avatarOrDemo(person.avatarUrl, person.personId)}
                             alt={person.displayName || "Avatar"}
-                            className="h-10 w-10 rounded-full object-cover border border-[#D8B282]/30"
+                            className="h-10 w-10 rounded-full object-cover border border-[var(--bc-mobile-border)]"
                           />
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold truncate text-white">
+                            <p className="text-sm font-semibold truncate text-[var(--bc-mobile-text)]">
                               {person.displayName || "Đối tác"}
                             </p>
-                            <p className="text-xs text-slate-400 truncate">
+                            <p className="text-xs text-[var(--bc-mobile-muted)] truncate">
                               {person.headline || person.companyName || "Thành viên mạng lưới"}
                             </p>
                           </div>
@@ -393,8 +403,8 @@ export function MomentManageSheet({
                         <div
                           className={`h-5 w-5 rounded-full flex items-center justify-center border ${
                             isSelected
-                              ? "bg-[#D8B282] border-[#D8B282] text-slate-950"
-                              : "border-slate-600"
+                              ? "bg-[var(--bc-mobile-accent)] border-[var(--bc-mobile-accent)] text-slate-950"
+                              : "border-[var(--bc-mobile-border)]"
                           }`}
                         >
                           {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
@@ -405,11 +415,11 @@ export function MomentManageSheet({
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end">
+              <div className="pt-3 border-t border-[var(--bc-mobile-border)] flex justify-end">
                 <button
                   type="button"
                   onClick={() => setActiveSubView("none")}
-                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                  className="px-5 py-2 rounded-xl bg-[var(--bc-mobile-accent)] text-slate-950 font-semibold text-sm hover:brightness-110 cursor-pointer shadow-sm"
                 >
                   Xong ({taggedPersons.length})
                 </button>
@@ -418,7 +428,7 @@ export function MomentManageSheet({
           ) : activeSubView === "feeling" ? (
             /* Subview: Chọn cảm xúc / Hoạt động */
             <div className="flex-1 p-4 overflow-y-auto min-h-[380px]">
-              <p className="text-xs font-medium text-slate-400 mb-3 uppercase tracking-wider">
+              <p className="text-xs font-medium text-[var(--bc-mobile-muted)] mb-3 uppercase tracking-wider">
                 Bạn và đối tác đang thực hiện hoạt động gì?
               </p>
               <div className="grid grid-cols-2 gap-2.5">
@@ -432,10 +442,10 @@ export function MomentManageSheet({
                         setSelectedFeeling(isSelected ? null : f.id);
                         setActiveSubView("none");
                       }}
-                      className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#D8B282]/20 border-[#D8B282] text-[#F0D5A8]"
-                          : "bg-slate-900/50 border-slate-800 text-slate-200 hover:bg-slate-800/60"
+                          ? "bg-[var(--bc-mobile-accent)]/20 border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F6E1C3] font-bold"
+                          : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:border-[var(--bc-mobile-accent)]/50"
                       }`}
                     >
                       <span className="text-xl">{f.emoji}</span>
@@ -449,23 +459,23 @@ export function MomentManageSheet({
             /* Subview: Check-in vị trí */
             <div className="flex-1 p-4 overflow-y-auto min-h-[380px] space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--bc-mobile-text)] mb-1.5">
                   Nhập địa điểm / Nhà hàng / Văn phòng
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#D8B282]" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--bc-mobile-accent)]" />
                   <input
                     type="text"
                     placeholder="VD: Khách sạn JW Marriott, Hà Nội..."
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D8B282]"
+                    className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] focus:outline-none focus:border-[var(--bc-mobile-accent)]"
                   />
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-medium text-slate-400 mb-2">Gợi ý địa điểm phổ biến:</p>
+                <p className="text-xs font-medium text-[var(--bc-mobile-muted)] mb-2">Gợi ý địa điểm phổ biến:</p>
                 <div className="flex flex-wrap gap-2">
                   {POPULAR_LOCATIONS.map((loc) => (
                     <button
@@ -475,10 +485,10 @@ export function MomentManageSheet({
                         setLocation(loc);
                         setActiveSubView("none");
                       }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                         location === loc
-                          ? "bg-[#D8B282] border-[#D8B282] text-slate-950 font-semibold"
-                          : "bg-slate-800/60 border-slate-700 text-slate-300 hover:border-[#D8B282]/60"
+                          ? "bg-[var(--bc-mobile-accent)] border-[var(--bc-mobile-accent)] text-slate-950 font-semibold shadow-sm"
+                          : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:border-[var(--bc-mobile-accent)]"
                       }`}
                     >
                       📍 {loc}
@@ -491,7 +501,7 @@ export function MomentManageSheet({
                 <button
                   type="button"
                   onClick={() => setActiveSubView("none")}
-                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                  className="px-5 py-2 rounded-xl bg-[var(--bc-mobile-accent)] text-slate-950 font-semibold text-sm hover:brightness-110 cursor-pointer shadow-sm"
                 >
                   Xác nhận
                 </button>
@@ -500,7 +510,7 @@ export function MomentManageSheet({
           ) : activeSubView === "time" ? (
             /* Subview: Thời điểm diễn ra */
             <div className="flex-1 p-4 overflow-y-auto min-h-[300px] space-y-4">
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--bc-mobile-text)] mb-1.5">
                 Ngày & giờ diễn ra khoảnh khắc:
               </label>
               <input
@@ -508,13 +518,13 @@ export function MomentManageSheet({
                 value={occurredLocal}
                 max={toLocalInputValue(new Date())}
                 onChange={(e) => setOccurredLocal(e.target.value)}
-                className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-[#D8B282]"
+                className="w-full px-4 py-2.5 text-sm rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] focus:outline-none focus:border-[var(--bc-mobile-accent)]"
               />
               <div className="pt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setActiveSubView("none")}
-                  className="px-5 py-2 rounded-xl bg-[#D8B282] text-slate-950 font-semibold text-sm hover:brightness-110"
+                  className="px-5 py-2 rounded-xl bg-[var(--bc-mobile-accent)] text-slate-950 font-semibold text-sm hover:brightness-110 cursor-pointer shadow-sm"
                 >
                   Xong
                 </button>
@@ -528,66 +538,82 @@ export function MomentManageSheet({
                 <img
                   src={avatarOrDemo(null, viewerUserId || "me")}
                   alt="Avatar"
-                  className="h-11 w-11 rounded-full object-cover border-2 border-[#D8B282]"
+                  className="h-11 w-11 rounded-full object-cover border-2 border-[var(--bc-mobile-accent)]"
                 />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white">Bạn</span>
+                    <span className="text-sm font-bold text-[var(--bc-mobile-text)]">Bạn</span>
                     {activeFeelingObj && (
-                      <span className="inline-flex items-center gap-1 text-xs text-[#F0D5A8] bg-[#D8B282]/20 px-2 py-0.5 rounded-full border border-[#D8B282]/30">
+                      <span className="inline-flex items-center gap-1 text-xs text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F0D5A8] bg-[var(--bc-mobile-accent)]/15 px-2 py-0.5 rounded-full border border-[var(--bc-mobile-accent)]/30">
                         {activeFeelingObj.emoji} đang {activeFeelingObj.label.toLowerCase()}
                       </span>
                     )}
                     {location && (
-                      <span className="inline-flex items-center gap-1 text-xs text-amber-200/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-200 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                         📍 tại {location}
                       </span>
                     )}
                   </div>
 
-                  {/* Privacy Picker */}
-                  <div className="flex items-center gap-1 mt-1">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVisibility((prev) =>
-                          prev === "public" ? "friends" : prev === "friends" ? "private" : "public",
-                        )
-                      }
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 text-[11px] font-medium text-slate-300 hover:text-white transition-colors"
-                    >
+                  {/* Privacy Picker Dropdown */}
+                  <div className="relative inline-flex items-center gap-1 mt-1">
+                    <div className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[11px] font-semibold text-[var(--bc-mobile-text)] shadow-xs">
                       {visibility === "public" ? (
                         <>
-                          <Globe className="h-3 w-3 text-sky-400" /> Công khai
+                          <Globe className="h-3.5 w-3.5 text-sky-500" />
+                          <span>Công khai</span>
                         </>
                       ) : visibility === "friends" ? (
                         <>
-                          <UserCheck className="h-3 w-3 text-emerald-400" /> Mạng lưới
+                          <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>Mạng lưới</span>
                         </>
                       ) : (
                         <>
-                          <Lock className="h-3 w-3 text-amber-400" /> Chỉ mình tôi
+                          <Lock className="h-3.5 w-3.5 text-amber-500" />
+                          <span>Chỉ mình tôi (Private)</span>
                         </>
                       )}
-                    </button>
+                      <span className="ml-1 text-[9px] text-[var(--bc-mobile-muted)]">▼</span>
+
+                      {/* Native Select Overlay */}
+                      <select
+                        value={visibility}
+                        onChange={(e) => setVisibility(e.target.value as any)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                        aria-label="Chọn quyền riêng tư"
+                      >
+                        <option value="friends" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                          👥 Mạng lưới kết nối (Mặc định)
+                        </option>
+                        <option value="public" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                          🌍 Công khai toàn hệ sinh thái
+                        </option>
+                        <option value="private" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                          🔒 Chỉ mình tôi (Riêng tư - Private)
+                        </option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Tagged Persons List */}
               {taggedPersons.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 bg-[#D8B282]/10 p-2.5 rounded-xl border border-[#D8B282]/20">
-                  <span className="text-xs font-semibold text-[#D8B282]">Cùng với:</span>
+                <div className="flex flex-wrap items-center gap-1.5 bg-[var(--bc-mobile-accent)]/10 p-2.5 rounded-xl border border-[var(--bc-mobile-accent)]/20">
+                  <span className="text-xs font-semibold text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F6E1C3]">
+                    Cùng với:
+                  </span>
                   {taggedPersons.map((tp) => (
                     <span
                       key={tp.id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D8B282]/20 text-white text-xs font-medium border border-[#D8B282]/40"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--bc-mobile-accent)]/20 text-[var(--bc-mobile-text)] text-xs font-medium border border-[var(--bc-mobile-accent)]/40"
                     >
                       @{tp.name}
                       <button
                         type="button"
                         onClick={() => toggleTagPerson({ personId: tp.id })}
-                        className="hover:text-red-400 ml-0.5"
+                        className="hover:text-red-500 ml-0.5 cursor-pointer"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -596,7 +622,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("tag")}
-                    className="text-xs text-[#D8B282] hover:underline ml-1"
+                    className="text-xs font-semibold text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F6E1C3] hover:underline ml-1 cursor-pointer"
                   >
                     + Thêm
                   </button>
@@ -604,27 +630,27 @@ export function MomentManageSheet({
               )}
 
               {/* Text Input */}
-              <div className="relative">
+              <div className="relative rounded-2xl bg-[var(--bc-mobile-surface-2)]/60 border border-[var(--bc-mobile-border)] p-3">
                 <textarea
                   ref={textareaRef}
                   rows={4}
                   placeholder="Cập nhật nội dung khoảnh khắc..."
                   value={content}
                   onChange={handleContentChange}
-                  className="w-full bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed border-none p-0"
+                  className="w-full bg-transparent text-sm sm:text-base text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] focus:outline-none resize-none leading-relaxed border-none p-0"
                 />
               </div>
 
               {/* Photo Preview Grid */}
               {totalPhotosCount > 0 && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center justify-between text-xs text-[var(--bc-mobile-muted)]">
                     <span>Hình ảnh đính kèm ({totalPhotosCount}/6):</span>
                     {totalPhotosCount < 6 && (
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="text-[#D8B282] hover:underline"
+                        className="text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#D8B282] font-semibold hover:underline cursor-pointer"
                       >
                         + Thêm ảnh
                       </button>
@@ -635,13 +661,13 @@ export function MomentManageSheet({
                     {existingPhotos.map((url, i) => (
                       <div
                         key={`exist-${i}`}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-[#D8B282]/30 group"
+                        className="relative aspect-square rounded-xl overflow-hidden border border-[var(--bc-mobile-border)] group"
                       >
                         <img src={url} alt={`Ảnh ${i + 1}`} className="h-full w-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeExistingPhoto(i)}
-                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors"
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
                           aria-label="Xóa ảnh"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -653,13 +679,13 @@ export function MomentManageSheet({
                     {newPhotos.map((p, i) => (
                       <div
                         key={`new-${i}`}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-emerald-500/40 group"
+                        className="relative aspect-square rounded-xl overflow-hidden border border-emerald-500/50 group"
                       >
                         <img src={p.previewUrl} alt={`Ảnh mới ${i + 1}`} className="h-full w-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeNewPhoto(i)}
-                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors"
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors cursor-pointer"
                           aria-label="Xóa ảnh"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -681,13 +707,13 @@ export function MomentManageSheet({
               />
 
               {/* Quick Actions Toolbar */}
-              <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-300">Tùy chỉnh:</span>
+              <div className="p-3 rounded-2xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] flex items-center justify-between">
+                <span className="text-xs font-medium text-[var(--bc-mobile-muted)]">Tùy chỉnh:</span>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 rounded-xl text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                    className="p-2 rounded-xl text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
                     title="Thêm ảnh"
                   >
                     <ImageIcon className="h-5 w-5" />
@@ -696,7 +722,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("tag")}
-                    className="p-2 rounded-xl text-sky-400 hover:bg-sky-500/10 transition-colors"
+                    className="p-2 rounded-xl text-sky-500 hover:bg-sky-500/10 transition-colors cursor-pointer"
                     title="Gắn thẻ đối tác"
                   >
                     <Users className="h-5 w-5" />
@@ -705,7 +731,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("feeling")}
-                    className="p-2 rounded-xl text-amber-400 hover:bg-amber-500/10 transition-colors"
+                    className="p-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
                     title="Cảm xúc / Hoạt động"
                   >
                     <Smile className="h-5 w-5" />
@@ -714,7 +740,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("location")}
-                    className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                     title="Check-in vị trí"
                   >
                     <MapPin className="h-5 w-5" />
@@ -723,7 +749,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("time")}
-                    className="p-2 rounded-xl text-[#D8B282] hover:bg-[#D8B282]/10 transition-colors"
+                    className="p-2 rounded-xl text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-accent)]/10 transition-colors cursor-pointer"
                     title="Thời gian diễn ra"
                   >
                     <Clock className="h-5 w-5" />
@@ -737,7 +763,7 @@ export function MomentManageSheet({
                   type="button"
                   onClick={() => setDeleteConfirmOpen(true)}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-500/30 text-red-500 bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4" />
                   Xoá bài
@@ -748,7 +774,7 @@ export function MomentManageSheet({
                     type="button"
                     onClick={() => onOpenChange(false)}
                     disabled={submitting}
-                    className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition-colors"
+                    className="px-4 py-2.5 rounded-xl border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] bg-[var(--bc-mobile-surface-2)] text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer"
                   >
                     Hủy
                   </button>
@@ -757,15 +783,15 @@ export function MomentManageSheet({
                     type="button"
                     onClick={handleSave}
                     disabled={submitting}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[linear-gradient(135deg,#F0D5A8_0%,#D8B282_50%,#C49B6A_100%)] hover:brightness-110 active:scale-95 shadow-md shadow-[#D8B282]/20 disabled:opacity-60 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[linear-gradient(135deg,#F0D5A8_0%,#D8B282_50%,#C49B6A_100%)] hover:brightness-110 active:scale-95 shadow-md disabled:opacity-60 transition-all cursor-pointer"
                   >
                     {submitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-                        Đang lưu...
+                        <span>Đang lưu...</span>
                       </>
                     ) : (
-                      "Lưu thay đổi"
+                      <span>Lưu thay đổi</span>
                     )}
                   </button>
                 </div>

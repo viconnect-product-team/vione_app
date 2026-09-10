@@ -82,7 +82,13 @@ export function MemberHeader({
 }) {
   const t = useT();
   return (
-    <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/85 px-4 py-3.5 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-md"
+      style={{
+        paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
+        minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + var(--bc-mobile-header-h, 56px))",
+      }}
+    >
       <div className="flex w-9 items-center">
         {back ? (
           <button

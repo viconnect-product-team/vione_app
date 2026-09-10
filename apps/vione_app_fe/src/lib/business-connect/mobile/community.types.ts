@@ -9,6 +9,7 @@ export type CommunitySummaryDTO = {
   communityId: string;
   name: string;
   logoUrl: string | null;
+  bannerUrl?: string | null;
   shortDescription: string | null;
   /** Canonical active-member count; null only when the count failed (rendered quiet). */
   memberCount: number | null;

@@ -5,7 +5,7 @@
 // câu mô tả cuộc gặp. Thân thẻ điều hướng tới Person Detail; hàng hành động
 // (Ghi nhớ · Bình luận · Thích · Kết nối · "…") nằm ngoài liên kết để giữ ngữ nghĩa đúng.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -28,12 +28,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
+import { fetchNestApi } from "@/lib/api-client";
 import { useNetworkRowConnect } from "@/hooks/use-network-row-connect";
 import { ConnectConfirmDialog } from "./ConnectConfirmDialog";
 import { networkFeedKeys } from "@/hooks/use-network-feed";
 import { MomentManageSheet } from "./MomentManageSheet";
 import { MomentActionBar } from "./moments/MomentActionBar";
-import { MomentCommentTree } from "./moments/MomentCommentTree";
+import { MomentCommentSheet } from "./moments/MomentCommentSheet";
+import { MomentImageViewer } from "./moments/MomentImageViewer";
 import { useMomentComments } from "@/hooks/use-moment-comments";
 import type { BcNetworkFeedItem } from "@/lib/business-connect/mobile/network-feed.types";
 import type { BcMobileNetworkPerson } from "@/hooks/use-business-connect-network";
@@ -59,17 +61,31 @@ function initialsOf(name: string | null): string {
   return (first + last).toUpperCase();
 }
 
-function PhotoGrid({ urls, alt }: { urls: string[]; alt: string }) {
+function PhotoGrid({
+  urls,
+  alt,
+  onImageClick,
+}: {
+  urls: string[];
+  alt: string;
+  onImageClick?: (index: number) => void;
+}) {
   if (urls.length === 0) return null;
 
   if (urls.length === 1) {
     return (
-      <img
-        src={urls[0]}
-        alt={alt}
-        loading="lazy"
-        className="mt-3 aspect-[16/10] w-full rounded-xl object-cover ring-1 ring-[var(--bc-mobile-border)]"
-      />
+      <button
+        type="button"
+        onClick={() => onImageClick?.(0)}
+        className="mt-3 block w-full text-left cursor-pointer overflow-hidden rounded-xl group focus:outline-none"
+      >
+        <img
+          src={urls[0]}
+          alt={alt}
+          loading="lazy"
+          className="aspect-[16/10] w-full rounded-xl object-cover ring-1 ring-[var(--bc-mobile-border)] transition-transform duration-200 group-hover:scale-[1.01] active:scale-[0.99]"
+        />
+      </button>
     );
   }
 
@@ -78,22 +94,27 @@ function PhotoGrid({ urls, alt }: { urls: string[]; alt: string }) {
   return (
     <div className="mt-3 grid grid-cols-3 gap-1.5">
       {shown.map((url, i) => (
-        <div key={url} className="relative">
+        <button
+          key={url}
+          type="button"
+          onClick={() => onImageClick?.(i)}
+          className="relative block w-full text-left cursor-pointer overflow-hidden rounded-lg group focus:outline-none"
+        >
           <img
             src={url}
             alt={alt}
             loading="lazy"
-            className="aspect-square w-full rounded-lg object-cover ring-1 ring-[var(--bc-mobile-border)]"
+            className="aspect-square w-full rounded-lg object-cover ring-1 ring-[var(--bc-mobile-border)] transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
           />
           {i === shown.length - 1 && extra > 0 ? (
             <span
               aria-hidden="true"
-              className="absolute inset-0 grid place-items-center rounded-lg bg-[#04111F]/62 text-[18px] font-semibold text-[var(--bc-mobile-text)]"
+              className="absolute inset-0 grid place-items-center rounded-lg bg-[#04111F]/70 text-[18px] font-bold text-white backdrop-blur-[1px]"
             >
               +{extra}
             </span>
           ) : null}
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -110,6 +131,9 @@ export function NetworkFeedCard({
   const fmt = useFmt();
   const viewerUserId = useViewerUserId();
 
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
   // Author details (người đăng)
   const authorName = item.owner?.displayName || person?.displayName || t("bc.mobile.network.unknownPerson");
   const authorAvatar = item.owner?.avatarUrl || person?.avatarUrl || null;
@@ -124,6 +148,11 @@ export function NetworkFeedCard({
 
   const place = item.placeLabel ?? item.eventName;
   const timeDisplay = item.createdAt ? fmt.rel(item.createdAt) : fmt.rel(item.occurredAt);
+
+  const handleImageClick = (index: number) => {
+    setViewerIndex(index);
+    setViewerOpen(true);
+  };
 
   return (
     <li className="rounded-2xl bc-translucent-card p-3.5 transition-colors duration-150 ease-out hover:border-[#D8B282]/40 motion-reduce:transition-none">
@@ -220,8 +249,24 @@ export function NetworkFeedCard({
         </div>
       </div>
 
-      {/* Ảnh lớn hoặc lưới ảnh kèm "+N" */}
-      <PhotoGrid urls={item.photoUrls} alt={t("bc.mobile.network.feed.photoAlt")} />
+      {/* Ảnh lớn hoặc lưới ảnh kèm "+N" (Click để xem toàn màn hình) */}
+      <PhotoGrid
+        urls={item.photoUrls}
+        alt={t("bc.mobile.network.feed.photoAlt")}
+        onImageClick={handleImageClick}
+      />
+
+      {/* Trình xem ảnh toàn màn hình Facebook-style */}
+      <MomentImageViewer
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        images={item.photoUrls}
+        initialIndex={viewerIndex}
+        authorName={authorName}
+        authorAvatar={authorAvatar}
+        caption={item.note || item.eventName}
+        timeDisplay={timeDisplay}
+      />
 
       {/* Câu mô tả cuộc gặp */}
       {item.note ? (
@@ -248,6 +293,7 @@ function FeedActionRow({
   person: BcMobileNetworkPerson | null;
 }) {
   const t = useT();
+  const fmt = useFmt();
   const queryClient = useQueryClient();
   const viewerUserId = useViewerUserId();
   const [manageOpen, setManageOpen] = useState(false);
@@ -256,11 +302,17 @@ function FeedActionRow({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Author & Target IDs
+  // Author & Target IDs & Details
   const authorUserId = item.owner?.userId || item.ownerUserId;
   const authorName = item.owner?.displayName || person?.displayName || t("bc.mobile.network.unknownPerson");
+  const authorAvatar = item.owner?.avatarUrl || person?.avatarUrl || null;
+  const authorHeadline = item.owner?.headline || person?.headline || null;
+  const authorCompany = item.owner?.companyName || person?.companyName || null;
+  const authorRoleLine = [authorHeadline, authorCompany].filter(Boolean).join(" • ");
   const targetName = item.target?.displayName || (item.owner?.userId && item.owner.userId !== (person?.personId || (person as any)?.id) ? person?.displayName : null);
   const targetPersonId = item.target?.personId || item.personId;
+  const place = item.placeLabel ?? item.eventName;
+  const timeDisplay = item.createdAt ? fmt.rel(item.createdAt) : fmt.rel(item.occurredAt);
 
   // Phân quyền: Chỉ tác giả/người đăng mới có quyền chỉnh sửa / xoá khoảnh khắc
   const isOwner = Boolean(
@@ -306,6 +358,29 @@ function FeedActionRow({
   };
 
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    fetchNestApi<{ ok: boolean; isMuted: boolean }>(`/connect-app/moments/${item.momentId}/mute-status`)
+      .then((res) => {
+        if (res?.ok) setIsMuted(res.isMuted);
+      })
+      .catch(() => {});
+  }, [item.momentId]);
+
+  const handleToggleMute = async () => {
+    try {
+      const res = await fetchNestApi<{ ok: boolean; isMuted: boolean }>(`/connect-app/moments/${item.momentId}/mute`, {
+        method: "POST",
+      });
+      if (res?.ok) {
+        setIsMuted(res.isMuted);
+        toast.success(res.isMuted ? "Đã tắt thông báo về khoảnh khắc này" : "Đã bật thông báo về khoảnh khắc này");
+      }
+    } catch {
+      toast.error("Không thể thay đổi cài đặt thông báo");
+    }
+  };
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/connect-app/network#moment-${item.momentId}`;
@@ -474,6 +549,10 @@ function FeedActionRow({
               {isBookmarked ? "Bỏ lưu khoảnh khắc" : "Lưu khoảnh khắc"}
             </DropdownMenuItem>
 
+            <DropdownMenuItem onSelect={handleToggleMute} className="cursor-pointer">
+              {isMuted ? "Bật thông báo khoảnh khắc" : "Tắt thông báo khoảnh khắc"}
+            </DropdownMenuItem>
+
             {/* Chỉ hiện tuỳ chọn Sửa & Xoá cho chính chủ sở hữu bài đăng */}
             {isOwner ? (
               <>
@@ -495,8 +574,25 @@ function FeedActionRow({
         </DropdownMenu>
       </div>
 
-      {/* Cây bình luận 3 tầng khi mở */}
-      <MomentCommentTree momentId={item.momentId} isOpen={commentsOpen} />
+      {/* Facebook-style Bottom Sheet Bình luận */}
+      <MomentCommentSheet
+        momentId={item.momentId}
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        authorName={authorName}
+        postPreview={{
+          authorName,
+          authorAvatar,
+          authorRoleLine,
+          timeDisplay,
+          place,
+          content: item.note || item.eventName,
+          photos: item.photoUrls || [],
+          likeCount: likesCount,
+          isLiked: userLiked,
+          onToggleLike: () => toggleMomentLike(),
+        }}
+      />
 
       {/* Sheet quản lý / sửa ghi chú khoảnh khắc */}
       <MomentManageSheet

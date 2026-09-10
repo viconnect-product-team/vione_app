@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
+import { safeRandomUUID } from "@/lib/utils";
 import { detectCapability } from "@/lib/ai-capability-router";
 import { getAllowedRoutes } from "@/lib/ai-context-builder";
 import { AiProviderError, mockAiProvider, type AiProviderOutput } from "@/lib/ai-provider";
@@ -145,7 +146,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     fetchNestApiFromServer("/ai/audit", context.token, {
       method: "POST",
       body: JSON.stringify({
-        requestId: crypto.randomUUID(),
+        requestId: safeRandomUUID(),
         associationId,
         capability: "chat",
         permissionLevel: isPlatformAdmin ? "platform" : isAdmin ? "admin" : "member",
@@ -201,7 +202,7 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
   .inputValidator((data: AskAiInput) => validateAskInput(data))
   .handler(async ({ data, context }) => {
     const startedAt = Date.now();
-    const requestId = crypto.randomUUID();
+    const requestId = safeRandomUUID();
 
     // 1) Resolve association + role SERVER-SIDE qua NestJS
     const { globalRoles, associationId, membershipRoles } = await fetchUserRoles(context.token);

@@ -29,6 +29,7 @@ import {
   NotebookPen,
   RefreshCw,
   RotateCcw,
+  Sparkles,
   UserRound,
   Users,
   X,
@@ -451,11 +452,15 @@ export function MomentComposer({ personId }: { personId: string }) {
     queryClient.invalidateQueries({ queryKey: ["bc-mobile", "person-journey"] });
     // BC-Mobile-6A — a new moment is a fresh interaction: refresh suggestions.
     queryClient.invalidateQueries({ queryKey: ["bc-mobile", "rel-intel"] });
-    await navigate({
-      to: "/connect-app/network/$personId",
-      params: { personId },
-      search: { momentSaved: true },
-    });
+    if (personId === "general") {
+      await navigate({ to: "/connect-app" });
+    } else {
+      await navigate({
+        to: "/connect-app/network/$personId",
+        params: { personId },
+        search: { momentSaved: true },
+      });
+    }
   }
 
   async function save() {
@@ -581,12 +586,16 @@ export function MomentComposer({ personId }: { personId: string }) {
     <MobilePage>
       {/* Thanh đầu màn: quay lại · tiêu đề hai dòng · nút Lưu vàng. */}
       <header
-        className="sticky top-0 z-20 -mx-5 flex items-center gap-2 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-bg)]/90 px-3 pb-3 backdrop-blur-md"
+        className="sticky top-0 z-50 -mx-5 flex items-center gap-2 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-bg)]/95 backdrop-blur-md px-3 pb-3"
         style={{ paddingTop: "calc(var(--bc-mobile-safe-top-compact) + 8px)" }}
       >
         <button
           type="button"
-          onClick={() => navigate({ to: "/connect-app/network/$personId", params: { personId } })}
+          onClick={() =>
+            personId === "general"
+              ? navigate({ to: "/connect-app/moment" })
+              : navigate({ to: "/connect-app/network/$personId", params: { personId } })
+          }
           aria-label={t("bc.mobile.moment.composer.back")}
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
         >
@@ -604,7 +613,7 @@ export function MomentComposer({ personId }: { personId: string }) {
           type="button"
           form="bc-mobile-moment-form"
           onClick={() => void save()}
-          disabled={saving || person.status !== "ok"}
+          disabled={saving || (personId !== "general" && person.status !== "ok")}
           className="inline-flex h-10 min-w-[72px] shrink-0 items-center justify-center rounded-xl bc-cta-gold px-4 text-[14px] font-semibold active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] disabled:opacity-60"
         >
           {saving ? (
@@ -655,7 +664,7 @@ export function MomentComposer({ personId }: { personId: string }) {
           </button>
         </div>
       ) : null}
-      {person.status === "loading" ? (
+      {personId !== "general" && person.status === "loading" ? (
         <div aria-busy="true" className="mt-10 space-y-4">
           <span className="sr-only">{t("bc.mobile.person.loading")}</span>
           <div
@@ -671,7 +680,7 @@ export function MomentComposer({ personId }: { personId: string }) {
             className="h-12 w-full animate-pulse rounded-2xl bg-[var(--bc-mobile-surface-2)] motion-reduce:animate-none"
           />
         </div>
-      ) : person.status === "unavailable" || !person.person ? (
+      ) : personId !== "general" && (person.status === "unavailable" || !person.person) ? (
         <section className="mt-20 flex flex-col items-center px-2 text-center">
           <span
             aria-hidden="true"
@@ -686,7 +695,7 @@ export function MomentComposer({ personId }: { personId: string }) {
             {t("bc.mobile.person.unavailable.body")}
           </p>
         </section>
-      ) : person.status === "error" ? (
+      ) : personId !== "general" && person.status === "error" ? (
         <section className="mt-20 flex flex-col items-center px-2 text-center">
           <h1 className="text-[16px] font-medium text-[var(--bc-mobile-text)]">
             {t("bc.mobile.person.error.title")}
@@ -702,55 +711,73 @@ export function MomentComposer({ personId }: { personId: string }) {
         </section>
       ) : (
         <main id="bc-mobile-moment-composer" className="mt-4">
-          {/* Người liên hệ — thẻ tóm tắt, chạm để mở hồ sơ. */}
-          <button
-            type="button"
-            onClick={() =>
-              void navigate({ to: "/connect-app/network/$personId", params: { personId } })
-            }
-            aria-label={t("bc.mobile.moment.person.open")}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
-          >
-            {person.person.avatarUrl ? (
-              <img
-                src={person.person.avatarUrl}
-                alt=""
-                loading="lazy"
-                className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border-gold)]"
-              />
-            ) : (
-              <span
-                aria-hidden="true"
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[16px] font-semibold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]"
-              >
-                {(person.person.displayName ?? "?").trim().charAt(0).toUpperCase()}
+          {personId === "general" ? (
+            <div className="flex w-full items-center gap-3.5 rounded-2xl border border-[var(--bc-mobile-border-gold)] bg-gradient-to-r from-[var(--bc-mobile-surface)] to-[var(--bc-mobile-surface-2)] p-3.5 text-left shadow-sm">
+              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#D8B282] to-[#F6E1C3] text-slate-950 shadow-md">
+                <Sparkles className="h-7 w-7" />
               </span>
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[17px] font-semibold text-[var(--bc-mobile-text)]">
-                {person.person.displayName ?? t("bc.mobile.network.unknownPerson")}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[17px] font-bold text-[var(--bc-mobile-text)]">
+                  Khoảnh Khắc Doanh Nghiệp & Cá Nhân
+                </span>
+                <span className="mt-0.5 block truncate text-[13px] text-[var(--bc-mobile-text-2)]">
+                  Lưu trữ sự kiện, bài học quản trị, kỷ niệm gặp gỡ
+                </span>
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12px] text-[var(--bc-mobile-accent)] font-semibold">
+                  ✓ Tự do lưu trữ không bắt buộc kết nối
+                </span>
               </span>
-              {(person.person.headline || person.person.companyName) && (
-                <span className="mt-0.5 block truncate text-[13.5px] text-[var(--bc-mobile-text-2)]">
-                  {[person.person.headline, person.person.companyName]
-                    .filter(Boolean)
-                    .join(" · ")}
+            </div>
+          ) : (
+            /* Người liên hệ — thẻ tóm tắt, chạm để mở hồ sơ. */
+            <button
+              type="button"
+              onClick={() =>
+                void navigate({ to: "/connect-app/network/$personId", params: { personId } })
+              }
+              aria-label={t("bc.mobile.moment.person.open")}
+              className="flex w-full items-center gap-3.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+            >
+              {person.person?.avatarUrl ? (
+                <img
+                  src={person.person.avatarUrl}
+                  alt=""
+                  loading="lazy"
+                  className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border-gold)]"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[16px] font-semibold text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]"
+                >
+                  {(person.person?.displayName ?? "?").trim().charAt(0).toUpperCase()}
                 </span>
               )}
-              <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
-                <UserRound aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.8} />
-                {connectedSince
-                  ? t("bc.mobile.moment.person.connectedSince", { date: connectedSince })
-                  : t("bc.mobile.moment.person.viewProfile")}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[17px] font-semibold text-[var(--bc-mobile-text)]">
+                  {person.person?.displayName ?? t("bc.mobile.network.unknownPerson")}
+                </span>
+                {(person.person?.headline || person.person?.companyName) && (
+                  <span className="mt-0.5 block truncate text-[13.5px] text-[var(--bc-mobile-text-2)]">
+                    {[person.person?.headline, person.person?.companyName]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
+                <span className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-[var(--bc-mobile-muted)]">
+                  <UserRound aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  {connectedSince
+                    ? t("bc.mobile.moment.person.connectedSince", { date: connectedSince })
+                    : t("bc.mobile.moment.person.viewProfile")}
+                </span>
               </span>
-
-            </span>
-            <ChevronRight
-              aria-hidden="true"
-              className="h-5 w-5 shrink-0 text-[var(--bc-mobile-muted)]"
-              strokeWidth={1.8}
-            />
-          </button>
+              <ChevronRight
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 text-[var(--bc-mobile-muted)]"
+                strokeWidth={1.8}
+              />
+            </button>
+          )}
 
           <form
             id="bc-mobile-moment-form"

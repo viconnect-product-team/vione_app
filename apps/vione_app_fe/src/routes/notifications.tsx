@@ -54,6 +54,13 @@ const AUDIENCE_KEY: Record<Notification["audience"], TKey> = {
   staff: "notif.aud.staff",
 };
 
+const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  crm: { label: "CRM Quản trị", bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/20" },
+  vione_app: { label: "ViOne App", bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/20" },
+  association_app: { label: "Hiệp Hội", bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/20" },
+  all: { label: "Toàn hệ thống", bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", border: "border-purple-500/20" },
+};
+
 function audienceIcon(a: Notification["audience"]) {
   if (a === "sponsors" || a === "staff") return Info;
   return Megaphone;
@@ -104,6 +111,7 @@ function NotifyPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [audience, setAudience] = useState<"all" | Notification["audience"]>("all");
+  const [scope, setScope] = useState<string>("all");
 
   const createFn = useServerFn(createNotificationFn);
   const updateFn = useServerFn(updateNotificationFn);
@@ -126,11 +134,15 @@ function NotifyPage() {
         if (tab === "unread" && !isUnread(n)) return false;
         if (tab === "read" && isUnread(n)) return false;
         if (audience !== "all" && n.audience !== audience) return false;
+        if (scope !== "all") {
+          const nScope = n.appScope || n.targetApp || "crm";
+          if (nScope !== scope && nScope !== "all") return false;
+        }
         if (q && !`${n.title} ${n.body}`.toLowerCase().includes(q)) return false;
         return true;
       })
       .sort((a, b) => tsOf(b) - tsOf(a));
-  }, [items, tab, audience, query, isUnread]);
+  }, [items, tab, audience, scope, query, isUnread]);
 
   const now = Date.now();
   const todayStart = startOfDay(now);
@@ -150,6 +162,17 @@ function NotifyPage() {
   const fields: CrudField[] = [
     { name: "title", label: t("notif.col.title"), type: "text", required: true },
     { name: "body", label: t("notif.col.title"), type: "textarea" },
+    {
+      name: "appScope",
+      label: "Hệ thống / Ứng dụng nhận",
+      type: "select",
+      options: [
+        { value: "crm", label: "Hệ thống Quản trị CRM" },
+        { value: "vione_app", label: "Ứng dụng ViOne Connect" },
+        { value: "association_app", label: "Ứng dụng Hiệp Hội" },
+        { value: "all", label: "Tất cả các nền tảng" },
+      ],
+    },
     {
       name: "audience",
       label: t("notif.col.audience"),
@@ -244,6 +267,9 @@ function NotifyPage() {
   const renderCard = (n: Notification) => {
     const unread = isUnread(n);
     const Icon = audienceIcon(n.audience);
+    const scopeKey = n.appScope || n.targetApp || "crm";
+    const scopeConf = SCOPE_CONFIG[scopeKey] || SCOPE_CONFIG.crm;
+
     return (
       <div
         key={n.id}
@@ -270,6 +296,9 @@ function NotifyPage() {
           </div>
           {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${scopeConf.bg} ${scopeConf.text} ${scopeConf.border}`}>
+              {scopeConf.label}
+            </span>
             <span>{t(AUDIENCE_KEY[n.audience])}</span>
             <span className="uppercase font-semibold">{n.channel}</span>
             <Pill color={STATUS_COLOR[n.status]}>{t(STATUS_KEY[n.status])}</Pill>
@@ -381,7 +410,7 @@ function NotifyPage() {
       </div>
 
       {/* Sticky tabs + search/filter */}
-      <div className="sticky top-0 z-10 -mx-1 mb-4 rounded-xl border border-border bg-background/85 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="sm:sticky sm:top-18 z-20 -mx-1 mb-4 rounded-xl border border-border bg-background/85 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex flex-col gap-2 px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
           <div
             role="tablist"
@@ -434,6 +463,17 @@ function NotifyPage() {
                 className="h-11 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
+            <select
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+              aria-label="Phân loại hệ thống"
+              className="h-11 rounded-lg border border-border bg-card px-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">Tất cả hệ thống</option>
+              <option value="crm">CRM Quản trị</option>
+              <option value="vione_app">ViOne App</option>
+              <option value="association_app">App Hiệp Hội</option>
+            </select>
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value as typeof audience)}

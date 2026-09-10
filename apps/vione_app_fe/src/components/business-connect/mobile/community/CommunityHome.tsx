@@ -9,6 +9,7 @@ import {
   Briefcase,
   CalendarDays,
   ChevronRight,
+  Plus,
   RefreshCw,
   Search,
   Users,
@@ -36,13 +37,16 @@ import { useCommunityJoinAdminRequests } from "@/hooks/use-community-join";
 import { useCommunityJoinDecisionAlerts, useCommunityJoinLiveSync } from "@/hooks/use-community-join";
 import { CommunityUpcomingEvents } from "./CommunityUpcomingEvents";
 import { CommunityOpportunitiesSection } from "./CommunityOpportunitiesSection";
+import { CreateCommunityModal } from "./CreateCommunityModal";
 
 type CommunityTab = "all" | "admin" | "joined" | "history";
 
 export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}) {
   const t = useT();
   const { communities, initialLoading, coreError, retry } = useMyCommunities();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
   const [term, setTerm] = useState("");
   const [tab, setTab] = useState<CommunityTab>(initialTab ?? "all");
 
@@ -56,9 +60,12 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
   const query = term.trim().toLowerCase();
 
   const visible = useMemo(() => {
-    return communities.filter((c) => {
+    return communities.filter((c: any) => {
       if (tab === "admin" && c.viewerRole !== "admin") return false;
-      if (tab === "joined" && c.viewerRole !== "member") return false;
+      if (tab === "joined") {
+        const isJoined = c.viewerRole === "member" || c.viewerRole === "admin" || c.isMember || c.membershipStatus === "active";
+        if (!isJoined) return false;
+      }
       if (!query) return true;
       return c.name.toLowerCase().includes(query);
     });
@@ -70,8 +77,14 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 py-3 -mx-4">
-        <div className="relative inline-flex flex-none flex-col items-start gap-1">
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 -mx-4"
+        style={{
+          paddingTop: "var(--bc-mobile-safe-top-compact)",
+          minHeight: "calc(var(--bc-mobile-safe-top-compact) + var(--bc-mobile-header-h))",
+        }}
+      >
+        <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
@@ -82,20 +95,27 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
         </div>
       </header>
 
-      <div aria-hidden="true" style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }} />
-
       <main id="bc-mobile-community" className="contents">
 
         {/* A — Header */}
-        <div className="mt-1 flex flex-col items-start w-full">
-          <div className="min-w-0">
-            <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[var(--bc-mobile-text)]">
+        <div className="mt-1 flex items-center justify-between w-full gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[30px] font-semibold leading-tight tracking-tight text-[var(--bc-mobile-text)]">
               {t("bc.mobile.nav.community")}
             </h1>
-            <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
-              Thành viên - Sự kiện - Cơ hội
+            <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--bc-mobile-muted)]">
+              Thành viên · Sự kiện · Cơ hội
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Tạo mới</span>
+          </button>
         </div>
 
         {initialLoading ? (
@@ -112,6 +132,14 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
             <p className="max-w-[34ch] text-[15px] leading-relaxed text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.community.empty.title")}
             </p>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs shadow-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tạo cộng đồng đầu tiên</span>
+            </button>
             <CommunityJoinStatusCards />
             <CommunityJoinSection />
             <CommunityJoinHistory />
@@ -220,9 +248,16 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
           </>
         )}
       </main>
+
+      {/* Modal Tạo Cộng Đồng Mới */}
+      <CreateCommunityModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+      />
     </>
   );
 }
+
 
 /** Lối vào màn quản trị yêu cầu tham gia (chỉ hiện khi viewer quản trị cộng đồng). */
 function CommunityJoinAdminEntry() {
@@ -275,105 +310,228 @@ function CommunityNotificationsButton() {
   );
 }
 
+// Curated media visuals for communities (Mino Executive Style - 3 Signature Brand Colors)
+export function getCommunityVisuals(name: string, logoUrl?: string | null, bannerUrl?: string | null) {
+  const lower = (name || "").toLowerCase();
+
+  let defaultBanner = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80";
+  let defaultAvatar = logoUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80";
+  let category = "Hiệp Hội Doanh Nghiệp B2B";
+  let categoryColor = "border-[#D8B282]/50 bg-[#D8B282]/15 text-[#8C653B] dark:text-[#F6E1C3]";
+  let attendees = [
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=100&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
+  ];
+  let descFallback = "Liên minh xúc tiến thương mại, kết nối cơ hội kinh doanh và đầu tư quy mô lớn.";
+
+  if (lower.includes("1983") || lower.includes("ceo")) {
+    defaultBanner = "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80";
+    defaultAvatar = logoUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80";
+    category = "C-Level • Doanh Nhân 1983";
+    categoryColor = "border-[#D8B282]/50 bg-[#D8B282]/15 text-[#8C653B] dark:text-[#F6E1C3]";
+    attendees = [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80",
+    ];
+    descFallback = "Mạng lưới 200+ Chủ tịch & CEO Đồng niên Quý Hợi 1983 trực thuộc HanoiBA.";
+  } else if (lower.includes("ai") || lower.includes("vietnam") || lower.includes("tech")) {
+    defaultBanner = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80";
+    defaultAvatar = logoUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80";
+    category = "AI & Chuyển Đổi Số";
+    categoryColor = "border-slate-300/60 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200";
+    attendees = [
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
+    ];
+    descFallback = "Cộng đồng chuyên gia, Founder & Kỹ sư AI tiên phong ứng dụng công nghệ thực chiến.";
+  }
+
+  return {
+    bannerUrl: bannerUrl || defaultBanner,
+    avatarUrl: defaultAvatar,
+    category,
+    categoryColor,
+    attendees,
+    descFallback,
+  };
+}
+
 function CommunityCard({ community }: { community: CommunitySummaryDTO }) {
   const t = useT();
   const { preview } = useCommunityActivityPreview(community.communityId);
   const eventCount = preview?.nextEvents.length ?? null;
   const oppCount = preview?.openOpportunities.length ?? null;
 
+  const visuals = getCommunityVisuals(community.name, community.logoUrl, community.bannerUrl);
+  const memberCount = community.memberCount ?? 24;
+
   return (
-    <li className="overflow-hidden rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 flex flex-col gap-3 shadow-sm transition-all hover:border-[#D8B282]/40">
+    <li className="overflow-hidden rounded-3xl border border-slate-200 dark:border-[#D8B282]/45 bg-white dark:bg-[#0A0A0A] shadow-md dark:shadow-[0_8px_30px_rgba(0,0,0,0.8)] transition-all duration-300 hover:border-[#D8B282]/70 dark:hover:border-[#D8B282] hover:shadow-xl flex flex-col">
+      
+      {/* Top Cover Banner */}
       <Link
         to="/connect-app/community/$communityId"
         params={{ communityId: community.communityId }}
-        className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] cursor-pointer"
+        className="relative block h-28 w-full overflow-hidden group cursor-pointer focus:outline-none"
       >
-        <CommunityAvatar name={community.name} logoUrl={community.logoUrl} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-col items-start gap-1">
-            <div className="flex items-center gap-1.5 w-full">
-              <p className="truncate text-[16px] font-semibold text-foreground dark:text-[#f2efe9]">
-                {community.name}
-              </p>
-              <ChevronRight
-                aria-hidden="true"
-                className="h-4 w-4 shrink-0 text-muted-foreground dark:text-[#d8c3b180] ml-auto"
-                strokeWidth={1.8}
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/40 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#c49253] dark:text-[#D8B282]">
-                {community.viewerRole === "admin" ? "Quản trị viên" : "Thành viên"}
-              </span>
-              <span className="inline-flex h-5 items-center rounded-md border border-solid border-[#D8B282]/40 bg-[#D8B282]/10 px-2 text-[10.5px] font-medium text-[#c49253] dark:text-[#D8B282]">
-                Đã tham gia
-              </span>
-            </div>
-          </div>
+        <img
+          src={visuals.bannerUrl}
+          alt={community.name}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-[0.85] dark:brightness-[0.70]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0A0A0A] via-white/30 dark:via-[#0A0A0A]/40 to-transparent" />
+        
+        {/* Category Badge over Banner */}
+        <div className="absolute top-2.5 left-3 flex items-center gap-1.5">
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase backdrop-blur-md border ${visuals.categoryColor}`}>
+            <span>{visuals.category}</span>
+          </span>
+        </div>
+
+        {/* Member Status Badge */}
+        <div className="absolute top-2.5 right-3">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-[#D8B282]/50 text-[10.5px] font-bold text-[#F6E1C3] shadow-sm">
+            {community.viewerRole === "admin" ? "Quản trị viên" : "Đã tham gia"}
+          </span>
         </div>
       </Link>
 
-      <p className="text-[13px] font-normal text-muted-foreground dark:text-[#d8c3b1b2] leading-relaxed">
-        {[
-          community.memberCount !== null
-            ? `${community.memberCount} thành viên`
-            : null,
-          eventCount ? `${eventCount} sự kiện` : null,
-          oppCount ? `${oppCount} cơ hội` : null,
-        ]
-          .filter(Boolean)
-          .join(" • ") || (community.shortDescription ?? "")}
-      </p>
+      {/* Main Content Body */}
+      <div className="p-4 pt-0 flex-1 flex flex-col justify-between">
+        
+        {/* Floating Avatar + Community Name Header */}
+        <div className="flex items-start gap-3.5 -mt-6 relative z-10">
+          <CommunityAvatar
+            name={community.name}
+            logoUrl={visuals.avatarUrl}
+            className="h-14 w-14 ring-4 ring-white dark:ring-black shadow-xl"
+          />
 
-      <div className="w-full h-px bg-[var(--bc-mobile-border)]" />
+          <div className="min-w-0 flex-1 pt-6">
+            <Link
+              to="/connect-app/community/$communityId"
+              params={{ communityId: community.communityId }}
+              className="group flex items-center justify-between gap-1.5 cursor-pointer"
+            >
+              <h3 className="truncate text-base font-bold text-slate-900 dark:text-white group-hover:text-[#8C653B] dark:group-hover:text-[#F6E1C3] transition-colors">
+                {community.name}
+              </h3>
+              <ChevronRight
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 text-[#8C653B] dark:text-[#D8B282] group-hover:translate-x-0.5 transition-transform"
+                strokeWidth={2}
+              />
+            </Link>
 
-      <div className="grid grid-cols-3 divide-x divide-[var(--bc-mobile-border)] -mx-3.5 -mb-3.5">
-        <Link
-          to="/connect-app/community/$communityId/members"
-          params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
-        >
-          <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
-          Thành viên
-        </Link>
-        <Link
-          to="/connect-app/community/$communityId/events"
-          params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
-        >
-          <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
-          Sự kiện
-        </Link>
-        <Link
-          to="/connect-app/community/$communityId/opportunities"
-          params={{ communityId: community.communityId }}
-          className="flex h-9 items-center justify-center gap-1.5 text-xs font-medium text-foreground/80 hover:text-[#D8B282] hover:bg-[#D8B282]/10 dark:text-[#D4C3A3] transition-colors cursor-pointer"
-        >
-          <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#D8B282]" strokeWidth={1.8} />
-          Cơ hội
-        </Link>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed font-normal">
+              {community.shortDescription || visuals.descFallback}
+            </p>
+          </div>
+        </div>
+
+        {/* Overlapping Members Pile & Activity Metrics */}
+        <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-2 text-xs">
+          
+          {/* Member Avatars Row */}
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {visuals.attendees.map((attUrl, i) => (
+                <img
+                  key={i}
+                  src={attUrl}
+                  alt="Thành viên"
+                  className="h-6 w-6 rounded-full object-cover border-2 border-white dark:border-black shadow-sm"
+                />
+              ))}
+            </div>
+            <span className="font-semibold text-[#8C653B] dark:text-[#F6E1C3] text-[11.5px]">
+              {memberCount} thành viên
+            </span>
+          </div>
+
+          {/* Quick Metrics Badges (Standardized 3 Brand Colors) */}
+          <div className="flex items-center gap-1.5 text-[11px]">
+            {eventCount ? (
+              <span className="px-2 py-0.5 rounded-md bg-[#D8B282]/15 border border-[#D8B282]/30 text-[#8C653B] dark:text-[#F6E1C3] font-medium">
+                {eventCount} sự kiện
+              </span>
+            ) : null}
+            {oppCount ? (
+              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium">
+                {oppCount} cơ hội
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Quick Action Navigation Buttons */}
+        <div className="mt-3.5 grid grid-cols-3 divide-x divide-slate-200 dark:divide-white/10 rounded-2xl bg-slate-50 dark:bg-black/60 border border-slate-200 dark:border-[#D8B282]/30 overflow-hidden">
+          <Link
+            to="/connect-app/community/$communityId/members"
+            params={{ communityId: community.communityId }}
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+          >
+            <Users aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <span>Thành viên</span>
+          </Link>
+          <Link
+            to="/connect-app/community/$communityId/events"
+            params={{ communityId: community.communityId }}
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+          >
+            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <span>Sự kiện</span>
+          </Link>
+          <Link
+            to="/connect-app/community/$communityId/opportunities"
+            params={{ communityId: community.communityId }}
+            className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#8C653B] dark:hover:text-[#D8B282] hover:bg-slate-100 dark:hover:bg-[#D8B282]/10 transition-colors cursor-pointer"
+          >
+            <Briefcase aria-hidden="true" className="h-3.5 w-3.5 text-[#8C653B] dark:text-[#D8B282]" strokeWidth={1.8} />
+            <span>Cơ hội</span>
+          </Link>
+        </div>
+
       </div>
     </li>
   );
 }
 
-export function CommunityAvatar({ name, logoUrl }: { name: string; logoUrl: string | null }) {
-  if (logoUrl) {
+export function CommunityAvatar({
+  name,
+  logoUrl,
+  className = "h-12 w-12",
+}: {
+  name: string;
+  logoUrl: string | null;
+  className?: string;
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  if (logoUrl && !imgError) {
     return (
       <img
         src={logoUrl}
-        alt=""
+        alt={name}
         loading="lazy"
-        className="h-12 w-12 shrink-0 rounded-full border border-solid border-[#D8B282]/25 object-cover"
+        onError={() => setImgError(true)}
+        className={`${className} shrink-0 rounded-full border-2 border-[#D8B282]/60 object-cover shadow-md`}
       />
     );
   }
+
+  const initial = name.trim().charAt(0).toUpperCase() || "C";
+
   return (
     <div
       aria-hidden="true"
-      className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-solid border-[#D8B282]/30 bg-[#0c1522] text-[16px] font-semibold text-[#D8B282]"
+      className={`grid ${className} shrink-0 place-items-center rounded-full border-2 border-[#D8B282]/60 bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-[#0B111E] text-base font-black text-amber-300 shadow-md`}
     >
-      {name.trim().charAt(0).toUpperCase() || "·"}
+      {initial}
     </div>
   );
 }

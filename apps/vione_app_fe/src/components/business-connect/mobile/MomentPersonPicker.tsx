@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, RefreshCw, Search, UserRound } from "lucide-react";
+import { ChevronRight, RefreshCw, Search, Sparkles, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
   useBusinessConnectNetwork,
@@ -105,6 +105,28 @@ export function MomentPersonPicker() {
           />
         </div>
 
+        {/* Tùy chọn Đăng khoảnh khắc chung / Cá nhân (luôn khả dụng) */}
+        <div className="mt-4">
+          <Link
+            to="/connect-app/moment/$personId"
+            params={{ personId: "general" }}
+            className="flex items-center gap-3.5 rounded-2xl border border-[var(--bc-mobile-border-gold)] bg-gradient-to-r from-[var(--bc-mobile-surface)] to-[var(--bc-mobile-surface-2)] p-3.5 text-left transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
+          >
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#D8B282] to-[#F6E1C3] text-slate-950 shadow-md">
+              <Sparkles className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-bold text-[var(--bc-mobile-text)]">
+                Đăng khoảnh khắc chung / Sự kiện của tôi
+              </span>
+              <span className="block text-[13px] text-[var(--bc-mobile-muted)]">
+                Lưu bài học, sự kiện doanh nghiệp không giới hạn đối tác
+              </span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-[var(--bc-mobile-accent)]" />
+          </Link>
+        </div>
+
         {net.initialLoading ? (
           <div aria-busy="true" className="mt-6 space-y-3">
             <span className="sr-only">{t("bc.mobile.network.loading")}</span>
@@ -133,18 +155,33 @@ export function MomentPersonPicker() {
             </button>
           </div>
         ) : net.people.length === 0 ? (
-          <div className="mt-16 flex flex-col items-center px-4 text-center">
+          <div className="mt-10 flex flex-col items-center px-4 text-center">
             <span
               aria-hidden="true"
-              className="grid h-14 w-14 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)]"
+              className="grid h-16 w-16 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-accent)] ring-1 ring-[var(--bc-mobile-border-gold)]"
             >
-              <UserRound className="h-6 w-6" strokeWidth={1.6} />
+              <UserRound className="h-8 w-8" strokeWidth={1.6} />
             </span>
-            <p className="mt-4 max-w-[34ch] text-[14px] leading-relaxed text-[var(--bc-mobile-muted)]">
+            <p className="mt-4 max-w-[34ch] text-[14px] font-medium leading-relaxed text-[var(--bc-mobile-text)]">
               {net.searching
                 ? t("bc.mobile.moment.picker.searchEmpty")
-                : t("bc.mobile.moment.picker.empty")}
+                : "Bạn chưa có kết nối nào trong danh bạ nhưng vẫn có thể tự do đăng khoảnh khắc ngay!"}
             </p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm">
+              <Link
+                to="/connect-app/moment/$personId"
+                params={{ personId: "general" }}
+                className="w-full py-3 px-5 rounded-full font-bold text-[14px] text-center bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-md hover:brightness-105 active:scale-95 transition-all"
+              >
+                Đăng Khoảnh Khắc Ngay
+              </Link>
+              <Link
+                to="/connect-app/card-scan"
+                className="w-full py-3 px-5 rounded-full font-semibold text-[13.5px] text-center border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors"
+              >
+                Quét Danh Thiếp / Thêm Đối Tác
+              </Link>
+            </div>
           </div>
         ) : (
           <>

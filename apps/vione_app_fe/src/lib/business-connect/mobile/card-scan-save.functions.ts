@@ -3,16 +3,65 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import type {
+  ScanDuplicateCandidate,
   ScanDuplicateResolution,
+  ScanDuplicateState,
   ScanSaveResponse,
 } from "./card-scan.review";
 
 /** Maps raw API resolve response to the local ScanDuplicateResolution shape. */
 export function mapResolveResponse(raw: unknown): ScanDuplicateResolution {
-  return raw as ScanDuplicateResolution;
+  const fallback: ScanDuplicateResolution = { state: "none", candidates: [] };
+  if (!raw || typeof raw !== "object") return fallback;
+  const obj = raw as Record<string, unknown>;
+  const rawState = obj.state;
+  if (rawState !== "none" && rawState !== "exact" && rawState !== "ambiguous") {
+    return fallback;
+  }
+  if (!Array.isArray(obj.candidates)) {
+    return { state: rawState === "exact" ? "none" : (rawState as ScanDuplicateState), candidates: [] };
+  }
+  const candidates: ScanDuplicateCandidate[] = [];
+  for (const c of obj.candidates) {
+    if (!c || typeof c !== "object") continue;
+    const item = c as Record<string, unknown>;
+    if (typeof item.personId !== "string" || !/^(g|u|c):.+/.test(item.personId)) continue;
+    if (item.kind !== "guest" && item.kind !== "saved_card" && item.kind !== "connection") continue;
+    if (item.matchLevel !== "exact" && item.matchLevel !== "strong" && item.matchLevel !== "possible") continue;
+    if (
+      item.reason !== "phone" &&
+      item.reason !== "email" &&
+      item.reason !== "phone_email" &&
+      item.reason !== "name_company" &&
+      item.reason !== "name_domain" &&
+      item.reason !== "name" &&
+      item.reason !== "company"
+    ) {
+      continue;
+    }
+    candidates.push({
+      personId: item.personId,
+      kind: item.kind,
+      displayName: typeof item.displayName === "string" ? item.displayName : null,
+      title: typeof item.title === "string" ? item.title : null,
+      companyName: typeof item.companyName === "string" ? item.companyName : null,
+      matchLevel: item.matchLevel,
+      reason: item.reason,
+    });
+  }
+
+  let finalState: ScanDuplicateState = rawState as ScanDuplicateState;
+  if (finalState === "exact" && candidates.length === 0) {
+    finalState = "none";
+  }
+
+  return {
+    state: finalState,
+    candidates,
+  };
 }
 
 
@@ -24,7 +73,7 @@ const resolveInput = z.object({
 });
 
 export const bcMobileCardScanResolveFn = createServerFn({ method: "POST" })
-  .middleware([requireNestAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => resolveInput.parse(data))
   .handler(async ({ data, context }): Promise<ScanDuplicateResolution> => {
     return fetchNestApiFromServer("/connect-app/card-scan/resolve", context.token, {
@@ -60,7 +109,7 @@ const saveInput = z.object({
 });
 
 export const bcMobileCardScanSaveFn = createServerFn({ method: "POST" })
-  .middleware([requireNestAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => saveInput.parse(data))
   .handler(async ({ data, context }): Promise<ScanSaveResponse> => {
     return fetchNestApiFromServer("/connect-app/card-scan/save", context.token, {

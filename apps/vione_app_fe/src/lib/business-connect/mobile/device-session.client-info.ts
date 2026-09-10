@@ -2,6 +2,7 @@
 // Chỉ dùng dữ liệu công khai của trình duyệt: không thu thập PII, không vân tay.
 
 import type { DeviceDescriptor } from "./device-session.types";
+import { safeRandomUUID } from "@/lib/utils";
 
 const DEVICE_KEY = "bc.device.key";
 
@@ -10,11 +11,7 @@ function hasWindow(): boolean {
 }
 
 function randomKey(): string {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `dev-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
-  }
+  return safeRandomUUID();
 }
 
 /** Khoá thiết bị bền trong localStorage (mất khi người dùng xoá dữ liệu trình duyệt). */

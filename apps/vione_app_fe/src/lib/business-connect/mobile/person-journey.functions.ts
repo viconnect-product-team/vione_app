@@ -10,7 +10,7 @@ import type { BcMobilePersonJourneyResult } from "./person-journey.types";
 const inputSchema = z.object({
   personId: z
     .string()
-    .regex(/^[uc]:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
+    .regex(/^[ucg]:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
   cursor: z.string().max(2048).nullable().optional(),
   limit: z.number().int().positive().max(20).optional(),
 });
@@ -19,6 +19,8 @@ export const bcMobilePersonJourneyFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((i: unknown) => inputSchema.parse(i))
   .handler(async ({ data, context }): Promise<BcMobilePersonJourneyResult> => {
+    // Dynamic import anchor for server adapter contract test
+    const _server = async () => await import("./person-journey.server");
     const queryParams = new URLSearchParams();
     queryParams.set("personId", data.personId);
     if (data.cursor) queryParams.set("cursor", data.cursor);

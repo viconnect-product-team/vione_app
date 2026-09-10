@@ -13,6 +13,7 @@ import { useFmt, useT, type TKey } from "@/lib/i18n";
 import { useState } from "react";
 import { useNetworkRowConnect } from "@/hooks/use-network-row-connect";
 import { ConnectConfirmDialog } from "./ConnectConfirmDialog";
+import { avatarOrDemo, demoAvatar } from "@/lib/business-connect/mobile/demo-avatars";
 import type { BcMobileNetworkPerson } from "@/hooks/use-business-connect-network";
 
 function initialsOf(name: string | null): string | null {
@@ -75,9 +76,10 @@ export function NetworkPersonRow({ person }: { person: BcMobileNetworkPerson }) 
           ) : (
             <span
               aria-hidden="true"
-              className="grid h-[56px] w-[56px] place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[16px] font-semibold text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border)]"
+              className="grid place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[16px] font-semibold text-[var(--bc-mobile-text)] ring-1 ring-[var(--bc-mobile-border)]"
+              style={{ height: "56px", width: "56px" }}
             >
-              {initials ?? name.slice(0, 1).toUpperCase()}
+              {initials ?? "•"}
             </span>
           )}
           <span

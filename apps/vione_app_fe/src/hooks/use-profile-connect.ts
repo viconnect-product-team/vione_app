@@ -13,6 +13,8 @@ import { networkErrorTKey } from "@/lib/global-network/error-messages";
 import { toNetworkErrorCode } from "@/lib/global-network/error-messages";
 import { useT } from "@/lib/i18n";
 
+import { safeRandomUUID } from "@/lib/utils";
+
 const ANON_STATE: BusinessProfileRelationshipState = {
   viewer: "anonymous",
   savedCard: false,
@@ -20,11 +22,7 @@ const ANON_STATE: BusinessProfileRelationshipState = {
 };
 
 function newMutationKey(): string {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `mk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  }
+  return safeRandomUUID();
 }
 
 export type ProfileConnectAction = "connect" | "accept" | "decline" | "cancel" | "disconnect";

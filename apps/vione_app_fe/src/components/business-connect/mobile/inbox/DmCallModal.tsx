@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
+import { safeRandomUUID } from "@/lib/utils";
 
 export interface DmCallModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ export function DmCallModal({
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const callIdRef = useRef<string>(crypto.randomUUID());
+  const callIdRef = useRef<string>(safeRandomUUID());
 
   // Initialize camera/mic
   useEffect(() => {
@@ -63,8 +64,9 @@ export function DmCallModal({
     const socket = getConnectAppSocket();
 
     if (!isIncomingAcceptance && counterpartUserId && viewerUserId) {
-      const callId = crypto.randomUUID();
+      const callId = safeRandomUUID();
       callIdRef.current = callId;
+
 
       socket.emit("call:initiate", {
         callId,

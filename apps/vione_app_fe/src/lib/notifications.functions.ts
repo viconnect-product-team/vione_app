@@ -1,100 +1,59 @@
+/**
+ * notifications.functions.ts
+ * Server functions cho thông báo quản trị CRM — gọi NestJS REST API, hỗ trợ realtime & routing.
+ */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Notification } from "@/lib/extra-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
-
-type Row = Record<string, unknown>;
-
-function mapNotif(n: Row): Notification {
-  return {
-    id: n.code as string,
-    title: n.title as string,
-    body: (n.body as string) ?? "",
-    audience: n.audience as Notification["audience"],
-    channel: n.channel as Notification["channel"],
-    sentAt: n.sent_at as string,
-    reach: (n.reach as number) ?? 0,
-    status: n.status as Notification["status"],
-  };
-}
+import { fetchNestApiFromServer } from "./api-client";
 
 export const listNotificationsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }): Promise<Notification[]> => {
-    const { getActiveAssociationId } = await import("./assoc-scope.server");
-    const activeId = await getActiveAssociationId(getDb(context));
-    let query = getDb(context)
-      .from("notifications")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (activeId) query = query.eq("association_id", activeId);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data ?? []).map((r: any) => mapNotif(r as Row));
+  .inputValidator((d: unknown) => (d ? z.object({ appScope: z.string().optional(), associationId: z.string().optional() }).optional().parse(d) : undefined))
+  .handler(async ({ data, context }): Promise<Notification[]> => {
+    try {
+      const params = new URLSearchParams();
+      if (data?.appScope) params.set("appScope", data.appScope);
+      if (data?.associationId) params.set("associationId", data.associationId);
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const res = await fetchNestApiFromServer<Notification[]>(`/admin/notifications${query}`, context.token);
+      return Array.isArray(res) ? res : [];
+    } catch (err) {
+      console.warn("[listNotificationsFn] Error fetching notifications from Nest API:", err);
+      return [];
+    }
   });
 
 const notifInput = z.object({
   title: z.string().min(1).max(300),
   body: z.string().max(2000).default(""),
-  audience: z.enum(["all", "members", "sponsors", "staff"]),
-  channel: z.enum(["inapp", "email", "sms"]),
-  status: z.enum(["sent", "scheduled", "draft"]),
+  audience: z.enum(["all", "members", "sponsors", "staff"]).default("all"),
+  channel: z.enum(["inapp", "email", "sms"]).default("inapp"),
+  appScope: z.enum(["crm", "vione_app", "association_app", "all"]).default("crm"),
+  targetApp: z.enum(["crm", "vione_app", "association_app", "all"]).optional(),
+  status: z.enum(["sent", "scheduled", "draft"]).default("sent"),
+  associationId: z.string().optional(),
 });
 
 export const createNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => notifInput.parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
-    const { genCode, logActivity } = await import("./crud.server");
-    const code = genCode("NTF");
-    const { data: row, error } = await getDb(context)
-      .from("notifications")
-      .insert({
-        code,
-        title: data.title,
-        body: data.body,
-        audience: data.audience,
-        channel: data.channel,
-        status: data.status,
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Soạn thông báo",
-      target: data.title,
-      category: "system",
+    return fetchNestApiFromServer<Notification>("/admin/notifications", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
     });
-    return mapNotif(row);
   });
 
 export const updateNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => notifInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
-    const { logActivity } = await import("./crud.server");
-    const { data: row, error } = await getDb(context)
-      .from("notifications")
-      .update({
-        title: data.title,
-        body: data.body,
-        audience: data.audience,
-        channel: data.channel,
-        status: data.status,
-      })
-      .eq("code", data.id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Cập nhật thông báo",
-      target: data.title,
-      category: "system",
+    return fetchNestApiFromServer<Notification>(`/admin/notifications/${encodeURIComponent(data.id)}`, context.token, {
+      method: "PATCH",
+      body: JSON.stringify(data),
     });
-    return mapNotif(row);
   });
 
 // Mark a draft/scheduled notification as sent.
@@ -102,39 +61,16 @@ export const sendNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Notification> => {
-    const { logActivity } = await import("./crud.server");
-    const sentAt = new Date().toISOString().slice(0, 10);
-    const { data: row, error } = await getDb(context)
-      .from("notifications")
-      .update({ status: "sent", sent_at: sentAt })
-      .eq("code", data.id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Gửi thông báo",
-      target: (row.title as string) ?? data.id,
-      category: "system",
+    return fetchNestApiFromServer<Notification>(`/admin/notifications/${encodeURIComponent(data.id)}/send`, context.token, {
+      method: "POST",
     });
-    return mapNotif(row);
   });
 
 export const deleteNotificationFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const { logActivity } = await import("./crud.server");
-    const found = await getDb(context)
-      .from("notifications")
-      .select("title")
-      .eq("code", data.id)
-      .maybeSingle();
-    const { error } = await getDb(context).from("notifications").delete().eq("code", data.id);
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Xóa thông báo",
-      target: (found.data?.title as string) ?? data.id,
-      category: "system",
+    return fetchNestApiFromServer<{ ok: boolean }>(`/admin/notifications/${encodeURIComponent(data.id)}`, context.token, {
+      method: "DELETE",
     });
-    return { ok: true };
   });

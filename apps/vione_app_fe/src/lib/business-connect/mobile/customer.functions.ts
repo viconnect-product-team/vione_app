@@ -24,7 +24,7 @@ import {
   type BcCustomerResult,
 } from "./customer.types";
 
-const personIdSchema = z.string().regex(/^[ucg]:[0-9a-fA-F-]{36}$/);
+const personIdSchema = z.string().min(2).max(120);
 const stageSchema = z.enum(CUSTOMER_STAGES);
 const isoSchema = z.string().min(4).max(40);
 

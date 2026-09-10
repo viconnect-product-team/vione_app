@@ -11,7 +11,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { axe } from "jest-axe";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   createRootRoute,
@@ -92,6 +92,20 @@ import { CardScanDuplicateSheet } from "@/components/business-connect/mobile/car
 import { CardScanFieldResolutionSheet } from "@/components/business-connect/mobile/card-scan/CardScanFieldResolutionSheet";
 
 const MIGRATION_4B = "supabase/migrations/20260809102507_71d1df05-014a-4787-9250-1f58e93d974a.sql";
+
+function readWorkspaceFile(p: string): string {
+  const candidates = [
+    join(process.cwd(), p),
+    join(process.cwd(), "../../", p),
+    join(process.cwd(), "../", p),
+    join(__dirname, "../../../", p),
+    join(__dirname, "../../../../", p),
+  ];
+  for (const c of candidates) {
+    if (existsSync(c)) return readFileSync(c, "utf8");
+  }
+  return readFileSync(join(process.cwd(), p), "utf8");
+}
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -305,7 +319,7 @@ describe("BC-Mobile-4B — deterministic duplicate classification", () => {
     // No emailHit/phoneHit flags ⇒ no match, even with an identical name.
     const r = classifyScanDuplicates([]);
     expect(r.state).toBe("none");
-    const source = readFileSync(join(process.cwd(), MIGRATION_4B), "utf8");
+    const source = readWorkspaceFile(MIGRATION_4B);
     expect(source).not.toMatch(/similarity|trgm|fuzzy/i);
   });
 
@@ -489,7 +503,7 @@ describe("BC-Mobile-4B — field-level merge model", () => {
 // ── 4. Contract guards (static) ──────────────────────────────────────────────
 
 describe("BC-Mobile-4B — contract guards", () => {
-  const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+  const read = (p: string) => readWorkspaceFile(p);
 
   it("review + duplicate sheet NEVER write to the DB or graph directly", () => {
     for (const f of [

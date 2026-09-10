@@ -43,10 +43,10 @@ export function requestCountLabel(loaded: number, pageSize: number): string {
   return loaded >= pageSize ? `${pageSize}+` : String(loaded);
 }
 
+import { safeRandomUUID } from "@/lib/utils";
+
 function newMutationKey(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return safeRandomUUID();
 }
 
 export function useIncomingConnectionRequests(enabled = true) {

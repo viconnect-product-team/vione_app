@@ -138,7 +138,7 @@ export function ConnectAppSignIn({
       `}</style>
 
       <div
-        className="vba-auth-wrapper relative mx-auto flex h-full max-h-full w-full max-w-md flex-col justify-between px-5 py-2 overflow-hidden"
+        className="bc-auth-wrapper relative mx-auto flex h-full max-h-full w-full max-w-md flex-col justify-between px-5 py-2 overflow-hidden"
         style={{
           paddingTop: "max(6px, env(safe-area-inset-top))",
           paddingBottom: "max(6px, env(safe-area-inset-bottom))",
@@ -150,21 +150,51 @@ export function ConnectAppSignIn({
         </div>
 
         {/* Brand & Welcome Header */}
-        <div className="flex flex-col items-center justify-center text-center shrink-0 my-1">
-          <ViOneLogo className="h-8 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-1 text-[9.5px] font-bold tracking-[0.25em] text-[#D8B282]">
-            BUSINESS CONNECT
+        <div className="flex flex-col items-center justify-center text-center shrink-0 my-0.5">
+          <ViOneLogo className="h-7 w-auto transition-transform hover:scale-105 duration-300" />
+          <div className="mt-0.5 text-[9px] font-bold tracking-[0.25em] text-[#D8B282]">
+            {isAssociation ? "CỔNG HIỆP HỘI & CLB" : "BUSINESS CONNECT"}
           </div>
           <h1
-            className="mt-1 font-serif text-[22px] sm:text-[26px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
+            className="mt-0.5 font-serif text-[20px] sm:text-[24px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.35)]"
           >
-            {t("bc.mobile.auth.welcome")}
+            {isAssociation ? "Cổng Hội Viên Hiệp Hội" : t("bc.mobile.auth.welcome")}
           </h1>
           <p
-            className="mx-auto mt-0.5 max-w-[19rem] text-center text-[12px] sm:text-[13px] leading-tight font-light text-[#D4C3A3]/90"
+            className="mx-auto mt-0.5 max-w-[19rem] text-center text-[11.5px] sm:text-[12.5px] leading-tight font-light text-[#D4C3A3]/90"
           >
-            {t("bc.mobile.auth.subtitle")}
+            {isAssociation
+              ? "Đăng nhập để vào không gian hội viên hiệp hội, CLB doanh nghiệp"
+              : t("bc.mobile.auth.subtitle")}
           </p>
+        </div>
+
+        {/* 2-Tab Segmented Switcher: ViOne vs Hiệp hội / CLB */}
+        <div className="my-1.5 p-1 rounded-2xl bg-black/60 border border-[#D8B282]/30 backdrop-blur-md flex items-center gap-1 shadow-inner shrink-0">
+          <button
+            type="button"
+            onClick={() => onAppPortalChange?.("connect")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
+              !isAssociation
+                ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-md font-bold"
+                : "text-[#D4C3A3]/70 hover:text-white hover:bg-white/[0.05] font-medium"
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${!isAssociation ? "text-[#050c15]" : "text-[#D8B282]"}`} />
+            <span className="truncate">Đăng nhập ViOne</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onAppPortalChange?.("association")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
+              isAssociation
+                ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-md font-bold"
+                : "text-[#D4C3A3]/70 hover:text-white hover:bg-white/[0.05] font-medium"
+            }`}
+          >
+            <Building2 className={`w-3.5 h-3.5 shrink-0 ${isAssociation ? "text-[#050c15]" : "text-[#D8B282]"}`} />
+            <span className="truncate">Cổng Hiệp hội / CLB</span>
+          </button>
         </div>
 
         {/* Error */}

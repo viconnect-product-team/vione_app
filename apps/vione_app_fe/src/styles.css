@@ -308,27 +308,27 @@
    Unified enterprise theme (navy / warm gold) for the member app.
    Legacy .vba-* class names are kept as aliases so every screen
 /* ============================================================
-   Unified enterprise theme (navy / warm gold) for the member app.
+   Unified enterprise theme (Solid Obsidian Black / Warm Champagne Gold) for the member app.
    Standardized 3-dominant-color system for Dark, Light, & Contrast.
    ============================================================ */
 .vba-app {
-  --vba-bg: #050c15;
-  --vba-bg-2: #09111d;
-  --vba-surface: rgba(13, 22, 35, 0.95);
-  --vba-surface-2: rgba(18, 30, 48, 0.95);
-  --vba-border: rgba(216, 178, 130, 0.28);
-  --vba-border-soft: rgba(255, 255, 255, 0.13);
-  --vba-border-accent: rgba(216, 178, 130, 0.45);
+  --vba-bg: #000000;
+  --vba-bg-2: #050505;
+  --vba-surface: #0A0A0A;
+  --vba-surface-2: #121212;
+  --vba-border: rgba(216, 178, 130, 0.45);
+  --vba-border-soft: rgba(255, 255, 255, 0.15);
+  --vba-border-accent: rgba(216, 178, 130, 0.70);
   --vba-gold: #D8B282;
   --vba-gold-2: #F0D5A8;
-  --vba-gold-soft: rgba(216, 178, 130, 0.14);
-  --vba-gold-glow: 0 8px 24px -8px rgba(216, 178, 130, 0.45);
+  --vba-gold-soft: rgba(216, 178, 130, 0.18);
+  --vba-gold-glow: 0 8px 24px -8px rgba(216, 178, 130, 0.60);
   --vba-text: #FFFFFF;
-  --vba-text-muted: #B0BEC8;
-  --vba-text-dim: #7A8FA0;
+  --vba-text-muted: #CBD5E1;
+  --vba-text-dim: #94A3B8;
   --vba-danger: #EF4444;
 
-  background: transparent;
+  background: #000000;
   color: var(--vba-text);
   min-height: 100dvh;
   font-family: var(--font-sans);
@@ -345,13 +345,13 @@
 
 /* Light mode tokens for .vba-app — Clean Executive White & Warm Bronze Gold */
 html:not(.dark) .vba-app {
-  --vba-bg: #F8FAFC;
-  --vba-bg-2: #FFFFFF;
+  --vba-bg: #FFFFFF;
+  --vba-bg-2: #F8FAFC;
   --vba-surface: #FFFFFF;
   --vba-surface-2: #F1F5F9;
-  --vba-border: rgba(180, 83, 9, 0.25);
+  --vba-border: rgba(216, 178, 130, 0.35);
   --vba-border-soft: rgba(15, 23, 42, 0.08);
-  --vba-border-accent: rgba(180, 83, 9, 0.50);
+  --vba-border-accent: rgba(216, 178, 130, 0.60);
   --vba-gold: #B45309;
   --vba-gold-2: #92400E;
   --vba-gold-soft: rgba(180, 83, 9, 0.08);
@@ -363,14 +363,15 @@ html:not(.dark) .vba-app {
   --popover-foreground: #0F172A;
   --card: #FFFFFF;
   --card-foreground: #0F172A;
+  background: #FFFFFF;
   color: #0F172A;
 }
 
 html:not(.dark) .vba-card {
   background: #FFFFFF;
   color: #0F172A;
-  border: 1px solid rgba(180, 83, 9, 0.20);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(216, 178, 130, 0.30);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
 }
 
 html:not(.dark) .vba-gold-text {
@@ -665,66 +666,144 @@ input[type="radio"] {
    `.bc-app` carries tokens (safe on portal content such as the V
    sheet); `.bc-app-viewport` adds page-level layout.
    ============================================================ */
-.bc-app {
-  /* ── Business Connect — Executive Minimal Luxury ──────────────────
-     Deep Navy × Champagne Gold × Executive Minimalism.
-     Single token namespace: --bc-mobile-*. No parallel design system. */
+/* High-contrast mode tokens for .bc-app (ViOne Connect) — Crisp Solid Black, High-Visibility White, Sapphire & Electric Gold */
+html.hc .bc-app {
+  --bc-bg-deep: rgb(0, 0, 0);
+  --bc-bg-primary: rgb(0, 0, 0);
+  --bc-bg-secondary: #050505;
+  --bc-surface: #0A0A0A;
+  --bc-surface-elevated: #111111;
+
+  --bc-mobile-bg: rgb(0, 0, 0);
+  --bc-mobile-bg-deep: rgb(0, 0, 0);
+  --bc-mobile-surface: #0A0A0A;
+  --bc-mobile-surface-2: #121212;
+  --bc-mobile-navy: rgb(0, 0, 0);
+  --bc-mobile-navy-deep: rgb(0, 0, 0);
+  --bc-mobile-app-gradient: rgb(0, 0, 0);
+  --bc-mobile-card-grad: #0A0A0A;
+
+  --bc-text-primary: #FFFFFF;
+  --bc-text-secondary: #FDE68A;
+  --bc-text-tertiary: #CBD5E1;
+  --bc-text-disabled: #94A3B8;
+
+  --bc-mobile-ivory: #FFFFFF;
+  --bc-mobile-text: #FFFFFF;
+  --bc-mobile-text-2: #FDE68A;
+  --bc-mobile-muted: #CBD5E1;
+  --bc-mobile-disabled: #94A3B8;
+
+  --bc-border-subtle: rgba(216, 178, 130, 0.45);
+  --bc-border-medium: #FACC15;
+  --bc-border-gold: #FACC15;
+  --bc-mobile-border: rgba(216, 178, 130, 0.65);
+  --bc-mobile-border-subtle: #FFFFFF;
+  --bc-mobile-border-gold: #FACC15;
+}
+
+.vba-card {
+  background: linear-gradient(165deg, #0E0E0E 0%, #050505 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #FFFFFF;
+  border: 1px solid rgba(216, 178, 130, 0.45);
+  border-radius: 1rem;
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.7), 0 0 1px rgba(216, 178, 130, 0.35);
+}
+
+.vba-gold-grad {
+  background: linear-gradient(135deg, #F0D5A8 0%, #D8B282 50%, #C49B6A 100%);
+  color: #0A111C !important;
+  font-weight: 600;
+  box-shadow: 0 4px 16px -2px rgba(216, 178, 130, 0.35);
+}
+
+/* High-contrast: flatten gradients to solid, remove glows for clarity */
+@media (prefers-contrast: more) {
+  .vba-gold-text {
+    background: none;
+    -webkit-text-fill-color: var(--primary);
+    color: var(--primary);
+    filter: none;
+  }
+  .vba-gold-grad {
+    background: var(--primary);
+    box-shadow: none;
+  }
+}
+
+/* Keyboard focus ring for all interactive elements in the member app. */
+.vba-app a:focus-visible,
+.vba-app button:focus-visible,
+.vba-app [role="button"]:focus-visible,
+.vba-app input:focus-visible,
+.vba-app select:focus-visible,
+.vba-app textarea:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 4px var(--vba-gold-soft);
+}
+
+.bc-app,
+.dark .bc-app {
+  /* ── Business Connect — Translucent Obsidian Dark Glass & Champagne Gold ──────────────────
+     Frosted Dark Glass (Đen mờ cao cấp) × Champagne Gold Gradient (Vàng đồng như nút ViOne). */
 
   /* Backgrounds / surfaces */
-  --bc-bg-deep: #020509;
-  --bc-bg-primary: #030810;
-  --bc-bg-secondary: #040810;
-  --bc-surface: #070b14;
-  --bc-surface-elevated: #0a0f1a;
+  --bc-bg-deep: #03050A;
+  --bc-bg-primary: #060913;
+  --bc-bg-secondary: #0A0F1D;
+  --bc-surface: rgba(14, 20, 34, 0.85);
+  --bc-surface-elevated: rgba(20, 28, 48, 0.90);
 
+  --bc-mobile-bg: #060913;
+  --bc-mobile-bg-deep: #03050A;
+  --bc-mobile-surface: rgba(14, 20, 34, 0.85);
+  --bc-mobile-surface-2: rgba(20, 28, 48, 0.90);
+  --bc-mobile-navy: #0A0F1D;
+  --bc-mobile-navy-deep: #04070D;
+  --bc-mobile-app-gradient: linear-gradient(180deg, #070B14 0%, #04070D 100%);
+  --bc-mobile-card-grad: linear-gradient(165deg, rgba(16, 24, 40, 0.85) 0%, rgba(9, 14, 25, 0.90) 100%);
 
-  --bc-mobile-bg: var(--bc-bg-primary);
-  --bc-mobile-bg-deep: var(--bc-bg-deep);
-  --bc-mobile-surface: #070b14;
-  --bc-mobile-surface-2: #0a0f1a;
-  --bc-mobile-navy: var(--bc-bg-secondary);
-  --bc-mobile-navy-deep: var(--bc-bg-deep);
-  --bc-mobile-app-gradient: linear-gradient(180deg, #020408 0%, #030810 48%, #040810 100%);
-  --bc-mobile-card-grad: linear-gradient(150deg, rgba(16, 24, 40, 0.22) 0%, rgba(10, 16, 25, 0.10) 50%, rgba(4, 8, 14, 0.22) 100%);
+  /* Text - High luminance white & vibrant champagne gold, crisp subtitles */
+  --bc-text-primary: #FFFFFF;
+  --bc-text-secondary: #FEE6B4;
+  --bc-text-tertiary: #CBD5E1;
+  --bc-text-disabled: #64748B;
 
-  /* Text - aligned with login screen palette (#f5f7fa, #D4C3A3, #d8c3b1) */
-  --bc-text-primary: #f5f7fa;
-  --bc-text-secondary: #D4C3A3;
-  --bc-text-tertiary: #d8c3b1;
-  --bc-text-disabled: #8c8273;
+  --bc-mobile-ivory: #FFFFFF;
+  --bc-mobile-text: #FFFFFF;
+  --bc-mobile-text-2: #FEE6B4;
+  --bc-mobile-muted: #94A3B8;
+  --bc-mobile-disabled: #64748B;
 
-  --bc-mobile-ivory: var(--bc-text-primary);
-  --bc-mobile-text: var(--bc-text-primary);
-  --bc-mobile-text-2: var(--bc-text-secondary);
-  --bc-mobile-muted: var(--bc-text-secondary);
-  --bc-mobile-disabled: var(--bc-text-disabled);
+  /* Borders — delicate champagne gold matching ViOne button */
+  --bc-border-subtle: rgba(216, 178, 130, 0.25);
+  --bc-border-medium: rgba(216, 178, 130, 0.35);
+  --bc-border-gold: rgba(216, 178, 130, 0.60);
+  --bc-mobile-border: rgba(216, 178, 130, 0.32);
+  --bc-mobile-border-subtle: rgba(246, 225, 195, 0.20);
+  --bc-mobile-border-gold: rgba(216, 178, 130, 0.60);
+  --bc-mobile-border-strong: rgba(246, 225, 195, 0.85);
 
-  /* Borders — luminous gold tone with crisp contrast */
-  --bc-border-subtle: rgba(216, 178, 130, 0.32);
-  --bc-border-medium: rgba(216, 178, 130, 0.48);
-  --bc-border-gold: rgba(216, 178, 130, 0.68);
-  --bc-mobile-border: var(--bc-border-medium);
-  --bc-mobile-border-subtle: var(--bc-border-subtle);
-  --bc-mobile-border-gold: var(--bc-border-gold);
-  /* Boundary colour for focusable controls: >=3:1 against every surface. */
-  --bc-mobile-border-strong: rgba(216, 178, 130, 0.85);
-
-  /* Champagne gold -> Login page warm luxury gold */
-  --bc-gold-300: #FDE6B4;
+  /* Gold & Warm Highlights */
+  --bc-gold-300: #F6E1C3;
   --bc-gold-400: #D8B282;
-  --bc-gold-500: #D8B282;
-  --bc-gold-600: #AB6D3C;
+  --bc-gold-500: #C29B69;
+  --bc-gold-600: #8C653B;
 
   --bc-mobile-accent: #D8B282;
   --bc-mobile-accent-strong: #F6E1C3;
-  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.18);
+  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.22);
   --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #faecda 0%, #e2be90 45%, #cea877 70%, #9c7348 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #eed5b5 0%, #cca573 45%, #b58d5b 70%, #7d572e 100%);
-  --bc-mobile-accent-on: #050c15;
-  --bc-mobile-shadow-cta: none;
-  --bc-mobile-success: #5ec49d;
-  --bc-mobile-danger: #ef7b6a;
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FFF0DC 0%, #E2BA84 45%, #D4A772 70%, #9F7547 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #ECC89F 0%, #C29B69 45%, #AA7F4C 70%, #754F26 100%);
+  --bc-mobile-accent-on: #050505;
+  --bc-mobile-shadow-cta: 0 4px 20px rgba(216, 178, 130, 0.40);
+  --bc-mobile-success: #10B981;
+  --bc-mobile-danger: #F43F5E;
 
   /* Radius — soft rounded */
   --bc-radius-sm: 10px;
@@ -735,22 +814,20 @@ input[type="radio"] {
   --bc-mobile-radius-card: var(--bc-radius-lg);
   --bc-mobile-radius-sheet: var(--bc-radius-sheet);
 
-  /* Flat / Light Glassmorphism — completely removed harsh 3D elevation */
-  --bc-mobile-shadow-surface: none;
-  --bc-mobile-shadow-gold: none;
-  --bc-mobile-shadow-nav: none;
-  --bc-mobile-shadow-v: none;
+  /* Glassmorphism & Shadow Depth */
+  --bc-mobile-shadow-surface: 0 8px 30px -4px rgba(0, 0, 0, 0.5), 0 0 1px rgba(216, 178, 130, 0.2);
+  --bc-mobile-shadow-gold: 0 0 25px rgba(216, 178, 130, 0.25);
+  --bc-mobile-shadow-nav: 0 -4px 25px rgba(0, 0, 0, 0.7);
+  --bc-mobile-shadow-v: 0 0 20px rgba(216, 178, 130, 0.35);
 
   --bc-mobile-nav-h: 64px;
   --bc-mobile-safe-top: env(safe-area-inset-top, 0px);
-  /* Compact top inset: the app chrome sits close to the status bar. */
-  /* Top inset: full notch inset when present, sane minimum on non-notch devices. */
   --bc-mobile-safe-top-compact: calc(max(env(safe-area-inset-top, 0px), 12px) + 4px);
   --bc-mobile-safe-right: env(safe-area-inset-right, 0px);
   --bc-mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
   --bc-mobile-safe-left: env(safe-area-inset-left, 0px);
 
-  /* Header baseline grid — dùng chung cho mọi header của Connect-app. */
+  /* Header baseline grid */
   --bc-mobile-header-h: 56px;
   --bc-mobile-header-avatar: 48px;
   --bc-mobile-header-action: 44px;
@@ -762,103 +839,60 @@ input[type="radio"] {
   color-scheme: dark;
 }
 
-/* Light mode tokens for .bc-app (ViOne Connect) — Clean Executive White & Warm Bronze Gold */
+/* Light mode tokens for .bc-app (ViOne Connect) — Crisp Porcelain Platinum & Vibrant Royal Gold */
 html:not(.dark) .bc-app {
-  --bc-bg-deep: #F1F5F9;
+  --bc-bg-deep: #EEF2F6;
   --bc-bg-primary: #F8FAFC;
   --bc-bg-secondary: #FFFFFF;
   --bc-surface: #FFFFFF;
-  --bc-surface-elevated: #F8FAFC;
+  --bc-surface-elevated: #FFFFFF;
 
   --bc-mobile-bg: #F8FAFC;
-  --bc-mobile-bg-deep: #F1F5F9;
+  --bc-mobile-bg-deep: #EEF2F6;
   --bc-mobile-surface: #FFFFFF;
   --bc-mobile-surface-2: #F1F5F9;
-  --bc-mobile-navy: #FFFFFF;
-  --bc-mobile-navy-deep: #E2E8F0;
+  --bc-mobile-navy: #0F172A;
+  --bc-mobile-navy-deep: #020617;
   --bc-mobile-app-gradient: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-  --bc-mobile-card-grad: linear-gradient(150deg, #FFFFFF 0%, #F8FAFC 100%);
+  --bc-mobile-card-grad: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
 
   --bc-text-primary: #0F172A;
-  --bc-text-secondary: #475569;
+  --bc-text-secondary: #334155;
   --bc-text-tertiary: #64748B;
   --bc-text-disabled: #94A3B8;
 
   --bc-mobile-ivory: #0F172A;
   --bc-mobile-text: #0F172A;
-  --bc-mobile-text-2: #475569;
+  --bc-mobile-text-2: #334155;
   --bc-mobile-muted: #64748B;
   --bc-mobile-disabled: #94A3B8;
 
-  --bc-border-subtle: rgba(180, 83, 9, 0.15);
-  --bc-border-medium: rgba(180, 83, 9, 0.28);
-  --bc-border-gold: rgba(180, 83, 9, 0.50);
-  --bc-mobile-border: rgba(180, 83, 9, 0.22);
-  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.08);
-  --bc-mobile-border-gold: rgba(180, 83, 9, 0.50);
-  --bc-mobile-border-strong: rgba(180, 83, 9, 0.80);
+  --bc-border-subtle: rgba(15, 23, 42, 0.08);
+  --bc-border-medium: rgba(217, 119, 6, 0.35);
+  --bc-border-gold: rgba(217, 119, 6, 0.65);
+  --bc-mobile-border: rgba(15, 23, 42, 0.10);
+  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.06);
+  --bc-mobile-border-gold: rgba(217, 119, 6, 0.55);
+  --bc-mobile-border-strong: rgba(217, 119, 6, 0.85);
 
   --bc-gold-300: #FDE68A;
-  --bc-gold-400: #B45309;
-  --bc-gold-500: #92400E;
-  --bc-gold-600: #78350F;
+  --bc-gold-400: #F59E0B;
+  --bc-gold-500: #D97706;
+  --bc-gold-600: #B45309;
 
-  --bc-mobile-accent: #B45309;
-  --bc-mobile-accent-strong: #92400E;
-  --bc-mobile-accent-soft: rgba(180, 83, 9, 0.08);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #B45309 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FEF08A 0%, #F59E0B 50%, #D97706 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #92400E 100%);
-  --bc-mobile-accent-on: #0F172A;
+  --bc-mobile-accent: #D97706;
+  --bc-mobile-accent-strong: #B45309;
+  --bc-mobile-accent-soft: rgba(217, 119, 6, 0.12);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #FBBF24 0%, #D97706 50%, #92400E 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCD34D 0%, #EAB308 50%, #A16207 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #F59E0B 0%, #B45309 50%, #78350F 100%);
+  --bc-mobile-accent-on: #FFFFFF;
+
+  --bc-mobile-shadow-surface: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --bc-mobile-shadow-gold: 0 4px 16px rgba(217, 119, 6, 0.2);
+  --bc-mobile-shadow-nav: 0 -4px 20px rgba(15, 23, 42, 0.05);
 
   color-scheme: light;
-}
-
-/* High-contrast mode tokens for .bc-app (ViOne Connect) — Pure Solid Black, Pure White, & Electric Gold */
-html.hc .bc-app {
-  --bc-bg-deep: #000000;
-  --bc-bg-primary: #000000;
-  --bc-bg-secondary: #000000;
-  --bc-surface: #000000;
-  --bc-surface-elevated: #0A0A0A;
-
-  --bc-mobile-bg: #000000;
-  --bc-mobile-bg-deep: #000000;
-  --bc-mobile-surface: #000000;
-  --bc-mobile-surface-2: #0D0D0D;
-  --bc-mobile-navy: #000000;
-  --bc-mobile-navy-deep: #000000;
-  --bc-mobile-app-gradient: #000000;
-  --bc-mobile-card-grad: #000000;
-
-  --bc-text-primary: #FFFFFF;
-  --bc-text-secondary: #FFFFFF;
-  --bc-text-tertiary: #E2E8F0;
-  --bc-text-disabled: #A1A1AA;
-
-  --bc-mobile-ivory: #FFFFFF;
-  --bc-mobile-text: #FFFFFF;
-  --bc-mobile-text-2: #FEF08A;
-  --bc-mobile-muted: #FFFFFF;
-  --bc-mobile-disabled: #A1A1AA;
-
-  --bc-border-subtle: #FACC15;
-  --bc-border-medium: #FACC15;
-  --bc-border-gold: #FACC15;
-  --bc-mobile-border: #FACC15;
-  --bc-mobile-border-subtle: #FFFFFF;
-  --bc-mobile-border-gold: #FACC15;
-  --bc-mobile-border-strong: #FEF08A;
-
-  --bc-mobile-accent: #FACC15;
-  --bc-mobile-accent-strong: #FEF08A;
-  --bc-mobile-accent-soft: rgba(250, 204, 21, 0.25);
-  --bc-mobile-accent-grad: #FACC15;
-  --bc-mobile-accent-grad-hover: #FEF08A;
-  --bc-mobile-accent-grad-active: #EAB308;
-  --bc-mobile-accent-on: #000000;
-
-  color-scheme: dark;
 }
 
 .bc-app-viewport {
@@ -980,20 +1014,20 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
    /connect-app surface — presentation only, no layout opinions.
    Deep obsidian gradient matching section Hôm nay */
 @utility bc-card {
-  border: 1px solid rgba(216, 178, 130, 0.38);
+  border: 1px solid rgba(216, 178, 130, 0.32);
   border-radius: var(--bc-mobile-radius-card);
-  background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(165deg, rgba(16, 23, 38, 0.82) 0%, rgba(9, 14, 24, 0.88) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* Slightly raised variant (inputs, chips, nested rows). */
 @utility bc-card-soft {
-  border: 1px solid rgba(216, 178, 130, 0.45);
+  border: 1px solid rgba(216, 178, 130, 0.40);
   border-radius: var(--bc-mobile-radius-card);
-  background: linear-gradient(165deg, rgba(10, 16, 25, 0.97) 0%, rgba(7, 12, 19, 0.97) 50%, rgba(4, 8, 14, 0.98) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(165deg, rgba(20, 30, 48, 0.85) 0%, rgba(12, 18, 30, 0.90) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* Any hairline separator inside the app follows the same border token. */
@@ -1035,11 +1069,20 @@ textarea::placeholder {
   color: var(--bc-mobile-text);
 }
 
-.bc-app input:focus-visible,
+.bc-app input:not([type="search"]):not(.mobile-search-input):focus-visible,
 .bc-app select:focus-visible,
 .bc-app textarea:focus-visible {
   border-color: color-mix(in oklab, var(--bc-mobile-accent) 65%, transparent);
   outline-color: color-mix(in oklab, var(--bc-mobile-accent) 65%, transparent);
+}
+
+.bc-app input[type="search"]:focus-visible,
+.bc-app input[type="search"]:focus,
+.bc-app .mobile-search-input:focus-visible,
+.bc-app .mobile-search-input:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .bc-app input:disabled,
@@ -1085,7 +1128,7 @@ html:not(.dark) .bc-translucent-card {
 html.hc .bc-translucent-card,
 html.hc .bc-card,
 html.hc .bc-card-soft {
-  background: #000000 !important;
+  background: rgb(0, 0, 0) !important;
   border: 2px solid #FACC15 !important;
   box-shadow: none !important;
   color: #FFFFFF !important;
@@ -1126,7 +1169,7 @@ html.hc body > [data-radix-portal] [role="menu"],
 html.hc body > [data-radix-portal] [role="listbox"],
 html.hc body > div[role="dialog"],
 html.hc body > div[role="menu"] {
-  background: #000000 !important;
+  background: rgb(0, 0, 0) !important;
   color: #FFFFFF !important;
   border: 2px solid #FACC15 !important;
   box-shadow: none !important;
@@ -1648,4 +1691,49 @@ html:not(.dark) body > div[role="menu"] {
   box-shadow: 0 0 15px 2px rgba(208, 169, 92, 0.8), 0 0 30px 4px rgba(245, 158, 11, 0.4);
   animation: scanLaser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   z-index: 20;
-}
+}
+
+/* ── 3D CONSTELLATION ORBIT & PLANETARY ANIMATIONS ── */
+@keyframes orbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbitReverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes floatingWave {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-orbit-spin {
+  animation: orbitSpin 42s linear infinite;
+}
+
+.animate-orbit-reverse {
+  animation: orbitReverse 42s linear infinite;
+}
+
+.paused-spin {
+  animation-play-state: paused !important;
+}
+
+.animate-spin-slow {
+  animation: orbitSpin 28s linear infinite;
+}
+

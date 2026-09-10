@@ -12,7 +12,7 @@ import { useCommunityNews } from "@/hooks/use-community-news";
 import { eventDateParts } from "@/lib/business-connect/mobile/community-activity.service";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityInviteButton } from "./CommunityInviteSheet";
-import { CommunityAvatar, CommunityError, CommunityListSkeleton } from "./CommunityHome";
+import { CommunityAvatar, CommunityError, CommunityListSkeleton, getCommunityVisuals } from "./CommunityHome";
 import { monthLabel } from "./CommunityEvents";
 import { daysLeftLabel, opportunityCategoryLabel } from "./CommunityOpportunities";
 
@@ -21,6 +21,10 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
   const fmt = useFmt();
   const { detail, unavailable, initialLoading, error: coreError, retry } = useCommunityDetail(communityId);
   const activity = useCommunityActivityPreview(communityId);
+
+  const visuals = detail?.community
+    ? getCommunityVisuals(detail.community.name, detail.community.logoUrl, detail.community.bannerUrl)
+    : null;
 
   return (
     <>
@@ -32,7 +36,7 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
           </div>
         ) : coreError ? (
           <CommunityError onRetry={retry} />
-        ) : unavailable || !detail ? (
+        ) : unavailable || !detail || !visuals ? (
           <section className="mt-14">
             <p className="max-w-[34ch] text-[15px] leading-relaxed text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.community.unavailable")}
@@ -40,14 +44,36 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
           </section>
         ) : (
           <>
-            <section className="mt-5 flex items-start gap-4">
-              <CommunityAvatar name={detail.community.name} logoUrl={detail.community.logoUrl} />
-              <div className="min-w-0 flex-1">
-                <h1 className="text-[24px] font-semibold leading-tight tracking-tight text-[var(--bc-mobile-text)]">
+            {/* Top Cover Banner (Ảnh bìa cộng đồng) */}
+            <div className="relative -mx-4 -mt-4 mb-4 h-36 sm:h-44 w-[calc(100%+2rem)] overflow-hidden border-b border-[var(--bc-mobile-border)] bg-slate-900">
+              <img
+                src={visuals.bannerUrl}
+                alt={detail.community.name}
+                className="h-full w-full object-cover brightness-[0.85] dark:brightness-[0.70]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bc-mobile-surface)] via-[var(--bc-mobile-surface)]/20 to-transparent" />
+              
+              {/* Category Pill Tag on Banner */}
+              <div className="absolute top-3 left-4">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-mono font-bold uppercase backdrop-blur-md border ${visuals.categoryColor}`}>
+                  <span>{visuals.category}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Header with Overlapping Floating Avatar */}
+            <section className="relative z-10 -mt-10 flex items-start gap-4">
+              <CommunityAvatar
+                name={detail.community.name}
+                logoUrl={visuals.avatarUrl}
+                className="h-16 w-16 ring-4 ring-[var(--bc-mobile-surface)] shadow-2xl"
+              />
+              <div className="min-w-0 flex-1 pt-6">
+                <h1 className="text-[22px] font-bold leading-tight tracking-tight text-[var(--bc-mobile-text)]">
                   {detail.community.name}
                 </h1>
                 {detail.community.shortDescription ? (
-                  <p className="mt-1 text-[14px] text-[var(--bc-mobile-muted)]">
+                  <p className="mt-1 text-[13.5px] text-[var(--bc-mobile-muted)] leading-relaxed">
                     {detail.community.shortDescription}
                   </p>
                 ) : null}

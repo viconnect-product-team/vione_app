@@ -659,7 +659,7 @@ function MemberDetailPage() {
       </div>
 
       {/* Sticky sub-navigation */}
-      <div className="sticky top-2 z-20 mb-5 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card/95 p-1 shadow-[var(--shadow-card)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sm:sticky sm:top-18 z-20 mb-5 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card/95 p-1 shadow-[var(--shadow-card)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tb) => {
           const Icon = tb.icon;
           const active = tab === tb.key;

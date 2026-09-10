@@ -21,10 +21,10 @@ export const networkRowConnectKeys = {
     [...networkRowConnectKeys.root, viewerUserId, cardSlug] as const,
 };
 
+import { safeRandomUUID } from "@/lib/utils";
+
 function newMutationKey(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return safeRandomUUID();
 }
 
 export function useNetworkRowConnect(cardSlug: string | null, enabled: boolean) {

@@ -6,8 +6,11 @@ export class CreateCommunityDto {
   name!: string;
   description?: string;
   logoUrl?: string;
+  bannerUrl?: string;
+  coverUrl?: string;
   slug?: string;
   tagline?: string;
+  about?: string;
 }
 
 @Controller(['communities', 'connect-app/community'])
@@ -28,6 +31,66 @@ export class CommunityController {
     return this.connectAppService.createCommunity(req.user.id, body);
   }
 
+  // --- Static Community Join Requests & Invites (must be defined before :communityId) ---
+  @Get('joinable')
+  async listJoinableCommunities(@Request() req) {
+    return this.connectAppService.listJoinableCommunities(req.user.id);
+  }
+
+  @Get('join-requests/history')
+  async listCommunityJoinHistory(@Request() req) {
+    return this.connectAppService.listCommunityJoinHistory(req.user.id);
+  }
+
+  @Post('join-requests/sync')
+  async syncCommunityJoinDecisions(@Request() req) {
+    return this.connectAppService.syncCommunityJoinDecisions(req.user.id);
+  }
+
+  @Get('join-requests/admin')
+  async listCommunityJoinAdminRequests(@Request() req) {
+    return this.connectAppService.listCommunityJoinAdminRequests(req.user.id);
+  }
+
+  @Delete('invites/:inviteRef')
+  async cancelCommunityInvite(@Request() req, @Param('inviteRef') inviteRef: string) {
+    return this.connectAppService.cancelCommunityInvite(req.user.id, inviteRef);
+  }
+
+  @Post('invites/:inviteRef/resend')
+  async resendCommunityInvite(
+    @Request() req,
+    @Param('inviteRef') inviteRef: string,
+    @Body('locale') locale?: string,
+  ) {
+    return this.connectAppService.resendCommunityInvite(req.user.id, inviteRef, locale);
+  }
+
+  @Get('invites/token/:token')
+  async getCommunityInviteByToken(@Request() req, @Param('token') token: string) {
+    return this.connectAppService.getCommunityInviteByToken(req.user.id, token);
+  }
+
+  @Post('invites/accept')
+  async acceptCommunityInvite(@Request() req, @Body() body: { token: string; email: string }) {
+    return this.connectAppService.acceptCommunityInvite(req.user.id, body.token, body.email);
+  }
+
+  @Patch('invites/:inviteRef/role')
+  async updateAcceptedInviteRole(
+    @Request() req,
+    @Param('inviteRef') inviteRef: string,
+    @Body('role') role: 'admin' | 'member',
+  ) {
+    return this.connectAppService.updateAcceptedInviteRole(req.user.id, inviteRef, role);
+  }
+
+  @Get('invites/:inviteRef/role-history')
+  async listInviteRoleHistory(@Request() req, @Param('inviteRef') inviteRef: string) {
+    return this.connectAppService.listInviteRoleHistory(req.user.id, inviteRef);
+  }
+
+  // --- Parameterized :communityId Routes ---
   @Get(':communityId')
   async getCommunityDetail(@Request() req, @Param('communityId') communityId: string) {
     return this.connectAppService.getCommunityDetail(req.user.id, communityId);
@@ -106,12 +169,6 @@ export class CommunityController {
     return this.connectAppService.getCommunityNewsDetail(req.user.id, communityId, newsRef);
   }
 
-  // --- Community Join Requests ---
-  @Get('joinable')
-  async listJoinableCommunities(@Request() req) {
-    return this.connectAppService.listJoinableCommunities(req.user.id);
-  }
-
   @Post(':communityId/join-requests')
   async requestCommunityJoin(
     @Request() req,
@@ -130,22 +187,7 @@ export class CommunityController {
     return this.connectAppService.cancelCommunityJoin(req.user.id, { communityId, cancelReason: body.cancelReason });
   }
 
-  @Get('join-requests/history')
-  async listCommunityJoinHistory(@Request() req) {
-    return this.connectAppService.listCommunityJoinHistory(req.user.id);
-  }
-
-  @Post('join-requests/sync')
-  async syncCommunityJoinDecisions(@Request() req) {
-    return this.connectAppService.syncCommunityJoinDecisions(req.user.id);
-  }
-
-  @Get('join-requests/admin')
-  async listCommunityJoinAdminRequests(@Request() req) {
-    return this.connectAppService.listCommunityJoinAdminRequests(req.user.id);
-  }
-
-  // --- Community Invites ---
+  // --- Community Invites (:communityId) ---
   @Get(':communityId/invites')
   async listCommunityInvites(@Request() req, @Param('communityId') communityId: string) {
     return this.connectAppService.listCommunityInvites(req.user.id, communityId);
@@ -169,44 +211,6 @@ export class CommunityController {
   @Post(':communityId/invite-templates/reset')
   async resetCommunityInviteTemplate(@Request() req, @Param('communityId') communityId: string, @Body() body: any) {
     return this.connectAppService.resetCommunityInviteTemplate(req.user.id, { ...body, communityId });
-  }
-
-  @Delete('invites/:inviteRef')
-  async cancelCommunityInvite(@Request() req, @Param('inviteRef') inviteRef: string) {
-    return this.connectAppService.cancelCommunityInvite(req.user.id, inviteRef);
-  }
-
-  @Post('invites/:inviteRef/resend')
-  async resendCommunityInvite(
-    @Request() req,
-    @Param('inviteRef') inviteRef: string,
-    @Body('locale') locale?: string,
-  ) {
-    return this.connectAppService.resendCommunityInvite(req.user.id, inviteRef, locale);
-  }
-
-  @Get('invites/token/:token')
-  async getCommunityInviteByToken(@Request() req, @Param('token') token: string) {
-    return this.connectAppService.getCommunityInviteByToken(req.user.id, token);
-  }
-
-  @Post('invites/accept')
-  async acceptCommunityInvite(@Request() req, @Body() body: { token: string; email: string }) {
-    return this.connectAppService.acceptCommunityInvite(req.user.id, body.token, body.email);
-  }
-
-  @Patch('invites/:inviteRef/role')
-  async updateAcceptedInviteRole(
-    @Request() req,
-    @Param('inviteRef') inviteRef: string,
-    @Body('role') role: 'admin' | 'member',
-  ) {
-    return this.connectAppService.updateAcceptedInviteRole(req.user.id, inviteRef, role);
-  }
-
-  @Get('invites/:inviteRef/role-history')
-  async listInviteRoleHistory(@Request() req, @Param('inviteRef') inviteRef: string) {
-    return this.connectAppService.listInviteRoleHistory(req.user.id, inviteRef);
   }
 
   // --- Community Activity ---

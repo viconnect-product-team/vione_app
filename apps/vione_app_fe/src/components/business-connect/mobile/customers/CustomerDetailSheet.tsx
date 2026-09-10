@@ -216,7 +216,7 @@ export function CustomerDetailSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t("bc.mobile.customers.detail.title")}
-      className="fixed inset-0 z-50 flex items-end bg-black/60"
+      className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm"
       onClick={() => {
         if (!busy) onClose();
       }}
@@ -225,7 +225,7 @@ export function CustomerDetailSheet({
       }}
     >
       <div
-        className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border-t border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl p-5 shadow-2xl"
+        className="bc-app max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] backdrop-blur-xl p-5 shadow-2xl"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 20px)" }}
         onClick={(e) => e.stopPropagation()}
       >

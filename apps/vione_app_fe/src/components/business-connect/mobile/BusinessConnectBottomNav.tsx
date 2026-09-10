@@ -76,7 +76,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
         to={tab.to}
         activeOptions={{ exact: tab.exact ?? false }}
         className="group relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 select-none transition-colors duration-150 motion-reduce:transition-none cursor-pointer"
-        activeProps={{ className: "text-[#D8B282] font-semibold" }}
+        activeProps={{ className: "text-[var(--bc-mobile-accent-strong)] font-bold" }}
         inactiveProps={{
           className: "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]",
         }}
@@ -84,12 +84,12 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
         {/* Chỉ báo tab đang chọn */}
         <span
           aria-hidden="true"
-          className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
+          className="absolute -top-[7px] h-[3px] w-6 rounded-full bg-[var(--bc-mobile-accent-grad)] opacity-0 transition-opacity duration-150 group-data-[status=active]:opacity-100 motion-reduce:transition-none"
         />
-        <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[#D8B282]/15 motion-reduce:transition-none">
+        <span className="grid place-items-center rounded-xl px-3 py-1 transition-colors duration-150 group-data-[status=active]:bg-[var(--bc-mobile-accent-soft)] motion-reduce:transition-none">
           <Icon className="h-[20px] w-[20px]" />
         </span>
-        <span className="text-[10.5px] font-medium leading-none group-data-[status=active]:font-semibold">
+        <span className="text-[10.5px] font-medium leading-none group-data-[status=active]:font-bold">
           {t(tab.key)}
         </span>
       </Link>

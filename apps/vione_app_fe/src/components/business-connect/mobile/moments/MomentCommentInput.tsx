@@ -72,11 +72,13 @@ export function MomentCommentInput({
 
     const cursorPos = e.target.selectionStart || val.length;
     const textBeforeCursor = val.slice(0, cursorPos);
-    const lastAtIdx = textBeforeCursor.lastIndexOf("@");
 
-    if (lastAtIdx !== -1 && (lastAtIdx === 0 || /\s/.test(textBeforeCursor[lastAtIdx - 1]))) {
-      const query = textBeforeCursor.slice(lastAtIdx + 1);
-      if (query.length <= 30 && !query.includes("\n")) {
+    // Only trigger mention search when currently typing directly after @ (without trailing spaces)
+    const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF]*)$/);
+
+    if (match) {
+      const query = match[1] || "";
+      if (query.length <= 25) {
         setMentionQuery(query);
         return;
       }
@@ -184,6 +186,7 @@ export function MomentCommentInput({
 
       setText("");
       setChosenMentions([]);
+      setMentionQuery(null);
       handleRemovePhoto();
       onCancelReply();
     } catch (err) {
@@ -194,8 +197,32 @@ export function MomentCommentInput({
     }
   };
 
+  // Close mention suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mentionQuery !== null) {
+        const popover = document.getElementById("mention-popover");
+        if (popover && !popover.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node)) {
+          setMentionQuery(null);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mentionQuery]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape" && mentionQuery !== null) {
+      e.preventDefault();
+      setMentionQuery(null);
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
+      if (mentionQuery !== null && mentionSuggestions.length > 0) {
+        e.preventDefault();
+        selectMention(mentionSuggestions[0]);
+        return;
+      }
       e.preventDefault();
       void handleSend();
     }
@@ -248,7 +275,10 @@ export function MomentCommentInput({
 
       {/* Mention suggestion popover */}
       {mentionQuery !== null && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 max-h-48 overflow-y-auto rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-2xl p-1 z-30">
+        <div
+          id="mention-popover"
+          className="absolute bottom-full left-0 right-0 mb-2 max-h-48 overflow-y-auto rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] shadow-2xl p-1 z-30"
+        >
           <div className="px-2 py-1 text-[11px] font-semibold text-[var(--bc-mobile-muted)] uppercase tracking-wider">
             Nhắc đến hội viên
           </div>

@@ -8,6 +8,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   Bell,
+  Briefcase,
   Camera,
   ChevronDown,
   ChevronRight,
@@ -44,13 +45,12 @@ import { toast } from "sonner";
 import { useVSheet } from "@/hooks/use-v-sheet";
 import { useNetworkFeed } from "@/hooks/use-network-feed";
 import { useUnreadDmCount } from "@/hooks/use-bc-dm";
-import { avatarOrDemo } from "@/lib/business-connect/mobile/demo-avatars";
+import { avatarOrDemo, demoAvatar } from "@/lib/business-connect/mobile/demo-avatars";
 import { BusinessConnectTopBar } from "./BusinessConnectTopBar";
 import { NetworkFeedCard } from "./NetworkFeedCard";
 import { NetworkPersonRow } from "./NetworkPersonRow";
 import { AiMatchConnectAction, AiMatchDetailSheet } from "./AiMatchDetailSheet";
 import { CustomersPanel } from "./customers/CustomersPanel";
-import { PostMomentModal } from "./moments/PostMomentModal";
 import { HomeNotificationsMenu } from "./HomeNotificationsMenu";
 
 type NetworkSort = "recent" | "name" | "company";
@@ -89,8 +89,6 @@ export function NetworkHome() {
   const [sort, setSort] = useState<NetworkSort>("recent");
   const [filter, setFilter] = useState<NetworkFilter>("all");
   const [sortOpen, setSortOpen] = useState(false);
-  const [postModalOpen, setPostModalOpen] = useState(false);
-  const [initialFeeling, setInitialFeeling] = useState<string | undefined>(undefined);
   const network = useBusinessConnectNetwork(term);
   const { recommendations } = useTodayRelationshipRecommendations(lang);
   const clearSearch = () => setTerm("");
@@ -142,8 +140,14 @@ export function NetworkHome() {
   return (
     <>
       {/* Sticky Header thương hiệu chung */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 py-3 -mx-4">
-        <div className="relative inline-flex flex-none flex-col items-start gap-1">
+      <header
+        className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md px-5 -mx-4"
+        style={{
+          paddingTop: "var(--bc-mobile-safe-top-compact)",
+          minHeight: "calc(var(--bc-mobile-safe-top-compact) + var(--bc-mobile-header-h))",
+        }}
+      >
+        <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
           <ViOneLogo className="h-5 w-[77px]" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
@@ -165,8 +169,6 @@ export function NetworkHome() {
           <HomeNotificationsMenu unreadCount={unread} />
         </div>
       </header>
-
-      <div aria-hidden="true" style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }} />
 
       <main id="bc-mobile-network" className="contents">
 
@@ -245,27 +247,21 @@ export function NetworkHome() {
           role="search"
           onSubmit={(event) => event.preventDefault()}
         >
-            <MobileSearchBar
-              value={term}
-              onChange={setTerm}
-              placeholder="Tìm người, công ty, chức danh..."
-            />
+          <MobileSearchBar
+            id="bc-network-search"
+            value={term}
+            onChange={setTerm}
+            placeholder={t("bc.mobile.network.search.placeholder")}
+          />
           <div className="relative shrink-0">
             <button
               className="flex w-[42px] h-[42px] items-center justify-center p-2.5 relative bg-[var(--bc-mobile-surface-2)] backdrop-blur-md rounded-lg border border-solid border-[var(--bc-mobile-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bc-mobile-accent)] hover:border-[var(--bc-mobile-accent)] transition-colors"
               type="button"
-              aria-label="Mở bộ lọc tìm kiếm"
+              aria-label={t("bc.mobile.network.filter")}
               aria-pressed={sortOpen}
               onClick={() => setSortOpen((active) => !active)}
             >
-              <span className="inline-flex items-center flex-[0_0_auto] flex-col relative">
-                <img
-                  className="relative w-[15px] h-[15px] opacity-80"
-                  alt=""
-                  aria-hidden="true"
-                  src={image}
-                />
-              </span>
+              <SlidersHorizontal className="h-4 w-4 text-[var(--bc-mobile-muted)]" aria-hidden="true" strokeWidth={1.8} />
             </button>
             {sortOpen ? (
               <div className="absolute right-0 z-30 mt-1 w-56 overflow-hidden rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] backdrop-blur-xl py-1 shadow-2xl">
@@ -323,16 +319,18 @@ export function NetworkHome() {
           <NetworkSkeleton />
         ) : network.coreError ? (
           <NetworkError onRetry={network.retry} />
-        ) : network.people.length === 0 ? (
+        ) : people.length === 0 ? (
           network.searching ? (
             <NetworkSearchEmpty onClear={clearSearch} />
+          ) : filtering ? (
+            <NetworkFilterEmpty onReset={() => setFilter("all")} />
           ) : (
             <NetworkEmpty onOpenV={openV} />
           )
         ) : (
           <>
             {/* Lời mời kết bạn đang chờ phản hồi */}
-            {tab === "network" && <NetworkIncomingRequestsSection />}
+            {!narrowed && tab === "network" && <NetworkIncomingRequestsSection />}
 
             {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network hoặc suggestions */}
             {(tab === "network" || tab === "suggestions") && (
@@ -362,74 +360,43 @@ export function NetworkHome() {
                   />
                 ) : null}
 
-                {/* Hộp Đăng khoảnh khắc Facebook-grade */}
+                {/* Ghi khoảnh khắc nhanh: Bạn vừa gặp ai? */}
                 {!narrowed ? (
-                  <div className="mt-5 rounded-2xl border border-[var(--bc-mobile-border-gold,#D8B282)]/40 bg-[var(--bc-mobile-surface)] p-3.5 shadow-md space-y-3">
-                    {/* Top Row: Avatar + Prompt Bar */}
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={avatarOrDemo(null, viewerUserId || "me")}
-                        alt=""
-                        className="h-10 w-10 rounded-full object-cover border border-[#D8B282]/50 shrink-0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInitialFeeling(undefined);
-                          setPostModalOpen(true);
-                        }}
-                        className="flex-1 text-left px-4 py-2.5 rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] text-xs sm:text-[13px] text-[var(--bc-mobile-muted)] transition-colors cursor-pointer truncate"
+                  <div className="mt-5 flex items-center gap-3 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 shadow-md">
+                    <Link
+                      to="/connect-app/moment"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] shadow-sm"
                       >
-                        Bạn đang nghĩ gì? Chia sẻ khoảnh khắc, cơ hội...
-                      </button>
-                    </div>
-
-                    {/* Quick Action Buttons Row (Facebook style) */}
-                    <div className="flex items-center justify-between border-t border-[var(--bc-mobile-border)] pt-2.5 px-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInitialFeeling(undefined);
-                          setPostModalOpen(true);
-                        }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                        <span>Ảnh/Video</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInitialFeeling(undefined);
-                          setPostModalOpen(true);
-                        }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-sky-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>Gắn thẻ</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInitialFeeling("sign_contract");
-                          setPostModalOpen(true);
-                        }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-500 hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-[var(--bc-mobile-surface-2)]"
-                      >
-                        <Smile className="h-4 w-4" />
-                        <span>Cảm xúc</span>
-                      </button>
-                    </div>
+                        <Sparkles className="h-5 w-5 text-[var(--bc-mobile-accent)]" strokeWidth={1.9} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[15.5px] font-semibold text-[var(--bc-mobile-accent)]">
+                          {t("bc.mobile.network.compose.title")}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[12.5px] text-[var(--bc-mobile-muted)]">
+                          {t("bc.mobile.network.compose.subtitle")}
+                        </span>
+                      </span>
+                    </Link>
+                    <Link
+                      to="/connect-app/card-scan"
+                      aria-label={t("bc.mobile.network.compose.scan")}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+                    >
+                      <Camera className="h-[21px] w-[21px]" strokeWidth={1.7} />
+                    </Link>
                   </div>
                 ) : null}
 
-                {/* Khoảnh khắc gần đây / danh sách người */}
+                {/* Danh sách người trong Network */}
                 <section className="mt-6">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="min-w-0 truncate text-[10px] font-medium tracking-[1px] uppercase text-[#d8c3b1cc]">
-                      {showFeed ? t("bc.mobile.network.moments.title") : t("bc.mobile.network.people")}
+                    <h2 className="min-w-0 truncate text-[10px] font-medium tracking-[1px] uppercase text-[var(--bc-mobile-muted)]">
+                      {t("bc.mobile.network.people")}
                     </h2>
                     {narrowed ? (
                       <p
@@ -442,21 +409,7 @@ export function NetworkHome() {
                     ) : null}
                   </div>
 
-                  {showFeed ? (
-                    <ul
-                      aria-label={t("bc.mobile.network.list.label")}
-                      aria-busy={feed.isLoadingMore}
-                      className="space-y-3"
-                    >
-                      {feed.items.map((item) => (
-                        <NetworkFeedCard
-                          key={item.momentId}
-                          item={item}
-                          person={peopleById.get(item.personId) ?? null}
-                        />
-                      ))}
-                    </ul>
-                  ) : people.length === 0 ? (
+                  {people.length === 0 ? (
                     <NetworkFilterEmpty onReset={() => setFilter("all")} />
                   ) : (
                     <ul
@@ -470,24 +423,32 @@ export function NetworkHome() {
                     </ul>
                   )}
                 </section>
+
+                {/* Khoảnh khắc mạng lưới khi không tìm kiếm */}
+                {!narrowed && feed.items.length > 0 ? (
+                  <section className="mt-8">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h2 className="min-w-0 truncate text-[10px] font-medium tracking-[1px] uppercase text-[var(--bc-mobile-muted)]">
+                        {t("bc.mobile.network.moments.title")}
+                      </h2>
+                    </div>
+                    <ul
+                      aria-label={t("bc.mobile.network.moments.title")}
+                      aria-busy={feed.isLoadingMore}
+                      className="space-y-3"
+                    >
+                      {feed.items.map((item) => (
+                        <NetworkFeedCard
+                          key={item.momentId}
+                          item={item}
+                          person={peopleById.get(item.personId) ?? null}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
               </>
             )}
-
-
-            {showFeed && feed.hasMore ? (
-              <div className="mt-2 flex min-h-[52px] items-center justify-center">
-                <button
-                  type="button"
-                  onClick={feed.loadMore}
-                  disabled={feed.isLoadingMore}
-                  className="inline-flex min-h-[44px] items-center rounded-lg px-4 text-[14px] font-medium text-[var(--bc-mobile-muted)] transition-colors duration-150 hover:bg-[var(--bc-mobile-surface-2)] hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-60 motion-reduce:transition-none"
-                >
-                  {feed.isLoadingMore
-                    ? t("bc.mobile.network.loadingMore")
-                    : t("bc.mobile.network.loadMore")}
-                </button>
-              </div>
-            ) : null}
 
             {network.hasMore ? (
               <div className="mt-2 flex min-h-[52px] items-center justify-center">
@@ -507,12 +468,6 @@ export function NetworkHome() {
         )}
         </>
         )}
-
-        <PostMomentModal
-          open={postModalOpen}
-          onOpenChange={setPostModalOpen}
-          initialFeeling={initialFeeling}
-        />
       </main>
 
     </>
@@ -690,6 +645,7 @@ function NetworkNurtureList({
               key={rec.id}
               to="/connect-app/network/$personId"
               params={{ personId: rec.person.personId }}
+              aria-label={`${t("bc.mobile.network.nurture.title")}: ${name}`}
               className={`flex items-center justify-between gap-3 p-3 hover:bg-[var(--bc-mobile-surface-2)] transition-colors ${
                 index !== items.length - 1 ? "border-b border-solid border-[var(--bc-mobile-border)]" : ""
               }`}
@@ -755,10 +711,11 @@ function NetworkRecentStrip({
           const isFirst = index === 0;
 
           return (
-            <li key={person.personId} className="w-[81.5px] shrink-0 snap-start flex flex-col items-center">
+            <li key={person.personId} className="min-w-[86px] max-w-[100px] shrink-0 snap-start flex flex-col items-center">
               <Link
                 to="/connect-app/network/$personId"
                 params={{ personId: person.personId }}
+                aria-label={`${t("bc.mobile.network.recent.title")}: ${name}`}
                 className="w-full flex flex-col items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] rounded-xl"
               >
                 <div
@@ -772,6 +729,9 @@ function NetworkRecentStrip({
                     src={avatarOrDemo(person.avatarUrl, person.personId)}
                     alt=""
                     loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = demoAvatar(person.personId);
+                    }}
                     className="w-full h-full rounded-full object-cover"
                   />
                 </div>
