@@ -152,7 +152,7 @@ const DEFAULT_SLIDES: ShowcaseSlide[] = [
   },
 ];
 
-export function LandingInteractiveShowcase({ themeMode = "dark" }: { themeMode?: "dark" | "light" | "contrast" }) {
+export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?: "dark" | "light" | "contrast" }) {
   const [activeIndex, setActiveIndex] = useState(1); // Active on B2B match matching image 3
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredTab, setHoveredTab] = useState<number | null>(null);

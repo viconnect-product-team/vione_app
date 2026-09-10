@@ -24,7 +24,7 @@ export function LandingCtaBanner({
   btnAppText = "Liên hệ tư vấn",
   btnAppLink = "/contact",
   onAppClick,
-  themeMode = "dark",
+  themeMode = "light",
 }: LandingCtaBannerProps) {
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";

@@ -7,6 +7,9 @@ import { notificationKeys } from "./use-bc-notifications";
 import { bcMobileHomeKeys } from "./use-business-connect-home";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
 
+// Global cache of recent notifications / connection event keys to strictly prevent double toasts across components & re-renders
+const globalRecentToastKeys = new Map<string, number>();
+
 export function useConnectAppRealtimeNotifications() {
   let qc: ReturnType<typeof useQueryClient> | null = null;
   try {
@@ -19,9 +22,6 @@ export function useConnectAppRealtimeNotifications() {
 
   useEffect(() => {
     if (!socket || !viewerUserId || !qc) return;
-
-    // Cache of recent notifications / connection event keys to strictly prevent double toasts
-    const recentToastKeys = new Map<string, number>();
 
     const playNotificationSound = () => {
       try {
@@ -52,13 +52,13 @@ export function useConnectAppRealtimeNotifications() {
       const now = Date.now();
       const validKeys = keys.filter(Boolean) as string[];
       for (const k of validKeys) {
-        const prev = recentToastKeys.get(k);
+        const prev = globalRecentToastKeys.get(k);
         if (prev && now - prev < 8000) {
           return false;
         }
       }
       for (const k of validKeys) {
-        recentToastKeys.set(k, now);
+        globalRecentToastKeys.set(k, now);
       }
       return true;
     };

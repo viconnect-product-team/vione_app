@@ -1,11 +1,7 @@
-// BC-Mobile-0B — minimal top-bar primitive for the BC mobile shell.
-// Supports: optional title, optional back control, optional left slot
-// (e.g. avatar), optional right action. Notifications are NOT hardcoded —
-// each page composes its own right slot (Home specializes in BC-Mobile-1).
-
 import type { ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 export function BusinessConnectTopBar({
   title,
@@ -13,12 +9,14 @@ export function BusinessConnectTopBar({
   onBack,
   left,
   right,
+  className,
 }: {
   title?: string;
   back?: boolean;
   onBack?: () => void;
   left?: ReactNode;
   right?: ReactNode;
+  className?: string;
 }) {
   const t = useT();
   // An empty bar (no title, back, or slots) would render as a blank band above
@@ -29,10 +27,13 @@ export function BusinessConnectTopBar({
   }
   return (
     <header
-      className="sticky top-0 z-50 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md"
+      className={cn(
+        "sticky top-0 z-50 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md -mx-5 w-[calc(100%+2.5rem)]",
+        className
+      )}
       style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }}
     >
-      <div style={{ height: "var(--bc-mobile-header-h)" }} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[var(--bc-mobile-header-gap)] px-2">
+      <div style={{ height: "var(--bc-mobile-header-h)" }} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[var(--bc-mobile-header-gap)] px-3">
         <div className="flex min-w-11 items-center justify-start pl-1">
           {back ? (
             <button

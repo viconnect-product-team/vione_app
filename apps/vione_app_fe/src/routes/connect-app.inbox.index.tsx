@@ -87,6 +87,25 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
     return `${prefix}📎 [Tệp] ${fileName}`;
   }
 
+  // Voice tag format: voice:URL|DURATION
+  if (/\[voice:(https?:\/\/[^|\]]+|data:audio\/[^|\]]+)(?:\|(\d+))?\]/i.test(text)) {
+    return `${prefix}🎙️ [Tin nhắn thoại]`;
+  }
+
+  // Call tag format: call:TYPE|status:STATUS|duration:SECONDS
+  const callMatch = text.match(/\[call:(audio|video)(?:\|status:(ended|missed|declined))?(?:\|duration:(\d+))?\]/i);
+  if (callMatch) {
+    const isVideo = callMatch[1].toLowerCase() === "video";
+    const status = callMatch[2]?.toLowerCase() || "ended";
+    if (status === "missed") {
+      return `${prefix}📵 [Cuộc gọi ${isVideo ? "video " : ""}nhỡ]`;
+    }
+    if (status === "declined") {
+      return `${prefix}🚫 [Cuộc gọi ${isVideo ? "video " : ""}bị từ chối]`;
+    }
+    return `${prefix}📞 [Cuộc gọi ${isVideo ? "video" : "thoại"}]`;
+  }
+
   return `${prefix}${text}`;
 }
 

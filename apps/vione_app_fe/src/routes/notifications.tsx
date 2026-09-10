@@ -129,8 +129,12 @@ function NotifyPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const seenKeys = new Set<string>();
     return items
       .filter((n) => {
+        const key = n.id || `${n.title}:${n.body}`;
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
         if (tab === "unread" && !isUnread(n)) return false;
         if (tab === "read" && isUnread(n)) return false;
         if (audience !== "all" && n.audience !== audience) return false;

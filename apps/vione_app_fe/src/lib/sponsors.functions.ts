@@ -55,14 +55,14 @@ export const listSponsorPackagesFn = createServerFn({ method: "GET" })
 
 const sponsorInput = z.object({
   name: z.string().min(1).max(200),
-  tier: z.enum(["platinum", "gold", "silver", "bronze"]),
+  tier: z.enum(["platinum", "gold", "silver", "bronze"]).default("bronze"),
   contact: z.string().max(120).default(""),
   email: z.string().max(160).default(""),
   phone: z.string().max(40).default(""),
   amount: z.number().min(0).max(1e12).default(0),
   events: z.number().int().min(0).max(100000).default(0),
-  since: z.string().min(1).max(40),
-  status: z.enum(["active", "expired"]),
+  since: z.string().max(40).optional().transform((v) => (v && v.trim() ? v.trim() : new Date().toISOString().slice(0, 10))),
+  status: z.enum(["active", "expired"]).default("active"),
 });
 
 export const createSponsorFn = createServerFn({ method: "POST" })

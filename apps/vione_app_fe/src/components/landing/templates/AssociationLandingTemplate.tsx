@@ -72,7 +72,7 @@ export function AssociationLandingTemplate({
   const t = useT();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // 3 Distinct Theme Modes: Obsidian (Dark), Ivory (Light), Onyx (Contrast)
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
 
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";

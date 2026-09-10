@@ -77,6 +77,10 @@ export function GlobalIncomingCallModal() {
     if (!socket || !viewerUserId) return;
 
     const handleIncomingCall = (data: IncomingCallData) => {
+      // NEVER show incoming call modal if caller is the viewer themselves
+      if (!viewerUserId || data.callerUserId === viewerUserId) {
+        return;
+      }
       setIncomingCall(data);
       startRingtone();
       // External background notification like Messenger / Zalo
@@ -205,6 +209,7 @@ export function GlobalIncomingCallModal() {
       {activeCallData && (
         <DmCallModal
           isOpen={true}
+          callId={activeCallData.callId}
           callType={activeCallData.callType}
           counterpartUserId={activeCallData.callerUserId}
           counterpartName={activeCallData.callerName}

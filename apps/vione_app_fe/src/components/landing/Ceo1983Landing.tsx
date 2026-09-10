@@ -630,7 +630,7 @@ function VipPass4StepsProgressiveFlow({ themeMode, t }: { themeMode: ThemeMode; 
 
 export function Ceo1983Landing() {
   const { lang } = useLang();
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
   const [modalOpen, setModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cardFlipped, setCardFlipped] = useState(false);
@@ -1477,13 +1477,13 @@ export function Ceo1983Landing() {
             >
               1983
             </div>
-            <div className="flex flex-col text-left justify-center">
-              <span className={`text-[8.5px] font-medium tracking-[0.18em] uppercase transition-colors ${themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-400")}`}>
+            <div className="flex flex-col text-left justify-center shrink-0">
+              <span className={`text-[8.5px] font-semibold tracking-[0.18em] uppercase transition-colors whitespace-nowrap ${themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-400")}`}>
                 {t.navBadge}
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <span
-                  className={`text-sm sm:text-[15px] font-bold tracking-tight leading-tight ${
+                  className={`text-sm sm:text-[15px] font-bold tracking-tight leading-tight whitespace-nowrap ${
                     themeClass(
                       "text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]",
                       "text-[#181512]",
@@ -1494,10 +1494,10 @@ export function Ceo1983Landing() {
                   CLB CEO 1983
                 </span>
                 <span
-                  className={`text-[8px] font-mono font-medium uppercase px-2 py-0.5 rounded-full border tracking-wider ${
+                  className={`text-[8px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border tracking-wider shrink-0 whitespace-nowrap ${
                     themeClass(
-                      "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15 shadow-[0_0_8px_rgba(216,178,130,0.2)]",
-                      "border-[#D8B282] text-[#8C653B] bg-[#F6E1C3]/30",
+                      "border-[#D8B282]/60 text-[#F6E1C3] bg-[#D8B282]/20 shadow-[0_0_8px_rgba(216,178,130,0.25)]",
+                      "border-[#D8B282] text-[#8C653B] bg-[#F6E1C3]/40",
                       "border-yellow-400 text-yellow-300 bg-yellow-400/20"
                     )
                   }`}
@@ -1508,31 +1508,31 @@ export function Ceo1983Landing() {
             </div>
           </Link>
 
-          {/* Nav Links - Refined, elegant font weight and airy spacing */}
+          {/* Nav Links - Strictly single-line, zero wrapping, airy luxury spacing */}
           <nav
-            className={`hidden xl:flex items-center gap-7 2xl:gap-8 text-[12.5px] font-medium tracking-normal ${
+            className={`hidden xl:flex items-center gap-3.5 2xl:gap-6 text-[12px] 2xl:text-[13px] font-semibold tracking-normal whitespace-nowrap shrink-0 ${
               themeClass("text-slate-300", "text-[#5A4F43]", "text-yellow-200")
             }`}
           >
-            <a href="#leadership" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+            <a href="#leadership" className="whitespace-nowrap shrink-0 hover:text-[#F6E1C3] transition-colors py-1 px-1">
               {t.navLeadership}
             </a>
-            <a href="#timeline" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+            <a href="#timeline" className="whitespace-nowrap shrink-0 hover:text-[#F6E1C3] transition-colors py-1 px-1">
               {t.navTimeline}
             </a>
-            <a href="#ecosystem" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+            <a href="#ecosystem" className="whitespace-nowrap shrink-0 hover:text-[#F6E1C3] transition-colors py-1 px-1">
               {t.navEcosystem}
             </a>
-            <a href="#core-values" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+            <a href="#core-values" className="whitespace-nowrap shrink-0 hover:text-[#F6E1C3] transition-colors py-1 px-1">
               {t.navCore}
             </a>
-            <a href="#roadmap" className="hover:text-[#F6E1C3] hover:font-semibold transition-all py-1">
+            <a href="#roadmap" className="whitespace-nowrap shrink-0 hover:text-[#F6E1C3] transition-colors py-1 px-1">
               {t.navRoadmap}
             </a>
           </nav>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <LangSwitcher themeMode={themeMode} />
 
             {/* 3-WAY THEME TOGGLE */}
@@ -3437,10 +3437,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 1 (2021 - THÁP KHỞI NGUYÊN) — SLIDE IN FROM LEFT ─── */}
                 <motion.div
-                  initial={{ x: -280, y: 30, opacity: 0, scale: 0.85, rotateY: 18 }}
+                  initial={{ x: -200, y: 20, opacity: 0, scale: 0.9, rotateY: 12 }}
                   whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 130, damping: 15, delay: 0.12 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
                   onClick={() => setActiveMilestone(0)}
                   className="flex flex-col items-center group cursor-pointer w-full relative"
                 >
@@ -3532,10 +3532,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 2 (2023 - THÁP HỘI TỤ) ─── */}
                 <motion.div
-                  initial={{ x: -200, y: 25, opacity: 0, scale: 0.88, rotateY: 14 }}
+                  initial={{ x: -150, y: 20, opacity: 0, scale: 0.9, rotateY: 10 }}
                   whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 135, damping: 15, delay: 0.2 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
                   onClick={() => setActiveMilestone(1)}
                   className="flex flex-col items-center group cursor-pointer w-full relative"
                 >
@@ -3627,10 +3627,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 3 (2024 - THÁP BẮC - NAM - MÁI DỐC KIẾN TRÚC KÍNH) ─── */}
                 <motion.div
-                  initial={{ x: -120, y: 20, opacity: 0, scale: 0.9, rotateY: 10 }}
+                  initial={{ x: -100, y: 15, opacity: 0, scale: 0.92, rotateY: 8 }}
                   whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 140, damping: 15, delay: 0.28 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
                   onClick={() => setActiveMilestone(2)}
                   className="flex flex-col items-center group cursor-pointer w-full relative"
                 >
@@ -3719,10 +3719,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 4 (2025 - ĐẠI THÁP BỨT PHÁ - DUBAI BURJ SPIRE - TRỌNG TÂM KIẾN TRÚC) ─── */}
                 <motion.div
-                  initial={{ y: 220, opacity: 0, scale: 0.85 }}
+                  initial={{ y: 120, opacity: 0, scale: 0.9 }}
                   whileInView={{ y: 0, opacity: 1, scale: 1 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 150, damping: 16, delay: 0.1 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
                   onClick={() => setActiveMilestone(3)}
                   className="flex flex-col items-center group cursor-pointer w-full relative z-30"
                 >
@@ -3837,10 +3837,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 5 (2026-2028 - THÁP VƯƠN TẦM) ─── */}
                 <motion.div
-                  initial={{ x: 180, y: 20, opacity: 0, scale: 0.9, rotateY: -12 }}
+                  initial={{ x: 100, y: 15, opacity: 0, scale: 0.92, rotateY: -8 }}
                   whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 140, damping: 15, delay: 0.28 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
                   onClick={() => setActiveMilestone(4)}
                   className="flex flex-col items-center group cursor-pointer w-full relative"
                 >
@@ -3926,10 +3926,10 @@ export function Ceo1983Landing() {
 
                 {/* ─── TOWER 6 (2030+ - ĐẠI THÁP KỲ LÂN) — SLIDE IN FROM RIGHT ─── */}
                 <motion.div
-                  initial={{ x: 280, y: 30, opacity: 0, scale: 0.85, rotateY: -18 }}
+                  initial={{ x: 200, y: 20, opacity: 0, scale: 0.9, rotateY: -12 }}
                   whileInView={{ x: 0, y: 0, opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
-                  transition={{ type: "spring", stiffness: 130, damping: 15, delay: 0.38 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
                   onClick={() => setActiveMilestone(5)}
                   className="flex flex-col items-center group cursor-pointer w-full relative"
                 >
@@ -4129,15 +4129,61 @@ export function Ceo1983Landing() {
             )
           }`}
         >
-          {/* Luxury Gold Silk Aurora GIF Overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-25 mix-blend-screen"
-            style={{
-              backgroundImage: "url('/landing/ceo1983-gold-aurora.gif')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
+          {/* Dedicated Planetary Ecosystem Background per Theme (Chuyển động chậm, không gộp chung) */}
+          {themeMode === "dark" && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+              <motion.div
+                className="absolute -inset-[5%] w-[110%] h-[110%]"
+                animate={{
+                  scale: [1, 1.05, 1],
+                  x: ["0%", "-2%", "1.5%", "0%"],
+                  y: ["0%", "1.5%", "-1.5%", "0%"],
+                }}
+                transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <img
+                  src="/landing/ceo1983_ecosystem_dark.jpg"
+                  alt="Cosmic Planetary Nexus Dark"
+                  className="w-full h-full object-cover object-center opacity-50 mix-blend-screen filter brightness-105"
+                />
+              </motion.div>
+              <div className="absolute inset-0 bg-gradient-to-b from-[#040815] via-transparent to-[#040815]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(216,178,130,0.18)_0%,transparent_70%)]" />
+            </div>
+          )}
+
+          {themeMode === "light" && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+              <motion.div
+                className="absolute -inset-[5%] w-[110%] h-[110%]"
+                animate={{
+                  scale: [1, 1.04, 1],
+                  x: ["0%", "1.8%", "-1.2%", "0%"],
+                  y: ["0%", "-1.5%", "1.2%", "0%"],
+                }}
+                transition={{ duration: 32, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <img
+                  src="/landing/ceo1983_ecosystem_light.jpg"
+                  alt="Calacatta Marble Rotunda Light"
+                  className="w-full h-full object-cover object-center opacity-70 filter contrast-105 brightness-102"
+                />
+              </motion.div>
+              <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/90 via-transparent to-[#FAF8F5]/95" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(246,225,195,0.4)_0%,transparent_65%)]" />
+            </div>
+          )}
+
+          {themeMode === "contrast" && (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+              <img
+                src="/landing/ceo1983_ecosystem_contrast.jpg"
+                alt="Technical Blueprint Orbit Contrast"
+                className="w-full h-full object-cover object-center opacity-85 filter contrast-150"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
+            </div>
+          )}
 
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
@@ -4149,18 +4195,22 @@ export function Ceo1983Landing() {
                 transition={{ duration: 0.6 }}
                 className="lg:col-span-4 text-left space-y-4"
               >
-                <span className={`text-[11px] font-mono font-bold tracking-[0.2em] uppercase ${themeClass("text-[#D8B282]", "text-[#8C653B]", "text-yellow-400")}`}>
+                <span className={`text-[11px] font-mono font-bold tracking-[0.2em] uppercase ${themeClass("text-[#D8B282]", "text-[#785124] font-black", "text-yellow-400")}`}>
                   {t.ecoTag}
                 </span>
 
                 <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black uppercase leading-[1.12] tracking-tight ${themeClass("text-white", "text-[#181512]", "text-yellow-300")}`}>
                   CÙNG NHAU TẠO RA <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]">
+                  <span className={`text-transparent bg-clip-text ${themeClass(
+                    "bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B]",
+                    "bg-gradient-to-r from-[#785124] via-[#9E6B30] to-[#5C3D1E] font-black",
+                    "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-200"
+                  )}`}>
                     GIÁ TRỊ LỚN HƠN
                   </span>
                 </h2>
 
-                <p className={`text-sm sm:text-base leading-relaxed font-normal ${themeClass("text-slate-300", "text-[#4A3F35]", "text-yellow-100")}`}>
+                <p className={`text-sm sm:text-base leading-relaxed font-normal ${themeClass("text-slate-300", "text-[#3D332A]", "text-yellow-100")}`}>
                   {t.ecoDesc}
                 </p>
 
@@ -4337,32 +4387,41 @@ export function Ceo1983Landing() {
             )
           }`}
         >
-          {/* Neoclassical Golden Columns & Mandala Foundation Background for Core Values */}
-          <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none">
-            <img
-              src="/landing/ceo1983_core_values_bg.jpg"
-              alt="4 Neoclassical Pillars of Excellence"
-              className={`w-full h-full object-cover object-center transition-opacity duration-700 ${
-                themeClass(
-                  "opacity-35 mix-blend-screen brightness-90 contrast-125 filter",
-                  "opacity-20 mix-blend-multiply contrast-110 filter",
-                  "opacity-15 mix-blend-screen contrast-150"
-                )
-              }`}
-            />
-            {/* Gradient Vignettes for Perfect Legibility in all 3 Theme Modes */}
-            <div
-              className={`absolute inset-0 transition-colors duration-500 ${
-                themeClass(
-                  "bg-gradient-to-b from-[#02040A] via-transparent to-[#02040A]",
-                  "bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/60 to-[#FAF8F5]/95",
-                  "bg-gradient-to-b from-black via-black/80 to-black"
-                )
-              }`}
-            />
-            {/* Subtle radial center spotlight */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(216,178,130,0.12)_0%,transparent_70%)] pointer-events-none" />
-          </div>
+          {/* Dedicated Core Values Background per Theme (Không gộp chung ảnh) */}
+          {themeMode === "dark" && (
+            <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none">
+              <img
+                src="/landing/ceo1983_core_values_bg.jpg"
+                alt="4 Neoclassical Pillars Dark"
+                className="w-full h-full object-cover object-center opacity-35 mix-blend-screen brightness-90 contrast-125 filter"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#02040A] via-transparent to-[#02040A]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(216,178,130,0.15)_0%,transparent_70%)] pointer-events-none" />
+            </div>
+          )}
+
+          {themeMode === "light" && (
+            <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none">
+              <img
+                src="/landing/ceo1983-hero-light.jpg"
+                alt="Neoclassical Architecture Light"
+                className="w-full h-full object-cover object-center opacity-30 filter brightness-105 contrast-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/60 to-[#FAF8F5]/95" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(246,225,195,0.35)_0%,transparent_70%)] pointer-events-none" />
+            </div>
+          )}
+
+          {themeMode === "contrast" && (
+            <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none">
+              <img
+                src="/landing/ceo1983-contrast.jpg"
+                alt="Technical CAD Pillars Contrast"
+                className="w-full h-full object-cover object-center opacity-20 filter contrast-150"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black via-black/80 to-black" />
+            </div>
+          )}
 
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Core Values Section Header */}

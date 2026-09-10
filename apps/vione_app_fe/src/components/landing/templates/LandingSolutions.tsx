@@ -42,7 +42,7 @@ export function LandingSolutions({
   modules,
   ctaText = "Khám phá tính năng",
   onCtaClick,
-  themeMode = "dark",
+  themeMode = "light",
 }: LandingSolutionsProps) {
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";

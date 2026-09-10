@@ -50,10 +50,7 @@ export function NetworkPersonRow({ person }: { person: BcMobileNetworkPerson }) 
   const at = person.context?.at ?? null;
   const tagKey = kind ? (TAG_KEY[kind] ?? null) : null;
   const signalKey = kind ? (SIGNAL_KEY[kind] ?? null) : null;
-  // Deterministic recency dot: derived from the canonical context timestamp
-  // only — never a presence/online claim.
-  const recent =
-    at != null ? Date.now() - new Date(at).getTime() <= 14 * 24 * 60 * 60 * 1000 : false;
+  const isOnline = Boolean((person as any)?.isOnline);
   const SignalIcon = kind === "connected" ? CalendarDays : Clock;
 
   return (
@@ -82,12 +79,12 @@ export function NetworkPersonRow({ person }: { person: BcMobileNetworkPerson }) 
               {initials ?? "•"}
             </span>
           )}
-          <span
-            aria-hidden="true"
-            className={`absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full ring-2 ring-[var(--bc-mobile-surface)] ${
-              recent ? "bg-[var(--bc-mobile-success,#22c55e)]" : "bg-[var(--bc-mobile-border)]"
-            }`}
-          />
+          {isOnline && (
+            <span
+              aria-label="Đang trực tuyến"
+              className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full ring-2 ring-[var(--bc-mobile-surface)] bg-[var(--bc-mobile-success,#22c55e)]"
+            />
+          )}
         </span>
 
         <span className="min-w-0 flex-1">

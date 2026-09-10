@@ -386,12 +386,45 @@ export class AdminService implements OnModuleInit {
     return created.invoice;
   }
 
+  async checkIsAdmin(userId: string, assocId?: string): Promise<boolean> {
+    if (!userId) return false;
+    if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
+      return true;
+    }
+    const roles = await this.prisma.user_roles
+      .findMany({ where: { user_id: userId } })
+      .catch(() => [] as any[]);
+    if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin' || r.role === 'admin')) {
+      return true;
+    }
+    try {
+      let mems: any[] = [];
+      if (assocId) {
+        mems = await this.prisma.$queryRaw<any[]>`
+          SELECT role FROM public.memberships 
+          WHERE user_id = ${userId}::uuid AND association_id = ${assocId}::uuid
+        `;
+      } else {
+        mems = await this.prisma.$queryRaw<any[]>`
+          SELECT role FROM public.memberships 
+          WHERE user_id = ${userId}::uuid
+        `;
+      }
+      return mems.some(
+        (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
+      );
+    } catch {
+      return false;
+    }
+  }
+
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
   async listNotifications(userId: string, associationId?: string, appScope?: string) {
     const notifs: any[] = [];
     const seenMap = new Set<string>();
     const filterScope = appScope && appScope !== 'all' ? appScope : null;
+    const isAdmin = await this.checkIsAdmin(userId, associationId);
 
     // 1. Query broadcast notifications from public.notifications
     try {
@@ -416,6 +449,11 @@ export class AdminService implements OnModuleInit {
       }
 
       for (const r of rows) {
+        // Staff-only notifications are only visible to admins
+        if (r.audience === 'staff' && !isAdmin) {
+          continue;
+        }
+
         const item = {
           id: r.code || r.id,
           title: r.title,
@@ -438,32 +476,56 @@ export class AdminService implements OnModuleInit {
       console.warn('Error querying public.notifications:', e);
     }
 
-    // 2. Query personal business notifications for this admin
+    // 2. Query personal business notifications for this user (only admins see association-wide approval events)
     try {
       if (userId) {
         let bzRows: any[] = [];
-        if (filterScope) {
-          bzRows = await this.prisma.$queryRaw<any[]>`
-            SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
-            FROM public.business_notifications
-            WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
-              AND (app_scope = ${filterScope} OR target_app = ${filterScope})
-            ORDER BY created_at DESC
-            LIMIT 40
-          `.catch(() => []);
+        if (isAdmin) {
+          if (filterScope) {
+            bzRows = await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+                AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []);
+          } else {
+            bzRows = await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []);
+          }
         } else {
-          bzRows = await this.prisma.$queryRaw<any[]>`
-            SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
-            FROM public.business_notifications
-            WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
-            ORDER BY created_at DESC
-            LIMIT 40
-          `.catch(() => []);
+          // Regular user only sees notifications addressed explicitly to their user ID
+          if (filterScope) {
+            bzRows = await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE recipient_user_id = ${userId}::uuid
+                AND source_domain != 'association'
+                AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []);
+          } else {
+            bzRows = await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE recipient_user_id = ${userId}::uuid
+                AND source_domain != 'association'
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []);
+          }
         }
 
         for (const bz of bzRows) {
           const safe = bz.safe_display_data || {};
-          const title = safe.title || bz.title_key || 'Thông báo quản trị';
+          const title = safe.title || bz.title_key || 'Thông báo';
           const body = safe.body || bz.body_key || '';
           const key = `${title}:${body}`;
           const scope = bz.app_scope || bz.target_app || (bz.source_domain === 'association' ? 'crm' : 'vione_app');
@@ -473,14 +535,14 @@ export class AdminService implements OnModuleInit {
               id: bz.id,
               title,
               body,
-              audience: 'staff',
+              audience: isAdmin ? 'staff' : 'members',
               channel: 'inapp',
               appScope: scope,
               targetApp: scope,
               sentAt: bz.created_at ? new Date(bz.created_at).toISOString() : new Date().toISOString(),
               reach: 1,
               status: 'sent',
-              targetRoute: bz.action_target?.route || bz.action_target?.targetRoute || '/members?status=pending',
+              targetRoute: bz.action_target?.route || bz.action_target?.targetRoute || '/notifications',
             });
           }
         }
@@ -489,8 +551,8 @@ export class AdminService implements OnModuleInit {
       console.warn('Error querying business_notifications:', e);
     }
 
-    // 3. Fallback check: If there are pending members in public.members, ensure they appear in notifications (scope: crm)
-    if (!filterScope || filterScope === 'crm') {
+    // 3. Fallback check: If there are pending members, ONLY show to CRM admins
+    if (isAdmin && (!filterScope || filterScope === 'crm')) {
       try {
         const pendingMembers = await this.prisma.$queryRaw<any[]>`
           SELECT id, name, contact, phone, email, about, joined_at, created_at

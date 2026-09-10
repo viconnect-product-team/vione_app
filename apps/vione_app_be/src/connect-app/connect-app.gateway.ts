@@ -258,11 +258,17 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     },
   ) {
     if (!payload?.recipientUserId || !this.server) return { ok: false };
-    this.logger.log(`Call initiated [${payload.callType}] by ${payload.callerName} -> user:${payload.recipientUserId}`);
+    const callerId = payload.callerUserId || client.id;
+    if (callerId === payload.recipientUserId) {
+      this.logger.warn(`User ${callerId} attempted to call self`);
+      return { ok: false, error: 'cannot_call_self' };
+    }
+    this.logger.log(`Call initiated [${payload.callType}] by ${payload.callerName} (${callerId}) -> user:${payload.recipientUserId}`);
 
-    this.server.to(`user:${payload.recipientUserId}`).emit('call:incoming', {
+    // Broadcast to recipient room but explicitly exclude the caller's socket
+    client.to(`user:${payload.recipientUserId}`).emit('call:incoming', {
       callId: payload.callId,
-      callerUserId: payload.callerUserId || client.id,
+      callerUserId: callerId,
       callerName: payload.callerName,
       callerAvatar: payload.callerAvatar || null,
       callerTitle: payload.callerTitle || null,

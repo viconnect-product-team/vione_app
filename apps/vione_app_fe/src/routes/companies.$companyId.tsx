@@ -168,6 +168,7 @@ function CompanyDetailPage() {
   const events = history.events || [];
   const payments = history.payments || [];
 
+  const { isAdmin } = useRole();
   const [companyState, setCompanyState] = useState<Member>(loaded);
   const [openEmail, setOpenEmail] = useState(false);
   const [editingCompany, setEditingCompany] = useState(false);
@@ -253,6 +254,10 @@ function CompanyDetailPage() {
   });
 
   const handleSaveCompany = async (values: CrudValues) => {
+    if (!isAdmin) {
+      toast.error(t("perm.denied.title"), { description: t("perm.denied.adminOnly") });
+      return;
+    }
     setSubmittingEdit(true);
     try {
       const payload = {
@@ -317,6 +322,10 @@ function CompanyDetailPage() {
   );
   const [approving, setApproving] = useState(false);
   const handleQuickApprove = async () => {
+    if (!isAdmin) {
+      toast.error(t("perm.denied.title"), { description: t("perm.denied.adminOnly") });
+      return;
+    }
     setApproving(true);
     try {
       await fetchNestApi(`/members/${company.id}`, {
@@ -338,6 +347,10 @@ function CompanyDetailPage() {
 
   const [submittingFee, setSubmittingFee] = useState(false);
   const handleToggleFeePaid = async () => {
+    if (!isAdmin) {
+      toast.error(t("perm.denied.title"), { description: t("perm.denied.adminOnly") });
+      return;
+    }
     setSubmittingFee(true);
     const nextPaid = !company.feePaid;
     try {
@@ -433,7 +446,7 @@ function CompanyDetailPage() {
               {t(`status.${company.status}` as TKey)}
             </span>
             <div className="flex flex-wrap items-center gap-2">
-              {company.status === "pending" && (
+              {isAdmin && company.status === "pending" && (
                 <button
                   type="button"
                   onClick={handleQuickApprove}
@@ -451,13 +464,15 @@ function CompanyDetailPage() {
               >
                 <Mail className="h-3.5 w-3.5" /> {t("detail.sendEmail")}
               </button>
-              <button
-                type="button"
-                onClick={() => setEditingCompany(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-card/90"
-              >
-                <Edit3 className="h-3.5 w-3.5" /> {t("detail.edit")}
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setEditingCompany(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-card/90"
+                >
+                  <Edit3 className="h-3.5 w-3.5" /> {t("detail.edit")}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -529,7 +544,7 @@ function CompanyDetailPage() {
         <Overview
           company={company}
           onSaveContact={handleSaveContact}
-          onToggleFeePaid={handleToggleFeePaid}
+          onToggleFeePaid={isAdmin ? handleToggleFeePaid : undefined}
           submittingFee={submittingFee}
         />
       )}
@@ -677,22 +692,24 @@ function Overview({
               <Wallet className="h-5 w-5 text-muted-foreground" />
             </div>
 
-            <button
-              type="button"
-              disabled={submittingFee}
-              onClick={onToggleFeePaid}
-              className={`mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                company.feePaid
-                  ? "bg-secondary text-secondary-foreground hover:bg-destructive/15 hover:text-destructive"
-                  : "bg-success text-white hover:bg-success/90"
-              }`}
-            >
-              {submittingFee
-                ? "Đang xử lý..."
-                : company.feePaid
-                  ? "Đổi sang Chưa nộp"
-                  : "Xác nhận đã đóng phí"}
-            </button>
+            {onToggleFeePaid && (
+              <button
+                type="button"
+                disabled={submittingFee}
+                onClick={onToggleFeePaid}
+                className={`mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  company.feePaid
+                    ? "bg-secondary text-secondary-foreground hover:bg-destructive/15 hover:text-destructive"
+                    : "bg-success text-white hover:bg-success/90"
+                }`}
+              >
+                {submittingFee
+                  ? "Đang xử lý..."
+                  : company.feePaid
+                    ? "Đổi sang Chưa nộp"
+                    : "Xác nhận đã đóng phí"}
+              </button>
+            )}
           </div>
         </Section>
       </div>

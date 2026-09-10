@@ -16,7 +16,6 @@ import { VActionSheet } from "./VActionSheet";
 import { useTheme } from "@/lib/theme";
 
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
-  useConnectAppRealtimeNotifications();
   let isLight = false;
   let isContrast = false;
   try {

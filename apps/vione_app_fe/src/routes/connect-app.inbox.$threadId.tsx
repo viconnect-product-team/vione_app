@@ -19,6 +19,8 @@ import {
   MoreHorizontal,
   Paperclip,
   Phone,
+  PhoneMissed,
+  PhoneOff,
   Plus,
   RotateCcw,
   Send,
@@ -149,13 +151,34 @@ function getFileBadgeInfo(fileName: string) {
   };
 }
 
+function formatCallDuration(sec: number): string {
+  if (!sec || sec <= 0) return "0s";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m > 0) {
+    return `${m} phút ${s > 0 ? `${s}s` : ""}`;
+  }
+  return `${s} giây`;
+}
+
 type ParsedContent =
   | { type: "image"; url: string; name?: string; caption?: string }
   | { type: "file"; url: string; name: string; size?: number; caption?: string }
   | { type: "voice"; url: string; duration?: number; caption?: string }
+  | { type: "call"; callType: "audio" | "video"; status: "ended" | "missed" | "declined"; duration: number }
   | { type: "text"; text: string };
 
 function parseMessageContent(body: string): ParsedContent {
+  // Pattern -1: call:TYPE|status:STATUS|duration:SECONDS
+  const callRegex = /\[call:(audio|video)(?:\|status:(ended|missed|declined))?(?:\|duration:(\d+))?\]/i;
+  const callMatch = body.match(callRegex);
+  if (callMatch) {
+    const callType = (callMatch[1].toLowerCase() === "video" ? "video" : "audio") as "audio" | "video";
+    const status = (callMatch[2]?.toLowerCase() || "ended") as "ended" | "missed" | "declined";
+    const duration = callMatch[3] ? parseInt(callMatch[3], 10) : 0;
+    return { type: "call", callType, status, duration };
+  }
+
   // Pattern 0: voice:URL|DURATION or voice:URL
   const voiceRegex = /\[voice:(https?:\/\/[^|\]]+|data:audio\/[^|\]]+)(?:\|(\d+))?\]/i;
   const voiceMatch = body.match(voiceRegex);
@@ -260,6 +283,7 @@ function ThreadPage() {
         if (preview.startsWith("[image:")) preview = "📷 Đã gửi một hình ảnh";
         else if (preview.startsWith("[file:")) preview = "📎 Đã gửi một tệp đính kèm";
         else if (preview.startsWith("[voice:")) preview = "🎙️ Đã gửi một tin nhắn thoại";
+        else if (preview.startsWith("[call:")) preview = "📞 Cuộc gọi";
 
         sendExternalNotification(thread?.displayName || "Tin nhắn mới", {
           body: preview,
@@ -396,6 +420,22 @@ function ThreadPage() {
       setReplyingTo(null);
     } else {
       setErrorCode(res.error);
+    }
+  };
+
+  const handleCallRecord = async (rec: {
+    callType: "audio" | "video";
+    status: "ended" | "missed" | "declined";
+    duration: number;
+  }) => {
+    const bodyPayload = `[call:${rec.callType}|status:${rec.status}${rec.duration ? `|duration:${rec.duration}` : ""}]`;
+    try {
+      await send.mutateAsync({
+        body: bodyPayload,
+        clientToken: newToken(),
+      });
+    } catch (e) {
+      console.warn("Could not record call log into thread:", e);
     }
   };
 
@@ -587,6 +627,7 @@ function ThreadPage() {
         counterpartAvatar={thread?.avatarUrl}
         counterpartTitle={thread?.companyName || thread?.headline}
         onClose={() => setCallModal((prev) => ({ ...prev, isOpen: false }))}
+        onCallRecord={handleCallRecord}
       />
 
       <div className="flex flex-1 min-h-0 flex-col max-w-full relative overflow-hidden">
@@ -904,6 +945,77 @@ function ThreadPage() {
                                           {content.caption}
                                         </p>
                                       ) : null}
+                                    </div>
+                                  ) : content.type === "call" ? (
+                                    <div className="p-3">
+                                      <div className="flex items-center gap-3">
+                                        <div
+                                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                                            content.status === "missed"
+                                              ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                                              : content.status === "declined"
+                                                ? "bg-slate-500/15 text-slate-400 border border-slate-500/30"
+                                                : m.fromMe
+                                                  ? "bg-black/15 text-amber-900 border border-amber-800/20"
+                                                  : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                                          }`}
+                                        >
+                                          {content.status === "missed" ? (
+                                            <PhoneMissed className="h-5 w-5" />
+                                          ) : content.status === "declined" ? (
+                                            <PhoneOff className="h-5 w-5" />
+                                          ) : content.callType === "video" ? (
+                                            <Video className="h-5 w-5" />
+                                          ) : (
+                                            <Phone className="h-5 w-5" />
+                                          )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <p
+                                            className={`text-[13.5px] font-semibold leading-tight ${
+                                              content.status === "missed"
+                                                ? "text-rose-600 dark:text-rose-400"
+                                                : content.status === "declined"
+                                                  ? "text-slate-600 dark:text-slate-400"
+                                                  : m.fromMe
+                                                    ? "text-[#1A1206]"
+                                                    : "text-slate-900 dark:text-white"
+                                            }`}
+                                          >
+                                            {content.status === "missed"
+                                              ? `Cuộc gọi ${content.callType === "video" ? "video " : ""}nhỡ`
+                                              : content.status === "declined"
+                                                ? `Cuộc gọi ${content.callType === "video" ? "video " : ""}bị từ chối`
+                                                : `Cuộc gọi ${content.callType === "video" ? "video" : "thoại"}`}
+                                          </p>
+                                          <p
+                                            className={`text-[11.5px] mt-0.5 ${
+                                              m.fromMe
+                                                ? "text-[#1A1206]/70"
+                                                : "text-slate-500 dark:text-[var(--bc-mobile-muted)]"
+                                            }`}
+                                          >
+                                            {content.status === "ended" && content.duration > 0
+                                              ? `Thời lượng: ${formatCallDuration(content.duration)}`
+                                              : content.status === "missed"
+                                                ? "Không có người trả lời"
+                                                : content.status === "declined"
+                                                  ? "Người nhận bận"
+                                                  : "Đã kết thúc"}
+                                          </p>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => setCallModal({ isOpen: true, type: content.callType })}
+                                          className={`shrink-0 rounded-lg px-2.5 py-1 text-[11.5px] font-semibold transition-colors cursor-pointer ${
+                                            m.fromMe
+                                              ? "bg-black/10 hover:bg-black/20 text-[#1A1206]"
+                                              : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-[var(--bc-mobile-accent)] border border-amber-500/30"
+                                          }`}
+                                        >
+                                          Gọi lại
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : content.type === "voice" ? (
                                     <div className="p-0.5">

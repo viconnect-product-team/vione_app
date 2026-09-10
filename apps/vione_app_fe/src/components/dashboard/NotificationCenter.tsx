@@ -9,6 +9,7 @@ import { listNotificationsFn, deleteNotificationFn } from "@/lib/notifications.f
 import { getLastSeen, markNotificationsSeen } from "@/hooks/use-unread-notifications";
 import { ListSkeleton, NoNotifications } from "@/components/dashboard/StateKit";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
+import { useRole } from "@/hooks/use-role";
 
 
 function startOfDay(ts: number) {
@@ -46,6 +47,7 @@ export function NotificationCenter() {
   const t = useT();
   const rel = useRelativeTime();
   const navigate = useNavigate();
+  const { isAdmin } = useRole();
   const list = useServerFn(listNotificationsFn);
   const deleteFn = useServerFn(deleteNotificationFn);
   const [items, setItems] = useState<Notification[]>([]);
@@ -57,14 +59,35 @@ export function NotificationCenter() {
   const refresh = useCallback(async () => {
     try {
       const rows = await list({ data: { appScope: "crm" } as never });
-      setItems(rows.filter((n) => n.status === "sent"));
+      const uniqueMap = new Map<string, Notification>();
+      for (const r of rows) {
+        if (r.status !== "sent") continue;
+        // Hide staff-only and member approval notifications from non-admin accounts
+        if (!isAdmin) {
+          if (r.audience === "staff") continue;
+          const tLower = (r.title || "").toLowerCase();
+          const bLower = (r.body || "").toLowerCase();
+          if (
+            (tLower.includes("đăng ký") && (bLower.includes("duyệt") || bLower.includes("nộp hồ sơ"))) ||
+            bLower.includes("bấm để duyệt ngay") ||
+            (r as any).targetRoute?.includes("status=pending")
+          ) {
+            continue;
+          }
+        }
+        const key = r.id || `${r.title}:${r.body}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, r);
+        }
+      }
+      setItems([...uniqueMap.values()]);
       setSeen(getLastSeen());
     } catch {
       /* ignore */
     } finally {
       setLoading(false);
     }
-  }, [list]);
+  }, [list, isAdmin]);
 
   useEffect(() => {
     void refresh();
@@ -154,11 +177,12 @@ export function NotificationCenter() {
     const bodyLower = (n.body || "").toLowerCase();
 
     if (
-      titleLower.includes("hội viên") ||
-      titleLower.includes("đăng ký") ||
-      titleLower.includes("gia nhập") ||
-      bodyLower.includes("duyệt") ||
-      bodyLower.includes("hồ sơ")
+      isAdmin &&
+      (titleLower.includes("hội viên") ||
+        titleLower.includes("đăng ký") ||
+        titleLower.includes("gia nhập") ||
+        bodyLower.includes("duyệt") ||
+        bodyLower.includes("hồ sơ"))
     ) {
       void navigate({ to: "/members", search: { status: "pending" } });
       return;

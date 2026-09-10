@@ -78,6 +78,21 @@ const EMPTY: Record<FieldKey, string> = {
   city: "",
 };
 
+const FIELD_PLACEHOLDERS: Record<FieldKey, string> = {
+  displayName: "Ví dụ: Phạm Văn Vũ",
+  headline: "Ví dụ: Chủ tịch & Nhà sáng lập Tập đoàn ViOne",
+  jobTitle: "Ví dụ: Tổng Giám Đốc / CEO",
+  companyName: "Ví dụ: Công ty Cổ phần Công nghệ ViOne",
+  bio: "Mô tả ngắn gọn về hành trình, thế mạnh chuyên môn, quy mô doanh nghiệp và định hướng hợp tác B2B...",
+  avatarUrl: "Hoặc dán liên kết URL ảnh đại diện (https://...)",
+  primaryEmail: "contact@vione.vn",
+  primaryPhone: "0912 345 678",
+  website: "https://vione.vn",
+  linkedinUrl: "https://linkedin.com/in/username",
+  address: "Số 123 Phố Trần Duy Hưng, Cầu Giấy",
+  city: "Hà Nội",
+};
+
 const inputClass =
   "min-h-12 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[14.5px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]";
 
@@ -252,6 +267,7 @@ export function IdentityEditPage() {
                               value={values[field.key]}
                               onChange={(e) => set(field.key, e.target.value)}
                               disabled={saving}
+                              placeholder={FIELD_PLACEHOLDERS[field.key] || ""}
                               aria-invalid={errors[field.key] || undefined}
                               className={inputClass}
                             />
@@ -262,6 +278,7 @@ export function IdentityEditPage() {
                             value={values[field.key]}
                             onChange={(e) => set(field.key, e.target.value)}
                             disabled={saving}
+                            placeholder={FIELD_PLACEHOLDERS[field.key] || ""}
                             rows={4}
                             aria-invalid={errors[field.key] || undefined}
                             className={`${inputClass} min-h-24 resize-y py-2.5`}
@@ -273,6 +290,7 @@ export function IdentityEditPage() {
                             value={values[field.key]}
                             onChange={(e) => set(field.key, e.target.value)}
                             disabled={saving}
+                            placeholder={FIELD_PLACEHOLDERS[field.key] || ""}
                             aria-invalid={errors[field.key] || undefined}
                             className={inputClass}
                           />

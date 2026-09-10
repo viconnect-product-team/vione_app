@@ -470,100 +470,87 @@ function NotificationsScreen() {
         }
       />
 
-      <div className="mt-3 space-y-2 px-4">
+      <div className="mt-3 space-y-3 px-4">
+        {/* Segmented Filter Control */}
         <div
-          className="flex flex-wrap gap-1.5"
+          className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--vba-border)] overflow-x-auto no-scrollbar"
           role="group"
           aria-label={t("m.notifications.filter.group")}
-          aria-describedby="noti-filter-hint"
         >
-          <span id="noti-filter-hint" className="sr-only">
-            {t("m.notifications.filter.hint")}
-          </span>
           {filterTabs.map((tab) => {
             const active = filter === tab.key;
+            const count =
+              tab.key === "unread"
+                ? notifications.filter((n) => n.unread && !n.dismissed).length
+                : tab.key === "all"
+                  ? notifications.filter((n) => !n.dismissed).length
+                  : null;
+
             return (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setFilter(tab.key)}
                 aria-pressed={active}
-                className="rounded-full border px-3 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vba-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--vba-bg)]"
-                style={{
-                  borderColor: active ? "var(--vba-gold)" : "var(--vba-border)",
-                  color: active ? "var(--vba-gold)" : "var(--vba-text-muted)",
-                  background: active ? "var(--vba-gold-soft)" : "transparent",
-                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                  active
+                    ? "bg-[var(--vba-gold)] text-[#0B0C10] shadow-sm font-bold"
+                    : "text-[var(--vba-text-muted)] hover:text-[var(--vba-text)] hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
               >
-                {t(tab.label)}
+                <span>{t(tab.label)}</span>
+                {count != null && count > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold tabular-nums ${
+                      active
+                        ? "bg-[#0B0C10]/20 text-[#0B0C10]"
+                        : "bg-[var(--vba-gold-soft)] text-[var(--vba-gold)] border border-[var(--vba-border)]"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
+
+        {/* Search & Sort Controls */}
         <div className="flex items-center gap-2">
-          <span id="noti-sort-label" className="text-[11px] text-[var(--vba-text-dim)]">
-            {t("m.notifications.sort.label")}:
-          </span>
-          <div
-            className="inline-flex rounded-full border border-[var(--vba-border)] p-0.5"
-            role="group"
-            aria-labelledby="noti-sort-label"
-          >
-            <button
-              type="button"
-              onClick={() => setSort("priority")}
-              aria-pressed={sort === "priority"}
-              className="rounded-full px-3 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vba-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--vba-bg)]"
-              style={{
-                background: sort === "priority" ? "var(--vba-gold-soft)" : "transparent",
-                color: sort === "priority" ? "var(--vba-gold)" : "var(--vba-text-muted)",
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--vba-text-dim)]" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && query) {
+                  e.preventDefault();
+                  setQuery("");
+                }
               }}
-            >
-              {t("m.notifications.sort.priorityFirst")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSort("newest")}
-              aria-pressed={sort === "newest"}
-              className="rounded-full px-3 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vba-gold)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--vba-bg)]"
-              style={{
-                background: sort === "newest" ? "var(--vba-gold-soft)" : "transparent",
-                color: sort === "newest" ? "var(--vba-gold)" : "var(--vba-text-muted)",
-              }}
-            >
-              {t("m.notifications.sort.timeFirst")}
-            </button>
+              placeholder={t("m.notifications.search.placeholder")}
+              aria-label={t("m.notifications.search.placeholder")}
+              className="w-full rounded-2xl border border-[var(--vba-border)] bg-[var(--vba-surface,#fff)] py-2 pl-9 pr-8 text-[13px] text-[var(--vba-text)] placeholder:text-[var(--vba-text-dim)] shadow-xs focus:border-[var(--vba-gold)] focus:outline-none transition-colors"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--vba-text-dim)] hover:text-[var(--vba-text)] cursor-pointer"
+                aria-label={t("action.close")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-        </div>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--vba-text-dim)]" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape" && query) {
-                e.preventDefault();
-                setQuery("");
-              }
-            }}
-            placeholder={t("m.notifications.search.placeholder")}
-            aria-label={t("m.notifications.search.placeholder")}
-            aria-describedby="noti-search-hint"
-            className="w-full rounded-xl border border-[var(--vba-border)] bg-transparent py-2 pl-9 pr-8 text-[13px] text-[var(--vba-text)] placeholder:text-[var(--vba-text-dim)] focus:border-[var(--vba-gold)] focus:outline-none"
-          />
-          <span id="noti-search-hint" className="sr-only">
-            {t("m.notifications.search.clearHint")}
-          </span>
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--vba-text-dim)] hover:text-[var(--vba-text)]"
-              aria-label={t("action.close")}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+
+          <button
+            type="button"
+            onClick={() => setSort(sort === "priority" ? "newest" : "priority")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-[var(--vba-border)] bg-[var(--vba-surface,#fff)] text-xs font-semibold text-[var(--vba-text-muted)] hover:text-[var(--vba-gold)] shadow-xs transition-colors shrink-0 cursor-pointer"
+          >
+            <span>{sort === "priority" ? "⚡ Ưu tiên" : "🕒 Mới nhất"}</span>
+          </button>
         </div>
       </div>
 
@@ -578,16 +565,24 @@ function NotificationsScreen() {
             : t("m.notifications.announce.allRead")}
       </p>
 
-      <div className="mt-3 space-y-2.5 px-4" role="list" aria-live="polite" aria-busy={loading}>
+      <div className="mt-3.5 space-y-3 px-4" role="list" aria-live="polite" aria-busy={loading}>
         {loading && (
           <p className="py-10 text-center text-[13px] text-[var(--vba-text-dim)]">
             {t("m.notifications.loading")}
           </p>
         )}
         {!loading && visible.length === 0 && (
-          <p className="py-10 text-center text-[13px] text-[var(--vba-text-dim)]">
-            {t("m.notifications.empty")}
-          </p>
+          <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-[var(--vba-border)] bg-[var(--vba-surface,#fff)] px-6 py-12 text-center shadow-xs">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <p className="text-[14.5px] font-bold text-[var(--vba-text)]">
+              {t("m.notifications.empty")}
+            </p>
+            <p className="text-[12.5px] text-[var(--vba-text-muted)] max-w-[28ch]">
+              Không có thông báo nào trong danh mục này.
+            </p>
+          </div>
         )}
         {visible.map((n: any) => {
           const Icon = iconFor(n.type);
@@ -596,20 +591,29 @@ function NotificationsScreen() {
             <div
               key={n.id}
               role="listitem"
-              className="vba-card flex gap-3 p-3.5"
-              style={n.unread ? { borderColor: "var(--vba-border)" } : undefined}
+              className={`relative flex gap-3.5 p-4 rounded-2xl border transition-all duration-200 shadow-xs overflow-hidden ${
+                n.unread
+                  ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-500/40"
+                  : "bg-[var(--vba-surface,#fff)] border-[var(--vba-border)] hover:border-[var(--vba-gold)]/40"
+              }`}
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
+              {/* Vertical Gold Highlight on Unread */}
+              {n.unread && (
+                <span className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-[var(--vba-gold)]" />
+              )}
+
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[var(--vba-gold-soft)] to-transparent text-[var(--vba-gold)] border border-[var(--vba-border)] shadow-xs">
                 <Icon className="h-5 w-5" />
               </span>
+
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-[13px] font-semibold text-[var(--vba-text)]">
+                  <span className="truncate text-[13.5px] font-bold text-[var(--vba-text)]">
                     {n.title}
                   </span>
                   {n.priority !== "low" && (
                     <span
-                      className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
                       style={{
                         color: priorityColor(n.priority),
                         background: "var(--vba-gold-soft)",
@@ -623,7 +627,7 @@ function NotificationsScreen() {
                     <span
                       role="status"
                       aria-label={t("m.notifications.status.unread")}
-                      className="h-2 w-2 shrink-0 rounded-full bg-[var(--vba-danger)]"
+                      className="h-2 w-2 shrink-0 rounded-full bg-[var(--vba-gold)] shadow-[0_0_8px_var(--vba-gold)]"
                     />
                   )}
                   {isLead && (
@@ -632,8 +636,6 @@ function NotificationsScreen() {
                       disabled={openingLeadId === n.id}
                       onClick={async () => {
                         setOpeningLeadId(n.id);
-                        // Mark read FIRST and with retry so it is guaranteed to
-                        // persist even if navigation is slow or interrupted.
                         let marked = false;
                         for (let attempt = 0; attempt < 3 && !marked; attempt++) {
                           try {
@@ -660,7 +662,7 @@ function NotificationsScreen() {
                         }
                       }}
                       aria-label={t("m.notifications.lead.openDetail")}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50 cursor-pointer"
                     >
                       {openingLeadId === n.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -670,9 +672,11 @@ function NotificationsScreen() {
                     </button>
                   )}
                 </div>
-                <p className="mt-0.5 text-[12px] leading-snug text-[var(--vba-text-muted)]">
+
+                <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--vba-text-muted)]">
                   {n.body}
                 </p>
+
                 {n.refType === "renewal_audit" && n.refId && (
                   <button
                     type="button"
@@ -680,23 +684,24 @@ function NotificationsScreen() {
                       void markRead({ data: { id: n.id } }).catch(() => {});
                       void navigate({ to: "/m/renew/audit", search: { ref: n.refId as string } });
                     }}
-                    className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2 py-1 text-[10px] font-medium text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)]"
+                    className="mt-2 inline-flex items-center gap-1 rounded-xl border border-[var(--vba-border)] px-2.5 py-1 text-[11px] font-semibold text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] cursor-pointer"
                   >
                     <ExternalLink className="h-3 w-3" />
                     {t("m.notifications.renewal.openAudit")}
                   </button>
                 )}
-                <span className="mt-1 block text-[10px] text-[var(--vba-text-dim)]">
+
+                <span className="mt-1.5 block text-[10.5px] font-medium text-[var(--vba-text-dim)]">
                   {fmt.rel(n.time)}
                 </span>
 
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2 pt-2 border-t border-[var(--vba-border)]/60">
                   {n.dismissed ? (
                     <button
                       type="button"
                       disabled={rowBusy === n.id}
                       onClick={() => onUndoDismiss(n)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2 py-1 text-[10px] font-medium text-[var(--vba-text-muted)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-xl border border-[var(--vba-border)] px-2.5 py-1 text-[11px] font-medium text-[var(--vba-text-muted)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50 cursor-pointer"
                     >
                       {rowBusy === n.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -712,7 +717,7 @@ function NotificationsScreen() {
                           type="button"
                           disabled={rowBusy === n.id}
                           onClick={() => onMarkOneRead(n)}
-                          className="inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2 py-1 text-[10px] font-medium text-[var(--vba-text-muted)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-xl border border-[var(--vba-border)] bg-[var(--vba-surface,#fff)] px-2.5 py-1 text-[11px] font-semibold text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50 shadow-xs cursor-pointer active:scale-95"
                         >
                           {rowBusy === n.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -729,7 +734,7 @@ function NotificationsScreen() {
                           dismissTriggerRef.current = e.currentTarget;
                           setConfirmDismiss(n);
                         }}
-                        className="inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2 py-1 text-[10px] font-medium text-[var(--vba-text-muted)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-xl border border-[var(--vba-border)] px-2.5 py-1 text-[11px] font-medium text-[var(--vba-text-muted)] transition hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50 cursor-pointer"
                       >
                         <EyeOff className="h-3 w-3" />
                         {t("m.notifications.dismiss")}

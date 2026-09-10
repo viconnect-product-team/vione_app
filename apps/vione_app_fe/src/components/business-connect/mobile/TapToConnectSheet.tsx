@@ -312,53 +312,42 @@ export function TapToConnectSheet({ onClose }: { onClose: () => void }) {
                         <p className="font-medium text-[var(--bc-mobile-text)]">{t("bc.mobile.tapConnect.cameraStarting")}</p>
                       </div>
                     ) : qrStatus === "unsupported" ? (
-                      <div className="flex flex-col items-center gap-3 px-2">
-                        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--bc-mobile-accent)]/15 text-[var(--bc-mobile-accent)]">
-                          <Camera className="h-6 w-6" />
+                      <div className="flex flex-col items-center gap-3.5 px-3 py-2 w-full max-w-[320px]">
+                        <div className="relative grid h-16 w-16 place-items-center rounded-3xl bg-[var(--bc-mobile-accent)]/20 text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-accent)]/40 shadow-lg">
+                          <Camera className="h-8 w-8" />
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500" />
+                          </span>
                         </div>
+
                         <div>
-                          <p className="font-semibold text-[var(--bc-mobile-text)]">
-                            {typeof window !== "undefined" && !window.isSecureContext
-                              ? "Yêu cầu kết nối HTTPS bảo mật"
-                              : "Chụp ảnh mã QR"}
+                          <p className="text-[16px] font-bold text-[var(--bc-mobile-text)]">
+                            Quét Mã QR Bằng Máy Ảnh
                           </p>
-                          <p className="mt-1 text-[12px] text-[var(--bc-mobile-muted)] max-w-[280px] leading-relaxed">
-                            {typeof window !== "undefined" && !window.isSecureContext
-                              ? "Trình duyệt chặn camera live tự động trên HTTP để bảo mật. Hãy mở qua HTTPS để quét trực tiếp trong nền, hoặc bấm chụp ảnh bằng máy ảnh điện thoại."
-                              : "Chụp ảnh mã QR bằng máy ảnh điện thoại để kết nối ngay"}
+                          <p className="mt-1 text-[12.5px] text-[var(--bc-mobile-muted)] leading-relaxed">
+                            Bấm nút bên dưới để mở trực tiếp máy ảnh điện thoại, chụp quét mã QR và tự động kết nối hội viên.
                           </p>
                         </div>
-                        <div className="flex flex-col items-center justify-center gap-2 pt-1 w-full max-w-[300px]">
-                          {typeof window !== "undefined" && !window.isSecureContext && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                window.location.href = window.location.href.replace("http:", "https:");
-                              }}
-                              className="w-full flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/15 px-4 py-2 text-[12.5px] font-bold text-emerald-400 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                            >
-                              <ShieldCheck className="h-4 w-4" />
-                              <span>Mở bằng HTTPS (Tự động quét live)</span>
-                            </button>
-                          )}
-                          <div className="flex items-center gap-2 w-full justify-center">
-                            <button
-                              type="button"
-                              onClick={() => retryCamera()}
-                              className="flex-1 flex items-center justify-center gap-1.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-3 py-2 text-[12px] font-bold text-[var(--bc-mobile-accent)] shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                            >
-                              <RefreshCw className="h-3.5 w-3.5" />
-                              <span>Thử mở Live</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => captureInputRef.current?.click()}
-                              className="flex-1 flex items-center justify-center gap-1.5 rounded-full bg-[var(--bc-mobile-accent)] px-3 py-2 text-[12px] font-bold text-[#050c15] shadow-md active:scale-95 transition-transform cursor-pointer"
-                            >
-                              <Camera className="h-4 w-4" />
-                              <span>Chụp ảnh QR</span>
-                            </button>
-                          </div>
+
+                        <div className="flex flex-col items-center gap-2.5 pt-1 w-full">
+                          <button
+                            type="button"
+                            onClick={() => captureInputRef.current?.click()}
+                            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#D8B282] to-[#F6E1C3] px-5 py-3.5 text-[14.5px] font-bold text-[#0B0C10] shadow-[0_6px_25px_rgba(216,178,130,0.45)] hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Camera className="h-5 w-5" />
+                            <span>Mở Máy Ảnh Quét QR</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 py-2.5 text-[12.5px] font-medium text-[var(--bc-mobile-text)] hover:bg-[var(--bc-mobile-surface-2)] transition-colors cursor-pointer"
+                          >
+                            <ImagePlus className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
+                            <span>Chọn ảnh QR từ Thư viện</span>
+                          </button>
                         </div>
                       </div>
                     ) : (

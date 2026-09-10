@@ -110,6 +110,17 @@ function formatMessagePreview(raw?: string | null): string {
   if (fileMatch) {
     return `📎 [Tệp] ${fileMatch[2] || "Tài liệu"}`;
   }
+  if (/\[voice:(https?:\/\/[^|\]]+|data:audio\/[^|\]]+)(?:\|(\d+))?\]/i.test(text)) {
+    return "🎙️ [Tin nhắn thoại]";
+  }
+  const callMatch = text.match(/\[call:(audio|video)(?:\|status:(ended|missed|declined))?(?:\|duration:(\d+))?\]/i);
+  if (callMatch) {
+    const isVideo = callMatch[1].toLowerCase() === "video";
+    const status = callMatch[2]?.toLowerCase() || "ended";
+    if (status === "missed") return `📵 [Cuộc gọi ${isVideo ? "video " : ""}nhỡ]`;
+    if (status === "declined") return `🚫 [Cuộc gọi ${isVideo ? "video " : ""}bị từ chối]`;
+    return `📞 [Cuộc gọi ${isVideo ? "video" : "thoại"}]`;
+  }
   return text;
 }
 

@@ -277,12 +277,15 @@ function ConnectAppNotificationsPage() {
               return (
                 <li
                   key={n.id}
-                  className={`rounded-2xl border p-4 transition-all relative ${
+                  className={`rounded-2xl border p-4 transition-all relative overflow-hidden ${
                     unread
                       ? "bg-amber-50/40 dark:bg-[#121927] border-amber-300/60 dark:border-[#D8B282]/50 shadow-xs"
                       : "bg-white dark:bg-[#0c121d] border-slate-200 dark:border-[#243042] hover:border-slate-300 dark:hover:border-[#334155]"
                   }`}
                 >
+                  {unread && (
+                    <span className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-amber-500 dark:bg-[#D8B282]" />
+                  )}
                   {/* Hàng trên cùng: Nhãn phân loại + Nút Xóa thông báo (Thùng rác rõ nét) */}
                   <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100 dark:border-[#1e293b]">
                     <div className="flex items-center gap-1.5">

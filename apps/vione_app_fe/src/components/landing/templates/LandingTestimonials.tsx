@@ -22,7 +22,7 @@ export function LandingTestimonials({
   tag,
   title,
   testimonials,
-  themeMode = "dark",
+  themeMode = "light",
 }: LandingTestimonialsProps) {
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";

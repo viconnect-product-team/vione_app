@@ -44,29 +44,29 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
           </section>
         ) : (
           <>
-            {/* Top Cover Banner (Ảnh bìa cộng đồng) */}
-            <div className="relative -mx-4 -mt-4 mb-4 h-36 sm:h-44 w-[calc(100%+2rem)] overflow-hidden border-b border-[var(--bc-mobile-border)] bg-slate-900">
+            {/* Top Cover Banner (Ảnh bìa cộng đồng full-bleed) */}
+            <div className="relative -mx-5 mt-0 mb-3 h-44 sm:h-52 w-[calc(100%+2.5rem)] overflow-hidden border-b border-[var(--bc-mobile-border)] bg-slate-950 shadow-xs">
               <img
                 src={visuals.bannerUrl}
                 alt={detail.community.name}
-                className="h-full w-full object-cover brightness-[0.85] dark:brightness-[0.70]"
+                className="h-full w-full object-cover brightness-[0.90] dark:brightness-[0.75]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bc-mobile-surface)] via-[var(--bc-mobile-surface)]/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bc-mobile-surface)] via-transparent to-black/30" />
               
-              {/* Category Pill Tag on Banner */}
-              <div className="absolute top-3 left-4">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-mono font-bold uppercase backdrop-blur-md border ${visuals.categoryColor}`}>
+              {/* Category Pill Tag on Banner - positioned bottom-right with luxury styling */}
+              <div className="absolute bottom-3 right-4 z-10">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider backdrop-blur-md bg-black/65 shadow-md border border-amber-400/40 text-amber-300`}>
                   <span>{visuals.category}</span>
                 </span>
               </div>
             </div>
 
             {/* Header with Overlapping Floating Avatar */}
-            <section className="relative z-10 -mt-10 flex items-start gap-4">
+            <section className="relative z-10 -mt-12 ml-1 flex items-start gap-3.5">
               <CommunityAvatar
                 name={detail.community.name}
                 logoUrl={visuals.avatarUrl}
-                className="h-16 w-16 ring-4 ring-[var(--bc-mobile-surface)] shadow-2xl"
+                className="h-20 w-20 ring-4 ring-[var(--bc-mobile-surface)] shadow-xl shrink-0"
               />
               <div className="min-w-0 flex-1 pt-6">
                 <h1 className="text-[22px] font-bold leading-tight tracking-tight text-[var(--bc-mobile-text)]">

@@ -43,6 +43,17 @@ export class OnboardSponsorDto {
 export class SponsorsService {
   constructor(private prisma: PrismaService) {}
 
+  private async resolveAssociationId(assocId?: string): Promise<string> {
+    if (assocId) return assocId;
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.associations 
+      ORDER BY landing_published DESC, created_at DESC 
+      LIMIT 1
+    `.catch(() => []);
+    if (rows.length > 0 && rows[0]?.id) return rows[0].id;
+    return 'ba000000-0000-4000-8000-000000000001';
+  }
+
   // ── SPONSOR PACKAGES ────────────────────────────────────────────────────────
 
   async listPackages() {
@@ -88,17 +99,18 @@ export class SponsorsService {
     };
   }
 
-  async createPackage(dto: CreateSponsorPackageDto) {
+  async createPackage(dto: CreateSponsorPackageDto & { associationId?: string }) {
     const id = `PKG-${Date.now().toString(36).toUpperCase()}`;
     const tier = dto.tier || 'bronze';
     const price = BigInt(Math.round(dto.price || 0));
     const benefits = dto.benefits || [];
     const available = Math.round(dto.available ?? 0);
     const sold = Math.round(dto.sold ?? 0);
+    const associationId = await this.resolveAssociationId(dto.associationId);
 
     await this.prisma.$executeRaw`
-      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, created_at, updated_at)
-      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, NOW(), NOW())
+      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, created_at, updated_at)
+      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, ${associationId}::uuid, NOW(), NOW())
     `;
 
     return this.getPackageById(id);
@@ -189,12 +201,16 @@ export class SponsorsService {
     const phone = dto.phone || '';
     const amount = BigInt(Math.round(dto.amount || 0));
     const events = Math.round(dto.events || 0);
-    const since = dto.since || new Date().toISOString().slice(0, 10);
+    let safeSince = dto.since?.trim() || new Date().toISOString().slice(0, 10);
+    if (isNaN(new Date(safeSince).getTime())) {
+      safeSince = new Date().toISOString().slice(0, 10);
+    }
     const status = dto.status || 'active';
+    const associationId = await this.resolveAssociationId((dto as any).associationId);
 
     await this.prisma.$executeRaw`
-      INSERT INTO public.sponsors (id, name, tier, contact, email, phone, amount, events, since, status, created_at, updated_at)
-      VALUES (${id}, ${name}, ${tier}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${since}::date, ${status}, NOW(), NOW())
+      INSERT INTO public.sponsors (id, name, tier, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
+      VALUES (${id}, ${name}, ${tier}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${safeSince}::date, ${status}, ${associationId}::uuid, NOW(), NOW())
     `;
 
     return this.getSponsorById(id);

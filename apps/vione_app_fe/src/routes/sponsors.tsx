@@ -85,8 +85,8 @@ function SponsorsPage() {
       name: "since",
       label: t("sponsors.col.since"),
       type: "text",
-      required: true,
-      placeholder: "2026-01-31",
+      required: false,
+      placeholder: "YYYY-MM-DD (mặc định hôm nay)",
     },
     {
       name: "status",
@@ -101,12 +101,16 @@ function SponsorsPage() {
 
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
+    const payload = {
+      ...v,
+      since: v.since && String(v.since).trim() ? String(v.since).trim() : new Date().toISOString().slice(0, 10),
+    };
     try {
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        await updateFn({ data: { id: editing.id, ...(payload as object) } as never });
         toast.success(t("common.updated"));
       } else {
-        await createFn({ data: v as never });
+        await createFn({ data: payload as never });
         toast.success(t("common.created"));
       }
       setOpen(false);
