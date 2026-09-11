@@ -65,40 +65,35 @@ App của bạn đã có sẵn thông tin trên App Store Connect:
 - **Bundle ID**: `ViOneBusinessConnect`
 - **Apple ID**: `6810608093`
 
-### Cách A: Build & Tự Động Đẩy Lên App Store Connect (Khuyên Dùng)
+### Cách A: Build File iOS `.ipa` trên Cloud (Khuyên dùng hiện tại vì đã có chứng chỉ trên Web)
 
-Chạy lệnh:
-
-```bash
-npm run build:ios:submit
-# Tương đương: npx eas-cli build --profile production --platform ios --auto-submit
-```
-
-- EAS CLI sẽ hỏi bạn xác thực tài khoản Apple Developer (nếu chưa lưu credentials). Bạn chỉ cần đăng nhập tài khoản Apple Developer của mình.
-- EAS sẽ tự động tạo Certificate, Provisioning Profile, biên dịch file `.ipa` và **tự động upload lên TestFlight / App Store Connect**.
-- Sau khoảng 10 - 15 phút, bản build sẽ hiển thị trong tab **TestFlight** trên App Store Connect.
-
-### Cách B: Chỉ Build file iOS `.ipa` trên Cloud (Chưa upload)
+Vì bạn đã cấu hình **Valid** (Màu xanh) cho Distribution Certificate & Provisioning Profile trên Expo Web, bạn chỉ cần chạy:
 
 ```bash
 npm run build:ios:prod
+# Tương đương: npx eas-cli build --profile production --platform ios
 ```
 
-Nếu muốn nộp file đã build lên App Store Connect sau:
+- EAS CLI sẽ tự động lấy chứng chỉ trên Expo Cloud mà **KHÔNG hỏi mật khẩu Apple ID**.
+- Nén và đẩy mã nguồn lên hệ thống macOS Cloud của Expo để biên dịch file `.ipa`.
+- Khi xong, bạn sẽ có link tải file `.ipa` chuẩn Production.
+
+### Cách B: Nộp File Lên App Store Connect / TestFlight
+Sau khi build xong file IPA hoặc nếu muốn EAS tự động nộp:
 
 ```bash
 npm run submit:ios
 ```
+*(Nếu muốn tự động hoàn toàn mà không cần nhập mật khẩu, cấu hình thêm App Store Connect API Key trên Expo Web).*
 
 ---
 
 ## 4. Tóm Tắt Các Lệnh Nhanh
 
-| Mục tiêu | Lệnh chạy (tại `apps/mobile`) | Kết quả |
+| Mục tiêu | Lệnh chạy (tại `apps/mobile`) | Ghi chú |
 | :--- | :--- | :--- |
-| **Đăng nhập Expo** | `npx eas-cli login` | Đăng nhập tài khoản Expo |
-| **Xuất Android APK (Cloud)** | `npm run build:apk` | Trả link tải file `.apk` cài trực tiếp |
-| **Xuất Android APK (Máy thật)** | `npm run build:apk:local` | Tạo file `.apk` trong thư mục `android/app/build/...` |
-| **Build & Upload iOS** | `npm run build:ios:submit` | Đẩy trực tiếp lên App Store Connect / TestFlight |
-| **Build iOS Production** | `npm run build:ios:prod` | Xuất bản iOS Production trên EAS Cloud |
-| **Đồng bộ code web sang mobile** | `npm run sync` | Cập nhật UI mới nhất từ FE sang Capacitor |
+| **Build iOS Production (.ipa)** | `npm run build:ios:prod` | **Khuyên dùng** - Dùng chứng chỉ xanh trên Expo Cloud |
+| **Xuất Android APK (Máy thật)** | `npm run build:apk:local` | **Siêu tốc (~25s)** - Ra file APK cài trực tiếp trên Android |
+| **Xuất Android APK (Cloud)** | `npm run build:apk` | Build qua Expo Cloud trả link tải & QR Code |
+| **Đồng bộ code web sang mobile** | `npm run build:static` | Đóng gói bản web FE mới nhất và nạp vào Android/iOS |
+| **Kiểm tra đăng nhập Expo** | `npx eas-cli whoami` | Kiểm tra tài khoản Expo đang liên kết |
