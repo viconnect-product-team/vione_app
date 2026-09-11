@@ -18,3 +18,4 @@ document/
 *.docx
 *.tar
 apps/mobile
+.npmrc
