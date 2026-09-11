@@ -147,7 +147,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
         ) : (
           <>
             {/* D — Tabs nằm ngay dưới Header */}
-            <div className="mt-5 flex items-center gap-5 border-b border-[#D8B282]/15 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mt-5 flex items-center gap-5 border-b border-slate-200 dark:border-[#D8B282]/20 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {[
                 { id: "all", label: "Tất cả" },
                 ...(hasAdmin ? [{ id: "admin", label: "Đang quản trị" }] : []),
@@ -162,15 +162,15 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                     onClick={() => setTab(item.id as any)}
                     className={`relative pb-2.5 text-sm transition-colors whitespace-nowrap focus-visible:outline-none cursor-pointer ${
                       isActive
-                        ? "font-semibold bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
-                        : "text-[#d8c3b180] hover:text-[#D4C3A3]"
+                        ? "font-bold text-amber-700 dark:text-[#F6E1C3]"
+                        : "font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {item.label}
                     {isActive ? (
                       <span
                         aria-hidden="true"
-                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]"
+                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-[#D97706] to-[#B45309] dark:from-[#F6E1C3] dark:to-[#8C653B]"
                       />
                     ) : null}
                   </button>

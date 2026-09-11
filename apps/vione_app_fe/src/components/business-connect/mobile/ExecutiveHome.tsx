@@ -66,6 +66,8 @@ export type CrmEvent = {
   location?: string | null;
   venue?: string | null;
   status?: string | null;
+  type?: string | null;
+  description?: string | null;
   associationId?: string | null;
   associationName?: string | null;
   communityName?: string | null;
@@ -271,10 +273,11 @@ export function ExecutiveHome() {
                 <button
                   type="button"
                   onClick={() => setScheduleTab("today")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+                  style={scheduleTab === "today" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
+                  className={`flex-1 py-1.5 text-xs rounded-lg transition-all text-center cursor-pointer ${
                     scheduleTab === "today"
-                      ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold shadow-xs"
-                      : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                      ? "text-[#050c15] font-bold shadow-xs"
+                      : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium"
                   }`}
                 >
                   Hôm nay {todayItems.length > 0 ? `(${todayItems.length})` : ""}
@@ -282,10 +285,11 @@ export function ExecutiveHome() {
                 <button
                   type="button"
                   onClick={() => setScheduleTab("upcoming")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  style={scheduleTab === "upcoming" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
+                  className={`flex-1 py-1.5 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     scheduleTab === "upcoming"
-                      ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold shadow-xs"
-                      : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                      ? "text-[#050c15] font-bold shadow-xs"
+                      : "text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium"
                   }`}
                 >
                   <span>Sắp tới</span>
@@ -294,7 +298,7 @@ export function ExecutiveHome() {
                       className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                         scheduleTab === "upcoming"
                           ? "bg-[#050c15]/20 text-[#050c15] font-bold"
-                          : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
+                          : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)] font-semibold"
                       }`}
                     >
                       {upcomingEvents.length}

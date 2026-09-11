@@ -294,7 +294,7 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
     setActionBusy(true);
     try {
       const parsed = parseBcMobilePersonId(person.personId);
-      let connId = rel.connectionId;
+      let connId = (rel as any).connectionId;
       if (!connId && parsed?.id) {
         const state = await GlobalNetworkSDK.connections.getState(parsed.id);
         connId = state.connectionId;
@@ -379,13 +379,13 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
 
       {/* Pending Connection Request Bar */}
       {incomingConnectionId ? (
-        <section className="mt-5 rounded-2xl border border-[#D8B282]/80 bg-gradient-to-br from-[#1C2333] via-[#141A26] to-[#0D111A] p-4.5 text-white shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(216,178,130,0.15)]">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#E8C986]">
-            <span className="inline-block w-2 h-2 rounded-full bg-[#E8C986] animate-pulse" />
+        <section className="mt-5 rounded-2xl border border-amber-200 dark:border-[#D8B282]/80 bg-white dark:bg-gradient-to-br dark:from-[#1C2333] dark:via-[#141A26] dark:to-[#0D111A] p-4.5 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(216,178,130,0.15)]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-[#E8C986]">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 dark:bg-[#E8C986] animate-pulse" />
             <span>Lời mời kết nối đang chờ bạn phản hồi</span>
           </div>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[#D1D5DB]">
-            <strong className="text-white">{name}</strong> đã gửi lời mời kết nối danh thiếp thông
+          <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600 dark:text-[#D1D5DB]">
+            <strong className="text-slate-900 dark:text-white">{name}</strong> đã gửi lời mời kết nối danh thiếp thông
             minh với bạn. Bạn có muốn đồng ý kết bạn?
           </p>
           <div className="mt-3.5 flex items-center gap-2.5">
@@ -434,28 +434,28 @@ function PersonLoaded({ person }: { person: BcMobilePersonDetail }) {
                   setActionBusy(false);
                 }
               }}
-              className="py-3 px-4 rounded-full font-semibold text-[13px] border border-white/20 bg-white/5 hover:bg-white/10 text-[#9CA3AF] active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              className="py-3 px-4 rounded-full font-semibold text-[13px] border border-slate-200 dark:border-white/20 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-[#9CA3AF] active:scale-98 transition-all cursor-pointer disabled:opacity-50"
             >
               Từ chối
             </button>
           </div>
         </section>
       ) : outgoingPending ? (
-        <section className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-center">
-          <p className="text-xs font-semibold text-[#E8C986]">
+        <section className="mt-5 rounded-2xl border border-amber-300/40 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 p-3.5 text-center">
+          <p className="text-xs font-semibold text-amber-800 dark:text-[#E8C986]">
             ⏳ Lời mời kết nối đã được gửi đi và đang chờ đối phương chấp nhận.
           </p>
         </section>
-      ) : rel.kind === "connection" ||
+      ) : (rel as any).kind === "connection" ||
         (rel.kind === "connected" &&
           (rel.status === "none" || (!rel.status && !rel.connectedAt))) ? (
-        <section className="mt-5 rounded-2xl border border-[#D8B282]/50 bg-gradient-to-br from-[#1C2333]/90 via-[#141A26]/90 to-[#0D111A]/90 p-4 text-white shadow-lg">
+        <section className="mt-5 rounded-2xl border border-amber-200/80 dark:border-[#D8B282]/50 bg-white dark:bg-gradient-to-br dark:from-[#1C2333]/90 dark:via-[#141A26]/90 dark:to-[#0D111A]/90 p-4 text-slate-900 dark:text-white shadow-sm dark:shadow-lg">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#E8C986]">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-[#E8C986]">
                 Gợi ý kết nối đối tác
               </p>
-              <p className="mt-1 text-[13px] text-slate-200">
+              <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-200">
                 Kết nối để xem đầy đủ danh thiếp thông minh và giao thương cùng {name}.
               </p>
             </div>

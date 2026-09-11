@@ -645,10 +645,11 @@ function NetworkAllAiSuggestionsPanel({
         <button
           type="button"
           onClick={() => setFilterMode("all")}
+          style={filterMode === "all" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
           className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
             filterMode === "all"
-              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
-              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+              ? "text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           Tất cả ({recommendations.length})
@@ -656,10 +657,11 @@ function NetworkAllAiSuggestionsPanel({
         <button
           type="button"
           onClick={() => setFilterMode("near")}
+          style={filterMode === "near" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
           className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
             filterMode === "near"
-              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
-              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+              ? "text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           📍 Ở gần bạn
@@ -667,10 +669,11 @@ function NetworkAllAiSuggestionsPanel({
         <button
           type="button"
           onClick={() => setFilterMode("potential")}
+          style={filterMode === "potential" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
           className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
             filterMode === "potential"
-              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
-              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+              ? "text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           ⭐ Tiềm năng cao
@@ -678,10 +681,11 @@ function NetworkAllAiSuggestionsPanel({
         <button
           type="button"
           onClick={() => setFilterMode("frequent")}
+          style={filterMode === "frequent" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
           className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
             filterMode === "frequent"
-              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
-              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+              ? "text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           🔥 Nhiều tương tác
@@ -689,10 +693,11 @@ function NetworkAllAiSuggestionsPanel({
         <button
           type="button"
           onClick={() => setFilterMode("nurture")}
+          style={filterMode === "nurture" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
           className={`h-7 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap ${
             filterMode === "nurture"
-              ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] font-bold border-transparent"
-              : "bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+              ? "text-[#050c15] font-bold border-transparent"
+              : "bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)] hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           ⏳ Cần chăm sóc

@@ -64,7 +64,7 @@
 :root {
   --radius: 0.75rem;
 
-  --background: oklch(0.985 0.005 250);
+  --background: #FFFFFF;
   --foreground: oklch(0.2 0.04 265);
 
   --card: oklch(1 0 0);
@@ -933,20 +933,20 @@ html:not(.dark) .vba-app .text-muted-foreground {
 
 /* Light mode tokens for .bc-app (ViOne Connect) — Crisp Porcelain Platinum & Vibrant Royal Gold */
 html:not(.dark) .bc-app {
-  --bc-bg-deep: #EEF2F6;
-  --bc-bg-primary: #F8FAFC;
+  --bc-bg-deep: #F8FAFC;
+  --bc-bg-primary: #FFFFFF;
   --bc-bg-secondary: #FFFFFF;
   --bc-surface: #FFFFFF;
   --bc-surface-elevated: #FFFFFF;
 
-  --bc-mobile-bg: #F8FAFC;
-  --bc-mobile-bg-deep: #EEF2F6;
+  --bc-mobile-bg: #FFFFFF;
+  --bc-mobile-bg-deep: #FFFFFF;
   --bc-mobile-surface: #FFFFFF;
-  --bc-mobile-surface-2: #F1F5F9;
+  --bc-mobile-surface-2: #F8FAFC;
   --bc-mobile-navy: #0F172A;
   --bc-mobile-navy-deep: #020617;
-  --bc-mobile-app-gradient: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-  --bc-mobile-card-grad: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+  --bc-mobile-app-gradient: #FFFFFF;
+  --bc-mobile-card-grad: #FFFFFF;
 
   --bc-text-primary: #0F172A;
   --bc-text-secondary: #334155;
@@ -968,18 +968,18 @@ html:not(.dark) .bc-app {
   --bc-mobile-border-active: rgba(217, 119, 6, 0.70);
   --bc-mobile-border-strong: rgba(217, 119, 6, 0.85);
 
-  --bc-gold-300: #FDE68A;
-  --bc-gold-400: #F59E0B;
-  --bc-gold-500: #D97706;
-  --bc-gold-600: #B45309;
+  --bc-gold-300: #F6E1C3;
+  --bc-gold-400: #D8B282;
+  --bc-gold-500: #C29B69;
+  --bc-gold-600: #8C653B;
 
-  --bc-mobile-accent: #D97706;
-  --bc-mobile-accent-strong: #B45309;
-  --bc-mobile-accent-soft: rgba(217, 119, 6, 0.12);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #FBBF24 0%, #D97706 50%, #92400E 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCD34D 0%, #EAB308 50%, #A16207 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #F59E0B 0%, #B45309 50%, #78350F 100%);
-  --bc-mobile-accent-on: #FFFFFF;
+  --bc-mobile-accent: #C29B69;
+  --bc-mobile-accent-strong: #8C653B;
+  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.18);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FFF0DC 0%, #E2BA84 45%, #D4A772 70%, #9F7547 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #ECC89F 0%, #C29B69 45%, #AA7F4C 70%, #754F26 100%);
+  --bc-mobile-accent-on: #050505;
 
   --bc-mobile-shadow-surface: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
   --bc-mobile-shadow-gold: 0 4px 16px rgba(217, 119, 6, 0.2);
@@ -1324,6 +1324,17 @@ html:not(.dark) body > div[role="menu"] {
 /* Luxury gold surface gradient matching Login "Chào mừng" palette */
 @utility bc-gold-gradient {
   background: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
+}
+
+/* Universal ViOne gold gradient background class fix (strictly for non-clipped containers) */
+:not([class*="bg-clip-text"])[class*="bg-[var(--bc-mobile-accent-grad)]"],
+.bg-vione-gold-grad {
+  background-image: var(--bc-mobile-accent-grad);
+}
+
+[class*="bg-clip-text"] {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
 }
 
 /* Warm-gold primary CTA surface (design parity for actions such as

@@ -30,7 +30,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
 
-  const bgMain = isLight ? "#FAF7F2" : isContrast ? "#000000" : "#050c15";
+  const bgMain = isLight ? "#FFFFFF" : isContrast ? "#000000" : "#050c15";
 
   return (
     <VSheetContext.Provider value={vControls}>
@@ -41,21 +41,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
         aria-hidden="true"
       >
         {isLight ? (
-          <>
-            <img
-              src={authLightBg}
-              alt=""
-              width={1024}
-              height={640}
-              className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-40 mix-blend-multiply"
-            />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background: `radial-gradient(130% 75% at 50% 15%, rgba(249,231,196,0.5) 0%, transparent 60%), radial-gradient(100% 60% at 50% 90%, rgba(212,175,55,0.08) 0%, ${bgMain} 80%)`,
-              }}
-            />
-          </>
+          <div className="pointer-events-none absolute inset-0 bg-white" />
         ) : !isContrast ? (
           <>
             <img

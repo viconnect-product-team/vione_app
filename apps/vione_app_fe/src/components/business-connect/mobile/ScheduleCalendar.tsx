@@ -95,10 +95,16 @@ export function ScheduleCalendar() {
         descriptionKey: s.location || (s.isOnline ? "Sự kiện trực tuyến" : "Sự kiện kết nối"),
         startsAt: s.startsAt,
         dueAt: s.startsAt,
-        category: "today",
+        category: "upcoming",
         urgency: "normal",
         counterpartDisplayName: s.organizer || "ViOne Event",
-        action: { canRoute: false, targetRoute: null },
+        action: {
+          labelKey: "bc.workHub.action.view",
+          targetRoute: null,
+          targetParams: null,
+          targetSearch: null,
+          canRoute: false,
+        },
       });
     }
 
@@ -117,10 +123,16 @@ export function ScheduleCalendar() {
           descriptionKey: e.location || (e.type === "online" ? "Sự kiện trực tuyến" : "Sự kiện trực tiếp"),
           startsAt,
           dueAt: startsAt,
-          category: "today",
+          category: "upcoming",
           urgency: "normal",
           counterpartDisplayName: e.associationName || (e as any).communityName || "ViOne Event",
-          action: { canRoute: false, targetRoute: null },
+          action: {
+            labelKey: "bc.workHub.action.view",
+            targetRoute: "/events/$eventId",
+            targetParams: { eventId: String(e.id) },
+            targetSearch: null,
+            canRoute: true,
+          },
         });
       }
     }
@@ -233,10 +245,11 @@ export function ScheduleCalendar() {
               role="tab"
               aria-selected={active}
               onClick={() => setFilter(f.id)}
+              style={active ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
               className={`inline-flex min-h-[34px] items-center rounded-full px-3.5 text-[12.5px] font-semibold transition-all cursor-pointer ${
                 active
-                  ? "bg-[var(--bc-mobile-accent-grad)] text-[#050c15] shadow-xs"
-                  : "border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+                  ? "text-[#050c15] shadow-xs"
+                  : "border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-slate-400 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {f.label}

@@ -223,7 +223,7 @@ function SessionsPage() {
                 type="button"
                 onClick={() => void handleRevoke()}
                 disabled={revoking}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-text)] px-6 text-[15px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bc-cta-gold px-6 text-[15px] font-bold shadow-md shadow-[#D8B282]/25 hover:opacity-95 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
               >
                 {revoking && (
                   <Loader2

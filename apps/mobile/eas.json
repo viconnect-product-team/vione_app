@@ -1,13 +1,15 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "scheme": "App"
       },
       "android": {
         "buildType": "apk"
@@ -19,7 +21,8 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "scheme": "App"
       },
       "android": {
         "buildType": "apk"
@@ -31,7 +34,8 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "scheme": "App"
       },
       "android": {
         "buildType": "app-bundle"

@@ -86,7 +86,8 @@ const FALLBACK_RECOMMENDATIONS = [
 export const RelationshipIntelSDK = {
   today: async (locale: RelationshipWordingLocale): Promise<BcMobileTodayRecommendationsResult> => {
     try {
-      const res = await getTodayRecommendationsDirect(locale);
+      const validLang = locale === "en" ? "en" : "vi";
+      const res = await getTodayRecommendationsDirect(validLang);
       if (res && Array.isArray(res.recommendations) && res.recommendations.length > 0) {
         return res;
       }
@@ -101,7 +102,8 @@ export const RelationshipIntelSDK = {
     locale: RelationshipWordingLocale,
   ): Promise<BcMobilePersonRecommendationResult> => {
     try {
-      const res = await getPersonRecommendationDirect(personId, locale);
+      const validLang = locale === "en" ? "en" : "vi";
+      const res = await getPersonRecommendationDirect(personId, validLang);
       if (res && res.recommendation) {
         return res;
       }

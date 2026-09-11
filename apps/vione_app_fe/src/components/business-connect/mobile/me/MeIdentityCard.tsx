@@ -55,10 +55,10 @@ export function MeIdentityCard({
       </span>
 
       <div className="relative flex items-start justify-between gap-3">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] bg-clip-text text-transparent bg-[var(--bc-mobile-accent-grad)]">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-[#D8B282] dark:text-[#F6E1C3]">
           {t("bc.mobile.me.showcase.badge")}
         </p>
-        <p className="text-right text-[11px] font-bold uppercase leading-tight tracking-[0.18em] bg-clip-text text-transparent bg-[var(--bc-mobile-accent-grad)]">
+        <p className="text-right text-[11px] font-bold uppercase leading-tight tracking-[0.18em] text-[#D8B282] dark:text-[#F6E1C3]">
           ViOne
           <span className="block text-[8.5px] tracking-[0.24em] text-[var(--bc-mobile-muted)] font-medium">
             BUSINESS CONNECT
@@ -75,7 +75,7 @@ export function MeIdentityCard({
             {displayName}
           </h1>
           {identity?.jobTitle && (
-            <p className="mt-1 break-words text-[15px] font-bold bg-clip-text text-transparent bg-[var(--bc-mobile-accent-grad)]">
+            <p className="mt-1 break-words text-[15px] font-bold text-[#D8B282] dark:text-[#F6E1C3]">
               {identity.jobTitle}
             </p>
           )}

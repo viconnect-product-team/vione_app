@@ -773,10 +773,12 @@ function ConnectAppMePage() {
                 <span className="flex items-center gap-3">
                   <LogOut
                     aria-hidden="true"
-                    className="h-4.5 w-4.5 text-[var(--bc-mobile-muted)]"
+                    className="h-4.5 w-4.5 text-[var(--bc-mobile-accent)]"
                     strokeWidth={1.8}
                   />
-                  {t("bc.mobile.me.signOut")}
+                  <span className="font-semibold text-[#D8B282] dark:text-[#F6E1C3] transition-colors">
+                    {t("bc.mobile.me.signOut")}
+                  </span>
                 </span>
                 <ChevronRight
                   aria-hidden="true"
@@ -806,7 +808,7 @@ function ConnectAppMePage() {
                 type="button"
                 onClick={() => void handleSignOut()}
                 disabled={signingOut}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-text)] px-6 text-[15px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bc-cta-gold px-6 text-[15px] font-bold shadow-md shadow-[#D8B282]/25 hover:opacity-95 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
               >
                 {signingOut && (
                   <Loader2

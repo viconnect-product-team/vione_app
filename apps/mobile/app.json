@@ -38,6 +38,11 @@
       "favicon": "./assets/favicon.png"
     },
     "scheme": "vione",
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "99ca8a2c-46ed-423a-b295-727bbce64c4f"
+      }
+    }
   }
 }
