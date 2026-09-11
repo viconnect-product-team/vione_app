@@ -45,9 +45,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "YOUR_APPLE_ID_EMAIL",
-        "ascAppId": "6810608093",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "tuanna@unicomhub.com",
+        "ascAppId": "6810608093"
       }
     }
   }
