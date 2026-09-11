@@ -23,3 +23,5 @@ fast-deploy.ps1
 missing_i18n.json
 translated_i18n.json
 tsc-errors*.log
+bun.lockb
+bun.lock
