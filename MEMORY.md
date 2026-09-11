@@ -462,3 +462,37 @@ XONG! Mở app trên điện thoại là thấy giao diện mới ngay lập t�
                         => Kiểm tra TestFlight tại: https://appstoreconnect.apple.com/apps/6810608093/testflight/ios
 ```
 
+---
+
+## 19. Khắc Phục Lỗi Crash Backend NestJS (:5001 ERR_CONNECTION_REFUSED)
+
+### 19.1. Triệu chứng & Log Lỗi
+- **Triệu chứng**: Giao diện đăng nhập trên Server Dev (`http://14.225.217.232:5000`) và iOS báo *"Không có kết nối mạng ổn định"*. F12 Console xuất hiện lỗi:
+  - `net::ERR_CONNECTION_REFUSED :5001/api/auth/login`
+  - `WebSocket connection to 'ws://14.225.217.232:5001/socket.io/...' failed`
+- **Log gốc từ container backend**:
+  ```text
+  Error: Cannot find module '/app/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node'
+  Require stack:
+  - /app/node_modules/bcrypt/bcrypt.js
+  - /app/apps/vione_app_be/dist/src/auth/auth.service.js
+  - /app/apps/vione_app_be/dist/src/main.js
+  ```
+
+### 19.2. Nguyên nhân
+- Khi thêm tệp `.npmrc` (`ignore-scripts=true`) cho quá trình build iOS trên Expo, Docker backend vô tình sao chép tệp này vào container.
+- Lệnh `npm ci` trong `Dockerfile.backend` bị áp dụng cờ `ignore-scripts=true`, khiến quá trình biên dịch module C++ của thư viện `bcrypt` bị bỏ qua. Kết quả là container backend sập ngay khi vừa nạp thư viện.
+
+### 19.3. Giải pháp đã xử lý triệt để
+1. **Thêm `.npmrc` vào [.dockerignore](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/.dockerignore)**: Không cho Docker sao chép file cấu hình npmrc từ máy chủ phát triển vào container.
+2. **Cập nhật [Dockerfile.backend](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/Dockerfile.backend)**:
+   ```dockerfile
+   RUN npm ci --ignore-scripts=false && npm rebuild bcrypt
+   ```
+3. **Cập nhật [apps/vione_app_be/src/main.ts](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_be/src/main.ts)**:
+   - `await app.listen(port, '0.0.0.0');` (Đảm bảo bind đúng `0.0.0.0` thay vì loopback `127.0.0.1` trong container).
+   - `origin: true` trong CORS để tương thích với `credentials: true`.
+4. **Quy trình deploy cập nhật lại**:
+   Chạy `.\fast-deploy.ps1` (lưu ý không dùng `-FrontendOnly` khi cần đẩy bản sửa lỗi backend).
+
+
