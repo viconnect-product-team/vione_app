@@ -31,7 +31,8 @@
     },
     "production": {
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "image": "latest"
       },
       "android": {
         "buildType": "app-bundle"
@@ -45,7 +46,10 @@
     "production": {
       "ios": {
         "appleId": "tuanna@unicomhub.com",
-        "ascAppId": "6810608093"
+        "ascAppId": "6810608093",
+        "ascApiKeyPath": "./credentials/AuthKey_4Q734PS4PG.p8",
+        "ascApiKeyIssuerId": "6c7d5137-21b1-4bae-96d2-3cc761483dbc",
+        "ascApiKeyId": "4Q734PS4PG"
       }
     }
   }

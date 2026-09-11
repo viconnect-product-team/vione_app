@@ -38,3 +38,9 @@ dist-ssr
 *.rar
 backend.tar
 frontend.tar
+
+# Apple / EAS credentials
+credentials/
+*.p8
+*.p12
+*.mobileprovision
