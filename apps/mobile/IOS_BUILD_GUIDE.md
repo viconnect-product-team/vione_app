@@ -1,99 +1,124 @@
 # Hướng Dẫn Build & Xuất Bản Mobile ViOne (Android APK & iOS App Store Connect)
 
-Tài liệu này hướng dẫn chi tiết quy trình xuất file **Android APK** và bản build **iOS (TestFlight / App Store Connect)** cho dự án **ViOne**, đồng bộ chính xác với cấu hình hệ thống của bạn:
+Tài liệu này hướng dẫn chi tiết quy trình xuất file **Android APK** và bản build **iOS (TestFlight / App Store Connect)** cho dự án **ViOne**, đồng bộ chính xác 100% với cấu hình hệ thống thực tế:
 
-- **Tên App trên Apple App Store**: `Vione`
+- **Tên App trên Apple App Store**: `Vione` (Tên hiển thị trên máy: `Vione Business Connect`)
 - **Bundle Identifier**: `ViOneBusinessConnect`
 - **Apple ID (App Store Connect ID)**: `6810608093`
 - **SKU**: `vione-app`
 - **Tài khoản Expo**: `unicom-vibe-coding-team`
-- **Expo Slug**: `vione`
+- **Expo Project**: `@unicom-vibe-coding-team/vione` (Project ID: `3b83c509-f641-4560-a8e5-33dfd5940f89`)
 
 ---
 
-## 1. Cài Đặt & Đăng Nhập EAS CLI
+## ⭐️ LƯU Ý QUAN TRỌNG NHẤT: KHI NÀO CẦN BUILD APP?
 
-Mở Terminal tại thư mục `apps/mobile`:
+Ứng dụng Mobile ViOne chạy ở chế độ **Live Remote Server** ([capacitor.config.ts](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/mobile/capacitor.config.ts)):
+```ts
+const USE_REMOTE_SERVER = true;
+const REMOTE_URL = 'http://14.225.217.232:5000';
+```
 
+- **Khi sửa UI / Logic Frontend**: **KHÔNG CẦN BUILD LẠI FILE NATIVE!**
+  Bạn chỉ cần deploy bản web frontend lên máy chủ `14.225.217.232:5000` (chạy script `fast-deploy.ps1`). App trên điện thoại tự động cập nhật ngay khi mở lại.
+- **Chỉ cần build lại file .ipa / .apk khi**:
+  1. Đổi Icon app hoặc màn hình chờ Splash screen.
+  2. Tích hợp thư viện Native mới (Push notification, Bluetooth, NFC, In-app purchase,...).
+  3. Đổi địa chỉ URL máy chủ (ví dụ: chuyển từ IP sang domain chính thức `https://app.vione.vn`).
+  4. Nâng version lớn để phát hành chính thức lên App Store / Google Play.
+
+---
+
+## 1. Các Đường Link Quan Trọng (Dashboards & Tải Sản Phẩm)
+
+- **Trang theo dõi tiến trình Build & Tải trực tiếp file `.ipa`**:
+  👉 [EAS Builds Dashboard](https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds)
+- **Trang quản lý TestFlight & App Store Connect**:
+  👉 [App Store Connect TestFlight](https://appstoreconnect.apple.com/apps/6810608093/testflight/ios)
+- **File IPA Build 3 (Đã hoàn tất & Đang hoạt động trên TestFlight)**:
+  👉 [Download Build 3 .IPA](https://expo.dev/artifacts/eas/-BMmwAUQczehQxzZYWV6fMMSYQH5k5zKy7hTKhLKpzA.ipa)
+- **File Android APK Debug cục bộ (Đã build sẵn)**:
+  👉 `apps/mobile/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
+
+---
+
+## 2. Thông Tin Xác Thực Apple & Expo (Không Hỏi Mật Khẩu)
+
+- **App Store Connect API Key ID**: `4Q734PS4PG`
+- **Issuer ID**: `6c7d5137-21b1-4bae-96d2-3cc761483dbc`
+- **File Private Key cục bộ**: `apps/mobile/credentials/AuthKey_4Q734PS4PG.p8` (đã được bảo vệ trong `.gitignore`)
+- **Tài khoản Apple Developer**: `tuanna@unicomhub.com`
+- Nhờ API Key này, bạn **không bao giờ phải nhập mật khẩu Apple ID hoặc mã xác thực OTP 2FA** khi build hoặc submit.
+
+---
+
+## 3. Quy Trình & Lệnh Build iOS Production Lên TestFlight
+
+### Yêu Cầu Bắt Buộc Của Apple (Chính Sách 2026)
+- **Bắt buộc dùng Xcode 26 & iOS 26 SDK**: File `eas.json` đã cấu hình `"image": "macos-sequoia-15.6-xcode-26.2"`.
+- **Bỏ qua script C++ node-gyp**: File `.npmrc` đã có `ignore-scripts=true`.
+- **Bỏ qua câu hỏi mã hóa trên TestFlight**: File `Info.plist` đã có `<key>ITSAppUsesNonExemptEncryption</key><false/>`.
+
+### Các Lệnh Chạy (Tại thư mục `apps/mobile`):
+
+#### Cách 1: Tự động Trọn Gói: Build .IPA rồi Auto-Submit lên TestFlight (Khuyên dùng nhất)
 ```powershell
-cd d:\download\VICONNECT\VIONE_PROJECT\vione_app\apps\mobile
+cd apps/mobile
+npx eas-cli build --profile production --platform ios --auto-submit --non-interactive
 ```
 
-Đăng nhập tài khoản Expo của bạn (`unicom-vibe-coding-team`):
-
-```bash
-npx eas-cli login
+#### Cách 2: Chỉ Build file .IPA (Để tải về máy hoặc lưu trữ)
+```powershell
+cd apps/mobile
+npx eas-cli build --profile production --platform ios --non-interactive
 ```
 
-Kiểm tra trạng thái đăng nhập:
-
-```bash
-npx eas-cli whoami
+#### Cách 3: Đẩy bản build IPA mới nhất lên Apple TestFlight
+```powershell
+cd apps/mobile
+npx eas-cli submit -p ios --latest --non-interactive
 ```
 
 ---
 
-## 2. Xuất File Android APK
+## 4. Quy Trình & Lệnh Build Android (Cục Bộ)
 
-Bạn có **2 lựa chọn** để xuất file `.apk`:
+Chạy tại thư mục `apps/mobile`:
 
-### Cách A: Xuất APK qua Expo EAS Cloud (Tải trực tiếp bằng link / mã QR)
-Dùng hạ tầng build của Expo để tạo file APK độc lập cài được ngay cho mọi thiết bị Android:
-
-```bash
-npm run build:apk
-# Tương đương: npx eas-cli build --profile preview --platform android
+#### Bước 1: Đồng bộ cấu hình
+```powershell
+cd apps/mobile
+npx cap sync android
 ```
-- Quá trình build chạy trên Cloud của Expo.
-- Sau khi hoàn thành, Terminal sẽ trả về **URL tải file `.apk`** và mã QR để quét tải trực tiếp về điện thoại Android.
 
-### Cách B: Xuất APK Cục Bộ Ngay Trên Máy Windows (Không cần chờ Cloud, không lo tài khoản Expo)
-Vì máy bạn đã có sẵn Java 21 và Gradle, bạn có thể build APK siêu tốc ngay trên máy:
-
-```bash
-npm run build:apk:local
-```
-- Lệnh này sẽ tự động đóng gói web tĩnh mới nhất và chạy Gradle compile.
-- File APK được tạo ra ngay tại:
+#### Bước 2: Biên dịch file APK / AAB
+- **Build APK Debug (Cài ngay vào điện thoại Android cá nhân)**:
+  ```powershell
+  cd apps/mobile/android
+  .\gradlew assembleDebug
+  ```
+  *Vị trí file APK sau khi xong:*
   `apps/mobile/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
 
----
-
-## 3. Xuất Bản iOS & Đẩy Lên App Store Connect / TestFlight
-
-App của bạn đã có sẵn thông tin trên App Store Connect:
-- **Bundle ID**: `ViOneBusinessConnect`
-- **Apple ID**: `6810608093`
-
-### Cách A: Build File iOS `.ipa` trên Cloud (Khuyên dùng hiện tại vì đã có chứng chỉ trên Web)
-
-Vì bạn đã cấu hình **Valid** (Màu xanh) cho Distribution Certificate & Provisioning Profile trên Expo Web, bạn chỉ cần chạy:
-
-```bash
-npm run build:ios:prod
-# Tương đương: npx eas-cli build --profile production --platform ios
-```
-
-- EAS CLI sẽ tự động lấy chứng chỉ trên Expo Cloud mà **KHÔNG hỏi mật khẩu Apple ID**.
-- Nén và đẩy mã nguồn lên hệ thống macOS Cloud của Expo để biên dịch file `.ipa`.
-- Khi xong, bạn sẽ có link tải file `.ipa` chuẩn Production.
-
-### Cách B: Nộp File Lên App Store Connect / TestFlight
-Sau khi build xong file IPA hoặc nếu muốn EAS tự động nộp:
-
-```bash
-npm run submit:ios
-```
-*(Nếu muốn tự động hoàn toàn mà không cần nhập mật khẩu, cấu hình thêm App Store Connect API Key trên Expo Web).*
+- **Build APK / AAB Release (Phát hành Google Play)**:
+  ```powershell
+  cd apps/mobile/android
+  .\gradlew assembleRelease
+  ```
+  *Vị trí file sau khi xong:*
+  `apps/mobile/android/app/build/outputs/apk/release/`
+  `apps/mobile/android/app/build/outputs/bundle/release/`
 
 ---
 
-## 4. Tóm Tắt Các Lệnh Nhanh
+## 5. Bảng Tổng Hợp Lệnh Nhanh
 
-| Mục tiêu | Lệnh chạy (tại `apps/mobile`) | Ghi chú |
-| :--- | :--- | :--- |
-| **Build iOS Production (.ipa)** | `npm run build:ios:prod` | **Khuyên dùng** - Dùng chứng chỉ xanh trên Expo Cloud |
-| **Xuất Android APK (Máy thật)** | `npm run build:apk:local` | **Siêu tốc (~25s)** - Ra file APK cài trực tiếp trên Android |
-| **Xuất Android APK (Cloud)** | `npm run build:apk` | Build qua Expo Cloud trả link tải & QR Code |
-| **Đồng bộ code web sang mobile** | `npm run build:static` | Đóng gói bản web FE mới nhất và nạp vào Android/iOS |
-| **Kiểm tra đăng nhập Expo** | `npx eas-cli whoami` | Kiểm tra tài khoản Expo đang liên kết |
+| Mục tiêu | Thư mục chạy | Lệnh | Ghi chú |
+| :--- | :--- | :--- | :--- |
+| **Build & Nộp TestFlight (iOS)** | `apps/mobile` | `npx eas-cli build --profile production --platform ios --auto-submit --non-interactive` | Chạy 1 lệnh duy nhất, tự build và tự đẩy lên Apple |
+| **Build file .IPA (iOS)** | `apps/mobile` | `npx eas-cli build --profile production --platform ios --non-interactive` | Build cloud macOS, tải file IPA tại EAS Dashboard |
+| **Nộp IPA lên TestFlight** | `apps/mobile` | `npx eas-cli submit -p ios --latest --non-interactive` | Submit bản build mới nhất lên App Store Connect |
+| **Build APK Debug (Android)** | `apps/mobile/android` | `.\gradlew assembleDebug` | Biên dịch siêu tốc cục bộ trên Windows |
+| **Đồng bộ code sang Android** | `apps/mobile` | `npx cap sync android` | Cập nhật file cấu hình và web sang thư mục android |
+| **Kiểm tra đăng nhập Expo** | `apps/mobile` | `npx eas-cli whoami` | Kiểm tra tài khoản EAS |
+

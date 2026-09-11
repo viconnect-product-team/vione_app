@@ -333,3 +333,132 @@ Nhãn chuyển đổi theme phải tuân thủ nghiêm ngặt ngôn ngữ hiển
     - Chế độ Sáng (Light): `/landing/business-saas-light.jpg`
     - Chế độ Tương phản (Contrast): `/landing/business-cta-bg.jpg`
 - **Tuyệt đối không dùng chung background giữa 2 landing page** để đảm bảo tính độc bản thương hiệu và bản quyền thiết kế.
+
+---
+
+## 18. Cẩm Nang Toàn Diện Build & Phát Hành Mobile App (iOS & Android) - Sổ Tay Cho AI & Developer
+
+### 18.1. Nguyên Lý Kiến Trúc Mobile (Live Remote Server Mode)
+- **Vị trí source code mobile**: `apps/mobile/` (gói `@vibe/vione_app_mobile`).
+- **Nền tảng**: Capacitor 7 + React/Vite/TanStack.
+- **Cấu hình máy chủ từ xa ([capacitor.config.ts](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/mobile/capacitor.config.ts))**:
+  - `USE_REMOTE_SERVER = true`
+  - `REMOTE_URL = 'http://14.225.217.232:5000'`
+  - `CLEARTEXT = true`
+- **QUY TẮC VÀNG VỀ BUILD APP**:
+  - **Sửa giao diện / Logic Frontend**: **KHÔNG CẦN BUILD LẠI APP NATIVE!** Chỉ cần deploy web frontend lên server `14.225.217.232:5000` (dùng `fast-deploy.ps1`), ứng dụng mobile trên máy người dùng sẽ tự động cập nhật ngay khi mở lại app.
+  - **Khi nào MỚI CẦN build lại file cài đặt (.ipa / .apk)?**:
+    1. Thay đổi App Icon hoặc Splash Screen.
+    2. Cài thêm hoặc cập nhật thư viện Native Plugin (Push notifications, Bluetooth, NFC, In-app purchase,...).
+    3. Thay đổi URL máy chủ từ xa (ví dụ: chuyển từ IP sang domain chính thức `https://app.vione.vn`).
+    4. Nâng số hiệu phiên bản lớn (Version / Build Number) để phát hành chính thức lên App Store / Google Play.
+
+---
+
+### 18.2. Thông Tin Định Danh & Tài Khoản Phát Hành
+
+| Hạng mục | Giá trị cấu hình | Ghi chú |
+| :--- | :--- | :--- |
+| **App Name** | `ViOne Connect` | Tên nội bộ / hiển thị bundle |
+| **Display Name (iOS)** | `Vione Business Connect` | Tên xuất hiện dưới icon trên màn hình iPhone |
+| **Bundle Identifier (App ID)** | `ViOneBusinessConnect` | Bắt buộc giữ nguyên cho cả iOS và Android |
+| **Apple ID (App Store Connect)** | `6810608093` | Mã định danh app trên App Store Connect |
+| **Apple Developer Account** | `tuanna@unicomhub.com` | Tài khoản Developer quản lý |
+| **App Store Connect API Key ID** | `4Q734PS4PG` | Đã lưu tại `apps/mobile/credentials/AuthKey_4Q734PS4PG.p8` (được .gitignore bảo vệ) |
+| **Issuer ID** | `6c7d5137-21b1-4bae-96d2-3cc761483dbc` | Dùng cho xác thực tự động không cần OTP |
+| **Expo / EAS Project** | `@unicom-vibe-coding-team/vione` | Project ID: `3b83c509-f641-4560-a8e5-33dfd5940f89` |
+
+---
+
+### 18.3. Quy Trình Build iOS Production & Đẩy TestFlight (Qua EAS Cloud)
+
+#### A. Yêu Cầu & Lưu Ý Bắt Buộc (Apple 2026 Policy)
+1. **Xcode & SDK**: Apple từ chối tất cả bản build dưới **Xcode 26 / iOS 26 SDK**. Trong [eas.json](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/mobile/eas.json) bắt buộc cấu hình:
+   ```json
+   "image": "macos-sequoia-15.6-xcode-26.2",
+   "node": "20.18.0"
+   ```
+2. **Bỏ qua node-gyp / sharp trên macOS**: File `.npmrc` ở root và `apps/mobile/.npmrc` phải có dòng `ignore-scripts=true` để tránh lỗi biên dịch C++ native của `sharp` trên máy chủ macOS của Expo.
+3. **Tự động kích hoạt TestFlight (Không bị hỏi App Encryption)**: Đã cấu hình `<key>ITSAppUsesNonExemptEncryption</key><false/>` trong `Info.plist`. Sau khi Apple xử lý xong, build sẽ chuyển sang trạng thái sẵn sàng kiểm thử mà không cần chọn thủ công.
+
+#### B. Các Lệnh Build & Upload iOS (Chạy tại `apps/mobile`)
+- **Lệnh 1: Build file `.ipa` trên Cloud (Khuyên dùng)**:
+  ```powershell
+  cd apps/mobile
+  npx eas-cli build --profile production --platform ios --non-interactive
+  ```
+- **Lệnh 2: Tự động submit file `.ipa` mới nhất lên Apple TestFlight**:
+  ```powershell
+  cd apps/mobile
+  npx eas-cli submit -p ios --latest --non-interactive
+  ```
+- **Lệnh 3: Trọn gói Build + Auto-submit lên TestFlight (Chạy 1 lệnh)**:
+  ```powershell
+  cd apps/mobile
+  npx eas-cli build --profile production --platform ios --auto-submit --non-interactive
+  ```
+
+#### C. Link Web Quản Lý Sản Phẩm & Tải File iOS
+- **Trang theo dõi tiến trình Build & Tải trực tiếp file `.ipa`**:
+  👉 [EAS Builds Dashboard](https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds)
+- **Trang quản lý TestFlight & App Store Connect**:
+  👉 [App Store Connect TestFlight](https://appstoreconnect.apple.com/apps/6810608093/testflight/ios)
+- **File IPA Build 3 (Đã phát hành thành công lên TestFlight)**:
+  👉 [Download Build 3 .IPA](https://expo.dev/artifacts/eas/-BMmwAUQczehQxzZYWV6fMMSYQH5k5zKy7hTKhLKpzA.ipa)
+
+---
+
+### 18.4. Quy Trình Build Android (Cục Bộ Bằng Gradle)
+
+#### A. Các Lệnh Build Android
+- **Đồng bộ code web và cấu hình sang Android**:
+  ```powershell
+  cd apps/mobile
+  npx cap sync android
+  ```
+- **Build file APK Debug (Cài ngay vào máy Android thử nghiệm)**:
+  ```powershell
+  cd apps/mobile/android
+  .\gradlew assembleDebug
+  ```
+- **Build file APK / AAB Release (Để phát hành Google Play)**:
+  ```powershell
+  cd apps/mobile/android
+  .\gradlew assembleRelease
+  ```
+
+#### B. Thư Mục Lấy File Sản Phẩm Android
+- **File APK Debug đã build sẵn**:
+  `apps/mobile/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
+- **Thư mục chứa bản Release**:
+  `apps/mobile/android/app/build/outputs/apk/release/`
+  `apps/mobile/android/app/build/outputs/bundle/release/` (file `.aab` cho Google Play Console)
+
+---
+
+### 18.5. Tóm Tắt Quy Trình Làm Việc Hàng Ngày Cho AI & Dev
+
+```
+[Khi sửa UI/Tính năng Frontend]
+         │
+         ▼
+Sửa code trong apps/vione_app_fe
+         │
+         ▼
+Deploy lên server 14.225.217.232 (chạy fast-deploy.ps1)
+         │
+         ▼
+XONG! Mở app trên điện thoại là thấy giao diện mới ngay lập tức.
+(Không cần build lại iOS/Android)
+
+
+[Khi cần đổi Icon/Splash/Plugin hoặc phát hành bản Store mới]
+         │
+         ├──> [Android] cd apps/mobile/android ; .\gradlew assembleDebug
+         │              => Lấy APK tại: apps/mobile/android/app/build/outputs/apk/debug/
+         │
+         └──> [iOS]     cd apps/mobile ; npx eas-cli build --profile production --platform ios --auto-submit --non-interactive
+                        => Tải IPA tại: https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds
+                        => Kiểm tra TestFlight tại: https://appstoreconnect.apple.com/apps/6810608093/testflight/ios
+```
+
