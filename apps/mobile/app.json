@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ViOneBusinessConnect",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "ViOne cần quyền truy cập camera để quét mã QR check-in sự kiện và trao đổi danh thiếp số.",
         "NSPhotoLibraryUsageDescription": "ViOne cần quyền truy cập thư viện ảnh để tải lên avatar và tài liệu doanh nghiệp.",
