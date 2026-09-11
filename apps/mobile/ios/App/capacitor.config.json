@@ -1,9 +1,9 @@
 {
-	"appId": "com.vione.app",
-	"appName": "Vione Business Connect",
-	"webDir": ".output/public",
+	"appId": "ViOneBusinessConnect",
+	"appName": "ViOne Connect",
+	"webDir": "www",
 	"server": {
-		"url": "http://192.168.88.145:8080",
+		"url": "http://14.225.217.232:5000",
 		"cleartext": true
 	},
 	"packageClassList": []

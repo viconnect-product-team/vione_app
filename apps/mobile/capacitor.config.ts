@@ -31,7 +31,7 @@ const REMOTE_URL = 'http://14.225.217.232:5000';
 const CLEARTEXT = true;
 
 const config: CapacitorConfig = {
-  appId: 'com.vione.app',
+  appId: 'ViOneBusinessConnect',
   appName: 'ViOne Connect',
 
   // Web assets directory fallback
