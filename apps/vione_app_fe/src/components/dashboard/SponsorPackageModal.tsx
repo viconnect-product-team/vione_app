@@ -6,6 +6,8 @@ import type { SponsorPackage } from "@/lib/sponsors.functions";
 export type PackageDraft = {
   tier: SponsorPackage["tier"];
   price: number;
+  packageType: "cash" | "in_kind";
+  inKindDescription: string;
   available: number;
   sold: number;
   benefits: string[];
@@ -34,6 +36,8 @@ export function SponsorPackageModal({
   const [draft, setDraft] = useState<PackageDraft>({
     tier: "gold",
     price: 0,
+    packageType: "cash",
+    inKindDescription: "",
     available: 0,
     sold: 0,
     benefits: [],
@@ -49,11 +53,13 @@ export function SponsorPackageModal({
           ? {
               tier: initial.tier,
               price: initial.price,
+              packageType: initial.packageType || "cash",
+              inKindDescription: initial.inKindDescription || "",
               available: initial.available,
               sold: initial.sold,
               benefits: [...initial.benefits],
             }
-          : { tier: "gold", price: 0, available: 0, sold: 0, benefits: [] },
+          : { tier: "gold", price: 0, packageType: "cash", inKindDescription: "", available: 0, sold: 0, benefits: [] },
       );
       setRaw(
         initial
@@ -133,8 +139,27 @@ export function SponsorPackageModal({
               </select>
             </div>
             <div>
+              <label className={labelCls} htmlFor="pkg-type">
+                Hình thức gói tài trợ
+              </label>
+              <select
+                id="pkg-type"
+                className={inputCls}
+                value={draft.packageType}
+                onChange={(e) =>
+                  setDraft({ ...draft, packageType: e.target.value as "cash" | "in_kind" })
+                }
+              >
+                <option value="cash">💵 Tài trợ bằng Tiền</option>
+                <option value="in_kind">🎁 Tài trợ Hiện vật</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div>
               <label className={labelCls} htmlFor="pkg-price">
-                {t("pkg.field.price")}
+                {draft.packageType === "in_kind" ? "Định giá quy đổi tương đương (VNĐ)" : t("pkg.field.price")}
               </label>
               <input
                 id="pkg-price"
@@ -145,6 +170,21 @@ export function SponsorPackageModal({
                 onChange={(e) => setRaw({ ...raw, price: e.target.value })}
               />
             </div>
+            {draft.packageType === "in_kind" && (
+              <div>
+                <label className={labelCls} htmlFor="pkg-inkind-desc">
+                  Mô tả chi tiết hiện vật tài trợ
+                </label>
+                <input
+                  id="pkg-inkind-desc"
+                  type="text"
+                  placeholder="Ví dụ: 200 bộ quà tặng cao cấp, Teabreak tiệc trà, Địa điểm tổ chức..."
+                  className={inputCls}
+                  value={draft.inKindDescription}
+                  onChange={(e) => setDraft({ ...draft, inKindDescription: e.target.value })}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -296,6 +296,36 @@ export class CommunityController {
     return this.connectAppService.getCommunityOpportunityDetail(req.user.id, communityId, opportunityRef);
   }
 
+  @Post(':communityId/opportunities')
+  @UseGuards(JwtAuthGuard)
+  async createCommunityOpportunity(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.createCommunityOpportunity(req.user.id, communityId, body);
+  }
+
+  @Post(':communityId/news')
+  @UseGuards(JwtAuthGuard)
+  async createCommunityNews(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.createCommunityNews(req.user.id, communityId, body);
+  }
+
+  @Post(':communityId/opportunities/:opportunityRef/claim')
+  @UseGuards(JwtAuthGuard)
+  async claimCommunityOpportunity(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Param('opportunityRef') opportunityRef: string,
+  ) {
+    return this.connectAppService.claimCommunityOpportunity(req.user.id, communityId, opportunityRef);
+  }
+
   @Post(':communityId/opportunities/:opportunityRef/interests')
   @UseGuards(JwtAuthGuard)
   async expressCommunityOpportunityInterest(

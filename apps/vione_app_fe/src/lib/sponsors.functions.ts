@@ -7,6 +7,9 @@ export type Sponsor = {
   id: string;
   name: string;
   tier: "platinum" | "gold" | "silver" | "bronze";
+  sponsorType: "regular" | "new";
+  packageType: "cash" | "in_kind";
+  inKindDescription?: string;
   contact: string;
   email: string;
   phone: string;
@@ -20,6 +23,8 @@ export type SponsorPackage = {
   id: string;
   tier: "platinum" | "gold" | "silver" | "bronze";
   price: number;
+  packageType: "cash" | "in_kind";
+  inKindDescription?: string;
   benefits: string[];
   available: number;
   sold: number;
@@ -56,6 +61,9 @@ export const listSponsorPackagesFn = createServerFn({ method: "GET" })
 const sponsorInput = z.object({
   name: z.string().min(1).max(200),
   tier: z.enum(["platinum", "gold", "silver", "bronze"]).default("bronze"),
+  sponsorType: z.enum(["regular", "new"]).default("new"),
+  packageType: z.enum(["cash", "in_kind"]).default("cash"),
+  inKindDescription: z.string().max(1000).optional().default(""),
   contact: z.string().max(120).default(""),
   email: z.string().max(160).default(""),
   phone: z.string().max(40).default(""),
@@ -100,6 +108,8 @@ export const deleteSponsorFn = createServerFn({ method: "POST" })
 const packageInput = z.object({
   tier: z.enum(["platinum", "gold", "silver", "bronze"]),
   price: z.number().min(0).max(1e12).default(0),
+  packageType: z.enum(["cash", "in_kind"]).default("cash"),
+  inKindDescription: z.string().max(1000).optional().default(""),
   benefits: z.array(z.string().min(1).max(200)).max(30).default([]),
   available: z.number().int().min(0).max(100000).default(0),
   sold: z.number().int().min(0).max(100000).default(0),

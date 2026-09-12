@@ -5,6 +5,8 @@ export type SortDir = "asc" | "desc";
 export interface TableControls<T> {
   /** Rows for the current page after sorting. */
   pageRows: T[];
+  /** Alias for pageRows for compatibility */
+  paged: T[];
   /** Full sorted list (useful for export). */
   sorted: T[];
   sortKey: string | null;
@@ -35,10 +37,12 @@ export function useTableControls<T>(
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(opts?.initialPageSize ?? 20);
 
+  const safeRows = Array.isArray(rows) ? rows : [];
+
   const sorted = useMemo(() => {
-    if (!sortKey || !accessors[sortKey]) return rows;
+    if (!sortKey || !accessors[sortKey]) return safeRows;
     const acc = accessors[sortKey];
-    const copy = [...rows];
+    const copy = [...safeRows];
     copy.sort((a, b) => {
       const av = acc(a);
       const bv = acc(b);
@@ -52,7 +56,7 @@ export function useTableControls<T>(
     });
     return copy;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, sortKey, sortDir]);
+  }, [safeRows, sortKey, sortDir]);
 
   const total = sorted.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -77,6 +81,7 @@ export function useTableControls<T>(
 
   return {
     pageRows,
+    paged: pageRows,
     sorted,
     sortKey,
     sortDir,

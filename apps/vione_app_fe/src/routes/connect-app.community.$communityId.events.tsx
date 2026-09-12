@@ -1,14 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CommunityEvents } from "@/components/business-connect/mobile/community/CommunityEvents";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/connect-app/community/$communityId/events")({
+export const Route = createFileRoute(
+  "/connect-app/community/$communityId/events",
+)({
   head: () => ({
-    meta: [{ title: "Sự kiện cộng đồng — Business Connect" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Sự kiện cộng đồng — Business Connect" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
-  component: CommunityEventsPage,
+  component: () => <Outlet />,
 });
-
-function CommunityEventsPage() {
-  const { communityId } = Route.useParams();
-  return <CommunityEvents communityId={communityId} />;
-}

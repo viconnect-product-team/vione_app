@@ -22,6 +22,12 @@ export interface NfcTapProfile {
   website: string | null;
   linkedinUrl: string | null;
   city: string | null;
+  executiveRole?: string | null;
+  department?: string | null;
+  association?: string | null;
+  skills?: string[] | null;
+  talents?: string | null;
+  verifiedBadge?: boolean;
 }
 
 export interface NfcTapResult {

@@ -4,8 +4,9 @@
 
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, Check, CheckCheck, Loader2, Undo2, Trash2, MessageSquare, X, CheckCircle2 } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, Undo2, Trash2, MessageSquare, X, CheckCircle2, Sparkles, AlertTriangle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { fetchNestApi } from "@/lib/api-client";
 import { hasTKey, useLang, useT } from "@/lib/i18n";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
@@ -53,14 +54,13 @@ const NOTIFICATION_KIND_TITLES: Record<string, string> = {
   moment_reply_comment: "{commenterName} đã phản hồi bình luận của bạn",
   moment_user_mention: "Bạn được nhắc tên trong khoảnh khắc của {mentionerName}",
   opportunity_new: "Cơ hội kinh doanh mới",
+  opportunity_claimed: "Bạn đã nhận cơ hội",
+  opportunity_claimed_by_peer: "Cơ hội của bạn đã có người tiếp nhận",
+  opportunity_interest_sent: "Đã gửi mức độ quan tâm cơ hội",
+  opportunity_received: "Tiếp nhận cơ hội thành công",
+  system_broadcast: "Thông báo hệ thống",
   community_post_new: "Bài viết mới trong cộng đồng",
 };
-
-function label(t: ReturnType<typeof useT>, key: string, fallback: string): string {
-  if (key && hasTKey(key)) return t(key);
-  if (fallback && NOTIFICATION_KIND_TITLES[fallback]) return NOTIFICATION_KIND_TITLES[fallback];
-  return fallback || "Thông báo";
-}
 
 /** Chèn dữ liệu hiển thị an toàn ({communityName}, ...) vào chuỗi đã dịch. */
 function fill(text: string, data: unknown): string {
@@ -69,6 +69,36 @@ function fill(text: string, data: unknown): string {
     const v = (data as Record<string, unknown>)[k];
     return typeof v === "string" || typeof v === "number" ? String(v) : m;
   });
+}
+
+function resolveText(
+  t: ReturnType<typeof useT>,
+  keyOrText: string | undefined | null,
+  fallbackKind?: string,
+  displayData?: any
+): string {
+  if (keyOrText) {
+    if (hasTKey(keyOrText)) return fill(t(keyOrText as any), displayData);
+    if (NOTIFICATION_KIND_TITLES[keyOrText]) return fill(NOTIFICATION_KIND_TITLES[keyOrText], displayData);
+    // If it's already a Vietnamese or human-readable sentence/phrase:
+    if (keyOrText.includes(" ") || keyOrText.length > 20) {
+      return fill(keyOrText, displayData);
+    }
+  }
+  if (fallbackKind && NOTIFICATION_KIND_TITLES[fallbackKind]) {
+    return fill(NOTIFICATION_KIND_TITLES[fallbackKind], displayData);
+  }
+  if (keyOrText && !keyOrText.includes("_")) {
+    return fill(keyOrText, displayData);
+  }
+  if (displayData?.message) return String(displayData.message);
+  if (displayData?.content) return String(displayData.content);
+  if (fallbackKind === "system_broadcast") return "Thông báo hệ thống";
+  if (fallbackKind === "opportunity_claimed") return "Tiếp nhận cơ hội thành công";
+  if (fallbackKind === "opportunity_claimed_by_peer") return "Cơ hội của bạn đã có người tiếp nhận";
+  if (fallbackKind === "opportunity_interest_sent") return "Đã gửi mức độ quan tâm cơ hội";
+  if (fallbackKind) return fallbackKind.replace(/_/g, " ");
+  return "";
 }
 
 function timeLabel(iso: string, locale: string): string {
@@ -88,6 +118,20 @@ function ConnectAppNotificationsPage() {
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   const [tab, setTab] = useState<Tab>("unread");
   const [actionStates, setActionStates] = useState<Record<string, "accepted" | "declined">>({});
+  const [votedPolls, setVotedPolls] = useState<Record<string, string>>({});
+
+  const handleQuickVote = async (pollId: string, optionId: string) => {
+    try {
+      setVotedPolls((prev) => ({ ...prev, [pollId]: optionId }));
+      await fetchNestApi(`/voting/polls/${pollId}/vote`, {
+        method: "POST",
+        body: JSON.stringify({ optionId }),
+      });
+      toast.success("Đã ghi nhận biểu quyết của bạn!");
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể gửi biểu quyết");
+    }
+  };
 
   const query = useNotifications({ unreadOnly: tab === "unread", limit: 30 });
   const markRead = useMarkNotificationRead();
@@ -261,7 +305,26 @@ function ConnectAppNotificationsPage() {
                 n.notificationKind === "connection_request_accepted" ||
                 n.sourceDomain === "connection" ||
                 n.titleKey === "connection_request_received";
+              const isOpportunityNotification =
+                n.sourceDomain === "opportunity" ||
+                n.notificationKind?.startsWith("opportunity") ||
+                Boolean(n.safeDisplayData?.opportunityId);
+              const isPollNotification =
+                n.notificationKind === "interactive_poll" ||
+                n.sourceDomain === "voting" ||
+                n.eventKind === "poll_created" ||
+                Boolean(n.safeDisplayData?.pollId);
+              const isInvoiceReminder =
+                n.notificationKind === "overdue_payment_reminder" ||
+                n.sourceDomain === "finance" ||
+                n.eventKind === "invoice_reminder" ||
+                Boolean(n.safeDisplayData?.invoiceId);
               const connectionId = n.sourceRecordId || n.safeDisplayData?.connectionId;
+              const opportunityId = n.safeDisplayData?.opportunityId || (n.sourceDomain === "opportunity" ? n.sourceRecordId : null);
+              const communityId = n.safeDisplayData?.communityId || n.associationId || "clb-ceo-1983";
+              const opportunityRoute = opportunityId
+                ? `/connect-app/community/${communityId}/opportunities/${opportunityId}`
+                : null;
               const senderUserId =
                 n.safeDisplayData?.counterpartUserId || n.actorUserId;
               const profileRoute = senderUserId
@@ -273,6 +336,13 @@ function ConnectAppNotificationsPage() {
                 (connectionId ? actionStates[connectionId] : null) ||
                 n.safeDisplayData?.connectionStatus ||
                 (n.notificationKind === "connection_request_accepted" ? "accepted" : "pending");
+
+              const displayTitle = resolveText(t, n.titleKey, n.notificationKind, n.safeDisplayData);
+              const displayBody =
+                resolveText(t, n.bodyKey, "", n.safeDisplayData) ||
+                n.safeDisplayData?.message ||
+                n.safeDisplayData?.body ||
+                "";
 
               return (
                 <li
@@ -296,7 +366,15 @@ function ConnectAppNotificationsPage() {
                         }`}
                       />
                       <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-500/10 dark:bg-[#D8B282]/15 text-amber-700 dark:text-[#D8B282] border border-amber-500/20 dark:border-[#D8B282]/30 uppercase tracking-wider">
-                        {isConnectionNotification ? "Kết nối B2B" : "Thông báo"}
+                        {isOpportunityNotification
+                          ? "Cơ hội B2B"
+                          : isConnectionNotification
+                          ? "Kết nối B2B"
+                          : isPollNotification
+                          ? "Biểu quyết"
+                          : isInvoiceReminder
+                          ? "Nhắc nợ"
+                          : "Thông báo"}
                       </span>
                     </div>
 
@@ -323,14 +401,78 @@ function ConnectAppNotificationsPage() {
                   {/* Nội dung thông báo */}
                   <div className="pt-2.5">
                     <p className="text-[14px] sm:text-[14.5px] font-bold leading-snug text-slate-900 dark:text-slate-100">
-                      {fill(label(t, n.titleKey, n.notificationKind), n.safeDisplayData)}
+                      {displayTitle}
                     </p>
 
-                    {label(t, n.bodyKey, "") ? (
+                    {displayBody ? (
                       <p className="mt-1 text-[12.5px] leading-relaxed text-slate-600 dark:text-slate-300">
-                        {fill(label(t, n.bodyKey, ""), n.safeDisplayData)}
+                        {displayBody}
                       </p>
                     ) : null}
+
+                    {/* Thẻ biểu quyết tương tác trực tiếp */}
+                    {isPollNotification && n.safeDisplayData?.options && (
+                      <div className="mt-3 p-3 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-2">
+                        <div className="text-[11.5px] font-bold text-amber-800 dark:text-amber-300">
+                          Bình chọn ý kiến của bạn:
+                        </div>
+                        <div className="space-y-1.5">
+                          {n.safeDisplayData.options.map((opt: any) => {
+                            const pollId = n.safeDisplayData.pollId || n.sourceRecordId;
+                            const isSelected = votedPolls[pollId] === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => handleQuickVote(pollId, opt.id)}
+                                className={`w-full p-2.5 rounded-lg text-left text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? "bg-amber-500 text-slate-950 border-amber-400 shadow-sm"
+                                    : "bg-white dark:bg-[#151f2e] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-amber-400"
+                                }`}
+                              >
+                                <span>{opt.title}</span>
+                                {isSelected ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold">
+                                    <Check className="size-3.5" />
+                                    <span>Đã chọn</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Bình chọn</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {votedPolls[n.safeDisplayData.pollId || n.sourceRecordId] && (
+                          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
+                            <CheckCircle2 className="size-3.5" />
+                            <span>Đã ghi nhận biểu quyết thành công.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Thẻ thông báo nhắc nợ quá hạn thanh toán */}
+                    {isInvoiceReminder && (
+                      <div className="mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/30 space-y-2">
+                        <div className="text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-1.5">
+                          <AlertTriangle className="size-3.5 text-red-500" />
+                          <span>Chi tiết hóa đơn quá hạn</span>
+                        </div>
+                        <div className="text-xs text-slate-700 dark:text-slate-300">
+                          Số tiền: <strong className="text-red-600 dark:text-red-400">{Number(n.safeDisplayData?.amount || 0).toLocaleString("vi-VN")} đ</strong>
+                          {n.safeDisplayData?.dueDate && ` • Hạn chót: ${n.safeDisplayData.dueDate}`}
+                        </div>
+                        <Link
+                          to="/fees"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600 text-white text-[11.5px] font-bold shadow-xs hover:bg-red-700 transition-colors"
+                        >
+                          <span>Kiểm tra & Thanh toán ngay</span>
+                          <ArrowRight className="size-3" />
+                        </Link>
+                      </div>
+                    )}
 
                     {/* Hàng nút hành động */}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -396,15 +538,26 @@ function ConnectAppNotificationsPage() {
                         </>
                       ) : (
                         <>
-                          {n.action?.targetRoute ? (
+                          {isOpportunityNotification && opportunityRoute ? (
                             <Link
-                              to={profileRoute}
+                              to={opportunityRoute}
+                              className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-[var(--bc-mobile-accent-grad)] px-3.5 text-[12px] font-bold text-black shadow-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                            >
+                              <Sparkles className="size-3.5 text-black" />
+                              <span>Xem chi tiết cơ hội</span>
+                            </Link>
+                          ) : null}
+
+                          {n.action?.targetRoute && n.action.targetRoute !== opportunityRoute ? (
+                            <Link
+                              to={n.action.targetRoute}
                               search={(n.action.targetSearch ?? undefined) as never}
                               className="inline-flex min-h-8 items-center rounded-full border border-amber-400/60 dark:border-[#D8B282] bg-amber-50/50 dark:bg-[#D8B282]/10 px-3.5 text-[12px] font-semibold text-amber-800 dark:text-[#D8B282] transition-colors hover:brightness-105"
                             >
-                              {label(t, n.action.labelKey, t("bc.mobile.notifications.page.open"))}
+                              {resolveText(t, n.action.labelKey, t("bc.mobile.notifications.page.open"))}
                             </Link>
                           ) : null}
+
                           <button
                             type="button"
                             disabled={busy}

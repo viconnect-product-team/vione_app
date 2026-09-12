@@ -215,7 +215,7 @@ export function ExecutiveHome() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationsLink unreadCount={unread} />
+          <HomeNotificationsMenu unreadCount={unread} />
         </div>
       </header>
 
@@ -418,30 +418,7 @@ function TodayDate() {
 }
 
 function NotificationsLink({ unreadCount }: { unreadCount: number | null }) {
-  const t = useT();
-  const hasUnread = typeof unreadCount === "number" && unreadCount > 0;
-  const label = hasUnread
-    ? t("bc.mobile.home.notifications.unread", { count: unreadCount })
-    : t("bc.mobile.home.notifications");
-  const display = typeof unreadCount === "number" && unreadCount > 9 ? "9+" : unreadCount;
-
-  return (
-    <Link
-      to="/connect-app/inbox"
-      aria-label={label}
-      className="relative grid h-11 w-11 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
-    >
-      <Bell aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
-      {hasUnread ? (
-        <span
-          aria-hidden="true"
-          className="absolute right-1 top-1 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[var(--bc-mobile-accent)] px-1 text-[10px] font-bold leading-none text-[var(--bc-mobile-bg)]"
-        >
-          {display}
-        </span>
-      ) : null}
-    </Link>
-  );
+  return <HomeNotificationsMenu unreadCount={unreadCount} />;
 }
 
 function QuickActions() {

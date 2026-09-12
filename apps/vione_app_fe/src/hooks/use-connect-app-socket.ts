@@ -12,10 +12,16 @@ export function getConnectAppSocket(): Socket {
   if (!globalSocket) {
     globalSocket = io(NEST_API_URL, {
       transports: ["websocket", "polling"],
-      autoConnect: true,
+      autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 5000,
+      timeout: 6000,
+    });
+
+    // Gracefully handle connection errors to avoid flooding console with uncaught red errors
+    globalSocket.on("connect_error", () => {
+      // Backend is temporarily unreachable or offline — quiet fallback
     });
   }
   return globalSocket;
@@ -26,8 +32,15 @@ export function useConnectAppSocket(room?: string) {
   const viewerUserId = useViewerUserId();
 
   useEffect(() => {
+    // Only connect if there is an authenticated user or a specific room requested
+    if (!viewerUserId && !room) return;
+
     const socket = getConnectAppSocket();
     socketRef.current = socket;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     const joinRooms = () => {
       // Join personal user room for targeted notifications, NFC tap alerts, DMs

@@ -66,7 +66,10 @@ export function useDmThreads(enabled = true) {
 export function useUnreadDmCount(): number {
   const query = useDmThreads();
   const threads = query.data?.ok ? query.data.threads : [];
-  return threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0);
+  // CHỈ tính tin nhắn của người ĐÃ KẾT NỐI y hệt Messenger (tin nhắn chờ không tính vào badge thông báo)
+  return threads
+    .filter((t) => t.isConnected !== false)
+    .reduce((acc, t) => acc + (t.unreadCount || 0), 0);
 }
 
 export function useDmThread(threadId: string | null) {

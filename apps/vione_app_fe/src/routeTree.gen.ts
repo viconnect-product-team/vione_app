@@ -37,6 +37,7 @@ import { Route as IncomeRouteImport } from './routes/income'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FinanceReportRouteImport } from './routes/finance-report'
 import { Route as FeesRouteImport } from './routes/fees'
+import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as EventsOverviewRouteImport } from './routes/events-overview'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as EventRegistrationsRouteImport } from './routes/event-registrations'
@@ -122,6 +123,11 @@ import { Route as CompanySlugRouteImport } from './routes/company.$slug'
 import { Route as CompaniesCompanyIdRouteImport } from './routes/companies.$companyId'
 import { Route as CardCodeRouteImport } from './routes/card.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as BusinessConnectV5RouteImport } from './routes/business-connect.v5'
+import { Route as BusinessConnectV4RouteImport } from './routes/business-connect.v4'
+import { Route as BusinessConnectV3RouteImport } from './routes/business-connect.v3'
+import { Route as BusinessConnectV2RouteImport } from './routes/business-connect.v2'
+import { Route as BusinessConnectV1RouteImport } from './routes/business-connect.v1'
 import { Route as BusinessConnectSavedCardsRouteImport } from './routes/business-connect.saved-cards'
 import { Route as BusinessConnectRelationshipTimelineRouteImport } from './routes/business-connect.relationship-timeline'
 import { Route as BusinessConnectNotificationsRouteImport } from './routes/business-connect.notifications'
@@ -177,6 +183,7 @@ import { Route as BusinessConnectIntroductionsAnalyticsRouteImport } from './rou
 import { Route as BusinessConnectIntroductionsTargetPersonNodeIdRouteImport } from './routes/business-connect.introductions.$targetPersonNodeId'
 import { Route as BusinessConnectConnectionsPersonNodeIdRouteImport } from './routes/business-connect.connections.$personNodeId'
 import { Route as AdminBusinessCardsAuditRouteImport } from './routes/admin.business-cards.audit'
+import { Route as ConnectAppCommunityCommunityIdIndexRouteImport } from './routes/connect-app.community.$communityId.index'
 import { Route as ConnectNetworkRequestsSentRouteImport } from './routes/connect.network.requests.sent'
 import { Route as ConnectNetworkRequestsIncomingRouteImport } from './routes/connect.network.requests.incoming'
 import { Route as ConnectCardsCardIdEditRouteImport } from './routes/connect.cards.$cardId.edit'
@@ -188,6 +195,10 @@ import { Route as ApiPublicHooksTimelineProjectionRouteImport } from './routes/a
 import { Route as ApiPublicHooksOutcomeConsumerRouteImport } from './routes/api/public/hooks/outcome-consumer'
 import { Route as ApiPublicHooksNotificationRuntimeRouteImport } from './routes/api/public/hooks/notification-runtime'
 import { Route as ApiPublicCardChar123slugChar125DotvcfRouteImport } from './routes/api/public/card.{$slug}[.]vcf'
+import { Route as ConnectAppCommunityCommunityIdOpportunitiesIndexRouteImport } from './routes/connect-app.community.$communityId.opportunities.index'
+import { Route as ConnectAppCommunityCommunityIdNewsIndexRouteImport } from './routes/connect-app.community.$communityId.news.index'
+import { Route as ConnectAppCommunityCommunityIdMembersIndexRouteImport } from './routes/connect-app.community.$communityId.members.index'
+import { Route as ConnectAppCommunityCommunityIdEventsIndexRouteImport } from './routes/connect-app.community.$communityId.events.index'
 import { Route as ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRouteImport } from './routes/connect-app.community.$communityId.opportunities.$opportunityRef'
 import { Route as ConnectAppCommunityCommunityIdNewsNewsRefRouteImport } from './routes/connect-app.community.$communityId.news.$newsRef'
 import { Route as ConnectAppCommunityCommunityIdMembersMemberRefRouteImport } from './routes/connect-app.community.$communityId.members.$memberRef'
@@ -334,6 +345,11 @@ const FinanceReportRoute = FinanceReportRouteImport.update({
 const FeesRoute = FeesRouteImport.update({
   id: '/fees',
   path: '/fees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsOverviewRoute = EventsOverviewRouteImport.update({
@@ -762,6 +778,31 @@ const CTokenRoute = CTokenRouteImport.update({
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessConnectV5Route = BusinessConnectV5RouteImport.update({
+  id: '/v5',
+  path: '/v5',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV4Route = BusinessConnectV4RouteImport.update({
+  id: '/v4',
+  path: '/v4',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV3Route = BusinessConnectV3RouteImport.update({
+  id: '/v3',
+  path: '/v3',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV2Route = BusinessConnectV2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV1Route = BusinessConnectV1RouteImport.update({
+  id: '/v1',
+  path: '/v1',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
 const BusinessConnectSavedCardsRoute =
   BusinessConnectSavedCardsRouteImport.update({
     id: '/saved-cards',
@@ -1061,6 +1102,12 @@ const AdminBusinessCardsAuditRoute = AdminBusinessCardsAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminBusinessCardsRoute,
 } as any)
+const ConnectAppCommunityCommunityIdIndexRoute =
+  ConnectAppCommunityCommunityIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAppCommunityCommunityIdRoute,
+  } as any)
 const ConnectNetworkRequestsSentRoute =
   ConnectNetworkRequestsSentRouteImport.update({
     id: '/requests/sent',
@@ -1126,6 +1173,30 @@ const ApiPublicCardChar123slugChar125DotvcfRoute =
     path: '/api/public/card/{$slug}.vcf',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ConnectAppCommunityCommunityIdOpportunitiesIndexRoute =
+  ConnectAppCommunityCommunityIdOpportunitiesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAppCommunityCommunityIdOpportunitiesRoute,
+  } as any)
+const ConnectAppCommunityCommunityIdNewsIndexRoute =
+  ConnectAppCommunityCommunityIdNewsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAppCommunityCommunityIdNewsRoute,
+  } as any)
+const ConnectAppCommunityCommunityIdMembersIndexRoute =
+  ConnectAppCommunityCommunityIdMembersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAppCommunityCommunityIdMembersRoute,
+  } as any)
+const ConnectAppCommunityCommunityIdEventsIndexRoute =
+  ConnectAppCommunityCommunityIdEventsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConnectAppCommunityCommunityIdEventsRoute,
+  } as any)
 const ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute =
   ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRouteImport.update({
     id: '/$opportunityRef',
@@ -1189,6 +1260,7 @@ export interface FileRoutesByFullPath {
   '/event-registrations': typeof EventRegistrationsRoute
   '/events': typeof EventsRouteWithChildren
   '/events-overview': typeof EventsOverviewRoute
+  '/expenses': typeof ExpensesRoute
   '/fees': typeof FeesRouteWithChildren
   '/finance-report': typeof FinanceReportRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -1229,6 +1301,11 @@ export interface FileRoutesByFullPath {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
+  '/business-connect/v1': typeof BusinessConnectV1Route
+  '/business-connect/v2': typeof BusinessConnectV2Route
+  '/business-connect/v3': typeof BusinessConnectV3Route
+  '/business-connect/v4': typeof BusinessConnectV4Route
+  '/business-connect/v5': typeof BusinessConnectV5Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1349,6 +1426,7 @@ export interface FileRoutesByFullPath {
   '/connect/cards/$cardId/edit': typeof ConnectCardsCardIdEditRoute
   '/connect/network/requests/incoming': typeof ConnectNetworkRequestsIncomingRoute
   '/connect/network/requests/sent': typeof ConnectNetworkRequestsSentRoute
+  '/connect-app/community/$communityId/': typeof ConnectAppCommunityCommunityIdIndexRoute
   '/api/public/avatar/$owner/$file': typeof ApiPublicAvatarOwnerFileRoute
   '/api/public/card/$slug/contact': typeof ApiPublicCardSlugContactRoute
   '/api/public/identity/$token/contact': typeof ApiPublicIdentityTokenContactRoute
@@ -1356,6 +1434,10 @@ export interface FileRoutesByFullPath {
   '/connect-app/community/$communityId/members/$memberRef': typeof ConnectAppCommunityCommunityIdMembersMemberRefRoute
   '/connect-app/community/$communityId/news/$newsRef': typeof ConnectAppCommunityCommunityIdNewsNewsRefRoute
   '/connect-app/community/$communityId/opportunities/$opportunityRef': typeof ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute
+  '/connect-app/community/$communityId/events/': typeof ConnectAppCommunityCommunityIdEventsIndexRoute
+  '/connect-app/community/$communityId/members/': typeof ConnectAppCommunityCommunityIdMembersIndexRoute
+  '/connect-app/community/$communityId/news/': typeof ConnectAppCommunityCommunityIdNewsIndexRoute
+  '/connect-app/community/$communityId/opportunities/': typeof ConnectAppCommunityCommunityIdOpportunitiesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1371,6 +1453,7 @@ export interface FileRoutesByTo {
   '/email-marketing': typeof EmailMarketingRoute
   '/event-registrations': typeof EventRegistrationsRoute
   '/events-overview': typeof EventsOverviewRoute
+  '/expenses': typeof ExpensesRoute
   '/finance-report': typeof FinanceReportRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
@@ -1403,6 +1486,11 @@ export interface FileRoutesByTo {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
+  '/business-connect/v1': typeof BusinessConnectV1Route
+  '/business-connect/v2': typeof BusinessConnectV2Route
+  '/business-connect/v3': typeof BusinessConnectV3Route
+  '/business-connect/v4': typeof BusinessConnectV4Route
+  '/business-connect/v5': typeof BusinessConnectV5Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1469,7 +1557,6 @@ export interface FileRoutesByTo {
   '/business-connect/introductions/outcomes': typeof BusinessConnectIntroductionsOutcomesRoute
   '/business-connect/introductions/requests': typeof BusinessConnectIntroductionsRequestsRoute
   '/business-connect/meetings/$meetingId': typeof BusinessConnectMeetingsMeetingIdRoute
-  '/connect-app/community/$communityId': typeof ConnectAppCommunityCommunityIdRouteWithChildren
   '/connect-app/community/requests': typeof ConnectAppCommunityRequestsRoute
   '/connect-app/inbox/$threadId': typeof ConnectAppInboxThreadIdRoute
   '/connect-app/invite/$token': typeof ConnectAppInviteTokenRoute
@@ -1507,13 +1594,10 @@ export interface FileRoutesByTo {
   '/api/public/hooks/notification-runtime': typeof ApiPublicHooksNotificationRuntimeRoute
   '/api/public/hooks/outcome-consumer': typeof ApiPublicHooksOutcomeConsumerRoute
   '/api/public/hooks/timeline-projection': typeof ApiPublicHooksTimelineProjectionRoute
-  '/connect-app/community/$communityId/events': typeof ConnectAppCommunityCommunityIdEventsRouteWithChildren
-  '/connect-app/community/$communityId/members': typeof ConnectAppCommunityCommunityIdMembersRouteWithChildren
-  '/connect-app/community/$communityId/news': typeof ConnectAppCommunityCommunityIdNewsRouteWithChildren
-  '/connect-app/community/$communityId/opportunities': typeof ConnectAppCommunityCommunityIdOpportunitiesRouteWithChildren
   '/connect/cards/$cardId/edit': typeof ConnectCardsCardIdEditRoute
   '/connect/network/requests/incoming': typeof ConnectNetworkRequestsIncomingRoute
   '/connect/network/requests/sent': typeof ConnectNetworkRequestsSentRoute
+  '/connect-app/community/$communityId': typeof ConnectAppCommunityCommunityIdIndexRoute
   '/api/public/avatar/$owner/$file': typeof ApiPublicAvatarOwnerFileRoute
   '/api/public/card/$slug/contact': typeof ApiPublicCardSlugContactRoute
   '/api/public/identity/$token/contact': typeof ApiPublicIdentityTokenContactRoute
@@ -1521,6 +1605,10 @@ export interface FileRoutesByTo {
   '/connect-app/community/$communityId/members/$memberRef': typeof ConnectAppCommunityCommunityIdMembersMemberRefRoute
   '/connect-app/community/$communityId/news/$newsRef': typeof ConnectAppCommunityCommunityIdNewsNewsRefRoute
   '/connect-app/community/$communityId/opportunities/$opportunityRef': typeof ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute
+  '/connect-app/community/$communityId/events': typeof ConnectAppCommunityCommunityIdEventsIndexRoute
+  '/connect-app/community/$communityId/members': typeof ConnectAppCommunityCommunityIdMembersIndexRoute
+  '/connect-app/community/$communityId/news': typeof ConnectAppCommunityCommunityIdNewsIndexRoute
+  '/connect-app/community/$communityId/opportunities': typeof ConnectAppCommunityCommunityIdOpportunitiesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1543,6 +1631,7 @@ export interface FileRoutesById {
   '/event-registrations': typeof EventRegistrationsRoute
   '/events': typeof EventsRouteWithChildren
   '/events-overview': typeof EventsOverviewRoute
+  '/expenses': typeof ExpensesRoute
   '/fees': typeof FeesRouteWithChildren
   '/finance-report': typeof FinanceReportRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -1583,6 +1672,11 @@ export interface FileRoutesById {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
+  '/business-connect/v1': typeof BusinessConnectV1Route
+  '/business-connect/v2': typeof BusinessConnectV2Route
+  '/business-connect/v3': typeof BusinessConnectV3Route
+  '/business-connect/v4': typeof BusinessConnectV4Route
+  '/business-connect/v5': typeof BusinessConnectV5Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1703,6 +1797,7 @@ export interface FileRoutesById {
   '/connect/cards/$cardId/edit': typeof ConnectCardsCardIdEditRoute
   '/connect/network/requests/incoming': typeof ConnectNetworkRequestsIncomingRoute
   '/connect/network/requests/sent': typeof ConnectNetworkRequestsSentRoute
+  '/connect-app/community/$communityId/': typeof ConnectAppCommunityCommunityIdIndexRoute
   '/api/public/avatar/$owner/$file': typeof ApiPublicAvatarOwnerFileRoute
   '/api/public/card/$slug/contact': typeof ApiPublicCardSlugContactRoute
   '/api/public/identity/$token/contact': typeof ApiPublicIdentityTokenContactRoute
@@ -1710,6 +1805,10 @@ export interface FileRoutesById {
   '/connect-app/community/$communityId/members/$memberRef': typeof ConnectAppCommunityCommunityIdMembersMemberRefRoute
   '/connect-app/community/$communityId/news/$newsRef': typeof ConnectAppCommunityCommunityIdNewsNewsRefRoute
   '/connect-app/community/$communityId/opportunities/$opportunityRef': typeof ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute
+  '/connect-app/community/$communityId/events/': typeof ConnectAppCommunityCommunityIdEventsIndexRoute
+  '/connect-app/community/$communityId/members/': typeof ConnectAppCommunityCommunityIdMembersIndexRoute
+  '/connect-app/community/$communityId/news/': typeof ConnectAppCommunityCommunityIdNewsIndexRoute
+  '/connect-app/community/$communityId/opportunities/': typeof ConnectAppCommunityCommunityIdOpportunitiesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1733,6 +1832,7 @@ export interface FileRouteTypes {
     | '/event-registrations'
     | '/events'
     | '/events-overview'
+    | '/expenses'
     | '/fees'
     | '/finance-report'
     | '/forgot-password'
@@ -1773,6 +1873,11 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
+    | '/business-connect/v1'
+    | '/business-connect/v2'
+    | '/business-connect/v3'
+    | '/business-connect/v4'
+    | '/business-connect/v5'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -1893,6 +1998,7 @@ export interface FileRouteTypes {
     | '/connect/cards/$cardId/edit'
     | '/connect/network/requests/incoming'
     | '/connect/network/requests/sent'
+    | '/connect-app/community/$communityId/'
     | '/api/public/avatar/$owner/$file'
     | '/api/public/card/$slug/contact'
     | '/api/public/identity/$token/contact'
@@ -1900,6 +2006,10 @@ export interface FileRouteTypes {
     | '/connect-app/community/$communityId/members/$memberRef'
     | '/connect-app/community/$communityId/news/$newsRef'
     | '/connect-app/community/$communityId/opportunities/$opportunityRef'
+    | '/connect-app/community/$communityId/events/'
+    | '/connect-app/community/$communityId/members/'
+    | '/connect-app/community/$communityId/news/'
+    | '/connect-app/community/$communityId/opportunities/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1915,6 +2025,7 @@ export interface FileRouteTypes {
     | '/email-marketing'
     | '/event-registrations'
     | '/events-overview'
+    | '/expenses'
     | '/finance-report'
     | '/forgot-password'
     | '/income'
@@ -1947,6 +2058,11 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
+    | '/business-connect/v1'
+    | '/business-connect/v2'
+    | '/business-connect/v3'
+    | '/business-connect/v4'
+    | '/business-connect/v5'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -2013,7 +2129,6 @@ export interface FileRouteTypes {
     | '/business-connect/introductions/outcomes'
     | '/business-connect/introductions/requests'
     | '/business-connect/meetings/$meetingId'
-    | '/connect-app/community/$communityId'
     | '/connect-app/community/requests'
     | '/connect-app/inbox/$threadId'
     | '/connect-app/invite/$token'
@@ -2051,13 +2166,10 @@ export interface FileRouteTypes {
     | '/api/public/hooks/notification-runtime'
     | '/api/public/hooks/outcome-consumer'
     | '/api/public/hooks/timeline-projection'
-    | '/connect-app/community/$communityId/events'
-    | '/connect-app/community/$communityId/members'
-    | '/connect-app/community/$communityId/news'
-    | '/connect-app/community/$communityId/opportunities'
     | '/connect/cards/$cardId/edit'
     | '/connect/network/requests/incoming'
     | '/connect/network/requests/sent'
+    | '/connect-app/community/$communityId'
     | '/api/public/avatar/$owner/$file'
     | '/api/public/card/$slug/contact'
     | '/api/public/identity/$token/contact'
@@ -2065,6 +2177,10 @@ export interface FileRouteTypes {
     | '/connect-app/community/$communityId/members/$memberRef'
     | '/connect-app/community/$communityId/news/$newsRef'
     | '/connect-app/community/$communityId/opportunities/$opportunityRef'
+    | '/connect-app/community/$communityId/events'
+    | '/connect-app/community/$communityId/members'
+    | '/connect-app/community/$communityId/news'
+    | '/connect-app/community/$communityId/opportunities'
   id:
     | '__root__'
     | '/'
@@ -2086,6 +2202,7 @@ export interface FileRouteTypes {
     | '/event-registrations'
     | '/events'
     | '/events-overview'
+    | '/expenses'
     | '/fees'
     | '/finance-report'
     | '/forgot-password'
@@ -2126,6 +2243,11 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
+    | '/business-connect/v1'
+    | '/business-connect/v2'
+    | '/business-connect/v3'
+    | '/business-connect/v4'
+    | '/business-connect/v5'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -2246,6 +2368,7 @@ export interface FileRouteTypes {
     | '/connect/cards/$cardId/edit'
     | '/connect/network/requests/incoming'
     | '/connect/network/requests/sent'
+    | '/connect-app/community/$communityId/'
     | '/api/public/avatar/$owner/$file'
     | '/api/public/card/$slug/contact'
     | '/api/public/identity/$token/contact'
@@ -2253,6 +2376,10 @@ export interface FileRouteTypes {
     | '/connect-app/community/$communityId/members/$memberRef'
     | '/connect-app/community/$communityId/news/$newsRef'
     | '/connect-app/community/$communityId/opportunities/$opportunityRef'
+    | '/connect-app/community/$communityId/events/'
+    | '/connect-app/community/$communityId/members/'
+    | '/connect-app/community/$communityId/news/'
+    | '/connect-app/community/$communityId/opportunities/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2275,6 +2402,7 @@ export interface RootRouteChildren {
   EventRegistrationsRoute: typeof EventRegistrationsRoute
   EventsRoute: typeof EventsRouteWithChildren
   EventsOverviewRoute: typeof EventsOverviewRoute
+  ExpensesRoute: typeof ExpensesRoute
   FeesRoute: typeof FeesRouteWithChildren
   FinanceReportRoute: typeof FinanceReportRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -2526,6 +2654,13 @@ declare module '@tanstack/react-router' {
       path: '/fees'
       fullPath: '/fees'
       preLoaderRoute: typeof FeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events-overview': {
@@ -3123,6 +3258,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-connect/v5': {
+      id: '/business-connect/v5'
+      path: '/v5'
+      fullPath: '/business-connect/v5'
+      preLoaderRoute: typeof BusinessConnectV5RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v4': {
+      id: '/business-connect/v4'
+      path: '/v4'
+      fullPath: '/business-connect/v4'
+      preLoaderRoute: typeof BusinessConnectV4RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v3': {
+      id: '/business-connect/v3'
+      path: '/v3'
+      fullPath: '/business-connect/v3'
+      preLoaderRoute: typeof BusinessConnectV3RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v2': {
+      id: '/business-connect/v2'
+      path: '/v2'
+      fullPath: '/business-connect/v2'
+      preLoaderRoute: typeof BusinessConnectV2RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v1': {
+      id: '/business-connect/v1'
+      path: '/v1'
+      fullPath: '/business-connect/v1'
+      preLoaderRoute: typeof BusinessConnectV1RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
     '/business-connect/saved-cards': {
       id: '/business-connect/saved-cards'
       path: '/saved-cards'
@@ -3508,6 +3678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusinessCardsAuditRouteImport
       parentRoute: typeof AdminBusinessCardsRoute
     }
+    '/connect-app/community/$communityId/': {
+      id: '/connect-app/community/$communityId/'
+      path: '/'
+      fullPath: '/connect-app/community/$communityId/'
+      preLoaderRoute: typeof ConnectAppCommunityCommunityIdIndexRouteImport
+      parentRoute: typeof ConnectAppCommunityCommunityIdRoute
+    }
     '/connect/network/requests/sent': {
       id: '/connect/network/requests/sent'
       path: '/requests/sent'
@@ -3584,6 +3761,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/card/{$slug}.vcf'
       preLoaderRoute: typeof ApiPublicCardChar123slugChar125DotvcfRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/connect-app/community/$communityId/opportunities/': {
+      id: '/connect-app/community/$communityId/opportunities/'
+      path: '/'
+      fullPath: '/connect-app/community/$communityId/opportunities/'
+      preLoaderRoute: typeof ConnectAppCommunityCommunityIdOpportunitiesIndexRouteImport
+      parentRoute: typeof ConnectAppCommunityCommunityIdOpportunitiesRoute
+    }
+    '/connect-app/community/$communityId/news/': {
+      id: '/connect-app/community/$communityId/news/'
+      path: '/'
+      fullPath: '/connect-app/community/$communityId/news/'
+      preLoaderRoute: typeof ConnectAppCommunityCommunityIdNewsIndexRouteImport
+      parentRoute: typeof ConnectAppCommunityCommunityIdNewsRoute
+    }
+    '/connect-app/community/$communityId/members/': {
+      id: '/connect-app/community/$communityId/members/'
+      path: '/'
+      fullPath: '/connect-app/community/$communityId/members/'
+      preLoaderRoute: typeof ConnectAppCommunityCommunityIdMembersIndexRouteImport
+      parentRoute: typeof ConnectAppCommunityCommunityIdMembersRoute
+    }
+    '/connect-app/community/$communityId/events/': {
+      id: '/connect-app/community/$communityId/events/'
+      path: '/'
+      fullPath: '/connect-app/community/$communityId/events/'
+      preLoaderRoute: typeof ConnectAppCommunityCommunityIdEventsIndexRouteImport
+      parentRoute: typeof ConnectAppCommunityCommunityIdEventsRoute
     }
     '/connect-app/community/$communityId/opportunities/$opportunityRef': {
       id: '/connect-app/community/$communityId/opportunities/$opportunityRef'
@@ -3693,6 +3898,11 @@ interface BusinessConnectRouteChildren {
   BusinessConnectNotificationsRoute: typeof BusinessConnectNotificationsRoute
   BusinessConnectRelationshipTimelineRoute: typeof BusinessConnectRelationshipTimelineRoute
   BusinessConnectSavedCardsRoute: typeof BusinessConnectSavedCardsRoute
+  BusinessConnectV1Route: typeof BusinessConnectV1Route
+  BusinessConnectV2Route: typeof BusinessConnectV2Route
+  BusinessConnectV3Route: typeof BusinessConnectV3Route
+  BusinessConnectV4Route: typeof BusinessConnectV4Route
+  BusinessConnectV5Route: typeof BusinessConnectV5Route
   BusinessConnectIndexRoute: typeof BusinessConnectIndexRoute
   BusinessConnectIntroductionsTargetPersonNodeIdRoute: typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   BusinessConnectIntroductionsAnalyticsRoute: typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -3711,6 +3921,11 @@ const BusinessConnectRouteChildren: BusinessConnectRouteChildren = {
   BusinessConnectRelationshipTimelineRoute:
     BusinessConnectRelationshipTimelineRoute,
   BusinessConnectSavedCardsRoute: BusinessConnectSavedCardsRoute,
+  BusinessConnectV1Route: BusinessConnectV1Route,
+  BusinessConnectV2Route: BusinessConnectV2Route,
+  BusinessConnectV3Route: BusinessConnectV3Route,
+  BusinessConnectV4Route: BusinessConnectV4Route,
+  BusinessConnectV5Route: BusinessConnectV5Route,
   BusinessConnectIndexRoute: BusinessConnectIndexRoute,
   BusinessConnectIntroductionsTargetPersonNodeIdRoute:
     BusinessConnectIntroductionsTargetPersonNodeIdRoute,
@@ -3803,12 +4018,15 @@ const ConnectRouteWithChildren =
 
 interface ConnectAppCommunityCommunityIdEventsRouteChildren {
   ConnectAppCommunityCommunityIdEventsEventRefRoute: typeof ConnectAppCommunityCommunityIdEventsEventRefRoute
+  ConnectAppCommunityCommunityIdEventsIndexRoute: typeof ConnectAppCommunityCommunityIdEventsIndexRoute
 }
 
 const ConnectAppCommunityCommunityIdEventsRouteChildren: ConnectAppCommunityCommunityIdEventsRouteChildren =
   {
     ConnectAppCommunityCommunityIdEventsEventRefRoute:
       ConnectAppCommunityCommunityIdEventsEventRefRoute,
+    ConnectAppCommunityCommunityIdEventsIndexRoute:
+      ConnectAppCommunityCommunityIdEventsIndexRoute,
   }
 
 const ConnectAppCommunityCommunityIdEventsRouteWithChildren =
@@ -3818,12 +4036,15 @@ const ConnectAppCommunityCommunityIdEventsRouteWithChildren =
 
 interface ConnectAppCommunityCommunityIdMembersRouteChildren {
   ConnectAppCommunityCommunityIdMembersMemberRefRoute: typeof ConnectAppCommunityCommunityIdMembersMemberRefRoute
+  ConnectAppCommunityCommunityIdMembersIndexRoute: typeof ConnectAppCommunityCommunityIdMembersIndexRoute
 }
 
 const ConnectAppCommunityCommunityIdMembersRouteChildren: ConnectAppCommunityCommunityIdMembersRouteChildren =
   {
     ConnectAppCommunityCommunityIdMembersMemberRefRoute:
       ConnectAppCommunityCommunityIdMembersMemberRefRoute,
+    ConnectAppCommunityCommunityIdMembersIndexRoute:
+      ConnectAppCommunityCommunityIdMembersIndexRoute,
   }
 
 const ConnectAppCommunityCommunityIdMembersRouteWithChildren =
@@ -3833,12 +4054,15 @@ const ConnectAppCommunityCommunityIdMembersRouteWithChildren =
 
 interface ConnectAppCommunityCommunityIdNewsRouteChildren {
   ConnectAppCommunityCommunityIdNewsNewsRefRoute: typeof ConnectAppCommunityCommunityIdNewsNewsRefRoute
+  ConnectAppCommunityCommunityIdNewsIndexRoute: typeof ConnectAppCommunityCommunityIdNewsIndexRoute
 }
 
 const ConnectAppCommunityCommunityIdNewsRouteChildren: ConnectAppCommunityCommunityIdNewsRouteChildren =
   {
     ConnectAppCommunityCommunityIdNewsNewsRefRoute:
       ConnectAppCommunityCommunityIdNewsNewsRefRoute,
+    ConnectAppCommunityCommunityIdNewsIndexRoute:
+      ConnectAppCommunityCommunityIdNewsIndexRoute,
   }
 
 const ConnectAppCommunityCommunityIdNewsRouteWithChildren =
@@ -3848,12 +4072,15 @@ const ConnectAppCommunityCommunityIdNewsRouteWithChildren =
 
 interface ConnectAppCommunityCommunityIdOpportunitiesRouteChildren {
   ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute: typeof ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute
+  ConnectAppCommunityCommunityIdOpportunitiesIndexRoute: typeof ConnectAppCommunityCommunityIdOpportunitiesIndexRoute
 }
 
 const ConnectAppCommunityCommunityIdOpportunitiesRouteChildren: ConnectAppCommunityCommunityIdOpportunitiesRouteChildren =
   {
     ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute:
       ConnectAppCommunityCommunityIdOpportunitiesOpportunityRefRoute,
+    ConnectAppCommunityCommunityIdOpportunitiesIndexRoute:
+      ConnectAppCommunityCommunityIdOpportunitiesIndexRoute,
   }
 
 const ConnectAppCommunityCommunityIdOpportunitiesRouteWithChildren =
@@ -3866,6 +4093,7 @@ interface ConnectAppCommunityCommunityIdRouteChildren {
   ConnectAppCommunityCommunityIdMembersRoute: typeof ConnectAppCommunityCommunityIdMembersRouteWithChildren
   ConnectAppCommunityCommunityIdNewsRoute: typeof ConnectAppCommunityCommunityIdNewsRouteWithChildren
   ConnectAppCommunityCommunityIdOpportunitiesRoute: typeof ConnectAppCommunityCommunityIdOpportunitiesRouteWithChildren
+  ConnectAppCommunityCommunityIdIndexRoute: typeof ConnectAppCommunityCommunityIdIndexRoute
 }
 
 const ConnectAppCommunityCommunityIdRouteChildren: ConnectAppCommunityCommunityIdRouteChildren =
@@ -3878,6 +4106,8 @@ const ConnectAppCommunityCommunityIdRouteChildren: ConnectAppCommunityCommunityI
       ConnectAppCommunityCommunityIdNewsRouteWithChildren,
     ConnectAppCommunityCommunityIdOpportunitiesRoute:
       ConnectAppCommunityCommunityIdOpportunitiesRouteWithChildren,
+    ConnectAppCommunityCommunityIdIndexRoute:
+      ConnectAppCommunityCommunityIdIndexRoute,
   }
 
 const ConnectAppCommunityCommunityIdRouteWithChildren =
@@ -4204,6 +4434,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventRegistrationsRoute: EventRegistrationsRoute,
   EventsRoute: EventsRouteWithChildren,
   EventsOverviewRoute: EventsOverviewRoute,
+  ExpensesRoute: ExpensesRoute,
   FeesRoute: FeesRouteWithChildren,
   FinanceReportRoute: FinanceReportRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

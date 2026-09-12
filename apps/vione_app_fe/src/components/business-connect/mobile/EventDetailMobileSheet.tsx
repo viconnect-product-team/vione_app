@@ -231,7 +231,7 @@ export function EventDetailMobileSheet({
             <span
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase ${
                 isOnline
-                  ? "bg-sky-500/15 text-sky-400 border border-sky-500/30"
+                  ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
                   : "bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)]"
               }`}
             >

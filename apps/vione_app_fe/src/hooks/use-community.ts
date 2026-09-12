@@ -46,17 +46,24 @@ export function useMyCommunities(enabled = true) {
     enabled: enabled && authStatus !== "loading",
     staleTime: 30_000,
     queryFn: async () => {
+      let list: any[] = [];
       try {
         const res = await fetchNestApi<any[]>("/connect-app/community");
-        return res || [];
+        list = res || [];
       } catch {
         try {
           const res = await CommunitySDK.listMyCommunities();
-          return res || [];
+          list = res || [];
         } catch {
-          return [];
+          list = [];
         }
       }
+      return list.filter((c: any) => {
+        const id = String(c.communityId || "");
+        const name = String(c.name || "");
+        const slug = String(c.slug || "");
+        return id === "c1983000-0000-4000-8000-000000001983" || slug === "ceo1983" || name.includes("1983");
+      });
     },
   });
   return {

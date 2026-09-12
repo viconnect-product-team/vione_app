@@ -494,18 +494,41 @@ function AuthPage() {
 
         {/* Brand Crest & Headers */}
         <div className="mt-5 flex flex-col items-center justify-center text-center">
-          <ViOneLogo className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
-            BUSINESS CONNECT
-          </div>
-          <h1 className="mt-3 font-serif text-[26px] sm:text-[30px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
-            {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
-          </h1>
-          <p className="mt-1.5 max-w-[20rem] text-center text-[12.5px] sm:text-[13.5px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
-            {mode === "signin"
-              ? t("auth.subtitle")
-              : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
-          </p>
+          {isAssociation ? (
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-16 h-16 rounded-2xl p-1.5 bg-white border-2 border-blue-500/30 shadow-[0_4px_20px_rgba(2,132,199,0.2)] flex items-center justify-center overflow-hidden">
+                <img
+                  src="/landing/ceo1983-official-logo.png"
+                  alt="Logo CLB Doanh Nhân CEO 1983"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="mt-2 text-[10px] font-black tracking-[0.25em] text-[#0284C7] uppercase">
+                CLB DOANH NHÂN CEO 1983
+              </div>
+              <h1 className="mt-2 font-bold text-[24px] sm:text-[28px] tracking-wide text-slate-900 dark:text-white">
+                Cổng Hội Viên Hiệp Hội
+              </h1>
+              <p className="mt-1 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-semibold text-blue-700 dark:text-blue-400">
+                Không gian kết nối giao thương và thông tin chính thức CLB CEO 1983
+              </p>
+            </div>
+          ) : (
+            <>
+              <ViOneLogo wordmarkOnly className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
+              <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
+                BUSINESS CONNECT
+              </div>
+              <h1 className="mt-3 font-serif text-[26px] sm:text-[30px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
+                {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
+              </h1>
+              <p className="mt-1.5 max-w-[20rem] text-center text-[12.5px] sm:text-[13.5px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
+                {mode === "signin"
+                  ? t("auth.subtitle")
+                  : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Error Alert */}
@@ -606,15 +629,23 @@ function AuthPage() {
           <button
             type="submit"
             disabled={busy}
-            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold text-[#1b1206] transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md"
-            style={{
-              background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-              boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
-            }}
+            className={`relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md ${
+              isAssociation
+                ? "bg-gradient-to-r from-[#004B91] via-[#0284C7] to-[#0369A1] text-white shadow-blue-500/25"
+                : "text-[#1b1206]"
+            }`}
+            style={
+              isAssociation
+                ? undefined
+                : {
+                    background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
+                    boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
+                  }
+            }
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("auth.processing")}
+                <Loader2 className={`h-5 w-5 animate-spin ${isAssociation ? "text-white" : "text-[#1b1206]"}`} /> {t("auth.processing")}
               </span>
             ) : mode === "signin" ? (
               isAssociation ? (
@@ -627,7 +658,7 @@ function AuthPage() {
             )}
             {!loading && (
               <ArrowRight
-                className="absolute right-5 sm:right-6 h-5 w-5 text-[#1b1206]"
+                className={`absolute right-5 sm:right-6 h-5 w-5 ${isAssociation ? "text-white" : "text-[#1b1206]"}`}
                 aria-hidden="true"
               />
             )}

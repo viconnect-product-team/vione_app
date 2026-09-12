@@ -10,6 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Award,
   Briefcase,
   Building2,
   Calendar,
@@ -558,6 +559,24 @@ function MemberDetailPage() {
                 <ShoppingBag className="h-3.5 w-3.5" />
                 {activeProducts} {t("mdetail.products.count")}
               </span>
+              {member.executiveRole && (
+                <>
+                  <span className="opacity-50">•</span>
+                  <span className="inline-flex items-center gap-1.5 font-semibold text-amber-300">
+                    <Award className="h-3.5 w-3.5" />
+                    {member.executiveRole}
+                  </span>
+                </>
+              )}
+              {member.department && (
+                <>
+                  <span className="opacity-50">•</span>
+                  <span className="inline-flex items-center gap-1.5 font-medium text-sky-200">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {member.department}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">

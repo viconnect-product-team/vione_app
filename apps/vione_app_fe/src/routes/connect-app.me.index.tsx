@@ -745,7 +745,7 @@ function ConnectAppMePage() {
             </SectionCard>
 
             <SectionCard title={t("bc.mobile.me.accountSection.title")}>
-              <Link to="/account-settings" className={rowClass}>
+              <Link to="/connect-app/me/sessions" className={rowClass}>
                 <span className="flex items-center gap-3">{t("bc.mobile.me.accountSecurity")}</span>
                 <ChevronRight
                   aria-hidden="true"

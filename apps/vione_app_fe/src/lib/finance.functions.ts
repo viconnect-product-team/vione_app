@@ -14,6 +14,10 @@ export type Transaction = {
   amount: number;
   method: "bank" | "card" | "cash";
   status: "completed" | "pending";
+  advanceAmount?: number;
+  refundAmount?: number;
+  invoiceUrl?: string;
+  recipient?: string;
 };
 
 type Row = Record<string, unknown>;
@@ -21,13 +25,17 @@ type Row = Record<string, unknown>;
 function mapTx(tx: Row): Transaction {
   return {
     id: tx.code as string,
-    date: tx.date as string,
+    date: tx.date ? (tx.date instanceof Date ? tx.date.toISOString().slice(0, 10) : String(tx.date).slice(0, 10)) : "",
     type: tx.type as Transaction["type"],
     category: tx.category as string,
     description: (tx.description as string) ?? "",
     amount: Number(tx.amount ?? 0),
     method: tx.method as Transaction["method"],
     status: tx.status as Transaction["status"],
+    advanceAmount: Number(tx.advance_amount ?? 0),
+    refundAmount: Number(tx.refund_amount ?? 0),
+    invoiceUrl: (tx.invoice_url as string) ?? "",
+    recipient: (tx.recipient as string) ?? "",
   };
 }
 
@@ -50,6 +58,10 @@ const txInput = z.object({
   amount: z.number().min(0).max(1e12).default(0),
   method: z.enum(["bank", "card", "cash"]),
   status: z.enum(["completed", "pending"]),
+  advanceAmount: z.number().min(0).default(0),
+  refundAmount: z.number().min(0).default(0),
+  invoiceUrl: z.string().default(""),
+  recipient: z.string().default(""),
 });
 
 export const createTransactionFn = createServerFn({ method: "POST" })
@@ -57,10 +69,24 @@ export const createTransactionFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => txInput.parse(d))
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { genCode, logActivity } = await import("./crud.server");
-    const code = genCode("TX");
+    const code = genCode(data.type === "income" ? "THU" : "CHI");
+    const dbPayload = {
+      code,
+      date: data.date,
+      type: data.type,
+      category: data.category,
+      description: data.description,
+      amount: data.amount,
+      method: data.method,
+      status: data.status,
+      advance_amount: data.advanceAmount,
+      refund_amount: data.refundAmount,
+      invoice_url: data.invoiceUrl || `/invoices/${code}.pdf`,
+      recipient: data.recipient,
+    };
     const { data: row, error } = await getDb(context)
       .from("transactions")
-      .insert({ code, ...data })
+      .insert(dbPayload)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
@@ -73,10 +99,17 @@ export const updateTransactionFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => txInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Transaction> => {
     const { logActivity } = await import("./crud.server");
-    const { id, ...rest } = data;
+    const { id, advanceAmount, refundAmount, invoiceUrl, ...rest } = data;
+    const dbUpdate = {
+      ...rest,
+      advance_amount: advanceAmount,
+      refund_amount: refundAmount,
+      invoice_url: invoiceUrl,
+      recipient: data.recipient,
+    };
     const { data: row, error } = await getDb(context)
       .from("transactions")
-      .update(rest)
+      .update(dbUpdate)
       .eq("code", id)
       .select("*")
       .single();

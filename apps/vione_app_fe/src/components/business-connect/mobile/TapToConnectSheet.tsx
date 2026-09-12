@@ -14,6 +14,8 @@ import {
   Camera,
   CheckCircle2,
   Copy,
+  Crown,
+  Download,
   Globe,
   ImagePlus,
   Loader2,
@@ -671,12 +673,32 @@ function ZaloProfilePreview({
   return (
     <div className="grid gap-4 animate-fade-in">
       {/* Luxury Profile Card */}
-      <div className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] overflow-hidden shadow-2xl">
+      <div className="rounded-3xl border border-[#D8B282]/40 bg-[var(--bc-mobile-surface)] overflow-hidden shadow-2xl">
         {/* Profile Header */}
-        <div className="relative flex flex-col items-center text-center bg-gradient-to-b from-[var(--bc-mobile-surface-2)] via-[var(--bc-mobile-surface)] to-[var(--bc-mobile-surface)] px-6 pt-7 pb-4">
+        <div className="relative flex flex-col items-center text-center bg-gradient-to-b from-[#0F1B36] via-[#080F22] to-[var(--bc-mobile-surface)] px-6 pt-7 pb-4">
+          {/* Executive Role, Department & Association Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3 w-full">
+            {profile?.executiveRole && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-md border border-amber-300">
+                <Crown className="h-3.5 w-3.5 fill-current" />
+                <span>{profile.executiveRole}</span>
+              </span>
+            )}
+            {profile?.department && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-300 bg-amber-500/20 border border-amber-400/40">
+                <span>🏛️ {profile.department}</span>
+              </span>
+            )}
+            {profile?.association && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold text-[#D8B282] bg-[#D8B282]/15 border border-[#D8B282]/30">
+                <span>⭐ {profile.association}</span>
+              </span>
+            )}
+          </div>
+
           {/* Avatar with luxury golden glow */}
-          <div className="relative mb-3.5">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] shadow-[0_8px_20px_-4px_rgba(216,178,130,0.35)]">
+          <div className="relative mb-3">
+            <div className="h-22 w-22 shrink-0 overflow-hidden rounded-2xl border-2 border-[#D8B282] bg-[var(--bc-mobile-surface-2)] shadow-[0_0_25px_rgba(216,178,130,0.4)]">
               {profile?.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
@@ -684,45 +706,75 @@ function ZaloProfilePreview({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-[28px] font-bold text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)]">
+                <div className="flex h-full w-full items-center justify-center text-[30px] font-black text-[#F6E1C3] bg-[#0A1329]">
                   {(profile?.displayName ?? "HV")[0]?.toUpperCase()}
                 </div>
               )}
             </div>
-            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bc-mobile-accent)] text-[#050c15] shadow-md">
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#D8B282] text-slate-950 shadow-md">
               <Sparkles className="h-3.5 w-3.5 fill-current" />
             </span>
           </div>
 
-          {/* Name & Headline */}
-          <h2 className="text-[19px] font-bold tracking-tight text-[var(--bc-mobile-text)]">
+          {/* Full Name with gold gradient accent */}
+          <h2 className="text-[21px] font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F6E1C3] to-[#D8B282]">
             {profile?.displayName ?? "Hội viên ViOne"}
           </h2>
+
+          {/* Company & Title */}
           {(profile?.jobTitle || profile?.companyName) && (
-            <p className="mt-1 text-[13.5px] font-medium text-[var(--bc-mobile-accent)]">
+            <p className="mt-1 text-[13.5px] font-bold text-[#F6E1C3]">
               {[profile.jobTitle, profile.companyName].filter(Boolean).join(" · ")}
             </p>
           )}
+
+          {/* Verified C-Level Badge */}
+          <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px] font-bold text-amber-300">
+            <ShieldCheck className="h-3.5 w-3.5 text-amber-400 fill-amber-400/20" />
+            <span>{profile?.verifiedBadge || "Hội viên Doanh nhân C-Level đã xác thực"}</span>
+          </div>
+
+          {/* Bio Headline */}
           {profile?.headline && (
-            <p className="mt-1 line-clamp-2 text-[12.5px] text-[var(--bc-mobile-muted)] max-w-[320px]">
+            <p className="mt-2 line-clamp-2 text-[12.5px] text-slate-300 max-w-[340px] leading-relaxed">
               {profile.headline}
             </p>
           )}
 
+          {/* Core Skills & Talents Tags */}
+          {((profile?.talents && profile.talents.length > 0) || (profile?.skills && profile.skills.length > 0)) && (
+            <div className="mt-3.5 pt-3 border-t border-white/10 w-full text-left">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#D8B282] block mb-1.5">
+                💎 Thế mạnh & Năng lực kết nối:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[...(profile?.talents || []), ...(profile?.skills || [])].slice(0, 6).map((talent, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 bg-[#D8B282]/15 border border-[#D8B282]/30"
+                  >
+                    <CheckCircle2 className="h-3 w-3 text-[#F6E1C3]" />
+                    <span>{talent}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Relationship Status Badge */}
-          <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
+          <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[12px] font-semibold border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
             {isConnected ? (
-              <span className="flex items-center gap-1.5 text-emerald-400">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>Đã là bạn bè / đối tác kết nối</span>
               </span>
             ) : isOutgoingPending ? (
-              <span className="flex items-center gap-1.5 text-amber-400">
+              <span className="flex items-center gap-1.5 text-amber-400 font-bold">
                 <UserCheck className="h-3.5 w-3.5" />
                 <span>Đã gửi lời mời (Đang chờ đối phương xác nhận)</span>
               </span>
             ) : isIncomingPending ? (
-              <span className="flex items-center gap-1.5 text-sky-400">
+              <span className="flex items-center gap-1.5 text-amber-400 font-bold">
                 <UserPlus className="h-3.5 w-3.5" />
                 <span>Hội viên này đã gửi lời mời cho bạn</span>
               </span>
@@ -730,7 +782,7 @@ function ZaloProfilePreview({
               <span className="text-[var(--bc-mobile-muted)]">Mã QR của chính bạn</span>
             ) : (
               <span className="flex items-center gap-1.5 text-[var(--bc-mobile-muted)]">
-                <Sparkles className="h-3.5 w-3.5 text-[var(--bc-mobile-accent)]" />
+                <Sparkles className="h-3.5 w-3.5 text-[#D8B282]" />
                 <span>Chưa kết nối trên mạng lưới ViOne</span>
               </span>
             )}
@@ -805,18 +857,45 @@ function ZaloProfilePreview({
 
       {/* Bottom helper actions */}
       <div className="flex items-center gap-2 mt-1">
+        <button
+          type="button"
+          onClick={() => {
+            if (!profile) return;
+            const vcard = [
+              "BEGIN:VCARD",
+              "VERSION:3.0",
+              `FN:${profile.displayName || "Hội viên ViOne"}`,
+              profile.jobTitle ? `TITLE:${profile.jobTitle}` : "",
+              profile.companyName ? `ORG:${profile.companyName}` : "",
+              profile.primaryPhone ? `TEL;TYPE=CELL:${profile.primaryPhone}` : "",
+              profile.primaryEmail ? `EMAIL;TYPE=WORK:${profile.primaryEmail}` : "",
+              profile.website ? `URL:${profile.website}` : "",
+              profile.city ? `ADR;TYPE=WORK:;;;${profile.city};;;` : "",
+              profile.executiveRole ? `NOTE:${profile.executiveRole} - ${profile.association || "CLB CEO 1983"}` : "",
+              "END:VCARD",
+            ].filter(Boolean).join("\n");
+
+            const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${(profile.displayName || "contact").replace(/\s+/g, "_")}.vcf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success("✓ Đã lưu danh thiếp VCard vào máy!");
+          }}
+          className={SECONDARY_BTN}
+        >
+          <Download aria-hidden="true" className="h-4 w-4 text-[#D8B282]" strokeWidth={1.8} />
+          <span>Lưu danh thiếp</span>
+        </button>
+
         <button type="button" onClick={onReset} className={SECONDARY_BTN}>
           <Camera aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           <span>Quét mã khác</span>
         </button>
-        <Link
-          to="/connect-app/network"
-          search={{ tab: "network" }}
-          onClick={onClose}
-          className={SECONDARY_BTN}
-        >
-          <span>Xem mạng lưới</span>
-        </Link>
       </div>
     </div>
   );

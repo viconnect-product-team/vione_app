@@ -14,6 +14,11 @@ export type Attendee = {
   membership: TKey; // memberLevel.* key
   ticketType?: string;
   checkedIn?: boolean;
+  seatAssignment?: string;
+  paymentStatus?: string;
+  sponsorType?: "regular" | "new";
+  packageType?: "cash" | "in_kind";
+  inKindDescription?: string;
 };
 
 export type TicketStat = {

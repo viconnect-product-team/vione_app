@@ -94,3 +94,46 @@ export const updateCommunityMemberRoleFn = createServerFn({ method: "POST" })
     });
   });
 
+const createOpportunityInput = z.object({
+  communityId: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  budget: z.string().optional(),
+  industry: z.string().optional(),
+  deadline: z.string().optional(),
+  contactPhone: z.string().optional(),
+});
+
+export const createCommunityOpportunityFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((i: unknown) => createOpportunityInput.parse(i))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; opportunity?: any; error?: string }> => {
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/opportunities`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  });
+
+const createNewsInput = z.object({
+  communityId: z.string().min(1),
+  title: z.string().min(1),
+  content: z.string().optional(),
+  excerpt: z.string().optional(),
+  category: z.string().optional(),
+  coverImage: z.string().optional(),
+});
+
+export const createCommunityNewsFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((i: unknown) => createNewsInput.parse(i))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; news?: any; error?: string }> => {
+    const { token } = context as any;
+    return fetchNestApiFromServer(`/connect-app/community/${data.communityId}/news`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  });
+
+

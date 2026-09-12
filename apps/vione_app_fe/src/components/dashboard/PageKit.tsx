@@ -77,11 +77,14 @@ export function StatCard({
 
 export function Pill({
   children,
-  color = "neutral",
+  color,
+  tone,
 }: {
   children: ReactNode;
   color?: "neutral" | "success" | "warning" | "danger" | "info" | "primary";
+  tone?: "neutral" | "success" | "warning" | "danger" | "info" | "primary" | "warn";
 }) {
+  const effectiveTone = tone === "warn" ? "warning" : (tone || color || "neutral");
   const styles: Record<string, { bg: string; fg: string }> = {
     neutral: { bg: "oklch(0.94 0.01 250)", fg: "oklch(0.40 0.02 250)" },
     success: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)" },
@@ -90,7 +93,7 @@ export function Pill({
     info: { bg: "oklch(0.94 0.05 220)", fg: "oklch(0.42 0.15 220)" },
     primary: { bg: "oklch(0.94 0.06 265)", fg: "oklch(0.40 0.18 265)" },
   };
-  const s = styles[color];
+  const s = styles[effectiveTone] || styles.neutral;
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
@@ -108,45 +111,51 @@ export function TableShell({
   sort,
   footer,
 }: {
-  columns: TableColumn[];
+  columns?: TableColumn[];
   children: ReactNode;
   sort?: { sortKey: string | null; sortDir: SortDir; onSort: (key: string) => void };
   footer?: ReactNode;
 }) {
+  const hasColumns = Array.isArray(columns) && columns.length > 0;
+
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-secondary/60 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {columns.map((c, i) => {
-                const col = typeof c === "string" ? { label: c } : c;
-                if (sort && col.key) {
+        {hasColumns ? (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/60 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {(columns || []).map((c, i) => {
+                  const col = typeof c === "string" ? { label: c } : c;
+                  if (sort && col.key) {
+                    return (
+                      <SortHeader
+                        key={col.key}
+                        label={col.label}
+                        columnKey={col.key}
+                        sortKey={sort.sortKey}
+                        sortDir={sort.sortDir}
+                        onSort={sort.onSort}
+                        align={col.align}
+                      />
+                    );
+                  }
                   return (
-                    <SortHeader
-                      key={col.key}
-                      label={col.label}
-                      columnKey={col.key}
-                      sortKey={sort.sortKey}
-                      sortDir={sort.sortDir}
-                      onSort={sort.onSort}
-                      align={col.align}
-                    />
+                    <th
+                      key={col.label + i}
+                      className={`px-4 py-3 ${col.align === "right" ? "text-right" : ""}`}
+                    >
+                      {col.label}
+                    </th>
                   );
-                }
-                return (
-                  <th
-                    key={col.label + i}
-                    className={`px-4 py-3 ${col.align === "right" ? "text-right" : ""}`}
-                  >
-                    {col.label}
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>{children}</tbody>
-        </table>
+                })}
+              </tr>
+            </thead>
+            <tbody>{children}</tbody>
+          </table>
+        ) : (
+          children
+        )}
       </div>
       {footer}
     </Card>

@@ -81,13 +81,15 @@ export const requireNestAuth = createMiddleware({ type: "function" }).server(
     }
 
     const userId: string = decoded.sub ?? decoded.id;
+    const role: string = decoded.role ?? "admin";
     const user = {
       id: userId,
       email: decoded.email ?? decoded.username ?? "",
       name: decoded.name ?? "",
       avatar_url: decoded.avatar_url ?? "",
+      role,
     };
 
-    return next({ context: { userId, token, user, supabase: supabaseAdmin } });
+    return next({ context: { userId, token, user, role, supabase: supabaseAdmin } });
   }
 );

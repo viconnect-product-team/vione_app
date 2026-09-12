@@ -173,6 +173,40 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
   const nextSlide = () => setActiveIndex((prev) => (prev + 1) % DEFAULT_SLIDES.length);
   const prevSlide = () => setActiveIndex((prev) => (prev - 1 + DEFAULT_SLIDES.length) % DEFAULT_SLIDES.length);
 
+  const getSlideMotionProps = (idx: number): any => {
+    switch (idx) {
+      case 0: // NFC Card: 3D Hyperspace Warp & Gravitational Snap
+        return {
+          initial: { opacity: 0, scale: 0.72, rotateZ: -7, filter: "blur(12px)" },
+          animate: { opacity: 1, scale: 1, rotateZ: 0, filter: "blur(0px)" },
+          exit: { opacity: 0, scale: 1.25, rotateZ: 5, filter: "blur(10px)" },
+          transition: { type: "spring", stiffness: 120, damping: 18, mass: 0.9 },
+        };
+      case 1: // B2B Match: Quantum Stargate Singularity Iris Unfold
+        return {
+          initial: { opacity: 0, clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", scale: 0.85 },
+          animate: { opacity: 1, clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)", scale: 1 },
+          exit: { opacity: 0, clipPath: "polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)", scale: 0.9 },
+          transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+        };
+      case 2: // Events: Cybernetic Laser Curtain Sweep
+        return {
+          initial: { opacity: 0, clipPath: "inset(0 0 100% 0)", filter: "brightness(1.8)" },
+          animate: { opacity: 1, clipPath: "inset(0 0 0% 0)", filter: "brightness(1)" },
+          exit: { opacity: 0, clipPath: "inset(100% 0 0 0)", filter: "brightness(1.4)" },
+          transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+        };
+      case 3: // Perks: Prismatic Holographic Tilt & Unfold
+      default:
+        return {
+          initial: { opacity: 0, rotateY: 30, scale: 0.88, filter: "blur(8px)" },
+          animate: { opacity: 1, rotateY: 0, scale: 1, filter: "blur(0px)" },
+          exit: { opacity: 0, rotateY: -25, scale: 0.92, filter: "blur(8px)" },
+          transition: { duration: 0.5, ease: "easeOut" },
+        };
+    }
+  };
+
   const themeClass = (darkClass: string, lightClass: string, contrastClass?: string) => {
     if (themeMode === "contrast" && contrastClass) return contrastClass;
     if (themeMode === "dark" || themeMode === "contrast") return darkClass;
@@ -355,10 +389,7 @@ export function LandingInteractiveShowcase({ themeMode = "light" }: { themeMode?
       <AnimatePresence mode="wait">
         <motion.div
           key={current.id}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
-          transition={{ duration: 0.35 }}
+          {...getSlideMotionProps(activeIndex)}
           className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center min-h-[420px] relative z-10"
         >
           {/* Left Column: Feature Descriptions matching Image 3 */}

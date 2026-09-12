@@ -26,6 +26,11 @@ export type Opportunity = {
   createdAt: string;
   views: number;
   emoji: string;
+  claimedById?: string;
+  claimedByName?: string;
+  claimedAt?: string;
+  claimedPhone?: string;
+  claimedCompany?: string;
 };
 
 export type OpportunityInterest = {

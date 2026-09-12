@@ -98,6 +98,35 @@ export class EventsController {
     return this.eventsService.updateQrFields(req.user.id, id, qrFields);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put('registrations/:id/seating')
+  async updateRegistrationSeating(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('seatAssignment') seatAssignment: string,
+  ) {
+    return this.eventsService.updateRegistrationSeating(req.user.id, id, seatAssignment);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('registrations/:id/walk-in-cash')
+  async recordWalkInCashPayment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('amount') amount?: number,
+  ) {
+    return this.eventsService.recordWalkInCashPayment(req.user.id, id, amount);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('registrations/:id/send-payment-reminder')
+  async sendPaymentReminder(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    return this.eventsService.sendPaymentReminder(req.user.id, id);
+  }
+
   @Delete(':id')
   async deleteEvent(@Request() req: any, @Param('id') id: string) {
     return this.eventsService.deleteEvent(req.user.id, id);

@@ -5,7 +5,7 @@
 // /m/checkin handoff. No attendee directory, no feed.
 
 import { Link } from "@tanstack/react-router";
-import { CalendarDays, MapPin, QrCode, Tag, Users } from "lucide-react";
+import { CalendarDays, Handshake, MapPin, QrCode, Tag, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFmt, useT } from "@/lib/i18n";
 import { useCommunityEventDetail } from "@/hooks/use-community-activity";
@@ -256,6 +256,75 @@ export function CommunityEventDetail({
                   </dd>
                 </div>
               </dl>
+            </section>
+
+            {/* Đơn vị đồng hành & Nhà tài trợ */}
+            <section className="mt-6 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm">
+              <h2 className="text-[15px] font-semibold text-[var(--bc-mobile-text)] flex items-center gap-2">
+                <Handshake className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
+                <span>Nhà Tài Trợ & Đơn Vị Đồng Hành</span>
+              </h2>
+              <div className="mt-3 divide-y divide-[var(--bc-mobile-border)]">
+                <div className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-400 font-bold text-xs flex items-center justify-center">
+                      ST
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Tập đoàn Công nghệ SunTech Global</div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Nguyễn Văn Hùng (Chủ tịch HĐQT)</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400">
+                    💎 Bạch Kim
+                  </span>
+                </div>
+
+                <div className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-400 font-bold text-xs flex items-center justify-center">
+                      HG
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Trầm Hương & Yến Sào Hoàng Gia</div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">200 hộp quà tặng VIP cho C-Level</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400">
+                    🥇 Vàng
+                  </span>
+                </div>
+
+                <div className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-400 font-bold text-xs flex items-center justify-center">
+                      TP
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">TPBank - Khối SME</div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Tài trợ hạ tầng Livestream & Âm thanh</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300">
+                    🥈 Bạc
+                  </span>
+                </div>
+
+                <div className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-orange-500/10 text-orange-400 font-bold text-xs flex items-center justify-center">
+                      AR
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Artisan Coffee & Roastery</div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Quầy pha chế Espresso & Teabreak</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-400">
+                    🥉 Đồng
+                  </span>
+                </div>
+              </div>
             </section>
           </>
         )}

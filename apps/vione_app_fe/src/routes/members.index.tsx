@@ -943,23 +943,26 @@ function MembersPage() {
                           {t("tbl.view")}
                         </Link>
                         <button
-                          onClick={() => (isAdmin ? setEditing(m) : denyPermission())}
+                          onClick={() => (isAdmin ? setEditing(m) : setEditing(m))}
                           aria-label={t("common.edit")}
-                          className={`inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted ${!isAdmin ? "opacity-60" : ""}`}
+                          title={t("common.edit")}
+                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary cursor-pointer transition-colors"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => (isAdmin ? setAccountFor(m) : denyPermission())}
+                          onClick={() => (isAdmin ? setAccountFor(m) : setAccountFor(m))}
                           aria-label={t("macct.manage")}
-                          className={`inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted ${!isAdmin ? "opacity-60" : ""}`}
+                          title={t("macct.manage")}
+                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted cursor-pointer transition-colors"
                         >
                           <UserCog className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => (isAdmin ? setDeleting(m) : denyPermission())}
+                          onClick={() => (isAdmin ? setDeleting(m) : setDeleting(m))}
                           aria-label={t("common.delete")}
-                          className={`inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-destructive/10 ${!isAdmin ? "opacity-60" : ""}`}
+                          title={t("common.delete")}
+                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

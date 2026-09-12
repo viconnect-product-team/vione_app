@@ -203,7 +203,13 @@ function AttendeeCard({ reg }: { reg: Registration }) {
         {reg.memberCode && reg.memberName && (
           <p className="truncate text-xs text-muted-foreground">{reg.memberCode}</p>
         )}
-        <p className="truncate text-[11px] text-muted-foreground">{fmt.date(reg.registeredAt)}</p>
+        {reg.seatAssignment ? (
+          <div className="mt-0.5 inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+            <span>📍</span> {reg.seatAssignment}
+          </div>
+        ) : (
+          <p className="truncate text-[11px] text-muted-foreground">{fmt.date(reg.registeredAt)}</p>
+        )}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span
@@ -212,7 +218,7 @@ function AttendeeCard({ reg }: { reg: Registration }) {
           {t(STATUS_KEY[reg.status])}
         </span>
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TICKET_TONE[reg.ticketType]}`}
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TICKET_TONE[reg.ticketType] || "bg-secondary text-muted-foreground"}`}
         >
           {reg.ticketType}
         </span>

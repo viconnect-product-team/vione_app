@@ -53,6 +53,8 @@ function SponsorsPage() {
   const { data: SPONSORS, reload } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
   const [q, setQ] = useUrlState<string>("q", "");
   const [tier, setTier] = useState<Sponsor["tier"] | "all">("all");
+  const [sponsorTypeFilter, setSponsorTypeFilter] = useState<"all" | "regular" | "new">("all");
+  const [packageTypeFilter, setPackageTypeFilter] = useState<"all" | "cash" | "in_kind">("all");
 
   const createFn = useServerFn(createSponsorFn);
   const updateFn = useServerFn(updateSponsorFn);
@@ -65,6 +67,30 @@ function SponsorsPage() {
 
   const fields: CrudField[] = [
     { name: "name", label: t("sponsors.col.name"), type: "text", required: true },
+    {
+      name: "sponsorType",
+      label: "Phân loại đối tác",
+      type: "select",
+      options: [
+        { value: "regular", label: "★ Thường xuyên ổn định" },
+        { value: "new", label: "✦ Nhà tài trợ mới" },
+      ],
+    },
+    {
+      name: "packageType",
+      label: "Hình thức tài trợ",
+      type: "select",
+      options: [
+        { value: "cash", label: "💵 Bằng Tiền (Chuyển khoản / Tiền mặt)" },
+        { value: "in_kind", label: "🎁 Bằng Hiện vật (Sản phẩm, quà tặng, dịch vụ)" },
+      ],
+    },
+    {
+      name: "inKindDescription",
+      label: "Mô tả hiện vật tài trợ (nếu có)",
+      type: "text",
+      placeholder: "Ví dụ: 200 bộ quà tặng cao cấp, Teabreak tiệc trà...",
+    },
     {
       name: "tier",
       label: t("sponsors.col.tier"),
@@ -79,7 +105,7 @@ function SponsorsPage() {
     { name: "contact", label: t("sponsors.col.contact"), type: "text" },
     { name: "email", label: "Email", type: "text" },
     { name: "phone", label: "Phone", type: "text" },
-    { name: "amount", label: t("sponsors.col.value"), type: "number" },
+    { name: "amount", label: "Giá trị / Định giá quy đổi (VNĐ)", type: "number" },
     { name: "events", label: t("sponsors.col.events"), type: "number" },
     {
       name: "since",
@@ -139,16 +165,26 @@ function SponsorsPage() {
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return SPONSORS.filter((s) => (tier === "all" ? true : s.tier === tier)).filter(
-      (s) => !ql || s.name.toLowerCase().includes(ql) || s.contact.toLowerCase().includes(ql),
-    );
-  }, [q, tier, SPONSORS]);
+    return SPONSORS
+      .filter((s) => (tier === "all" ? true : s.tier === tier))
+      .filter((s) => (sponsorTypeFilter === "all" ? true : s.sponsorType === sponsorTypeFilter))
+      .filter((s) => (packageTypeFilter === "all" ? true : s.packageType === packageTypeFilter))
+      .filter(
+        (s) =>
+          !ql ||
+          s.name.toLowerCase().includes(ql) ||
+          s.contact.toLowerCase().includes(ql) ||
+          (s.inKindDescription && s.inKindDescription.toLowerCase().includes(ql)),
+      );
+  }, [q, tier, sponsorTypeFilter, packageTypeFilter, SPONSORS]);
 
   const tc = useTableControls<Sponsor>(
     filtered,
     {
       code: (s) => s.id,
       name: (s) => s.name,
+      sponsorType: (s) => s.sponsorType,
+      packageType: (s) => s.packageType,
       tier: (s) => s.tier,
       contact: (s) => s.contact,
       value: (s) => s.amount,
@@ -196,27 +232,30 @@ function SponsorsPage() {
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label={t("sponsors.kpi.total")}
-          value={SPONSORS.length}
+          label="Tổng NTT & Giá Trị"
+          value={`${SPONSORS.length} NTT · ${fmt.money(totalAmount)}`}
           icon={<Handshake className="h-4 w-4" />}
         />
         <StatCard
-          label={t("sponsors.kpi.value")}
-          value={fmt.money(totalAmount)}
+          label="★ Thường Xuyên Ổn Định"
+          value={`${SPONSORS.filter((s) => s.sponsorType === "regular").length} Đối tác`}
           tone="success"
-          icon={<TrendingUp className="h-4 w-4" />}
+          hint={`${Math.round((SPONSORS.filter((s) => s.sponsorType === "regular").length / (SPONSORS.length || 1)) * 100)}% tổng số đối tác`}
+          icon={<Award className="h-4 w-4 text-emerald-500" />}
         />
         <StatCard
-          label={t("sponsors.kpi.platinum")}
-          value={SPONSORS.filter((s) => s.tier === "platinum").length}
+          label="✦ Nhà Tài Trợ Mới"
+          value={`${SPONSORS.filter((s) => s.sponsorType === "new").length} Đơn vị`}
           tone="info"
-          icon={<Award className="h-4 w-4" />}
+          hint="Mới đồng hành các kỳ gần nhất"
+          icon={<UserPlus className="h-4 w-4 text-sky-500" />}
         />
         <StatCard
-          label={t("sponsors.kpi.active")}
-          value={SPONSORS.filter((s) => s.status === "active").length}
-          tone="success"
-          icon={<Handshake className="h-4 w-4" />}
+          label="🎁 Tài Trợ Hiện Vật"
+          value={`${SPONSORS.filter((s) => s.packageType === "in_kind").length} Gói hiện vật`}
+          tone="warning"
+          hint={`Quy đổi ~${fmt.money(SPONSORS.filter((s) => s.packageType === "in_kind").reduce((acc, s) => acc + s.amount, 0))}`}
+          icon={<TrendingUp className="h-4 w-4 text-purple-500" />}
         />
       </div>
 
@@ -226,10 +265,28 @@ function SponsorsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={t("sponsors.searchPh")}
+            placeholder="Tìm theo tên, liên hệ, quà tặng hiện vật..."
             className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm shadow-[var(--shadow-card)] focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
         </div>
+        <select
+          value={sponsorTypeFilter}
+          onChange={(e) => setSponsorTypeFilter(e.target.value as any)}
+          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+        >
+          <option value="all">Tất cả đối tác</option>
+          <option value="regular">★ Thường xuyên ổn định</option>
+          <option value="new">✦ Nhà tài trợ mới</option>
+        </select>
+        <select
+          value={packageTypeFilter}
+          onChange={(e) => setPackageTypeFilter(e.target.value as any)}
+          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+        >
+          <option value="all">Tất cả hình thức</option>
+          <option value="cash">💵 Bằng Tiền mặt/CK</option>
+          <option value="in_kind">🎁 Bằng Hiện vật</option>
+        </select>
         <select
           value={tier}
           onChange={(e) => setTier(e.target.value as Sponsor["tier"] | "all")}
@@ -247,6 +304,8 @@ function SponsorsPage() {
         columns={[
           { label: t("sponsors.col.code"), key: "code" },
           { label: t("sponsors.col.name"), key: "name" },
+          { label: "Phân loại đối tác", key: "sponsorType" },
+          { label: "Hình thức gói", key: "packageType" },
           { label: t("sponsors.col.tier"), key: "tier" },
           { label: t("sponsors.col.contact"), key: "contact" },
           { label: t("sponsors.col.value"), key: "value" },
@@ -273,6 +332,36 @@ function SponsorsPage() {
           <tr key={s.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
             <td className="px-4 py-3 font-mono text-[12px] font-semibold text-primary">{s.id}</td>
             <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
+            <td className="px-4 py-3">
+              {s.sponsorType === "regular" ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm whitespace-nowrap">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  ★ Thường xuyên
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 shadow-sm whitespace-nowrap">
+                  ✦ NTT mới
+                </span>
+              )}
+            </td>
+            <td className="px-4 py-3">
+              {s.packageType === "in_kind" ? (
+                <div className="flex flex-col gap-0.5 max-w-[220px]">
+                  <span className="inline-flex items-center gap-1 w-fit rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                    🎁 Hiện vật
+                  </span>
+                  {s.inKindDescription && (
+                    <span className="text-[11px] text-muted-foreground truncate" title={s.inKindDescription}>
+                      {s.inKindDescription}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                  💵 Bằng Tiền
+                </span>
+              )}
+            </td>
             <td className="px-4 py-3">
               <span
                 className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"

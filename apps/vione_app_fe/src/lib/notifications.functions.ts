@@ -30,8 +30,8 @@ const notifInput = z.object({
   body: z.string().max(2000).default(""),
   audience: z.enum(["all", "members", "sponsors", "staff"]).default("all"),
   channel: z.enum(["inapp", "email", "sms"]).default("inapp"),
-  appScope: z.enum(["crm", "vione_app", "association_app", "all"]).default("crm"),
-  targetApp: z.enum(["crm", "vione_app", "association_app", "all"]).optional(),
+  appScope: z.enum(["crm", "vione_app", "association_app", "all"]).default("all"),
+  targetApp: z.enum(["crm", "vione_app", "association_app", "all"]).default("all"),
   status: z.enum(["sent", "scheduled", "draft"]).default("sent"),
   associationId: z.string().optional(),
 });

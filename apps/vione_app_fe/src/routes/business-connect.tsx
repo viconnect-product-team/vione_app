@@ -5,7 +5,7 @@
 // authenticated AppShell. Tab navigation uses type-safe <Link>; each leaf
 // route owns its own head()/content. No business logic here.
 
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useT, type TKey } from "@/lib/i18n";
 
@@ -28,6 +28,17 @@ const TABS: Tab[] = [
 
 function BusinessConnectLayout() {
   const t = useT();
+  const location = useLocation();
+  const isFullBleed =
+    location.pathname === "/business-connect" ||
+    location.pathname === "/business-connect/" ||
+    location.pathname.startsWith("/business-connect/v");
+
+  // Khi người dùng vào /business-connect hoặc các bản demo v1, v2, v3, v4, hiển thị toàn màn hình (Full-bleed) không bị bó khung trong AppShell
+  if (isFullBleed) {
+    return <Outlet />;
+  }
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
@@ -59,3 +70,4 @@ function BusinessConnectLayout() {
     </AppShell>
   );
 }
+

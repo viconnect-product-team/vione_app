@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  FileText,
   Lock,
   MapPin,
   QrCode,
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import type { EventItem, Registration } from "@/lib/events.functions";
 import { downloadIcs } from "@/lib/ics";
 import { useFmt, useT } from "@/lib/i18n";
+import { GoogleFormEventRegistrationModal } from "@/components/events/GoogleFormEventRegistrationModal";
 
 type RegAvailability = "open" | "full" | "closed";
 
@@ -45,6 +47,7 @@ export function EventRegistrationPanel({
   const t = useT();
   const fmt = useFmt();
   const [addedToCalendar, setAddedToCalendar] = useState(false);
+  const [googleFormOpen, setGoogleFormOpen] = useState(false);
 
   const availability = availabilityOf(event);
   const pct =
@@ -164,7 +167,7 @@ export function EventRegistrationPanel({
       </div>
 
       {/* Primary CTA state block */}
-      <div className="mt-5">
+      <div className="mt-5 space-y-2.5">
         {availability === "closed" ? (
           <button
             disabled
@@ -179,18 +182,24 @@ export function EventRegistrationPanel({
           >
             <Users className="h-4 w-4" aria-hidden="true" /> {t("edetail.cta.full")}
           </button>
-        ) : canManage ? (
-          <Link
-            to="/event-registrations"
-            className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <ClipboardList className="h-4 w-4" aria-hidden="true" /> {t("edetail.cta.manageReg")}
-          </Link>
         ) : (
-          <div className="rounded-xl border border-border bg-secondary/40 p-3 text-center text-[13px] font-medium text-muted-foreground">
-            {t("edetail.reg.openHint")}
-          </div>
+          <>
+            <button
+              onClick={() => setGoogleFormOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95 active:scale-[0.99]"
+              style={{ background: "linear-gradient(135deg, #673ab7 0%, #5e35b1 100%)" }}
+            >
+              <FileText className="h-4 w-4" /> Đăng Ký Tham Gia (Form Google)
+            </button>
+            {canManage && (
+              <Link
+                to="/event-registrations"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+              >
+                <ClipboardList className="h-4 w-4" /> {t("edetail.cta.manageReg")}
+              </Link>
+            )}
+          </>
         )}
       </div>
 
@@ -248,6 +257,12 @@ export function EventRegistrationPanel({
           <Clock className="h-3 w-3" aria-hidden="true" /> {t("edetail.reg.deadlineHint")}
         </p>
       )}
+
+      <GoogleFormEventRegistrationModal
+        event={event}
+        isOpen={googleFormOpen}
+        onClose={() => setGoogleFormOpen(false)}
+      />
     </section>
   );
 }

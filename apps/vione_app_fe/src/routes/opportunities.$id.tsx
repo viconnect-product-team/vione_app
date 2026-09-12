@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
   CalendarClock,
+  CheckCircle2,
   Eye,
   Mail,
   MapPin,
@@ -245,6 +246,42 @@ function OpportunityDetailPage() {
             </div>
           </Card>
 
+          {/* Người nhận cơ hội từ Mobile */}
+          {opp.claimedByName && (
+            <Card className="p-6 border-emerald-500/30 bg-emerald-500/5">
+              <div className="flex items-center gap-2 mb-3 text-emerald-400">
+                <CheckCircle2 className="h-5 w-5" />
+                <h3 className="font-bold text-base text-emerald-300">
+                  Thông tin người đã nhận cơ hội (Đồng bộ từ Mobile)
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-emerald-500/20 bg-background/60 p-4">
+                <div>
+                  <div className="text-xs text-muted-foreground">Người nhận:</div>
+                  <div className="text-sm font-semibold text-foreground">{opp.claimedByName}</div>
+                </div>
+                {opp.claimedCompany && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Doanh nghiệp:</div>
+                    <div className="text-sm font-semibold text-foreground">{opp.claimedCompany}</div>
+                  </div>
+                )}
+                {opp.claimedPhone && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Số điện thoại liên hệ:</div>
+                    <div className="text-sm font-semibold text-emerald-400">{opp.claimedPhone}</div>
+                  </div>
+                )}
+                {opp.claimedAt && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Thời gian tiếp nhận:</div>
+                    <div className="text-sm font-medium text-foreground">{fmt.date(opp.claimedAt)}</div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
           {/* Interests */}
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -257,17 +294,11 @@ function OpportunityDetailPage() {
               </span>
             </div>
 
-            {!isOwner && (
-              <p className="mb-4 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
-                {t("opp.detail.interestsPrivate")}
-              </p>
-            )}
-
-            {isOwner && interests.length === 0 ? (
+            {interests.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 {t("opp.empty.interests")}
               </p>
-            ) : isOwner ? (
+            ) : (
               <div className="space-y-3">
                 {interests.map((it: OpportunityInterest) => {
                   const m = getPoster(it.memberId);
@@ -312,7 +343,7 @@ function OpportunityDetailPage() {
                   );
                 })}
               </div>
-            ) : null}
+            )}
           </Card>
         </div>
 

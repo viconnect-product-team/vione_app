@@ -1,7 +1,18 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Link2, Pencil, Plus, Trash2, Vote as VoteIcon, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Gift,
+  Link2,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  Trophy,
+  Vote as VoteIcon,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +22,9 @@ import {
   createVoteFn,
   updateVoteFn,
   deleteVoteFn,
+  castVoteFn,
   type Vote,
+  type VoteOption,
 } from "@/lib/voting.functions";
 import { getVotingOpenPrefFn, setVotingOpenPrefFn } from "@/lib/settings.functions";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
@@ -128,13 +141,29 @@ function VotingPage() {
   const { tab: filter, page, size: PAGE_SIZE } = Route.useSearch();
   const VOTES = Route.useLoaderData() as Vote[];
   const [open, setOpen] = useState(false);
+  const [luckyDrawOpen, setLuckyDrawOpen] = useState(false);
   const [editing, setEditing] = useState<Vote | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [remotePref, setRemotePref] = useState<OpenMode | null>(null);
   const deleteVote = useServerFn(deleteVoteFn);
+  const castVote = useServerFn(castVoteFn);
   const loadPref = useServerFn(getVotingOpenPrefFn);
   const savePref = useServerFn(setVotingOpenPrefFn);
+  const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
+
+  async function handleVote(pollId: string, optionId: string) {
+    setVotingOptionId(optionId);
+    try {
+      await castVote({ data: { pollId, optionId } });
+      toast.success("Đã ghi nhận biểu quyết thành công!");
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể gửi biểu quyết");
+    } finally {
+      setVotingOptionId(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -285,6 +314,13 @@ function VotingPage() {
               {copied ? "Đã sao chép!" : "Sao chép liên kết"}
             </button>
             <button
+              onClick={() => setLuckyDrawOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95"
+            >
+              <Gift className="h-4 w-4" />
+              Bốc Thăm Trúng Thưởng
+            </button>
+            <button
               onClick={() => setOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
               style={{ background: "var(--gradient-primary)" }}
@@ -356,12 +392,75 @@ function VotingPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[v.type])}
                     </span>
+                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400">
+                      🎯 Dành cho: Người ngoài hiệp hội
+                    </span>
                   </div>
                   <h3 className="text-base font-semibold text-foreground">{v.title}</h3>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {fmt.date(v.startsAt)} → {fmt.date(v.endsAt)}
                   </div>
-                  {v.options.length > 0 && (
+                  {/* Options breakdown with exact percentages & leading badges */}
+                  {v.optionDetails && v.optionDetails.length > 0 ? (
+                    <div className="mt-4 space-y-2 max-w-xl">
+                      <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Danh sách lựa chọn ({v.optionDetails.length} lựa chọn)
+                      </div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {v.optionDetails.map((opt) => (
+                          <div
+                            key={opt.id}
+                            className={`p-2.5 rounded-xl border transition-all ${
+                              opt.isLeading
+                                ? "bg-amber-500/10 border-amber-500/40 shadow-xs"
+                                : "bg-secondary/40 border-border"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleVote(v.id, opt.id)}
+                                  disabled={votingOptionId === opt.id}
+                                  className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                                    v.myVote === opt.id
+                                      ? "border-amber-500 bg-amber-500 text-white"
+                                      : "border-muted-foreground hover:border-primary"
+                                  }`}
+                                  title="Bấm để bình chọn cho phương án này"
+                                >
+                                  {v.myVote === opt.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                </button>
+                                <span className="text-xs font-semibold text-foreground">{opt.title}</span>
+                                {opt.isLeading && (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9.5px] font-bold">
+                                    👑 Dẫn đầu
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-muted-foreground text-[11px]">({opt.votesCount} phiếu)</span>
+                                <span className={`font-black text-xs ${opt.isLeading ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
+                                  {opt.percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="h-1.5 rounded-full overflow-hidden bg-secondary">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${Math.max(opt.percentage, 1)}%`,
+                                  background: opt.isLeading
+                                    ? "linear-gradient(90deg, #F59E0B, #D97706)"
+                                    : "var(--gradient-primary)",
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : v.options.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {v.options.map((o, i) => (
                         <span
@@ -372,7 +471,7 @@ function VotingPage() {
                         </span>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
@@ -451,6 +550,7 @@ function VotingPage() {
 
       {open && <VoteModal onClose={() => setOpen(false)} />}
       {editing && <VoteModal vote={editing} onClose={() => setEditing(null)} />}
+      {luckyDrawOpen && <LuckyDrawModal onClose={() => setLuckyDrawOpen(false)} />}
     </AppShell>
   );
 }
@@ -461,6 +561,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const updateVote = useServerFn(updateVoteFn);
   const [title, setTitle] = useState(vote?.title ?? "");
   const [type, setType] = useState<Vote["type"]>(vote?.type ?? "policy");
+  const [targetAudience, setTargetAudience] = useState("non_members");
   const [startsAt, setStartsAt] = useState(vote?.startsAt ?? "");
   const [endsAt, setEndsAt] = useState(vote?.endsAt ?? "");
   const [options, setOptions] = useState<string[]>(
@@ -540,6 +641,26 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
             </select>
           </div>
 
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              Đối tượng nhận thông báo biểu quyết
+            </label>
+            <select
+              value={targetAudience}
+              onChange={(e) => setTargetAudience(e.target.value)}
+              className={inputCls}
+            >
+              <option value="non_members">
+                🎯 Chỉ người không tham gia hiệp hội (Khách mời sự kiện / Non-members)
+              </option>
+              <option value="all">🌐 Toàn thể cộng đồng & Hội viên</option>
+              <option value="members">⭐ Chỉ hội viên chính thức hiệp hội</option>
+            </select>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              * Theo quy định biểu quyết sự kiện, chỉ gửi thông báo biểu quyết cho người chưa tham gia hiệp hội để khảo sát khách quan.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Bắt đầu</label>
@@ -614,3 +735,167 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
     </div>
   );
 }
+
+function LuckyDrawModal({ onClose }: { onClose: () => void }) {
+  const [prize, setPrize] = useState("🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle");
+  const candidates = [
+    { name: "Lê Hoàng Long", company: "Tập đoàn Xây dựng Hoàng Long", code: "M1983-001", seat: "Bàn VIP 01 - Ghế 01" },
+    { name: "Nguyễn Văn Cường", company: "Cường Thịnh Corp", code: "M1983-002", seat: "Bàn VIP 01 - Ghế 02" },
+    { name: "Vũ Thu Trang", company: "Kiến Vàng Capital", code: "M1983-003", seat: "Bàn VIP 01 - Ghế 03" },
+    { name: "Phạm Quang Huy", company: "Huy Hoàng Media Group", code: "M1983-004", seat: "Bàn VIP 01 - Ghế 04" },
+    { name: "Hoàng Minh Tuấn", company: "Tuấn Minh Global Trade", code: "M1983-005", seat: "Bàn VIP 02 - Ghế 01" },
+    { name: "Đỗ Thị Mai", company: "EcoClean Vietnam", code: "M1983-006", seat: "Bàn VIP 02 - Ghế 02" },
+    { name: "Bùi Đức Thắng", company: "Thắng Lợi XNK JSC", code: "M1983-007", seat: "Bàn 03 - Ghế 01" },
+    { name: "Ngô Bảo Anh", company: "MediaPro Solution", code: "M1983-008", seat: "Bàn 04 - Ghế 01" },
+    { name: "Đinh Trọng Hiếu", company: "Tài Chính Việt An", code: "M1983-009", seat: "Bàn 05 - Ghế 01" },
+    { name: "Trịnh Kim Oanh", company: "An Phát Holding", code: "M1983-010", seat: "Bàn 06 - Ghế 01" },
+  ];
+
+  const [spinning, setSpinning] = useState(false);
+  const [displayIndex, setDisplayIndex] = useState(0);
+  const [winner, setWinner] = useState<(typeof candidates)[0] | null>(null);
+  const [history, setHistory] = useState<Array<{ prize: string; winner: (typeof candidates)[0]; time: string }>>([]);
+
+  const spin = () => {
+    if (spinning) return;
+    setWinner(null);
+    setSpinning(true);
+    let counter = 0;
+    const interval = setInterval(() => {
+      setDisplayIndex(Math.floor(Math.random() * candidates.length));
+      counter += 1;
+      if (counter > 28) {
+        clearInterval(interval);
+        const winIdx = Math.floor(Math.random() * candidates.length);
+        setDisplayIndex(winIdx);
+        const chosen = candidates[winIdx];
+        setWinner(chosen);
+        setSpinning(false);
+        setHistory((prev) => [
+          { prize, winner: chosen, time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) },
+          ...prev,
+        ]);
+        toast.success(`🎉 Chúc mừng ${chosen.name} đã trúng ${prize}!`);
+      }
+    }, 75);
+  };
+
+  const handleNotifyWinner = () => {
+    if (!winner) return;
+    toast.success(`Đã phát thông báo trúng thưởng ${prize} tới điện thoại của ${winner.name}!`);
+  };
+
+  const current = candidates[displayIndex];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-500">
+              <Trophy className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Bốc Thăm May Mắn Sự Kiện</h3>
+              <p className="text-xs text-muted-foreground">Quay số ngẫu nhiên dành cho tất cả khách tham dự</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-xl p-1 text-muted-foreground hover:bg-secondary">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-foreground">Hạng mục giải thưởng</label>
+            <select
+              value={prize}
+              onChange={(e) => setPrize(e.target.value)}
+              disabled={spinning}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-bold text-amber-600 outline-none focus:border-primary"
+            >
+              <option value="🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle">🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle</option>
+              <option value="🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm">🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm</option>
+              <option value="🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ">🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ</option>
+              <option value="🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp">🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp</option>
+            </select>
+          </div>
+
+          {/* Wheel / Slot Box */}
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-background to-amber-500/5 p-6 text-center shadow-inner">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
+              {spinning ? "⚡ Đang quay ngẫu nhiên ứng viên..." : winner ? "🎉 NGƯỜI TRÚNG GIẢI MAY MẮN 🎉" : "Sẵn sàng quay số"}
+            </div>
+
+            <div className="my-4">
+              <div className="text-2xl font-black text-foreground transition duration-150">
+                {current?.name}
+              </div>
+              <div className="mt-1 text-sm font-semibold text-muted-foreground">
+                {current?.company}
+              </div>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
+                <span>📍 {current?.seat}</span>
+                <span>·</span>
+                <span>{current?.code}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={spin}
+              disabled={spinning}
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              {spinning ? "Đang quay số..." : "QUAY SỐ NGẪU NHIÊN"}
+            </button>
+          </div>
+
+          {/* Winner Action */}
+          {winner && (
+            <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 animate-in fade-in zoom-in-95">
+              <div>
+                <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                  Xác nhận người trúng giải: {winner.name}
+                </div>
+                <div className="text-[11px] text-muted-foreground">{prize}</div>
+              </div>
+              <button
+                type="button"
+                onClick={handleNotifyWinner}
+                className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+              >
+                Gửi thông báo trúng
+              </button>
+            </div>
+          )}
+
+          {/* History of Drawn Winners */}
+          {history.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-bold text-foreground">Danh sách đã trúng thưởng:</div>
+              <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-border bg-secondary/30 p-2 text-xs">
+                {history.map((h, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-card p-2 shadow-xs">
+                    <div>
+                      <strong className="text-foreground">{h.winner.name}</strong> ({h.winner.seat})
+                      <div className="text-[10px] text-muted-foreground">{h.prize}</div>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground">{h.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+

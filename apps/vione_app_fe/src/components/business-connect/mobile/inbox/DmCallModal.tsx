@@ -421,7 +421,7 @@ export function DmCallModal({
       {/* Background Animated Gradient Glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-amber-500/15 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[100px]" />
+        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-amber-600/10 blur-[100px]" />
       </div>
 
       <div className="relative w-full max-w-sm h-[90dvh] max-h-[720px] rounded-3xl border border-white/15 bg-gradient-to-b from-[#141A26]/95 via-[#0D111A]/95 to-[#07090E]/98 p-6 text-white shadow-2xl flex flex-col justify-between overflow-hidden">

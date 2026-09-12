@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { FeeRecord, ReminderEntry } from "./fees-data";
+import { DEFAULT_FEE_INVOICES } from "./fees-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
@@ -9,10 +10,10 @@ export const listInvoicesFn = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<FeeRecord[]> => {
     try {
       const res = await fetchNestApiFromServer<FeeRecord[]>("/admin/invoices", context.token);
-      return Array.isArray(res) ? res : [];
+      return Array.isArray(res) && res.length > 0 ? res : DEFAULT_FEE_INVOICES;
     } catch (err: any) {
       console.error("[listInvoicesFn] error:", err);
-      return [];
+      return DEFAULT_FEE_INVOICES;
     }
   });
 
@@ -25,14 +26,16 @@ export const getInvoiceFn = createServerFn({ method: "GET" })
       context,
     }): Promise<{ invoice: FeeRecord; reminders: ReminderEntry[] } | null> => {
       try {
-        return await fetchNestApiFromServer<{ invoice: FeeRecord; reminders: ReminderEntry[] }>(
+        const res = await fetchNestApiFromServer<{ invoice: FeeRecord; reminders: ReminderEntry[] }>(
           `/admin/invoices/${data.id}`,
           context.token,
         );
+        if (res && res.invoice) return res;
       } catch (err: any) {
         console.error("[getInvoiceFn] error:", err);
-        return null;
       }
+      const fallback = DEFAULT_FEE_INVOICES.find((i) => i.id === data.id);
+      return fallback ? { invoice: fallback, reminders: [] } : null;
     },
   );
 

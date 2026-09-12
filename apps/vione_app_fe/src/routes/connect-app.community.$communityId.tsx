@@ -1,16 +1,11 @@
-// BC-Mobile-7A — Community Detail (leaf).
+// BC-Mobile-7A — Community Layout (renders child routes or index detail).
 
-import { createFileRoute } from "@tanstack/react-router";
-import { CommunityDetail } from "@/components/business-connect/mobile/community/CommunityDetail";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/connect-app/community/$communityId")({
   head: () => ({
     meta: [{ title: "Cộng đồng — Business Connect" }, { name: "robots", content: "noindex" }],
   }),
-  component: ConnectAppCommunityDetailPage,
+  component: () => <Outlet />,
 });
 
-function ConnectAppCommunityDetailPage() {
-  const { communityId } = Route.useParams();
-  return <CommunityDetail communityId={communityId} />;
-}

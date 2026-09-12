@@ -24,6 +24,8 @@ export type BcDmThreadSummary = {
   /** true khi tin cuối do chính người xem gửi. */
   lastMessageFromMe: boolean;
   unreadCount: number;
+  /** true nếu 2 bên đã kết nối, false nếu là tin nhắn chờ (người lạ / gợi ý) */
+  isConnected?: boolean;
 };
 
 export type BcDmMessageReaction = {

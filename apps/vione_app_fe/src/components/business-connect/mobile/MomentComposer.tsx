@@ -792,7 +792,7 @@ export function MomentComposer({ personId }: { personId: string }) {
                     : "bg-[var(--bc-mobile-surface)] border border-transparent text-[var(--bc-mobile-muted)]"
                 }`}
               >
-                <Globe className="h-3 w-3 text-sky-400" />
+                <Globe className="h-3 w-3 text-amber-400" />
                 <span>Công khai</span>
               </button>
 

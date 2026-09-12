@@ -1295,6 +1295,42 @@ export function Ceo1983Landing() {
           .animate-nfc-wave {
             animation: nfcWaveExpand 2.2s cubic-bezier(0.1, 0.7, 0.1, 1) infinite;
           }
+
+          @keyframes cosmicDriftSlow {
+            0% { transform: scale(1.03) translate(0%, 0%) rotate(0deg); }
+            50% { transform: scale(1.08) translate(-1.5%, -0.8%) rotate(0.4deg); }
+            100% { transform: scale(1.03) translate(0%, 0%) rotate(0deg); }
+          }
+          .animate-cosmic-drift {
+            animation: cosmicDriftSlow 24s ease-in-out infinite alternate;
+          }
+
+          @keyframes warpPulseRing {
+            0% { transform: scale(0.35); opacity: 0.9; }
+            50% { opacity: 0.6; }
+            100% { transform: scale(2.6); opacity: 0; }
+          }
+          .animate-warp-pulse {
+            animation: warpPulseRing 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          }
+
+          @keyframes laserScanSweep {
+            0% { transform: translateY(-100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(600%); opacity: 0; }
+          }
+          .animate-laser-scan {
+            animation: laserScanSweep 3.5s ease-in-out infinite;
+          }
+
+          @keyframes cosmicConstellationTwinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.3); }
+          }
+          .animate-cosmic-twinkle {
+            animation: cosmicConstellationTwinkle 2.5s ease-in-out infinite alternate;
+          }
         `}
       </style>
 
@@ -1331,25 +1367,53 @@ export function Ceo1983Landing() {
           </>
         ) : (
           <>
-            {/* Real Hanoi City Night Skyline & Cosmic Starfield Image */}
-            <div className="absolute inset-0 w-full h-full opacity-65 mix-blend-screen scale-105 animate-pulse transition-opacity duration-700" style={{ animationDuration: "8s" }}>
+            {/* 1. Primary High-Definition Space Cosmos & Cyber Pyramids Canvas (Vivid, Not Murky) */}
+            <div className="absolute inset-0 w-full h-full opacity-90 scale-105 animate-cosmic-drift transition-all duration-1000">
               <img
-                src="/ceo1983_hero_cosmos_skyline.jpg"
-                alt="CEO 1983 Cosmos Hanoi Skyline"
-                className="w-full h-full object-cover object-center filter brightness-110 contrast-125"
+                src="/landing/robot_pyramid_cosmic.jpg"
+                alt="Cosmic Deep Space Universe & Cyber Architecture"
+                className="w-full h-full object-cover object-center filter brightness-110 contrast-125 saturate-115"
               />
             </div>
-            {/* Robot AI Tech GIF Overlay */}
+
+            {/* 2. Swirling Cosmic Stardust & Celestial Gold Aurora Flow */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-15 mix-blend-screen"
+              className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen"
+              style={{
+                backgroundImage: "url('/landing/ceo1983-gold-aurora.gif')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+
+            {/* 3. Cybernetic Space Coordinates & Warp Matrix Mesh */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen"
               style={{
                 backgroundImage: "url('/landing/tech-grid-motion.gif')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
             />
-            {/* Dynamic Dark Radial Gradient Vignette for Text Legibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-[#02050E]/80 to-[#02040A] pointer-events-none" />
+
+            {/* 4. Active Slide-Synchronized Cosmic Gravitational Shockwaves */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+              {/* Central Gravitational Pulsing Lens Rings */}
+              <div className="w-[500px] h-[500px] rounded-full border border-[#F6E1C3]/30 animate-warp-pulse blur-[0.5px]" />
+              <div className="w-[750px] h-[750px] rounded-full border border-[#D8B282]/20 animate-warp-pulse blur-[1px]" style={{ animationDelay: "1.2s" }} />
+              <div className="w-[1000px] h-[1000px] rounded-full border border-amber-400/15 animate-warp-pulse blur-[1.5px]" style={{ animationDelay: "2.4s" }} />
+
+              {/* Cosmic Constellation Twinkling Star Clusters */}
+              <div className="absolute top-[18%] left-[12%] w-2 h-2 rounded-full bg-white animate-cosmic-twinkle shadow-[0_0_12px_#FFF]" />
+              <div className="absolute top-[28%] right-[15%] w-2.5 h-2.5 rounded-full bg-[#F6E1C3] animate-cosmic-twinkle shadow-[0_0_15px_#F6E1C3]" style={{ animationDelay: "0.8s" }} />
+              <div className="absolute top-[55%] left-[8%] w-2 h-2 rounded-full bg-amber-300 animate-cosmic-twinkle shadow-[0_0_10px_#F59E0B]" style={{ animationDelay: "1.6s" }} />
+              <div className="absolute top-[42%] right-[22%] w-1.5 h-1.5 rounded-full bg-cyan-200 animate-cosmic-twinkle shadow-[0_0_8px_#38BDF8]" style={{ animationDelay: "2.1s" }} />
+              <div className="absolute bottom-[22%] left-[25%] w-2 h-2 rounded-full bg-[#D8B282] animate-cosmic-twinkle shadow-[0_0_12px_#D8B282]" style={{ animationDelay: "1.1s" }} />
+            </div>
+
+            {/* 5. Minimal Vignette (Preserving Maximum Cosmic Sky Visibility) */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-[#02040A] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(2,4,10,0.7)_100%)] pointer-events-none" />
           </>
         )}
 
@@ -1898,10 +1962,33 @@ export function Ceo1983Landing() {
               <motion.div
                 key="slide-card"
                 custom={slideDirection}
-                initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
-                transition={{ duration: 0.45, ease: "easeInOut" }}
+                initial={{
+                  opacity: 0,
+                  scale: 0.6,
+                  rotateZ: slideDirection > 0 ? -9 : 9,
+                  rotateY: slideDirection > 0 ? 25 : -25,
+                  filter: "blur(16px)",
+                }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  rotateZ: 0,
+                  rotateY: 0,
+                  filter: "blur(0px)",
+                }}
+                exit={{
+                  opacity: 0,
+                  scale: 1.3,
+                  rotateZ: slideDirection > 0 ? 8 : -8,
+                  filter: "blur(14px)",
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 110,
+                  damping: 18,
+                  mass: 0.9,
+                }}
+                style={{ transformPerspective: 1200 }}
                 onMouseEnter={() => setIsSlidePaused(true)}
                 onMouseLeave={() => setIsSlidePaused(false)}
                 className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center"
@@ -2248,14 +2335,35 @@ export function Ceo1983Landing() {
             )}
 
             {heroSlide === 1 && (
-              /* SLIDE 2: 200+ C-LEVEL DIRECTORY (Organic 3D Constellation of Verified Leaders - Không ô vuông chữ nhật thô) */
+              /* SLIDE 2: 200+ C-LEVEL DIRECTORY - Quantum Singularity Stargate Iris Unfold */
               <motion.div
                 key="slide-network"
                 custom={slideDirection}
-                initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
-                transition={{ duration: 0.45, ease: "easeInOut" }}
+                initial={{
+                  opacity: 0,
+                  clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+                  scale: 0.84,
+                  rotateX: 16,
+                  filter: "brightness(1.6) contrast(1.2)",
+                }}
+                animate={{
+                  opacity: 1,
+                  clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                  scale: 1,
+                  rotateX: 0,
+                  filter: "brightness(1) contrast(1)",
+                }}
+                exit={{
+                  opacity: 0,
+                  clipPath: "polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)",
+                  scale: 0.9,
+                  filter: "brightness(0.7)",
+                }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                style={{ transformPerspective: 1000 }}
                 onMouseEnter={() => setIsSlidePaused(true)}
                 onMouseLeave={() => setIsSlidePaused(false)}
                 className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
@@ -2451,17 +2559,35 @@ export function Ceo1983Landing() {
             )}
 
             {heroSlide === 2 && (
-              /* SLIDE 3: 4K KYC VIDEO BRIEFING TERMINAL & TITANIUM PASS (Chuyển video KYC vào Slide 3 Hero Section) */
+              /* SLIDE 3: 4K KYC VIDEO TERMINAL - Cyber Holographic Laser Curtain Sweep */
               <motion.div
                 key="slide-kyc-video"
                 custom={slideDirection}
-                initial={{ opacity: 0, x: slideDirection > 0 ? 50 : -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: slideDirection > 0 ? -50 : 50 }}
-                transition={{ duration: 0.45, ease: "easeInOut" }}
+                initial={{
+                  opacity: 0,
+                  clipPath: "inset(0 0 100% 0)",
+                  scale: 0.95,
+                  filter: "hue-rotate(45deg) brightness(1.8)",
+                }}
+                animate={{
+                  opacity: 1,
+                  clipPath: "inset(0 0 0% 0)",
+                  scale: 1,
+                  filter: "hue-rotate(0deg) brightness(1)",
+                }}
+                exit={{
+                  opacity: 0,
+                  clipPath: "inset(100% 0 0 0)",
+                  scale: 0.96,
+                  filter: "brightness(1.5)",
+                }}
+                transition={{
+                  duration: 0.65,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 onMouseEnter={() => setIsSlidePaused(true)}
                 onMouseLeave={() => setIsSlidePaused(false)}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center"
+                className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative"
               >
                 {/* Left Column (5 cols) - KYC Overview & Navigation */}
                 <div className="lg:col-span-5 text-left space-y-4">

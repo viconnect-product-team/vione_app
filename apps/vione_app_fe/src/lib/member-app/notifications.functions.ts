@@ -28,6 +28,8 @@ export type MyNotification = {
   refType?: string | null;
   refId?: string | null;
   leadStatus?: LeadWorkflowStatus | null;
+  safeDisplayData?: any;
+  notificationKind?: string;
 };
 
 // ---------- Notifications ----------

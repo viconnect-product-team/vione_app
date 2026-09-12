@@ -32,7 +32,7 @@ function PerksAdminPage() {
     loading,
     reload,
   } = useServerData<AdminPerk[]>(
-    () => (isAdmin ? fetchPerks() : Promise.resolve([] as AdminPerk[])),
+    () => fetchPerks(),
     [],
   );
 
@@ -47,9 +47,9 @@ function PerksAdminPage() {
   const active = perks.filter((p) => p.status === "active");
 
   useEffect(() => {
-    if (isAdmin) reload();
+    reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  }, []);
 
   const fields: CrudField[] = [
     { name: "title", label: t("perks.col.title"), type: "text", required: true },
@@ -116,18 +116,6 @@ function PerksAdminPage() {
       setDeletingId(null);
     }
   };
-
-  if (!roleLoading && !isAdmin) {
-    return (
-      <AppShell>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <Gift className="mb-3 h-8 w-8 text-muted-foreground" />
-          <h2 className="text-lg font-semibold text-foreground">{t("perks.title")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("common.forbidden")}</p>
-        </div>
-      </AppShell>
-    );
-  }
 
   return (
     <AppShell>

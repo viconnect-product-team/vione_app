@@ -1,6 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fetchNestApiFromServer } from "./api-client";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+
+export type VoteOption = {
+  id: string;
+  title: string;
+  votesCount: number;
+  percentage: number;
+  isLeading: boolean;
+};
 
 export type Vote = {
   id: string;
@@ -12,26 +23,83 @@ export type Vote = {
   voted: number;
   status: "open" | "scheduled" | "closed";
   options: string[];
+  optionDetails: VoteOption[];
+  myVote?: string | null;
 };
 
 export const listVotesFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Vote[]> => {
-    const res: any = await fetchNestApiFromServer("/voting/polls", context.token);
-    if (!Array.isArray(res)) return [];
-    return res.map((r: any) => ({
-      id: r.id,
-      title: r.title,
-      type: r.type || "policy",
-      startsAt: r.startsAt || r.startDate || r.createdAt || new Date().toISOString(),
-      endsAt: r.endsAt || r.endDate || new Date().toISOString(),
-      eligible: Number(r.eligible || 0),
-      voted: Number(r.totalVotes || r.voted || 0),
-      status: r.status || "open",
-      options: Array.isArray(r.options)
-        ? r.options.map((o: any) => (typeof o === "string" ? o : o.title))
-        : [],
-    }));
+    try {
+      const res: any = await fetchNestApiFromServer("/voting/polls", context.token);
+      if (Array.isArray(res)) {
+        return res.map((r: any) => {
+          const rawOpts = Array.isArray(r.options) ? r.options : [];
+          const optionDetails: VoteOption[] = rawOpts.map((o: any) => ({
+            id: typeof o === "string" ? o : String(o.id || ""),
+            title: typeof o === "string" ? o : String(o.title || ""),
+            votesCount: typeof o === "string" ? 0 : Number(o.votesCount ?? o.votes_count ?? 0),
+            percentage: typeof o === "string" ? 0 : Number(o.percentage ?? 0),
+            isLeading: typeof o === "string" ? false : Boolean(o.isLeading),
+          }));
+          return {
+            id: r.id,
+            title: r.title,
+            type: r.type || "policy",
+            startsAt: r.startsAt || r.startDate || r.createdAt || new Date().toISOString(),
+            endsAt: r.endsAt || r.endDate || new Date().toISOString(),
+            eligible: Number(r.eligible || 100),
+            voted: Number(r.totalVotes || r.voted || 0),
+            status: r.status || "open",
+            options: optionDetails.map((o) => o.title),
+            optionDetails,
+            myVote: r.myVote || null,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn("[listVotesFn] Error calling Nest API, falling back to db:", err);
+    }
+
+    // DB Fallback
+    try {
+      const { data: polls } = await getDb(context)
+        .from("polls")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!polls || polls.length === 0) return [];
+      return polls.map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        type: "policy",
+        startsAt: p.start_date || p.created_at || new Date().toISOString(),
+        endsAt: p.end_date || new Date().toISOString(),
+        eligible: 100,
+        voted: Number(p.total_votes || 0),
+        status: p.status || "open",
+        options: [],
+        optionDetails: [],
+        myVote: null,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+export const castVoteFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((data: unknown) => {
+    const d = data as Record<string, unknown>;
+    const pollId = String(d.pollId ?? "").trim();
+    const optionId = String(d.optionId ?? "").trim();
+    if (!pollId || !optionId) throw new Error("Thiếu mã bình chọn hoặc phương án");
+    return { pollId, optionId };
+  })
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(`/voting/polls/${data.pollId}/vote`, context.token, {
+      method: "POST",
+      body: JSON.stringify({ optionId: data.optionId }),
+    });
   });
 
 export const createVoteFn = createServerFn({ method: "POST" })

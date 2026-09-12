@@ -234,6 +234,12 @@ import { useConnectAppRealtimeNotifications } from "@/hooks/use-connect-app-real
 import { GlobalIncomingCallModal } from "@/components/business-connect/mobile/inbox/GlobalIncomingCallModal";
 
 function GlobalRealtimeNotifications() {
+  const { status } = useAuth();
+  if (status !== "in") return null;
+  return <AuthenticatedRealtimeNotifications />;
+}
+
+function AuthenticatedRealtimeNotifications() {
   useConnectAppRealtimeNotifications();
   return <GlobalIncomingCallModal />;
 }

@@ -109,12 +109,15 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
   return `${prefix}${text}`;
 }
 
+type InboxFilter = "all" | "unread" | "requests";
+
 function InboxPage() {
   const t = useT();
   const { lang } = useLang();
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   const query = useDmThreads();
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<InboxFilter>("all");
   const result = query.data;
   const threads = Array.isArray(result)
     ? result
@@ -122,6 +125,22 @@ function InboxPage() {
       ? result.threads
       : [];
   const isError = query.isError || (result != null && typeof result === "object" && "ok" in result && !result.ok);
+
+  // Phân loại danh mục chuẩn Messenger:
+  // - Người ĐÃ kết nối: isConnected !== false
+  // - Tin nhắn chờ (người lạ / gợi ý đối tác chưa kết nối): isConnected === false
+  const connectedThreads = useMemo(() => threads.filter((t) => t.isConnected !== false), [threads]);
+  const unreadConnectedThreads = useMemo(
+    () => connectedThreads.filter((t) => (t.unreadCount || 0) > 0),
+    [connectedThreads],
+  );
+  const pendingThreads = useMemo(() => threads.filter((t) => t.isConnected === false), [threads]);
+
+  const unreadCount = useMemo(
+    () => unreadConnectedThreads.reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    [unreadConnectedThreads],
+  );
+  const requestsCount = pendingThreads.length;
 
   const normalize = (s: string) =>
     (s || "")
@@ -134,16 +153,22 @@ function InboxPage() {
 
   const q = normalize(searchTerm);
 
+  const baseThreads = useMemo(() => {
+    if (activeTab === "unread") return unreadConnectedThreads;
+    if (activeTab === "requests") return pendingThreads;
+    return connectedThreads;
+  }, [activeTab, unreadConnectedThreads, pendingThreads, connectedThreads]);
+
   const filteredThreads = useMemo(() => {
-    if (!q) return threads;
-    return threads.filter((thread) => {
+    if (!q) return baseThreads;
+    return baseThreads.filter((thread) => {
       const name = normalize(thread.displayName);
       const company = normalize(thread.companyName || "");
       const headline = normalize(thread.headline || "");
       const msg = normalize(thread.lastMessagePreview || "");
       return name.includes(q) || company.includes(q) || headline.includes(q) || msg.includes(q);
     });
-  }, [threads, q]);
+  }, [baseThreads, q]);
 
   return (
     <MobilePage>
@@ -158,9 +183,69 @@ function InboxPage() {
           <MobileSearchBar
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Tìm người đã kết nối hoặc tin nhắn..."
+            placeholder="Tìm người liên hệ hoặc nội dung tin nhắn..."
           />
         </div>
+
+        {/* Messenger-style Segmented Categories */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "all"
+                ? "bg-[var(--bc-mobile-accent-grad)] text-black border border-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                : "border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <span>Tất cả</span>
+            <span className="text-[11px] opacity-80">({connectedThreads.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("unread")}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "unread"
+                ? "bg-[var(--bc-mobile-accent-grad)] text-black border border-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                : "border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <span>Chưa đọc</span>
+            {unreadCount > 0 ? (
+              <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[10.5px] font-bold text-white">
+                {unreadCount}
+              </span>
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("requests")}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "requests"
+                ? "bg-[var(--bc-mobile-accent-grad)] text-black border border-[var(--bc-mobile-border-gold)] font-bold shadow-xs"
+                : "border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] text-slate-700 dark:text-[var(--bc-mobile-muted)] hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <span>Tin nhắn chờ</span>
+            {requestsCount > 0 ? (
+              <span className="rounded-full bg-[var(--bc-mobile-accent)] px-1.5 py-0.2 text-[10.5px] font-bold text-black">
+                {requestsCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        {/* Info banner for Message Requests */}
+        {activeTab === "requests" ? (
+          <div className="rounded-2xl border border-[var(--bc-mobile-border-gold)]/30 bg-[var(--bc-mobile-surface-2)] p-3.5 text-[12px] text-slate-700 dark:text-[var(--bc-mobile-muted)] leading-relaxed">
+            <span className="font-bold text-slate-900 dark:text-[var(--bc-mobile-text)]">
+              📩 Tin nhắn từ người chưa kết nối:
+            </span>{" "}
+            Người gửi không thể thấy trạng thái bạn đã đọc cho đến khi bạn đồng ý kết nối hoặc trả lời tin nhắn.
+          </div>
+        ) : null}
 
         {query.isLoading ? (
           <div className="flex items-center gap-2 py-10 text-[13px] text-[var(--bc-mobile-muted)]">
@@ -171,24 +256,34 @@ function InboxPage() {
           <p className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 text-[13px] text-[var(--bc-mobile-muted)]">
             {t("bc.mobile.inbox.error")}
           </p>
-        ) : threads.length === 0 ? (
+        ) : baseThreads.length === 0 ? (
           <div className="grid justify-items-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-5 py-10 text-center">
             <MessageSquare
               className="h-6 w-6 text-[var(--bc-mobile-accent)]"
               aria-hidden="true"
             />
             <p className="text-[14px] font-semibold text-slate-900 dark:text-[var(--bc-mobile-text)]">
-              {t("bc.mobile.inbox.empty.title")}
+              {activeTab === "requests"
+                ? "Không có tin nhắn chờ nào"
+                : activeTab === "unread"
+                  ? "Bạn đã đọc hết tin nhắn"
+                  : t("bc.mobile.inbox.empty.title")}
             </p>
             <p className="text-[12.5px] leading-snug text-slate-500 dark:text-[var(--bc-mobile-muted)]">
-              {t("bc.mobile.inbox.empty.desc")}
+              {activeTab === "requests"
+                ? "Tin nhắn từ người gửi lạ hoặc đối tác từ AI gợi ý chưa kết nối sẽ xuất hiện tại đây mà không làm phiền thông báo chính."
+                : activeTab === "unread"
+                  ? "Không có tin nhắn chưa đọc nào từ các đối tác đã kết nối."
+                  : t("bc.mobile.inbox.empty.desc")}
             </p>
-            <Link
-              to="/connect-app/network"
-              className="mt-1 rounded-full border border-[var(--bc-mobile-border)] px-4 py-2 text-[12.5px] text-slate-800 dark:text-[var(--bc-mobile-text)] hover:bg-slate-100 dark:hover:bg-white/5"
-            >
-              {t("bc.mobile.inbox.empty.cta")}
-            </Link>
+            {activeTab === "all" ? (
+              <Link
+                to="/connect-app/network"
+                className="mt-1 rounded-full border border-[var(--bc-mobile-border)] px-4 py-2 text-[12.5px] text-slate-800 dark:text-[var(--bc-mobile-text)] hover:bg-slate-100 dark:hover:bg-white/5"
+              >
+                {t("bc.mobile.inbox.empty.cta")}
+              </Link>
+            ) : null}
           </div>
         ) : filteredThreads.length === 0 ? (
           <div className="grid justify-items-center gap-2 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-5 py-8 text-center">
@@ -213,7 +308,7 @@ function InboxPage() {
                 <Link
                   to="/connect-app/inbox/$threadId"
                   params={{ threadId: thread.threadId }}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] p-3 active:opacity-80 shadow-xs hover:border-amber-500/40 transition-colors"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] p-3 active:opacity-80 shadow-xs hover:border-[var(--bc-mobile-border-gold)]/50 transition-colors"
                 >
                   <Avatar thread={thread} />
                   <span className="min-w-0 flex-1">
@@ -235,6 +330,7 @@ function InboxPage() {
                             )
                           : t("bc.mobile.inbox.noMessage")}
                       </span>
+                      {/* Chỉ hiển thị badge chưa đọc của cuộc trò chuyện */}
                       {thread.unreadCount > 0 ? (
                         <span className="ml-auto shrink-0 rounded-full bg-[var(--bc-mobile-accent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--bc-mobile-on-accent,#04111F)]">
                           {thread.unreadCount}

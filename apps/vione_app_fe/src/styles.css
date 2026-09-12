@@ -352,9 +352,9 @@ html:not(.dark) .vba-app {
   --vba-border: rgba(216, 178, 130, 0.35);
   --vba-border-soft: rgba(15, 23, 42, 0.08);
   --vba-border-accent: rgba(216, 178, 130, 0.60);
-  --vba-gold: #B45309;
-  --vba-gold-2: #92400E;
-  --vba-gold-soft: rgba(180, 83, 9, 0.08);
+  --vba-gold: #C5A059;
+  --vba-gold-2: #D8B282;
+  --vba-gold-soft: rgba(197, 160, 89, 0.14);
   --vba-gold-glow: none;
   --vba-text: #0F172A;
   --vba-text-muted: #475569;
@@ -375,17 +375,17 @@ html:not(.dark) .vba-card {
 }
 
 html:not(.dark) .vba-gold-text {
-  background: linear-gradient(135deg, #B45309 0%, #92400E 100%);
+  background: linear-gradient(135deg, #C5A059 0%, #9A7B38 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 html:not(.dark) .vba-gold-grad {
-  background: linear-gradient(135deg, #FDE68A 0%, #D97706 50%, #B45309 100%);
+  background: linear-gradient(135deg, #F5E5C9 0%, #D8B282 50%, #C5A059 100%);
   color: #0F172A !important;
   font-weight: 700;
-  box-shadow: 0 2px 10px -2px rgba(180, 83, 9, 0.25);
+  box-shadow: 0 2px 10px -2px rgba(197, 160, 89, 0.25);
 }
 
 /* High-contrast mode tokens for .vba-app — Pure Solid Black, Pure White, & Electric Gold */
@@ -695,12 +695,12 @@ html.hc .bc-app {
   --bc-mobile-disabled: #94A3B8;
 
   --bc-border-subtle: rgba(255, 255, 255, 0.15);
-  --bc-border-medium: #FACC15;
-  --bc-border-gold: #FACC15;
-  --bc-mobile-border: rgba(255, 255, 255, 0.20);
-  --bc-mobile-border-subtle: rgba(255, 255, 255, 0.10);
-  --bc-mobile-border-gold: #FACC15;
-  --bc-mobile-border-active: #FFFFFF;
+  --bc-border-medium: rgba(216, 178, 130, 0.45);
+  --bc-border-gold: rgba(216, 178, 130, 0.45);
+  --bc-mobile-border: rgba(255, 255, 255, 0.12);
+  --bc-mobile-border-subtle: rgba(255, 255, 255, 0.06);
+  --bc-mobile-border-gold: #D8B282;
+  --bc-mobile-border-active: #F6E1C3;
 }
 
 .vba-card {
@@ -714,10 +714,10 @@ html.hc .bc-app {
 }
 
 .vba-gold-grad {
-  background: linear-gradient(135deg, #F0D5A8 0%, #D8B282 50%, #C49B6A 100%);
-  color: #0A111C !important;
-  font-weight: 600;
-  box-shadow: 0 4px 16px -2px rgba(216, 178, 130, 0.35);
+  background: linear-gradient(135deg, #FFF3C4 0%, #FEE180 30%, #F5C443 65%, #EDB028 100%);
+  color: #000000 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px -2px rgba(245, 196, 67, 0.40);
 }
 
 /* High-contrast: flatten gradients to solid, remove glows for clarity */
@@ -790,20 +790,21 @@ html.hc .bc-app {
   --bc-mobile-border-active: rgba(216, 178, 130, 0.70);
   --bc-mobile-border-strong: rgba(246, 225, 195, 0.85);
 
-  /* Gold & Warm Highlights */
+  /* Gold & Warm Highlights - Royal Bronze Gold */
   --bc-gold-300: #F6E1C3;
-  --bc-gold-400: #D8B282;
-  --bc-gold-500: #C29B69;
-  --bc-gold-600: #8C653B;
+  --bc-gold-400: #E6C59E;
+  --bc-gold-500: #D8B282;
+  --bc-gold-600: #C29B69;
+  --bc-gold-700: #9E7445;
 
   --bc-mobile-accent: #D8B282;
   --bc-mobile-accent-strong: #F6E1C3;
   --bc-mobile-accent-soft: rgba(216, 178, 130, 0.22);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FFF0DC 0%, #E2BA84 45%, #D4A772 70%, #9F7547 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #ECC89F 0%, #C29B69 45%, #AA7F4C 70%, #754F26 100%);
-  --bc-mobile-accent-on: #050505;
-  --bc-mobile-shadow-cta: 0 4px 20px rgba(216, 178, 130, 0.40);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #E6C59E 30%, #D8B282 65%, #C29B69 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCF3E7 0%, #EED5B3 30%, #E2C095 65%, #CCA777 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #E6C59E 0%, #D8B282 35%, #C29B69 70%, #9E7445 100%);
+  --bc-mobile-accent-on: #000000;
+  --bc-mobile-shadow-cta: 0 4px 20px rgba(216, 178, 130, 0.35);
   --bc-mobile-success: #10B981;
   --bc-mobile-danger: #F43F5E;
 
@@ -885,7 +886,7 @@ html:not(.dark) .bc-app .text-zinc-300,
 html:not(.dark) .bc-app .text-neutral-100,
 html:not(.dark) .bc-app .text-neutral-200,
 html:not(.dark) .bc-app .text-neutral-300 {
-  color: #0F172A !important;
+  color: #000000 !important; /* Pure Crisp Black */
 }
 
 html:not(.dark) .bc-app .text-slate-400,
@@ -896,25 +897,25 @@ html:not(.dark) .bc-app .text-gray-500,
 html:not(.dark) .bc-app .text-neutral-400,
 html:not(.dark) .bc-app .text-neutral-500,
 html:not(.dark) .bc-app .text-muted-foreground {
-  color: #475569 !important;
+  color: #475569 !important; /* Crisp Slate Gray */
 }
 
-/* Gold/amber/yellow in light mode → warm dark amber for contrast */
+/* Gold/amber/yellow in light mode → bright gold & warm amber accents */
 html:not(.dark) .bc-app .text-amber-100,
 html:not(.dark) .bc-app .text-amber-200,
 html:not(.dark) .bc-app .text-amber-300,
 html:not(.dark) .bc-app .text-yellow-100,
 html:not(.dark) .bc-app .text-yellow-200,
 html:not(.dark) .bc-app .text-yellow-300 {
-  color: #92400E !important;
+  color: #D97706 !important; /* Bright Gold Amber */
 }
 
-/* vba-app light mode text fixes */
+/* vba-app light mode text */
 html:not(.dark) .vba-app {
-  --foreground: #0F172A;
-  --card-foreground: #0F172A;
-  --popover-foreground: #0F172A;
-  --muted-foreground: #475569;
+  --foreground: #000000;
+  --card-foreground: #000000;
+  --popover-foreground: #000000;
+  --muted-foreground: #64748B;
 }
 
 html:not(.dark) .vba-app .text-white,
@@ -922,70 +923,90 @@ html:not(.dark) .vba-app .text-slate-50,
 html:not(.dark) .vba-app .text-slate-100,
 html:not(.dark) .vba-app .text-slate-200,
 html:not(.dark) .vba-app .text-slate-300 {
-  color: #0F172A !important;
+  color: #000000 !important;
 }
 
 html:not(.dark) .vba-app .text-slate-400,
 html:not(.dark) .vba-app .text-slate-500,
 html:not(.dark) .vba-app .text-muted-foreground {
-  color: #475569 !important;
+  color: #64748B !important;
 }
 
-/* Light mode tokens for .bc-app (ViOne Connect) — Crisp Porcelain Platinum & Vibrant Royal Gold */
+/* Light mode tokens for .bc-app (ViOne Connect) — Clean White & Pure Black */
 html:not(.dark) .bc-app {
-  --bc-bg-deep: #F8FAFC;
+  --bc-bg-deep: #FAF8F5;
   --bc-bg-primary: #FFFFFF;
   --bc-bg-secondary: #FFFFFF;
   --bc-surface: #FFFFFF;
   --bc-surface-elevated: #FFFFFF;
 
   --bc-mobile-bg: #FFFFFF;
-  --bc-mobile-bg-deep: #FFFFFF;
+  --bc-mobile-bg-deep: #FAF8F5;
   --bc-mobile-surface: #FFFFFF;
-  --bc-mobile-surface-2: #F8FAFC;
+  --bc-mobile-surface-2: #FAF8F5;
   --bc-mobile-navy: #0F172A;
   --bc-mobile-navy-deep: #020617;
   --bc-mobile-app-gradient: #FFFFFF;
   --bc-mobile-card-grad: #FFFFFF;
 
-  --bc-text-primary: #0F172A;
+  --bc-text-primary: #000000;
   --bc-text-secondary: #334155;
   --bc-text-tertiary: #64748B;
   --bc-text-disabled: #94A3B8;
 
-  --bc-mobile-ivory: #0F172A;
-  --bc-mobile-text: #0F172A;
+  --bc-mobile-ivory: #000000;
+  --bc-mobile-text: #000000;
   --bc-mobile-text-2: #334155;
   --bc-mobile-muted: #64748B;
   --bc-mobile-disabled: #94A3B8;
 
-  --bc-border-subtle: rgba(15, 23, 42, 0.06);
-  --bc-border-medium: rgba(217, 119, 6, 0.25);
-  --bc-border-gold: rgba(217, 119, 6, 0.45);
-  --bc-mobile-border: rgba(15, 23, 42, 0.08);
-  --bc-mobile-border-subtle: rgba(15, 23, 42, 0.04);
-  --bc-mobile-border-gold: rgba(217, 119, 6, 0.45);
-  --bc-mobile-border-active: rgba(217, 119, 6, 0.70);
-  --bc-mobile-border-strong: rgba(217, 119, 6, 0.85);
+  --bc-border-subtle: rgba(0, 0, 0, 0.08);
+  --bc-border-medium: rgba(0, 0, 0, 0.15);
+  --bc-border-gold: #D8B282;
+  --bc-mobile-border: rgba(0, 0, 0, 0.10);
+  --bc-mobile-border-subtle: rgba(0, 0, 0, 0.05);
+  --bc-mobile-border-gold: #D8B282;
+  --bc-mobile-border-active: #C29B69;
+  --bc-mobile-border-strong: rgba(216, 178, 130, 0.65);
 
   --bc-gold-300: #F6E1C3;
-  --bc-gold-400: #D8B282;
-  --bc-gold-500: #C29B69;
-  --bc-gold-600: #8C653B;
+  --bc-gold-400: #E6C59E;
+  --bc-gold-500: #D8B282;
+  --bc-gold-600: #C29B69;
+  --bc-gold-700: #9E7445;
 
   --bc-mobile-accent: #C29B69;
-  --bc-mobile-accent-strong: #8C653B;
-  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.18);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FFF0DC 0%, #E2BA84 45%, #D4A772 70%, #9F7547 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #ECC89F 0%, #C29B69 45%, #AA7F4C 70%, #754F26 100%);
-  --bc-mobile-accent-on: #050505;
+  --bc-mobile-accent-strong: #9E7445;
+  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.20);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #E6C59E 30%, #D8B282 65%, #C29B69 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCF3E7 0%, #EED5B3 30%, #E2C095 65%, #CCA777 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #E6C59E 0%, #D8B282 35%, #C29B69 70%, #9E7445 100%);
+  --bc-mobile-accent-on: #000000;
 
-  --bc-mobile-shadow-surface: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --bc-mobile-shadow-gold: 0 4px 16px rgba(217, 119, 6, 0.2);
-  --bc-mobile-shadow-nav: 0 -4px 20px rgba(15, 23, 42, 0.05);
+  --bc-mobile-shadow-surface: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --bc-mobile-shadow-gold: 0 4px 16px rgba(216, 178, 130, 0.30);
+  --bc-mobile-shadow-nav: 0 -4px 20px rgba(0, 0, 0, 0.05);
 
   color-scheme: light;
+}
+
+/* ViOne Button & Active Tab Contrast Rules:
+   Buttons with gold gradient/accent must ALWAYS display crisp black text (#000000) and bold font in both light and dark themes */
+.bc-app .bc-cta-gold,
+.bc-app button.bc-cta-gold,
+.bc-app a.bc-cta-gold,
+.bc-app .bc-cta-gold *,
+.bc-app button.bc-cta-gold *,
+.bc-app a.bc-cta-gold *,
+.bc-app :not([class*="bg-clip-text"]):not(.text-transparent)[class*="bg-[var(--bc-mobile-accent-grad)]"],
+.bc-app :not([class*="bg-clip-text"]):not(.text-transparent)[class*="bg-[var(--bc-mobile-accent-grad)]"] :not([class*="bg-clip-text"]):not(.text-transparent),
+.bc-app .bg-gradient-to-r.from-amber-400,
+.bc-app .bg-amber-400,
+.bc-app .bg-amber-500,
+.bc-app [aria-pressed="true"].gold-active,
+.bc-app [aria-selected="true"].gold-active {
+  color: #000000 !important;
+  font-weight: 700 !important;
 }
 
 .bc-app-viewport {
@@ -1165,8 +1186,7 @@ body:has(.bc-app-viewport)::-webkit-scrollbar {
 .bc-app textarea {
   background-color: var(--bc-mobile-surface-2);
   color: var(--bc-mobile-text);
-  /* WCAG 1.4.11: control boundary needs >=3:1 against the surface. */
-  border-color: var(--bc-mobile-border-strong);
+  border-color: var(--bc-mobile-border);
   caret-color: var(--bc-mobile-accent);
 }
 
@@ -1479,24 +1499,23 @@ html:not(.dark) body > div[role="menu"] {
   color: var(--bc-mobile-muted);
 }
 
-/* Contrast fix: many controls carry `focus-visible:outline-none
-   focus-visible:ring-[var(--bc-mobile-navy)]`, and navy on a navy surface is a
-   ~1.2:1 (invisible) focus indicator. Force the gold ring everywhere inside
-   the connect-app shell so keyboard focus stays visible at >=9:1. */
-.bc-app :is(a, button, [role="button"], [role="tab"], [role="link"], input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline), summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--bc-mobile-accent) !important;
-  outline-offset: 2px;
+/* Contrast fix: replace harsh rectangular outline with rounded box-shadow that respects border-radius */
+.bc-app :is(a, button, [role="button"], [role="tab"], [role="link"], summary, [tabindex]):focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--bc-mobile-bg), 0 0 0 4px var(--bc-mobile-accent) !important;
   --tw-ring-color: var(--bc-mobile-accent);
   --tw-ring-offset-color: var(--bc-mobile-bg);
 }
 
-/* Chat and Seamless Capsule Inputs: completely remove all harsh rectangular outlines */
-.bc-app :is(.chat-input, .no-focus-outline, textarea.chat-input, input.chat-input):focus,
-.bc-app :is(.chat-input, .no-focus-outline, textarea.chat-input, input.chat-input):focus-visible,
+/* Chat, Search, and Seamless Capsule Inputs: completely remove all harsh rectangular outlines */
+.bc-app :is(.chat-input, .mobile-search-input, .no-focus-outline, textarea.chat-input, input.chat-input, input[type="search"]):focus,
+.bc-app :is(.chat-input, .mobile-search-input, .no-focus-outline, textarea.chat-input, input.chat-input, input[type="search"]):focus-visible,
 .chat-input:focus,
 .chat-input:focus-visible,
 .no-focus-outline:focus,
-.no-focus-outline:focus-visible {
+.no-focus-outline:focus-visible,
+.mobile-search-input:focus,
+.mobile-search-input:focus-visible {
   outline: none !important;
   outline-offset: 0 !important;
   border-color: transparent !important;

@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 
 export type SponsorTier = 'platinum' | 'gold' | 'silver' | 'bronze';
+export type SponsorType = 'regular' | 'new';
+export type PackageType = 'cash' | 'in_kind';
 
 export class CreateSponsorPackageDto {
   tier!: SponsorTier;
@@ -9,6 +11,8 @@ export class CreateSponsorPackageDto {
   benefits?: string[];
   available?: number;
   sold?: number;
+  packageType?: PackageType;
+  inKindDescription?: string;
 }
 
 export class UpdateSponsorPackageDto {
@@ -17,6 +21,8 @@ export class UpdateSponsorPackageDto {
   benefits?: string[];
   available?: number;
   sold?: number;
+  packageType?: PackageType;
+  inKindDescription?: string;
 }
 
 export class CreateSponsorDto {
@@ -29,6 +35,9 @@ export class CreateSponsorDto {
   events?: number;
   since?: string;
   status?: 'active' | 'expired';
+  sponsorType?: SponsorType;
+  packageType?: PackageType;
+  inKindDescription?: string;
 }
 
 export class OnboardSponsorDto {
@@ -70,6 +79,8 @@ export class SponsorsService {
         benefits: Array.isArray(r.benefits) ? r.benefits : [],
         available: Number(r.available ?? 0),
         sold: Number(r.sold ?? 0),
+        packageType: (r.package_type || 'cash') as PackageType,
+        inKindDescription: r.in_kind_description || '',
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       })).sort((a, b) => tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier));
@@ -94,6 +105,8 @@ export class SponsorsService {
       benefits: Array.isArray(r.benefits) ? r.benefits : [],
       available: Number(r.available ?? 0),
       sold: Number(r.sold ?? 0),
+      packageType: (r.package_type || 'cash') as PackageType,
+      inKindDescription: r.in_kind_description || '',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -106,11 +119,13 @@ export class SponsorsService {
     const benefits = dto.benefits || [];
     const available = Math.round(dto.available ?? 0);
     const sold = Math.round(dto.sold ?? 0);
+    const packageType = dto.packageType || 'cash';
+    const inKindDescription = dto.inKindDescription || null;
     const associationId = await this.resolveAssociationId(dto.associationId);
 
     await this.prisma.$executeRaw`
-      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, created_at, updated_at)
-      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, ${associationId}::uuid, NOW(), NOW())
+      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, package_type, in_kind_description, created_at, updated_at)
+      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, ${associationId}::uuid, ${packageType}, ${inKindDescription}, NOW(), NOW())
     `;
 
     return this.getPackageById(id);
@@ -123,10 +138,13 @@ export class SponsorsService {
     const benefits = dto.benefits ?? existing.benefits;
     const available = Math.round(dto.available !== undefined ? dto.available : existing.available);
     const sold = Math.round(dto.sold !== undefined ? dto.sold : existing.sold);
+    const packageType = dto.packageType ?? existing.packageType;
+    const inKindDescription = dto.inKindDescription !== undefined ? dto.inKindDescription : existing.inKindDescription;
 
     await this.prisma.$executeRaw`
       UPDATE public.sponsor_packages
-      SET tier = ${tier}, price = ${price}, benefits = ${benefits}::text[], available = ${available}, sold = ${sold}, updated_at = NOW()
+      SET tier = ${tier}, price = ${price}, benefits = ${benefits}::text[], available = ${available}, sold = ${sold},
+          package_type = ${packageType}, in_kind_description = ${inKindDescription}, updated_at = NOW()
       WHERE id = ${id}
     `;
 
@@ -152,6 +170,9 @@ export class SponsorsService {
         id: r.id,
         name: r.name,
         tier: r.tier || 'bronze',
+        sponsorType: (r.sponsor_type || 'new') as SponsorType,
+        packageType: (r.package_type || 'cash') as PackageType,
+        inKindDescription: r.in_kind_description || '',
         contact: r.contact || '',
         email: r.email || '',
         phone: r.phone || '',
@@ -180,6 +201,9 @@ export class SponsorsService {
       id: r.id,
       name: r.name,
       tier: r.tier || 'bronze',
+      sponsorType: (r.sponsor_type || 'new') as SponsorType,
+      packageType: (r.package_type || 'cash') as PackageType,
+      inKindDescription: r.in_kind_description || '',
       contact: r.contact || '',
       email: r.email || '',
       phone: r.phone || '',
@@ -196,6 +220,9 @@ export class SponsorsService {
     const id = `SP-${Date.now().toString(36).toUpperCase()}`;
     const name = dto.name;
     const tier = dto.tier || 'bronze';
+    const sponsorType = dto.sponsorType || 'new';
+    const packageType = dto.packageType || 'cash';
+    const inKindDescription = dto.inKindDescription || null;
     const contact = dto.contact || '';
     const email = dto.email || '';
     const phone = dto.phone || '';
@@ -209,8 +236,8 @@ export class SponsorsService {
     const associationId = await this.resolveAssociationId((dto as any).associationId);
 
     await this.prisma.$executeRaw`
-      INSERT INTO public.sponsors (id, name, tier, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
-      VALUES (${id}, ${name}, ${tier}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${safeSince}::date, ${status}, ${associationId}::uuid, NOW(), NOW())
+      INSERT INTO public.sponsors (id, name, tier, sponsor_type, package_type, in_kind_description, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
+      VALUES (${id}, ${name}, ${tier}, ${sponsorType}, ${packageType}, ${inKindDescription}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${safeSince}::date, ${status}, ${associationId}::uuid, NOW(), NOW())
     `;
 
     return this.getSponsorById(id);
@@ -220,6 +247,9 @@ export class SponsorsService {
     const existing = await this.getSponsorById(id);
     const name = dto.name ?? existing.name;
     const tier = dto.tier ?? existing.tier;
+    const sponsorType = dto.sponsorType ?? existing.sponsorType;
+    const packageType = dto.packageType ?? existing.packageType;
+    const inKindDescription = dto.inKindDescription !== undefined ? dto.inKindDescription : existing.inKindDescription;
     const contact = dto.contact ?? existing.contact;
     const email = dto.email ?? existing.email;
     const phone = dto.phone ?? existing.phone;
@@ -230,7 +260,8 @@ export class SponsorsService {
 
     await this.prisma.$executeRaw`
       UPDATE public.sponsors
-      SET name = ${name}, tier = ${tier}, contact = ${contact}, email = ${email}, phone = ${phone},
+      SET name = ${name}, tier = ${tier}, sponsor_type = ${sponsorType}, package_type = ${packageType}, in_kind_description = ${inKindDescription},
+          contact = ${contact}, email = ${email}, phone = ${phone},
           amount = ${amount}, events = ${events}, since = ${since}::date, status = ${status}, updated_at = NOW()
       WHERE id = ${id}
     `;
@@ -254,6 +285,9 @@ export class SponsorsService {
     const sponsor = await this.createSponsor({
       name: dto.name,
       tier: pkg.tier,
+      sponsorType: 'new',
+      packageType: pkg.packageType,
+      inKindDescription: pkg.inKindDescription,
       contact: dto.contact,
       email: dto.email,
       phone: dto.phone,

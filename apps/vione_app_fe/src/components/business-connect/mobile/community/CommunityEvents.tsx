@@ -78,10 +78,10 @@ export function CommunityEvents({ communityId }: { communityId: string }) {
               role="tab"
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
-              className={`inline-flex min-h-[44px] items-center rounded-full px-4 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none ${
+              className={`inline-flex min-h-[36px] items-center rounded-full px-4 text-[13px] font-medium transition-all duration-150 focus-visible:outline-none cursor-pointer ${
                 tab === item.id
-                  ? "bg-[var(--bc-mobile-navy)] text-[var(--bc-mobile-surface)]"
-                  : "border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)]"
+                  ? "border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-accent-grad)] text-black shadow-sm font-bold"
+                  : "border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:border-[var(--bc-mobile-accent)] hover:text-[var(--bc-mobile-text)]"
               }`}
             >
               {item.label}

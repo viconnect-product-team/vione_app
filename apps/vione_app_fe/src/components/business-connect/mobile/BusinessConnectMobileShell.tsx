@@ -30,7 +30,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
 
-  const bgMain = isLight ? "#FFFFFF" : isContrast ? "#000000" : "#050c15";
+  const bgMain = isLight ? "#FAF8F5" : isContrast ? "#000000" : "#1A120B";
 
   return (
     <VSheetContext.Provider value={vControls}>

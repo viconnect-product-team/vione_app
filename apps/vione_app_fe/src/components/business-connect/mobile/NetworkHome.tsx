@@ -53,6 +53,7 @@ import { NetworkPersonRow } from "./NetworkPersonRow";
 import { AiMatchConnectAction, AiMatchDetailSheet } from "./AiMatchDetailSheet";
 import { CustomersPanel } from "./customers/CustomersPanel";
 import { HomeNotificationsMenu } from "./HomeNotificationsMenu";
+import { DynamicAiMatcherPanel } from "./ai/DynamicAiMatcherPanel";
 
 type NetworkSort = "recent" | "name" | "company";
 type NetworkFilter = "all" | "connected" | "saved_card" | "card_scanned" | "contact_shared";
@@ -257,13 +258,13 @@ export function NetworkHome({
                 aria-pressed={isActive}
                 className={`all-unset box-border inline-flex h-[34px] px-4 rounded-full border items-center justify-center relative border-solid transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
-                    : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted,#64748B)] hover:border-[var(--bc-mobile-accent)] hover:text-[var(--bc-mobile-text)]"
+                    ? "bg-[var(--bc-mobile-accent-grad)] text-black border-transparent shadow-[0_2px_10px_rgba(201,158,74,0.35)]"
+                    : "bg-[var(--bc-mobile-surface-2)] border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:border-[var(--bc-mobile-accent)] hover:text-[var(--bc-mobile-text)]"
                 }`}
               >
                 <span
                   className={`[font-family:'Inter-Medium',Helvetica] text-xs text-center leading-4 relative flex items-center w-fit tracking-[0] whitespace-nowrap font-medium ${
-                    isActive ? "text-[#050c15] font-bold" : "text-[var(--bc-mobile-muted,#64748B)]"
+                    isActive ? "text-black font-bold" : "text-[var(--bc-mobile-muted)]"
                   }`}
                 >
                   {tabItem.label}
@@ -276,7 +277,7 @@ export function NetworkHome({
         {tab === "customers" ? (
           <CustomersPanel />
         ) : tab === "suggestions" ? (
-          <NetworkAllAiSuggestionsPanel peopleById={peopleById} />
+          <NetworkAllAiSuggestionsPanel peopleById={peopleById} initialQuery={term} />
         ) : (
         <>
 
@@ -374,6 +375,36 @@ export function NetworkHome({
             {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network */}
             {tab === "network" && (
               <>
+                {/* ViOne Dynamic AI Copilot Banner */}
+                {!narrowed && (
+                  <div className="mb-4 p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+                    <div className="flex items-start justify-between gap-3 relative z-10">
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#F6E1C3] to-[#D8B282] p-0.5 shadow-md shrink-0 flex items-center justify-center">
+                          <Sparkles className="h-5 w-5 text-slate-950" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-amber-300">ViOne AI Copilot Matcher</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-400/20 text-amber-200 border border-amber-400/40">Dynamic %</span>
+                          </div>
+                          <p className="text-[13.5px] font-bold text-white mt-0.5">Tìm kiếm đối tác theo năng lực & chức danh</p>
+                          <p className="text-[11.5px] text-slate-300 mt-0.5 line-clamp-1">Ví dụ: "Tôi cần tìm 1 người có khả năng gọi vốn quỹ đầu tư..."</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleTabChange("suggestions")}
+                        className="shrink-0 px-3.5 py-2 rounded-xl bg-[linear-gradient(135deg,#FFF3C4_0%,#FEE180_30%,#F5C443_65%,#EDB028_100%)] text-black text-xs font-black uppercase tracking-wider shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Khám phá AI</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <NetworkAiMatchStrip
                   peopleById={peopleById}
                   allowedIds={allowedIds}
@@ -518,14 +549,24 @@ export function NetworkHome({
 /** Bảng hiển thị toàn bộ gợi ý AI khi người dùng chọn tab "Gợi ý (AI)". */
 function NetworkAllAiSuggestionsPanel({
   peopleById,
+  initialQuery = "",
 }: {
   peopleById: Map<string, BcMobileNetworkPerson>;
+  initialQuery?: string;
 }) {
   const t = useT();
   const { lang } = useLang();
   const { recommendations, initialLoading, error: coreError, retry } = useTodayRelationshipRecommendations(lang as any);
   const [filterMode, setFilterMode] = useState<"all" | "near" | "potential" | "frequent" | "nurture">("all");
-  const [query, setQuery] = useState("");
+  const [aiViewMode, setAiViewMode] = useState<"dynamic" | "routine">("dynamic");
+  const [query, setQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    if (initialQuery !== undefined) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
+
   const [openId, setOpenId] = useState<string | null>(null);
   const viewerUserId = useViewerUserId();
   const [viewerCity, setViewerCity] = useState<string | null>(null);
@@ -590,45 +631,69 @@ function NetworkAllAiSuggestionsPanel({
     };
   };
 
-  if (initialLoading) {
-    return (
-      <div className="mt-4 flex flex-col gap-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4" />
-        ))}
-      </div>
-    );
-  }
-
-  if (coreError) {
-    return (
-      <div className="mt-6 text-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6">
-        <p className="text-sm text-[var(--bc-mobile-muted)]">Không thể tải danh sách gợi ý quan hệ.</p>
-        <button
-          type="button"
-          onClick={() => retry()}
-          className="mt-3 inline-flex h-8 items-center rounded-full px-4 text-xs font-semibold text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
-  }
-
   return (
     <section className="mt-4 flex flex-col gap-4">
-      {/* Header giới thiệu */}
-      <div className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm">
-        <div className="flex items-center gap-2 text-[var(--bc-mobile-accent)]">
-          <Sparkles className="h-4.5 w-4.5 text-[var(--bc-mobile-accent)]" />
-          <h2 className="text-sm font-bold text-[var(--bc-mobile-text)]">
-            Tất cả gợi ý trí tuệ nhân tạo (AI Match)
-          </h2>
-        </div>
-        <p className="mt-1 text-xs text-[var(--bc-mobile-muted)] leading-relaxed">
-          Hệ thống AI tự động ưu tiên gợi ý người ở gần, lãnh đạo doanh nghiệp tiềm năng và các đối tác tương tác cao để tối ưu hiệu quả kết nối.
-        </p>
+      {/* Segmented View Mode Picker */}
+      <div className="flex items-center p-1 rounded-2xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] shadow-sm">
+        <button
+          type="button"
+          onClick={() => setAiViewMode("dynamic")}
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            aiViewMode === "dynamic"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-black border border-[#D8B282]/50 shadow-sm font-bold"
+              : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-black" />
+          <span>AI Matcher Năng Lực (Dynamic %)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAiViewMode("routine")}
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            aiViewMode === "routine"
+              ? "bg-[var(--bc-mobile-accent-grad)] text-black border border-[#D8B282]/50 shadow-sm font-bold"
+              : "text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+          }`}
+        >
+          <Users className="w-3.5 h-3.5 text-black" />
+          <span>Gợi Ý Hàng Ngày (Routine)</span>
+        </button>
       </div>
+
+      {aiViewMode === "dynamic" ? (
+        <DynamicAiMatcherPanel initialQuery={query} />
+      ) : initialLoading ? (
+        <div className="mt-2 flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-28 animate-pulse rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4" />
+          ))}
+        </div>
+      ) : coreError ? (
+        <div className="mt-4 text-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6">
+          <p className="text-sm text-[var(--bc-mobile-muted)]">Không thể tải danh sách gợi ý quan hệ.</p>
+          <button
+            type="button"
+            onClick={() => retry()}
+            className="mt-3 inline-flex h-8 items-center rounded-full px-4 text-xs font-semibold text-[var(--bc-mobile-accent)] bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] hover:border-[var(--bc-mobile-accent)]"
+          >
+            Thử lại
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Header giới thiệu */}
+          <div className="rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-[var(--bc-mobile-accent)]">
+              <Sparkles className="h-4.5 w-4.5 text-[var(--bc-mobile-accent)]" />
+              <h2 className="text-sm font-bold text-[var(--bc-mobile-text)]">
+                Gợi ý duy trì tương tác hàng ngày
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-[var(--bc-mobile-muted)] leading-relaxed">
+              Hệ thống AI tự động ưu tiên gợi ý người ở gần, lãnh đạo doanh nghiệp tiềm năng và các đối tác tương tác cao để tối ưu hiệu quả kết nối.
+            </p>
+          </div>
 
       {/* Ô tìm kiếm gợi ý */}
       <div className="flex items-center gap-2">
@@ -830,6 +895,8 @@ function NetworkAllAiSuggestionsPanel({
         rec={activeRec}
         target={activeRec ? targetFor(activeRec.person.personId) : { cardSlug: null, alreadyConnected: false }}
       />
+        </>
+      )}
     </section>
   );
 }

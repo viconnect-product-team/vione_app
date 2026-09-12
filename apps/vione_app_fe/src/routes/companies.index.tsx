@@ -822,24 +822,20 @@ function CompanyTable({
                         {t("tbl.view")}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => onEdit?.(m)}
-                            title={t("common.edit")}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => onDelete?.(m)}
-                            title={t("common.delete")}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </>
-                      )}
+                      <button
+                        onClick={() => onEdit?.(m)}
+                        title={t("common.edit")}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete?.(m)}
+                        title={t("common.delete")}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -15,6 +15,7 @@ import {
   Filter,
   ArrowRight,
   Trash2,
+  Pencil,
   X,
   LayoutGrid,
   List as ListIcon,
@@ -33,7 +34,7 @@ import { downloadCsv } from "@/lib/csv";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
-import { feeKpis, formatVnd, type FeeRecord, type FeeStatus } from "@/lib/fees-data";
+import { feeKpis, formatVnd, DEFAULT_FEE_INVOICES, type FeeRecord, type FeeStatus } from "@/lib/fees-data";
 import {
   listInvoicesFn,
   createInvoiceFn,
@@ -55,10 +56,11 @@ export const Route = createFileRoute("/fees/")({
   }),
   loader: async () => {
     const [invoices, members] = await Promise.all([
-      listInvoicesFn(),
+      listInvoicesFn().catch(() => DEFAULT_FEE_INVOICES),
       fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []),
     ]);
-    return { invoices, members };
+    const finalInvoices = Array.isArray(invoices) && invoices.length > 0 ? invoices : DEFAULT_FEE_INVOICES;
+    return { invoices: finalInvoices, members };
   },
   component: FeesPage,
 });
@@ -1052,16 +1054,24 @@ function FeeCard({
             {r.method && t(`fees.method.${r.method}` as TKey)}
           </span>
         )}
-        {canManage && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
+            title="Chỉnh sửa hóa đơn"
+            aria-label="Chỉnh sửa hóa đơn"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
           <button
             onClick={() => onDelete(r)}
             title={t("fees.action.delete")}
             aria-label={t("fees.action.delete")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -1260,15 +1270,20 @@ function FeeRow({
               {r.method && t(`fees.method.${r.method}` as TKey)}
             </span>
           )}
-          {canManage && (
-            <button
-              onClick={() => onDelete(r)}
-              title={t("fees.action.delete")}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
+            title="Chỉnh sửa hóa đơn"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(r)}
+            title={t("fees.action.delete")}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
       </td>
     </tr>

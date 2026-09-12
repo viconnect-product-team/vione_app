@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -21,6 +21,8 @@ import {
   Package,
   FileBarChart,
   Wallet,
+  ArrowDownCircle,
+  ArrowUpCircle,
   ArrowLeftRight,
   PieChart,
   Bell,
@@ -44,6 +46,8 @@ import {
   Sun,
   Moon,
   Contrast,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -74,7 +78,8 @@ const sponsors: Item[] = [
 ];
 const finance: Item[] = [
   { key: "nav.fee", icon: Wallet, to: "/fees" },
-  { key: "nav.income", icon: ArrowLeftRight, to: "/income" },
+  { key: "nav.income", icon: ArrowDownCircle, to: "/income" },
+  { key: "nav.expenses" as TKey, icon: ArrowUpCircle, to: "/expenses" },
   { key: "nav.financeReport", icon: PieChart, to: "/finance-report" },
 ];
 const comm: Item[] = [
@@ -173,13 +178,24 @@ function NavItem({
   );
   if (item.to) {
     return (
-      <Link to={item.to} className={cls} onClick={onNavigate} title={collapsed ? label : undefined}>
+      <Link
+        to={item.to}
+        data-active={active ? "true" : undefined}
+        className={cls}
+        onClick={onNavigate}
+        title={collapsed ? label : undefined}
+      >
         {inner}
       </Link>
     );
   }
   return (
-    <button className={cls} onClick={onNavigate} title={collapsed ? label : undefined}>
+    <button
+      data-active={active ? "true" : undefined}
+      className={cls}
+      onClick={onNavigate}
+      title={collapsed ? label : undefined}
+    >
       {inner}
     </button>
   );
@@ -252,6 +268,9 @@ export function Sidebar({
 
   // Collapse only applies to the desktop sidebar; the mobile drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [bottomExpanded, setBottomExpanded] = useState(false);
+
   useEffect(() => {
     if (mobile) return;
     try {
@@ -260,6 +279,30 @@ export function Sidebar({
       /* ignore */
     }
   }, [mobile]);
+
+  // Restore scroll position & auto-scroll active item into view
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("crm_sidebar_scroll_top");
+      if (saved && scrollRef.current) {
+        scrollRef.current.scrollTop = Number(saved);
+      }
+    } catch {}
+
+    const timer = setTimeout(() => {
+      const activeEl = scrollRef.current?.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    try {
+      sessionStorage.setItem("crm_sidebar_scroll_top", String(e.currentTarget.scrollTop));
+    } catch {}
+  };
 
   function toggle() {
     setCollapsed((prev) => {
@@ -339,7 +382,11 @@ export function Sidebar({
       )}
 
       {/* Nav */}
-      <div className="sidebar-scroll flex-1 space-y-5 overflow-y-auto py-4">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="sidebar-scroll flex-1 space-y-5 overflow-y-auto py-4"
+      >
         <Group
           items={overview}
           pathname={pathname}
@@ -430,43 +477,78 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Theme switcher — hiển thị khi sidebar mở, hoặc icon thu gọn khi collapsed */}
-      <div
-        className={`flex items-center border-t border-sidebar-border pb-2 pt-3 ${
-          isCollapsed ? "justify-center px-2" : "px-4"
-        }`}
-      >
-        {isCollapsed ? (
+      {/* Theme switcher & Enterprise bar — có thể thu nhỏ cố định hoặc phóng to */}
+      {isCollapsed ? (
+        <div className="flex items-center justify-center border-t border-sidebar-border pb-2 pt-3 px-2">
           <ThemeToggleIconBtn />
-        ) : (
-          <div className="flex w-full items-center justify-between">
-            <span className="text-[11px] font-medium text-sidebar-foreground/60">
-              {t("theme.label")}
-            </span>
+        </div>
+      ) : !bottomExpanded ? (
+        /* Cố định thu nhỏ: thanh ngang nhỏ gọn, tiết kiệm diện tích tối đa */
+        <div className="border-t border-sidebar-border px-3 py-2.5">
+          <div className="flex w-full items-center justify-between gap-2">
             <ThemeSwitcher />
-          </div>
-        )}
-      </div>
-
-      {/* Upgrade card */}
-      {!isCollapsed && (
-        <div className="p-4">
-          <div
-            className="overflow-hidden rounded-xl border border-border/10 p-4 text-primary-foreground shadow-[var(--shadow-card)]"
-            style={{ background: "var(--gradient-card)" }}
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <div className="text-[13px] font-semibold">{t("upgrade.title")}</div>
-            </div>
-            <p className="mb-3 text-[11px] leading-relaxed text-primary-foreground/85">
-              {t("upgrade.body")}
-            </p>
-            <button className="w-full rounded-lg bg-card/15 py-2 text-xs font-semibold backdrop-blur transition hover:bg-card/25">
-              {t("upgrade.cta")}
+            <button
+              type="button"
+              onClick={() => setBottomExpanded(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2 py-1 text-[11px] font-bold text-primary transition hover:bg-primary/20 cursor-pointer"
+              title="Mở rộng xem gói Enterprise"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="truncate max-w-[68px]">Enterprise</span>
+              <ChevronUp className="h-3.5 w-3.5 opacity-70" />
             </button>
           </div>
         </div>
+      ) : (
+        /* Trạng thái mở rộng: hiển thị đầy đủ Theme Switcher và Card Enterprise với nút thu nhỏ */
+        <>
+          <div className="flex items-center border-t border-sidebar-border px-4 pb-2 pt-3">
+            <div className="flex w-full items-center justify-between">
+              <span className="text-[11px] font-medium text-sidebar-foreground/60">
+                {t("theme.label")}
+              </span>
+              <div className="flex items-center gap-2">
+                <ThemeSwitcher />
+                <button
+                  type="button"
+                  onClick={() => setBottomExpanded(false)}
+                  className="rounded-lg p-1 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
+                  title="Thu nhỏ cố định"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 pt-1">
+            <div
+              className="relative overflow-hidden rounded-xl border border-border/10 p-4 text-primary-foreground shadow-[var(--shadow-card)]"
+              style={{ background: "var(--gradient-card)" }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  <div className="text-[13px] font-semibold">{t("upgrade.title")}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBottomExpanded(false)}
+                  className="rounded-md p-1 text-primary-foreground/70 transition hover:bg-white/10 hover:text-white cursor-pointer"
+                  title="Thu nhỏ cố định"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="mb-3 text-[11px] leading-relaxed text-primary-foreground/85">
+                {t("upgrade.body")}
+              </p>
+              <button className="w-full rounded-lg bg-card/15 py-2 text-xs font-semibold backdrop-blur transition hover:bg-card/25 cursor-pointer">
+                {t("upgrade.cta")}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </aside>
   );

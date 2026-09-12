@@ -40,9 +40,9 @@ export function CommunityInviteButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gradient-to-r from-[#F97316] via-[#EA580C] to-[#C2410C] px-5 text-[13.5px] font-semibold text-white shadow-md shadow-orange-500/25 transition-all duration-150 hover:opacity-95 hover:shadow-orange-500/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C] cursor-pointer motion-reduce:transition-none"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--bc-mobile-accent-grad)] px-5 text-[13.5px] font-bold text-black shadow-md transition-all duration-150 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] cursor-pointer motion-reduce:transition-none"
       >
-        <UserPlus aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+        <UserPlus aria-hidden="true" className="h-4 w-4 text-black" strokeWidth={2} />
         {t("bc.mobile.community.invite.cta")}
       </button>
       {open ? (

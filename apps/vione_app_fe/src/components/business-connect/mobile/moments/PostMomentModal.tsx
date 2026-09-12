@@ -342,7 +342,7 @@ export function PostMomentModal({
                       : "bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
                   }`}
                 >
-                  <Globe className="h-3 w-3 text-sky-400" />
+                  <Globe className="h-3 w-3 text-amber-400" />
                   <span>Công khai</span>
                 </button>
 
@@ -602,7 +602,7 @@ export function PostMomentModal({
                 type="button"
                 onClick={() => setActiveSubView(activeSubView === "tag" ? "none" : "tag")}
                 title="Gắn thẻ bạn bè / Đối tác"
-                className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 text-sky-400 hover:text-sky-300 transition-colors cursor-pointer"
+                className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
               >
                 <Users className="h-4.5 w-4.5" />
               </button>

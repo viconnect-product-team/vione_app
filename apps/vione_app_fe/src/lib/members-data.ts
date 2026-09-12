@@ -39,6 +39,8 @@ export type Member = {
   lastReminder?: string;
   renewedAt?: string;
   newTermEnd?: string;
+  executiveRole?: string;
+  department?: string;
 };
 
 export const MEMBERS: Member[] = [];

@@ -1,16 +1,13 @@
-// BC-Mobile-7A — Community member directory (leaf).
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-import { createFileRoute } from "@tanstack/react-router";
-import { CommunityMembers } from "@/components/business-connect/mobile/community/CommunityMembers";
-
-export const Route = createFileRoute("/connect-app/community/$communityId/members")({
+export const Route = createFileRoute(
+  "/connect-app/community/$communityId/members",
+)({
   head: () => ({
-    meta: [{ title: "Thành viên — Business Connect" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Thành viên — Business Connect" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
-  component: ConnectAppCommunityMembersPage,
+  component: () => <Outlet />,
 });
-
-function ConnectAppCommunityMembersPage() {
-  const { communityId } = Route.useParams();
-  return <CommunityMembers communityId={communityId} />;
-}

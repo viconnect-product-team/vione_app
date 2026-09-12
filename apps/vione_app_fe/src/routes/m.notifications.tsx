@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { fetchNestApi } from "@/lib/api-client";
 import { z } from "zod";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -56,7 +57,10 @@ import {
 const NOTIFICATIONS_PREFS_KEY = "vba-notifications-preferences";
 
 const notificationsSearchSchema = z.object({
-  filter: fallback(z.enum(["all", "lead", "unread", "read", "dismissed"]), "all").default("all"),
+  filter: fallback(
+    z.enum(["all", "lead", "unread", "read", "dismissed", "event", "fee", "opportunity"]),
+    "all",
+  ).default("all"),
   sort: fallback(z.enum(["priority", "newest"]), "priority").default("priority"),
   q: fallback(z.string(), "").default(""),
 });
@@ -207,6 +211,21 @@ function NotificationsScreen() {
     | { type: "markRead"; ids: string[] }
     | { type: "dismiss"; personalIds: string[]; broadcastIds: string[] }
   >(null);
+  const [votedPolls, setVotedPolls] = useState<Record<string, string>>({});
+
+  const handleQuickVote = async (pollId: string, optionId: string) => {
+    try {
+      setVotedPolls((prev) => ({ ...prev, [pollId]: optionId }));
+      await fetchNestApi(`/voting/polls/${pollId}/vote`, {
+        method: "POST",
+        body: JSON.stringify({ optionId }),
+      });
+      toast.success("Đã ghi nhận biểu quyết của bạn!");
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể gửi biểu quyết");
+    }
+  };
 
   const onMarkOneRead = async (n: MyNotification) => {
     if (rowBusy) return;
@@ -306,8 +325,10 @@ function NotificationsScreen() {
 
   const search = Route.useSearch();
 
-  const [filter, setFilter] = useState<"all" | "lead" | "unread" | "read" | "dismissed">(
-    search.filter,
+  type NotificationFilter = "all" | "lead" | "unread" | "read" | "dismissed" | "event" | "fee" | "opportunity";
+
+  const [filter, setFilter] = useState<NotificationFilter>(
+    search.filter as NotificationFilter,
   );
   const [sort, setSort] = useState<"priority" | "newest">(search.sort);
   const [query, setQuery] = useState(search.q ?? "");
@@ -329,8 +350,19 @@ function NotificationsScreen() {
           sort?: string;
           q?: string;
         };
-        const validFilters: (typeof filter)[] = ["all", "lead", "unread", "read", "dismissed"];
-        if (validFilters.includes(p.filter as typeof filter)) setFilter(p.filter as typeof filter);
+        const validFilters: NotificationFilter[] = [
+          "all",
+          "lead",
+          "unread",
+          "read",
+          "dismissed",
+          "event",
+          "fee",
+          "opportunity",
+        ];
+        if (validFilters.includes(p.filter as NotificationFilter)) {
+          setFilter(p.filter as NotificationFilter);
+        }
         if (p.sort === "priority" || p.sort === "newest") setSort(p.sort);
         if (typeof p.q === "string") setQuery(p.q);
       } catch {
@@ -346,12 +378,13 @@ function NotificationsScreen() {
     return () => clearTimeout(t);
   }, [filter, sort, query, search.filter, search.sort, search.q, navigate, prefsLoaded]);
 
-  const filterTabs: { key: typeof filter; label: TKey }[] = [
-    { key: "all", label: "m.notifications.filter.all" },
-    { key: "unread", label: "m.notifications.filter.unread" },
-    { key: "read", label: "m.notifications.filter.read" },
-    { key: "dismissed", label: "m.notifications.filter.dismissed" },
-    { key: "lead", label: "m.notifications.filter.lead" },
+  const filterTabs: { key: typeof filter; label: string }[] = [
+    { key: "all", label: "Tất cả" },
+    { key: "unread", label: "Chưa đọc" },
+    { key: "opportunity", label: "Cơ hội B2B" },
+    { key: "event", label: "Sự kiện" },
+    { key: "fee", label: "Hội phí" },
+    { key: "dismissed", label: "Đã ẩn" },
   ];
 
   const PRIORITY_RANK: Record<NotificationPriority, number> = {
@@ -381,6 +414,9 @@ function NotificationsScreen() {
       if (filter === "dismissed") return n.dismissed;
       if (n.dismissed) return false;
       if (filter === "lead") return n.type === "lead";
+      if (filter === "event") return n.type === "event";
+      if (filter === "fee") return n.type === "fee";
+      if (filter === "opportunity") return n.type === "opportunity" || n.type === "lead";
       if (filter === "unread") return n.unread;
       if (filter === "read") return !n.unread;
       return true;
@@ -483,8 +519,16 @@ function NotificationsScreen() {
               tab.key === "unread"
                 ? notifications.filter((n) => n.unread && !n.dismissed).length
                 : tab.key === "all"
-                  ? notifications.filter((n) => !n.dismissed).length
-                  : null;
+                ? notifications.filter((n) => !n.dismissed).length
+                : tab.key === "opportunity"
+                ? notifications.filter((n) => (n.type === "opportunity" || n.type === "lead") && !n.dismissed).length
+                : tab.key === "event"
+                ? notifications.filter((n) => n.type === "event" && !n.dismissed).length
+                : tab.key === "fee"
+                ? notifications.filter((n) => n.type === "fee" && !n.dismissed).length
+                : tab.key === "dismissed"
+                ? notifications.filter((n) => n.dismissed).length
+                : null;
 
             return (
               <button
@@ -494,11 +538,11 @@ function NotificationsScreen() {
                 aria-pressed={active}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   active
-                    ? "bg-[var(--vba-gold)] text-[#0B0C10] shadow-sm font-bold"
+                    ? "bg-[var(--vba-gold)] text-[#0B0C10] shadow-sm font-bold scale-[1.02]"
                     : "text-[var(--vba-text-muted)] hover:text-[var(--vba-text)] hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
               >
-                <span>{t(tab.label)}</span>
+                <span>{tab.label}</span>
                 {count != null && count > 0 && (
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold tabular-nums ${
@@ -587,49 +631,105 @@ function NotificationsScreen() {
         {visible.map((n: any) => {
           const Icon = iconFor(n.type);
           const isLead = n.type === "lead" && !!n.refId;
+
+          // Color coded per type
+          const typeTheme: Record<string, { iconBg: string; badge: string; label: string }> = {
+            opportunity: {
+              iconBg: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+              badge: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
+              label: "Cơ hội B2B",
+            },
+            lead: {
+              iconBg: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+              badge: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
+              label: "Khách hàng B2B",
+            },
+            event: {
+              iconBg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+              badge: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
+              label: "Sự kiện",
+            },
+            fee: {
+              iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+              badge: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+              label: "Hội phí",
+            },
+            network: {
+              iconBg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+              badge: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
+              label: "Kết nối",
+            },
+            info: {
+              iconBg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+              badge: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+              label: "Hệ thống",
+            },
+          };
+
+          const theme = typeTheme[n.type] || {
+            iconBg: "bg-muted text-muted-foreground border-border",
+            badge: "bg-muted text-muted-foreground border-border",
+            label: "Thông báo",
+          };
+
           return (
             <div
               key={n.id}
               role="listitem"
-              className={`relative flex gap-3.5 p-4 rounded-2xl border transition-all duration-200 shadow-xs overflow-hidden ${
+              className={`relative flex gap-3.5 p-4 rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden ${
                 n.unread
-                  ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-500/40"
-                  : "bg-[var(--vba-surface,#fff)] border-[var(--vba-border)] hover:border-[var(--vba-gold)]/40"
+                  ? "bg-amber-50/50 dark:bg-[#121927] border-amber-300/70 dark:border-[#D8B282]/50 shadow-sm"
+                  : "bg-[var(--vba-surface,#fff)] border-slate-200 dark:border-[#243042] hover:border-slate-300 dark:hover:border-[#334155]"
               }`}
             >
-              {/* Vertical Gold Highlight on Unread */}
+              {/* Vertical Indicator on Unread */}
               {n.unread && (
-                <span className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-[var(--vba-gold)]" />
+                <span className="absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full bg-[var(--vba-gold)]" />
               )}
 
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[var(--vba-gold-soft)] to-transparent text-[var(--vba-gold)] border border-[var(--vba-border)] shadow-xs">
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border shadow-xs ${theme.iconBg}`}>
                 <Icon className="h-5 w-5" />
               </span>
 
               <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase tracking-wider border ${theme.badge}`}>
+                      {theme.label}
+                    </span>
+                    {n.priority !== "low" && (
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
+                        style={{
+                          color: priorityColor(n.priority),
+                          background: "var(--vba-gold-soft)",
+                        }}
+                        aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority as NotificationPriority])}`}
+                      >
+                        {t(PRIORITY_KEY[n.priority as NotificationPriority])}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {n.unread && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                        </span>
+                        Mới
+                      </span>
+                    )}
+                    <span className="text-[10.5px] font-medium text-[var(--vba-text-dim)]">
+                      {fmt.rel(n.time)}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <span className="truncate text-[13.5px] font-bold text-[var(--vba-text)]">
                     {n.title}
                   </span>
-                  {n.priority !== "low" && (
-                    <span
-                      className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                      style={{
-                        color: priorityColor(n.priority),
-                        background: "var(--vba-gold-soft)",
-                      }}
-                      aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority as NotificationPriority])}`}
-                    >
-                      {t(PRIORITY_KEY[n.priority as NotificationPriority])}
-                    </span>
-                  )}
-                  {n.unread && (
-                    <span
-                      role="status"
-                      aria-label={t("m.notifications.status.unread")}
-                      className="h-2 w-2 shrink-0 rounded-full bg-[var(--vba-gold)] shadow-[0_0_8px_var(--vba-gold)]"
-                    />
-                  )}
                   {isLead && (
                     <button
                       type="button"
@@ -677,6 +777,79 @@ function NotificationsScreen() {
                   {n.body}
                 </p>
 
+                {/* Thẻ biểu quyết tương tác trực tiếp */}
+                {(n.type === "voting" || n.notificationKind === "interactive_poll" || n.refType === "voting" || Boolean(n.safeDisplayData?.pollId)) && n.safeDisplayData?.options && (
+                  <div className="mt-3 p-3 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-2">
+                    <div className="text-[11.5px] font-bold text-amber-800 dark:text-amber-300">
+                      Bình chọn ý kiến của bạn:
+                    </div>
+                    <div className="space-y-1.5">
+                      {n.safeDisplayData.options.map((opt: any) => {
+                        const pollId = n.safeDisplayData.pollId || n.refId;
+                        const isSelected = votedPolls[pollId] === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleQuickVote(pollId, opt.id)}
+                            className={`w-full p-2.5 rounded-lg text-left text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-amber-500 text-slate-950 border-amber-400 shadow-sm"
+                                : "bg-white dark:bg-[#151f2e] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-amber-400"
+                            }`}
+                          >
+                            <span>{opt.title}</span>
+                            {isSelected ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold">
+                                <Check className="size-3.5" />
+                                <span>Đã chọn</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Bình chọn</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {votedPolls[n.safeDisplayData.pollId || n.refId] && (
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
+                        <CheckCircle2 className="size-3.5" />
+                        <span>Đã ghi nhận biểu quyết thành công.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Thẻ nhắc nhở thanh toán quá hạn */}
+                {(n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || Boolean(n.safeDisplayData?.invoiceId)) && n.safeDisplayData?.amount && (
+                  <div className="mt-3 p-3 rounded-xl bg-red-500/10 dark:bg-red-500/15 border border-red-500/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-red-700 dark:text-red-300">
+                        Số tiền cần thanh toán:
+                      </span>
+                      <span className="text-sm font-extrabold text-red-600 dark:text-red-400">
+                        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(n.safeDisplayData.amount))}
+                      </span>
+                    </div>
+                    {n.safeDisplayData.dueDate && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Hạn chót: {new Date(n.safeDisplayData.dueDate).toLocaleDateString("vi-VN")}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void markRead({ data: { id: n.id } }).catch(() => {});
+                        void navigate({ to: "/m/renew" });
+                      }}
+                      className="w-full py-2 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Wallet className="size-3.5" />
+                      <span>Thanh toán ngay</span>
+                    </button>
+                  </div>
+                )}
+
                 {n.refType === "renewal_audit" && n.refId && (
                   <button
                     type="button"
@@ -690,10 +863,6 @@ function NotificationsScreen() {
                     {t("m.notifications.renewal.openAudit")}
                   </button>
                 )}
-
-                <span className="mt-1.5 block text-[10.5px] font-medium text-[var(--vba-text-dim)]">
-                  {fmt.rel(n.time)}
-                </span>
 
                 <div className="mt-3 flex items-center gap-2 pt-2 border-t border-[var(--vba-border)]/60">
                   {n.dismissed ? (

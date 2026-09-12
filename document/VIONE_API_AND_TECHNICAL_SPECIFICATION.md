@@ -283,6 +283,140 @@ x-tenant-id: <TENANT_SLUG_OR_UUID>  (Tùy chọn cho môi trường Multi-tenant
 
 ---
 
+## 2.8. Phân hệ Tài chính, Thu Chi & Báo Cáo Kế Toán (Finance & Accounting APIs)
+
+### `GET /finance/report`
+- **Mô tả**: Lấy dữ liệu báo cáo tài chính tổng hợp (KPI, Dòng tiền, Cơ cấu % và Sổ cái giao dịch).
+- **Query Params**: `period=this_month | this_quarter | this_year | all`
+- **Response `200 OK`**:
+  ```json
+  {
+    "kpi": {
+      "totalIncome": 1250000000,
+      "totalExpense": 420000000,
+      "netMargin": 830000000,
+      "netMarginPercent": 66.4,
+      "collectionRate": 94.2
+    },
+    "cashFlow": [
+      { "month": "T1", "income": 120000000, "expense": 45000000 },
+      { "month": "T2", "income": 180000000, "expense": 60000000 }
+    ],
+    "incomeBreakdown": [
+      { "label": "Hội phí hội viên", "amount": 812500000, "percent": 65 },
+      { "label": "Tài trợ sự kiện", "amount": 312500000, "percent": 25 }
+    ],
+    "expenseBreakdown": [
+      { "label": "Thuê hội trường & Tiệc", "amount": 189000000, "percent": 45 },
+      { "label": "Ấn phẩm & Danh thiếp NFC", "amount": 105000000, "percent": 25 }
+    ],
+    "transactions": [
+      {
+        "id": "tx_991",
+        "code": "REC-0091",
+        "date": "2026-09-12",
+        "type": "income",
+        "category": "Hội phí thường niên",
+        "party": "Tập đoàn Viconnect",
+        "amount": 50000000,
+        "status": "completed"
+      }
+    ]
+  }
+  ```
+
+### `GET /income` & `GET /expenses`
+- **Mô tả**: Lấy danh sách sổ thu / sổ chi có hỗ trợ phân trang và lọc theo danh mục.
+- **Query Params**: `page=1&limit=20&search=Gala`
+
+---
+
+## 2.9. Phân hệ Sơ đồ Xếp chỗ Sân khấu & Khán phòng (Seating Map APIs)
+
+### `GET /events/:id/seating`
+- **Mô tả**: Lấy cấu hình sơ đồ ghế hội trường và danh sách các ghế đã bị khóa (Occupied).
+- **Response `200 OK`**:
+  ```json
+  {
+    "eventId": "evt_gala_2026",
+    "stageSeats": ["SK-01", "SK-02", "SK-03", "SK-04", "SK-05", "SK-06"],
+    "cinemaRows": [
+      { "rowLetter": "A", "seatCount": 10 },
+      { "rowLetter": "B", "seatCount": 12 }
+    ],
+    "occupiedSeats": [
+      {
+        "seatCode": "A-04",
+        "attendeeName": "Nguyễn Văn A",
+        "company": "Tập đoàn Alpha"
+      },
+      {
+        "seatCode": "SK-01",
+        "attendeeName": "Đặng Văn Thành",
+        "company": "Chủ tịch Đoàn"
+      }
+    ]
+  }
+  ```
+
+### `POST /events/:id/seats/book`
+- **Mô tả**: Đại biểu khóa chỗ và xác nhận đặt ghế ngồi.
+- **Request Body**:
+  ```json
+  {
+    "seatCode": "A-05",
+    "attendeeId": "usr_98a72b1c"
+  }
+  ```
+
+---
+
+## 2.10. Phân hệ Trung tâm Thông báo Đa kênh (Notification Hub APIs)
+
+### `GET /notifications`
+- **Mô tả**: Lấy danh sách thông báo của hội viên phân loại theo danh mục.
+- **Query Params**: `filter=all | unread | opportunity | event | fee | archived`
+- **Response `200 OK`**:
+  ```json
+  {
+    "unreadCount": 3,
+    "items": [
+      {
+        "id": "notif_01",
+        "category": "opportunity",
+        "title": "Cơ hội B2B mới phù hợp",
+        "content": "Doanh nghiệp ABC vừa đăng nhu cầu tìm đối tác bao bì.",
+        "createdAt": "2026-09-12T10:30:00Z",
+        "read": false,
+        "archived": false
+      }
+    ]
+  }
+  ```
+
+### `POST /notifications/:id/read` & `POST /notifications/:id/archive`
+- **Mô tả**: Đánh dấu đã đọc hoặc ẩn thông báo.
+
+---
+
+## 2.11. Phân hệ Tiếp nhận Leads Demo từ Landing Page (Leads APIs)
+
+### `POST /leads/demo-request`
+- **Mô tả**: Khách hàng gửi biểu mẫu đăng ký trải nghiệm từ Landing Page V1 - V5.
+- **Request Body**:
+  ```json
+  {
+    "fullName": "Nguyễn Văn A",
+    "phone": "0912345678",
+    "email": "ceo@company.com",
+    "organization": "Hiệp hội Doanh nghiệp TP.HCM",
+    "notes": "Cần tư vấn giải pháp chuyển đổi số cho 500 hội viên",
+    "sourceVersion": "v3_cotich"
+  }
+  ```
+
+---
+
 # 3. QUY TRÌNH BIÊN DỊCH & ĐÓNG GÓI ỨNG DỤNG (BUILD & DEPLOYMENT)
 
 ## 3.1. Quy trình Build Android APK (Capacitor & Gradle)

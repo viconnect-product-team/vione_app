@@ -59,8 +59,17 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
 
   const query = term.trim().toLowerCase();
 
-  const visible = useMemo(() => {
+  const ceoOnlyCommunities = useMemo(() => {
     return communities.filter((c: any) => {
+      const id = String(c.communityId || "");
+      const name = String(c.name || "");
+      const slug = String(c.slug || "");
+      return id === "c1983000-0000-4000-8000-000000001983" || slug === "ceo1983" || name.includes("1983");
+    });
+  }, [communities]);
+
+  const visible = useMemo(() => {
+    return ceoOnlyCommunities.filter((c: any) => {
       if (tab === "admin" && c.viewerRole !== "admin") return false;
       if (tab === "joined") {
         const isJoined = c.viewerRole === "member" || c.viewerRole === "admin" || c.isMember || c.membershipStatus === "active";
@@ -69,10 +78,9 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
       if (!query) return true;
       return c.name.toLowerCase().includes(query);
     });
-  }, [communities, query, tab]);
+  }, [ceoOnlyCommunities, query, tab]);
 
-
-  const hasAdmin = communities.some((c) => c.viewerRole === "admin");
+  const hasAdmin = ceoOnlyCommunities.some((c) => c.viewerRole === "admin");
 
   return (
     <>
@@ -108,14 +116,6 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs shadow-md hover:opacity-90 active:scale-95 transition-all cursor-pointer shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tạo mới</span>
-          </button>
         </div>
 
         {initialLoading ? (
@@ -232,8 +232,8 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
                 <CommunityJoinStatusCards term={term} />
 
                 {/* Sắp diễn ra & Cơ hội kinh doanh trong cộng đồng */}
-                <CommunityUpcomingEvents communities={communities} />
-                <CommunityOpportunitiesSection communities={communities} />
+                <CommunityUpcomingEvents communities={ceoOnlyCommunities} />
+                <CommunityOpportunitiesSection communities={ceoOnlyCommunities} />
 
                 {/* F — Cộng đồng gợi ý (yêu cầu tham gia) */}
                 {!query ? (

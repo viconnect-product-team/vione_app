@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-business-connect-network";
 import { MobilePage } from "./MobilePage";
 import { BusinessConnectTopBar } from "./BusinessConnectTopBar";
+import { MobileSearchBar } from "./MobileSearchBar";
 
 function initialsOf(name: string | null): string {
   if (!name) return "?";
@@ -89,19 +90,12 @@ export function MomentPersonPicker() {
           {t("bc.mobile.moment.picker.subtitle")}
         </p>
 
-        <div className="mt-5 flex items-center gap-2.5 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4">
-          <Search
-            aria-hidden="true"
-            className="h-4.5 w-4.5 shrink-0 text-[var(--bc-mobile-muted)]"
-            strokeWidth={1.8}
-          />
-          <input
-            type="search"
+        <div className="mt-5">
+          <MobileSearchBar
+            id="bc-moment-person-search"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={setSearchTerm}
             placeholder={t("bc.mobile.network.search.placeholder")}
-            aria-label={t("bc.mobile.network.search.placeholder")}
-            className="min-h-11 w-full bg-transparent text-[15px] text-[var(--bc-mobile-text)] outline-none placeholder:text-[var(--bc-mobile-muted)]"
           />
         </div>
 

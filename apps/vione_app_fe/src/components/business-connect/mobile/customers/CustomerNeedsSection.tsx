@@ -23,7 +23,7 @@ const PRIORITY_TKEY: Record<BcCustomerNeedPriority, string> = {
 
 const PRIORITY_TONE: Record<BcCustomerNeedPriority, string> = {
   low: "text-[var(--bc-mobile-muted)]",
-  medium: "text-sky-400",
+  medium: "text-amber-500",
   high: "text-amber-400",
 };
 

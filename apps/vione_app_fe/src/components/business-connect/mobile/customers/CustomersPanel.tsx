@@ -21,6 +21,7 @@ import {
 import { CustomerDetailSheet } from "./CustomerDetailSheet";
 import { CustomerTasksPanel } from "./CustomerTasksPanel";
 import { CustomerTagManagerSheet } from "./CustomerTagManagerSheet";
+import { MobileSearchBar } from "../MobileSearchBar";
 
 export const STAGE_TKEY = {
   prospect: "bc.mobile.customers.stage.prospect",
@@ -34,7 +35,7 @@ const STAGE_TONE: Record<BcCustomerStage, string> = {
   prospect: "text-[var(--bc-mobile-muted)]",
   consulting: "text-[var(--bc-mobile-accent)]",
   won: "text-emerald-400",
-  nurturing: "text-sky-400",
+  nurturing: "text-amber-500",
   inactive: "text-[var(--bc-mobile-muted)]",
 };
 
@@ -148,26 +149,18 @@ export function CustomersPanel() {
       <CustomerTasksPanel onOpen={(id) => setOpenId(id)} />
 
       {/* Tìm kiếm + thêm */}
-      <div className="mt-4 flex items-center gap-2.5">
-        <div className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5">
-          <label htmlFor="bc-customer-search" className="sr-only">
-            {t("bc.mobile.customers.search.label")}
-          </label>
-          <Search aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-[var(--bc-mobile-muted)]" strokeWidth={1.8} />
-          <input
-            id="bc-customer-search"
-            type="search"
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder={t("bc.mobile.customers.search.placeholder")}
-            className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[var(--bc-mobile-text)] outline-none placeholder:text-[var(--bc-mobile-muted)] [&::-webkit-search-cancel-button]:hidden"
-          />
-        </div>
+      <div className="mt-4 flex items-center gap-2">
+        <MobileSearchBar
+          id="bc-customer-search"
+          value={term}
+          onChange={setTerm}
+          placeholder={t("bc.mobile.customers.search.placeholder")}
+        />
         <button
           type="button"
           onClick={() => setPicking(true)}
           aria-label={t("bc.mobile.customers.add")}
-          className="bc-cta-gold grid h-12 w-12 shrink-0 place-items-center rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+          className="bc-cta-gold grid h-10 w-10 shrink-0 place-items-center rounded-full focus-visible:outline-none shadow-sm cursor-pointer"
         >
           <Plus className="h-5 w-5" strokeWidth={2} />
         </button>
@@ -415,10 +408,10 @@ function StageChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
+      className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium transition-all cursor-pointer ${
         active
-          ? "border-[var(--bc-mobile-accent)] text-[var(--bc-mobile-accent)]"
-          : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+          ? "bg-[var(--bc-mobile-accent-grad)] text-black border-[var(--bc-mobile-border-gold)] shadow-sm font-bold"
+          : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:border-[var(--bc-mobile-accent)] hover:text-[var(--bc-mobile-text)]"
       }`}
     >
       {children}

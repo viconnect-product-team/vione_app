@@ -358,7 +358,7 @@ export class AdminService implements OnModuleInit {
       VALUES (gen_random_uuid(), ${id}, ${channel}, NOW(), ${byName}, ${note}, NOW(), NOW())
     `;
 
-    // Cập nhật số lần nhắc trên member
+    // Cập nhật số lần nhắc trên member và phát thông báo in-app
     const existing = await this.getInvoiceById(id);
     if (existing.invoice.memberId) {
       await this.prisma.$executeRaw`
@@ -366,6 +366,50 @@ export class AdminService implements OnModuleInit {
         SET reminder_count = COALESCE(reminder_count, 0) + 1, last_reminder = NOW(), updated_at = NOW()
         WHERE id = ${existing.invoice.memberId}
       `.catch(() => null);
+
+      try {
+        const memberRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, user_id, name, email FROM public.members WHERE id = ${existing.invoice.memberId} LIMIT 1
+        `.catch(() => [] as any[]);
+
+        const targetUserId = memberRows[0]?.user_id;
+        if (targetUserId) {
+          const formattedAmount = Number(existing.invoice.amount || 0).toLocaleString('vi-VN');
+          const notifTitle = `[Nhắc nhở] Quá hạn thanh toán hội phí`;
+          const notifBody = `Hóa đơn ${existing.invoice.invoiceNo || id} (Số tiền: ${formattedAmount} đ) của Quý hội viên đã quá hạn thanh toán ngày ${existing.invoice.dueDate || 'gần nhất'}. Vui lòng kiểm tra và hoàn tất thanh toán.`;
+          const dedupeKey = `reminder-${id}-${Date.now()}`;
+          const safeDisplayData = JSON.stringify({
+            title: notifTitle,
+            body: notifBody,
+            invoiceId: id,
+            invoiceNo: existing.invoice.invoiceNo || id,
+            amount: Number(existing.invoice.amount || 0),
+            dueDate: existing.invoice.dueDate,
+            type: 'invoice_reminder',
+            targetRoute: `/fees/${id}`,
+          });
+
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), $1, 'finance', $2, 'invoice_reminder', 'overdue_payment_reminder',
+              $3, $4, $5::jsonb, 'urgent', 'delivered', $6, 'all', 'all', NOW(), NOW()
+            )
+          `, targetUserId, id, notifTitle, notifBody, safeDisplayData, dedupeKey).catch(() => {});
+
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
+            )
+          `, targetUserId, notifTitle, notifBody, id).catch(() => {});
+        }
+      } catch (e: any) {
+        console.warn('[addInvoiceReminder] Failed to push notifications:', e?.message);
+      }
     }
 
     return this.getInvoiceById(id);
@@ -599,21 +643,53 @@ export class AdminService implements OnModuleInit {
     const body = String(data.body || '').trim();
     const audience = String(data.audience || 'all');
     const channel = String(data.channel || 'inapp');
-    const appScope = String(data.appScope || data.targetApp || 'crm');
+    const appScope = String(data.appScope || data.targetApp || 'all');
     const status = String(data.status || 'sent');
     const assocId = data.associationId || null;
 
-    await this.prisma.$executeRaw`
+    const sentAtStr = status === 'sent' ? now.toISOString() : null;
+
+    await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.notifications (
         id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), ${code}, ${title}, ${body}, ${audience}, ${channel},
-        ${status}, ${status === 'sent' ? now : null}, 0, ${assocId}::uuid,
-        ${appScope}, ${appScope}, ${now}, ${now}
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW(), NOW()
       )
-    `;
+    `, code, title, body, audience, channel, status, sentAtStr, assocId, appScope, appScope);
 
     if (status === 'sent') {
+      try {
+        const users = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM auth.users LIMIT 1000
+        `.catch(async () => {
+          return this.prisma.$queryRaw<any[]>`SELECT user_id as id FROM public.members WHERE user_id IS NOT NULL LIMIT 1000`.catch(() => []);
+        });
+        for (const u of users) {
+          const dedupeKey = `crm-notif-${code}-${u.id}`;
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), $1, 'crm', $2, 'crm_broadcast', 'system_broadcast',
+              $3, $4, $5::jsonb, 'normal', 'delivered', $6, $7, $8, NOW(), NOW()
+            )
+          `, u.id, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code }), dedupeKey, appScope, appScope).catch((err) => {
+            console.error('Error inserting business_notification:', err?.message);
+          });
+
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
+            )
+          `, u.id, title, body, code).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('Failed to broadcast CRM notification:', err);
+      }
+
       this.gateway.emitToAll('notification:new', {
         id: code,
         title,
@@ -670,15 +746,15 @@ export class AdminService implements OnModuleInit {
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.notifications
       SET status = 'sent', sent_at = NOW(), updated_at = NOW()
-      WHERE code = '${id}' OR id::text = '${id}'
-    `);
+      WHERE code = $1 OR id::text = $1
+    `, id);
 
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, code, title, body, audience, channel, status, sent_at, reach, app_scope, target_app
       FROM public.notifications
-      WHERE code = '${id}' OR id::text = '${id}'
+      WHERE code = $1 OR id::text = $1
       LIMIT 1
-    `).catch(() => []);
+    `, id).catch(() => []);
 
     const notif = rows[0] || { id, status: 'sent', sentAt: now.toISOString() };
     const appScope = notif.app_scope || notif.target_app || 'crm';

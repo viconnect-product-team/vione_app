@@ -94,7 +94,7 @@ const FIELD_PLACEHOLDERS: Record<FieldKey, string> = {
 };
 
 const inputClass =
-  "min-h-12 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[14.5px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]";
+  "min-h-12 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3.5 text-[14.5px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] focus-visible:border-[#D8B282]";
 
 export function IdentityEditPage() {
   const t = useT();

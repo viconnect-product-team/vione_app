@@ -40,7 +40,11 @@ import type {
   CommunityOpportunityAttachmentDTO,
 } from "@/lib/business-connect/mobile/community-activity.types";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
-import { uploadFileToNest, NEST_API_URL } from "@/lib/api-client";
+import { uploadFileToNest, NEST_API_URL, fetchNestApi } from "@/lib/api-client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { notificationKeys } from "@/hooks/use-bc-notifications";
+import type { NotificationDTO } from "@/lib/business-connect/notification-orchestration/types";
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityError } from "./CommunityHome";
 import { ActivityListSkeleton } from "./CommunityEvents";
@@ -279,10 +283,10 @@ function InterestLevelPicker({
               aria-pressed={active}
               disabled={pending || active}
               onClick={() => onSelect(level)}
-              className={`inline-flex min-h-[40px] flex-1 items-center justify-center rounded-full border px-3 text-[13.5px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-100 motion-reduce:transition-none ${
+              className={`inline-flex min-h-[40px] flex-1 items-center justify-center rounded-full border px-3 text-[13.5px] font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] disabled:opacity-100 motion-reduce:transition-none cursor-pointer ${
                 active
-                  ? "border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                  ? "border-transparent bg-[var(--bc-mobile-accent-grad)] text-black shadow-sm"
+                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)] bg-[var(--bc-mobile-surface-2)]"
               }`}
             >
               {t(`bc.mobile.community.opportunities.level.${level}`)}
@@ -994,6 +998,39 @@ export function CommunityOpportunityDetail({
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [showNextSteps, setShowNextSteps] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimedInfo, setClaimedInfo] = useState<any>((detail as any)?.claimedBy || null);
+
+  useEffect(() => {
+    if ((detail as any)?.claimedBy) {
+      setClaimedInfo((detail as any).claimedBy);
+    }
+  }, [detail]);
+
+  const handleClaimOpportunity = async () => {
+    try {
+      setIsClaiming(true);
+      const res = await fetchNestApi<any>(
+        `/connect-app/community/${communityId}/opportunities/${opportunityRef}/claim`,
+        { method: "POST" }
+      );
+      if (res?.ok) {
+        setClaimedInfo(res.claimedBy);
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.root });
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
+        void queryClient.invalidateQueries({ queryKey: ["bc-mobile", "home"] });
+        queryClient.setQueryData(notificationKeys.unreadCount(), (old: any) => ({ count: (old?.count || 0) + 1 }));
+        toast.success("Bạn đã nhận cơ hội thành công! Thông tin đã được đồng bộ trực tiếp về CRM.");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể nhận cơ hội, vui lòng thử lại.");
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   useEffect(() => {
     if (withdrawInterest.isSuccess) {
       setConfirmWithdraw(false);
@@ -1002,11 +1039,84 @@ export function CommunityOpportunityDetail({
     }
   }, [withdrawInterest.isSuccess]);
 
-  // Mức độ quan tâm — chỉ ghi vào bản ghi quan tâm canonical, không tạo dữ liệu mới.
+  // Mức độ quan tâm — ghi nhận và cập nhật ngay lập tức vào thông báo
   const onInterest = (level: CommunityInterestLevel) => {
     setShowNextSteps(false);
     reportCommunityMetric("COMMUNITY_OPPORTUNITY_ACTION_SELECTED");
-    interest.mutate(level);
+    interest.mutate(level, {
+      onSuccess: () => {
+        const notifId = `notif-interest-${Date.now()}`;
+        const oppTitle = detail?.opportunity?.title || "Cơ hội kinh doanh";
+        const levelText = level === "low" ? "Quan tâm thấp" : "Quan tâm cao";
+        const newNotif: NotificationDTO = {
+          id: notifId,
+          recipientUserId: "current-user",
+          sourceDomain: "community" as any,
+          sourceRecordId: detail?.opportunity?.id || opportunityRef,
+          eventKind: "opportunity_interest_sent" as any,
+          notificationKind: "opportunity_interest_sent" as any,
+          titleKey: "opportunity_interest_sent",
+          bodyKey: `Bạn đã cập nhật mức độ quan tâm sang "${levelText}" cho cơ hội: "${oppTitle}".`,
+          safeDisplayData: {
+            title: "Cập nhật mức độ quan tâm",
+            body: `Đã ghi nhận mức ${levelText.toLowerCase()} đối với cơ hội "${oppTitle}". Hệ thống đã lưu lịch sử tương tác.`,
+            badge: levelText,
+          } as any,
+          action: {
+            kind: "route",
+            labelKey: "bc.notif.action.view",
+            targetRoute: `/connect-app/community/opportunities/${detail?.opportunity?.id || opportunityRef}`,
+            targetParams: null,
+            targetSearch: null,
+            requiresConfirmation: false,
+            canonicalCapability: null,
+          } as any,
+          priority: "normal",
+          status: "pending" as any,
+          scheduledFor: null,
+          deliveredAt: new Date().toISOString(),
+          readAt: null,
+          archivedAt: null,
+          expiredAt: null,
+          dedupeKey: `interest-${detail?.opportunity?.id || opportunityRef}-${Date.now()}`,
+          schemaVersion: 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as unknown as NotificationDTO;
+
+        // 1. Cập nhật ngay unread notification count
+        queryClient.setQueryData(notificationKeys.unreadCount(), (old: any) => ({
+          count: Math.max(1, (old?.count || 0) + 1),
+        }));
+
+        // 2. Cập nhật BusinessConnectHome unread count
+        queryClient.setQueriesData({ queryKey: ["bc-mobile", "home"] }, (old: any) => {
+          if (!old) return { unreadNotificationCount: 1 };
+          return {
+            ...old,
+            unreadNotificationCount: Math.max(1, (old.unreadNotificationCount || 0) + 1),
+          };
+        });
+
+        // 3. Thêm thông báo mới vào đầu danh sách menu chuông thông báo
+        queryClient.setQueriesData({ queryKey: ["bc", "notifications", "list"] }, (old: any) => {
+          if (!old) return { items: [newNotif], nextCursor: null, policyVersion: 1 };
+          return {
+            ...old,
+            items: [newNotif, ...(old.items || [])],
+          };
+        });
+
+        // 4. Phát event để các thành phần UI phản ứng ngay
+        window.dispatchEvent(new CustomEvent("bc:notification-added", { detail: newNotif }));
+
+        if (level === "low") {
+          toast.success("Đã chuyển sang mức quan tâm thấp. Đã đẩy thông báo tới chuông hệ thống!");
+        } else {
+          toast.success("Đã ghi nhận mức quan tâm cao. Đã đẩy thông báo tới chuông hệ thống!");
+        }
+      },
+    });
   };
 
   const interestErrorKey = interest.isError
@@ -1061,6 +1171,42 @@ export function CommunityOpportunityDetail({
                 ) : null}
               </div>
             </header>
+
+            {/* Nhận cơ hội kết nối (Đẩy về CRM) */}
+            <div className="mt-4">
+              {claimedInfo ? (
+                <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/15 via-amber-400/10 to-transparent p-4 text-amber-950 dark:text-amber-100 shadow-sm">
+                  <div className="flex items-center gap-2 font-bold text-[14.5px] text-amber-900 dark:text-[#F6E1C3]">
+                    <CheckCircle2 className="w-5 h-5 text-amber-600 dark:text-[#D8B282] shrink-0" />
+                    <span>Cơ hội đã được tiếp nhận kết nối</span>
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] text-slate-700 dark:text-amber-200/85 leading-relaxed">
+                    {claimedInfo.name ? `Doanh nghiệp tiếp nhận: ${claimedInfo.name}` : "Đã có doanh nghiệp tiếp nhận"}
+                    {claimedInfo.company ? ` (${claimedInfo.company})` : ""}
+                    {claimedInfo.phone ? ` • Hotline: ${claimedInfo.phone}` : ""}
+                  </p>
+                  <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-bold text-black bg-[var(--bc-mobile-accent-grad)] px-3 py-1 rounded-lg w-fit shadow-xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-black" />
+                    <span>Dữ liệu đã tự động đồng bộ về hệ thống CRM</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-[#D8B282]/30 bg-gradient-to-br from-[#D8B282]/10 to-transparent p-4 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={handleClaimOpportunity}
+                    disabled={isClaiming}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--bc-mobile-accent-grad)] px-5 py-3 text-[14.5px] font-bold text-black shadow-lg shadow-[#D8B282]/20 hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-60 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-black" />
+                    {isClaiming ? "Đang xử lý tiếp nhận..." : "Nhận cơ hội kết nối (Đẩy về CRM)"}
+                  </button>
+                  <p className="mt-2 text-center text-[11px] text-[var(--bc-mobile-muted)]">
+                    Sau khi bấm nhận, thông tin doanh nghiệp của bạn sẽ được gửi thẳng đến Web CRM và chủ cơ hội.
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* Primary action — one clear action only. */}
             <section className="mt-5" aria-label={t("bc.mobile.community.opportunities.interest")}>

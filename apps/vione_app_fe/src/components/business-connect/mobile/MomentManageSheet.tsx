@@ -560,7 +560,7 @@ export function MomentManageSheet({
                     <div className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)] text-[11px] font-semibold text-[var(--bc-mobile-text)] shadow-xs">
                       {visibility === "public" ? (
                         <>
-                          <Globe className="h-3.5 w-3.5 text-sky-500" />
+                          <Globe className="h-3.5 w-3.5 text-amber-500" />
                           <span>Công khai</span>
                         </>
                       ) : visibility === "friends" ? (
@@ -722,7 +722,7 @@ export function MomentManageSheet({
                   <button
                     type="button"
                     onClick={() => setActiveSubView("tag")}
-                    className="p-2 rounded-xl text-sky-500 hover:bg-sky-500/10 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
                     title="Gắn thẻ đối tác"
                   >
                     <Users className="h-5 w-5" />

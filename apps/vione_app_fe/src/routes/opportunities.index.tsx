@@ -126,6 +126,20 @@ function OpportunityCard({
           <div className="font-semibold text-foreground">{budget}</div>
         </div>
 
+        {opp.claimedByName && (
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-[11px] text-emerald-400">
+            <div className="flex items-center gap-1 font-semibold text-emerald-300">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Đã nhận kết nối: {opp.claimedByName}
+            </div>
+            {(opp.claimedCompany || opp.claimedPhone) && (
+              <div className="mt-0.5 text-emerald-300/80 truncate text-[10.5px]">
+                {[opp.claimedCompany, opp.claimedPhone].filter(Boolean).join(" · ")}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-auto flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
           <Link
             to="/members/$memberId"

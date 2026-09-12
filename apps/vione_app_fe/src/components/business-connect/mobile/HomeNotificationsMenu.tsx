@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useT, hasTKey } from "@/lib/i18n";
 import {
   useNotifications,
+  useUnreadNotificationCount,
   useMarkNotificationRead,
   useDeleteNotification,
 } from "@/hooks/use-bc-notifications";
@@ -21,10 +22,20 @@ function text(
 }
 
 function humanizeNotifTitle(kind: string, rawTitle?: string): string {
-  if (rawTitle && rawTitle !== kind && !rawTitle.includes("moment_") && !rawTitle.includes("_")) {
+  if (rawTitle && rawTitle !== kind && !rawTitle.startsWith("system_") && !rawTitle.startsWith("moment_") && !rawTitle.startsWith("opportunity_")) {
     return rawTitle;
   }
   switch (kind) {
+    case "system_broadcast":
+      return "Thông báo hệ thống";
+    case "opportunity_claimed":
+      return "Tiếp nhận cơ hội thành công";
+    case "opportunity_claimed_by_peer":
+      return "Cơ hội đã có người nhận kết nối";
+    case "opportunity_interest_sent":
+      return "Đã gửi mức độ quan tâm cơ hội";
+    case "opportunity_new":
+      return "Cơ hội kinh doanh mới";
     case "moment_new_comment":
       return "Bình luận mới trong khoảnh khắc";
     case "moment_tagged":
@@ -42,7 +53,7 @@ function humanizeNotifTitle(kind: string, rawTitle?: string): string {
     case "connection_request_accepted":
       return "Đã đồng ý kết nối danh thiếp";
     default:
-      return rawTitle || "Thông báo mới";
+      return (rawTitle && rawTitle !== kind ? rawTitle : null) || "Thông báo hệ thống";
   }
 }
 
@@ -140,6 +151,13 @@ function UnreadList({ onClose }: { onClose: () => void }) {
             (n.notificationKind === "connection_request_accepted" ? "accepted" : "pending");
 
           const rawTitle = text(t, n.titleKey, n.notificationKind, n.safeDisplayData);
+          const isOpp =
+            n.sourceDomain === "opportunity" ||
+            n.notificationKind?.startsWith("opportunity") ||
+            Boolean(n.safeDisplayData?.opportunityId);
+          const oppId = n.safeDisplayData?.opportunityId || (n.sourceDomain === "opportunity" ? n.sourceRecordId : null);
+          const commId = n.safeDisplayData?.communityId || n.associationId || "clb-ceo-1983";
+
           const displayTitle = isConnection
             ? "Lời mời kết nối mới"
             : humanizeNotifTitle(n.notificationKind, rawTitle);
@@ -150,6 +168,8 @@ function UnreadList({ onClose }: { onClose: () => void }) {
               : text(t, n.bodyKey, "", n.safeDisplayData);
           const targetRoute = isConnection
             ? "/connect-app/network"
+            : isOpp && oppId
+            ? `/connect-app/community/${commId}/opportunities/${oppId}`
             : n.action?.targetRoute || "/connect-app/notifications";
           const targetSearch = isConnection
             ? { tab: "requests" }
@@ -296,10 +316,12 @@ function UnreadList({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function HomeNotificationsMenu({ unreadCount }: { unreadCount: number | null }) {
+export function HomeNotificationsMenu({ unreadCount: propCount }: { unreadCount: number | null }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const countQuery = useUnreadNotificationCount();
+  const unreadCount = countQuery.data?.count ?? propCount ?? 0;
   const hasUnread = typeof unreadCount === "number" && unreadCount > 0;
   const label = hasUnread
     ? t("bc.mobile.home.notifications.unread", { count: unreadCount })

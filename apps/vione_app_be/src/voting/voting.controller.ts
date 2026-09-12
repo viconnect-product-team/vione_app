@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -29,6 +31,16 @@ export class VotingController {
   @Post('polls')
   async createPoll(@Request() req: any, @Body() body: CreatePollDto) {
     return this.votingService.createPoll(req.user.id || req.user.sub, body);
+  }
+
+  @Put('polls/:id')
+  async updatePoll(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.votingService.updatePoll(req.user.id || req.user.sub, id, body);
+  }
+
+  @Delete('polls/:id')
+  async deletePoll(@Request() req: any, @Param('id') id: string) {
+    return this.votingService.deletePoll(req.user.id || req.user.sub, id);
   }
 
   @Post('polls/:id/vote')

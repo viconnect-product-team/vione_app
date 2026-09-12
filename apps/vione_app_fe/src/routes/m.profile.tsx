@@ -67,7 +67,8 @@ function ProfileScreen() {
   };
 
   const menu = [
-    { label: t("m.profile.menu_personal_info"), icon: User, to: "/m/card" as const, desc: "Danh thiếp & Thẻ số" },
+    { label: "Cập nhật hồ sơ & Quyền riêng tư", icon: User, to: "/connect-app/me/edit" as const, desc: "Chỉnh sửa tên, chức danh, liên hệ & quyền riêng tư" },
+    { label: t("m.profile.menu_personal_info"), icon: QrCode, to: "/m/card" as const, desc: "Danh thiếp & Thẻ số" },
     { label: t("m.profile.menu_business_info"), icon: Building2, to: "/m/business-cards" as const, desc: "Hồ sơ công ty" },
     { label: t("m.profile.menu_members"), icon: Users, to: "/m/members" as const, desc: "Danh bạ hội viên" },
     { label: t("m.profile.menu_opportunities"), icon: Sparkles, to: "/m/opportunities" as const, desc: "Cơ hội giao thương B2B" },
@@ -75,7 +76,7 @@ function ProfileScreen() {
     { label: t("m.profile.menu_posts"), icon: FileText, to: "/m/news" as const, desc: "Tin tức & sự kiện" },
     { label: t("m.profile.menu_history"), icon: History, to: "/m/history" as const, desc: "Lịch sử kết nối" },
     { label: t("m.profile.menu_notifications"), icon: Bell, to: "/m/notifications" as const, desc: "Thông báo & Lời mời" },
-    { label: t("m.profile.menu_settings"), icon: Cog, to: "/account-settings" as const, desc: "Bảo mật & Tài khoản" },
+    { label: t("m.profile.menu_settings"), icon: Cog, to: "/connect-app/me" as const, desc: "Bảo mật & Tài khoản" },
   ];
 
   const themeOptions: { mode: Theme; icon: typeof Sun; label: string; desc: string }[] = [
@@ -95,7 +96,7 @@ function ProfileScreen() {
         title={t("m.profile.title")}
         back
         right={
-          <Link to="/account-settings" aria-label={t("m.profile.settings_label")} className="text-[var(--vba-gold)]">
+          <Link to="/connect-app/me" aria-label={t("m.profile.settings_label")} className="text-[var(--vba-gold)]">
             <Settings className="h-5 w-5" />
           </Link>
         }
@@ -144,18 +145,24 @@ function ProfileScreen() {
         </div>
 
         {/* Action Bar */}
-        <div className="mt-4 pt-3 border-t border-[var(--vba-border-soft)] grid grid-cols-2 gap-2">
+        <div className="mt-4 pt-3 border-t border-[var(--vba-border-soft)] grid grid-cols-3 gap-2">
+          <Link
+            to="/connect-app/me/edit"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-gold-soft)] py-2.5 text-[11.5px] font-bold text-[var(--vba-gold)] hover:bg-[var(--vba-gold)] hover:text-slate-900 transition-colors border border-[var(--vba-border-accent)] shadow-xs"
+          >
+            <User className="h-3.5 w-3.5" /> Cập nhật
+          </Link>
           <Link
             to="/m/card"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[var(--vba-surface-2)] py-2.5 text-xs font-semibold text-[var(--vba-gold)] hover:bg-[var(--vba-gold-soft)] transition-colors border border-[var(--vba-border-soft)]"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-surface-2)] py-2.5 text-[11.5px] font-semibold text-[var(--vba-text)] hover:text-[var(--vba-gold)] transition-colors border border-[var(--vba-border-soft)]"
           >
-            <QrCode className="h-4 w-4" /> Mở Thẻ VIP & QR
+            <QrCode className="h-3.5 w-3.5 text-[var(--vba-gold)]" /> Thẻ VIP
           </Link>
           <Link
             to="/m/business-cards"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[var(--vba-surface-2)] py-2.5 text-xs font-semibold text-[var(--vba-text)] hover:text-[var(--vba-gold)] transition-colors border border-[var(--vba-border-soft)]"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-surface-2)] py-2.5 text-[11.5px] font-semibold text-[var(--vba-text)] hover:text-[var(--vba-gold)] transition-colors border border-[var(--vba-border-soft)]"
           >
-            <Share2 className="h-4 w-4 text-[var(--vba-gold)]" /> Chạm NFC / Chia sẻ
+            <Share2 className="h-3.5 w-3.5 text-[var(--vba-gold)]" /> Chạm NFC
           </Link>
         </div>
       </div>

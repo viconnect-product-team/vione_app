@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 // Data fields that can be embedded into an event's ticket QR code.
 export const QR_FIELDS = ["registration_code", "verify_url", "ticket_code"] as const;
@@ -36,7 +39,17 @@ export type Registration = {
   email: string;
   registeredAt: string;
   status: "confirmed" | "waitlist" | "cancelled";
-  ticketType: "standard" | "vip" | "speaker";
+  ticketType: string;
+  seatAssignment?: string;
+  paymentStatus?: "paid" | "pending" | "cancelled";
+  paymentMethod?: "transfer" | "bank" | "cash";
+  paymentAmount?: number;
+  paymentDeadline?: string;
+  reminderCount?: number;
+  qrPayload?: string;
+  checkedInAt?: string | null;
+  phone?: string;
+  company?: string;
 };
 
 type Row = Record<string, unknown>;
@@ -90,20 +103,47 @@ import { fetchNestApiFromServer } from "./api-client";
 
 export const listEventsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }) => {
-    return fetchNestApiFromServer("/events", context.token);
+  .handler(async ({ context }): Promise<EventItem[]> => {
+    try {
+      const res = await fetchNestApiFromServer<any>("/events", context.token);
+      if (Array.isArray(res)) return res.map((r: any) => mapEvent(r as Row));
+    } catch (err) {
+      console.warn("[listEventsFn] Nest API failed, falling back to db:", err);
+    }
+    const { data } = await getDb(context).from("events").select("*").order("date", { ascending: true });
+    return (data ?? []).map((r: any) => mapEvent(r as Row));
   });
 
 export const listRegistrationsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .handler(async ({ context }) => {
-    return fetchNestApiFromServer("/events/registrations", context.token);
+  .handler(async ({ context }): Promise<Registration[]> => {
+    try {
+      const res = await fetchNestApiFromServer<any>("/events/registrations", context.token);
+      if (Array.isArray(res)) return res.map((r: any) => mapReg(r as Row));
+    } catch (err) {
+      console.warn("[listRegistrationsFn] Nest API failed, falling back to db:", err);
+    }
+    const { data } = await getDb(context).from("event_registrations").select("*").order("registered_at", { ascending: false });
+    return (data ?? []).map((r: any) => mapReg(r as Row));
   });
 
 export const listEventsWithRegistrationsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {
-    return fetchNestApiFromServer("/events/with-registrations", context.token);
+    try {
+      const res = await fetchNestApiFromServer<any>("/events/with-registrations", context.token);
+      if (res && Array.isArray(res.events)) return res;
+    } catch (err) {
+      console.warn("[listEventsWithRegistrationsFn] Nest API failed, falling back to db:", err);
+    }
+    const [eventsRes, regsRes] = await Promise.all([
+      getDb(context).from("events").select("*").order("date", { ascending: true }),
+      getDb(context).from("event_registrations").select("*").order("registered_at", { ascending: false }),
+    ]);
+    return {
+      events: (eventsRes.data ?? []).map((r: any) => mapEvent(r as Row)),
+      registrations: (regsRes.data ?? []).map((r: any) => mapReg(r as Row)),
+    };
   });
 
 const eventInput = z.object({
@@ -193,3 +233,65 @@ export const deleteEventFn = createServerFn({ method: "POST" })
       method: "DELETE",
     });
   });
+
+export const updateRegistrationSeatingFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        registrationId: z.string().min(1),
+        seatAssignment: z.string().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(
+      `/events/registrations/${encodeURIComponent(data.registrationId)}/seating`,
+      context.token,
+      {
+        method: "PUT",
+        body: JSON.stringify({ seatAssignment: data.seatAssignment }),
+      },
+    );
+  });
+
+export const recordWalkInCashPaymentFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        registrationId: z.string().min(1),
+        amount: z.number().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(
+      `/events/registrations/${encodeURIComponent(data.registrationId)}/walk-in-cash`,
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify({ amount: data.amount }),
+      },
+    );
+  });
+
+export const sendPaymentReminderFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        registrationId: z.string().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(
+      `/events/registrations/${encodeURIComponent(data.registrationId)}/send-payment-reminder`,
+      context.token,
+      {
+        method: "POST",
+      },
+    );
+  });
+

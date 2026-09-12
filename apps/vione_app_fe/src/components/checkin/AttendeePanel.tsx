@@ -131,6 +131,55 @@ export function AttendeePanel({ attendee, result, onConfirm, onReset }: Props) {
           <Row icon={IdCard} label={`${t(attendee.membership)} · ${attendee.id}`} />
         </div>
 
+        {(attendee.badges.includes("sponsor") || attendee.sponsorType) && (
+          <div className="mt-3 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                <span>🤝 ĐẠI DIỆN NHÀ TÀI TRỢ</span>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                attendee.sponsorType === "regular"
+                  ? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30"
+                  : "bg-sky-500/20 text-sky-800 dark:text-sky-200 border border-sky-500/30"
+              }`}>
+                {attendee.sponsorType === "regular" ? "★ Thường Xuyên Ổn Định" : "✦ Nhà Tài Trợ Mới"}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Hình thức gói:</span>
+              <span className="font-bold text-foreground">
+                {attendee.packageType === "in_kind" ? "🎁 Tài trợ Hiện vật" : "💵 Tài trợ Bằng Tiền"}
+              </span>
+            </div>
+            {attendee.inKindDescription && (
+              <div className="mt-1 text-[11px] italic text-purple-900 dark:text-purple-200 bg-purple-500/15 p-1.5 rounded-md">
+                "{attendee.inKindDescription}"
+              </div>
+            )}
+          </div>
+        )}
+
+        {attendee.seatAssignment ? (
+          <div className="mt-3 rounded-xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 p-3.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                <span>👑 VỊ TRÍ CHỖ NGỒI VIP / BÀN TIỆC</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30">
+                ĐÃ ĐIỀU PHỐI
+              </span>
+            </div>
+            <div className="mt-1 text-base sm:text-lg font-black text-amber-900 dark:text-amber-200 font-sans tracking-tight">
+              📍 {attendee.seatAssignment}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-xl border border-border bg-muted/30 p-2.5 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Vị trí chỗ ngồi:</span>
+            <span className="font-semibold text-foreground">Khu vực tự do</span>
+          </div>
+        )}
+
         {result === null && (
           <button
             onClick={onConfirm}

@@ -161,13 +161,57 @@ function DonutChart({ data }: { data: { key: MemberLevelKey; count: number }[] }
   );
 }
 
+function normalizeMember(m: Member): Member {
+  let level = m.level;
+  if (!LEVELS.includes(level as any)) {
+    const l = String(level || "").toLowerCase();
+    if (l.includes("large") || l.includes("vip") || l.includes("diamond") || l.includes("kim")) level = "memberLevel.large";
+    else if (l.includes("medium") || l.includes("gold") || l.includes("vang")) level = "memberLevel.medium";
+    else if (l.includes("small") || l.includes("silver") || l.includes("bac")) level = "memberLevel.small";
+    else level = "memberLevel.individual";
+  }
+
+  let industry = m.industry;
+  if (!INDUSTRIES.includes(industry as any)) {
+    const ind = String(industry || "").toLowerCase();
+    if (ind.includes("it") || ind.includes("công nghệ") || ind.includes("phần mềm")) industry = "ind.it";
+    else if (ind.includes("sản xuất") || ind.includes("manufacturing")) industry = "ind.manufacturing";
+    else if (ind.includes("bất động sản") || ind.includes("realestate") || ind.includes("địa ốc")) industry = "ind.realestate";
+    else if (ind.includes("tài chính") || ind.includes("finance") || ind.includes("ngân hàng")) industry = "ind.finance";
+    else industry = "ind.trade";
+  }
+
+  let region = m.region;
+  if (!REGIONS.includes(region as any)) {
+    const reg = String(region || "").toLowerCase();
+    if (reg.includes("trung") || reg.includes("đà nẵng") || reg.includes("huế") || reg.includes("central")) region = "region.central";
+    else if (reg.includes("nam") || reg.includes("hồ chí minh") || reg.includes("hcm") || reg.includes("sài gòn") || reg.includes("south")) region = "region.south";
+    else region = "region.north";
+  }
+
+  let status = m.status;
+  if (!STATUSES.includes(status as any)) {
+    status = "active";
+  }
+
+  return {
+    ...m,
+    level,
+    industry,
+    region,
+    status,
+  };
+}
+
 function SegmentsPage() {
   const t = useT();
   const navigate = useNavigate();
   const { data: MEMBERS = [] } = useQuery<Member[]>({
     queryKey: ["members"],
     queryFn: () =>
-      fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []),
+      fetchNestApi<Member[]>("/members")
+        .then((res) => (Array.isArray(res) ? res.map(normalizeMember) : []))
+        .catch(() => []),
   });
 
   const [q, setQ] = useState("");

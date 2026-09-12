@@ -13,9 +13,10 @@ import type { CommunityOpportunitySummaryDTO } from "@/lib/business-connect/mobi
 import { BusinessConnectTopBar } from "../BusinessConnectTopBar";
 import { CommunityError } from "./CommunityHome";
 import { ActivityListSkeleton } from "./CommunityEvents";
+import { MobileSearchBar } from "../MobileSearchBar";
 
 export function daysLeftLabel(
-  daysLeft: number | null,
+  daysLeft: number | null | undefined,
   t: (
     key:
       | "bc.mobile.community.opportunities.daysLeft"
@@ -23,7 +24,7 @@ export function daysLeftLabel(
     vars?: { count: number },
   ) => string,
 ): string | null {
-  if (daysLeft === null) return null;
+  if (daysLeft === null || daysLeft === undefined || isNaN(daysLeft)) return null;
   if (daysLeft <= 0) return t("bc.mobile.community.opportunities.expiresToday");
   return t("bc.mobile.community.opportunities.daysLeft", { count: daysLeft });
 }
@@ -65,35 +66,12 @@ export function CommunityOpportunities({ communityId }: { communityId: string })
         </h1>
 
         <div role="search" className="mt-3.5">
-          <label htmlFor="bc-community-opportunity-search" className="sr-only">
-            {t("bc.mobile.community.opportunities.search.label")}
-          </label>
-          <div className="flex h-12 items-center gap-2.5 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-4 transition-colors duration-150 focus-within:ring-2 focus-within:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none">
-            <Search
-              aria-hidden="true"
-              className="h-4 w-4 shrink-0 text-[var(--bc-mobile-muted)]"
-              strokeWidth={1.8}
-            />
-            <input
-              id="bc-community-opportunity-search"
-              type="search"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder={t("bc.mobile.community.opportunities.search.placeholder")}
-              autoComplete="off"
-              className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[var(--bc-mobile-text)] outline-none placeholder:text-[var(--bc-mobile-muted)] [&::-webkit-search-cancel-button]:hidden"
-            />
-            {term ? (
-              <button
-                type="button"
-                onClick={() => setTerm("")}
-                aria-label={t("bc.mobile.community.search.clear")}
-                className="-mr-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 hover:bg-[var(--bc-mobile-border)] hover:text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
-              >
-                <X aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-              </button>
-            ) : null}
-          </div>
+          <MobileSearchBar
+            id="bc-community-opportunity-search"
+            value={term}
+            onChange={setTerm}
+            placeholder={t("bc.mobile.community.opportunities.search.placeholder")}
+          />
         </div>
 
         <div
@@ -110,10 +88,10 @@ export function CommunityOpportunities({ communityId }: { communityId: string })
                 role="tab"
                 aria-selected={active}
                 onClick={() => setFilter(key)}
-                className={`inline-flex min-h-[36px] items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none ${
+                className={`inline-flex min-h-[36px] items-center rounded-full border px-3.5 text-[13px] font-medium transition-all duration-150 focus-visible:outline-none cursor-pointer ${
                   active
-                    ? "border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)]"
-                    : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)]"
+                    ? "border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-accent-grad)] text-black shadow-sm font-bold"
+                    : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:border-[var(--bc-mobile-accent)] hover:text-[var(--bc-mobile-text)]"
                 }`}
               >
                 {t(`bc.mobile.community.opportunities.filter.${key}`)}
@@ -205,7 +183,14 @@ function OpportunityRow({
   const meta = [opportunityCategoryLabel(opportunity.categoryKey, t), opportunity.organizationLabel]
     .filter(Boolean)
     .join(" · ");
-  const deadline = daysLeftLabel(opportunity.daysLeft, t);
+  const expDate = opportunity.expiresAt || (opportunity as any).endsAt;
+  const calculatedDaysLeft =
+    typeof opportunity.daysLeft === "number" && !isNaN(opportunity.daysLeft)
+      ? opportunity.daysLeft
+      : expDate
+        ? Math.max(0, Math.ceil((new Date(expDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        : null;
+  const deadline = daysLeftLabel(calculatedDaysLeft, t);
 
   return (
     <li>

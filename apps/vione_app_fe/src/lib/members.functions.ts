@@ -191,3 +191,46 @@ export const sendRenewalReminderFn = createServerFn({ method: "POST" })
       method: "PATCH",
     });
   });
+
+const RoleAndDeptSchema = z.object({
+  memberId: z.string().min(1),
+  executiveRole: z.string().min(1),
+  department: z.string().min(1),
+});
+
+/** Cập nhật vai trò ban điều hành & phòng ban */
+export const updateMemberRoleAndDeptFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => RoleAndDeptSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    
+    // Update members
+    await admin
+      .from("members")
+      .update({
+        executive_role: data.executiveRole,
+        department: data.department,
+      })
+      .eq("id", data.memberId);
+
+    // Update memberships
+    const { data: m } = await admin
+      .from("members")
+      .select("user_id")
+      .eq("id", data.memberId)
+      .maybeSingle();
+
+    if (m?.user_id) {
+      await admin
+        .from("memberships")
+        .update({
+          executive_role: data.executiveRole,
+          department: data.department,
+        })
+        .eq("user_id", m.user_id);
+    }
+
+    return { ok: true };
+  });

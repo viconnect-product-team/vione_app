@@ -52,14 +52,15 @@ export class MembersService {
   constructor(private prisma: PrismaService) {}
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
+    if (!userId) return false;
     if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
       return true;
     }
-    const roles = await this.prisma.user_roles
-      .findMany({ where: { user_id: userId } })
-      .catch(() => [] as any[]);
+    const roles = await this.prisma.$queryRaw<any[]>`
+      SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
+    `.catch(() => [] as any[]);
     return roles.some(
-      (r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin',
+      (r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin' || r.role === 'admin',
     );
   }
 
@@ -141,6 +142,48 @@ export class MembersService {
         joinedStr = String(r.joined_at).slice(0, 10);
       }
     }
+
+    // Normalize level
+    let mappedLevel = 'memberLevel.medium';
+    const rawLevel = String(r.level || '').toLowerCase();
+    if (rawLevel.includes('large') || rawLevel.includes('vip') || rawLevel.includes('diamond') || rawLevel.includes('kim')) {
+      mappedLevel = 'memberLevel.large';
+    } else if (rawLevel.includes('medium') || rawLevel.includes('gold') || rawLevel.includes('vang')) {
+      mappedLevel = 'memberLevel.medium';
+    } else if (rawLevel.includes('small') || rawLevel.includes('silver') || rawLevel.includes('bac')) {
+      mappedLevel = 'memberLevel.small';
+    } else if (rawLevel.includes('individual') || rawLevel.includes('ca_nhan')) {
+      mappedLevel = 'memberLevel.individual';
+    } else if (r.level && r.level.startsWith('memberLevel.')) {
+      mappedLevel = r.level;
+    }
+
+    // Normalize industry
+    let mappedIndustry = 'ind.trade';
+    const rawInd = String(r.industry || '').toLowerCase();
+    if (rawInd.includes('it') || rawInd.includes('công nghệ') || rawInd.includes('phần mềm')) {
+      mappedIndustry = 'ind.it';
+    } else if (rawInd.includes('sản xuất') || rawInd.includes('manufacturing')) {
+      mappedIndustry = 'ind.manufacturing';
+    } else if (rawInd.includes('bất động sản') || rawInd.includes('realestate') || rawInd.includes('địa ốc')) {
+      mappedIndustry = 'ind.realestate';
+    } else if (rawInd.includes('tài chính') || rawInd.includes('finance') || rawInd.includes('ngân hàng')) {
+      mappedIndustry = 'ind.finance';
+    } else if (r.industry && r.industry.startsWith('ind.')) {
+      mappedIndustry = r.industry;
+    }
+
+    // Normalize region
+    let mappedRegion = 'region.north';
+    const rawReg = String(r.region || '').toLowerCase();
+    if (rawReg.includes('trung') || rawReg.includes('đà nẵng') || rawReg.includes('huế') || rawReg.includes('central')) {
+      mappedRegion = 'region.central';
+    } else if (rawReg.includes('nam') || rawReg.includes('hồ chí minh') || rawReg.includes('hcm') || rawReg.includes('sài gòn') || rawReg.includes('south')) {
+      mappedRegion = 'region.south';
+    } else if (r.region && r.region.startsWith('region.')) {
+      mappedRegion = r.region;
+    }
+
     return {
       id: r.id,
       code: r.code ?? '',
@@ -149,10 +192,10 @@ export class MembersService {
       email: r.email ?? '',
       phone: r.phone ?? '',
       type: r.type ?? 'company',
-      level: r.level ?? 'memberLevel.medium',
-      industry: r.industry ?? 'ind.trade',
-      region: r.region ?? 'region.north',
-      status: r.status ?? 'pending',
+      level: mappedLevel,
+      industry: mappedIndustry,
+      region: mappedRegion,
+      status: r.status ?? 'active',
       joinedAt: joinedStr,
       feeYear: r.fee_year ?? new Date().getFullYear(),
       feePaid: Boolean(r.fee_paid),

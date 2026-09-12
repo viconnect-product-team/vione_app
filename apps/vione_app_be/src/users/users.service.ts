@@ -13,6 +13,18 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findByUsername(username: string): Promise<vione_users | null> {
+    const user = await this.prisma.vione_users
+      .findFirst({
+        where: {
+          OR: [{ username }, { email: username }],
+        },
+      })
+      .catch(() => null);
+
+    if (user) {
+      return user;
+    }
+
     if (username === 'admin@connect.vn') {
       return {
         id: '00000000-0000-0000-0000-000000000000',
@@ -30,16 +42,21 @@ export class UsersService {
         updated_at: new Date(),
       } as vione_users;
     }
-    return this.prisma.vione_users
-      .findFirst({
-        where: {
-          OR: [{ username }, { email: username }],
-        },
-      })
-      .catch(() => null);
+
+    return null;
   }
 
   async findById(id: string): Promise<vione_users | null> {
+    const user = await this.prisma.vione_users
+      .findUnique({
+        where: { id },
+      })
+      .catch(() => null);
+
+    if (user) {
+      return user;
+    }
+
     if (id === 'mock-admin-id' || id === '00000000-0000-0000-0000-000000000000') {
       return {
         id: '00000000-0000-0000-0000-000000000000',
@@ -57,11 +74,8 @@ export class UsersService {
         updated_at: new Date(),
       } as vione_users;
     }
-    return this.prisma.vione_users
-      .findUnique({
-        where: { id },
-      })
-      .catch(() => null);
+
+    return null;
   }
 
   async findByGoogleId(googleId: string): Promise<vione_users | null> {

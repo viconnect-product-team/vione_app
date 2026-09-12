@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CommunityNews } from "@/components/business-connect/mobile/community/CommunityNews";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/connect-app/community/$communityId/news")({
+export const Route = createFileRoute(
+  "/connect-app/community/$communityId/news",
+)({
   head: () => ({
     meta: [
       { title: "Bảng tin cộng đồng — ViOne Business Connect" },
@@ -12,10 +13,5 @@ export const Route = createFileRoute("/connect-app/community/$communityId/news")
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: CommunityNewsPage,
+  component: () => <Outlet />,
 });
-
-function CommunityNewsPage() {
-  const { communityId } = Route.useParams();
-  return <CommunityNews communityId={communityId} />;
-}

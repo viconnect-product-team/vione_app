@@ -21,7 +21,7 @@ export const Route = createFileRoute("/connect-app")({
   head: () => ({
     // Dark navy chrome (status bar / browser UI) to match the Connect-app tone.
     meta: [
-      { name: "theme-color", content: "#050C15" },
+      { name: "theme-color", content: "#FAF8F5" },
       { name: "color-scheme", content: "dark" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
