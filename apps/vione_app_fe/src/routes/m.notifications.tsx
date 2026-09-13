@@ -473,19 +473,19 @@ function NotificationsScreen() {
         title={t("m.notifications.title")}
         back
         right={
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={onMarkAllRead}
               disabled={marking || !hasUnread || filter === "dismissed"}
               aria-label={t("m.notifications.markAllRead")}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] disabled:opacity-40"
+              title={t("m.notifications.markAllRead")}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-[var(--vba-border)] bg-slate-100 dark:bg-[var(--vba-surface)] text-[var(--vba-gold)] hover:bg-[var(--vba-gold-soft)] transition-colors disabled:opacity-30 cursor-pointer shadow-xs"
             >
               {marking ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <CheckCheck className="h-3.5 w-3.5" />
+                <CheckCheck className="h-4 w-4" />
               )}
-              {t("m.notifications.markAllRead")}
             </button>
             <button
               onClick={(e) => {
@@ -494,14 +494,14 @@ function NotificationsScreen() {
               }}
               disabled={dismissingAll || !hasVisible || filter === "dismissed"}
               aria-label={t("m.notifications.dismissAll")}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--vba-border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--vba-text-muted)] transition hover:bg-card/5 disabled:opacity-40"
+              title={t("m.notifications.dismissAll")}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 dark:border-[var(--vba-border)] bg-slate-100 dark:bg-[var(--vba-surface)] text-slate-500 dark:text-[var(--vba-text-muted)] hover:text-red-500 hover:border-red-400/40 transition-colors disabled:opacity-30 cursor-pointer shadow-xs"
             >
               {dismissingAll ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <EyeOff className="h-3.5 w-3.5" />
+                <EyeOff className="h-4 w-4" />
               )}
-              {t("m.notifications.dismissAll")}
             </button>
           </div>
         }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
@@ -40,7 +41,9 @@ import {
   type MyAssociationBrand,
 } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
-const appIcon = "/app-icon.png";
+import { AssociationContactSheet } from "@/components/member/AssociationContactSheet";
+import { resolveMediaUrl } from "@/lib/api-client";
+const appIcon = "/ceo1983-logo.png";
 
 export const Route = createFileRoute("/association/")({
   component: Home,
@@ -58,6 +61,7 @@ function initials(name?: string) {
 }
 
 const quickActionDefs = [
+  { key: "m.index.qaCheckin", icon: QrCode, to: "/association/checkin", customLabel: "Quét mã QR" },
   { key: "m.index.qaCard", icon: IdCard, to: "/association/card" },
   { key: "m.index.qaBusinessCards", icon: Contact, to: "/association/business-cards" },
   { key: "m.index.qaMembers", icon: Users, to: "/association/members" },
@@ -66,11 +70,13 @@ const quickActionDefs = [
   { key: "m.index.qaLibrary", icon: FolderOpen, to: "/association/library" },
   { key: "m.index.qaPerks", icon: LayoutGrid, to: "/association/perks" },
   { key: "m.index.qaOffers", icon: Gift, to: "/association/perks" },
-  { key: "m.index.qaContact", icon: Phone, to: "/association/messages" },
+  { key: "m.index.qaContact", icon: Phone, to: "/association/messages", isContact: true },
 ] as const;
 
 function Home() {
   const t = useT();
+  const navigate = Route.useNavigate();
+  const [contactOpen, setContactOpen] = useState(false);
   const fetchMember = useServerFn(getMyMember);
   const fetchEvents = useServerFn(listMyEvents);
   const fetchBrand = useServerFn(getMyAssociationBrand);
@@ -105,8 +111,11 @@ function Home() {
             <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--vba-gold)]/40 bg-[var(--vba-surface)] p-1 shadow-md">
                 <img
-                  src={brand?.logoUrl || appIcon}
-                  alt={brand?.name || "ViOne"}
+                  src={resolveMediaUrl(brand?.logoUrl) || appIcon}
+                  alt={brand?.name || "CEO 1983"}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = appIcon;
+                  }}
                   className="h-full w-full object-contain"
                   width={36}
                   height={36}
@@ -159,7 +168,7 @@ function Home() {
               </h2>
               <div className="mt-2 h-0.5 w-12 rounded-full bg-gradient-to-r from-[var(--vba-gold)] to-transparent" />
               <p className="mt-2 text-[12px] leading-relaxed text-[var(--vba-text-muted)]">
-                {(brand as any)?.tagline || t("m.index.heroSlogan")}
+                {(brand as any)?.tagline || "Nâng tầm giá trị • Tiên phong kết nối"}
               </p>
             </div>
 
@@ -240,6 +249,23 @@ function Home() {
         <div className="grid grid-cols-4 gap-2.5">
           {quickActionDefs.map((a: any) => {
             const Icon = a.icon;
+            if (a.isContact) {
+              return (
+                <button
+                  key={a.key}
+                  type="button"
+                  onClick={() => setContactOpen(true)}
+                  className="group flex flex-col items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span className="flex h-13 w-13 items-center justify-center rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] text-[var(--vba-gold)] shadow-sm backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-[var(--vba-gold)]/60 group-active:scale-95">
+                    <Icon className="h-5.5 w-5.5" />
+                  </span>
+                  <span className="text-center text-[10px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:text-[var(--vba-gold)]">
+                    {t(a.key)}
+                  </span>
+                </button>
+              );
+            }
             return (
               <Link
                 key={a.key}
@@ -250,13 +276,23 @@ function Home() {
                   <Icon className="h-5.5 w-5.5" />
                 </span>
                 <span className="text-center text-[10px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:text-[var(--vba-gold)]">
-                  {t(a.key)}
+                  {a.customLabel || t(a.key)}
                 </span>
               </Link>
             );
           })}
         </div>
       </div>
+
+      {/* Contact Drawer Modal */}
+      <AssociationContactSheet
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        onOpenChat={() => {
+          setContactOpen(false);
+          navigate({ to: "/association/messages" as any, search: { peerCode: "admin", peerName: "Ban Thư Ký CEO 1983" } as any });
+        }}
+      />
 
       {/* Promo pair: Opportunities & Marketplace */}
       <div className="mx-4 mt-6 grid grid-cols-2 gap-3">

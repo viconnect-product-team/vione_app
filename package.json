@@ -13,7 +13,17 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "mobile:vione:apk": "npm run build:apk --prefix apps/mobile_vione",
+    "mobile:vione:apk:local": "npm run build:apk:fast --prefix apps/mobile_vione",
+    "mobile:vione:ipa": "npm run build:ipa --prefix apps/mobile_vione",
+    "mobile:vione:submit": "npm run submit:ios --prefix apps/mobile_vione",
+    "mobile:vione:testflight": "npm run build:ios:submit --prefix apps/mobile_vione",
+    "mobile:ceo1983:apk": "npm run build:apk --prefix apps/mobile_ceo1983",
+    "mobile:ceo1983:apk:local": "npm run build:apk:fast --prefix apps/mobile_ceo1983",
+    "mobile:ceo1983:ipa": "npm run build:ipa --prefix apps/mobile_ceo1983",
+    "mobile:ceo1983:submit": "npm run submit:ios --prefix apps/mobile_ceo1983",
+    "mobile:ceo1983:testflight": "npm run build:ios:submit --prefix apps/mobile_ceo1983"
   },
   "devDependencies": {
     "docx": "^9.7.1",

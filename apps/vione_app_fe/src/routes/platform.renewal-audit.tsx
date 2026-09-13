@@ -6,6 +6,8 @@ import { ShieldCheck, Search, RefreshCcw, ScrollText } from "lucide-react";
 import { PlatformShell } from "@/components/platform/PlatformShell";
 import { Card, PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { useServerData } from "@/hooks/use-server-data";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { useLang, useT } from "@/lib/i18n";
 import {
   getRenewalAuditScopeFn,
@@ -95,6 +97,17 @@ function RenewalAuditAdminPage() {
       failures: rows.filter((r) => r.eventType === "failure").length,
     };
   }, [rows]);
+
+  const tc = useTableControls<AdminRenewalAuditRow>(
+    rows,
+    {
+      time: (r) => r.createdAt,
+      member: (r) => r.memberName || "",
+      association: (r) => r.associationName || "",
+      amount: (r) => r.amountPaid,
+    },
+    { initialSortKey: "time", initialSortDir: "desc", initialPageSize: 10 },
+  );
 
   const fmtMoney = (n: number) =>
     new Intl.NumberFormat(locale, {
@@ -264,7 +277,7 @@ function RenewalAuditAdminPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r: any) => (
+              {tc.paged.map((r: any) => (
                 <tr key={r.id} className="border-b border-border/60 align-top">
                   <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                     {fmtTime(r.createdAt)}
@@ -310,6 +323,18 @@ function RenewalAuditAdminPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </Card>
     </PlatformShell>
   );

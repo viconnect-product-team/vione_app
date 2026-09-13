@@ -60,15 +60,76 @@ export function getNestApiUrl(endpoint: string): string {
   return `${NEST_API_URL}${mapEndpoint(endpoint)}`;
 }
 
+export function getPublicBackendUrl(): string {
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:5001`;
+    }
+    return 'http://localhost:4000';
+  }
+  return (
+    (typeof process !== 'undefined' && (process.env?.VITE_PUBLIC_API_URL || process.env?.VITE_API_URL)) ||
+    ''
+  );
+}
+
+export function resolveMediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const publicBase = getPublicBackendUrl();
+
+  // If URL contains internal Docker host backend:4000
+  if (trimmed.includes('backend:4000')) {
+    const after = trimmed.split('backend:4000')[1];
+    return publicBase ? `${publicBase}${after}` : after;
+  }
+
+  // If remote browser receives localhost:4000 or 127.0.0.1:4000, rewrite to publicBase
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    if (trimmed.includes('localhost:4000')) {
+      const after = trimmed.split('localhost:4000')[1];
+      return `${publicBase}${after}`;
+    }
+    if (trimmed.includes('127.0.0.1:4000')) {
+      const after = trimmed.split('127.0.0.1:4000')[1];
+      return `${publicBase}${after}`;
+    }
+    if (trimmed.includes('minio:9000') || trimmed.includes('localhost:9000')) {
+      const parts = trimmed.split('/vione-bucket/');
+      if (parts[1]) {
+        return publicBase ? `${publicBase}/api/upload/file/${parts[1]}` : `/api/upload/file/${parts[1]}`;
+      }
+    }
+  }
+
+  if (trimmed.startsWith('/upload/')) {
+    return publicBase ? `${publicBase}/api${trimmed}` : `/api${trimmed}`;
+  }
+  if (trimmed.startsWith('/api/upload/')) {
+    return publicBase ? `${publicBase}${trimmed}` : trimmed;
+  }
+
+  return trimmed;
+}
+
 function transformUrls(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   
   if (typeof obj === 'string') {
-    if (obj.startsWith('/upload/')) {
-      return `${NEST_API_URL}/api${obj}`;
-    }
-    if (obj.startsWith('/uploads/')) {
-      return `${NEST_API_URL}${obj}`;
+    // If it's already a media URL or upload path, resolve it cleanly
+    if (
+      obj.startsWith('/upload/') ||
+      obj.startsWith('/uploads/') ||
+      obj.includes('backend:4000') ||
+      (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && obj.includes('localhost:4000'))
+    ) {
+      return resolveMediaUrl(obj) || obj;
     }
     return obj;
   }

@@ -6,12 +6,12 @@ import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { NetworkHome } from "@/components/business-connect/mobile/NetworkHome";
 
 type NetworkSearchParams = {
-  tab?: "network" | "customers" | "suggestions";
+  tab?: "network" | "customers" | "suggestions" | "requests";
 };
 
 export const Route = createFileRoute("/connect-app/network/")({
   validateSearch: (search: Record<string, unknown>): NetworkSearchParams => ({
-    tab: search.tab === "customers" || search.tab === "suggestions" ? search.tab : undefined,
+    tab: search.tab === "customers" || search.tab === "suggestions" || search.tab === "requests" ? search.tab : undefined,
   }),
   head: () => ({
     meta: [

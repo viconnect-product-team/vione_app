@@ -137,19 +137,22 @@ const CLIENT_LOGOS = [
 
 const TESTIMONIALS_DATA = [
   {
-    quote: "Business Connect giúp Hiệp hội Du lịch chuyển đổi số toàn diện. Việc kết nối giữa hơn 1,200 doanh nghiệp hội viên diễn ra chuẩn xác và tạo ra doanh thu thực tế rõ rệt.",
+    quote:
+      "Business Connect giúp Hiệp hội Du lịch chuyển đổi số toàn diện. Việc kết nối giữa hơn 1,200 doanh nghiệp hội viên diễn ra chuẩn xác và tạo ra doanh thu thực tế rõ rệt.",
     author: "Nguyễn Thị Lan",
     role: "Chủ tịch Hiệp hội Du lịch VN",
     badge: "1,200+ Hội viên",
   },
   {
-    quote: "Hệ thống CRM và matching cơ hội kinh doanh giúp công ty tôi tìm được đúng các đối tác cung ứng tin cậy trong các hiệp hội công nghiệp lớn chỉ trong vài tuần.",
+    quote:
+      "Hệ thống CRM và matching cơ hội kinh doanh giúp công ty tôi tìm được đúng các đối tác cung ứng tin cậy trong các hiệp hội công nghiệp lớn chỉ trong vài tuần.",
     author: "Trần Minh Quân",
     role: "CEO, Công ty Sản xuất Việt",
     badge: "Doanh nghiệp Tiêu biểu",
   },
   {
-    quote: "Tôi tiết kiệm được 80% thời gian mở rộng quan hệ. Thay vì phát danh thiếp giấy tràn lan, Business Connect trao đúng giá trị cho đúng người lãnh đạo cần gặp.",
+    quote:
+      "Tôi tiết kiệm được 80% thời gian mở rộng quan hệ. Thay vì phát danh thiếp giấy tràn lan, Business Connect trao đúng giá trị cho đúng người lãnh đạo cần gặp.",
     author: "Lê Hoàng Anh",
     role: "Doanh nhân, Hội viên VIP",
     badge: "Hội viên VIP",
@@ -189,15 +192,22 @@ export function BusinessConnectLandingV8() {
   };
 
   const cardClasses = {
-    light: "bg-white border border-slate-200/80 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_35px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl",
+    light:
+      "bg-white border border-slate-200/80 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_35px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl",
     dark: "bg-[#11141E] border border-slate-800 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.5)] hover:border-indigo-500/40 hover:shadow-[0_20px_35px_-5px_rgba(99,102,241,0.15)] transition-all duration-300 rounded-2xl",
     contrast: "bg-white border-2 border-black rounded-xl shadow-none",
   };
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 relative ${
-      theme === "dark" ? "bg-[#090A0F] text-[#EDEDED]" : theme === "contrast" ? "bg-white text-black" : "bg-[#F8FAFC] text-slate-900"
-    }`}>
+    <div
+      className={`min-h-screen font-sans transition-colors duration-300 relative ${
+        theme === "dark"
+          ? "bg-[#090A0F] text-[#EDEDED]"
+          : theme === "contrast"
+            ? "bg-white text-black"
+            : "bg-[#F8FAFC] text-slate-900"
+      }`}
+    >
       {/* Sliding Door Theme Transition */}
       <AnimatePresence>
         {isDoorClosing && (
@@ -229,9 +239,15 @@ export function BusinessConnectLandingV8() {
       {/* ========================================================================= */}
       {/* 1. HEADER (PART 1 EXACT) */}
       {/* ========================================================================= */}
-      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-colors ${
-        theme === "dark" ? "bg-[#090A0F]/90 border-slate-800" : theme === "contrast" ? "bg-white border-b-2 border-black" : "bg-white/90 border-slate-200"
-      }`}>
+      <header
+        className={`sticky top-0 z-50 backdrop-blur-md border-b transition-colors ${
+          theme === "dark"
+            ? "bg-[#090A0F]/90 border-slate-800"
+            : theme === "contrast"
+              ? "bg-white border-b-2 border-black"
+              : "bg-white/90 border-slate-200"
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/business-connect/v8" className="flex items-center gap-3">
@@ -239,25 +255,45 @@ export function BusinessConnectLandingV8() {
                 V8
               </div>
               <div>
-                <span className="font-extrabold text-xl tracking-tight block">BUSINESS CONNECT</span>
-                <span className="text-[10px] tracking-widest uppercase font-semibold text-indigo-400">Executive Titanium</span>
+                <span className="font-extrabold text-xl tracking-tight block">
+                  BUSINESS CONNECT
+                </span>
+                <span className="text-[10px] tracking-widest uppercase font-semibold text-indigo-400">
+                  Executive Titanium
+                </span>
               </div>
             </Link>
 
             <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold tracking-wide">
-              <a href="#giai-phap" className="hover:text-indigo-400 transition-colors">Giải pháp</a>
-              <a href="#khach-hang" className="hover:text-indigo-400 transition-colors">Khách hàng</a>
-              <a href="#cau-chuyen" className="hover:text-indigo-400 transition-colors">Câu chuyện</a>
-              <a href="#bang-gia" className="hover:text-indigo-400 transition-colors">Bảng giá</a>
-              <a href="#tai-nguyen" className="hover:text-indigo-400 transition-colors">Tài nguyên</a>
-              <a href="#ve-chung-toi" className="hover:text-indigo-400 transition-colors">Về chúng tôi</a>
+              <a href="#giai-phap" className="hover:text-indigo-400 transition-colors">
+                Giải pháp
+              </a>
+              <a href="#khach-hang" className="hover:text-indigo-400 transition-colors">
+                Khách hàng
+              </a>
+              <a href="#cau-chuyen" className="hover:text-indigo-400 transition-colors">
+                Câu chuyện
+              </a>
+              <a href="#bang-gia" className="hover:text-indigo-400 transition-colors">
+                Bảng giá
+              </a>
+              <a href="#tai-nguyen" className="hover:text-indigo-400 transition-colors">
+                Tài nguyên
+              </a>
+              <a href="#ve-chung-toi" className="hover:text-indigo-400 transition-colors">
+                Về chúng tôi
+              </a>
             </nav>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className={`flex items-center p-1 rounded-xl border ${
-              theme === "dark" ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-slate-100/80"
-            }`}>
+            <div
+              className={`flex items-center p-1 rounded-xl border ${
+                theme === "dark"
+                  ? "border-slate-800 bg-slate-900/60"
+                  : "border-slate-200 bg-slate-100/80"
+              }`}
+            >
               <button
                 onClick={() => handleSetThemeWithDoor("light")}
                 className={`p-1.5 rounded-lg text-xs font-bold transition-all ${theme === "light" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"}`}
@@ -335,7 +371,8 @@ export function BusinessConnectLandingV8() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-lg md:text-xl text-neutral-600 dark:text-neutral-300 font-normal leading-relaxed mb-10 max-w-3xl"
             >
-              Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
+              Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối
+              đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
             </motion.p>
 
             {/* CTAs */}
@@ -365,20 +402,30 @@ export function BusinessConnectLandingV8() {
             {/* 4 Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 border-t border-slate-200 dark:border-slate-800">
               <div>
-                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-indigo-500">10,000+</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Doanh nhân & Hội viên</div>
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-indigo-500">
+                  10,000+
+                </div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                  Doanh nhân & Hội viên
+                </div>
               </div>
               <div>
                 <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">300+</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Hiệp hội & Tổ chức</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                  Hiệp hội & Tổ chức
+                </div>
               </div>
               <div>
                 <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">50,000+</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Kết nối được tạo</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                  Kết nối được tạo
+                </div>
               </div>
               <div>
                 <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">20+</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Quốc gia & vùng lãnh thổ</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                  Quốc gia & vùng lãnh thổ
+                </div>
               </div>
             </div>
           </div>
@@ -413,9 +460,7 @@ export function BusinessConnectLandingV8() {
                   <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm mb-4">
                     {p.num}
                   </div>
-                  <h3 className="text-lg font-bold tracking-tight mb-2">
-                    {p.title}
-                  </h3>
+                  <h3 className="text-lg font-bold tracking-tight mb-2">{p.title}</h3>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-normal">
                     {p.desc}
                   </p>
@@ -433,7 +478,10 @@ export function BusinessConnectLandingV8() {
       {/* ========================================================================= */}
       {/* 4. SOLUTION SECTION (PART 1 EXACT - 9 CARDS) */}
       {/* ========================================================================= */}
-      <section id="giai-phap" className="relative z-10 py-24 border-b border-slate-200 dark:border-slate-800/80">
+      <section
+        id="giai-phap"
+        className="relative z-10 py-24 border-b border-slate-200 dark:border-slate-800/80"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div>
@@ -444,7 +492,9 @@ export function BusinessConnectLandingV8() {
                 Quản lý kết nối. Tạo ra cơ hội.
               </h2>
               <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-300 mt-4 max-w-3xl leading-relaxed">
-                Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực chất.
+                Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối
+                đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh
+                thực chất.
               </p>
             </div>
             <button
@@ -471,9 +521,7 @@ export function BusinessConnectLandingV8() {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 text-indigo-400 flex items-center justify-center mb-6">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold tracking-tight mb-3">
-                    {sol.title}
-                  </h3>
+                  <h3 className="text-xl font-bold tracking-tight mb-3">{sol.title}</h3>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-normal">
                     {sol.desc}
                   </p>
@@ -497,7 +545,9 @@ export function BusinessConnectLandingV8() {
               Cùng nhau tạo ra giá trị lớn hơn
             </h2>
             <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-300 max-w-4xl leading-relaxed mb-8">
-              Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà đầu tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực và cơ hội kinh doanh.
+              Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà
+              đầu tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức,
+              nguồn lực và cơ hội kinh doanh.
             </p>
 
             <div className="p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 mb-8 inline-block">
@@ -522,7 +572,10 @@ export function BusinessConnectLandingV8() {
       {/* ========================================================================= */}
       {/* 6. CLIENT & TESTIMONIAL SECTION (PART 1 EXACT) */}
       {/* ========================================================================= */}
-      <section id="khach-hang" className="relative z-10 py-24 border-b border-slate-200 dark:border-slate-800/80">
+      <section
+        id="khach-hang"
+        className="relative z-10 py-24 border-b border-slate-200 dark:border-slate-800/80"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div>
@@ -533,7 +586,10 @@ export function BusinessConnectLandingV8() {
                 Những tổ chức tiên phong đã lựa chọn
               </h3>
             </div>
-            <a href="#tat-ca-khach-hang" className="text-sm font-bold text-indigo-400 hover:underline flex items-center gap-1">
+            <a
+              href="#tat-ca-khach-hang"
+              className="text-sm font-bold text-indigo-400 hover:underline flex items-center gap-1"
+            >
               <span>Xem tất cả khách hàng</span>
               <ArrowRight className="w-4 h-4" />
             </a>
@@ -570,17 +626,11 @@ export function BusinessConnectLandingV8() {
                   <div className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-semibold mb-6">
                     {t.badge}
                   </div>
-                  <p className="text-base leading-relaxed italic mb-8">
-                    "{t.quote}"
-                  </p>
+                  <p className="text-base leading-relaxed italic mb-8">"{t.quote}"</p>
                 </div>
                 <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800">
-                  <div className="font-extrabold text-base tracking-tight">
-                    {t.author}
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5">
-                    {t.role}
-                  </div>
+                  <div className="font-extrabold text-base tracking-tight">{t.author}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{t.role}</div>
                 </div>
               </div>
             ))}
@@ -613,7 +663,9 @@ export function BusinessConnectLandingV8() {
               <button
                 onClick={() => setIsDemoModalOpen(true)}
                 className={`px-8 py-4 rounded-xl border ${
-                  theme === "dark" ? "border-slate-700 bg-slate-800/40" : "border-slate-300 bg-white"
+                  theme === "dark"
+                    ? "border-slate-700 bg-slate-800/40"
+                    : "border-slate-300 bg-white"
                 } font-bold text-base hover:opacity-90 transition-opacity`}
               >
                 Liên hệ tư vấn
@@ -651,7 +703,9 @@ export function BusinessConnectLandingV8() {
               <div className="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
                 <div>
                   <h3 className="text-xl font-bold">Đăng Ký Đặt Lịch Demo</h3>
-                  <p className="text-xs text-indigo-400 mt-1">Dành riêng cho Lãnh đạo Hiệp hội & Doanh nghiệp</p>
+                  <p className="text-xs text-indigo-400 mt-1">
+                    Dành riêng cho Lãnh đạo Hiệp hội & Doanh nghiệp
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsDemoModalOpen(false)}
@@ -663,7 +717,9 @@ export function BusinessConnectLandingV8() {
 
               <form onSubmit={handleDemoSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Họ và tên</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Họ và tên
+                  </label>
                   <input
                     type="text"
                     required
@@ -674,7 +730,9 @@ export function BusinessConnectLandingV8() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email doanh nghiệp</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Email doanh nghiệp
+                  </label>
                   <input
                     type="email"
                     required
@@ -685,7 +743,9 @@ export function BusinessConnectLandingV8() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Tên Hiệp hội / Doanh nghiệp</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Tên Hiệp hội / Doanh nghiệp
+                  </label>
                   <input
                     type="text"
                     required

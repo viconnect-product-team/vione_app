@@ -172,7 +172,11 @@ export function ExecutiveHome() {
   const rawPool = data?.today.pool ?? data?.today.items ?? [];
   const mergedTodayPool = [...rawPool];
   for (const crmItem of crmTodayItems) {
-    if (!mergedTodayPool.some((p) => p.id === crmItem.id || (p.titleKey && p.titleKey === crmItem.titleKey))) {
+    if (
+      !mergedTodayPool.some(
+        (p) => p.id === crmItem.id || (p.titleKey && p.titleKey === crmItem.titleKey),
+      )
+    ) {
       mergedTodayPool.unshift(crmItem);
     }
   }
@@ -209,7 +213,7 @@ export function ExecutiveHome() {
         }}
       >
         <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
-          <ViOneLogo className="h-5 w-[77px]" />
+          <ViOneLogo className="h-5 w-auto" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
           </p>
@@ -228,15 +232,14 @@ export function ExecutiveHome() {
           <div className="bc-home-enter">
             <Greeting identity={data.identity} />
 
-            <section
-              aria-labelledby="bc-home-today"
-              className="mt-8"
-            >
+            <section aria-labelledby="bc-home-today" className="mt-8">
               {/* Header */}
               <div className="flex items-baseline justify-between">
                 <div>
                   <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--bc-mobile-muted)]">
-                    {scheduleTab === "today" ? t("bc.mobile.home.today.label") : "Lịch trình sắp tới"}
+                    {scheduleTab === "today"
+                      ? t("bc.mobile.home.today.label")
+                      : "Lịch trình sắp tới"}
                   </div>
                   <h2
                     id="bc-home-today"
@@ -263,7 +266,11 @@ export function ExecutiveHome() {
                     className="inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-text)] focus-visible:outline-none"
                   >
                     {t("bc.mobile.home.today.viewCalendar")}
-                    <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 opacity-80" strokeWidth={2} />
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 opacity-80"
+                      strokeWidth={2}
+                    />
                   </Link>
                 </div>
               </div>
@@ -273,7 +280,11 @@ export function ExecutiveHome() {
                 <button
                   type="button"
                   onClick={() => setScheduleTab("today")}
-                  style={scheduleTab === "today" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
+                  style={
+                    scheduleTab === "today"
+                      ? { background: "var(--bc-mobile-accent-grad)" }
+                      : undefined
+                  }
                   className={`flex-1 py-1.5 text-xs rounded-lg transition-all text-center cursor-pointer ${
                     scheduleTab === "today"
                       ? "text-[#050c15] font-bold shadow-xs"
@@ -285,7 +296,11 @@ export function ExecutiveHome() {
                 <button
                   type="button"
                   onClick={() => setScheduleTab("upcoming")}
-                  style={scheduleTab === "upcoming" ? { background: "var(--bc-mobile-accent-grad)" } : undefined}
+                  style={
+                    scheduleTab === "upcoming"
+                      ? { background: "var(--bc-mobile-accent-grad)" }
+                      : undefined
+                  }
                   className={`flex-1 py-1.5 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     scheduleTab === "upcoming"
                       ? "text-[#050c15] font-bold shadow-xs"
@@ -319,9 +334,7 @@ export function ExecutiveHome() {
                   {data.today.status === "error" ? (
                     <TodayError onRetry={() => home.refetch()} />
                   ) : todayPool.length === 0 || todayItems.length === 0 ? (
-                    <TodayEmpty
-                      onOpenV={openV}
-                    />
+                    <TodayEmpty onOpenV={openV} />
                   ) : (
                     <>
                       <ul className="mt-1 divide-y divide-[var(--bc-mobile-border)]">
@@ -340,7 +353,9 @@ export function ExecutiveHome() {
                 <div className="mt-3">
                   {upcomingEvents.length === 0 ? (
                     <div className="py-8 text-center">
-                      <p className="text-sm font-medium text-[var(--bc-mobile-muted)]">Chưa có sự kiện hoặc lịch trình sắp tới</p>
+                      <p className="text-sm font-medium text-[var(--bc-mobile-muted)]">
+                        Chưa có sự kiện hoặc lịch trình sắp tới
+                      </p>
                       <Link
                         to="/connect-app/calendar"
                         className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--bc-mobile-accent)] hover:underline"
@@ -412,9 +427,7 @@ function TodayDate() {
     day: "2-digit",
     month: "long",
   });
-  return (
-    <span className="capitalize">{label}</span>
-  );
+  return <span className="capitalize">{label}</span>;
 }
 
 function NotificationsLink({ unreadCount }: { unreadCount: number | null }) {
@@ -468,9 +481,9 @@ function TodayTimelineRow({ item }: { item: BcMobileTodayItem }) {
   const title = hasTKey(item.titleKey) ? t(item.titleKey as TKey) : item.titleKey;
   const time = item.startsAt
     ? new Date(item.startsAt).toLocaleTimeString(fmt.locale, {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : item.dueAt
       ? new Date(item.dueAt).toLocaleDateString(fmt.locale, { day: "numeric", month: "short" })
       : null;
@@ -583,17 +596,17 @@ function InsightCard() {
         </h2>
       </div>
       <p className="relative z-10 mt-4 max-w-[17ch] text-[21px] font-bold leading-[1.3] text-[var(--bc-mobile-text)] uppercase">
-        {isEmpty ? (
-          t("bc.mobile.home.insight.emptyHeadline")
-        ) : (
-          parts.map((part, index) => 
-            /^\d+$/.test(part) ? (
-              <span key={index} className="text-[var(--bc-mobile-accent)] font-extrabold">{part}</span>
-            ) : (
-              part
-            )
-          )
-        )}
+        {isEmpty
+          ? t("bc.mobile.home.insight.emptyHeadline")
+          : parts.map((part, index) =>
+              /^\d+$/.test(part) ? (
+                <span key={index} className="text-[var(--bc-mobile-accent)] font-extrabold">
+                  {part}
+                </span>
+              ) : (
+                part
+              ),
+            )}
       </p>
       <p className="relative z-10 mt-2 max-w-[22ch] text-[13.5px] leading-relaxed text-[var(--bc-mobile-muted)]">
         {isEmpty ? t("bc.mobile.home.insight.emptyBody") : t("bc.mobile.home.insight.body")}
@@ -604,7 +617,11 @@ function InsightCard() {
         className="relative z-10 mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[var(--bc-mobile-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
       >
         {isEmpty ? t("bc.mobile.home.insight.emptyCta") : t("bc.mobile.home.insight.cta")}
-        <ArrowRight aria-hidden="true" className="h-4 w-4 text-[var(--bc-mobile-accent)]" strokeWidth={2} />
+        <ArrowRight
+          aria-hidden="true"
+          className="h-4 w-4 text-[var(--bc-mobile-accent)]"
+          strokeWidth={2}
+        />
       </Link>
     </div>
   );
@@ -627,11 +644,7 @@ function initialsOf(identity: BcMobileHomeIdentity | null): string | null {
 
 // ── Sections ─────────────────────────────────────────────────────────────────
 
-function Greeting({
-  identity,
-}: {
-  identity: BcMobileHomeIdentity;
-}) {
+function Greeting({ identity }: { identity: BcMobileHomeIdentity }) {
   const name = identity.displayName ?? identity.email ?? "Thành viên";
   const viewerUserId = useViewerUserId();
   const mine = useMyIdentity({ enabled: Boolean(viewerUserId) });
@@ -662,15 +675,9 @@ function Greeting({
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
         >
           {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              className="h-10 w-10 rounded-full object-cover"
-            />
+            <img src={avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
           ) : (
-            <span
-              className="grid h-10 w-10 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-semibold text-[var(--bc-mobile-ivory)]"
-            >
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-semibold text-[var(--bc-mobile-ivory)]">
               {initials ?? <User className="h-5 w-5" strokeWidth={1.6} />}
             </span>
           )}
@@ -719,13 +726,7 @@ function VMarker() {
 }
 
 /** Một dòng sự kiện SẮP TỚI — hiển thị ngày tháng chuẩn từ CRM, tên sự kiện, địa điểm, sức chứa và mở EventDetailMobileSheet khi bấm */
-function UpcomingEventTimelineRow({
-  event,
-  onSelect,
-}: {
-  event: CrmEvent;
-  onSelect?: () => void;
-}) {
+function UpcomingEventTimelineRow({ event, onSelect }: { event: CrmEvent; onSelect?: () => void }) {
   const fmt = useFmt();
   const dt = getEventDate(event);
   const dateFormatted = dt
@@ -737,9 +738,10 @@ function UpcomingEventTimelineRow({
       })
     : "Sắp diễn ra";
 
-  const timeFormatted = dt && (dt.getHours() !== 0 || dt.getMinutes() !== 0)
-    ? dt.toLocaleTimeString(fmt.locale, { hour: "2-digit", minute: "2-digit" })
-    : null;
+  const timeFormatted =
+    dt && (dt.getHours() !== 0 || dt.getMinutes() !== 0)
+      ? dt.toLocaleTimeString(fmt.locale, { hour: "2-digit", minute: "2-digit" })
+      : null;
 
   const title = event.title || event.name || "Sự kiện";
   const organizer = event.associationName || event.communityName || null;
@@ -762,7 +764,11 @@ function UpcomingEventTimelineRow({
           </span>
           {(event as any).type && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--bc-mobile-accent-soft)] text-[var(--bc-mobile-accent)] border border-[var(--bc-mobile-border)]">
-              {(event as any).type === "online" ? "Trực tuyến" : (event as any).type === "offline" ? "Trực tiếp" : (event as any).type}
+              {(event as any).type === "online"
+                ? "Trực tuyến"
+                : (event as any).type === "offline"
+                  ? "Trực tiếp"
+                  : (event as any).type}
             </span>
           )}
         </div>
@@ -779,30 +785,36 @@ function UpcomingEventTimelineRow({
           )}
           {location && (
             <span className="flex items-center gap-1 truncate max-w-[220px]">
-              <MapPin aria-hidden="true" className="h-3 w-3 shrink-0 text-[var(--bc-mobile-accent)]" strokeWidth={1.6} />
+              <MapPin
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 text-[var(--bc-mobile-accent)]"
+                strokeWidth={1.6}
+              />
               <span className="truncate">{location}</span>
             </span>
           )}
-          {(event as any).registered !== undefined && (event as any).capacity !== undefined && Number((event as any).capacity) > 0 && (
-            <span className="text-[11px] text-[var(--bc-mobile-muted)]">
-              {(event as any).registered}/{(event as any).capacity} đã đăng ký
-            </span>
-          )}
+          {(event as any).registered !== undefined &&
+            (event as any).capacity !== undefined &&
+            Number((event as any).capacity) > 0 && (
+              <span className="text-[11px] text-[var(--bc-mobile-muted)]">
+                {(event as any).registered}/{(event as any).capacity} đã đăng ký
+              </span>
+            )}
         </div>
       </button>
     </li>
   );
 }
 
-function TodayEmpty({
-  onOpenV,
-}: {
-  onOpenV: () => void;
-}) {
+function TodayEmpty({ onOpenV }: { onOpenV: () => void }) {
   const t = useT();
   return (
     <div className="mt-8 flex flex-col items-center px-2 pb-4 text-center">
-      <CircleCheck aria-hidden="true" className="h-7 w-7 text-[var(--bc-mobile-accent)]" strokeWidth={1.5} />
+      <CircleCheck
+        aria-hidden="true"
+        className="h-7 w-7 text-[var(--bc-mobile-accent)]"
+        strokeWidth={1.5}
+      />
       <p className="mt-3 text-[15px] font-medium text-[var(--bc-mobile-text)]">
         {t("bc.mobile.home.empty.title")}
       </p>
@@ -820,7 +832,6 @@ function TodayEmpty({
     </div>
   );
 }
-
 
 function TodayError({ onRetry }: { onRetry: () => void }) {
   const t = useT();
@@ -881,4 +892,3 @@ function HomeSkeleton() {
     </div>
   );
 }
-

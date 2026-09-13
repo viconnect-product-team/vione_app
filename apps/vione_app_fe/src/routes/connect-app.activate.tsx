@@ -172,7 +172,7 @@ function ActivateIdentityPage() {
   return (
     <main
       className="relative min-h-[100dvh] w-full"
-      style={{ background: "#050c15", color: "#f5f7fa" }}
+      style={{ background: "#0A0A0B", color: "#f5f7fa" }}
     >
       <div className="mx-auto w-full max-w-md px-6 pb-16 pt-6">
         {step !== "done" ? (

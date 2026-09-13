@@ -7,6 +7,7 @@ import {
   UserPen,
   BadgeCheck,
   QrCode,
+  IdCard,
   Nfc,
   X,
   Pencil,
@@ -346,6 +347,24 @@ function CardScreen() {
       <MemberHeader title={t("m.card.headerTitle")} back />
 
       <div className="px-4 pt-4">
+        {/* Switcher: Thẻ của tôi vs Quét mã QR */}
+        <div className="mx-auto mb-4 flex max-w-md items-center rounded-xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] p-1">
+          <button
+            type="button"
+            className="flex-1 rounded-lg py-2 text-center text-xs font-bold transition bg-[var(--vba-gold)] text-white shadow-xs inline-flex items-center justify-center gap-1.5"
+          >
+            <IdCard className="h-3.5 w-3.5" />
+            Thẻ của tôi
+          </button>
+          <Link
+            to="/association/checkin"
+            className="flex-1 rounded-lg py-2 text-center text-xs font-semibold text-[var(--vba-text-muted)] hover:text-white transition inline-flex items-center justify-center gap-1.5"
+          >
+            <QrCode className="h-3.5 w-3.5" />
+            Quét mã QR
+          </Link>
+        </div>
+
         {/* Membership card */}
         <div
           className="relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)]"
@@ -369,14 +388,14 @@ function CardScreen() {
 
           <button
             onClick={() => setThemeOpen((v) => !v)}
-            className="absolute right-12 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-foreground/30 text-[var(--vba-gold)] backdrop-blur"
+            className="absolute right-12 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
             aria-label={lang === "en" ? "Change card theme" : "Đổi giao diện thẻ"}
           >
             <Palette className="h-4 w-4" />
           </button>
           <button
             onClick={() => member && setEditOpen(true)}
-            className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-foreground/30 text-[var(--vba-gold)] backdrop-blur"
+            className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
             aria-label={t("m.card.editAriaLabel")}
           >
             <Pencil className="h-4 w-4" />
@@ -387,13 +406,13 @@ function CardScreen() {
               <img
                 src={appIcon}
                 alt="ViOne"
-                className="h-10 w-10 rounded-lg"
+                className="h-10 w-10 rounded-lg shadow-sm"
                 width={40}
                 height={40}
               />
               <div className="leading-tight">
-                <div className="text-[11px] font-bold vba-gold-text">{t("m.index.brandLine1")}</div>
-                <div className="text-[9px] font-semibold text-[var(--vba-text-muted)]">
+                <div className="text-[11px] font-bold text-white tracking-wide">{t("m.index.brandLine1")}</div>
+                <div className="text-[9px] font-medium text-white/70">
                   {t("m.index.brandLine2")}
                 </div>
               </div>
@@ -401,10 +420,10 @@ function CardScreen() {
           </div>
 
           <div className="relative mt-5">
-            <div className="text-[16px] font-extrabold tracking-wide vba-gold-text">
+            <div className="text-[16px] font-black tracking-wider text-white drop-shadow-sm">
               {t("m.card.cardLabel")}
             </div>
-            <div className="text-[10px] font-medium tracking-[0.2em] text-[var(--vba-text-muted)]">
+            <div className="text-[10px] font-semibold tracking-[0.2em] text-white/60">
               MEMBER CARD
             </div>
           </div>
@@ -415,29 +434,29 @@ function CardScreen() {
                 <img
                   src={d.photo}
                   alt={d.name}
-                  className="h-12 w-12 rounded-full border border-[var(--vba-border)] object-cover"
+                  className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm"
                 />
               ) : (
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--vba-gold-soft)] text-[14px] font-bold text-[var(--vba-gold)]">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm">
                   {initials(d.name)}
                 </span>
               ))}
             <div className="min-w-0">
               {d.showName && (
                 <div className="flex items-center gap-1.5">
-                  <span className="truncate text-[17px] font-bold text-[var(--vba-text)]">
+                  <span className="truncate text-[17px] font-bold text-white drop-shadow-xs">
                     {d.name || "..."}
                   </span>
                   {member?.verified && (
-                    <BadgeCheck className="h-4 w-4 shrink-0 text-[var(--vba-gold)]" />
+                    <BadgeCheck className="h-4 w-4 shrink-0 text-sky-300" />
                   )}
                 </div>
               )}
               {d.showCompany && d.company && (
-                <div className="truncate text-[12px] text-[var(--vba-text-muted)]">{d.company}</div>
+                <div className="truncate text-[12px] font-medium text-white/80">{d.company}</div>
               )}
               <span
-                className="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                className="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-xs"
                 style={{ background: stateStyle.bg, color: stateStyle.color }}
               >
                 {lang === "en" ? stateStyle.labelEn : stateStyle.labelVi}
@@ -445,14 +464,14 @@ function CardScreen() {
             </div>
           </div>
 
-          <div className="relative mt-4 flex justify-between border-t border-[var(--vba-border-soft)] pt-3">
+          <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
             <div>
-              <div className="text-[10px] text-[var(--vba-text-dim)]">{t("m.card.memberId")}</div>
-              <div className="text-[13px] font-semibold text-[var(--vba-gold)]">{member?.code}</div>
+              <div className="text-[10px] font-medium text-white/60">{t("m.card.memberId")}</div>
+              <div className="text-[13px] font-bold tracking-wider text-white">{member?.code}</div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-[var(--vba-text-dim)]">{t("m.card.validUntil")}</div>
-              <div className="text-[13px] font-semibold text-[var(--vba-gold)]">
+              <div className="text-[10px] font-medium text-white/60">{t("m.card.validUntil")}</div>
+              <div className="text-[13px] font-bold tracking-wider text-white">
                 {member?.validUntil ?? "—"}
               </div>
             </div>

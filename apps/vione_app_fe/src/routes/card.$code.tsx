@@ -16,7 +16,7 @@ import {
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { getPublicCard, type PublicCard } from "@/lib/card.functions";
 
-const appIcon = "/app-icon.png";
+const appIcon = "/ceo1983-logo.png";
 
 export const Route = createFileRoute("/card/$code")({
   loader: ({ params }) => getPublicCard({ data: { code: params.code } }),
@@ -160,23 +160,23 @@ function PublicCard() {
                 height={40}
               />
               <div className="leading-tight">
-                <div className="text-[11px] font-bold vba-gold-text">HIỆP HỘI DOANH NGHIỆP</div>
-                <div className="text-[9px] font-semibold text-[var(--vba-text-muted)]">
+                <div className="text-[11px] font-bold text-white tracking-wide">HIỆP HỘI DOANH NGHIỆP</div>
+                <div className="text-[9px] font-medium text-white/70">
                   VIỆT NAM
                 </div>
               </div>
             </div>
-            <div className="rounded-lg bg-card p-1.5">
+            <div className="rounded-lg bg-white/10 p-1.5 backdrop-blur-xs border border-white/20">
               <QrCanvas value={`VBA-MEMBER:${code}`} size={64} />
             </div>
           </div>
 
           <div className="relative mt-5 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--vba-gold-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--vba-gold)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
               {isCompany ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
               {isCompany ? t("company") : t("individual")}
             </span>
-            <span className="text-[10px] font-medium tracking-[0.2em] text-[var(--vba-text-muted)]">
+            <span className="text-[10px] font-semibold tracking-[0.2em] text-white/60">
               {t("memberCard")}
             </span>
           </div>
@@ -186,36 +186,36 @@ function PublicCard() {
               <img
                 src={member.photoUrl}
                 alt={primaryName}
-                className="h-12 w-12 shrink-0 rounded-full border border-[var(--vba-border-soft)] object-cover"
+                className="h-12 w-12 shrink-0 rounded-full border border-white/20 object-cover shadow-sm"
                 width={48}
                 height={48}
               />
             ) : (
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--vba-border-soft)] bg-[var(--vba-gold-soft)] text-[15px] font-bold text-[var(--vba-gold)]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/15 text-[15px] font-bold text-white shadow-sm">
                 {initials}
               </span>
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[19px] font-extrabold text-[var(--vba-text)]">
+                <span className="text-[19px] font-black text-white drop-shadow-xs">
                   {primaryName}
                 </span>
                 {member.verified ? (
-                  <BadgeCheck className="h-4 w-4 shrink-0 text-[var(--vba-gold)]" />
+                  <BadgeCheck className="h-4 w-4 shrink-0 text-sky-300" />
                 ) : null}
               </div>
-              <div className="text-[12px] text-[var(--vba-text-muted)]">{secondaryName}</div>
+              <div className="text-[12px] font-medium text-white/80">{secondaryName}</div>
             </div>
           </div>
 
-          <div className="relative mt-4 flex justify-between border-t border-[var(--vba-border-soft)] pt-3">
+          <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
             <div>
-              <div className="text-[10px] text-[var(--vba-text-dim)]">{t("code")}</div>
-              <div className="text-[13px] font-semibold text-[var(--vba-gold)]">{code}</div>
+              <div className="text-[10px] font-medium text-white/60">{t("code")}</div>
+              <div className="text-[13px] font-bold tracking-wider text-white">{code}</div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-[var(--vba-text-dim)]">{t("validUntil")}</div>
-              <div className="text-[13px] font-semibold text-[var(--vba-gold)]">
+              <div className="text-[10px] font-medium text-white/60">{t("validUntil")}</div>
+              <div className="text-[13px] font-bold tracking-wider text-white">
                 {member.validUntil ?? t("noValue")}
               </div>
             </div>

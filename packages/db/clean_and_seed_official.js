@@ -190,12 +190,13 @@ async function main() {
       id: '00000000-0000-4000-8000-000000000001',
       username: 'admin1@connect.vn',
       email: 'admin1@connect.vn',
-      name: 'Platform Administrator',
+      name: 'Trần Tuấn Anh',
       passwordHash: hashAdmin123,
       appRole: 'platform_admin',
       assocRole: 'admin',
       executiveRole: 'platform_admin',
       department: 'Ban Điều Hành Hệ Thống',
+      title: 'Platform Administrator',
       phone: '0901000001',
       company: 'ViConnect Holdings'
     },
@@ -203,12 +204,13 @@ async function main() {
       id: '00000000-0000-4000-8000-000000000002',
       username: 'admin@connect.vn',
       email: 'admin@connect.vn',
-      name: 'Quản trị viên Hệ thống',
+      name: 'Phạm Văn Vũ',
       passwordHash: hash123456,
       appRole: 'admin',
       assocRole: 'admin',
       executiveRole: 'admin',
       department: 'Ban Quản Trị',
+      title: 'Quản trị viên Hệ thống',
       phone: '0901000002',
       company: 'ViOne Platform'
     },
@@ -455,6 +457,21 @@ async function main() {
         professional_title = EXCLUDED.professional_title,
         company_name = EXCLUDED.company_name;
     `, [acc.id, acc.name, acc.title || acc.executiveRole, acc.company]);
+
+    // 4.1 public.business_identities
+    await client.query(`
+      INSERT INTO public.business_identities (
+        id, owner_user_id, display_name, job_title, company_name, primary_email, status, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, 'active', now(), now()
+      )
+      ON CONFLICT (owner_user_id) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        job_title = EXCLUDED.job_title,
+        company_name = EXCLUDED.company_name,
+        primary_email = EXCLUDED.primary_email,
+        updated_at = now();
+    `, [acc.id, acc.name, acc.title || acc.executiveRole, acc.company, acc.email]);
 
     // 5. public.members
     await client.query(`

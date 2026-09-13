@@ -527,7 +527,7 @@ function MeetingsPage() {
                 style={{ background: "var(--gradient-primary)" }}
               >
                 <Plus className="h-4 w-4" />
-                + Tạo Cuộc Họp Ban
+                Tạo Cuộc Họp Ban
               </button>
             )}
             {activeTab === "room_bookings" && (
@@ -537,7 +537,7 @@ function MeetingsPage() {
                 style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)" }}
               >
                 <Plus className="h-4 w-4" />
-                + Đăng Ký Đặt Phòng Họp
+                Đăng Ký Đặt Phòng Họp
               </button>
             )}
             {activeTab === "data_pipeline" && (

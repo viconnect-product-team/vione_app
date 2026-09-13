@@ -1,352 +1,488 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
   Sparkles,
   ArrowRight,
   Play,
   X,
-  Terminal,
-  Cpu,
-  Zap,
   Sun,
   Moon,
   Contrast,
-  Radio,
-  Eye,
-  Info,
+  Users,
+  Building2,
+  TrendingUp,
+  Globe2,
+  Calendar,
   Layers,
+  BookOpen,
+  BarChart3,
+  Bot,
+  Share2,
   ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  CalendarCheck,
+  MessagesSquare,
+  PlugZap,
+  Briefcase,
+  HeartHandshake,
+  Cpu,
+  Terminal,
+  Server,
+  Zap,
+  Radio,
+  Binary,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAutoHideHeader } from "./useAutoHideHeader";
+
+export type ThemeMode = "light" | "dark" | "contrast";
 
 // =========================================================================
-// INTERACTIVE NEURAL MATRIX CANVAS (Hero 100% Canvas interactive)
+// 3-LAYER BACKGROUND: DEEP TECH DATA WITH 50% SCROLL PARALLAX
+// Layer 0: Real Unsplash image of Data Center / Processor Chip with 50% parallax
+// Layer 1: Overlay covering 90% of image, revealing server blink lights
+// Layer 2: Subtle circuit board grid pattern & opposing floating cyber telemetry HUD
 // =========================================================================
-function CyberNeuralCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+function DeepTechThreeLayerBackground({ theme }: { theme: ThemeMode }) {
+  const { scrollYProgress } = useScroll();
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "45%"]);
+  const hud1Y = useTransform(scrollYProgress, [0, 1], [-90, 140]);
+  const hud2Y = useTransform(scrollYProgress, [0, 1], [130, -130]);
+  const rot1 = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const rot2 = useTransform(scrollYProgress, [0, 1], [0, -180]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  if (theme === "contrast") {
+    return <div className="pointer-events-none fixed inset-0 z-0 bg-black" />;
+  }
 
-    let animId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    let mouse = { x: -1000, y: -1000 };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-
-    const nodes = Array.from({ length: 55 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 1.2,
-      radius: Math.random() * 2 + 1.5,
-    }));
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Draw connections
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130) {
-            ctx.strokeStyle = `rgba(249, 115, 22, ${0.3 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.stroke();
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {/* LAYER 0: REAL IMAGE WITH 50% SCROLL PARALLAX */}
+      <motion.div style={{ y: bgY }} className="absolute -top-[25%] inset-x-0 h-[150%] w-full">
+        <img
+          src={
+            theme === "dark"
+              ? "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=2400&q=80"
+              : "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=2400&q=80"
           }
-        }
+          alt="Data Center Core"
+          className="h-full w-full object-cover object-center filter brightness-[0.65] contrast-125"
+        />
+      </motion.div>
 
-        // Connection to mouse
-        const mdx = nodes[i].x - mouse.x;
-        const mdy = nodes[i].y - mouse.y;
-        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mdist < 180) {
-          ctx.strokeStyle = `rgba(34, 197, 94, ${0.5 * (1 - mdist / 180)})`;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.stroke();
-        }
+      {/* LAYER 1: OVERLAY */}
+      <div
+        className={`absolute inset-0 transition-colors duration-500 ${
+          theme === "dark"
+            ? "bg-[#030712]/92 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.18),transparent_60%)]"
+            : "bg-[#F8FAFC]/94 bg-[radial-gradient(ellipse_at_top_right,rgba(148,163,184,0.2),transparent_60%)]"
+        }`}
+      />
 
-        // Move node
-        nodes[i].x += nodes[i].vx;
-        nodes[i].y += nodes[i].vy;
+      {/* OPPOSING FLOATING CYBER TELEMETRY ELEMENTS (Z-AXIS PARALLAX) */}
+      <motion.div
+        style={{ y: hud1Y, rotate: rot1 }}
+        className="absolute top-[20%] left-[6%] border border-cyan-500/30 bg-cyan-950/20 p-4 font-mono text-[10px] text-cyan-400 backdrop-blur-sm hidden md:block"
+      >
+        <div className="flex items-center gap-2">
+          <Terminal className="h-3 w-3 animate-pulse" />
+          <span>PORT: 8080 // ONLINE</span>
+        </div>
+        <div className="text-[9px] text-zinc-500 mt-1">PEER_SYNC: VERIFIED</div>
+      </motion.div>
 
-        if (nodes[i].x < 0 || nodes[i].x > width) nodes[i].vx *= -1;
-        if (nodes[i].y < 0 || nodes[i].y > height) nodes[i].vy *= -1;
+      <motion.div
+        style={{ y: hud2Y, rotate: rot2 }}
+        className="absolute top-[62%] right-[8%] border border-pink-500/30 bg-pink-950/20 p-4 font-mono text-[10px] text-pink-400 backdrop-blur-sm hidden md:block"
+      >
+        <div className="flex items-center gap-2">
+          <Cpu className="h-3 w-3 text-pink-400 animate-spin" />
+          <span>NEURAL_DISPATCH: 100%</span>
+        </div>
+        <div className="text-[9px] text-zinc-500 mt-1">BLOCK_HASH: #983F01</div>
+      </motion.div>
 
-        // Draw node
-        ctx.fillStyle = "#F97316";
-        ctx.beginPath();
-        ctx.arc(nodes[i].x, nodes[i].y, nodes[i].radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      animId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-45" />;
+      {/* LAYER 2: CIRCUIT BOARD GRID */}
+      <div
+        className={`absolute inset-0 opacity-15 pointer-events-none ${
+          theme === "dark"
+            ? "bg-[linear-gradient(to_right,#00F0FF_1px,transparent_1px),linear-gradient(to_bottom,#00F0FF_1px,transparent_1px)] bg-[size:48px_48px]"
+            : "bg-[linear-gradient(to_right,#475569_1px,transparent_1px),linear-gradient(to_bottom,#475569_1px,transparent_1px)] bg-[size:48px_48px]"
+        }`}
+      />
+    </div>
+  );
 }
 
-// TERMINAL TEXT DECODER (Hacker cipher effect)
-function DecryptedText({ text, speed = 30 }: { text: string; speed?: number }) {
-  const [display, setDisplay] = useState(text);
-  const chars = "0101XYZ_#@<>%*";
+// =========================================================================
+// THEME-SWITCH: CIRCUIT TRACE TRANSITION (Neon line drawing across screen)
+// =========================================================================
+function CircuitTraceThemeTransition({
+  isTracing,
+  theme,
+}: {
+  isTracing: boolean;
+  theme: ThemeMode;
+}) {
+  if (!isTracing) return null;
 
-  useEffect(() => {
-    let iteration = 0;
-    const interval = setInterval(() => {
-      setDisplay(
-        text
-          .split("")
-          .map((c, i) => {
-            if (i < iteration) return text[i];
-            if (c === " ") return " ";
-            return chars[Math.floor(Math.random() * chars.length)];
-          })
-          .join("")
-      );
-
-      if (iteration >= text.length) clearInterval(interval);
-      iteration += 1;
-    }, speed);
-
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return <span>{display}</span>;
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden">
+      {/* Neon Cyber Laser Sweep */}
+      <motion.div
+        initial={{ left: "-100%", top: "0%" }}
+        animate={{ left: "200%", top: "100%" }}
+        transition={{ duration: 0.65, ease: [0.65, 0, 0.35, 1] }}
+        className="absolute h-[3px] w-[200vw] -rotate-45 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_35px_rgba(6,182,212,1)]"
+      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.6, 0.6, 0] }}
+        transition={{ duration: 0.65, times: [0, 0.3, 0.7, 1] }}
+        className={`absolute inset-0 ${
+          theme === "dark" ? "bg-cyan-950/30" : theme === "contrast" ? "bg-black/40" : "bg-white/40"
+        }`}
+      />
+    </div>
+  );
 }
 
-// 5 VẤN ĐỀ - CYBER ANOMALIES
-const CYBER_PROBLEMS = [
+// =========================================================================
+// SECTION TRANSITION: SCROLL HIJACKING ASYMMETRIC STICKY CONTAINER
+// =========================================================================
+function AsymmetricScrollHijackSectionV5({
+  children,
+  id,
+  className = "",
+}: {
+  children: React.ReactNode;
+  id?: string;
+  className?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.92, 1, 1, 0.91]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [6, 0, 0, -6]);
+  const clipPath = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.85, 1],
+    [
+      "polygon(0 4%, 100% 0, 100% 96%, 0 100%)",
+      "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+      "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+      "polygon(0 0, 100% 4%, 100% 100%, 0 96%)",
+    ],
+  );
+  const yContent = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [40, 0, 0, -40]);
+
+  return (
+    <div ref={containerRef} id={id} className="relative min-h-[190vh] sm:min-h-[220vh] w-full">
+      <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden [perspective:1400px]">
+        <motion.div
+          style={{
+            scale,
+            rotateX,
+            clipPath,
+            y: yContent,
+          }}
+          className={`relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 max-h-[96vh] overflow-y-auto lg:overflow-visible no-scrollbar ${className}`}
+        >
+          {children}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// 5 PROBLEMS - EXACT PART 1
+const PROBLEMS_DATA = [
   {
-    id: 1,
+    num: "01",
     title: "Thông tin phân tán",
+    tagline: "Khó tìm đúng người",
+    desc: "Khó tìm đúng người trong mạng lưới do dữ liệu lưu trữ rải rác trên danh bạ, Zalo và nhiều file Excel rời rạc.",
     code: "ERR_DISPERSED_DATA",
-    desc: "Dữ liệu đối tác lưu rải rác trên danh bạ cá nhân, Zalo, danh thiếp giấy và nhiều file Excel rời rạc.",
-    icon: "💾",
   },
   {
-    id: 2,
+    num: "02",
     title: "Khó duy trì quan hệ",
-    code: "ERR_SYNC_DROPPED",
-    desc: "Thiếu hệ thống nhắc nhở thông minh, dễ quên tương tác sau sự kiện hoặc đánh mất sợi dây gắn kết.",
-    icon: "📡",
+    tagline: "Thiếu công cụ nhắc nhở và theo dõi tương tác",
+    desc: "Thiếu công cụ nhắc nhở và theo dõi tương tác, khiến sợi dây liên kết giữa các thành viên dần nguội lạnh.",
+    code: "ERR_DROPPED_RELATIONS",
   },
   {
-    id: 3,
+    num: "03",
     title: "Bỏ lỡ cơ hội",
-    code: "ERR_MISSED_PACKET",
-    desc: "Không nắm bắt được nhu cầu hợp tác tức thời của hội viên khác trong mạng lưới kinh doanh.",
-    icon: "⚠️",
+    tagline: "Không kịp nắm bắt cơ hội phù hợp",
+    desc: "Không kịp nắm bắt cơ hội phù hợp khi hội viên có nhu cầu hợp tác hoặc cung ứng dịch vụ cấp thiết.",
+    code: "ERR_MISSED_DEALS",
   },
   {
-    id: 4,
+    num: "04",
     title: "Thiếu kết nối thực chất",
+    tagline: "Nhiều sự kiện nhưng khó tạo giá trị sau sự kiện",
+    desc: "Nhiều sự kiện nhưng khó tạo giá trị sau sự kiện, giao lưu xã giao bề nổi thiếu cơ chế xúc tiến 1-on-1.",
     code: "ERR_SHALLOW_NET",
-    desc: "Tham gia nhiều hội nhóm nhưng chỉ trao đổi bề nổi, thiếu cơ chế kết nối 1-on-1 theo đúng nhu cầu.",
-    icon: "🔌",
   },
   {
-    id: 5,
+    num: "05",
     title: "Khó đo lường hiệu quả",
+    tagline: "Không biết mối quan hệ mang lại giá trị gì",
+    desc: "Không biết mối quan hệ mang lại giá trị gì, thiếu hệ thống số hóa ghi nhận doanh thu và cơ hội giao thương.",
     code: "ERR_METRICS_NULL",
-    desc: "Không thống kê được giá trị giao thương sinh ra từ các mối quan hệ và sự kiện kết nối.",
-    icon: "📉",
   },
 ];
 
-// 9 GIẢI PHÁP - CYBER MODULES
-const CYBER_SOLUTIONS = [
+// 9 SOLUTIONS - EXACT PART 1
+const SOLUTIONS_DATA = [
   {
-    id: 1,
+    icon: Users,
     title: "Quản lý hội viên",
-    mod: "CORE_MEMBER_360",
-    desc: "Hồ sơ năng lực số 360°, lưu trữ thông tin doanh nghiệp, lĩnh vực và phân hạng chính xác.",
+    desc: "Hồ sơ 360°, phân nhóm thông minh, tra cứu nhanh năng lực doanh nghiệp và ban điều hành.",
+    code: "MODULE_MEMBERS_360",
   },
   {
-    id: 2,
+    icon: HeartHandshake,
     title: "CRM & Quan hệ",
-    mod: "RELATION_ENGINE",
-    desc: "Nhật ký tương tác, timeline quan hệ, ghi chú lịch sử gặp gỡ và mức độ gắn kết.",
+    desc: "Theo dõi lịch sử, ghi chú, nhắc nhở tương tác và quản lý mức độ gắn kết bền chặt.",
+    code: "MODULE_RELATION_CRM",
   },
   {
-    id: 3,
+    icon: Briefcase,
     title: "Cơ hội kinh doanh",
-    mod: "DEAL_RADAR_B2B",
-    desc: "Đăng tin nhu cầu mua/bán, tìm kiếm đối tác cung ứng và cơ hội đầu tư B2B.",
+    desc: "Quản lý pipeline, matching nhu cầu cung - cầu, xúc tiến thương mại và tìm kiếm đối tác B2B.",
+    code: "MODULE_DEAL_PIPELINE",
   },
   {
-    id: 4,
+    icon: CalendarCheck,
     title: "Sự kiện",
-    mod: "EVENT_CHECKIN_NFC",
-    desc: "Check-in mã QR/NFC một chạm, sơ đồ giao lưu và khảo sát phản hồi tức thì.",
+    desc: "Tổ chức, quản lý đại biểu, check-in QR/NFC một chạm, kết nối trước - trong - sau sự kiện.",
+    code: "MODULE_SMART_EVENTS",
   },
   {
-    id: 5,
+    icon: MessagesSquare,
     title: "Cộng đồng & Nhóm",
-    mod: "COMMUNITY_HUB",
-    desc: "Không gian thảo luận chuyên sâu theo ngành nghề, phân ban và câu lạc bộ sở thích.",
+    desc: "Không gian kết nối theo ngành nghề, phân ban chuyên môn và câu lạc bộ doanh nhân chiến lược.",
+    code: "MODULE_CHAPTERS_NET",
   },
   {
-    id: 6,
+    icon: BookOpen,
     title: "Tri thức & Nội dung",
-    mod: "KNOWLEDGE_BASE",
-    desc: "Thư viện tài liệu quản trị, báo cáo kinh tế và chia sẻ bài học từ chuyên gia.",
+    desc: "Chia sẻ kinh nghiệm chuyên gia, tài liệu pháp lý, chuẩn mực quản trị và báo cáo ngành độc quyền.",
+    code: "MODULE_KNOWLEDGE_VAULT",
   },
   {
-    id: 7,
+    icon: BarChart3,
     title: "Báo cáo & Phân tích",
-    mod: "ANALYTICS_AI",
-    desc: "Đo lường chỉ số kết nối, tần suất giao thương và hiệu quả các chiến dịch kết nạp.",
+    desc: "Đo lường hiệu quả kết nối, lưu lượng giao thương, tần suất tương tác và tỷ suất hoàn vốn ROI.",
+    code: "MODULE_METRICS_ANALYTICS",
   },
   {
-    id: 8,
+    icon: Bot,
     title: "AI Copilot",
-    mod: "COPILOT_NEURAL",
-    desc: "Gợi ý ghép đôi đối tác tự động theo nhu cầu tương thích và phân tích hồ sơ thông minh.",
+    desc: "Tìm kiếm ngữ nghĩa, gợi ý kết nối chuẩn xác, tóm tắt hồ sơ năng lực và trợ lý kinh doanh AI.",
+    code: "MODULE_AI_COPILOT",
   },
   {
-    id: 9,
+    icon: PlugZap,
     title: "Tích hợp & Mở rộng",
-    mod: "API_GATEWAY",
-    desc: "Đồng bộ danh thiếp số điện tử, kết nối API linh hoạt với các hệ thống ERP/CRM có sẵn.",
+    desc: "Kết nối liền mạch với hệ sinh thái CRM, email, calendar và API mở tiêu chuẩn quốc tế.",
+    code: "MODULE_OPEN_API_MESH",
+  },
+];
+
+// 6 LOGOS
+const LOGOS = [
+  { name: "VCCI", label: "Liên đoàn Thương mại & Công nghiệp VN" },
+  { name: "AmCham", label: "Hiệp hội Doanh nghiệp Hoa Kỳ" },
+  { name: "EuroCham", label: "Hiệp hội Doanh nghiệp Châu Âu" },
+  { name: "KoCham", label: "Hiệp hội Doanh nghiệp Hàn Quốc" },
+  { name: "SBF", label: "Singapore Business Federation" },
+  { name: "AusCham", label: "Hiệp hội Doanh nghiệp Úc" },
+];
+
+// 3 TESTIMONIALS
+const REVIEWS = [
+  {
+    quote:
+      "Business Connect đã giúp Hiệp hội chuyển đổi số toàn diện công tác hội viên. Tỷ lệ kết nối thành công giữa các doanh nghiệp du lịch tăng hơn 300% chỉ sau một kỳ đại hội.",
+    author: "Nguyễn Thị Lan",
+    role: "Chủ tịch",
+    org: "Hiệp hội Du lịch Việt Nam",
+  },
+  {
+    quote:
+      "Tính năng AI matching mở ra cho công ty tôi 5 hợp đồng cung ứng chiến lược trong nước và khu vực. Khả năng theo dõi cơ hội và nhắc lịch chăm sóc quan hệ cực kỳ tinh tế.",
+    author: "Trần Minh Quân",
+    role: "CEO",
+    org: "Công ty Sản xuất Việt",
+  },
+  {
+    quote:
+      "Một nền tảng chuẩn mực cho giới doanh nhân cấp cao. Thiết kế trang trọng, bảo mật và mang lại giá trị thiết thực cho từng buổi kết nối giao thương.",
+    author: "Lê Hoàng Anh",
+    role: "Doanh nhân",
+    org: "Hội viên VIP Câu lạc bộ Doanh nghiệp",
   },
 ];
 
 export function BusinessConnectLandingV5() {
-  const [theme, setTheme] = useState<"light" | "dark" | "contrast">("dark");
-  const [activeProblem, setActiveProblem] = useState<typeof CYBER_PROBLEMS[0] | null>(null);
-  const [activeSolution, setActiveSolution] = useState<typeof CYBER_SOLUTIONS[0] | null>(null);
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [isTracing, setIsTracing] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
 
-  // Mouse spotlight coordinates
-  const [spotlight, setSpotlight] = useState({ x: 0, y: 0 });
+  const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      setSpotlight({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
-  }, []);
-
-  const themeClasses = {
-    light: "bg-[#E8ECEF] text-slate-900 font-mono",
-    dark: "bg-[#050508] text-white font-mono",
-    contrast: "bg-black text-[#00FF66] font-mono",
-  };
-
-  const cardClasses = {
-    light: "bg-white/80 border border-slate-300 shadow-md backdrop-blur-md",
-    dark: "bg-[#0c0d14]/80 border border-orange-500/25 shadow-[0_0_20px_rgba(249,115,22,0.1)] backdrop-blur-md",
-    contrast: "bg-black border border-[#00FF66] shadow-[0_0_15px_rgba(0,255,102,0.3)]",
+  const handleSwitchTheme = (nextTheme: ThemeMode) => {
+    if (nextTheme === theme) return;
+    setIsTracing(true);
+    setTimeout(() => {
+      setTheme(nextTheme);
+    }, 280);
+    setTimeout(() => {
+      setIsTracing(false);
+    }, 650);
   };
 
   return (
-    <div className={`relative min-h-screen ${themeClasses[theme]}`}>
-      {/* SPOTLIGHT MOUSE EFFECT */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-25"
-        style={{
-          background: `radial-gradient(450px circle at ${spotlight.x}px ${spotlight.y}px, rgba(249,115,22,0.25), transparent 75%)`,
-        }}
-      />
+    <div
+      className={`min-h-screen relative font-sans transition-colors duration-500 ${
+        theme === "dark"
+          ? "bg-[#030712] text-slate-100"
+          : theme === "contrast"
+            ? "bg-black text-[#00FF66]"
+            : "bg-[#F8FAFC] text-slate-900"
+      }`}
+    >
+      {/* 3-LAYER BACKGROUND WITH 50% SCROLL PARALLAX */}
+      <DeepTechThreeLayerBackground theme={theme} />
 
-      <CyberNeuralCanvas />
+      {/* CIRCUIT TRACE THEME TRANSITION */}
+      <CircuitTraceThemeTransition isTracing={isTracing} theme={theme} />
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-orange-500/20 bg-[#050508]/85 backdrop-blur-xl px-4 py-3">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-500/40 bg-orange-500/10 text-xl shadow-lg">
-              ⚡
-            </span>
-            <div>
-              <span className="text-sm sm:text-base font-bold tracking-widest text-orange-400">
-                BUSINESS_CONNECT::CYBER
-              </span>
-              <span className="ml-2 text-[10px] text-emerald-400 uppercase">v5 Deep Tech</span>
+      {/* =========================================================================
+          1. HEADER
+      ========================================================================= */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isHeaderVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        } ${
+          isAtTop
+            ? "bg-transparent py-5"
+            : theme === "dark"
+              ? "bg-[#030712]/80 backdrop-blur-md border-b border-cyan-500/20 py-3"
+              : theme === "contrast"
+                ? "bg-black border-b-2 border-[#00FF66] py-3 text-[#00FF66]"
+                : "bg-white/80 backdrop-blur-md border-b border-slate-200 py-3"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <div
+              className={`h-10 w-10 rounded-xl flex items-center justify-center border font-mono font-bold transition ${
+                theme === "dark"
+                  ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+                  : theme === "contrast"
+                    ? "bg-[#00FF66] text-black border-[#00FF66]"
+                    : "bg-slate-900 border-slate-700 text-white"
+              }`}
+            >
+              <Cpu className="h-5 w-5" />
             </div>
-          </div>
+            <div>
+              <div className="font-bold tracking-tight text-sm uppercase">BUSINESS CONNECT</div>
+              <div className="text-[10px] font-mono tracking-widest text-cyan-400 uppercase">
+                DEEP TECH • V5
+              </div>
+            </div>
+          </Link>
 
-          <nav className="hidden lg:flex items-center gap-6 text-xs uppercase tracking-wider">
-            <a href="#giai-phap" className="hover:text-orange-400 transition">&lt;Giải pháp/&gt;</a>
-            <a href="#khach-hang" className="hover:text-orange-400 transition">&lt;Khách hàng/&gt;</a>
-            <a href="#cau-chuyen" className="hover:text-orange-400 transition">&lt;Câu chuyện/&gt;</a>
-            <a href="#bang-gia" className="hover:text-orange-400 transition">&lt;Bảng giá/&gt;</a>
-            <a href="#tai-nguyen" className="hover:text-orange-400 transition">&lt;Tài nguyên/&gt;</a>
-            <a href="#ve-chung-toi" className="hover:text-orange-400 transition">&lt;Về chúng tôi/&gt;</a>
+          <nav className="hidden xl:flex items-center gap-8 text-sm font-medium font-mono">
+            <a href="#giai-phap" className="hover:text-cyan-400 transition">
+              Giải pháp
+            </a>
+            <a href="#khach-hang" className="hover:text-cyan-400 transition">
+              Khách hàng
+            </a>
+            <a href="#cau-chuyen" className="hover:text-cyan-400 transition">
+              Câu chuyện
+            </a>
+            <a href="#he-sinh-thai" className="hover:text-cyan-400 transition">
+              Hệ sinh thái
+            </a>
+            <a href="#van-de" className="hover:text-cyan-400 transition">
+              Vấn đề
+            </a>
           </nav>
 
           <div className="flex items-center gap-3">
             {/* Theme switcher */}
-            <div className="flex items-center rounded-full border border-orange-500/30 bg-black/60 p-1">
+            <div
+              className={`flex items-center border p-1 rounded-xl font-mono ${
+                theme === "dark"
+                  ? "border-white/10 bg-white/5"
+                  : theme === "contrast"
+                    ? "border-[#00FF66] bg-black text-[#00FF66]"
+                    : "border-slate-300 bg-white"
+              }`}
+            >
               <button
-                onClick={() => setTheme("light")}
-                title="Kim loại trắng bạc"
-                className={`rounded-full p-1.5 transition ${theme === "light" ? "bg-orange-500 text-black shadow" : "text-gray-400"}`}
+                onClick={() => handleSwitchTheme("light")}
+                title="Nhôm nguyên khối (Light)"
+                className={`p-1.5 rounded-lg transition ${
+                  theme === "light"
+                    ? "bg-slate-200 text-black shadow-sm"
+                    : "opacity-60 hover:opacity-100"
+                }`}
               >
                 <Sun className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setTheme("dark")}
-                title="Đen Neon Cam"
-                className={`rounded-full p-1.5 transition ${theme === "dark" ? "bg-orange-500 text-black shadow" : "text-gray-400"}`}
+                onClick={() => handleSwitchTheme("dark")}
+                title="Đen Neon (Dark)"
+                className={`p-1.5 rounded-lg transition ${
+                  theme === "dark"
+                    ? "bg-cyan-500/20 text-cyan-300 shadow-sm"
+                    : "opacity-60 hover:opacity-100"
+                }`}
               >
                 <Moon className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setTheme("contrast")}
-                title="Terminal Xanh lá"
-                className={`rounded-full p-1.5 transition ${theme === "contrast" ? "bg-[#00FF66] text-black shadow" : "text-gray-400"}`}
+                onClick={() => handleSwitchTheme("contrast")}
+                title="Terminal (Contrast)"
+                className={`p-1.5 rounded-lg transition ${
+                  theme === "contrast" ? "bg-[#00FF66] text-black" : "opacity-60 hover:opacity-100"
+                }`}
               >
-                <Contrast className="h-3.5 w-3.5" />
+                <Terminal className="h-3.5 w-3.5" />
               </button>
             </div>
 
             <Link
               to="/auth"
-              className="hidden sm:inline-flex rounded-xl px-4 py-2 text-xs font-semibold text-orange-400 hover:text-white transition"
+              className="hidden sm:inline-block px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider"
             >
-              [Đăng nhập]
+              Đăng nhập
             </Link>
+
             <button
               onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/60 bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-xs font-bold text-black shadow-lg hover:shadow-orange-500/30 transition"
+              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 ${
+                theme === "dark"
+                  ? "bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                  : theme === "contrast"
+                    ? "bg-[#00FF66] text-black border-2 border-[#00FF66]"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+              }`}
             >
               <span>Đặt demo</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -355,358 +491,589 @@ export function BusinessConnectLandingV5() {
         </div>
       </header>
 
-      {/* CONTENT CONTAINER */}
-      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-10">
-        {/* HERO SECTION */}
-        <section className={`my-6 rounded-3xl p-8 sm:p-14 text-center ${cardClasses[theme]}`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-orange-400 mb-6">
-            <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
-            <span>NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI</span>
+      {/* =========================================================================
+          2. HERO SECTION (ASYMMETRIC GRID: 7 vs 5 + OVERLAPPING STATS)
+      ========================================================================= */}
+      <AsymmetricScrollHijackSectionV5 className="pt-24 sm:pt-28">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* ASYMMETRIC COL 7: DEEP TECH HERO */}
+          <div className="lg:col-span-7 z-10 text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-xs font-mono font-bold uppercase tracking-widest border-cyan-500/40 bg-cyan-500/10 text-cyan-400">
+              <Zap className="h-3.5 w-3.5" />
+              <span>NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08] mb-6">
+              Hiểu đúng người. <br />
+              <span
+                className={
+                  theme === "dark"
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500"
+                    : theme === "contrast"
+                      ? "text-[#00FF66] underline underline-offset-8"
+                      : "text-slate-900"
+                }
+              >
+                Mở ra cơ hội thật.
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg leading-relaxed max-w-2xl mb-8 opacity-85">
+              Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối
+              đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setShowDemoModal(true)}
+                className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 text-sm font-mono font-bold uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 ${
+                  theme === "dark"
+                    ? "bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                    : theme === "contrast"
+                      ? "bg-[#00FF66] text-black border-2 border-[#00FF66]"
+                      : "bg-slate-900 text-white hover:bg-slate-800 shadow-lg"
+                }`}
+              >
+                <span>Đặt demo ngay</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={() => setShowVideoModal(true)}
+                className={`inline-flex items-center gap-3 rounded-xl px-7 py-4 text-sm font-mono font-bold uppercase tracking-wider border transition ${
+                  theme === "dark"
+                    ? "border-white/20 bg-white/5 text-white hover:bg-white/10"
+                    : theme === "contrast"
+                      ? "border-2 border-[#00FF66] bg-black text-[#00FF66]"
+                      : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+                }`}
+              >
+                <Play className="h-4 w-4 fill-current text-cyan-400" />
+                <span>Xem video (2 phút)</span>
+              </button>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-6xl font-black tracking-tight leading-tight mb-6">
-            <DecryptedText text="Hiểu đúng người." /> <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-emerald-400 bg-clip-text text-transparent">
-              <DecryptedText text="Mở ra cơ hội thật." />
-            </span>
-          </h1>
-
-          <p className="mx-auto max-w-2xl text-xs sm:text-base opacity-85 leading-relaxed mb-8">
-            Business Connect giúp quản lý mối quan hệ, kết nối đúng người, đúng thời điểm nhờ AI.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
-            <button
-              onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/80 bg-orange-500 px-7 py-3.5 text-xs sm:text-sm font-black text-black shadow-xl hover:shadow-orange-500/40 transition transform hover:scale-105"
+          {/* ASYMMETRIC COL 5: HOLOGRAPHIC HUD CONSOLE */}
+          <div className="lg:col-span-5 relative">
+            <div
+              className={`p-6 sm:p-7 rounded-2xl border font-mono text-xs transition ${
+                theme === "dark"
+                  ? "bg-[#050C1A]/90 border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.25)]"
+                  : theme === "contrast"
+                    ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                    : "bg-white border-slate-300 shadow-xl"
+              }`}
             >
-              <span>Đặt demo ngay -&gt;</span>
-            </button>
-            <button
-              onClick={() => setShowVideoModal(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/30 bg-black/40 px-7 py-3.5 text-xs sm:text-sm font-bold backdrop-blur-md hover:bg-black/70 transition"
-            >
-              <Play className="h-4 w-4 text-orange-400 fill-orange-400" />
-              <span>Xem video</span>
-            </button>
-          </div>
-
-          {/* 4 STATS HARDWARE METRICS */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left font-mono">
-            {[
-              { val: "10,000+", tag: "MEMBERS_ACTIVE" },
-              { val: "300+", tag: "ORGS_SYNCED" },
-              { val: "50,000+", tag: "NET_CONNECTIONS" },
-              { val: "20+", tag: "GLOBAL_REGIONS" },
-            ].map((st, i) => (
-              <div key={i} className="rounded-xl border border-orange-500/20 bg-black/40 p-3.5">
-                <div className="text-xl sm:text-2xl font-black text-orange-400">{st.val}</div>
-                <div className="text-[10px] opacity-60 mt-1 uppercase">{st.tag}</div>
+              <div className="flex items-center justify-between pb-3 border-b border-current/15 mb-4">
+                <div className="flex items-center gap-2">
+                  <Binary className="h-4 w-4 text-cyan-400" />
+                  <span className="font-bold text-cyan-400 uppercase">SYS_TELEMETRY: RUNNING</span>
+                </div>
+                <span className="text-[10px] opacity-60">KERNEL: v5.2</span>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* VẤN ĐỀ (CYBER ANOMALIES) */}
-        <section id="van-de" className="py-14">
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold uppercase tracking-widest text-orange-400">
-              [SYSTEM_DIAGNOSTICS]
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-black mt-2">
+              <div className="space-y-3 text-left">
+                <div className="p-3 border border-current/10 bg-current/5 rounded-lg">
+                  <div className="text-[10px] text-cyan-400 uppercase">TOPIC_MATCH // FDI_JAPAN</div>
+                  <div className="text-xs font-bold mt-1">Đã khớp 5 cơ hội cung ứng chuỗi bán lẻ quốc tế</div>
+                  <div className="text-[10px] opacity-70 mt-1">Trọng số phân loại: 0.994</div>
+                </div>
+
+                <div className="p-3 border border-current/10 bg-current/5 rounded-lg">
+                  <div className="text-[10px] text-cyan-400 uppercase">CRM_EVENT_BROADCAST</div>
+                  <div className="text-xs font-bold mt-1">Đã gửi thông báo nhắc lịch họp ban chấp hành</div>
+                  <div className="text-[10px] opacity-70 mt-1">Tỷ lệ mở thông báo: 94.2%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* OVERLAPPING STATS BAR - PIERCING UPWARD WITH NEGATIVE MARGIN */}
+        <div
+          className={`-mt-6 sm:-mt-10 lg:-mt-14 relative z-20 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 p-6 sm:p-8 rounded-2xl border text-left font-mono ${
+            theme === "dark"
+              ? "bg-[#050C1A]/95 border-cyan-500/30 shadow-[0_10px_30px_rgba(6,182,212,0.2)]"
+              : theme === "contrast"
+                ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                : "bg-white border-slate-300 shadow-xl"
+          }`}
+        >
+          <div>
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight">10,000+</div>
+            <div className="text-xs uppercase tracking-wider opacity-70 mt-1">
+              Doanh nhân & Hội viên
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight">300+</div>
+            <div className="text-xs uppercase tracking-wider opacity-70 mt-1">
+              Hiệp hội & Tổ chức
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight">50,000+</div>
+            <div className="text-xs uppercase tracking-wider opacity-70 mt-1">Kết nối được tạo</div>
+          </div>
+          <div>
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight">20+</div>
+            <div className="text-xs uppercase tracking-wider opacity-70 mt-1">
+              Quốc gia & vùng lãnh thổ
+            </div>
+          </div>
+        </div>
+      </AsymmetricScrollHijackSectionV5>
+
+      {/* =========================================================================
+          3. PROBLEM SECTION (ASYMMETRIC STICKY LEFT COL 4 vs OVERLAPPING CARDS COL 8)
+      ========================================================================= */}
+      <AsymmetricScrollHijackSectionV5 id="van-de">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ASYMMETRIC STICKY LEFT COLUMN */}
+          <div className="lg:col-span-4 lg:sticky lg:top-8 text-left">
+            <div className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 mb-2">
+              NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
               Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
             </h2>
-            <p className="text-xs opacity-70 mt-2">
-              Click vào từng mã lỗi hệ thống để xem nguyên nhân gốc rễ
+            <p className="text-sm opacity-80 leading-relaxed mb-6 font-mono">
+              Các tổ chức kết nối thường tốn hàng trăm giờ chuẩn bị sự kiện nhưng thiếu hạ tầng số
+              để biến mối quan hệ giao tiếp ban đầu thành hợp đồng hợp tác có giá trị.
             </p>
+            <div className="p-4 rounded-xl border border-cyan-500/30 bg-cyan-950/20 font-mono text-xs text-cyan-300">
+              AUDIT: 5 Điểm nghẽn nghiêm trọng trong quản trị quan hệ
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {CYBER_PROBLEMS.map((prob) => (
-              <motion.div
-                key={prob.id}
-                whileHover={{ scale: 1.05, y: -4 }}
-                onClick={() => setActiveProblem(prob)}
-                className={`group cursor-pointer flex flex-col items-center rounded-2xl p-5 text-center transition-all ${cardClasses[theme]}`}
-              >
-                <div className="text-3xl mb-3">{prob.icon}</div>
-                <div className="text-[10px] text-orange-400 mb-1">{prob.code}</div>
-                <h3 className="text-xs sm:text-sm font-bold">{prob.title}</h3>
-                <span className="mt-3 text-[10px] opacity-60 group-hover:text-orange-400 flex items-center gap-1">
-                  <Terminal className="h-3 w-3" /> Chi tiết
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* GIẢI PHÁP (LƯỚI 9 TÍNH NĂNG - CYBERNETIC MODULES) */}
-        <section id="giai-phap" className="py-14">
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-              [CORE_MODULES]
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-black mt-2">
-              Quản lý kết nối. Tạo ra cơ hội.
-            </h2>
-            <p className="text-xs opacity-70 mt-2">
-              9 phân hệ số hóa kiến tạo dòng chảy giao thương B2B tự động
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {CYBER_SOLUTIONS.map((sol) => (
-              <motion.div
-                key={sol.id}
-                whileHover={{ scale: 1.03, y: -3 }}
-                onClick={() => setActiveSolution(sol)}
-                className={`group cursor-pointer rounded-2xl p-5 transition-all ${cardClasses[theme]}`}
-              >
-                <div className="flex items-start gap-3">
-                  <Cpu className="h-6 w-6 shrink-0 text-orange-400 group-hover:rotate-90 transition transform duration-300" />
-                  <div>
-                    <div className="text-[10px] text-emerald-400 mb-0.5">{sol.mod}</div>
-                    <h3 className="text-xs sm:text-sm font-bold">{sol.title}</h3>
-                    <span className="text-[10px] opacity-60 flex items-center gap-1 mt-1">
-                      <Eye className="h-3 w-3" /> Xem module
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* HỆ SINH THÁI */}
-        <section className={`my-14 rounded-3xl p-8 sm:p-12 text-center ${cardClasses[theme]}`}>
-          <span className="text-xs font-bold uppercase tracking-widest text-orange-400">
-            // NETWORK SYNCHRONIZATION
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-black mt-2 mb-4">
-            Cùng nhau tạo ra giá trị lớn hơn
-          </h2>
-          <p className="max-w-xl mx-auto text-xs sm:text-sm opacity-80 mb-8">
-            Kết nối hội viên, hiệp hội, doanh nghiệp...
-          </p>
-          <div className="inline-block rounded-xl border border-orange-500/40 bg-black/60 px-6 py-3 text-xs sm:text-sm font-black tracking-widest text-orange-400">
-            NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
-          </div>
-        </section>
-
-        {/* KHÁCH HÀNG & TESTIMONIAL */}
-        <section id="khach-hang" className="py-14">
-          <div className="text-center mb-10">
-            <h2 className="text-xl sm:text-3xl font-bold">
-              Những tổ chức tiên phong đã lựa chọn
-            </h2>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 opacity-75">
-              {["VCCI", "AmCham", "EuroCham", "JCCI", "KoCham", "AusCham"].map((logo) => (
-                <span
-                  key={logo}
-                  className="rounded-xl border border-orange-500/20 bg-black/50 px-5 py-2.5 text-xs font-bold tracking-wider"
+          {/* ASYMMETRIC OVERLAPPING RIGHT COLUMN */}
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 font-mono">
+            {PROBLEMS_DATA.map((p, idx) => {
+              const isHovered = hoveredProblem === p.num;
+              const isOffset = idx % 2 === 1;
+              return (
+                <div
+                  key={p.num}
+                  onMouseEnter={() => setHoveredProblem(p.num)}
+                  onMouseLeave={() => setHoveredProblem(null)}
+                  className={`p-7 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                    isOffset ? "md:-mt-6 lg:-mt-10" : ""
+                  } ${
+                    theme === "dark"
+                      ? "bg-[#050C1A]/90 border-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(6,182,212,0.3)]"
+                      : theme === "contrast"
+                        ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                        : "bg-white border-slate-300 shadow-lg hover:border-slate-800"
+                  }`}
                 >
-                  [{logo}]
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-14 text-center">
-            <h3 className="text-2xl sm:text-3xl font-black mb-8">
-              Kết nối đúng. Tăng trưởng thật.
-            </h3>
-
-            <div className="grid sm:grid-cols-3 gap-6">
-              {[
-                {
-                  name: "Nguyễn Thị Lan",
-                  role: "Phó Chủ tịch Hiệp hội Doanh nghiệp",
-                  quote:
-                    "Business Connect giúp gắn kết hơn 1,200 hội viên chặt chẽ, các buổi giao thương đều đạt tỷ lệ phản hồi tích cực trên 95%.",
-                },
-                {
-                  name: "Trần Minh Quân",
-                  role: "CEO TechCorp Global",
-                  quote:
-                    "Hệ thống AI gợi ý chính xác đối tác chuỗi cung ứng, giúp doanh nghiệp chúng tôi chốt được 3 hợp đồng lớn ngay quý đầu tiên.",
-                },
-                {
-                  name: "Lê Hoàng Anh",
-                  role: "Giám đốc Kết nối Mạng lưới",
-                  quote:
-                    "Nền tảng số hóa toàn diện biến danh thiếp và các sự kiện truyền thống thành dòng cơ hội kinh doanh liên tục.",
-                },
-              ].map((t, idx) => (
-                <div key={idx} className={`rounded-2xl p-6 text-left ${cardClasses[theme]}`}>
-                  <p className="text-xs sm:text-sm italic opacity-85 mb-4">"{t.quote}"</p>
-                  <div className="text-xs font-bold text-orange-400">{t.name}</div>
-                  <div className="text-[10px] opacity-60">{t.role}</div>
+                  <div className="flex items-center justify-between mb-3 text-xs">
+                    <span className="text-cyan-400 font-bold">[{p.code}]</span>
+                    <span className="opacity-50">#{p.num}</span>
+                  </div>
+                  <h3 className="text-lg font-bold mb-2 font-sans">{p.title}</h3>
+                  <div className="text-xs text-cyan-300 mb-3">{p.tagline}</div>
+                  <p className="text-xs sm:text-sm opacity-80 leading-relaxed font-sans">{p.desc}</p>
                 </div>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      </AsymmetricScrollHijackSectionV5>
+
+      {/* =========================================================================
+          4. SOLUTION SECTION (ASYMMETRIC COL 5 SPOTLIGHT vs COL 7 MODULE TILES)
+      ========================================================================= */}
+      <AsymmetricScrollHijackSectionV5 id="giai-phap">
+        <div className="mb-10 text-left">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 mb-2">
+            GIẢI PHÁP BUSINESS CONNECT
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+            Quản lý kết nối. Tạo ra cơ hội.
+          </h2>
+          <p className="text-sm sm:text-base opacity-80 max-w-3xl leading-relaxed">
+            Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối
+            đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực
+            chất.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ASYMMETRIC STICKY SPOTLIGHT CARD */}
+          <div className="lg:col-span-5 lg:sticky lg:top-8 text-left">
+            <div
+              className={`p-8 rounded-2xl border font-mono ${
+                theme === "dark"
+                  ? "bg-[#050C1A] border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.25)]"
+                  : theme === "contrast"
+                    ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                    : "bg-white border-slate-300 shadow-xl"
+              }`}
+            >
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase text-cyan-400 mb-4">
+                <Sparkles className="h-4 w-4" />
+                <span>HẠ TẦNG KẾT NỐI DOANH NGHIỆP</span>
+              </div>
+              <h3 className="text-2xl font-bold mb-4 font-sans">
+                Hệ điều hành xúc tiến thương mại và hội viên toàn diện
+              </h3>
+              <p className="text-xs sm:text-sm opacity-80 leading-relaxed mb-6 font-sans">
+                Mỗi hội viên là một nút mạng phân tán trong mạng lưới tin cậy, tự động ghép đôi cơ
+                hội kinh doanh thông qua thuật toán AI ngữ nghĩa.
+              </p>
+              <div className="space-y-2 border-t border-current/15 pt-4 text-xs">
+                <div className="flex justify-between">
+                  <span className="opacity-70">PROFILE 360° ENGINE</span>
+                  <span className="text-cyan-400 font-bold">ONLINE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="opacity-70">DEAL ROUTING PROTOCOL</span>
+                  <span className="text-cyan-400 font-bold">VERIFIED</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="opacity-70">AI GRAPH MATCHING</span>
+                  <span className="text-cyan-400 font-bold">0.03s</span>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* FOOTER */}
-        <footer className={`mt-14 rounded-3xl p-8 sm:p-12 text-center ${cardClasses[theme]}`}>
-          <h2 className="text-2xl sm:text-4xl font-black mb-6">
-            Sẵn sàng mở ra nhiều cơ hội hơn?
+          {/* ASYMMETRIC MODULE CARDS */}
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {SOLUTIONS_DATA.map((s, idx) => {
+              const Icon = s.icon;
+              return (
+                <div
+                  key={s.title}
+                  className={`p-6 rounded-2xl border transition-all duration-300 ${
+                    theme === "dark"
+                      ? "bg-[#050C1A]/90 border-cyan-500/20 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+                      : theme === "contrast"
+                        ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                        : "bg-white border-slate-200 shadow-md hover:border-slate-800"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`h-11 w-11 rounded-xl border flex items-center justify-center ${
+                        theme === "dark"
+                          ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400"
+                          : theme === "contrast"
+                            ? "border-2 border-[#00FF66] bg-[#00FF66] text-black"
+                            : "border-slate-300 bg-slate-100 text-slate-800"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-mono opacity-50">[{s.code}]</span>
+                  </div>
+                  <h3 className="text-base font-bold mb-1.5 font-sans">{s.title}</h3>
+                  <p className="text-xs opacity-80 leading-relaxed font-sans">{s.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </AsymmetricScrollHijackSectionV5>
+
+      {/* =========================================================================
+          5. ECOSYSTEM SECTION (OVERLAPPING PIERCING BANNER)
+      ========================================================================= */}
+      <AsymmetricScrollHijackSectionV5 id="he-sinh-thai">
+        <div
+          className={`p-8 sm:p-12 rounded-2xl border relative overflow-hidden ${
+            theme === "dark"
+              ? "bg-[#050C1A] border-cyan-500/30 shadow-[0_0_40px_rgba(6,182,212,0.2)]"
+              : theme === "contrast"
+                ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                : "bg-white border-slate-300 shadow-2xl"
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-8 text-left">
+              <div className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 mb-2">
+                HỆ SINH THÁI KẾT NỐI KINH DOANH
+              </div>
+              <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+                Cùng nhau tạo ra giá trị lớn hơn
+              </h2>
+              <p className="text-sm sm:text-base opacity-80 leading-relaxed mb-6">
+                Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà
+                đầu tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức,
+                nguồn lực và cơ hội kinh doanh.
+              </p>
+
+              <div
+                className={`p-4 rounded-xl inline-block border mb-6 font-mono ${
+                  theme === "dark"
+                    ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+                    : theme === "contrast"
+                      ? "bg-[#00FF66] text-black font-bold"
+                      : "bg-slate-100 border-slate-300 text-slate-900 font-bold"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-bold tracking-widest uppercase">
+                  NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
+                </div>
+              </div>
+            </div>
+
+            {/* ASYMMETRIC RIGHT PIERCING BOX */}
+            <div className="lg:col-span-4 lg:-mt-10 font-mono">
+              <div
+                className={`p-6 rounded-2xl border text-left ${
+                  theme === "dark"
+                    ? "bg-black/80 border-cyan-500/40 shadow-xl"
+                    : theme === "contrast"
+                      ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                      : "bg-slate-50 border-slate-300 shadow-lg"
+                }`}
+              >
+                <div className="text-xs uppercase tracking-widest text-cyan-400 mb-2 font-bold">
+                  API & DATA MESH
+                </div>
+                <div className="text-lg font-bold mb-3 font-sans">Chuẩn Kết Nối Toàn Cầu</div>
+                <p className="text-xs opacity-80 mb-6 font-sans">
+                  Sẵn sàng tích hợp RESTful API và GraphQL với các cổng dữ liệu hội viên quốc tế và
+                  liên đoàn thương mại.
+                </p>
+                <button
+                  onClick={() => setShowDemoModal(true)}
+                  className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 hover:underline"
+                >
+                  <span>Xem tài liệu tích hợp</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AsymmetricScrollHijackSectionV5>
+
+      {/* =========================================================================
+          6. CLIENTS & TESTIMONIALS (OVERLAPPING ASYMMETRIC CYBER CARDS)
+      ========================================================================= */}
+      <AsymmetricScrollHijackSectionV5 id="khach-hang">
+        <div className="mb-8 text-left">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 mb-2">
+            ĐƯỢC TIN TƯỞNG BỞI CÁC HIỆP HỘI VÀ DOANH NGHIỆP
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Những tổ chức tiên phong đã lựa chọn
           </h2>
-          <div className="flex flex-wrap items-center justify-center gap-4">
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-16 font-mono">
+          {LOGOS.map((l) => (
+            <div
+              key={l.name}
+              className={`p-5 rounded-xl border text-center transition hover:border-cyan-400 ${
+                theme === "dark"
+                  ? "bg-[#050C1A] border-cyan-500/20"
+                  : theme === "contrast"
+                    ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                    : "bg-white border-slate-200 shadow-sm"
+              }`}
+            >
+              <div className="font-bold text-base font-sans">{l.name}</div>
+              <div className="text-[10px] opacity-60 leading-tight mt-1">{l.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div id="cau-chuyen" className="mb-8 text-left">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400 mb-2">
+            CÂU CHUYỆN THÀNH CÔNG
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Kết nối đúng. Tăng trưởng thật.
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {REVIEWS.map((r, idx) => (
+            <div
+              key={r.author}
+              className={`p-7 rounded-2xl border flex flex-col justify-between relative ${
+                idx === 1 ? "md:-mt-6" : ""
+              } ${
+                theme === "dark"
+                  ? "bg-[#050C1A] border-cyan-500/20 shadow-xl"
+                  : theme === "contrast"
+                    ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                    : "bg-white border-slate-200 shadow-lg"
+              }`}
+            >
+              <div className="absolute -top-3 left-6 px-3 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase bg-cyan-500 text-black border-cyan-400">
+                CASE_STUDY_0{idx + 1}
+              </div>
+              <p className="text-xs sm:text-sm italic leading-relaxed mb-6 opacity-90 pt-2">
+                "{r.quote}"
+              </p>
+              <div className="pt-4 border-t border-current/10 text-left font-mono">
+                <div className="font-bold text-sm font-sans">{r.author}</div>
+                <div className="text-xs opacity-70">
+                  {r.role}, {r.org}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </AsymmetricScrollHijackSectionV5>
+
+      {/* =========================================================================
+          7. FOOTER
+      ========================================================================= */}
+      <footer
+        className={`py-20 px-4 sm:px-6 lg:px-8 border-t relative z-20 ${
+          theme === "dark"
+            ? "border-cyan-500/20 bg-black"
+            : theme === "contrast"
+              ? "border-2 border-[#00FF66] bg-black text-[#00FF66]"
+              : "border-slate-200 bg-slate-100"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Sẵn sàng mở ra nhiều cơ hội hơn?</h2>
+          <p className="text-sm sm:text-base opacity-75 max-w-2xl mx-auto mb-8">
+            Hãy để Business Connect đồng hành cùng hiệp hội hoặc doanh nghiệp của bạn.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-12 font-mono">
             <button
               onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-7 py-3.5 text-xs sm:text-sm font-black text-black shadow-xl hover:shadow-orange-500/40 transition transform hover:scale-105"
+              className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider ${
+                theme === "dark"
+                  ? "bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                  : theme === "contrast"
+                    ? "bg-[#00FF66] text-black border-2 border-[#00FF66]"
+                    : "bg-slate-900 text-white shadow-md hover:bg-slate-800"
+              }`}
             >
               <span>Đặt demo ngay</span>
               <ArrowRight className="h-4 w-4" />
             </button>
+
             <button
-              onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/40 bg-black/40 px-7 py-3.5 text-xs sm:text-sm font-bold backdrop-blur-md hover:bg-black/70 transition"
+              onClick={() => {
+                toast.success("Cảm ơn bạn! Chuyên viên tư vấn sẽ liên hệ trong vòng 24 giờ.");
+              }}
+              className={`px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider border ${
+                theme === "dark"
+                  ? "border-white/20 bg-white/5 text-white hover:bg-white/10"
+                  : theme === "contrast"
+                    ? "border-2 border-[#00FF66] bg-black text-[#00FF66]"
+                    : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+              }`}
             >
-              <span>Liên hệ tư vấn</span>
+              Liên hệ tư vấn
             </button>
           </div>
-        </footer>
-      </div>
 
-      {/* POPUP CHO VẤN ĐỀ */}
-      <AnimatePresence>
-        {activeProblem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-md w-full rounded-2xl p-6 border border-orange-500 bg-[#0c0d14] text-white shadow-2xl"
-            >
-              <button
-                onClick={() => setActiveProblem(null)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-orange-950/60 hover:bg-orange-900 transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <div className="text-3xl mb-2">{activeProblem.icon}</div>
-              <div className="text-[10px] text-orange-400">{activeProblem.code}</div>
-              <h3 className="text-base font-bold text-orange-300 mt-1">{activeProblem.title}</h3>
-              <p className="mt-3 text-xs opacity-85 leading-relaxed">{activeProblem.desc}</p>
-            </motion.div>
+          <div className="text-xs opacity-50 font-mono border-t border-current/10 pt-8">
+            © {new Date().getFullYear()} Business Connect. Deep Tech Edition V5.
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      </footer>
 
-      {/* POPUP CHO GIẢI PHÁP */}
-      <AnimatePresence>
-        {activeSolution && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-md w-full rounded-2xl p-6 border border-emerald-500 bg-[#0c0d14] text-white shadow-2xl"
-            >
-              <button
-                onClick={() => setActiveSolution(null)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-emerald-950/60 hover:bg-emerald-900 transition"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <div className="text-[10px] text-emerald-400 mb-1">{activeSolution.mod}</div>
-              <h3 className="text-base font-bold text-emerald-300">{activeSolution.title}</h3>
-              <p className="mt-3 text-xs opacity-85 leading-relaxed">{activeSolution.desc}</p>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* DEMO MODAL */}
+      {/* MODALS */}
       <AnimatePresence>
         {showDemoModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-lg w-full rounded-2xl p-6 border border-orange-500 bg-[#0c0d14] text-white shadow-2xl"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`relative w-full max-w-lg p-8 rounded-2xl border ${
+                theme === "dark"
+                  ? "bg-[#0B1528] border-cyan-500/40 text-white shadow-[0_0_40px_rgba(6,182,212,0.3)]"
+                  : theme === "contrast"
+                    ? "bg-black border-2 border-[#00FF66] text-[#00FF66]"
+                    : "bg-white text-slate-900 border-slate-300 shadow-2xl"
+              }`}
             >
               <button
                 onClick={() => setShowDemoModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-orange-950/60 hover:bg-orange-900 transition"
+                className="absolute top-4 right-4 p-2 opacity-60 hover:opacity-100"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
-              <h3 className="text-lg font-bold text-orange-400">[INITIATE_DEMO_REQUEST]</h3>
-              <p className="text-xs opacity-75 mt-1">
-                Khai phá hạ tầng quản trị mạng lưới thông minh dành riêng cho tổ chức của bạn.
+              <h3 className="text-2xl font-bold mb-2">Đăng Ký Trải Nghiệm Demo</h3>
+              <p className="text-sm opacity-75 mb-6">
+                Chuyên viên cấp cao sẽ liên hệ trực tiếp để giới thiệu giải pháp phù hợp nhất.
               </p>
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  toast.success("Yêu cầu demo đã được đồng bộ vào hệ thống!");
+                  toast.success("Đăng ký thành công! Chúng tôi sẽ liên hệ trong vòng 24 giờ.");
                   setShowDemoModal(false);
                 }}
-                className="mt-4 space-y-3"
+                className="space-y-4 text-left font-mono"
               >
-                <input
-                  required
-                  placeholder="Họ và tên của bạn"
-                  className="w-full rounded-xl border border-orange-500/30 bg-black/60 px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-                <input
-                  required
-                  type="email"
-                  placeholder="Email công việc"
-                  className="w-full rounded-xl border border-orange-500/30 bg-black/60 px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-                <input
-                  required
-                  placeholder="Số điện thoại"
-                  className="w-full rounded-xl border border-orange-500/30 bg-black/60 px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-                <input
-                  placeholder="Tổ chức / Hiệp hội"
-                  className="w-full rounded-xl border border-orange-500/30 bg-black/60 px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                    Họ và tên
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="VD: Nguyễn Văn A"
+                    className="w-full px-4 py-3 rounded-xl border border-current/20 bg-current/5 text-sm focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                    Doanh nghiệp / Hiệp hội
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="VD: Công ty TNHH Cung Ứng..."
+                    className="w-full px-4 py-3 rounded-xl border border-current/20 bg-current/5 text-sm focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">
+                    Số điện thoại
+                  </label>
+                  <input
+                    required
+                    type="tel"
+                    placeholder="VD: 0987654321"
+                    className="w-full px-4 py-3 rounded-xl border border-current/20 bg-current/5 text-sm focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-orange-500 py-3 text-xs font-bold text-black shadow-lg hover:shadow-orange-500/30 transition"
+                  className="w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-cyan-500 text-black hover:bg-cyan-400 transition mt-4 shadow-lg"
                 >
-                  XÁC NHẬN ĐẶT LỊCH DEMO
+                  Xác Nhận Đăng Ký
                 </button>
               </form>
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
 
-      {/* VIDEO MODAL */}
-      <AnimatePresence>
         {showVideoModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-3xl w-full rounded-3xl overflow-hidden border border-orange-500/40 bg-black p-2 shadow-2xl"
-            >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="relative w-full max-w-4xl bg-black border border-cyan-500/30 rounded-2xl p-8 flex flex-col items-center justify-center text-white aspect-video shadow-[0_0_50px_rgba(6,182,212,0.3)]">
               <button
                 onClick={() => setShowVideoModal(false)}
-                className="absolute top-4 right-4 z-10 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition"
+                className="absolute top-4 right-4 text-white/80 hover:text-white"
               >
-                <X className="h-4 w-4" />
+                <X className="h-6 w-6" />
               </button>
-              <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black flex items-center justify-center text-center p-6 text-white">
-                <div>
-                  <Play className="mx-auto h-14 w-14 text-orange-400 animate-pulse mb-3" />
-                  <div className="text-base font-bold text-white">Business Connect Architecture</div>
-                  <div className="text-xs text-orange-400/80 mt-1">Hệ điều hành Deep Tech & Cybernetics B2B</div>
-                </div>
+              <Play className="h-16 w-16 text-cyan-400 mb-4 animate-pulse" />
+              <div className="text-xl font-bold">Giới Thiệu Nền Tảng Business Connect (2 Phút)</div>
+              <div className="text-sm text-cyan-400/80 mt-2 font-mono">
+                Đang khởi tạo luồng dữ liệu bảo mật...
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>
     </div>
   );
 }
-export default BusinessConnectLandingV5;

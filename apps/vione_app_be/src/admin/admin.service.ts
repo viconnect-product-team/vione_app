@@ -432,23 +432,53 @@ export class AdminService implements OnModuleInit {
             targetRoute: `/fees/${id}`,
           });
 
+          // 1. ViOne business_notifications (Priority 'critical' satisfies DB check constraint)
           await this.prisma.$executeRawUnsafe(`
             INSERT INTO public.business_notifications (
               id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
               title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
             ) VALUES (
               gen_random_uuid(), $1, 'finance', $2, 'invoice_reminder', 'overdue_payment_reminder',
-              $3, $4, $5::jsonb, 'urgent', 'delivered', $6, 'all', 'all', NOW(), NOW()
+              $3, $4, $5::jsonb, 'critical', 'delivered', $6, 'all', 'all', NOW(), NOW()
             )
-          `, targetUserId, id, notifTitle, notifBody, safeDisplayData, dedupeKey).catch(() => {});
+          `, targetUserId, id, notifTitle, notifBody, safeDisplayData, dedupeKey).catch((err) => {
+            console.warn('[addInvoiceReminder] Failed to insert business_notifications:', err?.message);
+          });
 
-          await this.prisma.$executeRawUnsafe(`
-            INSERT INTO public.member_notifications (
-              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-            ) VALUES (
-              gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
-            )
-          `, targetUserId, notifTitle, notifBody, id).catch(() => {});
+          // 2. Association member_notifications (insert by memberId and targetUserId so both portals receive it)
+          const memberDbId = memberRows[0]?.id;
+          const memberCode = memberRows[0]?.code;
+          if (memberDbId) {
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.member_notifications (
+                id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+              ) VALUES (
+                gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
+              )
+            `, String(memberDbId), notifTitle, notifBody, id).catch(() => {});
+          }
+          if (targetUserId) {
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.member_notifications (
+                id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+              ) VALUES (
+                gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
+              )
+            `, String(targetUserId), notifTitle, notifBody, id).catch(() => {});
+          }
+
+          // 3. Đẩy template tin nhắn tương tác (Actionable template) kèm VietQR trực tiếp vào tin nhắn
+          const invoiceAmount = Number(existing.invoice.amount || 0);
+          const invoiceNo = existing.invoice.invoiceNo || id;
+          const vietQrUrl = `https://img.vietqr.io/image/MB-0988888888-compact2.png?amount=${invoiceAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
+          const actionMsg = `[action:payment|amount:${invoiceAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${existing.invoice.dueDate || 'Hôm nay'}|desc:${encodeURIComponent(notifBody)}]`;
+
+          if (memberCode) {
+            await this.prisma.$executeRaw`
+              INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+              VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
+            `.catch(() => {});
+          }
         }
       } catch (e: any) {
         console.warn('[addInvoiceReminder] Failed to push notifications:', e?.message);

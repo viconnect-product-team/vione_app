@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
 import { downloadCsv } from "@/lib/csv";
@@ -747,7 +748,7 @@ function CompanyTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
       <div className="relative overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0 text-sm">
+        <table className="w-full min-w-[1050px] whitespace-nowrap border-separate border-spacing-0 text-sm">
           <thead>
             <tr className="bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
               <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
@@ -815,7 +816,11 @@ function CompanyTable({
                         {initials(m.name).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate font-semibold text-foreground">{m.name}</div>
+                        <TruncatedText
+                          text={m.name}
+                          maxWidth="max-w-[220px]"
+                          className="font-semibold text-foreground"
+                        />
                         <div className="truncate text-[11px] text-muted-foreground">
                           {m.taxCode ? `MST: ${m.taxCode}` : "-"}
                         </div>

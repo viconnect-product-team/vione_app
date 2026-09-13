@@ -5,13 +5,17 @@
 - **Frontend (@vibe/web)**: TanStack React Start, Vite, React 19, TailwindCSS 4, Radix UI, Lucide React, Zod, React Query.
 - **Backend (@vibe/api)**: NestJS, Passport, JWT.
 - **Database (@vibe/db)**: Prisma ORM, PostgreSQL.
-- **Mobile (@vibe/mobile)**: Capacitor (Android & iOS).
+- **Mobile Wrappers**: Capacitor (Android & iOS) tách biệt 2 app:
+  - `apps/mobile_vione/`: ViOne Connect (App ID: `com.vione.app`, route: `/connect-app`).
+  - `apps/mobile_ceo1983/`: CEO 1983 Association (App ID: `vn.ceo1983.app`, route: `/association`).
+  - `apps/mobile/`: Template gốc Capacitor.
 - **Environment**: Node.js >= 22 (Node 22 is required for native globalThis.WebSocket support on both local and server runtime environments).
 
 ## Folder Structure
 - `apps/web/`: Frontend application (TanStack Start).
 - `apps/api/`: Backend application (NestJS).
-- `apps/mobile/`: Native Capacitor wrappers (Android/iOS).
+- `apps/mobile_vione/`: ViOne Connect Native Wrapper (Android APK & iOS IPA/TestFlight).
+- `apps/mobile_ceo1983/`: CEO 1983 Association Native Wrapper (Android APK & iOS IPA/TestFlight).
 - `packages/db/`: Database models and Prisma client.
 
 ## Coding Conventions
@@ -66,15 +70,45 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
   - Theme mode labels must strictly follow language: `vi`: Tối, Sáng, Tương phản cao; `en`: Dark, Light, High Contrast; `zh`: 暗色, 亮色, 高对比度; `ja`: ダーク, ライト, 高コントラスト; `ko`: 다크, 라이트, 고대비.
   - Light mode (Sáng) must NEVER use white or light yellow gradients for text without dynamic `themeClass`. Headings must use high-contrast dark tones (`#0F172A`, `#B45309`).
 - **Business Connect Landing Pages Architecture Standards (V1 - V8)**:
+  - **Quy tắc Phá vỡ Cấu trúc DOM Cơ bản (Mandatory Anti-Boring Rule)**:
+    - Tuyệt đối cấm layout chia cột 50/50 thẳng hàng thông thường. Bắt buộc dùng CSS Grid bất đối xứng (`col-span-7` vs `col-span-5` hoặc `col-span-4` vs `col-span-8`).
+    - Bắt buộc có yếu tố đè lớp (Overlapping): Dùng negative margins (`-mt-14` đến `-mt-24`) để thanh stats bento và thẻ card đâm xuyên ranh giới section.
+    - Cấm fade-in mờ nhạt đơn thuần. Bắt buộc dùng Scroll Hijacking: Thẻ cha `min-h-[190vh]` hoặc `220vh`, ghim màn hình bằng `sticky top-0 h-screen overflow-hidden [perspective:1400px]`, mapping `scrollYProgress` với `useTransform` vào `scale`, `rotateX/rotateY`, `clipPath` và `yContent`.
+    - Z-axis Parallax: Layer 0 background image cuộn chậm hơn 50% so với tốc độ chuột (`["0%", "45%"]`), kèm các phần tử trang trí lơ lửng di chuyển ngược chiều nhau.
+  - **Bộ Siêu Prompt Master**: Tham chiếu `document/BUSINESS_CONNECT_LANDING_PROMPT_SUITE.md` khi triển khai bất kỳ phiên bản nào.
+  - **Quy tắc Background Ảnh 3 Lớp (Bắt buộc)**:
+    - Layer 0 (Đáy): Ảnh chụp thực tế (Real Image) chất lượng cao từ Unsplash cuộn 50% parallax, `z-index` thấp nhất.
+    - Layer 1 (Overlay): Lớp phủ mờ/làm tối/khuếch tán (blur/gradient/multiply) tôn vinh text tương phản cao.
+    - Layer 2 (Animation): Lớp hiệu ứng tương tác (Canvas hạt sáng, giọt nước mưa, lưới kỹ thuật, vệt bão cát, luồng aura mesh).
+  - **Cơ chế Theme-Switch Transition đặc thù**:
+    - V1: Cửa trượt khép mở (`TombStoneDoorTransition`).
+    - V2: Lật trang sách 3D (`BookFlipThemeTransition` quay quanh trục Y `rotateY: -180deg`).
+    - V3: Màn trập 5 dải màu (`ShutterBlindsThemeTransition` sập từ trần xuống).
+    - V4: Lau kính sương mù (`WipeFogThemeTransition` thanh gạt nước quét ngang màn hình).
+    - V5: Giật nhiễu Glitch Matrix (`GlitchMatrixThemeTransition` giật RGB và mưa ký tự số).
+    - V6: Hai phiến đá sập (`StoneSlabsThemeTransition` đập vào nhau rồi mở toang dọc).
+    - V7: Giọt nước bùng nổ (`WaterBubbleThemeTransition` nổ từ vị trí chuột scale 100vw).
   - Tất cả phiên bản landing page phải toát lên sự SANG TRỌNG, NGHIÊM TÚC và ĐẲNG CẤP TẬP ĐOÀN dành cho CEO, Chủ tịch, Lãnh đạo Hiệp hội.
-  - Tuyệt đối KHÔNG sử dụng yếu tố game, hoạt hình, bão cát, hầm mộ hay cổ tích huyễn hoặc. Bố trí <section> với padding lớn (`py-24`), chia cột grid khoa học.
-  - Bắt buộc dùng 100% nội dung Part 1 chuẩn mực: Header (6 nav + Đăng nhập + Đặt demo), Hero (Tagline, Headline, Subtext, CTAs, 4 Stats: 10,000+ | 300+ | 50,000+ | 20+), Problem (5 thẻ thách thức), Solution (9 thẻ giải pháp), Ecosystem (Cùng nhau tạo ra giá trị lớn hơn...), Clients/Testimonials (6 logo: VCCI, AmCham, EuroCham, KoCham, SBF, AusCham + 3 CEO review cards), Footer.
+  - Bắt buộc dùng 100% nội dung Part 1 chuẩn mực: Header (6 nav + Đăng nhập + Đặt demo), Hero (Tagline, Headline "Hiểu đúng người. Mở ra cơ hội thật.", Subtext, CTAs, 4 Stats: 10,000+ | 300+ | 50,000+ | 20+), Problem (5 thẻ thách thức), Solution (9 thẻ giải pháp), Ecosystem (Cùng nhau tạo ra giá trị lớn hơn...), Clients/Testimonials (6 logo: VCCI, AmCham, EuroCham, KoCham, SBF, AusCham + 3 CEO review cards), Footer.
   - V1 (Executive Zen): Aman Resorts, sương khói chậm, viền thẻ phát sáng, chuyển theme có hiệu ứng cánh cửa đá trượt khép mở.
-  - V2 (Heritage & Trust): Private Banking parchment, Midnight Navy, hạt ánh sáng vàng kim lơ lửng, thẻ hồ sơ đóng khung mạ vàng, chuyển section Legacy Reveal mượt mà (không lật trang rotateY).
-  - V3 (Premium Editorial): Vercel/Stripe style, đường lưới kỹ thuật chính xác, viền cứng sắc sảo, chuyển cảnh Snap & Slide, thẻ đẩy khối Offset Shadow.
-  - V4 (Executive Glass Dashboard): Kính mờ bóng bẩy, nền bokeh đô thị trung tâm tài chính mờ sâu, cuộn thẻ xếp lớp Stacking Cards.
-  - V6 (Corporate Monument): Tượng đài đá cẩm thạch Marble White / cát ấm, đen Obsidian điểm vàng đồng Bronze, hình học 3D đa diện xoay chậm, hiệu ứng cánh cửa đá khép mở khi đổi theme.
-  - V7 (Fluid Analytics): Nền trắng sứ / xanh đại dương thẫm, aura mesh gradient chất lỏng, ranh giới sóng dẻo Wave Morphing, thẻ bo góc lớn rounded-3xl.
+  - V2 (Heritage & Trust): Private Banking parchment, Midnight Navy, hạt ánh sáng vàng kim lơ lửng, thẻ hồ sơ đóng khung mạ vàng, chuyển section Scroll Hijacking 3D lật trang.
+  - V3 (Premium Editorial): Vercel/Stripe style, đường lưới kỹ thuật chính xác, viền cứng sắc sảo, chuyển cảnh Scroll Hijacking Shutter, thẻ bento đè lớp bất đối xứng 7/5.
+  - V4 (Executive Glass Dashboard): Kính mờ bóng bẩy, nền bokeh đô thị trung tâm tài chính mờ sâu, cuộn thẻ xếp lớp Scroll Hijacking 3D Glass Stacking.
+  - V5 (Deep Tech Data): Trung tâm dữ liệu Data Center, viền bạc/neon xanh dương/terminal, quét dòng tia laser Scroll Hijacking Matrix Cyber Cut.
+  - V6 (Corporate Monument): Tượng đài đá cẩm thạch Marble White / cát ấm, đen Obsidian điểm vàng đồng Bronze, phiến đá phong hoá Scroll Hijacking Monolithic.
+  - V7 (Fluid Analytics): Nền trắng sứ / xanh đại dương thẫm, aura mesh gradient chất lỏng, ranh giới sóng dẻo Scroll Hijacking Fluid Morph.
+- **Association App (CEO 1983) Navigation & Messaging Standards**:
+  - Độc lập hoàn toàn với ViOne App: Cài đặt hiệp hội nằm tại `/association/settings` (không được đẩy về `/connect-app/me`).
+  - Đăng nhập tách biệt: `/association/login` (CEO 1983) và `/auth/mobile` (ViOne).
+  - Chat hiệp hội `/association/messages` hỗ trợ tin nhắn tương tác (interactive template cards: VietQR thanh toán `[action:payment|...]`, giấy mời họp `[action:meeting|...]`).
+  - Thẻ thông báo giao dịch phong cách Zalo OA (`ZaloTransactionCard`): Định dạng hóa đơn, số tiền VND, hạn nộp, thông tin MB Bank, mã VietQR tương tác, tải ảnh QR về máy, sao chép STK. Áp dụng đồng bộ cho cả ViOne (`/connect-app/inbox/$threadId`) và Hiệp Hội (`/association/messages`).
+  - Kênh hệ thống ghim trên cùng: Backend `/dm/member/conversations` và `/dm/member/messages` bảo đảm "Ban Thư Ký CLB Doanh Nhân CEO 1983" (admin) luôn được ghim trên cùng với logo `/ceo1983-logo.png`, tích xanh xác thực, và tự động khởi tạo tin nhắn chào mừng & thông báo hội phí.
+  - Giao diện tin nhắn Hiệp Hội chuẩn Messenger: Thanh tìm kiếm, tabs phân loại ("Tất cả", "Chưa đọc", "Hệ thống", "Hội viên"), avatar logo hiệp hội, huy hiệu đếm chưa đọc, độ tương phản theme sáng/tối tối ưu.
+  - Nút hành động liên hệ trang chủ: Bấm "Liên hệ" trên trang chủ `/association/` mở `AssociationContactSheet` (Hotline, Email, Địa chỉ trụ sở, Trò chuyện hỗ trợ) thay vì chuyển hướng sai.
+  - Chính sách nhận diện thương hiệu: Không sử dụng slogan "kết nối đồng niên". Thương hiệu chuẩn là "CLB Doanh Nhân 1983 (CEO 1983)" với slogan "Nâng tầm giá trị • Tiên phong kết nối" và logo `/ceo1983-logo.png`.
+  - Logo ViOne chữ 'O' liền đáy: Nét lượn đáy chữ O liền mạch, mượt mà trên mọi kích thước.
+  - Kết nối hội viên 2 chiều và hủy kết bạn trong `/association/members`.
+  - Biểu tượng hiệp hội CEO 1983 chuẩn: `/ceo1983-logo.png`.
   - V8 (Executive Titanium Suite): Flagship tích hợp tối thượng, thiết kế Titanium sang trọng, đồng bộ đa ứng dụng CRM - ViOne - Hiệp Hội.
 - **Tiêu chuẩn Tài liệu Kiểm thử & Kế hoạch WBS (ISO/IEC/IEEE 29119-3 & PMBOK)**:
   - `document/VIONE_COMPREHENSIVE_TEST_CASES_SUITE_10000_CASES.xlsx`: Hơn 10,000 test cases thực tế, 100% không trùng lặp lặp lại, bao phủ toàn bộ các góc độ VIEW, CRUD, SEARCH, FILTER, SORT, PAGINATION, EXPORT, IMPORT, PERMISSION, SECURITY, CONCURRENCY, OFFLINE SYNC và MULTI-APP VOTING.
@@ -104,7 +138,13 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
 | **Landing V6: Kim Tự Tháp Huyền Bí (Sa Mạc, Khắc Đá & Ký Tự Cổ)** | Phong cách Ai Cập cổ đại kết hợp công nghệ ma thuật: 3 themes (Light: Sa mạc vàng cát/chữ nâu đá vôi/viền vàng kim; Dark: Đêm sao Ai Cập xanh tím/viền Neon Cyan; Contrast: Phiến đá điêu khắc trắng đen nứt nẻ gồ ghề). Layout Kim Tự Tháp chiếm 2/3 bên phải, trần hầm mộ vát chéo 1/2. | Hai phiến đá hầm mộ đóng sập lại ở giữa (shake + rơi bụi đá) khi chuyển section; Decrypting Hieroglyphs dịch thuật tiếng Việt khi hover; Scarab Cursor bọ hung kèm vệt cát rơi (particle gravity); 3D Obelisk Hover nhô cao trên cát. | Lưu trữ route tại `/business-connect/v6` và tích hợp bộ chuyển đổi phiên bản linh hoạt. |
 | **Quản lý Doanh nghiệp (`/companies`) hiển thị dữ liệu** | Dữ liệu `public.members` lưu `type: 'enterprise'` hoặc `'corporate'`, NestJS backend và Frontend filter lọc cứng `type === 'company'`. | Chuẩn hóa `r.type` tại `members.service.ts` và backend filter chấp nhận cả `company`, `enterprise`, `corporate`. Cập nhật `companies.index.tsx` chấp nhận cả 3 loại. Bổ sung đầy đủ mã số thuế, website, nhân sự, địa chỉ cho doanh nghiệp. | Luôn chuẩn hóa ánh xạ kiểu dữ liệu giữa database và API DTO. |
 | **Quyền lợi Hội viên (`/benefits`) Admin CRUD API** | Trang admin phụ thuộc vào Supabase `useServerFn` thiếu service role key trên frontend. | Thiết lập bộ API CRUD chuyên dụng `/api/members/benefits/admin` (GET, POST, PUT, DELETE) kết nối bảng `public.association_benefits` qua Prisma trong NestJS `members.controller.ts`. Frontend chuyển sang `fetchNestApi`. | Không dùng trực tiếp Supabase Admin client trên client browser; chuyển qua backend NestJS bảo mật bằng JWT. |
-| **Landing V7: Bong Bóng Bay (Trôi Nổi, Tối Giản, Dẻo)** | Phong cách bong bóng trôi nổi nghệ thuật: 3 themes (Light: Bầu trời Pastel trong trẻo; Dark: Đêm sâu bọt khí sinh học Cyan; Contrast: Bóng bay Vector Solid viền đen). | Transition Bubble Lift-off: Section mới bọc trong hình cầu `border-radius: 50%` trôi từ dưới lên (`y: 100vh -> 0`), khi tới giữa trang "nổ" scale ra `100vw` và `border-radius: 0` thành section bình thường; bọt xà phòng trôi nổi toàn trang; hover phình to bóng bay; click nổ bọt khí rớt confetti. | Bọc và cô lập canvas particle trong container riêng, dọn dẹp bộ nhớ khi chuyển trang. |
+| **Hook `useAutoHideHeader` thiếu `isVisible` & `isAtTop` gây lỗi TS2339 trên Landing V2-V7** | Các trang landing destructure `{ isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader()`, trong khi hook gốc chỉ trả về `{ showHeader, resetTimer, headerStyle }`. Khiến VS Code hiện cảnh báo đỏ `2, M` trên cả 6 tệp. | Cập nhật `useAutoHideHeader.ts` bổ sung `isAtTop` (theo dõi `window.scrollY < 20`), alias `isVisible: showHeader`, và giữ nguyên `showHeader, resetTimer, headerStyle`. Chạy `npx eslint --fix` tự động chuẩn hóa formatting. | Luôn đảm bảo hook dùng chung trả về đầy đủ các trường tương thích ngược với mọi trang gọi đến. |
+| **Lỗi Lời Mời Network, Ảnh Dev Server, Tên Thật & Theme Tối Đen Mờ** | Component lời mời bị lồng trong `people.length > 0` nên ẩn khi chưa có bạn; `full_name` không tồn tại trong `vione_users`; SSR gắn `http://backend:4000/upload/...`; logo có vòng tròn chữ O; dark mode dùng nền xanh đen `#060913`. | Đưa lời mời ra ngoài ưu tiên hàng đầu; hỗ trợ tab `requests`; thêm dải AI Match khi network rỗng; chuẩn hóa query `vione_users` sang `name`; tách tên thật ("Phạm Văn Vũ", "Trần Tuấn Anh") và chức danh; tạo `resolveMediaUrl()` + proxy `/upload`; bỏ vòng tròn chữ O trên logo; đổi theme tối sang đen mờ `#0A0A0B`. | Luôn hiển thị lời mời độc lập với số bạn bè; bảo đảm media URL giải quyết qua client proxy; chuẩn hóa tên cá nhân và chức danh riêng biệt. |
+| **Tin nhắn Hệ thống, Thông báo Giao dịch Zalo VietQR & Branding CEO 1983** | 1) Chữ O logo ViOne bị hở đáy. 2) Tagline cũ còn sót chữ "kết nối đồng niên". 3) Nút thông báo còn chữ cồng kềnh. 4) Thiếu kênh tin nhắn hệ thống ghim trên cùng. 5) Cần thẻ giao dịch Zalo OA đồng bộ cho ViOne & Hiệp hội. 6) Lịch sử sự kiện hội viên hiển thị rỗng. 7) Logo hiệp hội bị hỏng URL. 8) Bấm nút "Liên hệ" nhảy sang tin nhắn rỗng. | 1) Bổ sung bridge path đáy chữ O trong `ViOneLogo.tsx`. 2) Xóa sạch slogan "đồng niên", đổi sang "Nâng tầm giá trị • Tiên phong kết nối". 3) Đổi nút thông báo thành icon tròn `CheckCheck` và `EyeOff`. 4) Bổ sung kênh admin "Ban Thư Ký CLB Doanh Nhân CEO 1983" ghim trên cùng với auto-seed tin nhắn thông báo. 5) Xây dựng `ZaloTransactionCard` tích hợp VietQR, tải ảnh QR, copy STK cho cả ViOne và Hiệp hội. 6) Cập nhật query sự kiện khớp code/email/name và seed đăng ký sự kiện. 7) Trỏ logo về `/ceo1983-logo.png` kèm fallback. 8) Tạo `AssociationContactSheet` mở thông tin hotline/email/địa chỉ khi bấm "Liên hệ". | Luôn bảo đảm dữ liệu hệ thống (admin channel, event registrations) có fallback tự phục hồi, kiểm tra kĩ đường dẫn asset cục bộ, và thiết kế thẻ thông báo giao dịch tương tác chuẩn ngân hàng. |
+| **Tách 2 App Mobile Độc Lập, Chuẩn Hóa Bảng Dashboard CRM & Phối Màu Nhận Diện Hiệp Hội** | 1) Backend TS2345 `never[]` tại `connect-app.service.ts`. 2) CEO 1983 app bị lẫn màu lạ. 3) Thiếu đồng bộ thông báo sự kiện & cơ hội B2B. 4) Bảng CRM >6 cột bị gãy dòng, thiếu tooltip text dài, thiếu cột Creator/Receiver trong Trao cơ hội. 5) Cần tách app ViOne Connect và CEO 1983 thành 2 app riêng xuất APK & IPA. | 1) Sửa khởi tạo `msgs: any[] = []`. 2) Ép chuẩn palette Xanh Navy - Trắng - Đen (+ Green active/success, Red unread/danger) trong `styles.css`. 3) Query song song `events` và `opportunities` vào `listMyMemberNotifications`. 4) Tạo `TruncatedText` (Radix Tooltip), ép `overflow-x-auto` và `min-w-[1050px] whitespace-nowrap`, sticky STT trái & sticky Thao tác phải; bổ sung Table View cho `/opportunities` với cột Người tạo & Người nhận. 5) Tách `apps/mobile_vione` và `apps/mobile_ceo1983` với `eas.json` cấu hình build APK preview & IPA App Store Connect. | Tuân thủ nghiêm ngặt quy chuẩn bảng dashboard CRM chống gãy dòng và phân tách rõ ràng cấu hình native giữa các app mobile trong monorepo. |
+| **Quy Chuẩn Chữ Trắng Thẻ Thành Viên, Nhãn Nút CRM Sạch & Phân Trang Sổ Nhật Ký** | 1) Chữ trên thẻ hội viên bị chìm đen/xanh đậm do dùng CSS variable `--vba-text` ở Light mode. 2) Nút tin nhắn còn sót màu vàng cam amber. 3) Nút CRM bị double ký tự (`+ +`, `+ -`) do để icon kèm ký tự thừa trong label. 4) Sổ nhật ký hạch toán `/finance-report` và sổ kiểm toán thiếu phân trang. 5) Cần đổi tên tài liệu HDSD và xuất file Excel tiến độ công việc toàn diện. | 1) Ép chữ trắng thuần `#FFFFFF` (`text-white`, `text-white/80`, `text-white/60`, `text-sky-300`) cho thẻ hội viên bất kể Light/Dark mode. 2) Đổi nút "Bắt đầu trò chuyện" sang gradient Sky Blue (`#38BDF8` / `#7DD3FC`). 3) Xóa ký tự `+` và `-` thừa trong text của nút (`income.tsx`, `expenses.tsx`, `meetings.tsx`). 4) Tích hợp `useTableControls` và `<Pagination />` cho `finance-report.tsx`, `platform.renewal-audit.tsx`, `platform.audit.tsx`. 5) Đổi tên tài liệu HDSD thành `tai-lieu-huong-dan-su-dung.md/.docx`, xuất file Excel `TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE.xlsx` (135 chức năng, tiến độ 97.8%). | Luôn bảo đảm độ tương phản chữ trên bề mặt tối màu, nhãn nút không lặp ký tự icon, và tất cả danh sách nhật ký/chứng từ phải có thanh phân trang chuẩn. |
+
+
 
 
 

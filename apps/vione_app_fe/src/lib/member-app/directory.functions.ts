@@ -9,6 +9,8 @@ export type DirectoryMember = {
   region: string;
   type: "company" | "individual";
   verified: boolean;
+  userId?: string | null;
+  avatar?: string | null;
 };
 
 import { fetchNestApiFromServer } from "@/lib/api-client";

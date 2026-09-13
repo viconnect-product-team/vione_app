@@ -6,6 +6,8 @@ import { PlatformShell } from "@/components/platform/PlatformShell";
 import { Card, PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { useServerData } from "@/hooks/use-server-data";
 import { useRole } from "@/hooks/use-role";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { useLang, useT } from "@/lib/i18n";
 import { listRoleAuditLogFn, type RoleAuditEntry } from "@/lib/platform.functions";
 
@@ -66,6 +68,16 @@ function PlatformAuditPage() {
   };
 
   const list = rows ?? [];
+  const tc = useTableControls<RoleAuditEntry>(
+    list,
+    {
+      time: (r) => r.createdAt,
+      actor: (r) => r.actorEmail || "",
+      target: (r) => r.targetEmail || "",
+      action: (r) => r.action,
+    },
+    { initialSortKey: "time", initialSortDir: "desc", initialPageSize: 10 },
+  );
 
   return (
     <PlatformShell>
@@ -99,7 +111,7 @@ function PlatformAuditPage() {
                   </td>
                 </tr>
               )}
-              {list.map((r: any) => (
+              {tc.paged.map((r: any) => (
                 <tr
                   key={r.id}
                   className="border-b border-border last:border-0 hover:bg-secondary/30"
@@ -120,6 +132,18 @@ function PlatformAuditPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </Card>
     </PlatformShell>
   );

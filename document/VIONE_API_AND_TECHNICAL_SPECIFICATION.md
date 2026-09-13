@@ -354,30 +354,122 @@ Mã phản hồi chuẩn RESTful:
 
 ---
 
-## 2.8. Phân hệ Kết nối & Nhắn tin Realtime (Connections & Direct Messages)
+---
 
-### 1. `POST /api/connections/request`
-- **Mô tả**: Gửi lời mời kết nối kinh doanh tới đối tác.
+## 2.8. Phân hệ Kết nối Doanh nhân & Nhắn tin Realtime (Network Connections & Direct Messages)
+
+### 1. `POST /api/connect-app/network/requests` (hoặc `/api/network/requests`)
+- **Mô tả**: Gửi lời mời kết nối kinh doanh từ tài khoản hiện tại tới đối tác đích (`targetUserId`). Hệ thống tự động ghi nhận vào bảng `public.user_connections` với trạng thái `pending`, đồng thời bắn thông báo real-time qua WebSocket và lưu trữ vào `public.business_notifications` cùng `public.member_notifications` với `action_target: { route: "/connect-app/network", search: { tab: "requests" } }`.
 - **Request Body**:
 ```json
 {
-  "owner_id": "M1983-002",
-  "peer_id": "M1983-099",
-  "association_id": "c1983000-0000-4000-8000-000000001983",
+  "targetUserId": "00000000-0000-4000-8000-000000000001"
+}
+```
+- **Response (200 OK)**:
+```json
+{
+  "ok": true,
+  "connectionId": "c8a1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  "status": "pending",
+  "message": "Đã gửi lời mời kết nối thành công"
+}
+```
+
+### 2. `GET /api/connect-app/network/requests/incoming`
+- **Mô tả**: Lấy danh sách các lời mời kết nối gửi đến tài khoản hiện tại đang ở trạng thái `pending`.
+- **Response (200 OK)**:
+```json
+[
+  {
+    "id": "c8a1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+    "counterpartUserId": "00000000-0000-4000-8000-000000000002",
+    "status": "pending",
+    "createdAt": "2026-09-13T08:00:00.000Z"
+  }
+]
+```
+
+### 3. `PATCH /api/connect-app/network/connections/:id`
+- **Mô tả**: Chấp thuận (`status: "accepted"`) hoặc từ chối (`status: "declined"`) lời mời kết nối. Khi chấp thuận, hai tài khoản trở thành bạn bè kết nối chính thức trong tab Mạng lưới (Network).
+- **Request Body**:
+```json
+{
   "status": "accepted"
 }
 ```
 
-### 2. `POST /api/messages/direct`
+### 4. `POST /api/connect-app/network/connections/resolve`
+- **Mô tả**: Phân giải danh tính an toàn công khai (tên hiển thị thực tế, ảnh đại diện, chức danh, công ty) cho danh sách `userIds`.
+- **Request Body**:
+```json
+{
+  "userIds": ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"]
+}
+```
+- **Response (200 OK)**:
+```json
+[
+  {
+    "userId": "00000000-0000-4000-8000-000000000001",
+    "displayName": "Trần Tuấn Anh",
+    "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+    "headline": "Platform Administrator",
+    "companyName": "ViConnect Holdings"
+  }
+]
+```
+
+### 5. `GET /api/connect-app/network/recommendations/today`
+- **Mô tả**: Trả về danh sách gợi ý kết nối AI thông minh hôm nay dựa trên vị trí địa lý, quy mô doanh nghiệp và chức vụ (C-Level, Founder, Giám đốc), tích hợp tính năng tự động hiển thị trên Trang chủ và tab Mạng lưới.
+
+### 6. `POST /api/messages/direct`
 - **Mô tả**: Gửi tin nhắn trao đổi 1-on-1 trong `/connect-app/inbox`.
 - **Request Body**:
 ```json
 {
   "thread_id": "b8c9d0e1-0000-4000-8000-000000000010",
   "sender_user_id": "00000000-0000-4000-8000-000000000002",
-  "body": "Chào anh Khôi, tuần tới thứ Ba mình sắp xếp buổi B2B 1-1 tại Keangnam nhé!"
+  "body": "Chào anh Tuấn Anh, tuần tới mình sắp xếp buổi B2B 1-1 tại Keangnam nhé!"
 }
 ```
+
+### 7. `GET /api/connect-app/dm/member/conversations`
+- **Mô tả**: Lấy danh sách hội thoại của thành viên trong Hiệp hội (`/association/messages`). Tự động nhận diện tài khoản người dùng, ghim kênh chính thức "Ban Thư Ký CLB Doanh Nhân CEO 1983" (admin) lên vị trí đầu tiên (`isSystem: true`, avatar `/ceo1983-logo.png`).
+- **Response (200 OK)**:
+```json
+[
+  {
+    "peerCode": "admin",
+    "peerName": "Ban Thư Ký CLB Doanh Nhân CEO 1983",
+    "avatarUrl": "/ceo1983-logo.png",
+    "lastMessage": "Thông báo: Nộp hội phí niên liễm 2026...",
+    "lastTime": "2026-09-13T10:00:00.000Z",
+    "unreadCount": 1,
+    "isSystem": true
+  },
+  {
+    "peerCode": "M1983-002",
+    "peerName": "James Nguyễn",
+    "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+    "lastMessage": "Tuần tới anh em mình cafe nhé!",
+    "lastTime": "2026-09-13T09:30:00.000Z",
+    "unreadCount": 0,
+    "isSystem": false
+  }
+]
+```
+
+### 8. `GET /api/connect-app/dm/member/messages?peerCode={code}`
+- **Mô tả**: Lấy lịch sử tin nhắn 1-on-1 giữa thành viên hiện tại và đối tác `peerCode` (hoặc kênh hệ thống `admin`).
+- **Hỗ trợ thẻ thông báo giao dịch Zalo OA (`ZaloTransactionCard`)**:
+  Khi tin nhắn chứa định dạng:
+  `[action:payment|amount=20000000|code=HD-2026-001|title=Hội phí niên liễm 2026|dueDate=31/03/2026]`
+  Hệ thống tự động hiển thị thẻ thông báo giao dịch chuẩn Zalo Official Account với thông tin chuyển khoản MB Bank (`198388889999`), nút bật mã VietQR, nút tải ảnh QR và sao chép số tài khoản.
+- **Hỗ trợ thẻ thư mời họp (`action:meeting`)**:
+  `[action:meeting|title=Đại hội Thường niên 2026|time=08:30 - 15/04/2026|location=Keangnam Landmark 72|link=https://meet.google.com/ceo-1983]`
+
+
 
 ---
 
@@ -756,3 +848,50 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
    - 10 Phân hệ nghiệp vụ với **1,000+ gói công việc chi tiết (Work Packages)**.
    - Phân rã đầy đủ 5 giai đoạn: Kiến trúc & Schema -> Giao diện Frontend -> Logic Backend CSDL -> Tích hợp & Bảo mật -> Kiểm thử E2E & UAT.
    - Ước lượng chi tiết Man-days cho Frontend, Backend, QA, xác định rõ Actor, Priority, Route/Endpoint và Deliverables.
+
+---
+
+# 9. KIẾN TRÚC PHÁ VỠ CẤU TRÚC DOM LANDING V2-V7 & PHÂN HỆ HIỆP HỘI (CEO 1983)
+
+### 9.1. Kiến Trúc Landing Page Đột Phá (V2 - V7)
+- **Bố Cục Bất Đối Xứng (Asymmetric Grid)**: Triệt để loại bỏ bố cục 50/50 truyền thống. Áp dụng CSS Grid bất đối xứng `grid-cols-12` (`col-span-7` vs `col-span-5` hoặc `col-span-4` vs `col-span-8`).
+- **Phần Tử Đè Lớp (Overlapping Elements)**: Sử dụng negative margins (`-mt-14` đến `-mt-24`), `relative z-20` đâm xuyên qua các section lân cận và đè lên background layers.
+- **Scroll Hijacking (Framer Motion 3D Mapping)**:
+  - Container cha có chiều cao kéo dài (`190vh` - `220vh`).
+  - Container con cố định màn hình `sticky top-0 h-screen overflow-hidden perspective-[1400px]`.
+  - Mapping tiến độ cuộn chuột `useScroll({ target: containerRef })` qua `useTransform` vào các hiệu ứng:
+    - `clipPath`: Quét màn mở dần hoặc mở theo hình khối.
+    - `scale`: Thu nhỏ/phóng to mượt mà (`0.88 -> 1.0 -> 0.94`).
+    - `rotateX` / `rotateY`: Xoay 3D tạo chiều sâu không gian.
+    - `yContent`: Đẩy nội dung trượt lướt mượt mà.
+- **Parallax Chiều Sâu Trục Z**:
+  - Layer 0 (Background Image): Cuộn trễ hơn 50% so với tốc độ cuộn chuột.
+  - Layer 1 (Nội dung chính): Hiển thị sắc nét, tương phản cao.
+  - Layer Decorative: Các hạt ánh sáng, HUD grid, và liquid blobs bay lơ lửng ngược chiều.
+
+### 9.2. Phân Hệ Hiệp Hội Doanh Nhân (CEO 1983)
+- **Biểu Tượng Thương Hiệu Chính Thức**: `/ceo1983-logo.png` (Hình ảnh số 1) áp dụng đồng bộ toàn bộ app hiệp hội.
+- **Tách Biệt Xác Thực**: 
+  - URL đăng nhập ViOne: `/auth/mobile`.
+  - URL đăng nhập Hiệp hội CEO 1983: `/association/login` (Giao diện riêng biệt, màu sắc đại diện Sapphire & Gold).
+- **Cài Đặt & Ảnh Đại Diện (`/association/settings`)**:
+  - Route độc lập, loại bỏ việc bấm nút Cài đặt bị chuyển hướng về ViOne.
+  - Upload avatar trực tiếp lên MinIO bucket `vione-media` / `avatars`, đồng bộ tự động qua 3 bảng `user_profiles`, `business_identities`, `vione_users`.
+- **Nhắn Tin & Thẻ Thao Tác Trực Tiếp (`/association/messages`)**:
+  - Nhắn tin 1-1 với hội viên hiệp hội, chọn hội viên khởi tạo chat.
+  - Thẻ Hành Động Thanh Toán (`[action:payment|...]`): Tự động hiển thị thẻ VietQR với số tiền, nội dung, hạn nộp, nút mở popup quét mã QR và tải ảnh QR.
+  - Thẻ Hành Động Cuộc Họp (`[action:meeting|...]`): Hiển thị thẻ thư mời họp với thời gian, địa điểm, và nút bấm xác nhận tham gia trực tiếp.
+- **Kết Nối Hội Viên 2 Chiều (`/association/members`)**:
+  - 3 Tab quản lý: "Tất cả", "Bạn bè", "Đang chờ kết nối".
+  - Đầy đủ tính năng gửi lời mời, hủy lời mời đã gửi, đồng ý kết nối, và hủy kết bạn 2 chiều.
+  - Sửa lỗi notification nhận thông báo kết nối: Chuẩn hóa ép kiểu `memberRecipientId::text` và cơ chế fallback thông tin người gửi.
+
+### 9.3. Đồng Bộ Thông Báo & Nhắc Phí Từ CRM
+- Khi CRM gửi thông báo hoặc nhắc phí quá hạn:
+  1. Ghi nhận vào `member_notifications` (App Hiệp hội).
+  2. Ghi nhận vào `business_notifications` (App ViOne).
+  3. Đẩy template tin nhắn tương tác `[action:payment|...]` vào bảng `messages` để hội viên có thể thao tác ngay trong hội thoại chat.
+
+### 9.4. Chuẩn Hóa Thương Hiệu & Nút Bấm
+- **Nút Lưu ViOne**: Nền đen mờ cao cấp (`bg-[#121214]`), viền vàng đồng mảnh (`border-[#D4AF37]/50`), chữ vàng đồng sáng (`text-[#F5E0A3]`), không dùng nền xanh đen.
+- **Logo ViOne**: Loại bỏ path chữ 'v' lồng bên trong chữ 'O' tại component `ViOneLogo.tsx`.

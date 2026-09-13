@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarClock,
+  CheckCircle2,
+  Clock,
   Eye,
+  LayoutGrid,
   Lightbulb,
   MapPin,
   MessageSquare,
@@ -12,12 +15,15 @@ import {
   Search,
   Send,
   Sparkles,
+  Table as TableIcon,
   Trash2,
+  UserCheck,
   Users,
   X,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, Card, Pill } from "@/components/dashboard/PageKit";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import {
   OPPORTUNITY_TYPES,
@@ -484,6 +490,7 @@ function OpportunitiesPage() {
   const deleteOpp = useServerFn(deleteOpportunityFn);
   const toggleOpp = useServerFn(toggleOpportunityStatusFn);
   const [tab, setTab] = useState<Tab>("browse");
+  const [view, setView] = useUrlState<"table" | "grid">("view", "table");
   const [q, setQ] = useUrlState<string>("q", "");
   const [typeFilter, setTypeFilter] = useState<OpportunityTypeKey | "all">("all");
   const [showCreate, setShowCreate] = useState(false);
@@ -619,6 +626,32 @@ function OpportunitiesPage() {
                 </option>
               ))}
             </select>
+            <div className="flex items-center rounded-lg border border-border bg-background p-1">
+              <button
+                type="button"
+                onClick={() => setView("table")}
+                className={`rounded-md p-1.5 transition-colors ${
+                  view === "table"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Dạng bảng"
+              >
+                <TableIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                className={`rounded-md p-1.5 transition-colors ${
+                  view === "grid"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Dạng lưới"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </Card>
       )}
@@ -676,6 +709,219 @@ function OpportunitiesPage() {
         <Card className="p-12 text-center text-sm text-muted-foreground">
           {tab === "mine" ? t("opp.empty.mine") : t("opp.empty.browse")}
         </Card>
+      ) : view === "table" ? (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+          <div className="relative overflow-x-auto">
+            <table className="w-full min-w-[1250px] whitespace-nowrap border-separate border-spacing-0 text-sm">
+              <thead className="bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-secondary px-3 py-3 text-center text-xs font-bold border-b border-r border-border">
+                    STT
+                  </th>
+                  <th className="sticky left-[56px] z-20 min-w-[90px] bg-secondary px-3 py-3 border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                    Mã
+                  </th>
+                  <th className="px-4 py-3 border-b border-border text-left">Cơ hội / Tiêu đề</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Người tạo cơ hội</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Người nhận cơ hội</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Phân loại</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Ngành & Khu vực</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Ngân sách</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Hạn chót</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Trạng thái</th>
+                  <th className="sticky right-0 z-20 min-w-[150px] bg-secondary px-4 py-3 text-right font-bold border-b border-l border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tc.pageRows.map((opp, idx) => {
+                  const poster = getPoster(opp.posterId);
+                  const isOwner = opp.posterId === CURRENT_USER_ID;
+                  const budget =
+                    opp.budgetMin && opp.budgetMax
+                      ? `${fmt.money(opp.budgetMin)} – ${fmt.money(opp.budgetMax)}`
+                      : opp.budgetMin
+                        ? `${t("opp.fromLabel")} ${fmt.money(opp.budgetMin)}`
+                        : t("opp.budgetOpen");
+
+                  return (
+                    <tr
+                      key={opp.id}
+                      className="group border-b border-border transition-all duration-150 hover:bg-secondary/60"
+                    >
+                      {/* Sticky STT */}
+                      <td className="sticky left-0 z-10 w-14 min-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-b border-r border-border transition-colors">
+                        {(tc.page - 1) * tc.pageSize + idx + 1}
+                      </td>
+
+                      {/* Sticky Code */}
+                      <td className="sticky left-[56px] z-10 min-w-[90px] bg-card group-hover:bg-muted/70 px-3 py-3 font-mono text-[12px] font-semibold text-primary border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                        <span className="mr-1">{opp.emoji}</span>
+                        OPP-{opp.id.slice(0, 6).toUpperCase()}
+                      </td>
+
+                      {/* Title & Description with Tooltip */}
+                      <td className="px-4 py-3 border-b border-border">
+                        <Link
+                          to="/opportunities/$id"
+                          params={{ id: opp.id }}
+                          className="font-semibold text-foreground text-xs hover:text-primary hover:underline block"
+                        >
+                          <TruncatedText text={opp.title} maxWidth="max-w-[240px]" />
+                        </Link>
+                        <TruncatedText
+                          text={opp.description}
+                          maxWidth="max-w-[240px]"
+                          className="text-[11px] text-muted-foreground"
+                        />
+                      </td>
+
+                      {/* Người tạo cơ hội */}
+                      <td className="px-4 py-3 border-b border-border">
+                        <Link
+                          to="/members/$memberId"
+                          params={{ memberId: opp.posterId }}
+                          search={REVIEW_SEARCH_RESET}
+                          className="font-semibold text-primary hover:underline text-xs block"
+                        >
+                          <TruncatedText
+                            text={poster?.name || `Hội viên #${opp.posterId.slice(0, 6)}`}
+                            maxWidth="max-w-[160px]"
+                          />
+                        </Link>
+                        <div className="text-[11px] text-muted-foreground">
+                          <TruncatedText
+                            text={poster?.email || poster?.contact || "Hội viên"}
+                            maxWidth="max-w-[160px]"
+                          />
+                        </div>
+                      </td>
+
+                      {/* Người nhận cơ hội */}
+                      <td className="px-4 py-3 border-b border-border">
+                        {opp.claimedByName ? (
+                          <div>
+                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                              <TruncatedText text={opp.claimedByName} maxWidth="max-w-[150px]" />
+                            </div>
+                            {(opp.claimedCompany || opp.claimedPhone) && (
+                              <div className="text-[11px] text-muted-foreground">
+                                <TruncatedText
+                                  text={[opp.claimedCompany, opp.claimedPhone].filter(Boolean).join(" • ")}
+                                  maxWidth="max-w-[150px]"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            Chưa tiếp nhận
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Phân loại */}
+                      <td className="px-4 py-3 border-b border-border">
+                        <Pill color="primary">{t(opp.type)}</Pill>
+                      </td>
+
+                      {/* Ngành & Khu vực */}
+                      <td className="px-4 py-3 border-b border-border text-xs">
+                        <div className="font-medium text-foreground">
+                          <TruncatedText text={opp.industry} maxWidth="max-w-[140px]" />
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          <TruncatedText text={opp.region} maxWidth="max-w-[140px]" />
+                        </div>
+                      </td>
+
+                      {/* Ngân sách */}
+                      <td className="px-4 py-3 border-b border-border font-semibold text-xs text-foreground">
+                        {budget}
+                      </td>
+
+                      {/* Hạn chót */}
+                      <td className="px-4 py-3 border-b border-border text-xs text-muted-foreground">
+                        {fmt.date(opp.deadline)}
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="px-4 py-3 border-b border-border">
+                        <Pill color={STATUS_COLOR[opp.status]}>{t(STATUS_KEY[opp.status])}</Pill>
+                      </td>
+
+                      {/* Sticky Thao tác */}
+                      <td className="sticky right-0 z-10 min-w-[150px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-b border-l border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <Link
+                            to="/opportunities/$id"
+                            params={{ id: opp.id }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                            title={t("tbl.view")}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Link>
+                          {isOwner ? (
+                            <>
+                              <button
+                                onClick={async () => {
+                                  await toggleOpp({ data: { id: opp.id } });
+                                  await router.invalidate();
+                                }}
+                                className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-medium hover:bg-secondary"
+                                title={opp.status === "open" ? t("opp.action.close") : t("opp.action.reopen")}
+                              >
+                                {opp.status === "open" ? "Đóng" : "Mở lại"}
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (confirm(t("opp.confirmDelete"))) {
+                                    await deleteOpp({ data: { id: opp.id } });
+                                    await router.invalidate();
+                                  }
+                                }}
+                                className="rounded-lg border border-destructive/30 p-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                                title={t("opp.action.delete")}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setInterestOpp(opp)}
+                              disabled={opp.status === "closed"}
+                              className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                              title={t("opp.action.interest")}
+                            >
+                              <Send className="h-3 w-3" />
+                              Kết nối
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="border-t border-border bg-card">
+            <Pagination
+              page={tc.page}
+              pageCount={tc.pageCount}
+              pageSize={tc.pageSize}
+              total={tc.total}
+              from={tc.from}
+              to={tc.to}
+              onPage={tc.setPage}
+              onPageSize={tc.setPageSize}
+              pageSizeOptions={[9, 18, 36, 72]}
+            />
+          </div>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

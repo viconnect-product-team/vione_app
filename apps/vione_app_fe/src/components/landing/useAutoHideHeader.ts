@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
  */
 export function useAutoHideHeader(timeoutMs = 3000) {
   const [showHeader, setShowHeader] = useState(true);
+  const [isAtTop, setIsAtTop] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetTimer = useCallback(() => {
@@ -20,6 +21,11 @@ export function useAutoHideHeader(timeoutMs = 3000) {
     // Start initial countdown
     resetTimer();
 
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY < 20);
+      resetTimer();
+    };
+
     const handleInteraction = () => {
       resetTimer();
     };
@@ -28,13 +34,13 @@ export function useAutoHideHeader(timeoutMs = 3000) {
       resetTimer();
     };
 
-    window.addEventListener("scroll", handleInteraction, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("touchstart", handleInteraction, { passive: true });
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      window.removeEventListener("scroll", handleInteraction);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchstart", handleInteraction);
     };
@@ -42,6 +48,8 @@ export function useAutoHideHeader(timeoutMs = 3000) {
 
   return {
     showHeader,
+    isVisible: showHeader,
+    isAtTop,
     resetTimer,
     headerStyle: {
       transform: showHeader ? "translateY(0)" : "translateY(-100%)",

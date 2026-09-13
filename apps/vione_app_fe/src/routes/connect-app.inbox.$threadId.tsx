@@ -50,6 +50,11 @@ import { VoiceMessagePlayer } from "@/components/business-connect/mobile/inbox/V
 import { VoiceMessageRecorder } from "@/components/business-connect/mobile/inbox/VoiceMessageRecorder";
 import { NotificationPermissionBanner } from "@/components/business-connect/mobile/inbox/NotificationPermissionBanner";
 import { sendExternalNotification } from "@/lib/notification-permissions";
+import { resolveMediaUrl } from "@/lib/api-client";
+import {
+  ZaloTransactionCard,
+  type ZaloTransactionData,
+} from "@/components/business-connect/mobile/ZaloTransactionCard";
 
 export const Route = createFileRoute("/connect-app/inbox/$threadId")({
   head: () => ({
@@ -162,6 +167,7 @@ function formatCallDuration(sec: number): string {
 }
 
 type ParsedContent =
+  | { type: "action_payment"; data: ZaloTransactionData }
   | { type: "image"; url: string; name?: string; caption?: string }
   | { type: "file"; url: string; name: string; size?: number; caption?: string }
   | { type: "voice"; url: string; duration?: number; caption?: string }
@@ -169,6 +175,22 @@ type ParsedContent =
   | { type: "text"; text: string };
 
 function parseMessageContent(body: string): ParsedContent {
+  // Pattern -2: Zalo OA Style Payment Action [action:payment|amount:X|invoice:Y|qr:Z|due:D|desc:S]
+  const payRegex = /\[action:payment\|amount:(\d+)\|invoice:([^|]+)\|qr:([^|]+)(?:\|due:([^|]+))?(?:\|desc:([^\]]*))?\]/i;
+  const payMatch = body.match(payRegex);
+  if (payMatch) {
+    return {
+      type: "action_payment",
+      data: {
+        amount: parseInt(payMatch[1], 10),
+        invoiceNo: payMatch[2],
+        qrUrl: payMatch[3],
+        dueDate: payMatch[4],
+        desc: payMatch[5] ? decodeURIComponent(payMatch[5]) : undefined,
+      },
+    };
+  }
+
   // Pattern -1: call:TYPE|status:STATUS|duration:SECONDS
   const callRegex = /\[call:(audio|video)(?:\|status:(ended|missed|declined))?(?:\|duration:(\d+))?\]/i;
   const callMatch = body.match(callRegex);
@@ -249,6 +271,7 @@ function ThreadPage() {
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<BcDmErrorCode | null>(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Attachment upload & preview states
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
@@ -280,7 +303,8 @@ function ThreadPage() {
       const latest = messages[messages.length - 1];
       if (latest && !latest.fromMe && (typeof document !== "undefined" && document.hidden)) {
         let preview = latest.body;
-        if (preview.startsWith("[image:")) preview = "📷 Đã gửi một hình ảnh";
+        if (preview.startsWith("[action:payment")) preview = "💳 Thông báo giao dịch thanh toán";
+        else if (preview.startsWith("[image:")) preview = "📷 Đã gửi một hình ảnh";
         else if (preview.startsWith("[file:")) preview = "📎 Đã gửi một tệp đính kèm";
         else if (preview.startsWith("[voice:")) preview = "🎙️ Đã gửi một tin nhắn thoại";
         else if (preview.startsWith("[call:")) preview = "📞 Cuộc gọi";
@@ -554,10 +578,11 @@ function ThreadPage() {
           {thread ? (
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div className="relative shrink-0">
-                {thread.avatarUrl ? (
+                {thread.avatarUrl && !avatarError ? (
                   <img
-                    src={thread.avatarUrl}
+                    src={resolveMediaUrl(thread.avatarUrl) ?? thread.avatarUrl}
                     alt={thread.displayName}
+                    onError={() => setAvatarError(true)}
                     className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200 dark:ring-[var(--bc-mobile-border)]"
                   />
                 ) : (
@@ -706,10 +731,11 @@ function ThreadPage() {
                       >
                         {!m.fromMe ? (
                           <div className="relative shrink-0 mt-0.5">
-                            {thread.avatarUrl ? (
+                            {thread.avatarUrl && !avatarError ? (
                               <img
-                                src={thread.avatarUrl}
+                                src={resolveMediaUrl(thread.avatarUrl) ?? thread.avatarUrl}
                                 alt=""
+                                onError={() => setAvatarError(true)}
                                 className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-200 dark:ring-[var(--bc-mobile-border-gold)] shadow-xs"
                               />
                             ) : (
@@ -850,12 +876,16 @@ function ThreadPage() {
 
                                 <div
                                   className={`relative break-words transition-all shadow-xs overflow-hidden ${
-                                    m.fromMe
-                                      ? "rounded-2xl rounded-tr-xs bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_50%,#C29B69_100%)] text-[#1A1206] font-medium shadow-[0_2px_10px_rgba(184,134,11,0.25)] border border-amber-300/40"
-                                      : "rounded-2xl rounded-tl-xs border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131A26] text-slate-900 dark:text-slate-100 shadow-xs"
+                                    content.type === "action_payment"
+                                      ? "rounded-2xl bg-transparent border-0 shadow-none p-0"
+                                      : m.fromMe
+                                        ? "rounded-2xl rounded-tr-xs bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_50%,#C29B69_100%)] text-[#1A1206] font-medium shadow-[0_2px_10px_rgba(184,134,11,0.25)] border border-amber-300/40"
+                                        : "rounded-2xl rounded-tl-xs border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131A26] text-slate-900 dark:text-slate-100 shadow-xs"
                                   }`}
                                 >
-                                  {content.type === "image" ? (
+                                  {content.type === "action_payment" ? (
+                                    <ZaloTransactionCard data={content.data} isFromMe={m.fromMe} />
+                                  ) : content.type === "image" ? (
                                     <div className="space-y-1.5 p-1.5">
                                       <div
                                         onClick={() => setPreviewImageUrl(content.url)}

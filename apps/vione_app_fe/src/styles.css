@@ -312,23 +312,24 @@
    Standardized 3-dominant-color system for Dark, Light, & Contrast.
    ============================================================ */
 .vba-app {
-  --vba-bg: #000000;
-  --vba-bg-2: #050505;
-  --vba-surface: #0A0A0A;
-  --vba-surface-2: #121212;
-  --vba-border: rgba(216, 178, 130, 0.45);
-  --vba-border-soft: rgba(255, 255, 255, 0.15);
-  --vba-border-accent: rgba(216, 178, 130, 0.70);
-  --vba-gold: #D8B282;
-  --vba-gold-2: #F0D5A8;
-  --vba-gold-soft: rgba(216, 178, 130, 0.18);
-  --vba-gold-glow: 0 8px 24px -8px rgba(216, 178, 130, 0.60);
+  --vba-bg: #0B0F19;
+  --vba-bg-2: #080C14;
+  --vba-surface: #111622;
+  --vba-surface-2: #151C2C;
+  --vba-border: rgba(186, 230, 253, 0.15);
+  --vba-border-soft: rgba(255, 255, 255, 0.08);
+  --vba-border-accent: rgba(125, 211, 252, 0.35);
+  --vba-gold: #7DD3FC;
+  --vba-gold-2: #BAE6FD;
+  --vba-gold-soft: rgba(125, 211, 252, 0.12);
+  --vba-gold-glow: 0 6px 20px -6px rgba(125, 211, 252, 0.25);
   --vba-text: #FFFFFF;
   --vba-text-muted: #CBD5E1;
   --vba-text-dim: #94A3B8;
+  --vba-success: #10B981;
   --vba-danger: #EF4444;
 
-  background: #000000;
+  background: #0B0F19;
   color: var(--vba-text);
   min-height: 100dvh;
   font-family: var(--font-sans);
@@ -339,26 +340,28 @@
   .vba-app {
     --vba-gold-glow: none;
     --vba-text-muted: #FFFFFF;
-    --vba-border: #FACC15;
+    --vba-border: #BAE6FD;
   }
 }
 
-/* Light mode tokens for .vba-app — Clean Executive White & Warm Bronze Gold */
+/* Light mode tokens for .vba-app — Clean Executive White & Soft Sky Blue */
 html:not(.dark) .vba-app {
   --vba-bg: #FFFFFF;
   --vba-bg-2: #F8FAFC;
   --vba-surface: #FFFFFF;
   --vba-surface-2: #F1F5F9;
-  --vba-border: rgba(216, 178, 130, 0.35);
-  --vba-border-soft: rgba(15, 23, 42, 0.08);
-  --vba-border-accent: rgba(216, 178, 130, 0.60);
-  --vba-gold: #C5A059;
-  --vba-gold-2: #D8B282;
-  --vba-gold-soft: rgba(197, 160, 89, 0.14);
-  --vba-gold-glow: none;
+  --vba-border: rgba(14, 165, 233, 0.16);
+  --vba-border-soft: rgba(15, 23, 42, 0.06);
+  --vba-border-accent: rgba(14, 165, 233, 0.35);
+  --vba-gold: #0EA5E9;
+  --vba-gold-2: #38BDF8;
+  --vba-gold-soft: rgba(14, 165, 233, 0.08);
+  --vba-gold-glow: 0 4px 12px -4px rgba(14, 165, 233, 0.18);
   --vba-text: #0F172A;
   --vba-text-muted: #475569;
   --vba-text-dim: #64748B;
+  --vba-success: #10B981;
+  --vba-danger: #EF4444;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
   --card: #FFFFFF;
@@ -370,22 +373,22 @@ html:not(.dark) .vba-app {
 html:not(.dark) .vba-card {
   background: #FFFFFF;
   color: #0F172A;
-  border: 1px solid rgba(216, 178, 130, 0.30);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(14, 165, 233, 0.14);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
 }
 
 html:not(.dark) .vba-gold-text {
-  background: linear-gradient(135deg, #C5A059 0%, #9A7B38 100%);
+  background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 html:not(.dark) .vba-gold-grad {
-  background: linear-gradient(135deg, #F5E5C9 0%, #D8B282 50%, #C5A059 100%);
-  color: #0F172A !important;
+  background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+  color: #FFFFFF !important;
   font-weight: 700;
-  box-shadow: 0 2px 10px -2px rgba(197, 160, 89, 0.25);
+  box-shadow: 0 2px 10px -2px rgba(14, 165, 233, 0.25);
 }
 
 /* High-contrast mode tokens for .vba-app — Pure Solid Black, Pure White, & Electric Gold */
@@ -430,27 +433,27 @@ html.hc .vba-gold-grad {
 }
 
 .vba-gold-text {
-  background: linear-gradient(135deg, #F5DEB3 0%, #D8B282 50%, #B8860B 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #BAE6FD 45%, #7DD3FC 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .vba-card {
-  background: linear-gradient(165deg, rgba(13, 22, 35, 0.95) 0%, rgba(8, 14, 23, 0.98) 100%);
+  background: linear-gradient(165deg, rgba(14, 20, 32, 0.95) 0%, rgba(11, 15, 25, 0.98) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #FFFFFF;
-  border: 1px solid rgba(216, 178, 130, 0.28);
+  border: 1px solid rgba(186, 230, 253, 0.15);
   border-radius: 1rem;
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 .vba-gold-grad {
-  background: linear-gradient(135deg, #F0D5A8 0%, #D8B282 50%, #C49B6A 100%);
-  color: #0A111C !important;
-  font-weight: 600;
-  box-shadow: 0 4px 16px -2px rgba(216, 178, 130, 0.35);
+  background: linear-gradient(135deg, #38BDF8 0%, #7DD3FC 100%);
+  color: #071322 !important;
+  font-weight: 700;
+  box-shadow: 0 4px 14px -2px rgba(56, 189, 248, 0.30);
 }
 
 /* High-contrast: flatten gradients to solid, remove glows for clarity */
@@ -703,70 +706,26 @@ html.hc .bc-app {
   --bc-mobile-border-active: #F6E1C3;
 }
 
-.vba-card {
-  background: linear-gradient(165deg, #0E0E0E 0%, #050505 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: #FFFFFF;
-  border: 1px solid rgba(216, 178, 130, 0.45);
-  border-radius: 1rem;
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.7), 0 0 1px rgba(216, 178, 130, 0.35);
-}
-
-.vba-gold-grad {
-  background: linear-gradient(135deg, #FFF3C4 0%, #FEE180 30%, #F5C443 65%, #EDB028 100%);
-  color: #000000 !important;
-  font-weight: 700 !important;
-  box-shadow: 0 4px 16px -2px rgba(245, 196, 67, 0.40);
-}
-
-/* High-contrast: flatten gradients to solid, remove glows for clarity */
-@media (prefers-contrast: more) {
-  .vba-gold-text {
-    background: none;
-    -webkit-text-fill-color: var(--primary);
-    color: var(--primary);
-    filter: none;
-  }
-  .vba-gold-grad {
-    background: var(--primary);
-    box-shadow: none;
-  }
-}
-
-/* Keyboard focus ring for all interactive elements in the member app. */
-.vba-app a:focus-visible,
-.vba-app button:focus-visible,
-.vba-app [role="button"]:focus-visible,
-.vba-app input:focus-visible,
-.vba-app select:focus-visible,
-.vba-app textarea:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 0 4px var(--vba-gold-soft);
-}
-
 .bc-app,
 .dark .bc-app {
   /* ── Business Connect — Translucent Obsidian Dark Glass & Champagne Gold ──────────────────
      Frosted Dark Glass (Đen mờ cao cấp) × Champagne Gold Gradient (Vàng đồng như nút ViOne). */
 
-  /* Backgrounds / surfaces */
-  --bc-bg-deep: #03050A;
-  --bc-bg-primary: #060913;
-  --bc-bg-secondary: #0A0F1D;
-  --bc-surface: rgba(14, 20, 34, 0.85);
-  --bc-surface-elevated: rgba(20, 28, 48, 0.90);
+  /* Backgrounds / surfaces — Matte Frosted Black (Đen mờ cao cấp, loại bỏ ánh đen xanh/navy) */
+  --bc-bg-deep: #050505;
+  --bc-bg-primary: #0A0A0B;
+  --bc-bg-secondary: #121214;
+  --bc-surface: rgba(18, 18, 20, 0.88);
+  --bc-surface-elevated: rgba(26, 26, 28, 0.92);
 
-  --bc-mobile-bg: #060913;
-  --bc-mobile-bg-deep: #03050A;
-  --bc-mobile-surface: rgba(14, 20, 34, 0.85);
-  --bc-mobile-surface-2: rgba(20, 28, 48, 0.90);
-  --bc-mobile-navy: #0A0F1D;
-  --bc-mobile-navy-deep: #04070D;
-  --bc-mobile-app-gradient: linear-gradient(180deg, #070B14 0%, #04070D 100%);
-  --bc-mobile-card-grad: linear-gradient(165deg, rgba(16, 24, 40, 0.85) 0%, rgba(9, 14, 25, 0.90) 100%);
+  --bc-mobile-bg: #0A0A0B;
+  --bc-mobile-bg-deep: #050505;
+  --bc-mobile-surface: rgba(18, 18, 20, 0.88);
+  --bc-mobile-surface-2: rgba(26, 26, 28, 0.92);
+  --bc-mobile-navy: #121214;
+  --bc-mobile-navy-deep: #080809;
+  --bc-mobile-app-gradient: linear-gradient(180deg, #0E0E10 0%, #070708 100%);
+  --bc-mobile-card-grad: linear-gradient(165deg, rgba(24, 24, 27, 0.88) 0%, rgba(14, 14, 16, 0.92) 100%);
 
   /* Text - High luminance white & vibrant champagne gold ViOne, no dim gray */
   --bc-text-primary: #FFFFFF;

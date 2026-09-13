@@ -5,7 +5,7 @@ import { useT, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
-const NAVY = "#050c15";
+const NAVY = "#0A0A0B";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -61,7 +61,7 @@ function OfflineBanner() {
 
   if (!offline) return null;
   return (
-    <div className="sticky top-0 z-40 flex items-center justify-center gap-2 bg-[var(--vba-gold)] px-4 py-1.5 text-[11px] font-semibold text-[#1a1206]">
+    <div className="sticky top-0 z-40 flex items-center justify-center gap-2 bg-[var(--vba-gold)] px-4 py-1.5 text-[11px] font-semibold text-[#071322]">
       <WifiOff className="h-3.5 w-3.5" />
       {t("m.shell.offline")}
     </div>
@@ -139,7 +139,7 @@ function MemberTabBar() {
                 aria-label={t(tab.label)}
                 className="-mt-7 flex flex-col items-center"
               >
-                <span className="vba-gold-grad grid h-14 w-14 place-items-center rounded-2xl text-[#1a1206] shadow-[0_8px_24px_-6px_rgba(232,196,106,0.6)]">
+                <span className="vba-gold-grad grid h-14 w-14 place-items-center rounded-2xl text-[#071322] shadow-[0_8px_24px_-6px_rgba(56,189,248,0.40)]">
                   <Icon className="h-6 w-6" />
                 </span>
               </Link>

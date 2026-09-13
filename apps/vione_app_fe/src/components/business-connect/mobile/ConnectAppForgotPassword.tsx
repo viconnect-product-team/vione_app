@@ -6,7 +6,7 @@ import { AlertCircle, ChevronLeft, Loader2, Mail, MailCheck } from "lucide-react
 import { useT } from "@/lib/i18n";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
-const NAVY = "#050c15";
+const NAVY = "#0A0A0B";
 const GOLD = "#f2b45a";
 
 export type ForgotStatus = "idle" | "loading" | "sent" | "error";

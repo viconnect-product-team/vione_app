@@ -93,7 +93,7 @@ export function CommunityHome({ initialTab }: { initialTab?: CommunityTab } = {}
         }}
       >
         <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
-          <ViOneLogo className="h-5 w-[77px]" />
+          <ViOneLogo className="h-5 w-auto" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
           </p>
@@ -335,7 +335,7 @@ export function getCommunityVisuals(name: string, logoUrl?: string | null, banne
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80",
     ];
-    descFallback = "Mạng lưới 200+ Chủ tịch & CEO Đồng niên Quý Hợi 1983 trực thuộc HanoiBA.";
+    descFallback = "Mạng lưới 200+ Chủ tịch & CEO Doanh Nhân 1983 trực thuộc HanoiBA.";
   } else if (lower.includes("ai") || lower.includes("vietnam") || lower.includes("tech")) {
     defaultBanner = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80";
     defaultAvatar = logoUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80";

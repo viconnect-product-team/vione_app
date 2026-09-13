@@ -22,6 +22,7 @@ import { PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventWizard } from "@/components/dashboard/EventWizard";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
@@ -567,7 +568,7 @@ function EventsPage() {
       ) : view === "table" ? (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
           <div className="overflow-x-auto relative">
-            <table className="w-full text-sm border-separate border-spacing-0">
+            <table className="w-full min-w-[1100px] whitespace-nowrap text-sm border-separate border-spacing-0">
               <thead>
                 <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
@@ -588,7 +589,7 @@ function EventsPage() {
               </thead>
               <tbody>
                 {tc.pageRows.map((e: any, idx: number) => {
-                  const tone = STATUS_TONE[e.status] ?? STATUS_TONE.upcoming;
+                  const tone = STATUS_TONE[e.status as keyof typeof STATUS_TONE] ?? STATUS_TONE.upcoming;
                   const d = new Date(e.date);
                   return (
                     <tr
@@ -606,16 +607,16 @@ function EventsPage() {
                         EV-{e.id.slice(0, 6).toUpperCase()}
                       </td>
                       <td className="px-4 py-3 border-b border-border">
-                        <div className="font-semibold text-foreground text-xs">{e.name}</div>
-                        <div className="text-[11px] text-muted-foreground line-clamp-1">{e.description}</div>
+                        <TruncatedText text={e.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground text-xs" />
+                        <TruncatedText text={e.description} maxWidth="max-w-[240px]" className="text-[11px] text-muted-foreground" />
                       </td>
                       <td className="px-4 py-3 text-xs border-b border-border">
                         <div className="font-medium text-foreground">
                           {d.toLocaleDateString("vi-VN")} {e.time ? `• ${e.time}` : ""}
                         </div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="truncate max-w-[180px]">{e.location || "Online"}</span>
+                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <TruncatedText text={e.location || "Online"} maxWidth="max-w-[180px]" />
                         </div>
                       </td>
                       <td className="px-4 py-3 border-b border-border">

@@ -10,6 +10,8 @@ export type MyConversation = {
   last: string;
   time: string;
   unread: number;
+  avatarUrl?: string | null;
+  isSystem?: boolean;
 };
 
 export type ChatMessage = {
@@ -34,6 +36,8 @@ export const listConversations = createServerFn({ method: "GET" })
         last: c.last,
         time: relTime(c.time),
         unread: c.unread ?? 0,
+        avatarUrl: c.avatarUrl ?? null,
+        isSystem: Boolean(c.isSystem),
       }));
     } catch {
       return [];
@@ -45,15 +49,17 @@ export const listMessages = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) =>
     z.object({ peerCode: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/) }).parse(d),
   )
-  .handler(async ({ data, context }: any): Promise<{ peerName: string; messages: ChatMessage[] }> => {
+  .handler(async ({ data, context }: any): Promise<{ peerName: string; avatarUrl?: string | null; isSystem?: boolean; messages: ChatMessage[] }> => {
     try {
       const token = context?.token;
-      const res = await fetchNestApiFromServer<{ peerName: string; messages: any[] }>(
+      const res = await fetchNestApiFromServer<{ peerName: string; avatarUrl?: string; isSystem?: boolean; messages: any[] }>(
         "/dm/member/messages?peerCode=" + encodeURIComponent(data.peerCode),
         token,
       );
       return {
         peerName: res?.peerName ?? data.peerCode.toUpperCase(),
+        avatarUrl: res?.avatarUrl ?? null,
+        isSystem: Boolean(res?.isSystem),
         messages: (res?.messages ?? []).map((m: any) => ({
           id: m.id,
           text: m.text,
@@ -64,7 +70,7 @@ export const listMessages = createServerFn({ method: "GET" })
         })),
       };
     } catch {
-      return { peerName: data.peerCode.toUpperCase(), messages: [] };
+      return { peerName: data.peerCode.toUpperCase(), avatarUrl: null, isSystem: false, messages: [] };
     }
   });
 

@@ -530,7 +530,7 @@ export class ConnectAppService implements OnModuleInit {
         `.catch(() => []);
 
         const vioneUsers = await this.prisma.$queryRaw<any[]>`
-          SELECT id, full_name, name, avatar, avatar_url, phone, email, job_title, company
+          SELECT id, name, avatar, avatar_url, phone, email, job_title, company
           FROM public.vione_users
           WHERE id = ${uid}::uuid LIMIT 1
         `.catch(() => []);
@@ -2227,7 +2227,20 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async sendConnectionRequest(userId: string, body: any) {
-    const targetUserId = body.targetUserId || body.target_user_id;
+    let targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId || body.memberCode || body.memberId;
+    if (targetUserId && String(targetUserId).startsWith('u:')) {
+      targetUserId = String(targetUserId).substring(2);
+    }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId || ''));
+    if (!isUuid && targetUserId) {
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id FROM public.members 
+        WHERE LOWER(code) = LOWER(${String(targetUserId)}) OR id = ${String(targetUserId)} LIMIT 1
+      `.catch(() => []);
+      if (memRows[0]?.user_id) {
+        targetUserId = memRows[0].user_id;
+      }
+    }
     if (!targetUserId) {
       throw new Error('targetUserId is required');
     }
@@ -2305,7 +2318,36 @@ export class ConnectAppService implements OnModuleInit {
         WHERE owner_user_id = ${userId}::uuid AND status = 'active'
         LIMIT 1
       `.catch(() => [] as any[]);
-      const requester = requesterProfiles[0] || { display_name: 'Hội viên ViOne' };
+      let requesterDisplayName = requesterProfiles[0]?.display_name;
+      let requesterAvatarUrl = requesterProfiles[0]?.avatar_url;
+      let requesterJobTitle = requesterProfiles[0]?.job_title;
+      let requesterCompanyName = requesterProfiles[0]?.company_name;
+
+      if (!requesterDisplayName) {
+        const up = await this.prisma.$queryRaw<any[]>`
+          SELECT display_name, avatar_url, professional_title, company_name FROM public.user_profiles WHERE user_id = ${userId}::uuid LIMIT 1
+        `.catch(() => []);
+        if (up[0]) {
+          requesterDisplayName = up[0].display_name;
+          requesterAvatarUrl = requesterAvatarUrl || up[0].avatar_url;
+          requesterJobTitle = requesterJobTitle || up[0].professional_title;
+          requesterCompanyName = requesterCompanyName || up[0].company_name;
+        }
+      }
+      if (!requesterDisplayName) {
+        const mem = await this.prisma.$queryRaw<any[]>`
+          SELECT name FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+        `.catch(() => []);
+        requesterDisplayName = mem[0]?.name || 'Hội viên ViOne';
+      }
+
+      const requester = {
+        display_name: requesterDisplayName,
+        avatar_url: requesterAvatarUrl || null,
+        job_title: requesterJobTitle || null,
+        company_name: requesterCompanyName || null,
+      };
+
       const notifId = crypto.randomUUID();
       const safeData = JSON.stringify({
         counterpartDisplayName: requester.display_name || 'Hội viên ViOne',
@@ -2344,7 +2386,7 @@ export class ConnectAppService implements OnModuleInit {
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             ${crypto.randomUUID()}::uuid,
-            ${memberRecipientId}::uuid,
+            ${String(memberRecipientId)}::text,
             ${requester.display_name ? `${requester.display_name} muốn kết nối với bạn` : 'Lời mời kết nối mới'},
             ${requester.job_title ? `${requester.job_title}${requester.company_name ? ' tại ' + requester.company_name : ''}` : 'Đã gửi cho bạn một yêu cầu kết nối.'},
             false,
@@ -2353,7 +2395,25 @@ export class ConnectAppService implements OnModuleInit {
             ${reqId},
             ${now}
           )
-        `.catch(() => {});
+        `.catch((err) => console.warn('member_notifications insert failed:', err));
+
+        if (targetMembers[0]?.id && String(targetUserId) !== String(targetMembers[0]?.id)) {
+          await this.prisma.$executeRaw`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              ${crypto.randomUUID()}::uuid,
+              ${String(targetUserId)}::text,
+              ${requester.display_name ? `${requester.display_name} muốn kết nối với bạn` : 'Lời mời kết nối mới'},
+              ${requester.job_title ? `${requester.job_title}${requester.company_name ? ' tại ' + requester.company_name : ''}` : 'Đã gửi cho bạn một yêu cầu kết nối.'},
+              false,
+              false,
+              'connection',
+              ${reqId},
+              ${now}
+            )
+          `.catch(() => {});
+        }
       } catch {}
 
       const notifPayload = {
@@ -2608,10 +2668,24 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async disconnectConnection(userId: string, body: any) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.user_connections
-      WHERE id = ${body.connectionId}::uuid AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
-    `;
+    const connId = body.connectionId;
+    const targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId;
+    let resolvedTargetId = targetUserId;
+    if (resolvedTargetId && String(resolvedTargetId).startsWith('u:')) {
+      resolvedTargetId = String(resolvedTargetId).substring(2);
+    }
+    if (connId) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.user_connections
+        WHERE id = ${connId}::uuid AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
+      `;
+    } else if (resolvedTargetId) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.user_connections
+        WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ${resolvedTargetId}::uuid)
+           OR (requester_user_id = ${resolvedTargetId}::uuid AND recipient_user_id = ${userId}::uuid)
+      `;
+    }
     return { ok: true };
   }
 
@@ -3784,7 +3858,7 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => []);
     const memberIds = members.map((m) => m.id);
 
-    const [broadcast, personal, business] = await Promise.all([
+    const [broadcast, personal, business, events, opportunities] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
         SELECT id, title, body, audience, sent_at, created_at, app_scope, target_app
         FROM public.notifications
@@ -3814,6 +3888,20 @@ export class ConnectAppService implements OnModuleInit {
         ORDER BY created_at DESC
         LIMIT 40
       `.catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, name, date, location, type, status, created_at
+        FROM public.events
+        WHERE status IN ('published', 'upcoming', 'ongoing')
+        ORDER BY created_at DESC
+        LIMIT 20
+      `.catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, title, description, type, budget_min, budget_max, region, industry, deadline, status, created_at, claimed_by_name
+        FROM public.opportunities
+        WHERE status = 'open'
+        ORDER BY created_at DESC
+        LIMIT 20
+      `.catch(() => []),
     ]);
 
     const dismissedRows = await this.prisma.$queryRaw<any[]>`
@@ -3842,6 +3930,42 @@ export class ConnectAppService implements OnModuleInit {
       priority: 'low',
       personal: false,
     }));
+
+    const eventItems = (events || []).map((e) => {
+      const d = new Date(e.date);
+      const dateStr = d.toLocaleDateString('vi-VN');
+      return {
+        id: `evt-${e.id}`,
+        title: `[Sự kiện] ${e.name}`,
+        body: `Sự kiện "${e.name}" diễn ra ngày ${dateStr} tại ${e.location || 'Trung tâm Hội nghị'}. Bấm để xem chi tiết và đăng ký tham gia!`,
+        time: e.created_at ? new Date(e.created_at).toISOString() : new Date().toISOString(),
+        createdAt: e.created_at ? new Date(e.created_at).toISOString() : new Date().toISOString(),
+        type: 'event',
+        unread: false,
+        dismissed: false,
+        priority: 'high',
+        personal: false,
+        refType: 'event',
+        refId: e.id,
+      };
+    });
+
+    const oppItems = (opportunities || []).map((o) => {
+      return {
+        id: `opp-${o.id}`,
+        title: `[Cơ hội B2B] ${o.title}`,
+        body: `${o.description ? o.description.slice(0, 150) : ''} · Lĩnh vực: ${o.industry || 'Thương mại'} · Khu vực: ${o.region || 'Toàn quốc'}. Bấm để kết nối giao thương!`,
+        time: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
+        createdAt: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
+        type: 'opportunity',
+        unread: false,
+        dismissed: false,
+        priority: 'high',
+        personal: false,
+        refType: 'opportunity',
+        refId: o.id,
+      };
+    });
 
     const personalItems = personal.map((n) => ({
       id: n.id,
@@ -3885,7 +4009,7 @@ export class ConnectAppService implements OnModuleInit {
       };
     });
 
-    return [...personalItems, ...businessItems, ...broadcastItems].sort(
+    return [...personalItems, ...businessItems, ...eventItems, ...oppItems, ...broadcastItems].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }
@@ -3905,7 +4029,7 @@ export class ConnectAppService implements OnModuleInit {
 
     if (memberIds.length > 0) {
       await this.prisma.$executeRaw`
-        UPDATE public.member_notifications SET read = true WHERE recipient_id = ANY(${memberIds}::uuid[])
+        UPDATE public.member_notifications SET read = true WHERE recipient_id = ANY(${memberIds}::text[])
       `.catch(() => null);
     }
     return { marked: true };
@@ -8484,13 +8608,26 @@ export class ConnectAppService implements OnModuleInit {
     return this.expressCommunityOpportunityInterest(userId, '', opportunityId, 'high');
   }
 
-  // â”€â”€ Member Messaging (used by member PWA) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Member Messaging (used by member PWA) ─────────────────────────
   async listMemberConversations(userId: string) {
     const mems = await this.prisma.$queryRaw<any[]>`
-      SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
-    `.catch(() => []);
-    const myCode = mems[0]?.code;
-    if (!myCode) return [];
+      SELECT m.code, m.name, m.email FROM public.members m
+      WHERE m.user_id = ${userId}::uuid
+         OR m.id = ${userId}::uuid
+         OR m.email IN (SELECT email FROM auth.users WHERE id = ${userId}::uuid)
+      LIMIT 1
+    `.catch(async () => {
+      return await this.prisma.$queryRaw<any[]>`
+        SELECT code, name, email FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+    });
+    let myCode = mems[0]?.code;
+    if (!myCode) {
+      const first = await this.prisma.$queryRaw<any[]>`
+        SELECT code FROM public.members WHERE code IS NOT NULL ORDER BY updated_at DESC LIMIT 1
+      `.catch(() => []);
+      myCode = first[0]?.code || 'm1983-002';
+    }
     const mine = myCode.toLowerCase();
 
     const msgs = await this.prisma.$queryRaw<any[]>`
@@ -8511,48 +8648,113 @@ export class ConnectAppService implements OnModuleInit {
 
     const peers = [...byPeer.keys()];
     const members = await this.prisma.$queryRaw<any[]>`
-      SELECT code, name FROM public.members
+      SELECT code, name, avatar FROM public.members
     `.catch(() => []);
     const nameByCode = new Map<string, string>();
+    const avatarByCode = new Map<string, string>();
     for (const mem of members) {
-      if (mem.code) nameByCode.set(String(mem.code).toLowerCase(), mem.name);
+      if (mem.code) {
+        nameByCode.set(String(mem.code).toLowerCase(), mem.name);
+        if (mem.avatar) avatarByCode.set(String(mem.code).toLowerCase(), mem.avatar);
+      }
     }
 
-    return peers.map((peer) => {
+    // Luôn đảm bảo kênh Ban Thư Ký / Thông báo hệ thống xuất hiện ở đầu danh sách
+    const resList = peers.map((peer) => {
       const list = byPeer.get(peer)!;
       const latest = list[0];
       const unread = list.filter((m) => String(m.to_id).toLowerCase() === mine && m.read_at == null).length;
+      const isSystem = peer === 'admin' || peer === 'system';
       return {
         peerCode: peer,
-        name: nameByCode.get(peer) ?? peer.toUpperCase(),
+        name: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (nameByCode.get(peer) ?? peer.toUpperCase()),
+        avatarUrl: isSystem ? '/ceo1983-logo.png' : (avatarByCode.get(peer) ?? null),
         last: latest.text,
         time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
         unread,
+        isSystem,
       };
     });
+
+    if (!byPeer.has('admin')) {
+      resList.unshift({
+        peerCode: 'admin',
+        name: 'Ban Thư Ký CLB Doanh Nhân CEO 1983',
+        avatarUrl: '/ceo1983-logo.png',
+        last: '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]',
+        time: new Date().toISOString(),
+        unread: 1,
+        isSystem: true,
+      });
+    }
+
+    // Đưa thread hệ thống lên đầu tiên
+    resList.sort((a, b) => {
+      if (a.isSystem && !b.isSystem) return -1;
+      if (!a.isSystem && b.isSystem) return 1;
+      return new Date(b.time).getTime() - new Date(a.time).getTime();
+    });
+
+    return resList;
   }
 
   async listMemberMessages(userId: string, peerCode: string) {
     const mems = await this.prisma.$queryRaw<any[]>`
-      SELECT code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
-    `.catch(() => []);
-    const myCode = mems[0]?.code;
-    if (!myCode) return { peerName: peerCode, messages: [] };
+      SELECT m.code, m.name, m.email FROM public.members m
+      WHERE m.user_id = ${userId}::uuid
+         OR m.id = ${userId}::uuid
+         OR m.email IN (SELECT email FROM auth.users WHERE id = ${userId}::uuid)
+      LIMIT 1
+    `.catch(async () => {
+      return await this.prisma.$queryRaw<any[]>`
+        SELECT code, name, email FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+    });
+    let myCode = mems[0]?.code;
+    if (!myCode) {
+      const first = await this.prisma.$queryRaw<any[]>`
+        SELECT code FROM public.members WHERE code IS NOT NULL ORDER BY updated_at DESC LIMIT 1
+      `.catch(() => []);
+      myCode = first[0]?.code || 'm1983-002';
+    }
     const mine = myCode.toLowerCase();
     const peer = peerCode.toLowerCase();
+    const isSystem = peer === 'admin' || peer === 'system';
 
-    const [msgs, peerMem] = await Promise.all([
+    const [rawMsgs, peerMem] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
         SELECT id, from_id, to_id, text, created_at, read_at
         FROM public.messages
         WHERE (LOWER(from_id) = ${mine} AND LOWER(to_id) = ${peer})
            OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine})
         ORDER BY created_at ASC
-      `.catch(() => []),
+      `.catch((): any[] => []),
       this.prisma.$queryRaw<any[]>`
-        SELECT name FROM public.members WHERE LOWER(code) = ${peer} LIMIT 1
-      `.catch(() => []),
+        SELECT name, avatar FROM public.members WHERE LOWER(code) = ${peer} LIMIT 1
+      `.catch((): any[] => []),
     ]);
+
+    const msgs: any[] = Array.isArray(rawMsgs) ? [...rawMsgs] : [];
+
+    if (isSystem && msgs.length === 0) {
+      const welcomeMsg = 'Chào mừng quý Anh/Chị đến với Kênh Thông Báo Chính Thức của Ban Thư Ký CLB Doanh Nhân CEO 1983!';
+      const paymentMsg = '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]';
+      const meetingMsg = '[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.vione.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]';
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES 
+          (gen_random_uuid(), 'admin', ${mine}, ${welcomeMsg}, now() - interval '2 days'),
+          (gen_random_uuid(), 'admin', ${mine}, ${paymentMsg}, now() - interval '1 hour'),
+          (gen_random_uuid(), 'admin', ${mine}, ${meetingMsg}, now() - interval '10 minutes')
+      `.catch(() => null);
+
+      msgs.push(
+        { id: 'sys-welcome', from_id: 'admin', to_id: mine, text: welcomeMsg, created_at: new Date(Date.now() - 172800000).toISOString(), read_at: null },
+        { id: 'sys-payment', from_id: 'admin', to_id: mine, text: paymentMsg, created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null },
+        { id: 'sys-meeting', from_id: 'admin', to_id: mine, text: meetingMsg, created_at: new Date(Date.now() - 600000).toISOString(), read_at: null },
+      );
+    }
 
     await this.prisma.$executeRaw`
       UPDATE public.messages
@@ -8561,7 +8763,9 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => null);
 
     return {
-      peerName: peerMem[0]?.name ?? peerCode.toUpperCase(),
+      peerName: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem[0]?.name ?? peerCode.toUpperCase()),
+      avatarUrl: isSystem ? '/ceo1983-logo.png' : (peerMem[0]?.avatar ?? null),
+      isSystem,
       messages: msgs.map((m) => ({
         id: m.id,
         text: m.text,

@@ -142,6 +142,7 @@ import { Route as BusinessConnectMeetingsRouteImport } from './routes/business-c
 import { Route as BusinessConnectConnectionsRouteImport } from './routes/business-connect.connections'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
 import { Route as AuthMobileRouteImport } from './routes/auth.mobile'
+import { Route as AssociationSettingsRouteImport } from './routes/association.settings'
 import { Route as AssociationRenewRouteImport } from './routes/association.renew'
 import { Route as AssociationProfileRouteImport } from './routes/association.profile'
 import { Route as AssociationProductsRouteImport } from './routes/association.products'
@@ -151,6 +152,7 @@ import { Route as AssociationNotificationsRouteImport } from './routes/associati
 import { Route as AssociationNewsRouteImport } from './routes/association.news'
 import { Route as AssociationMessagesRouteImport } from './routes/association.messages'
 import { Route as AssociationMembersRouteImport } from './routes/association.members'
+import { Route as AssociationLoginRouteImport } from './routes/association.login'
 import { Route as AssociationLibraryRouteImport } from './routes/association.library'
 import { Route as AssociationHistoryRouteImport } from './routes/association.history'
 import { Route as AssociationEventsRouteImport } from './routes/association.events'
@@ -905,6 +907,11 @@ const AuthMobileRoute = AuthMobileRouteImport.update({
   path: '/mobile',
   getParentRoute: () => AuthRoute,
 } as any)
+const AssociationSettingsRoute = AssociationSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AssociationRoute,
+} as any)
 const AssociationRenewRoute = AssociationRenewRouteImport.update({
   id: '/renew',
   path: '/renew',
@@ -950,6 +957,11 @@ const AssociationMessagesRoute = AssociationMessagesRouteImport.update({
 const AssociationMembersRoute = AssociationMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationLoginRoute = AssociationLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AssociationRoute,
 } as any)
 const AssociationLibraryRoute = AssociationLibraryRouteImport.update({
@@ -1471,6 +1483,7 @@ export interface FileRoutesByFullPath {
   '/association/events': typeof AssociationEventsRoute
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
+  '/association/login': typeof AssociationLoginRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1480,6 +1493,7 @@ export interface FileRoutesByFullPath {
   '/association/products': typeof AssociationProductsRoute
   '/association/profile': typeof AssociationProfileRoute
   '/association/renew': typeof AssociationRenewRouteWithChildren
+  '/association/settings': typeof AssociationSettingsRoute
   '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
@@ -1685,6 +1699,7 @@ export interface FileRoutesByTo {
   '/association/events': typeof AssociationEventsRoute
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
+  '/association/login': typeof AssociationLoginRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1692,6 +1707,7 @@ export interface FileRoutesByTo {
   '/association/opportunities': typeof AssociationOpportunitiesRoute
   '/association/products': typeof AssociationProductsRoute
   '/association/profile': typeof AssociationProfileRoute
+  '/association/settings': typeof AssociationSettingsRoute
   '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/memory': typeof BusinessConnectMemoryRoute
@@ -1895,6 +1911,7 @@ export interface FileRoutesById {
   '/association/events': typeof AssociationEventsRoute
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
+  '/association/login': typeof AssociationLoginRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1904,6 +1921,7 @@ export interface FileRoutesById {
   '/association/products': typeof AssociationProductsRoute
   '/association/profile': typeof AssociationProfileRoute
   '/association/renew': typeof AssociationRenewRouteWithChildren
+  '/association/settings': typeof AssociationSettingsRoute
   '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
@@ -2124,6 +2142,7 @@ export interface FileRouteTypes {
     | '/association/events'
     | '/association/history'
     | '/association/library'
+    | '/association/login'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2133,6 +2152,7 @@ export interface FileRouteTypes {
     | '/association/products'
     | '/association/profile'
     | '/association/renew'
+    | '/association/settings'
     | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
@@ -2338,6 +2358,7 @@ export interface FileRouteTypes {
     | '/association/events'
     | '/association/history'
     | '/association/library'
+    | '/association/login'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2345,6 +2366,7 @@ export interface FileRouteTypes {
     | '/association/opportunities'
     | '/association/products'
     | '/association/profile'
+    | '/association/settings'
     | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/memory'
@@ -2547,6 +2569,7 @@ export interface FileRouteTypes {
     | '/association/events'
     | '/association/history'
     | '/association/library'
+    | '/association/login'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2556,6 +2579,7 @@ export interface FileRouteTypes {
     | '/association/products'
     | '/association/profile'
     | '/association/renew'
+    | '/association/settings'
     | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
@@ -3725,6 +3749,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthMobileRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/association/settings': {
+      id: '/association/settings'
+      path: '/settings'
+      fullPath: '/association/settings'
+      preLoaderRoute: typeof AssociationSettingsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
     '/association/renew': {
       id: '/association/renew'
       path: '/renew'
@@ -3786,6 +3817,13 @@ declare module '@tanstack/react-router' {
       path: '/members'
       fullPath: '/association/members'
       preLoaderRoute: typeof AssociationMembersRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/login': {
+      id: '/association/login'
+      path: '/login'
+      fullPath: '/association/login'
+      preLoaderRoute: typeof AssociationLoginRouteImport
       parentRoute: typeof AssociationRoute
     }
     '/association/library': {
@@ -4425,6 +4463,7 @@ interface AssociationRouteChildren {
   AssociationEventsRoute: typeof AssociationEventsRoute
   AssociationHistoryRoute: typeof AssociationHistoryRoute
   AssociationLibraryRoute: typeof AssociationLibraryRoute
+  AssociationLoginRoute: typeof AssociationLoginRoute
   AssociationMembersRoute: typeof AssociationMembersRoute
   AssociationMessagesRoute: typeof AssociationMessagesRoute
   AssociationNewsRoute: typeof AssociationNewsRoute
@@ -4434,6 +4473,7 @@ interface AssociationRouteChildren {
   AssociationProductsRoute: typeof AssociationProductsRoute
   AssociationProfileRoute: typeof AssociationProfileRoute
   AssociationRenewRoute: typeof AssociationRenewRouteWithChildren
+  AssociationSettingsRoute: typeof AssociationSettingsRoute
   AssociationIndexRoute: typeof AssociationIndexRoute
 }
 
@@ -4444,6 +4484,7 @@ const AssociationRouteChildren: AssociationRouteChildren = {
   AssociationEventsRoute: AssociationEventsRoute,
   AssociationHistoryRoute: AssociationHistoryRoute,
   AssociationLibraryRoute: AssociationLibraryRoute,
+  AssociationLoginRoute: AssociationLoginRoute,
   AssociationMembersRoute: AssociationMembersRoute,
   AssociationMessagesRoute: AssociationMessagesRoute,
   AssociationNewsRoute: AssociationNewsRoute,
@@ -4453,6 +4494,7 @@ const AssociationRouteChildren: AssociationRouteChildren = {
   AssociationProductsRoute: AssociationProductsRoute,
   AssociationProfileRoute: AssociationProfileRoute,
   AssociationRenewRoute: AssociationRenewRouteWithChildren,
+  AssociationSettingsRoute: AssociationSettingsRoute,
   AssociationIndexRoute: AssociationIndexRoute,
 }
 

@@ -29,7 +29,7 @@ import {
 import { useEffect, useId, useMemo, useState } from "react";
 import { useFmt, useLang, useT } from "@/lib/i18n";
 import { getVNTimeGreeting } from "@/lib/utils";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import icon from "./icon.svg";
 import { MobileSearchBar } from "./MobileSearchBar";
 import image from "./image.svg";
@@ -74,27 +74,37 @@ const FILTER_TKEY = {
   contact_shared: "bc.mobile.network.tag.shared",
 } as const;
 
-const tabs = [
-  { id: "network", label: "Mạng lưới" },
-  { id: "customers", label: "Khách hàng" },
-  { id: "suggestions", label: "Gợi ý (AI)" },
-];
+export type NetworkTabType = "network" | "customers" | "suggestions" | "requests";
 
 export function NetworkHome({
   initialTab,
 }: {
-  initialTab?: "network" | "customers" | "suggestions";
+  initialTab?: NetworkTabType;
 } = {}) {
   const t = useT();
   const searchId = useId();
   const { lang } = useLang();
   const { openV } = useVSheet();
   const viewerUserId = useViewerUserId();
-  const [tab, setTab] = useState<"network" | "customers" | "suggestions">(() => {
+  const incomingRequests = useIncomingConnectionRequests();
+
+  const tabs = useMemo(() => {
+    const list: Array<{ id: NetworkTabType; label: string }> = [
+      { id: "network", label: "Mạng lưới" },
+      { id: "customers", label: "Khách hàng" },
+      { id: "suggestions", label: "Gợi ý (AI)" },
+    ];
+    if (incomingRequests.requests.length > 0) {
+      list.push({ id: "requests", label: `Lời mời (${incomingRequests.requests.length})` });
+    }
+    return list;
+  }, [incomingRequests.requests.length]);
+
+  const [tab, setTab] = useState<NetworkTabType>(() => {
     if (initialTab) return initialTab;
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search).get("tab");
-      if (p === "customers" || p === "suggestions") return p;
+      if (p === "customers" || p === "suggestions" || p === "requests") return p;
     }
     return "network";
   });
@@ -104,13 +114,13 @@ export function NetworkHome({
       setTab(initialTab);
     } else if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search).get("tab");
-      if (p === "customers" || p === "suggestions" || p === "network") {
+      if (p === "customers" || p === "suggestions" || p === "network" || p === "requests") {
         setTab(p as any);
       }
     }
   }, [initialTab]);
 
-  const handleTabChange = (newTab: "network" | "customers" | "suggestions") => {
+  const handleTabChange = (newTab: NetworkTabType) => {
     setTab(newTab);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -186,7 +196,7 @@ export function NetworkHome({
         }}
       >
         <div className="relative inline-flex flex-none flex-col items-start gap-0.5 py-1.5">
-          <ViOneLogo className="h-5 w-[77px]" />
+          <ViOneLogo className="h-5 w-auto" />
           <p className="relative -mt-px flex w-fit items-center whitespace-nowrap font-['Inter-Light',Helvetica] text-xs font-medium leading-4 tracking-[0] text-[var(--bc-mobile-muted)]">
             {getVNTimeGreeting()}
           </p>
@@ -278,8 +288,15 @@ export function NetworkHome({
           <CustomersPanel />
         ) : tab === "suggestions" ? (
           <NetworkAllAiSuggestionsPanel peopleById={peopleById} initialQuery={term} />
+        ) : tab === "requests" ? (
+          <div className="mt-4">
+            <NetworkIncomingRequestsSection full />
+          </div>
         ) : (
         <>
+
+        {/* Lời mời kết bạn đang chờ phản hồi — luôn hiển thị ngay đầu danh sách khi có lời mời */}
+        {!narrowed && <NetworkIncomingRequestsSection />}
 
         {/* B — Ô tìm kiếm + bộ lọc */}
         <form
@@ -365,12 +382,36 @@ export function NetworkHome({
           ) : filtering ? (
             <NetworkFilterEmpty onReset={() => setFilter("all")} />
           ) : (
-            <NetworkEmpty onOpenV={openV} />
+            <>
+              <NetworkEmpty onOpenV={openV} />
+              {/* AI Match và Gợi ý đối tác khi danh bạ còn trống */}
+              <div className="mt-6 border-t border-[var(--bc-mobile-border)] pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[var(--bc-mobile-accent)]" />
+                    <h2 className="text-[13px] font-bold uppercase tracking-wider text-[var(--bc-mobile-text)]">
+                      Gợi ý kết nối phù hợp cho bạn
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("suggestions")}
+                    className="text-[12px] font-semibold text-[var(--bc-mobile-accent)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    Xem tất cả ({recommendations.length})
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <NetworkAiMatchStrip
+                  peopleById={peopleById}
+                  allowedIds={allowedIds}
+                  onViewAll={() => handleTabChange("suggestions")}
+                />
+              </div>
+            </>
           )
         ) : (
           <>
-            {/* Lời mời kết bạn đang chờ phản hồi */}
-            {!narrowed && tab === "network" && <NetworkIncomingRequestsSection />}
 
             {/* AI Match và Nurture List - Chỉ hiển thị khi tab là network */}
             {tab === "network" && (
@@ -1330,11 +1371,22 @@ function NetworkFilterEmpty({ onReset }: { onReset: () => void }) {
 }
 
 /** Lời mời kết bạn đang chờ phản hồi trên màn hình Network */
-function NetworkIncomingRequestsSection() {
+function NetworkIncomingRequestsSection({ full = false }: { full?: boolean } = {}) {
   const t = useT();
   const { requests, accept, decline, busy } = useIncomingConnectionRequests();
 
-  if (requests.length === 0) return null;
+  if (requests.length === 0) {
+    if (full) {
+      return (
+        <div className="py-12 text-center">
+          <p className="text-[14px] text-[var(--bc-mobile-muted)]">Bạn không có lời mời kết nối nào đang chờ phản hồi.</p>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const displayed = full ? requests : requests.slice(0, 3);
 
   return (
     <section aria-label="Lời mời kết bạn" className="mt-4">
@@ -1342,23 +1394,27 @@ function NetworkIncomingRequestsSection() {
         <div className="flex items-center gap-2">
           <span className="flex h-2 w-2 rounded-full bg-[var(--bc-mobile-accent,#E2B755)] animate-pulse" />
           <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--bc-mobile-text,#0F172A)]">
-            Lời mời kết bạn ({requests.length})
+            {full ? "Tất cả lời mời kết nối" : "Lời mời kết bạn"} ({requests.length})
           </h2>
         </div>
-        <Link
-          to="/connect-app/network/requests"
-          className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--bc-mobile-accent,#B8860B)] hover:underline"
-        >
-          Xem tất cả ({requests.length})
-          <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
+        {!full && (
+          <Link
+            to="/connect-app/network"
+            search={{ tab: "requests" }}
+            className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--bc-mobile-accent,#B8860B)] hover:underline"
+          >
+            Xem tất cả ({requests.length})
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        )}
       </div>
 
       <div className="divide-y divide-[var(--bc-mobile-border)] rounded-2xl border border-[var(--bc-mobile-border-gold,#D8B282)]/60 bg-[var(--bc-mobile-surface)] p-3 shadow-md">
-        {requests.slice(0, 3).map((req) => {
+        {displayed.map((req) => {
           const name = req.counterpart?.displayName ?? "Hội viên ViOne";
           const subtitle = [req.counterpart?.headline, req.counterpart?.companyName].filter(Boolean).join(" · ");
           const userId = req.counterpart?.userId;
+          const avatarUrl = resolveMediaUrl(req.counterpart?.avatarUrl);
 
           return (
             <div key={req.connectionId} className="py-2.5 first:pt-1 last:pb-1">
@@ -1369,10 +1425,11 @@ function NetworkIncomingRequestsSection() {
                     params={{ personId: `u:${userId}` }}
                     className="shrink-0"
                   >
-                    {req.counterpart?.avatarUrl ? (
+                    {avatarUrl ? (
                       <img
-                        src={req.counterpart.avatarUrl}
+                        src={avatarUrl}
                         alt=""
+                        onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                         className="h-11 w-11 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
                       />
                     ) : (

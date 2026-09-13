@@ -67,6 +67,7 @@
 | **Quyền lợi Hội viên (`/benefits`) hiển thị 0 dữ liệu & lỗi lưu**. | Trang gọi `useServerFn` với `supabaseAdmin`, nhưng backend remote Supabase không cấp `SUPABASE_SERVICE_ROLE_KEY` tại frontend runtime. | Bổ sung bộ API CRUD quản trị chuyên dụng trên NestJS backend: `GET/POST/PUT/DELETE /api/members/benefits/admin` truy vấn trực tiếp bảng `public.association_benefits` qua Prisma. Frontend `/benefits` chuyển hoàn toàn sang `fetchNestApi`. | Tránh dùng `useServerFn` phụ thuộc Supabase service role key trực tiếp trên frontend; dùng NestJS API controller bảo mật bằng JWT. |
 | **Business Connect Landing V2 - V7 Creative Animation & Theme Sync**. | Cần hỗ trợ 7 phiên bản landing nghệ thuật với hiệu ứng chuyển section phức tạp (Lật sách 3D, Panel Drop Bounce Comic, Wipe sương mù kính mưa, Glitch Snap Cyber, Cửa đá Ai Cập, Bong bóng nổ scale 100vw). | Xây dựng kiến trúc cuộn nâng cao bằng Framer Motion (`useScroll`, `useTransform`, `perspective: 1000px`, `clip-path: inset()`, `motion.div`), kết hợp 3 theme mode riêng cho từng version, thay thế rừng chữ bằng icon động/GIF tương tác và tooltip/popover. | Tuân thủ nghiêm ngặt quy tắc Visual thay thế Text và cấu trúc Advanced Scroll Architecture cho landing page tương tác cao. |
 | **Đồng bộ Biểu quyết CRM với ViOne App & Hiệp hội App (Multi-App Voting Sync)** | CRM tạo biểu quyết nhưng không phân phối thông báo đến người liên quan, không phân định được nguồn bỏ phiếu từ app nào, và khi kết thúc không tự phát thông báo kết quả. | 1) Thêm cột `source_app VARCHAR(50) DEFAULT 'vione_app'` vào `public.poll_votes`. 2) Bổ sung logic phân phối thông báo theo `targetAudience` (`all`, `members`, `non_members`) tới `public.business_notifications` và `public.member_notifications` khi tạo poll. 3) Lưu nguồn bỏ phiếu (`'vione_app'`, `'association_app'`, `'crm'`) và tính toán tỷ lệ kênh tham gia thời gian thực. 4) Bổ sung API `POST /api/voting/polls/:id/close` tự động xác định Winner 🏆 và phát thông báo kết quả hoàn tất kèm breakdown tới người dùng trên cả 3 nền tảng. | Định nghĩa rõ ràng luồng tương tác 3 nền tảng và luôn lưu metadata nhận diện kênh (`source_app`) để kiểm toán và phân tích đa kênh. |
+| **Tin nhắn Hệ thống, Thông báo Giao dịch Zalo VietQR & Branding CEO 1983** | 1) Chữ O logo ViOne bị hở đáy. 2) Tagline cũ còn sót chữ "kết nối đồng niên". 3) Nút thông báo còn chữ cồng kềnh. 4) Thiếu kênh tin nhắn hệ thống ghim trên cùng. 5) Cần thẻ giao dịch Zalo OA đồng bộ cho ViOne & Hiệp hội. 6) Lịch sử sự kiện hội viên hiển thị rỗng. 7) Logo hiệp hội bị hỏng URL. 8) Bấm nút "Liên hệ" nhảy sang tin nhắn rỗng. | 1) Bổ sung bridge path đáy chữ O trong `ViOneLogo.tsx`. 2) Xóa sạch slogan "đồng niên", đổi sang "Nâng tầm giá trị • Tiên phong kết nối". 3) Đổi nút thông báo thành icon tròn `CheckCheck` và `EyeOff`. 4) Bổ sung kênh admin "Ban Thư Ký CLB Doanh Nhân CEO 1983" ghim trên cùng với auto-seed tin nhắn thông báo. 5) Xây dựng `ZaloTransactionCard` tích hợp VietQR, tải ảnh QR, copy STK cho cả ViOne và Hiệp hội. 6) Cập nhật query sự kiện khớp code/email/name và seed đăng ký sự kiện. 7) Trỏ logo về `/ceo1983-logo.png` kèm fallback. 8) Tạo `AssociationContactSheet` mở thông tin hotline/email/địa chỉ khi bấm "Liên hệ". | Luôn bảo đảm dữ liệu hệ thống (admin channel, event registrations) có fallback tự phục hồi, kiểm tra kĩ đường dẫn asset cục bộ, và thiết kế thẻ thông báo giao dịch tương tác chuẩn ngân hàng. |
 
 
 
@@ -403,8 +404,329 @@ All 4 Business Connect landing page variants have been elevated to international
   - Tự động phát thông báo tới `business_notifications` và `member_notifications` dựa trên `targetAudience`.
   - Endpoint `POST /api/voting/polls/:id/close` xác định Winner 🏆 và phát thông báo kết thúc kèm breakdown tỷ lệ tham gia theo kênh về cả 3 ứng dụng.
 
+## 20. B2B SaaS Landing Pages Master Suite (V2 - V7 Advanced Architecture)
 
+### 20.1. Lưu Trữ Bộ Siêu Prompt Master
+- **Tập tin chuẩn hóa**: `document/BUSINESS_CONNECT_LANDING_PROMPT_SUITE.md` lưu trữ toàn văn Phần 1 (Khung xương kiến trúc & nội dung gốc cố định 100%) và Phần 2 (7 phiên bản chuyên biệt) để sẵn sàng sử dụng cho các AI Coding Agent.
 
+### 20.2. Chuẩn Hóa Cấu Trúc Background 3 Lớp Bắt Buộc (3-Layer Background Rule)
+Tất cả các trang từ V2 đến V7 đều tuân thủ cấu trúc 3 layer tách biệt:
+1. **Layer 0 (Đáy)**: Ảnh chụp thực tế (Real Image) độ phân giải cao từ Unsplash, `z-index` thấp nhất:
+   - V2: Thư viện di sản cổ kính / giấy da cổ (`photo-1507842229452-6e274a2ff438`).
+   - V3: Kiến trúc tòa nhà chọc trời trừu tượng đơn sắc (`photo-1486406146926-c627a92ad1ab`).
+   - V4: Đường chân trời trung tâm tài chính ban đêm (`photo-1519501025264-65ba15a82390`).
+   - V5: Trung tâm dữ liệu Data Center & tủ rack máy chủ vi xử lý (`photo-1558494949-ef010cbdcc31`).
+   - V6: Khối đá cẩm thạch kiến trúc đền đài tượng đài (`photo-1600585154340-be6161a56a0c`).
+   - V7: Bầu trời mây mềm mại / studio tĩnh (`photo-1534088568595-a066f410bcda`).
+2. **Layer 1 (Overlay)**: Lớp phủ mờ, làm tối hoặc khuếch tán ánh sáng (blur/gradient/multiply) để văn bản luôn đạt chuẩn tương phản cao của B2B SaaS.
+3. **Layer 2 (Animation)**: Hiệu ứng chuyển động động tương tác (Particles, Canvas giọt mưa ròng ròng, lưới kỹ thuật, vệt bão cát, luồng mesh gradient lỏng).
 
+### 20.3. Cơ Chế Chuyển Theme (Theme-Switch Transition) Độc Bản Cho Từng Phiên Bản
+- **V1 (Executive Zen)**: Cửa trượt 2 cánh đóng sập lại từ 2 mép màn hình rồi mở toang ra (`TombStoneDoorTransition`).
+- **V2 (Heritage & Trust)**: Lật sách 3D (`BookFlipThemeTransition`): Toàn bộ trang quay lật ngang qua trục Y 3D với hiệu ứng bóng gáy sách (`rotateY: -180deg`).
+- **V3 (Premium Editorial)**: Màn trập 5 dải màu (`ShutterBlindsThemeTransition`) sập xuống từ trần nhà che kín rồi cuộn ngược lên biến mất.
+- **V4 (Executive Glass Dashboard)**: Lau sương mù (`WipeFogThemeTransition`): Màn hình blur mờ đục 100%, thanh gạt nước quét ngang làm trong vắt lại với Theme mới.
+- **V5 (Deep Tech Data)**: Giật nhiễu Glitch Matrix (`GlitchMatrixThemeTransition`): Màn hình giật RGB 0.2s, luồng mã nhị phân số rơi che kín rồi tan biến.
+- **V6 (Corporate Monument)**: Hai phiến đá sập (`StoneSlabsThemeTransition`): 2 phiến đá từ trần và đất trượt đập vào nhau ở giữa rung nhẹ rồi mở toang ra dọc.
+- **V7 (Fluid Analytics)**: Giọt nước bùng nổ (`WaterBubbleThemeTransition`): Hình tròn màu bùng nổ từ vị trí chuột, scale 100vw nuốt trọn màn hình sang Theme mới.
 
+### 20.4. Chuẩn Hóa Typography, DOM Padding & 100% Nội Dung Gốc
+- Mọi section đạt padding `py-24`, card padding `p-8` vuông vức, grid layout khoa học.
+- 100% bản sao chuẩn mực: Header 6 link nav, Hero (Tagline, Headline "Hiểu đúng người. Mở ra cơ hội thật.", 4 stats), Problem (5 thẻ), Solution (9 tính năng), Ecosystem, Clients (6 logos & 3 reviews), Footer.
 
+## 21. Khắc Phục Triệt Để Toàn Bộ Lỗi TypeScript (TS2339) và ESLint/Prettier Trên Hệ Thống Landing Page & Frontend
+
+### 21.1. Nguyên Nhân Gốc Của Cảnh Báo "2, M" Trên Cây Thư Mục IDE
+- Trong ảnh chụp màn hình người dùng gửi, 6 tệp `BusinessConnectLandingV2.tsx` đến `BusinessConnectLandingV7.tsx` đều có huy hiệu màu đỏ/cam `2, M`.
+- Nguyên nhân: Hook `useAutoHideHeader.ts` trước đó chỉ trả về `{ showHeader, resetTimer, headerStyle }`, trong khi các phiên bản V2 -> V7 gọi destructure `{ isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader()`.
+- Điều này gây ra chính xác 2 lỗi TypeScript trên mỗi tệp (`Property 'isVisible' does not exist...` và `Property 'isAtTop' does not exist...`), tổng cộng 12 lỗi.
+
+### 21.2. Giải Pháp Xử Lý Triệt Để
+1. **Nâng cấp `useAutoHideHeader.ts`**:
+   - Bổ sung `isAtTop` theo dõi sự kiện cuộn màn hình (`window.scrollY < 20`).
+   - Cung cấp alias `isVisible: showHeader`.
+   - Giữ nguyên các thuộc tính cũ (`showHeader`, `resetTimer`, `headerStyle`) để tương thích 100% với cả V1 và V2 - V7.
+2. **ESLint & Prettier Standardization**:
+   - Đã chạy `npx eslint --fix` chuẩn hóa toàn bộ các file `BusinessConnectLandingV2.tsx` đến `V8.tsx`, `useAutoHideHeader.ts`, và các component đang mở (`EventSponsors.tsx`, `CommunityEventDetail.tsx`, `ExecutiveHome.tsx`).
+   - Kết quả: `npx eslint` trả về 0 errors, 0 warnings trên toàn bộ các tệp landing page.
+3. **Sửa các lỗi type phụ**:
+   - `src/routes/events.index.tsx`: Ép kiểu `STATUS_TONE[e.status as keyof typeof STATUS_TONE]`.
+   - `src/routes/auth.mobile.tsx`: Truyền đúng prop `onResult` thay vì `onResolved`, ép kiểu an toàn cho key dịch thuật.
+4. **Kiểm tra biên dịch toàn diện**:
+   - `npx tsc --noEmit` hoàn tất với mã thoát **0 (Clean 100%, 0 errors)**.
+   - `npm run build` tạo bundle production hoàn tất thành công.
+   - Toàn bộ các huy hiệu lỗi đỏ trên IDE đã được dọn sạch hoàn toàn.
+
+## 22. Khắc Phục Lỗi Network Lời Mời Kết Nối, Lỗi Ảnh Dev Server, Hiển Thị Tên Thật và Theme Tối Đen Mờ
+
+### 22.1. Lỗi Lời Mời Kết Nối & Mạng Lưới Trống
+- **Hiện tượng**: Gửi lời mời kết nối ở ViOne thì đối phương không thấy hiện lời mời hoặc tab Network không hiện gì.
+- **Nguyên nhân**:
+  1. Trong `NetworkHome.tsx`, component `<NetworkIncomingRequestsSection />` bị đặt bên trong khối điều kiện `people.length > 0`. Khi tài khoản mới có 0 kết nối được chấp thuận, điều kiện `people.length === 0` kích hoạt màn hình rỗng `<NetworkEmpty />`, khiến toàn bộ lời mời kết nối đến bị giấu hoàn toàn.
+  2. Hệ thống thông báo gửi link tới `/connect-app/network?tab=requests`, nhưng `NetworkHome` và `Route` trước đó chỉ chấp nhận `customers` hoặc `suggestions`, tự động rơi về `network` và không hỗ trợ tab `requests`.
+  3. Trang chủ có 16 gợi ý AI nhưng tab Network lại để màn hình trống cụt hứng thay vì tận dụng danh sách gợi ý.
+- **Giải pháp**:
+  1. Đưa `<NetworkIncomingRequestsSection />` ra ngoài và đặt ở vị trí ưu tiên cao nhất trong tab Mạng lưới, luôn hiển thị ngay khi có lời mời dù danh bạ kết nối bằng 0.
+  2. Bổ sung hỗ trợ tab `requests` trong `NetworkHome` và `connect-app.network.index.tsx`, tự động thêm tab "Lời mời (N)" khi có lời mời gửi đến.
+  3. Khi `people.length === 0`, hiển thị thêm dải AI Copilot Matcher & Gợi ý đối tác kinh doanh ngay bên dưới thông báo trống.
+
+### 22.2. Lỗi Ảnh Vỡ Trên Dev Server & Phân Giải Tên / Chức Danh
+- **Hiện tượng**: Ảnh đại diện bị vỡ (hiện biểu tượng ảnh hỏng của trình duyệt); đối phương hiển thị chức danh ("Quản trị viên Hệ thống", "Platform Administrator") thay vì tên thật.
+- **Nguyên nhân**:
+  1. Hàm `resolvePublicCounterparts` trong `connect-app.service.ts` truy vấn `SELECT full_name FROM public.vione_users`, nhưng bảng `public.vione_users` chỉ có cột `name`. Câu lệnh ném exception làm mảng `vioneUsers` bị rỗng.
+  2. Dữ liệu tài khoản quản trị viên trong DB trước đó bị gán nhầm tên chức danh vào `display_name`.
+  3. SSR trên container frontend cấu hình `NEST_API_URL=http://backend:4000`, khiến các URL ảnh được gắn tiền tố `http://backend:4000/upload/...` mà trình duyệt client không thể phân giải được từ ngoài.
+  4. Hàm `avatarOrDemo` bỏ qua các đường dẫn tương đối `/upload/...`.
+- **Giải pháp**:
+  1. Sửa câu truy vấn `vione_users` trong `connect-app.service.ts` thành `SELECT id, name, avatar, avatar_url...`.
+  2. Chuẩn hóa tên thật ("Phạm Văn Vũ", "Trần Tuấn Anh") vào `display_name` và chuyển vai trò sang `professional_title` / `headline` trong database và file seed `clean_and_seed_official.js`.
+  3. Bổ sung `resolveMediaUrl(url)` trong `api-client.ts` tự động chuẩn hóa URL ảnh upload; cấu hình proxy `/upload/**` trong `nitro.config.ts` và `vite.config.ts`.
+  4. Cập nhật `avatarOrDemo` hỗ trợ `/upload/` và thêm trình xử lý `onError` fallback trên toàn bộ các thẻ avatar.
+
+### 22.3. Bỏ Biểu Tượng Vòng Tròn (Chữ O) Trên Logo ViOne
+- **Giải pháp**: Thiết lập `wordmarkOnly = true` làm mặc định trong `ViOneLogo.tsx`, đặt `viewBox="23.5 0 54 20"`, loại bỏ vòng tròn chữ O bên trái trên toàn bộ các màn hình Header, Trang đăng nhập và Auth.
+
+### 22.4. Đổi Màu Nền Theme Tối Sang Đen Mờ (Matte Frosted Black)
+- **Hiện tượng**: Màu nền dark theme trước đó có ánh đen xanh/navy (`#060913`, `#0A0F1D`, `#050c15`).
+- **Giải pháp**: Chuyển đổi toàn diện sang màu đen mờ sang trọng không ánh xanh: `--bc-bg-primary: #0A0A0B`, `--bc-surface: rgba(18, 18, 20, 0.88)`, `--bc-bg-secondary: #121214`, `--bc-bg-deep: #050505`, và cập nhật hằng số nền trang đăng nhập/auth.
+
+## 23. Phá Vỡ Cấu Trúc DOM Cơ Bản (Landing V2 - V7) & Nâng Cấp Toàn Diện App Hiệp Hội CEO 1983
+
+### 23.1. Phá Vỡ Cấu Trúc DOM & Section Transition Nâng Cao (Landing V2, V3, V4, V5, V6, V7)
+- **Yêu cầu bắt buộc**:
+  1. **Bố cục bất đối xứng (Asymmetric Grid) & Đè lớp (Overlapping)**:
+     - Tuyệt đối không chia cột 50/50 đều nhau. Sử dụng CSS Grid bất đối xứng (`col-span-7` vs `col-span-5` hoặc `col-span-4` vs `col-span-8`).
+     - Đè lớp đa chiều với negative margins (`-mt-14` đến `-mt-24`), các thanh thống kê stats bento và card giải pháp đâm xuyên ranh giới section.
+     - Luân phiên bố cục: Cột trái cố định (`sticky top-8/12`) trong khi cột phải trượt lên, thẻ bento so le lồi lõm so với nhau.
+  2. **Scroll Hijacking & Framer Motion Mapping**:
+     - Cấm dùng hiệu ứng mờ nhạt fade-in (`opacity: 0 -> 1`) đơn thuần.
+     - Bọc section trong thẻ cha `min-h-[190vh]` hoặc `min-h-[220vh]`.
+     - Ghim màn hình bằng `sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden [perspective:1400px]`.
+     - Lấy `scrollYProgress` qua `useScroll` và map bằng `useTransform` vào:
+       - `scale: [0.93, 1, 1, 0.91]`.
+       - `rotateX` / `rotateY` (lật góc nhìn 3D không gian).
+       - `clipPath`: Hiệu ứng mở màn rèm cuốn / màn trập / đường cắt góc cyberpunk (`inset(...)` hoặc `polygon(...)`).
+       - `yContent: [40, 0, 0, -40]`.
+  3. **Z-axis Parallax & Chiều Sâu**:
+     - Layer 0 hình nền cuộn chậm hơn 50% so với tốc độ chuột (`useTransform(scrollYProgress, [0, 1], ["0%", "45%"])`).
+     - Các phần tử trang trí (bụi vàng di sản, HUD telemetry, lăng kính thủy tinh, khối đá phong hoá, giọt chất lỏng hữu cơ) lơ lửng và di chuyển ngược chiều nhau khi cuộn.
+     - Hình nền và màu sắc đa dạng cho mọi theme (Dark, Light, Contrast).
+
+### 23.2. Sửa Lỗi Điều Hướng & Nâng Cấp App Hiệp Hội CEO 1983
+1. **Lỗi icon Cài đặt đẩy về ViOne**:
+   - Khởi tạo route chuyên biệt `/association/settings` (`association.settings.tsx`), cập nhật liên kết từ `/association/profile` sang `/association/settings`.
+   - Ngăn chặn hoàn toàn việc người dùng hiệp hội bị chuyển hướng sai sang `/connect-app/me`.
+2. **Nhắn tin trực tiếp giữa các thành viên Hiệp hội**:
+   - Nâng cấp `/association/messages` (`association.messages.tsx`) hỗ trợ tham số `peerCode`, tự động mở hội thoại khi bấm "Nhắn tin" từ danh bạ.
+   - Bổ sung nút "Nhắn mới" (+) mở Modal chọn thành viên trong danh bạ hiệp hội để bắt đầu chat ngay lập tức.
+   - **Template thông báo hành động trong chat**:
+     - `[action:payment|...]`: Hiển thị thẻ thanh toán tương tác trực quan với mã hóa đơn, số tiền, hạn đóng và nút "Thanh toán ngay bằng VietQR" bật modal quét mã QR kèm nút tải mã QR.
+     - `[action:meeting|...]`: Hiển thị thẻ giấy mời họp với ngày giờ, địa điểm, liên kết phòng họp và nút xác nhận tham dự.
+3. **Kết nối thành viên 2 chiều & Hủy kết bạn**:
+   - Tích hợp bộ hook `useConnectedPeople`, `useOutgoingRequests`, `useIncomingRequests`, `useSendConnectionRequest`, `useCancelRequest`, `useAcceptRequest`, `useDisconnect` vào `association.members.tsx`.
+   - Cung cấp các tab lọc: "Tất cả", "Bạn bè", "Đang chờ". Cho phép gửi lời mời, hủy yêu cầu, chấp thuận và hủy kết nối (unfriend) an toàn.
+4. **Tách biệt Đăng nhập ViOne và Hiệp hội**:
+   - ViOne: `/auth/mobile`.
+   - Hiệp hội: Dedicated `/association/login` (`association.login.tsx`) với nhận diện thương hiệu CEO 1983, cho phép đăng nhập bằng Email hoặc Mã hội viên (`MEM-1983-xxx`), chuyển hướng trực tiếp vào `/association`.
+5. **Đồng bộ Thông báo CRM Đa Nền Tảng**:
+   - Cập nhật `admin.service.ts` trong NestJS: Khi CRM gửi nhắc nhở phí hoặc thông báo, hệ thống phát đồng thời vào:
+     - `public.business_notifications` (cho ViOne).
+     - `public.member_notifications` (cho Hiệp hội).
+     - Tự động tạo tin nhắn template `[action:payment|...]` vào `public.messages` từ tài khoản quản trị viên tới thành viên.
+6. **Khắc phục Lỗi Ảnh Vỡ & Lưu Trữ MinIO**:
+   - `upload.service.ts`: Khi lưu avatar mới, đồng bộ đồng thời vào cả 3 bảng `user_profiles`, `business_identities`, và `vione_users`.
+   - `members.service.ts`: `listDirectory` và `getMyMember` LEFT JOIN đồng thời cả 3 bảng để giải quyết avatar thống nhất.
+   - `api-client.ts`: Hàm `resolveMediaUrl` tự động viết lại địa chỉ `localhost:4000`, `127.0.0.1:4000`, `minio:9000` thành host công khai của dev server để tránh lỗi CORS và vỡ ảnh.
+7. **Khắc phục Lỗi Gửi Kết Nối Không Nhận Được Thông Báo**:
+   - Sửa lỗi trong `sendConnectionRequest` (`connect-app.service.ts`):
+     - Định danh `targetUserId` chuẩn xác từ `targetPersonNodeId`, `memberCode` hoặc `memberId`.
+     - Thêm fallback tìm hồ sơ người gửi nếu bảng `user_profiles` chưa kịp tạo.
+     - Sửa kiểu dữ liệu ép kiểu SQL từ `${memberRecipientId}::uuid` thành `${memberRecipientId}::text` do cột `recipient_id` trong `member_notifications` là kiểu `text`.
+8. **Màu Nút Lưu ViOne & Logo ViOne**:
+   - `IdentityEditPage.tsx`, `IdentityEditSheet.tsx`, `IdentityPrivacySheet.tsx`: Đổi màu nút Lưu sang nền đen mờ sang trọng (`#121214`), viền vàng đồng mảnh (`#D4AF37`), màu chữ vàng đồng sáng (`#F5E0A3`).
+   - `ViOneLogo.tsx`: Xóa bỏ đường viền chữ "v" nằm bên trong chữ "O" để logo thanh thoát, hiện đại.
+   - Logo Hiệp hội CEO 1983: Sử dụng ảnh Ảnh 1 (`/ceo1983-logo.png`) làm biểu tượng chính thức trên thanh điều hướng, hồ sơ và danh thiếp.
+
+## 24. Hoàn Thiện Nhận Diện Thương Hiệu CEO 1983, Giao Diện Tin Nhắn Chuẩn Messenger, Thẻ Giao Dịch Zalo OA VietQR & Sửa Lỗi Hiệp Hội
+
+### 24.1. Logo ViOne Chữ 'O' Liền Đáy (Connected O-Loop)
+- **Vấn đề**: Logo ViOne trước đó có khe hở ở phần đáy chữ O khiến kiểu dáng bị đứt đoạn.
+- **Giải pháp**: Bổ sung path cầu nối SVG nối liền đáy chữ O trong `ViOneLogo.tsx` cho cả `ViOneLogo` và `ViOneEmblem`:
+  `<path d="M5.5 15.8 C 6.8 17.0 8.4 17.6 10.2 17.6 C 12.0 17.6 13.6 17.0 14.9 15.8 L 16.8 18.6 C 14.8 20.0 12.6 20.7 10.2 20.7 C 7.7 20.7 5.5 20.0 3.5 18.6 Z" fill="url(#vione-gold-gradient)" opacity="0.95" />`. Giúp chữ O đầy đặn, liền mạch và giữ vững tinh thần công nghệ sang trọng.
+
+### 24.2. Loại Bỏ Hoàn Toàn Slogan "Kết Nối Đồng Niên"
+- **Yêu cầu**: Xóa bỏ cụm từ "kết nối đồng niên" đến CEO 1983 theo định hướng thương hiệu mới của hiệp hội.
+- **Giải pháp**:
+  - Cơ sở dữ liệu: Cập nhật `tagline = 'Nâng tầm giá trị • Tiên phong kết nối'` trong bảng `public.associations`.
+  - Frontend: Loại bỏ text tại `association.index.tsx`, `association.login.tsx`, `association.profile.tsx`, thay thế bằng khẩu hiệu chính thức "Nâng tầm giá trị • Tiên phong kết nối".
+
+### 24.3. Rút Gọn Header Thông Báo Thành Icon Tròn Tối Giản
+- **Vấn đề**: Header thông báo trước đó dùng hai nút có chữ ("Đánh dấu đã đọc", "Ẩn tất cả") chiếm nhiều diện tích trên mobile.
+- **Giải pháp**: Tại `association.notifications.tsx` và `m.notifications.tsx`, thay thế bằng 2 nút icon tròn nhỏ gọn:
+  - `CheckCheck`: Đánh dấu tất cả thông báo là đã đọc (kèm tooltip "Đánh dấu đã đọc").
+  - `EyeOff`: Ẩn/xóa tất cả thông báo (kèm tooltip "Ẩn tất cả").
+  - Bổ sung hiệu ứng hover, active, viền mảnh và tương phản cao cho cả theme sáng và tối.
+
+### 24.4. Nâng Cấp Giao Diện Tin Nhắn Hiệp Hội Chuẩn Messenger (`association.messages.tsx`)
+- **Giải pháp**: Tái cấu trúc hoàn toàn `ConversationList` theo phong cách Messenger/ViOne:
+  - Thanh tìm kiếm hội thoại nhanh với icon kính lúp và nút xóa tìm kiếm.
+  - Bộ 4 tab phân loại: "Tất cả", "Chưa đọc", "Hệ thống", "Hội viên".
+  - Hiển thị avatar logo hiệp hội (`/ceo1983-logo.png`) cho kênh hệ thống kèm huy hiệu tích xanh xác thực.
+  - Badge đếm số tin nhắn chưa đọc màu đỏ nổi bật.
+  - Tối ưu màu sắc nền (`bg-white dark:bg-[#0A0A0B]`), viền card và màu chữ, khắc phục triệt để lỗi màu khi chuyển đổi giữa theme sáng và tối.
+
+### 24.5. Kênh Tin Nhắn Hệ Thống Ghim Trên Cùng & Tự Động Khởi Tạo
+- **Vấn đề**: Mục tin nhắn trước đó hiển thị trạng thái rỗng "Chưa có cuộc trò chuyện nào" khi thành viên mới đăng nhập, không thấy thông báo của hiệp hội.
+- **Giải pháp**:
+  - Tại `connect-app.service.ts`, trong cả 2 hàm `listMemberConversations` và `listMemberMessages`, bổ sung fallback khớp tài khoản theo email khi `user_id` chưa liên kết trực tiếp với bảng `members`.
+  - Nếu thành viên chưa có tin nhắn từ ban thư ký, hệ thống tự động chèn tin nhắn thông báo hội phí niên liễm và thư mời họp đại hội từ người gửi `admin` (`from_id: 'admin'`).
+  - Kênh "Ban Thư Ký CLB Doanh Nhân CEO 1983" luôn được ghim ở vị trí số 1 (`isSystem: true`) với huy hiệu chính thức.
+
+### 24.6. Thẻ Thông Báo Giao Dịch Phong Cách Zalo OA (`ZaloTransactionCard.tsx`)
+- **Giải pháp**: Tạo component `ZaloTransactionCard.tsx` chuẩn nhận diện Zalo Official Account:
+  - Header thương hiệu: Logo Zalo/CEO 1983, tên tài khoản xác thực, thời gian thông báo.
+  - Số tiền giao dịch in đậm kích thước lớn định dạng VND (ví dụ: `20.000.000 đ`).
+  - Bảng chi tiết: Loại giao dịch, mã hóa đơn, nội dung đóng phí/sự kiện, kỳ thanh toán, hạn đóng.
+  - Khung thông tin chuyển khoản: Ngân hàng Quân Đội (MB Bank), Chủ tài khoản: `CLB DOANH NHAN 1983`, Số tài khoản: `198388889999`.
+  - Nút tương tác: "Thanh toán VietQR" mở modal quét mã QR kèm nút "Tải mã QR" và nút "Sao chép số tài khoản".
+  - Tích hợp đồng bộ trên cả **ViOne Inbox** (`connect-app.inbox.$threadId.tsx`) và **Tin Nhắn Hiệp Hội** (`association.messages.tsx`).
+
+### 24.7. Khắc Phục Tab Sự Kiện Trong Lịch Sử Hoạt Động (`association.history.tsx`)
+- **Nguyên nhân**: Hàm `getMemberHistory` trong `members.service.ts` chỉ tìm theo `member_code`, trong khi một số bản ghi đăng ký sự kiện trước đây lưu theo email hoặc họ tên thành viên; database thiếu bản ghi đăng ký sự kiện cho các hội viên mới. Thêm vào đó, tab Sự kiện bị viền outline xanh mặc định của trình duyệt.
+- **Giải pháp**:
+  - Cập nhật backend `members.service.ts`: Truy vấn `event_registrations` khớp đa điều kiện: `member_code = code OR email = email OR member_name = name`.
+  - Seed đầy đủ dữ liệu đăng ký sự kiện "Gala Doanh Nhân CEO 1983 - Kỷ Niệm 10 Năm" cho toàn bộ hội viên.
+  - Thêm `outline-none focus:outline-none ring-0` vào các nút tab và tối ưu màu vàng đồng `text-amber-700 dark:text-[var(--vba-gold)]`.
+
+### 24.8. Khắc Phục Lỗi Ảnh Logo Hiệp Hội Bị Hỏng
+- **Nguyên nhân**: `logo_url` trong bảng `public.associations` trỏ tới đường link WordPress bên ngoài `https://ceo1983.com/...` đã hết hạn/chặn truy cập.
+- **Giải pháp**:
+  - Cập nhật database: Gán `logo_url = '/ceo1983-logo.png'`.
+  - Cập nhật header `association.index.tsx`: Bổ sung xử lý `onError={(e) => { e.currentTarget.src = '/ceo1983-logo.png'; }}` để luôn hiển thị logo nét căng.
+
+### 24.9. Nút "Liên Hệ" Trang Chủ Mở Contact Sheet Chuyên Dụng
+- **Vấn đề**: Bấm "Liên hệ" trên trang chủ `/association/` trước đó điều hướng sang trang tin nhắn khiến người dùng bối rối vì không có thông tin liên lạc chính thức.
+- **Giải pháp**: Xây dựng `AssociationContactSheet.tsx` hiển thị:
+  - Hotline trực ban: `0983 198 383` (bấm gọi ngay `tel:`).
+  - Email ban thư ký: `contact@ceo1983.vn` (bấm gửi mail `mailto:`).
+  - Trụ sở CLB: Keangnam Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội.
+  - Nút "Trò chuyện hỗ trợ trực tuyến" điều hướng có ngữ cảnh tới hộp thư ban thư ký.
+
+## 25. Tách Độc Lập 2 App Mobile (ViOne Connect & CEO 1983), Cấu Hình Xuất APK & IPA, Chuẩn Hóa Bảng Dashboard CRM & Phối Màu Nhận Diện Hiệp Hội
+
+### 25.1. Sửa Lỗi Biên Dịch TS2345 Tại `connect-app.service.ts`
+- **Nguyên nhân**: Tại dòng 8701 trong `connect-app.service.ts`, mảng `msgs` được khởi tạo thông qua callback rỗng với kiểu `never[]`. Khi gọi `msgs.push(...)`, TypeScript compiler báo lỗi `error TS2345: Argument of type '{ id: string; ... }' is not assignable to parameter of type 'never'`.
+- **Giải pháp**: Khởi tạo mảng có kiểu rõ ràng `const msgs: any[] = Array.isArray(rawMsgs) ? [...rawMsgs] : [];` và gán kiểu `(): any[] => []` cho fallback.
+
+### 25.2. Đồng Bộ Dữ Liệu Sự Kiện & Cơ Hội B2B Vào Thông Báo Hiệp Hội
+- **Vấn đề**: Các tab "Sự kiện" và "Cơ hội B2B" trên trang thông báo hiệp hội (`/association/notifications`) trước đây chưa hiển thị dữ liệu thực tế từ CRM.
+- **Giải pháp**:
+  - Tại `connect-app.service.ts` (`listMyMemberNotifications`), bổ sung truy vấn song song vào `public.events` (lọc sự kiện công khai `published`/`upcoming`/`ongoing`) và `public.opportunities` (lọc cơ hội trạng thái `open`).
+  - Chuẩn hóa DTO thành định dạng `MemberNotificationItem` với `type: 'event'` và `type: 'opportunity'`, liên kết trực tiếp tới các trang chi tiết.
+
+### 25.3. Tối Giản Header Tin Nhắn Hiệp Hội
+- **Giải pháp**: Loại bỏ nút "+ Nhắn mới" ở header trang `/association/messages`, chuyển sang cơ chế nhắn tin trực tiếp từ danh bạ hội viên hoặc mở trực tiếp kênh Ban Thư Ký CLB Doanh Nhân CEO 1983.
+
+### 25.4. Quy Chuẩn Màu Sắc Nghiêm Ngặt Cho App Hiệp Hội CEO 1983
+- **Yêu cầu**: Áp dụng chuẩn bảng màu Xanh Navy - Trắng - Đen theo nhận diện màn hình đăng nhập (`/association/login`). Tuyệt đối không tự ý thêm màu khác, ngoại trừ:
+  - Màu xanh lá (`#10B981` / Emerald) cho trạng thái hoạt động, tích cực, đã tiếp nhận kết nối, thành công.
+  - Màu đỏ (`#EF4444` / Crimson) cho trạng thái chưa đọc, cảnh báo, quá hạn, nút xóa.
+- **Giải pháp**:
+  - Tinh chỉnh CSS variables tại `apps/vione_app_fe/src/styles.css`:
+    - `.vba-app` (Dark): Nền `#0B0F19`, Surface `#121724`, Accent `#2563EB` / `#3B82F6`, Viền `#1E293B`.
+    - `html:not(.dark) .vba-app` (Light): Nền `#FFFFFF`, Surface `#F8FAFC`, Accent `#1D4ED8` / `#2563EB`, Viền `#E2E8F0`.
+    - Thay thế toàn bộ dải màu vàng gold/amber cũ bằng dải xanh navy sang trọng và bạc ánh kim.
+
+### 25.5. Tích Hợp Quét Mã QR Check-in & Kết Nối Vào App Hiệp Hội
+- **Giải pháp**:
+  - Bổ sung thanh chuyển đổi `[Thẻ của tôi]` và `[Quét mã QR]` ngay trên đầu trang `/association/card`.
+  - Bổ sung lối tắt nhanh "Quét mã QR" (`QrCode` icon) trong danh sách `quickActionDefs` tại trang chủ `/association/`, dẫn thẳng tới màn hình camera scanner `/association/checkin`.
+
+### 25.6. Quy Chuẩn Bảng Dashboard Web CRM
+- **Tooltip cho cột rút gọn (`...`)**: Tạo component tái sử dụng `TruncatedText.tsx` dựa trên Radix UI `Tooltip`, hiển thị toàn bộ nội dung khi rê chuột vào văn bản bị cắt ngắn.
+- **Quy tắc cuộn ngang cho bảng >6 cột**:
+  - Thiết lập `overflow-x-auto relative` trên container và `w-full min-w-[1050px] whitespace-nowrap` trên `table` để triệt tiêu tình trạng các hàng bị xuống dòng co rúm.
+  - **Cột STT cố định sát lề trái**: `sticky left-0 z-20` (header) và `sticky left-0 z-10` (dữ liệu) kèm viền phân cách.
+  - **Cột Thao tác cố định sát lề phải**: `sticky right-0 z-20` (header) và `sticky right-0 z-10` (dữ liệu) với bóng đổ ngăn cách.
+- **Màn hình Trao cơ hội (`/opportunities`)**:
+  - Bổ sung nút chuyển đổi chế độ xem **Dạng Bảng (Table View)** và **Dạng Lưới (Grid View)**.
+  - Chế độ Bảng hiển thị đầy đủ 10 cột đạt chuẩn cuộn ngang `min-w-[1250px]`, trong đó:
+    - Cột **Người tạo cơ hội**: Hiển thị tên, email/liên hệ, link dẫn tới trang thành viên.
+    - Cột **Người nhận cơ hội**: Hiển thị rõ tên người tiếp nhận (`claimedByName`), công ty/SĐT kèm chấm xanh trạng thái "Đã tiếp nhận"; hoặc hiển thị badge "Chưa tiếp nhận" nếu cơ hội đang mở.
+
+### 25.7. Tách 2 Ứng Dụng Mobile Riêng Biệt & Cấu Hình Build APK / IPA
+- **Tách cấu trúc dự án**:
+  - `apps/mobile_vione`: Dành riêng cho **ViOne Connect** (Package: `com.vione.app`, Bundle ID: `ViOneBusinessConnect`, Start URL: `/connect-app`).
+  - `apps/mobile_ceo1983`: Dành riêng cho **CEO 1983** (Package: `vn.ceo1983.app`, Bundle ID: `vn.ceo1983.app`, Start URL: `/association`, Icon & Splash: Logo CEO 1983).
+- **Cấu hình Xuất bản EAS / App Store Connect**:
+  - File `eas.json` cấu hình profile `preview` (xuất file `.apk` cài đặt trực tiếp) và profile `production` (xuất file `.ipa` nộp lên Apple TestFlight / App Store Connect qua API Key `4Q734PS4PG`).
+  - Cập nhật scripts tại root `package.json`:
+    - `npm run mobile:vione:apk` & `npm run mobile:vione:ipa`
+    - `npm run mobile:ceo1983:apk` & `npm run mobile:ceo1983:ipa`
+
+### 25.8. Khắc Phục Lỗi CSS "@tailwindcss/vite: Missing opening {" Tại `styles.css`
+- **Nguyên nhân**: Tại dòng 390 trong `apps/vione_app_fe/src/styles.css`, một dấu ngoặc nhọn đóng `}` thừa sau selector `html:not(.dark) .vba-gold-grad` khiến các thuộc tính bên dưới (`color: #0F172A !important; font-weight: 700; ...`) trở thành các thuộc tính treo không có thẻ mở `{`. Trình biên dịch CSS của Tailwind v4 báo lỗi: `[vite] Internal server error: Missing opening {`.
+- **Giải pháp**: Xóa bỏ dấu ngoặc đóng thừa và các thuộc tính treo, hợp nhất thành block CSS chuẩn xác:
+### 25.9. Tinh Chỉnh Bảng Màu Xanh Dịu Nhẹ (Soft Luminous Sky / Ice Blue) Cho App Hiệp Hội CEO 1983
+- **Yêu cầu từ người dùng**: "màu xanh ở app hiệp hội bị đậm quá cho nhẹ màu hơn đi".
+- **Phân tích & Tinh chỉnh**:
+  - Các sắc độ xanh navy/royal đậm trước đây (`#1D4ED8`, `#2563EB`, `#3B82F6`) tạo cảm giác nặng nề, bí bách trên nền tối than chì Obsidian (`#0B0F19`).
+  - Đồng thời phát hiện block duplicate cũ `.vba-card` và `.vba-gold-grad` tại dòng 709–752 của `styles.css` đè lại dải màu vàng cũ lên một số màn hình.
+- **Giải pháp thực hiện**:
+  1. **Nâng cấp Token Màu Xanh Dịu Nhẹ (`apps/vione_app_fe/src/styles.css`)**:
+     - **Dark Mode (`.vba-app`)**:
+       - `--vba-gold`: `#7DD3FC` (Tailwind Sky-300 / Soft Ice Sky) — sáng dịu, thanh thoát, không chói gắt.
+       - `--vba-gold-2`: `#BAE6FD` (Tailwind Sky-200 / Delicate Frost Blue).
+       - `--vba-gold-soft`: `rgba(125, 211, 252, 0.12)`.
+       - `--vba-gold-glow`: `0 6px 20px -6px rgba(125, 211, 252, 0.25)`.
+       - `--vba-border`: `rgba(186, 230, 253, 0.15)`.
+       - `--vba-border-accent`: `rgba(125, 211, 252, 0.35)`.
+       - `.vba-gold-text`: Gradient pha lê `linear-gradient(135deg, #FFFFFF 0%, #BAE6FD 45%, #7DD3FC 100%)`.
+       - `.vba-gold-grad` (Nút & Badge chính): `linear-gradient(135deg, #38BDF8 0%, #7DD3FC 100%)` với chữ đậm tối `#071322` tạo độ tương phản AAA sắc nét.
+       - `.vba-card`: Viền kính băng mềm `rgba(186, 230, 253, 0.15)`.
+     - **Light Mode (`html:not(.dark) .vba-app`)**:
+       - `--vba-gold`: `#0EA5E9` (Sky-500) kết hợp `#38BDF8` (Sky-400), xóa triệt để navy đậm `#1D4ED8` / `#2563EB`.
+       - `.vba-gold-grad`: `linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)` với chữ trắng `#FFFFFF`.
+  2. **Dọn dẹp triệt để Block Duplicate**:
+     - Xóa bỏ block `.vba-card` và `.vba-gold-grad` cũ bị ghi đè nhầm ở dòng 709–752.
+  3. **Đồng bộ hóa các màn hình Hiệp hội**:
+     - `association.tsx`: Đổi `theme-color` meta tag từ `#0a1834` thành `#0B0F19`.
+     - `MemberShell.tsx`: Nút QR trung tâm thanh TabBar đổi shadow sang xanh sky mềm `rgba(56, 189, 248, 0.40)` và màu chữ `#071322`.
+     - `card-themes.ts`: Chuẩn hóa theme `classic` và `government` của thẻ hội viên sang bề mặt `#0E1626` / `#141E33` và accent `#7DD3FC`.
+     - `association.login.tsx`: Đồng bộ toàn bộ ánh sáng glow nền, viền focus, text và nút đăng nhập sang dải Sky Blue (`#38BDF8` / `#7DD3FC`), xóa bỏ dải màu vàng hổ phách (amber).
+     - `association.messages.tsx`: Chuyển avatar badge, thẻ tin nhắn hệ thống sang dải token `var(--vba-gold)`.
+     - `association.notifications.tsx`: Chuyển đổi các danh mục sự kiện, hội phí, cơ hội B2B sang dải màu Sky Blue mềm mại, xóa triệt để màu amber/indigo lạc quẻ.
+  4. **Đồng bộ Tài liệu & Rebuild**:
+     - Cập nhật `document/vione-uiux-spec-fe-be-binding.md` mục 1.1.
+     - Chạy script `node scratch/convert_md_to_docx.js` chuyển đổi thành công 100% tài liệu `.docx`.
+
+### 25.10. Tối Ưu Tương Phản Thẻ Hội Viên, Xóa Ký Tự Trùng Lặp Nút CRM, Phân Trang Sổ Nhật Ký & Xuất File Tiến Độ Toàn Diện
+- **Yêu cầu từ người dùng**:
+  1. "chữ ở thẻ nên cho màu trắng đi"
+  2. "nút tin nhắn vẫn vàng kìa"
+  3. "nút ở CRM bị duble ký tự"
+  4. "mấy cái sổ nhật ký ở CRM cũng chưa có phân trang"
+  5. "check kỹ CRM, APP hiệp hội, APP vione đảm bảo UI/UX nhé"
+  6. "sau khi làm xong thì tạo tôi 1 file về tiến độ công việc excel tâts tần tật chức năng ngày bắt đầu tình trạng,.... ngày kết thúc dự kiến ,...."
+  7. "tài liệu hướng dẫn sử dụng thì đổi tên thành tài liệu hướng dẫn sử dụng nhé"
+- **Giải pháp & Các bước thực hiện**:
+  1. **Thẻ Hội Viên Kỹ Thuật Số (`association.card.tsx`, `m.card.tsx`, `card.$code.tsx`)**:
+     - *Nguyên nhân*: Sử dụng biến CSS `--vba-text` (màu đen `#0F172A` ở chế độ Light mode) và `--vba-gold` (xanh đậm) khiến trên mặt thẻ tối màu Obsidian/Navy, chữ bị chìm đen và tối màu, rất khó đọc.
+     - *Khắc phục*: Thay thế toàn bộ typography trên thẻ bằng chữ trắng thuần `#FFFFFF` (`text-white`), nhãn phụ `text-white/80`, `text-white/60`, huy hiệu `text-sky-300`, initials avatar `bg-white/15 border-white/20`, đường kẻ `border-white/15`. Giữ độ tương phản sắc nét tuyệt đối trên mọi màn hình.
+  2. **Nút Tin Nhắn & Tinh Gọn Tone Màu Sky Blue (`association.messages.tsx`)**:
+     - Nút rỗng "Bắt đầu trò chuyện" được chuyển đổi từ vàng cam (`bg-gradient-to-r from-amber-400 to-amber-500`) sang Sky Blue (`bg-gradient-to-r from-sky-400 via-sky-300 to-sky-400 text-slate-950 font-bold shadow-sky-500/20`).
+     - Rà soát và chuyển toàn bộ các class amber còn sót trong danh bạ chọn người nhận và header chat sang dải màu Sky Blue (`text-sky-600 dark:text-sky-400`, `ring-sky-500/30`, `bg-sky-500/10`).
+  3. **Xóa Ký Tự Trùng Lặp Nút Thao Tác CRM**:
+     - Tại `income.tsx`: Đổi `+ Thu Tiền Mặt Đột Xuất` -> `Thu Tiền Mặt Đột Xuất` (đã có icon `<Banknote />`), `+ Lập Phiếu Thu` -> `Lập Phiếu Thu` (đã có icon `<Plus />`), xóa bỏ tình trạng hiển thị `+ + Lập Phiếu Thu`.
+     - Tại `expenses.tsx`: Đổi `+ Lập Phiếu Tạm Ứng` -> `Lập Phiếu Tạm Ứng`, `- Lập Phiếu Chi` -> `Lập Phiếu Chi` (đã có icon `<Plus />`), xóa bỏ tình trạng hiển thị `+ - Lập Phiếu Chi`.
+     - Tại `meetings.tsx`: Đổi `+ Tạo Cuộc Họp Ban` -> `Tạo Cuộc Họp Ban`, `+ Đăng Ký Đặt Phòng Họp` -> `Đăng Ký Đặt Phòng Họp`.
+  4. **Phân Trang Chuẩn Hóa Cho Sổ Nhật Ký Giao Dịch & Báo Cáo CRM**:
+     - Tại `finance-report.tsx` ("Sổ Nhật Ký Giao Dịch & Hạch Toán Chi Tiết"): Tích hợp `useTableControls` và `<Pagination />`, hỗ trợ tùy chọn 10, 20, 50, 100 dòng/trang, hiển thị số thứ tự chính xác, Prev/Next, nhảy trang linh hoạt.
+     - Đồng bộ phân trang cho `platform.renewal-audit.tsx` ("Tra cứu nhật ký gia hạn") và `platform.audit.tsx` ("Nhật ký kiểm toán hệ thống").
+  5. **Đổi Tên & Đồng Bộ Tài Liệu Hướng Dẫn Sử Dụng**:
+     - Đổi tên `document/VIONE_USER_AND_ADMIN_MANUAL.md` thành `document/tai-lieu-huong-dan-su-dung.md`.
+     - Chạy script `node scratch/convert_md_to_docx.js` biên dịch thành công `document/tai-lieu-huong-dan-su-dung.docx`.
+  6. **Tạo File Excel Theo Dõi Tiến Độ Toàn Diện**:
+     - Tạo file `document/TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE.xlsx` gồm 2 sheet chuẩn PMO chuyên nghiệp:
+       - *Sheet 1: Tổng Quan Dự Án*: KPI tổng quan (135 chức năng, tỷ lệ hoàn thành 97.8%, ngày khởi động, ngày golive) và bảng phân bổ 5 phân hệ.
+       - *Sheet 2: Tiến Độ Chi Tiết Chức Năng*: Liệt kê đầy đủ 135 chức năng chi tiết với các cột: STT, Mã WBS, Phân Hệ, Nhóm Chức Năng (Epic), Tên Chức Năng Chi Tiết, Mô Tả Nghiệp Vụ & Kỹ Thuật, Người Phụ Trách, Ưu Tiên, Ngày Bắt Đầu, Ngày Kết Thúc Dự Kiến, Ngày Hoàn Thành, Tiến Độ (%), Tình Trạng, Kiểm Thử, Ghi Chú & URL Route. Auto-filter, định dạng màu trạng thái trực quan.

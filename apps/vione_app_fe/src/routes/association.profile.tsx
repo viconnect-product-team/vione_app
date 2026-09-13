@@ -67,7 +67,7 @@ function ProfileScreen() {
   };
 
   const menu = [
-    { label: "Cập nhật hồ sơ & Quyền riêng tư", icon: User, to: "/connect-app/me/edit" as const, desc: "Chỉnh sửa tên, chức danh, liên hệ & quyền riêng tư" },
+    { label: "Cài đặt & Tài khoản", icon: Cog, to: "/association/settings" as const, desc: "Đổi mật khẩu, ảnh đại diện, giao diện & thông báo" },
     { label: t("m.profile.menu_personal_info"), icon: QrCode, to: "/association/card" as const, desc: "Danh thiếp & Thẻ số" },
     { label: t("m.profile.menu_business_info"), icon: Building2, to: "/association/business-cards" as const, desc: "Hồ sơ công ty" },
     { label: t("m.profile.menu_members"), icon: Users, to: "/association/members" as const, desc: "Danh bạ hội viên" },
@@ -76,7 +76,6 @@ function ProfileScreen() {
     { label: t("m.profile.menu_posts"), icon: FileText, to: "/association/news" as const, desc: "Tin tức & sự kiện" },
     { label: t("m.profile.menu_history"), icon: History, to: "/association/history" as const, desc: "Lịch sử kết nối" },
     { label: t("m.profile.menu_notifications"), icon: Bell, to: "/association/notifications" as const, desc: "Thông báo & Lời mời" },
-    { label: t("m.profile.menu_settings"), icon: Cog, to: "/connect-app/me" as const, desc: "Bảo mật & Tài khoản" },
   ];
 
   const themeOptions: { mode: Theme; icon: typeof Sun; label: string; desc: string }[] = [
@@ -87,7 +86,7 @@ function ProfileScreen() {
 
   async function logout() {
     await signOutSession();
-    navigate({ to: "/auth" });
+    navigate({ to: "/association/login" as any });
   }
 
   return (
@@ -96,7 +95,7 @@ function ProfileScreen() {
         title={t("m.profile.title")}
         back
         right={
-          <Link to="/connect-app/me" aria-label={t("m.profile.settings_label")} className="text-[var(--vba-gold)]">
+          <Link to="/association/settings" aria-label={t("m.profile.settings_label")} className="text-[var(--vba-gold)] hover:scale-110 transition-transform">
             <Settings className="h-5 w-5" />
           </Link>
         }
@@ -105,17 +104,22 @@ function ProfileScreen() {
       {/* Identity Card */}
       <div className="mx-4 mt-4 rounded-2xl vba-card p-4 border border-[var(--vba-border)] shadow-md">
         <div className="flex items-center gap-3.5">
-          {member?.avatar ? (
-            <img
-              src={member.avatar}
-              alt={member?.name ?? ""}
-              className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-[var(--vba-gold)] ring-offset-2 ring-offset-[var(--vba-bg)] shadow-md"
-            />
-          ) : (
-            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full vba-gold-grad text-[20px] font-black text-[#0A111C] ring-2 ring-[var(--vba-gold)] ring-offset-2 ring-offset-[var(--vba-bg)] shadow-md">
-              {initials(member?.name)}
-            </span>
-          )}
+          <Link to="/association/settings" className="relative group shrink-0" title="Chạm để đổi ảnh đại diện">
+            {member?.avatar ? (
+              <img
+                src={member.avatar}
+                alt={member?.name ?? ""}
+                className="h-16 w-16 rounded-full object-cover ring-2 ring-[var(--vba-gold)] ring-offset-2 ring-offset-[var(--vba-bg)] shadow-md"
+                onError={(e) => {
+                  e.currentTarget.src = "/ceo1983-logo.png";
+                }}
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-white p-2 shadow-md ring-2 ring-[var(--vba-gold)] ring-offset-2 ring-offset-[var(--vba-bg)] flex items-center justify-center">
+                <img src="/ceo1983-logo.png" alt="CEO 1983" className="h-full w-full object-contain" />
+              </div>
+            )}
+          </Link>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-[17px] font-bold text-[var(--vba-text)]">
@@ -147,10 +151,10 @@ function ProfileScreen() {
         {/* Action Bar */}
         <div className="mt-4 pt-3 border-t border-[var(--vba-border-soft)] grid grid-cols-3 gap-2">
           <Link
-            to="/connect-app/me/edit"
+            to="/association/settings"
             className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-gold-soft)] py-2.5 text-[11.5px] font-bold text-[var(--vba-gold)] hover:bg-[var(--vba-gold)] hover:text-slate-900 transition-colors border border-[var(--vba-border-accent)] shadow-xs"
           >
-            <User className="h-3.5 w-3.5" /> Cập nhật
+            <User className="h-3.5 w-3.5" /> Cài đặt
           </Link>
           <Link
             to="/association/card"

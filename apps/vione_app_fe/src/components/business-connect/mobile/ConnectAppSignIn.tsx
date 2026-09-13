@@ -46,7 +46,7 @@ type Props = {
   onAppPortalChange?: (portal: AppPortalType) => void;
 };
 
-const NAVY = "#050c15";
+const NAVY = "#0A0A0B";
 const GOLD = "#D8B282";
 
 function GoogleMark() {
@@ -111,7 +111,7 @@ export function ConnectAppSignIn({
   return (
     <main
       className={`relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col justify-between select-none transition-colors duration-500 ${
-        isAssociation ? "bg-gradient-to-b from-[#F0F7FF] via-[#FFFFFF] to-[#EBF4FE] text-slate-900" : "bg-[#050c15] text-[#f5f7fa]"
+        isAssociation ? "bg-gradient-to-b from-[#F0F7FF] via-[#FFFFFF] to-[#EBF4FE] text-slate-900" : "bg-[#0A0A0B] text-[#f5f7fa]"
       }`}
     >
       <img
@@ -174,7 +174,7 @@ export function ConnectAppSignIn({
                 Cổng Hội Viên Hiệp Hội
               </h1>
               <div className="mt-0.5 text-[11px] sm:text-[12px] font-semibold text-blue-700">
-                Kết nối đồng niên • Nâng tầm giá trị
+                Nâng tầm giá trị • Tiên phong kết nối
               </div>
               <p className="mx-auto mt-0.5 max-w-[19rem] text-center text-[11px] sm:text-[11.5px] leading-tight font-medium text-slate-600">
                 Không gian kết nối giao thương và thông tin chính thức CLB CEO 1983

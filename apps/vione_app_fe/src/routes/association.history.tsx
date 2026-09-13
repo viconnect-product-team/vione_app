@@ -76,15 +76,15 @@ function HistoryScreen() {
             <button
               key={tb.key}
               onClick={() => setTab(tb.key)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-[12px] font-semibold transition ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-[12px] font-semibold transition outline-none focus:outline-none cursor-pointer ${
                 active
-                  ? "border-[var(--vba-gold)] bg-[var(--vba-gold)]/10 text-[var(--vba-gold)]"
-                  : "border-[var(--vba-border)] text-[var(--vba-text-muted)]"
+                  ? "border-[var(--vba-gold)] bg-amber-500/10 dark:bg-[var(--vba-gold)]/15 text-amber-700 dark:text-[var(--vba-gold)] shadow-xs font-bold"
+                  : "border-slate-200 dark:border-[var(--vba-border)] bg-white dark:bg-[var(--vba-surface)] text-slate-700 dark:text-[var(--vba-text-muted)] hover:border-[var(--vba-gold)]/50"
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0 text-amber-600 dark:text-[var(--vba-gold)]" />
               <span className="truncate">{tb.label}</span>
-              <span className="text-[10px] opacity-70">({tb.count})</span>
+              <span className="text-[10px] opacity-75">({tb.count})</span>
             </button>
           );
         })}
@@ -189,7 +189,7 @@ function HistoryScreen() {
 
 function Empty({ label }: { label: string }) {
   return (
-    <div className="vba-card grid place-items-center py-12 text-[13px] text-[var(--vba-text-muted)]">
+    <div className="rounded-2xl border border-slate-200 dark:border-[var(--vba-border)] bg-white dark:bg-[var(--vba-surface)] grid place-items-center py-12 text-[13px] text-slate-500 dark:text-[var(--vba-text-muted)] shadow-xs">
       {label}
     </div>
   );

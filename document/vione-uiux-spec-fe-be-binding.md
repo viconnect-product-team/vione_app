@@ -53,15 +53,22 @@ Hệ sinh thái ViOne áp dụng triết lý phân tách giao diện trực quan
 └─────────────────────────────────────────────────────────┘   └─────────────────────────────────────────────────────────┘
 ```
 
-## 1.1 Ngôn ngữ Nhận diện 1: Royal Blue & Pure White (CRM & App Hiệp hội `/association`)
-- **Primary Color**: `#004B91` (Deep Corporate Blue) - Dùng cho Header, Nút hành động chính (Primary Button), Icon hoạt động.
-- **Secondary Accent**: `#0284C7` (Sky Cyan) - Dùng cho Badge trạng thái, Đồ thị tăng trưởng, Hiệu ứng hover.
-- **Background Surface**: `#F8FAFC` và `#FFFFFF` - Nền thẻ Card sạch sẽ, độ tương phản cao, tối ưu đọc văn bản.
-- **Status Colors**:
-  - *Đã gia hạn (Renewed)*: Xanh lá Emerald `#10B981` (Nền `#ECFDF5`).
-  - *Sắp đến hạn (Due)*: Vàng cam Amber `#F59E0B` (Nền `#FFFBEB`).
-  - *Đã quá hạn (Overdue)*: Đỏ Rose `#EF4444` (Nền `#FEF2F2`).
-  - *Kỳ tiếp theo (Upcoming)*: Xanh dương Indigo `#6366F1` (Nền `#EEF2FF`).
+## 1.1 Ngôn ngữ Nhận diện 1: Soft Sky Blue, Pure White & Obsidian (CRM & App Hiệp hội `/association`)
+- **Tôn chỉ Màu sắc App Hiệp hội CEO 1983**: Bảng màu tối giản, sang trọng gồm Xanh da trời dịu nhẹ (Soft Luminous Sky/Ice Blue), Trắng và Đen than Obsidian (`#0B0F19`), tuyệt đối không dùng màu vàng/cam (amber/gold), ngoại trừ:
+  - *Màu xanh lá (`#10B981` / Emerald)*: Hoạt động, điểm danh thành công, đã tiếp nhận.
+  - *Màu đỏ (`#EF4444` / Crimson)*: Cảnh báo, quá hạn, chưa đọc, nguy hiểm.
+- **Dark Mode (`.vba-app`)**:
+  - *Nền chính*: Obsidian Charcoal `#0B0F19`, Nền phụ `#080C14`.
+  - *Thẻ Card / Surface*: Kính mờ cao cấp `#111622` / `#151C2C`, viền kính băng `rgba(186, 230, 253, 0.15)`.
+  - *Primary Accent*: Soft Ice Sky `#7DD3FC` (Sky-300) dịu mắt, thanh thoát, không bị đậm gắt.
+  - *Secondary Accent*: Frost Blue `#BAE6FD` (Sky-200).
+  - *Nút bấm & Badge chính (`.vba-gold-grad`)*: Gradient `linear-gradient(135deg, #38BDF8 0%, #7DD3FC 100%)` với chữ đậm tối `#071322` tạo độ tương phản cao, hiện đại.
+  - *Hiệu ứng chữ phát sáng (`.vba-gold-text`)*: Gradient `linear-gradient(135deg, #FFFFFF 0%, #BAE6FD 45%, #7DD3FC 100%)`.
+- **Light Mode (`html:not(.dark) .vba-app`)**:
+  - *Nền chính*: Executive Pure White `#FFFFFF`, Nền phụ `#F8FAFC`.
+  - *Thẻ Card*: Trắng `#FFFFFF`, viền xanh nhẹ `rgba(14, 165, 233, 0.14)`.
+  - *Primary Accent*: `#0EA5E9` (Sky-500) kết hợp `#38BDF8` (Sky-400), xóa bỏ hoàn toàn navy đậm `#1D4ED8`.
+  - *Nút bấm*: `linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)`, chữ trắng `#FFFFFF`.
 
 ## 1.2 Ngôn ngữ Nhận diện 2: Luxury Dark & Champagne Gold (Mạng xã hội `/connect-app`)
 - **Primary Surface**: `#0A0A0C` (Obsidian Base) kết hợp `#16161A` (Card Surface).

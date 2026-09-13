@@ -42,13 +42,19 @@ function timeLabel(iso: string | null, locale: string): string {
     : d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" });
 }
 
+import { resolveMediaUrl } from "@/lib/api-client";
+
 function Avatar({ thread }: { thread: BcDmThreadSummary }) {
+  const [imgError, setImgError] = useState(false);
+  const resolvedUrl = resolveMediaUrl(thread.avatarUrl);
+
   return (
     <div className="relative shrink-0">
-      {thread.avatarUrl ? (
+      {resolvedUrl && !imgError ? (
         <img
-          src={thread.avatarUrl}
+          src={resolvedUrl}
           alt={thread.displayName}
+          onError={() => setImgError(true)}
           className="h-12 w-12 rounded-full object-cover ring-1 ring-[#D8B282]/30"
           loading="lazy"
         />
@@ -71,6 +77,11 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
   if (!raw) return "";
   const text = raw.trim();
   const prefix = isFromMe ? youPrefix : "";
+
+  // Payment action format: [action:payment|amount:X|invoice:Y|...]
+  if (/\[action:payment/i.test(text)) {
+    return `${prefix}💳 [Giao dịch] Thông báo thanh toán`;
+  }
 
   // Image tag format: image:URL|NAME or image:URL or raw image url
   if (

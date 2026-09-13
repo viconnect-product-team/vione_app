@@ -26,6 +26,8 @@ import { listTransactionsFn, type Transaction } from "@/lib/finance.functions";
 import { useFmt, useT } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv";
 import { toast } from "sonner";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 
 const FALLBACK_TRANSACTIONS: Transaction[] = [
   {
@@ -182,6 +184,19 @@ function FinanceReport() {
       return true;
     });
   }, [rawTransactions, typeFilter, searchQuery]);
+
+  const tc = useTableControls<Transaction>(
+    transactions,
+    {
+      id: (tx) => tx.id,
+      date: (tx) => tx.date,
+      type: (tx) => tx.type,
+      cat: (tx) => tx.category,
+      amount: (tx) => tx.amount,
+      status: (tx) => tx.status,
+    },
+    { initialSortKey: "date", initialSortDir: "desc", initialPageSize: 10 },
+  );
 
   const income = useMemo(() => transactions.filter((tx) => tx.type === "income"), [transactions]);
   const expense = useMemo(() => transactions.filter((tx) => tx.type === "expense"), [transactions]);
@@ -514,7 +529,9 @@ function FinanceReport() {
               Sổ Nhật Ký Giao Dịch & Hạch Toán Chi Tiết
             </h3>
             <p className="text-xs text-muted-foreground">
-              Hiển thị {transactions.length} chứng từ thu/chi đã được xác nhận trong hệ thống
+              {transactions.length > 0
+                ? `Hiển thị chứng từ ${tc.from}-${tc.to} trên tổng số ${transactions.length} chứng từ đã được xác nhận trong hệ thống`
+                : "Hiển thị 0 chứng từ thu/chi trong hệ thống"}
             </p>
           </div>
           <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-muted text-foreground">
@@ -538,14 +555,14 @@ function FinanceReport() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {transactions.length === 0 ? (
+              {tc.paged.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-muted-foreground text-xs">
                     Không tìm thấy chứng từ tài chính nào trong kỳ này.
                   </td>
                 </tr>
               ) : (
-                transactions.map((tx) => (
+                tc.paged.map((tx) => (
                   <tr key={tx.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs font-bold text-foreground">
                       {tx.id}
@@ -612,6 +629,19 @@ function FinanceReport() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination bar */}
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </div>
 
       {/* Modal Xuất Báo Cáo Tài Chính - Mờ nền Dashboard (bg-black/60 backdrop-blur-sm) */}

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useFmt, useT } from "@/lib/i18n";
 import { useIncomingConnectionRequests } from "@/hooks/use-network-requests";
 import { reportIdentityMetric } from "@/lib/business-connect/mobile/identity.telemetry";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { BusinessConnectTopBar } from "./BusinessConnectTopBar";
 
 function initialsOf(name: string | null): string {
@@ -112,21 +113,25 @@ export function NetworkRequestsView() {
                       params={{ personId: `u:${req.counterpart.userId}` }}
                       className="flex items-center gap-3.5 group cursor-pointer"
                     >
-                      {req.counterpart?.avatarUrl ? (
-                        <img
-                          src={req.counterpart.avatarUrl}
-                          alt=""
-                          loading="lazy"
-                          className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)] group-hover:ring-[var(--bc-mobile-accent)] transition-all"
-                        />
-                      ) : (
-                        <span
-                          aria-hidden="true"
-                          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors"
-                        >
-                          {initialsOf(req.counterpart?.displayName ?? null)}
-                        </span>
-                      )}
+                      {(() => {
+                        const avatarUrl = resolveMediaUrl(req.counterpart?.avatarUrl);
+                        return avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt=""
+                            loading="lazy"
+                            onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                            className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)] group-hover:ring-[var(--bc-mobile-accent)] transition-all"
+                          />
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors"
+                          >
+                            {initialsOf(req.counterpart?.displayName ?? null)}
+                          </span>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-semibold text-[var(--bc-mobile-text)] group-hover:text-[var(--bc-mobile-accent)] transition-colors">
                           {name}

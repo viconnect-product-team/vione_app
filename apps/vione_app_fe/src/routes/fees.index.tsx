@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
 import { downloadCsv } from "@/lib/csv";
@@ -687,7 +688,7 @@ function FeesPage() {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
           <div className="relative overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0 text-sm">
+            <table className="w-full min-w-[1050px] whitespace-nowrap border-separate border-spacing-0 text-sm">
               <thead className="bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
@@ -1243,9 +1244,11 @@ function FeeRow({
             {r.member.code.slice(-2)}
           </div>
           <div className="min-w-0">
-            <div className="truncate font-semibold text-foreground group-hover:text-primary">
-              {r.member.name}
-            </div>
+            <TruncatedText
+              text={r.member.name}
+              maxWidth="max-w-[200px]"
+              className="font-semibold text-foreground group-hover:text-primary"
+            />
             <div className="text-[11px] text-muted-foreground">{t(r.member.level)}</div>
           </div>
         </Link>

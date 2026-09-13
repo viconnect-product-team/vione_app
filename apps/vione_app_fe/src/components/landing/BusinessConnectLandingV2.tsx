@@ -31,6 +31,8 @@ import {
   Star,
   Network,
   Share2,
+  FileText,
+  Scroll,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
@@ -38,19 +40,20 @@ import { useAutoHideHeader } from "./useAutoHideHeader";
 export type ThemeMode = "light" | "dark" | "contrast";
 
 // =========================================================================
-// SLOW GOLDEN LIGHT PARTICLES (Heritage & Trust Atmosphere)
+// LAYER 2: SLOW GOLDEN LIGHT PARTICLES (Heritage & Trust Atmosphere)
 // =========================================================================
 function GoldenHeritageParticles({ theme }: { theme: ThemeMode }) {
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; duration: number }>>([]);
+  const [particles, setParticles] = useState<
+    Array<{ id: number; x: number; y: number; size: number; duration: number }>
+  >([]);
 
   useEffect(() => {
-    // Generate static initial particles for background floating ambient
-    const list = Array.from({ length: 28 }, (_, i) => ({
+    const list = Array.from({ length: 24 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       size: 2 + Math.random() * 3,
-      duration: 15 + Math.random() * 20,
+      duration: 18 + Math.random() * 22,
     }));
     setParticles(list);
   }, []);
@@ -58,7 +61,7 @@ function GoldenHeritageParticles({ theme }: { theme: ThemeMode }) {
   if (theme === "contrast") return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-60">
+    <div className="pointer-events-none fixed inset-0 z-[2] overflow-hidden opacity-50">
       {particles.map((p) => (
         <motion.div
           key={p.id}
@@ -69,11 +72,12 @@ function GoldenHeritageParticles({ theme }: { theme: ThemeMode }) {
             width: `${p.size}px`,
             height: `${p.size}px`,
             backgroundColor: theme === "dark" ? "#D4AF37" : "#C5A059",
-            boxShadow: theme === "dark" ? "0 0 10px rgba(212,175,55,0.7)" : "0 0 6px rgba(197,160,89,0.5)",
+            boxShadow:
+              theme === "dark" ? "0 0 10px rgba(212,175,55,0.7)" : "0 0 6px rgba(197,160,89,0.5)",
           }}
           animate={{
-            y: ["0px", "-60px", "0px"],
-            opacity: [0.2, 0.85, 0.2],
+            y: ["0px", "-50px", "0px"],
+            opacity: [0.15, 0.75, 0.15],
           }}
           transition={{
             duration: p.duration,
@@ -87,9 +91,141 @@ function GoldenHeritageParticles({ theme }: { theme: ThemeMode }) {
 }
 
 // =========================================================================
-// SECTION TRANSITION: LEGACY REVEAL (Slide Up & Smooth Opacity Reveal)
+// STARDUST CURSOR FOLLOWER (Golden Dust Trail)
 // =========================================================================
-function LegacyRevealSection({
+function StardustCursorTrail({ theme }: { theme: ThemeMode }) {
+  const [dots, setDots] = useState<Array<{ id: number; x: number; y: number }>>([]);
+
+  useEffect(() => {
+    let count = 0;
+    const handleMove = (e: MouseEvent) => {
+      count++;
+      if (count % 3 !== 0) return; // throttle
+      const newDot = { id: Date.now() + Math.random(), x: e.clientX, y: e.clientY };
+      setDots((prev) => [...prev.slice(-12), newDot]);
+    };
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, []);
+
+  if (theme === "contrast") return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      {dots.map((d) => (
+        <motion.div
+          key={d.id}
+          initial={{ scale: 1, opacity: 0.8 }}
+          animate={{ scale: 0, opacity: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="absolute h-2 w-2 rounded-full -translate-x-1/2 -translate-y-1/2"
+          style={{
+            left: d.x,
+            top: d.y,
+            backgroundColor: theme === "dark" ? "#F59E0B" : "#C5A059",
+            boxShadow: theme === "dark" ? "0 0 8px #F59E0B" : "0 0 6px #C5A059",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// =========================================================================
+// 3-LAYER BACKGROUND ARCHITECTURE (Strict Enterprise Rule)
+// Layer 0: Unsplash real image (Antique library / parchment)
+// Layer 1: Overlay Navy / Parchment opacity-80
+// Layer 2: Floating Golden particles
+// =========================================================================
+function HeritageThreeLayerBackground({ theme }: { theme: ThemeMode }) {
+  const { scrollYProgress } = useScroll();
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "45%"]);
+  const blob1Y = useTransform(scrollYProgress, [0, 1], [-90, 140]);
+  const blob2Y = useTransform(scrollYProgress, [0, 1], [120, -140]);
+  const rot1 = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const rot2 = useTransform(scrollYProgress, [0, 1], [0, -180]);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {/* LAYER 0: REAL IMAGE (Unsplash Luxury Library / Antique Parchment) WITH 50% SCROLL PARALLAX */}
+      <motion.div style={{ y: bgY }} className="absolute -top-[25%] inset-x-0 h-[150%] w-full">
+        <img
+          src={
+            theme === "dark"
+              ? "https://images.unsplash.com/photo-1507842229452-6e274a2ff438?auto=format&fit=crop&w=2400&q=80"
+              : theme === "contrast"
+              ? "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=2400&q=80"
+              : "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=2400&q=80"
+          }
+          alt="Heritage Library Archive"
+          className="h-full w-full object-cover object-center filter brightness-[0.78] contrast-[1.1]"
+        />
+      </motion.div>
+
+      {/* LAYER 1: OVERLAY (Parchment Be in Light / Midnight Navy in Dark / Solid in Contrast) */}
+      <div
+        className={`absolute inset-0 transition-colors duration-700 ${
+          theme === "dark"
+            ? "bg-[#070D1E]/90 backdrop-blur-[2px]"
+            : theme === "contrast"
+              ? "bg-white/95"
+              : "bg-[#F7F4EB]/90 backdrop-blur-[1px]"
+        }`}
+      />
+
+      {/* OPPOSING FLOATING DECORATIVE PARTICLES & WAX CRESTS (Z-AXIS PARALLAX) */}
+      <motion.div
+        style={{ y: blob1Y, rotate: rot1 }}
+        className="absolute -top-10 left-[8%] h-72 w-72 rounded-full bg-gradient-to-br from-amber-500/10 to-yellow-600/5 blur-3xl pointer-events-none"
+      />
+      <motion.div
+        style={{ y: blob2Y, rotate: rot2 }}
+        className="absolute top-1/2 right-[6%] h-96 w-96 rounded-full bg-gradient-to-tl from-blue-900/15 to-amber-400/10 blur-3xl pointer-events-none"
+      />
+
+      {/* LAYER 2: GOLDEN PARTICLES */}
+      <GoldenHeritageParticles theme={theme} />
+    </div>
+  );
+}
+
+// =========================================================================
+// THEME-SWITCH: 3D BOOK FLIP TRANSITION
+// =========================================================================
+function BookFlipThemeTransition({ isFlipping, theme }: { isFlipping: boolean; theme: ThemeMode }) {
+  if (!isFlipping) return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center overflow-hidden [perspective:1800px]">
+      {/* Book Spine shadow */}
+      <div className="absolute inset-y-0 left-1/2 w-8 -translate-x-1/2 bg-black/40 blur-md z-10" />
+
+      {/* Turning 3D Page */}
+      <motion.div
+        initial={{ rotateY: 0, transformOrigin: "left center" }}
+        animate={{ rotateY: -180 }}
+        transition={{ duration: 0.65, ease: [0.65, 0, 0.35, 1] }}
+        className={`relative h-full w-1/2 left-1/2 [transform-style:preserve-3d] shadow-[0_25px_60px_rgba(0,0,0,0.6)] ${
+          theme === "dark"
+            ? "bg-gradient-to-r from-[#0F172A] to-[#1E293B] border-l border-[#D4AF37]/50 text-[#D4AF37]"
+            : theme === "contrast"
+              ? "bg-black text-white border-l-2 border-white"
+              : "bg-gradient-to-r from-[#ECE4D0] to-[#FAF7EE] border-l border-[#C5A059]/40 text-[#5C3D1E]"
+        }`}
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 opacity-40">
+          <Scroll className="h-16 w-16 mb-4 animate-pulse" />
+          <div className="font-serif text-lg tracking-widest uppercase">Lật Mở Hồ Sơ Di Sản</div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// =========================================================================
+// SECTION TRANSITION: SCROLL HIJACKING ASYMMETRIC STICKY CONTAINER
+// =========================================================================
+function AsymmetricScrollHijackSection({
   children,
   id,
   className = "",
@@ -98,29 +234,49 @@ function LegacyRevealSection({
   id?: string;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
+    target: containerRef,
+    offset: ["start start", "end end"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 0.25, 0.75, 1], [60, 0, 0, -40]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.4, 1, 1, 0.5]);
+  const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.93, 1, 1, 0.9]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [6, 0, 0, -6]);
+  const clipPath = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.85, 1],
+    [
+      "inset(4% 2% 4% 2% round 28px)",
+      "inset(0% 0% 0% 0% round 0px)",
+      "inset(0% 0% 0% 0% round 0px)",
+      "inset(4% 2% 4% 2% round 28px)",
+    ],
+  );
+  const yContent = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [40, 0, 0, -40]);
 
   return (
-    <motion.section
-      ref={ref}
-      id={id}
-      style={{ y, opacity }}
-      className={`relative py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto ${className}`}
-    >
-      {children}
-    </motion.section>
+    <div ref={containerRef} id={id} className="relative min-h-[190vh] sm:min-h-[220vh] w-full">
+      <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden [perspective:1400px]">
+        <motion.div
+          style={{
+            scale,
+            rotateX,
+            clipPath,
+            y: yContent,
+          }}
+          className={`relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 max-h-[96vh] overflow-y-auto lg:overflow-visible no-scrollbar ${className}`}
+        >
+          {children}
+        </motion.div>
+      </div>
+    </div>
   );
 }
 
+const LegacyRevealSection = AsymmetricScrollHijackSection;
+
 // =========================================================================
-// 5 PROBLEM CARDS (Dossier Folios)
+// 5 ENTERPRISE PROBLEMS (Wax Seal & Dossier Archive Cards)
 // =========================================================================
 const PROBLEMS = [
   {
@@ -128,24 +284,24 @@ const PROBLEMS = [
     num: "01",
     title: "Thông tin phân tán",
     tagline: "Khó tìm đúng người",
-    desc: "Dữ liệu đối tác lưu rải rác trên danh bạ cá nhân, Zalo, danh thiếp giấy và nhiều file Excel rời rạc khiến việc tra cứu mất nhiều giờ.",
-    highlight: "PHÂN TÁN",
+    desc: "Dữ liệu đối tác, hội viên lưu trữ rải rác trên sổ tay, Zalo, danh thiếp giấy và file Excel rời rạc. Khi cần tìm người phù hợp thì mất nhiều thời gian hoặc không tìm ra.",
+    seal: "SEAL_DISPERSED",
   },
   {
     id: 2,
     num: "02",
     title: "Khó duy trì quan hệ",
     tagline: "Thiếu công cụ nhắc nhở và theo dõi tương tác",
-    desc: "Không có lịch sử gặp gỡ liên tục, dễ lãng quên đối tác tiềm năng sau sự kiện và đánh mất sợi dây gắn kết chiến lược.",
-    highlight: "GIÁN ĐOẠN",
+    desc: "Không có hệ thống lưu lại lịch sử tiếp xúc, ghi chú quan trọng và nhắc nhở chăm sóc định kỳ, khiến các mối quan hệ quý giá dần bị lãng quên.",
+    seal: "SEAL_RETENTION",
   },
   {
     id: 3,
     num: "03",
     title: "Bỏ lỡ cơ hội",
     tagline: "Không kịp nắm bắt cơ hội phù hợp",
-    desc: "Các nhu cầu mua bán, chuyển giao công nghệ và hợp tác đầu tư xuất hiện mỗi ngày nhưng không được matching kịp thời.",
-    highlight: "CHẬM TRỄ",
+    desc: "Nhu cầu hợp tác, dự án kinh doanh xuất hiện nhưng không có cơ chế matching kịp thời giữa bên có nhu cầu và bên có năng lực cung ứng.",
+    seal: "SEAL_OPPORTUNITY",
   },
   {
     id: 4,
@@ -153,7 +309,7 @@ const PROBLEMS = [
     title: "Thiếu kết nối thực chất",
     tagline: "Nhiều sự kiện nhưng khó tạo giá trị sau sự kiện",
     desc: "Giao lưu bề nổi, trao đổi danh thiếp hình thức mà thiếu cơ chế thiết lập cuộc hẹn 1-on-1 theo đúng năng lực cung ứng.",
-    highlight: "HÌNH THỨC",
+    seal: "SEAL_CONNECTION",
   },
   {
     id: 5,
@@ -161,7 +317,7 @@ const PROBLEMS = [
     title: "Khó đo lường hiệu quả",
     tagline: "Không biết mối quan hệ mang lại giá trị gì",
     desc: "Ban lãnh đạo và doanh nhân không đo lường được ROI, doanh số giao thương và giá trị thực tế do các mối quan hệ tạo ra.",
-    highlight: "VÔ HÌNH",
+    seal: "SEAL_ANALYTICS",
   },
 ];
 
@@ -251,120 +407,119 @@ const CLIENT_LOGOS = [
 // =========================================================================
 const TESTIMONIALS = [
   {
-    id: 1,
-    name: "Nguyễn Thị Lan",
-    role: "Chủ tịch Hiệp hội Du lịch Việt Nam",
     quote:
-      "Business Connect đã cách mạng hóa phương thức gắn kết hơn 600 hội viên của chúng tôi. Việc kết nối doanh nghiệp B2B và nhắc nhở gia hạn diễn ra tự động, nâng cao uy tín hiệp hội rõ rệt.",
-    stat: "+180% Tương tác hội viên",
+      "Business Connect đã giúp Hiệp hội chuyển đổi số toàn diện công tác hội viên. Tỷ lệ kết nối thành công giữa các doanh nghiệp du lịch tăng hơn 300% chỉ sau một kỳ đại hội.",
+    author: "Nguyễn Thị Lan",
+    role: "Chủ tịch",
+    org: "Hiệp hội Du lịch Việt Nam",
+    initials: "NL",
   },
   {
-    id: 2,
-    name: "Trần Minh Quân",
-    role: "CEO, Công ty Sản xuất Việt",
     quote:
-      "Tính năng AI Matching và hồ sơ số 360° đã giúp công ty tôi tìm được 4 nhà phân phối lớn chỉ trong 2 tháng đầu tham gia. Một nền tảng không thể thiếu cho lãnh đạo doanh nghiệp.",
-    stat: "4 Hợp đồng phân phối lớn",
+      "Tính năng AI matching mở ra cho công ty tôi 5 hợp đồng cung ứng chiến lược trong nước và khu vực. Khả năng theo dõi cơ hội và nhắc lịch chăm sóc quan hệ cực kỳ tinh tế.",
+    author: "Trần Minh Quân",
+    role: "CEO & Sáng lập",
+    org: "Công ty Sản xuất Việt",
+    initials: "MQ",
   },
   {
-    id: 3,
-    name: "Lê Hoàng Anh",
-    role: "Doanh nhân, Hội viên VIP",
     quote:
-      "Tôi tiết kiệm hàng chục giờ mỗi tháng nhờ hệ thống ghi chú lịch sử gặp gỡ và nhắc nhở thông minh. Mọi mối quan hệ kinh doanh giờ đây được chăm sóc bài bản và chuẩn mực.",
-    stat: "Tiết kiệm 40h/tháng",
+      "Một nền tảng chuẩn mực cho giới doanh nhân cấp cao. Thiết kế trang trọng, bảo mật và mang lại giá trị thiết thực cho từng buổi kết nối giao thương.",
+    author: "Lê Hoàng Anh",
+    role: "Doanh nhân & Ủy viên",
+    org: "Hội viên VIP Câu lạc bộ Doanh nghiệp",
+    initials: "HA",
   },
 ];
 
-// =========================================================================
-// MAIN V2 COMPONENT: HERITAGE & TRUST
-// =========================================================================
 export function BusinessConnectLandingV2() {
-  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [isFlipping, setIsFlipping] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const { showHeader, headerStyle, resetTimer } = useAutoHideHeader(3000);
+  const [hoveredProblem, setHoveredProblem] = useState<number | null>(null);
 
-  // Form State
-  const [demoForm, setDemoForm] = useState({ name: "", phone: "", email: "", org: "" });
-  const [submitting, setSubmitting] = useState(false);
+  const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
-  const handleDemoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const handleSwitchTheme = (nextTheme: ThemeMode) => {
+    if (nextTheme === theme) return;
+    setIsFlipping(true);
     setTimeout(() => {
-      setSubmitting(false);
-      setShowDemoModal(false);
-      setDemoForm({ name: "", phone: "", email: "", org: "" });
-      toast.success("Đã ghi nhận yêu cầu Demo! Đội ngũ Business Connect sẽ liên hệ bạn trong 15 phút.");
+      setTheme(nextTheme);
+    }, 320);
+    setTimeout(() => {
+      setIsFlipping(false);
     }, 700);
-  };
-
-  // Theme Styling Palettes
-  // Light: Private Banking / Law (Parchment beige background, charcoal text, champagne gold border)
-  // Dark: Midnight Navy Blue, metallic gold accents
-  // Contrast: Clean newspaper black & white
-  const themeContainerClasses = {
-    light: "bg-[#F9F6F0] text-[#1C1917]",
-    dark: "bg-[#060C1B] text-[#F3E5AB]",
-    contrast: "bg-white text-black",
-  };
-
-  const cardBorderClasses = {
-    light: "border-[#D9CDB8] bg-white/95 shadow-[0_10px_30px_rgba(197,160,89,0.12)] hover:border-[#C5A059]",
-    dark: "border-[#D4AF37]/35 bg-[#0D1830]/90 shadow-[0_15px_35px_rgba(0,0,0,0.6)] hover:border-[#D4AF37] hover:shadow-[0_0_25px_rgba(212,175,55,0.25)]",
-    contrast: "border-2 border-black bg-white shadow-none hover:bg-zinc-50",
   };
 
   return (
     <div
-      data-theme={theme}
-      className={`min-h-screen font-serif transition-colors duration-500 overflow-x-hidden ${themeContainerClasses[theme]}`}
-      style={{
-        fontFamily:
-          theme === "contrast"
-            ? "system-ui, -apple-system, sans-serif"
-            : "'Playfair Display', 'Merriweather', 'Be Vietnam Pro', Georgia, serif",
-      }}
+      className={`min-h-screen relative selection:bg-[#D4AF37]/30 selection:text-[#B8860B] transition-colors duration-500 font-sans ${
+        theme === "dark"
+          ? "bg-[#070D1E] text-slate-100"
+          : theme === "contrast"
+            ? "bg-white text-black"
+            : "bg-[#F7F4EB] text-[#1C1917]"
+      }`}
     >
-      {/* Background Particles */}
-      <GoldenHeritageParticles theme={theme} />
+      {/* 3-LAYER BACKGROUND ARCHITECTURE */}
+      <HeritageThreeLayerBackground theme={theme} />
 
-      {/* HEADER */}
+      {/* STARDUST CURSOR PARTICLES */}
+      <StardustCursorTrail theme={theme} />
+
+      {/* 3D BOOK FLIP ON THEME SWITCH */}
+      <BookFlipThemeTransition isFlipping={isFlipping} theme={theme} />
+
+      {/* =========================================================================
+          1. HEADER (STRICT CORPORATE PADDING & B2B COPY)
+      ========================================================================= */}
       <header
-        className={`sticky top-0 z-50 border-b backdrop-blur-xl transition-all duration-300 px-4 sm:px-6 lg:px-8 ${
-          theme === "dark"
-            ? "border-[#D4AF37]/25 bg-[#060C1B]/85"
-            : theme === "contrast"
-            ? "border-black bg-white"
-            : "border-[#E5DAC8] bg-[#F9F6F0]/90"
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isHeaderVisible ? "translate-y-0" : "-translate-y-full pointer-events-none"
+        } ${
+          isAtTop
+            ? "bg-transparent py-5"
+            : theme === "dark"
+              ? "bg-[#070D1E]/90 backdrop-blur-md border-b border-[#D4AF37]/20 py-3 shadow-lg"
+              : theme === "contrast"
+                ? "bg-white border-b-2 border-black py-3"
+                : "bg-[#F7F4EB]/90 backdrop-blur-md border-b border-[#C5A059]/30 py-3 shadow-sm"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl h-20 items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div
-              className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-105 ${
+              className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-all duration-300 ${
                 theme === "dark"
-                  ? "border-[#D4AF37] bg-gradient-to-br from-[#D4AF37] to-[#8C653B] text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                  ? "border-[#D4AF37] bg-[#0A1128] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]"
                   : theme === "contrast"
-                  ? "border-2 border-black bg-black text-white"
-                  : "border-[#C5A059] bg-gradient-to-br from-[#C5A059] to-[#8C653B] text-white shadow-md"
+                    ? "border-2 border-black bg-black text-white"
+                    : "border-[#C5A059] bg-[#FAF7EE] text-[#8C653B] shadow-sm"
               }`}
             >
-              <Building2 className="h-6 w-6" />
+              <Building2 className="h-5 w-5" />
             </div>
             <div>
               <div
-                className={`text-lg font-bold tracking-wider uppercase font-serif ${
-                  theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
+                className={`text-base font-bold tracking-wider uppercase font-serif ${
+                  theme === "dark"
+                    ? "text-[#D4AF37]"
+                    : theme === "contrast"
+                      ? "text-black"
+                      : "text-[#1C1917]"
                 }`}
               >
                 BUSINESS CONNECT
               </div>
               <div
-                className={`text-[10px] tracking-widest uppercase font-sans ${
-                  theme === "dark" ? "text-[#D4AF37]/70" : theme === "contrast" ? "text-zinc-600" : "text-[#8C653B]"
+                className={`text-[9px] tracking-widest uppercase font-sans font-semibold ${
+                  theme === "dark"
+                    ? "text-[#D4AF37]/70"
+                    : theme === "contrast"
+                      ? "text-zinc-600"
+                      : "text-[#8C653B]"
                 }`}
               >
                 HERITAGE & TRUST • V2
@@ -372,7 +527,7 @@ export function BusinessConnectLandingV2() {
             </div>
           </Link>
 
-          {/* Nav Links: Chính xác theo ảnh gốc */}
+          {/* 6 Nav Links: CHÍNH XÁC 100% THEO ẢNH GỐC */}
           <nav className="hidden xl:flex items-center gap-8 text-sm font-medium font-sans">
             <a href="#giai-phap" className="hover:opacity-75 transition">
               Giải pháp
@@ -402,33 +557,39 @@ export function BusinessConnectLandingV2() {
                 theme === "dark"
                   ? "border-[#D4AF37]/40 bg-[#0A1128]"
                   : theme === "contrast"
-                  ? "border-black bg-white"
-                  : "border-[#D9CDB8] bg-[#EFE9DD]"
+                    ? "border-black bg-white"
+                    : "border-[#D9CDB8] bg-[#EFE9DD]"
               }`}
             >
               <button
-                onClick={() => setTheme("light")}
+                onClick={() => handleSwitchTheme("light")}
                 title="Private Banking (Sáng)"
                 className={`rounded-full p-1.5 transition ${
-                  theme === "light" ? "bg-[#C5A059] text-white shadow" : "opacity-60 hover:opacity-100"
+                  theme === "light"
+                    ? "bg-[#C5A059] text-white shadow"
+                    : "opacity-60 hover:opacity-100"
                 }`}
               >
                 <Sun className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setTheme("dark")}
+                onClick={() => handleSwitchTheme("dark")}
                 title="Midnight Navy (Tối)"
                 className={`rounded-full p-1.5 transition ${
-                  theme === "dark" ? "bg-[#D4AF37] text-black shadow" : "opacity-60 hover:opacity-100"
+                  theme === "dark"
+                    ? "bg-[#D4AF37] text-black shadow"
+                    : "opacity-60 hover:opacity-100"
                 }`}
               >
                 <Moon className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setTheme("contrast")}
+                onClick={() => handleSwitchTheme("contrast")}
                 title="Báo chí (Tương phản cao)"
                 className={`rounded-full p-1.5 transition ${
-                  theme === "contrast" ? "bg-black text-white shadow" : "opacity-60 hover:opacity-100"
+                  theme === "contrast"
+                    ? "bg-black text-white shadow"
+                    : "opacity-60 hover:opacity-100"
                 }`}
               >
                 <Contrast className="h-3.5 w-3.5" />
@@ -447,68 +608,71 @@ export function BusinessConnectLandingV2() {
                 theme === "dark"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.35)]"
                   : theme === "contrast"
-                  ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
-                  : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-lg"
+                    ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
+                    : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-md hover:shadow-lg"
               }`}
             >
               <span>Đặt demo</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </header>
 
       {/* =========================================================================
-          HERO SECTION: NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI
-          ========================================================================= */}
-      <LegacyRevealSection id="hero" className="text-center pt-28 pb-20">
+          2. HERO SECTION: EXACT PART 1 COPY & STATS
+      ========================================================================= */}
+      <LegacyRevealSection className="pt-36 sm:pt-44 pb-20 text-center">
         {/* Tagline */}
-        <div
-          className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-xs font-bold tracking-widest uppercase font-sans mb-8 ${
-            theme === "dark"
-              ? "border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]"
-              : theme === "contrast"
-              ? "border-black bg-black text-white"
-              : "border-[#C5A059]/60 bg-[#C5A059]/15 text-[#8C653B]"
-          }`}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-xs font-bold uppercase tracking-widest font-serif">
+          <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
           <span>NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI</span>
         </div>
 
         {/* Headline */}
         <h1
-          className={`text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.15] max-w-5xl mx-auto ${
-            theme === "dark"
-              ? "text-transparent bg-clip-text bg-gradient-to-r from-white via-[#F3E5AB] to-[#D4AF37]"
-              : theme === "contrast"
-              ? "text-black"
-              : "text-[#1C1917]"
+          className={`text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-serif max-w-5xl mx-auto leading-[1.15] mb-6 ${
+            theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
           }`}
         >
-          Hiểu đúng người. Mở ra cơ hội thật.
+          Hiểu đúng người. <br className="hidden sm:inline" />
+          <span
+            className={`${
+              theme === "dark"
+                ? "text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#FFF2B2] to-[#D4AF37]"
+                : theme === "contrast"
+                  ? "text-black underline underline-offset-8"
+                  : "text-transparent bg-clip-text bg-gradient-to-r from-[#A47A3E] to-[#5C3D1E]"
+            }`}
+          >
+            Mở ra cơ hội thật.
+          </span>
         </h1>
 
         {/* Subtext */}
         <p
-          className={`mt-6 text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto font-sans ${
-            theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
+          className={`text-lg sm:text-xl font-sans max-w-3xl mx-auto leading-relaxed mb-10 ${
+            theme === "dark"
+              ? "text-slate-300"
+              : theme === "contrast"
+                ? "text-zinc-800"
+                : "text-[#4A453E]"
           }`}
         >
-          Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối đúng người, đúng thời
-          điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
+          Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối
+          đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
         </p>
 
         {/* CTAs */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-20">
           <button
             onClick={() => setShowDemoModal(true)}
-            className={`inline-flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-bold font-sans uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 shadow-xl ${
+            className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 text-sm font-bold uppercase tracking-wider font-sans transition-all duration-300 transform hover:-translate-y-0.5 ${
               theme === "dark"
-                ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_25px_rgba(212,175,55,0.4)]"
+                ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_30px_rgba(212,175,55,0.4)]"
                 : theme === "contrast"
-                ? "border-2 border-black bg-black text-white"
-                : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white"
+                  ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
+                  : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-xl hover:shadow-2xl"
             }`}
           >
             <span>Đặt demo ngay</span>
@@ -517,228 +681,157 @@ export function BusinessConnectLandingV2() {
 
           <button
             onClick={() => setShowVideoModal(true)}
-            className={`inline-flex items-center gap-2.5 rounded-xl border px-7 py-4 text-sm font-bold font-sans transition-all duration-300 hover:opacity-80 ${
+            className={`inline-flex items-center gap-3 rounded-xl px-7 py-4 text-sm font-bold uppercase tracking-wider font-sans border transition-all duration-300 ${
               theme === "dark"
-                ? "border-[#D4AF37]/40 bg-[#0A1128]/80 text-[#D4AF37]"
+                ? "border-[#D4AF37]/40 bg-[#0A1128]/60 text-white hover:bg-[#0A1128]"
                 : theme === "contrast"
-                ? "border-2 border-black bg-white text-black"
-                : "border-[#D9CDB8] bg-white text-[#1C1917]"
+                  ? "border-2 border-black bg-white text-black hover:bg-zinc-100"
+                  : "border-[#C5A059]/40 bg-[#FAF7EE] text-[#5C3D1E] hover:bg-[#F3EDE0]"
             }`}
           >
-            <Play className="h-4 w-4 fill-current" />
+            <Play className="h-4 w-4 fill-current text-[#D4AF37]" />
             <span>Xem video (2 phút)</span>
           </button>
         </div>
 
-        {/* 4 Stats Grid */}
-        <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-6 pt-12 border-t border-[#D4AF37]/20">
-          {[
-            { value: "10,000+", label: "Doanh nhân & Hội viên" },
-            { value: "300+", label: "Hiệp hội & Tổ chức" },
-            { value: "50,000+", label: "Kết nối được tạo" },
-            { value: "20+", label: "Quốc gia & vùng lãnh thổ" },
-          ].map((s, idx) => (
+        {/* 4 Corporate Stats Grid */}
+        <div
+          className={`grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl border text-left ${
+            theme === "dark"
+              ? "bg-[#0A1128]/80 border-[#D4AF37]/30 shadow-2xl backdrop-blur-md"
+              : theme === "contrast"
+                ? "bg-white border-2 border-black"
+                : "bg-[#FAF7EE]/90 border-[#D9CDB8] shadow-lg backdrop-blur-md"
+          }`}
+        >
+          <div>
             <div
-              key={idx}
-              className={`p-6 rounded-2xl border ${cardBorderClasses[theme]}`}
+              className={`text-3xl sm:text-4xl font-bold font-serif ${
+                theme === "dark"
+                  ? "text-[#D4AF37]"
+                  : theme === "contrast"
+                    ? "text-black"
+                    : "text-[#8C653B]"
+              }`}
             >
-              <div
-                className={`text-3xl sm:text-4xl font-extrabold tracking-tight font-serif ${
-                  theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
-                }`}
-              >
-                {s.value}
-              </div>
-              <div
-                className={`mt-2 text-xs sm:text-sm font-sans font-medium ${
-                  theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-700" : "text-[#57534E]"
-                }`}
-              >
-                {s.label}
-              </div>
+              10,000+
             </div>
-          ))}
+            <div className="text-xs font-sans uppercase tracking-wider opacity-75 mt-1">
+              Doanh nhân & Hội viên
+            </div>
+          </div>
+          <div>
+            <div
+              className={`text-3xl sm:text-4xl font-bold font-serif ${
+                theme === "dark"
+                  ? "text-[#D4AF37]"
+                  : theme === "contrast"
+                    ? "text-black"
+                    : "text-[#8C653B]"
+              }`}
+            >
+              300+
+            </div>
+            <div className="text-xs font-sans uppercase tracking-wider opacity-75 mt-1">
+              Hiệp hội & Tổ chức
+            </div>
+          </div>
+          <div>
+            <div
+              className={`text-3xl sm:text-4xl font-bold font-serif ${
+                theme === "dark"
+                  ? "text-[#D4AF37]"
+                  : theme === "contrast"
+                    ? "text-black"
+                    : "text-[#8C653B]"
+              }`}
+            >
+              50,000+
+            </div>
+            <div className="text-xs font-sans uppercase tracking-wider opacity-75 mt-1">
+              Kết nối được tạo
+            </div>
+          </div>
+          <div>
+            <div
+              className={`text-3xl sm:text-4xl font-bold font-serif ${
+                theme === "dark"
+                  ? "text-[#D4AF37]"
+                  : theme === "contrast"
+                    ? "text-black"
+                    : "text-[#8C653B]"
+              }`}
+            >
+              20+
+            </div>
+            <div className="text-xs font-sans uppercase tracking-wider opacity-75 mt-1">
+              Quốc gia & vùng lãnh thổ
+            </div>
+          </div>
         </div>
       </LegacyRevealSection>
 
       {/* =========================================================================
-          PROBLEM SECTION: NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
-          ========================================================================= */}
+          3. PROBLEM SECTION: 5 WAX SEAL ARCHIVE CARDS
+      ========================================================================= */}
       <LegacyRevealSection id="van-de">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest font-sans mb-4 ${
-              theme === "dark"
-                ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                : theme === "contrast"
-                ? "border-black bg-black text-white"
-                : "border-[#C5A059]/40 bg-[#C5A059]/10 text-[#8C653B]"
-            }`}
-          >
-            <span>NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY</span>
+          <div className="text-xs font-bold font-serif uppercase tracking-widest text-[#D4AF37] mb-2">
+            NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
           </div>
-          <h2
-            className={`text-3xl sm:text-5xl font-bold tracking-tight ${
-              theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-            }`}
-          >
+          <h2 className="text-3xl sm:text-4xl font-bold font-serif tracking-tight">
             Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
           </h2>
         </div>
 
-        {/* 5 Dossier Folio Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PROBLEMS.map((p, idx) => (
-            <div
-              key={p.id}
-              className={`relative rounded-2xl border p-8 transition-all duration-300 hover:-translate-y-1 ${
-                cardBorderClasses[theme]
-              } ${idx === 3 || idx === 4 ? "md:col-span-1 lg:col-span-1" : ""}`}
-            >
-              {/* Top Accent Strip */}
-              <div
-                className={`absolute top-0 left-8 right-8 h-0.5 ${
-                  theme === "dark" ? "bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" : "bg-[#C5A059]"
-                }`}
-              />
-
-              <div className="flex items-center justify-between mb-5">
-                <span
-                  className={`text-2xl font-bold font-serif ${
-                    theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
-                  }`}
-                >
-                  ({p.num})
-                </span>
-                <span
-                  className={`text-[10px] font-mono uppercase px-2.5 py-1 rounded-full border ${
-                    theme === "dark"
-                      ? "border-[#D4AF37]/40 text-[#D4AF37]"
-                      : theme === "contrast"
-                      ? "border-black text-black"
-                      : "border-[#C5A059]/50 text-[#8C653B]"
-                  }`}
-                >
-                  {p.highlight}
-                </span>
-              </div>
-
-              <h3
-                className={`text-xl font-bold mb-2 font-serif ${
-                  theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-                }`}
-              >
-                {p.title}
-              </h3>
-
-              <div
-                className={`text-xs font-bold font-sans uppercase tracking-wider mb-3 ${
-                  theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-zinc-600" : "text-[#8C653B]"
-                }`}
-              >
-                {p.tagline}
-              </div>
-
-              <p
-                className={`text-sm leading-relaxed font-sans ${
-                  theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
-                }`}
-              >
-                {p.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </LegacyRevealSection>
-
-      {/* =========================================================================
-          SOLUTION SECTION: GIẢI PHÁP BUSINESS CONNECT (9 ENTERPRISE MODULES)
-          ========================================================================= */}
-      <LegacyRevealSection id="giai-phap">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest font-sans mb-4 ${
-              theme === "dark"
-                ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                : theme === "contrast"
-                ? "border-black bg-black text-white"
-                : "border-[#C5A059]/40 bg-[#C5A059]/10 text-[#8C653B]"
-            }`}
-          >
-            <span>GIẢI PHÁP BUSINESS CONNECT</span>
-          </div>
-          <h2
-            className={`text-3xl sm:text-5xl font-bold tracking-tight ${
-              theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-            }`}
-          >
-            Quản lý kết nối. Tạo ra cơ hội.
-          </h2>
-          <p
-            className={`mt-4 text-base sm:text-lg leading-relaxed font-sans ${
-              theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
-            }`}
-          >
-            Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối đúng người, xây dựng
-            quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực chất.
-          </p>
-          <div className="mt-6">
-            <a
-              href="#tinh-nang"
-              className={`inline-flex items-center gap-2 text-sm font-bold font-sans uppercase tracking-wider hover:underline ${
-                theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
-              }`}
-            >
-              <span>Khám phá tính năng</span>
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
-
-        {/* 9 Enterprise SaaS Solution Cards */}
-        <div id="tinh-nang" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SOLUTIONS.map((s) => {
-            const IconComponent = s.icon;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {PROBLEMS.map((p) => {
+            const isHovered = hoveredProblem === p.id;
             return (
               <div
-                key={s.id}
-                className={`relative rounded-2xl border p-8 transition-all duration-300 hover:-translate-y-1 ${cardBorderClasses[theme]}`}
+                key={p.id}
+                onMouseEnter={() => setHoveredProblem(p.id)}
+                onMouseLeave={() => setHoveredProblem(null)}
+                className={`group relative p-8 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-[#0A1128]/70 border-[#D4AF37]/30 hover:border-[#D4AF37] hover:shadow-[0_0_25px_rgba(212,175,55,0.25)]"
+                    : theme === "contrast"
+                      ? "bg-white border-2 border-black hover:bg-zinc-50"
+                      : "bg-[#FAF7EE] border-[#D9CDB8] hover:border-[#C5A059] hover:shadow-xl"
+                }`}
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-colors ${
-                      theme === "dark"
-                        ? "border-[#D4AF37]/50 bg-[#D4AF37]/15 text-[#D4AF37]"
-                        : theme === "contrast"
-                        ? "border-2 border-black bg-black text-white"
-                        : "border-[#C5A059] bg-[#C5A059]/20 text-[#8C653B]"
-                    }`}
-                  >
-                    <IconComponent className="h-6 w-6" />
-                  </div>
-                  <span
-                    className={`text-xs font-mono font-bold tracking-widest ${
-                      theme === "dark" ? "text-[#D4AF37]/60" : "opacity-40"
-                    }`}
-                  >
-                    {s.num}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-serif text-xs font-bold tracking-widest text-[#D4AF37]">
+                    MỤC {p.num}
                   </span>
+                  {/* Wax Seal Icon */}
+                  <div
+                    className={`h-8 w-8 rounded-full border flex items-center justify-center text-xs font-serif ${
+                      theme === "dark"
+                        ? "border-[#D4AF37]/50 bg-[#070D1E] text-[#D4AF37]"
+                        : "border-[#C5A059] bg-[#ECE4D0] text-[#5C3D1E]"
+                    }`}
+                  >
+                    §
+                  </div>
                 </div>
 
-                <h3
-                  className={`text-xl font-bold mb-3 font-serif ${
-                    theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
+                <h3 className="text-xl font-bold font-serif mb-2">{p.title}</h3>
+                <div
+                  className={`text-sm font-semibold mb-4 ${
+                    theme === "dark" ? "text-amber-400" : "text-amber-800"
                   }`}
                 >
-                  {s.title}
-                </h3>
+                  {p.tagline}
+                </div>
 
+                {/* Text description revealed elegantly on hover / click */}
                 <p
-                  className={`text-sm leading-relaxed font-sans ${
-                    theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
+                  className={`text-sm leading-relaxed transition-opacity duration-300 ${
+                    isHovered ? "opacity-100" : "opacity-80"
                   }`}
                 >
-                  {s.desc}
+                  {p.desc}
                 </p>
               </div>
             );
@@ -747,198 +840,162 @@ export function BusinessConnectLandingV2() {
       </LegacyRevealSection>
 
       {/* =========================================================================
-          ECOSYSTEM SECTION: HỆ SINH THÁI KẾT NỐI KINH DOANH (CONSTELLATION NETWORK)
-          ========================================================================= */}
-      <LegacyRevealSection id="he-sinh-thai">
-        <div
-          className={`rounded-3xl border p-10 sm:p-14 relative overflow-hidden ${
-            theme === "dark"
-              ? "border-[#D4AF37]/40 bg-gradient-to-b from-[#0D1830] to-[#060C1B] shadow-2xl"
-              : theme === "contrast"
-              ? "border-2 border-black bg-white"
-              : "border-[#D9CDB8] bg-white shadow-xl"
-          }`}
-        >
-          {/* Subtle Grid overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:32px_32px] opacity-10 pointer-events-none" />
+          4. SOLUTION SECTION: 9 GOLD-FRAMED ENTERPRISE CARDS
+      ========================================================================= */}
+      <LegacyRevealSection id="giai-phap">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="text-xs font-bold font-serif uppercase tracking-widest text-[#D4AF37] mb-2">
+            GIẢI PHÁP BUSINESS CONNECT
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold font-serif tracking-tight mb-4">
+            Quản lý kết nối. Tạo ra cơ hội.
+          </h2>
+          <p className="text-base sm:text-lg opacity-80 leading-relaxed mb-6">
+            Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối
+            đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực
+            chất.
+          </p>
+          <a
+            href="#he-sinh-thai"
+            className="inline-flex items-center gap-2 text-sm font-bold font-serif uppercase tracking-wider text-[#D4AF37] hover:underline"
+          >
+            <span>Khám phá tính năng</span>
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </div>
 
-          <div className="relative z-10 text-center max-w-3xl mx-auto">
-            <div
-              className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest font-sans mb-4 ${
-                theme === "dark"
-                  ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                  : theme === "contrast"
-                  ? "border-black bg-black text-white"
-                  : "border-[#C5A059]/40 bg-[#C5A059]/10 text-[#8C653B]"
-              }`}
-            >
-              <span>HỆ SINH THÁI KẾT NỐI KINH DOANH</span>
-            </div>
-
-            <h2
-              className={`text-3xl sm:text-5xl font-bold tracking-tight ${
-                theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-              }`}
-            >
-              Cùng nhau tạo ra giá trị lớn hơn
-            </h2>
-
-            <p
-              className={`mt-4 text-base sm:text-lg leading-relaxed font-sans ${
-                theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
-              }`}
-            >
-              Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà đầu tư và các tổ chức
-              quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực và cơ hội kinh doanh.
-            </p>
-
-            <div className="mt-8">
-              <a
-                href="#he-sinh-thai"
-                className={`inline-flex items-center gap-2 text-sm font-bold font-sans uppercase tracking-wider hover:underline ${
-                  theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {SOLUTIONS.map((s) => {
+            const IconComponent = s.icon;
+            return (
+              <div
+                key={s.id}
+                className={`p-8 rounded-2xl border transition-all duration-300 group hover:-translate-y-1 ${
+                  theme === "dark"
+                    ? "bg-[#0A1128]/70 border-[#D4AF37]/30 hover:border-[#D4AF37] hover:shadow-[0_0_30px_rgba(212,175,55,0.2)]"
+                    : theme === "contrast"
+                      ? "bg-white border-2 border-black hover:bg-zinc-50"
+                      : "bg-[#FAF7EE] border-[#D9CDB8] hover:border-[#C5A059] hover:shadow-xl"
                 }`}
               >
-                <span>Xem hệ sinh thái</span>
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </div>
-
-            {/* Constellation Network Nodes */}
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-8 border-t border-[#D4AF37]/20">
-              {[
-                { name: "Hội viên", icon: Users },
-                { name: "Hiệp hội", icon: Building2 },
-                { name: "Doanh nghiệp", icon: Briefcase },
-                { name: "Chuyên gia", icon: BookOpen },
-                { name: "Nhà đầu tư", icon: TrendingUp },
-                { name: "Tổ chức QT", icon: Globe2 },
-              ].map((node, i) => {
-                const NodeIcon = node.icon;
-                return (
+                <div className="flex items-center justify-between mb-5">
                   <div
-                    key={i}
-                    className={`p-4 rounded-xl border text-center transition-all duration-300 hover:scale-105 ${
+                    className={`h-12 w-12 rounded-xl border flex items-center justify-center transition-all duration-300 ${
                       theme === "dark"
-                        ? "border-[#D4AF37]/30 bg-[#0A1128] text-[#D4AF37]"
+                        ? "border-[#D4AF37]/50 bg-[#070D1E] text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black"
                         : theme === "contrast"
-                        ? "border border-black bg-white text-black"
-                        : "border-[#E5DAC8] bg-[#F9F6F0] text-[#8C653B]"
+                          ? "border-2 border-black bg-black text-white"
+                          : "border-[#C5A059] bg-[#FAF7EE] text-[#8C653B] group-hover:bg-[#C5A059] group-hover:text-white"
                     }`}
                   >
-                    <div className="flex justify-center mb-2">
-                      <NodeIcon className="h-5 w-5 animate-pulse" />
-                    </div>
-                    <div className="text-xs font-bold font-sans">{node.name}</div>
+                    <IconComponent className="h-6 w-6" />
                   </div>
-                );
-              })}
-            </div>
+                  <span className="font-serif text-xs font-bold opacity-50 tracking-widest">
+                    {s.num}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold font-serif mb-2">{s.title}</h3>
+                <p className="text-sm opacity-80 leading-relaxed">{s.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+      </LegacyRevealSection>
 
-            {/* Highlight Banner */}
-            <div
-              className={`mt-10 p-4 rounded-2xl border text-center font-sans text-xs sm:text-sm font-black tracking-widest uppercase ${
-                theme === "dark"
-                  ? "border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]"
-                  : theme === "contrast"
-                  ? "border-2 border-black bg-black text-white"
-                  : "border-[#C5A059]/40 bg-[#C5A059]/15 text-[#8C653B]"
-              }`}
-            >
+      {/* =========================================================================
+          5. ECOSYSTEM SECTION: CONSTELLATION NETWORK VISUAL
+      ========================================================================= */}
+      <LegacyRevealSection id="he-sinh-thai">
+        <div
+          className={`p-10 sm:p-16 rounded-3xl border relative overflow-hidden text-center ${
+            theme === "dark"
+              ? "bg-[#0A1128]/90 border-[#D4AF37]/40 shadow-2xl"
+              : theme === "contrast"
+                ? "bg-white border-2 border-black"
+                : "bg-[#FAF7EE] border-[#D9CDB8] shadow-2xl"
+          }`}
+        >
+          <div className="text-xs font-bold font-serif uppercase tracking-widest text-[#D4AF37] mb-3">
+            HỆ SINH THÁI KẾT NỐI KINH DOANH
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-bold font-serif tracking-tight mb-4">
+            Cùng nhau tạo ra giá trị lớn hơn
+          </h2>
+          <p className="text-base sm:text-lg opacity-80 max-w-3xl mx-auto leading-relaxed mb-8">
+            Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà đầu
+            tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực
+            và cơ hội kinh doanh.
+          </p>
+
+          <div
+            className={`p-6 rounded-2xl inline-block border mb-10 ${
+              theme === "dark"
+                ? "bg-[#070D1E] border-[#D4AF37]/50 text-[#D4AF37]"
+                : theme === "contrast"
+                  ? "bg-black text-white border-black"
+                  : "bg-[#EFE9DD] border-[#C5A059] text-[#5C3D1E]"
+            }`}
+          >
+            <div className="text-sm sm:text-base font-bold font-serif tracking-widest uppercase">
               NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
             </div>
+          </div>
+
+          <div>
+            <button
+              onClick={() => setShowDemoModal(true)}
+              className="inline-flex items-center gap-2 text-sm font-bold font-serif uppercase tracking-wider text-[#D4AF37] hover:underline"
+            >
+              <span>Xem hệ sinh thái</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </LegacyRevealSection>
 
       {/* =========================================================================
-          CLIENT & TESTIMONIAL SECTION: ĐƯỢC TIN TƯỞNG & CÂU CHUYỆN THÀNH CÔNG
-          ========================================================================= */}
+          6. CLIENTS & TESTIMONIALS: 6 LOGOS & 3 CEO STORIES
+      ========================================================================= */}
       <LegacyRevealSection id="khach-hang">
-        {/* Header 1: Khách hàng tổ chức */}
+        {/* Header 1: Logos */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest font-sans mb-4 ${
-              theme === "dark"
-                ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                : theme === "contrast"
-                ? "border-black bg-black text-white"
-                : "border-[#C5A059]/40 bg-[#C5A059]/10 text-[#8C653B]"
-            }`}
-          >
-            <span>ĐƯỢC TIN TƯỞNG BỞI CÁC HIỆP HỘI VÀ DOANH NGHIỆP</span>
+          <div className="text-xs font-bold font-serif uppercase tracking-widest text-[#D4AF37] mb-2">
+            ĐƯỢC TIN TƯỞNG BỞI CÁC HIỆP HỘI VÀ DOANH NGHIỆP
           </div>
-          <h2
-            className={`text-2xl sm:text-4xl font-bold tracking-tight ${
-              theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-            }`}
-          >
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">
             Những tổ chức tiên phong đã lựa chọn
           </h2>
-          <div className="mt-3">
-            <a
-              href="#khach-hang"
-              className={`inline-flex items-center gap-1.5 text-xs font-bold font-sans uppercase tracking-wider hover:underline ${
-                theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
-              }`}
-            >
-              <span>Xem tất cả khách hàng</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </div>
         </div>
 
         {/* 6 Logos Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-24">
-          {CLIENT_LOGOS.map((org, i) => {
-            const OrgIcon = org.icon;
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-20">
+          {CLIENT_LOGOS.map((c) => {
+            const LogoIcon = c.icon;
             return (
               <div
-                key={i}
-                className={`p-5 rounded-xl border flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-1 ${cardBorderClasses[theme]}`}
+                key={c.name}
+                className={`p-6 rounded-2xl border text-center flex flex-col items-center justify-center gap-2 transition duration-300 hover:border-[#D4AF37] ${
+                  theme === "dark"
+                    ? "bg-[#0A1128]/60 border-[#D4AF37]/20"
+                    : theme === "contrast"
+                      ? "bg-white border-2 border-black"
+                      : "bg-[#FAF7EE] border-[#D9CDB8]"
+                }`}
               >
-                <OrgIcon
-                  className={`h-7 w-7 mb-2 ${
-                    theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#8C653B]"
-                  }`}
-                />
-                <div
-                  className={`text-base font-bold font-serif ${
-                    theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-                  }`}
-                >
-                  {org.name}
-                </div>
-                <div
-                  className={`text-[11px] mt-1 font-sans line-clamp-2 ${
-                    theme === "dark" ? "text-slate-400" : "text-[#78716C]"
-                  }`}
-                >
-                  {org.label}
-                </div>
+                <LogoIcon className="h-7 w-7 text-[#D4AF37]" />
+                <div className="font-serif font-bold text-base">{c.name}</div>
+                <div className="text-[10px] opacity-60 leading-tight">{c.label}</div>
               </div>
             );
           })}
         </div>
 
-        {/* Header 2: Câu chuyện thành công */}
-        <div id="cau-chuyen" className="text-center max-w-3xl mx-auto mb-14">
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest font-sans mb-4 ${
-              theme === "dark"
-                ? "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]"
-                : theme === "contrast"
-                ? "border-black bg-black text-white"
-                : "border-[#C5A059]/40 bg-[#C5A059]/10 text-[#8C653B]"
-            }`}
-          >
-            <span>CÂU CHUYỆN THÀNH CÔNG</span>
+        {/* Header 2: Stories */}
+        <div id="cau-chuyen" className="text-center max-w-3xl mx-auto mb-12 pt-8">
+          <div className="text-xs font-bold font-serif uppercase tracking-widest text-[#D4AF37] mb-2">
+            CÂU CHUYỆN THÀNH CÔNG
           </div>
-          <h2
-            className={`text-3xl sm:text-5xl font-bold tracking-tight ${
-              theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-            }`}
-          >
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">
             Kết nối đúng. Tăng trưởng thật.
           </h2>
         </div>
@@ -947,54 +1004,33 @@ export function BusinessConnectLandingV2() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {TESTIMONIALS.map((t) => (
             <div
-              key={t.id}
-              className={`rounded-2xl border p-8 flex flex-col justify-between relative transition-all duration-300 hover:-translate-y-1 ${cardBorderClasses[theme]}`}
+              key={t.author}
+              className={`p-8 rounded-2xl border flex flex-col justify-between ${
+                theme === "dark"
+                  ? "bg-[#0A1128]/70 border-[#D4AF37]/30 shadow-xl"
+                  : theme === "contrast"
+                    ? "bg-white border-2 border-black"
+                    : "bg-[#FAF7EE] border-[#D9CDB8] shadow-lg"
+              }`}
             >
-              <div>
-                <div className="flex items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={`h-4 w-4 fill-current ${
-                        theme === "dark" ? "text-[#D4AF37]" : "text-[#C5A059]"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p
-                  className={`text-sm italic leading-relaxed font-sans mb-6 ${
-                    theme === "dark" ? "text-slate-200" : theme === "contrast" ? "text-zinc-800" : "text-[#44403C]"
-                  }`}
-                >
-                  "{t.quote}"
-                </p>
+              <div className="mb-6 font-serif italic text-sm sm:text-base leading-relaxed opacity-90">
+                "{t.quote}"
               </div>
-
-              <div className="pt-4 border-t border-[#D4AF37]/20">
+              <div className="flex items-center gap-3 pt-4 border-t border-current/10">
                 <div
-                  className={`text-base font-bold font-serif ${
-                    theme === "dark" ? "text-[#D4AF37]" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-                  }`}
-                >
-                  {t.name}
-                </div>
-                <div
-                  className={`text-xs font-sans mt-0.5 ${
-                    theme === "dark" ? "text-slate-400" : "text-[#78716C]"
-                  }`}
-                >
-                  {t.role}
-                </div>
-                <div
-                  className={`inline-block mt-3 px-2.5 py-1 rounded-full text-[11px] font-bold font-sans ${
+                  className={`h-10 w-10 rounded-full border flex items-center justify-center font-serif text-sm font-bold ${
                     theme === "dark"
-                      ? "bg-[#D4AF37]/15 text-[#D4AF37]"
-                      : theme === "contrast"
-                      ? "bg-black text-white"
-                      : "bg-[#C5A059]/15 text-[#8C653B]"
+                      ? "border-[#D4AF37] bg-[#070D1E] text-[#D4AF37]"
+                      : "border-[#C5A059] bg-[#EFE9DD] text-[#5C3D1E]"
                   }`}
                 >
-                  {t.stat}
+                  {t.initials}
+                </div>
+                <div>
+                  <div className="font-serif font-bold text-sm">{t.author}</div>
+                  <div className="text-xs opacity-70">
+                    {t.role}, {t.org}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1003,42 +1039,34 @@ export function BusinessConnectLandingV2() {
       </LegacyRevealSection>
 
       {/* =========================================================================
-          FOOTER SECTION: SẴN SÀNG MỞ RA NHIỀU CƠ HỘI HƠN?
-          ========================================================================= */}
+          7. FOOTER: EXACT PART 1 COPY
+      ========================================================================= */}
       <footer
-        className={`border-t pt-20 pb-16 px-4 sm:px-6 lg:px-8 ${
+        className={`py-20 px-4 sm:px-6 lg:px-8 border-t ${
           theme === "dark"
-            ? "border-[#D4AF37]/30 bg-[#040813]"
+            ? "border-[#D4AF37]/20 bg-[#050A17]"
             : theme === "contrast"
-            ? "border-black bg-zinc-100"
-            : "border-[#E5DAC8] bg-[#F4EFE6]"
+              ? "border-black bg-black text-white"
+              : "border-[#D9CDB8] bg-[#FAF7EE]"
         }`}
       >
         <div className="max-w-7xl mx-auto text-center">
-          <h2
-            className={`text-3xl sm:text-5xl font-bold tracking-tight font-serif ${
-              theme === "dark" ? "text-white" : theme === "contrast" ? "text-black" : "text-[#1C1917]"
-            }`}
-          >
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif mb-4">
             Sẵn sàng mở ra nhiều cơ hội hơn?
           </h2>
-          <p
-            className={`mt-4 text-base sm:text-lg max-w-2xl mx-auto font-sans ${
-              theme === "dark" ? "text-slate-300" : theme === "contrast" ? "text-zinc-800" : "text-[#57534E]"
-            }`}
-          >
+          <p className="text-sm sm:text-base opacity-75 max-w-2xl mx-auto mb-8">
             Hãy để Business Connect đồng hành cùng hiệp hội hoặc doanh nghiệp của bạn.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
             <button
               onClick={() => setShowDemoModal(true)}
-              className={`inline-flex items-center gap-2 rounded-xl px-8 py-4 text-sm font-bold font-sans uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 shadow-xl ${
+              className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider font-sans ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                  ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-lg"
                   : theme === "contrast"
-                  ? "border-2 border-black bg-black text-white"
-                  : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white"
+                    ? "border-2 border-white bg-white text-black hover:bg-zinc-200"
+                    : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-lg"
               }`}
             >
               <span>Đặt demo ngay</span>
@@ -1046,166 +1074,123 @@ export function BusinessConnectLandingV2() {
             </button>
 
             <button
-              onClick={() => setShowDemoModal(true)}
-              className={`inline-flex items-center gap-2 rounded-xl border px-7 py-4 text-sm font-bold font-sans transition-all duration-300 hover:opacity-80 ${
-                theme === "dark"
-                  ? "border-[#D4AF37]/40 bg-[#0A1128] text-[#D4AF37]"
-                  : theme === "contrast"
-                  ? "border-2 border-black bg-white text-black"
-                  : "border-[#D9CDB8] bg-white text-[#1C1917]"
-              }`}
+              onClick={() => {
+                toast.success("Cảm ơn bạn! Chuyên viên tư vấn sẽ liên hệ trong vòng 24 giờ.");
+              }}
+              className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-xs font-bold uppercase tracking-wider font-sans border border-current/30 hover:bg-current/5 transition"
             >
-              <span>Liên hệ tư vấn</span>
+              Liên hệ tư vấn
             </button>
           </div>
 
-          <div className="mt-16 pt-8 border-t border-[#D4AF37]/20 flex flex-col sm:flex-row items-center justify-between text-xs font-sans opacity-70">
-            <div>© 2026 VI-ONE Business Connect. All rights reserved.</div>
-            <div className="mt-3 sm:mt-0 flex gap-6">
-              <a href="#dieu-khoan" className="hover:underline">
-                Điều khoản dịch vụ
-              </a>
-              <a href="#chinh-sach" className="hover:underline">
-                Chính sách bảo mật
-              </a>
-              <a href="#tieu-chuan" className="hover:underline">
-                Tiêu chuẩn ISO 27001
-              </a>
-            </div>
+          <div className="text-xs opacity-50 font-sans border-t border-current/10 pt-8">
+            © {new Date().getFullYear()} Business Connect. Bản quyền thuộc về hệ thống VIONE B2B
+            Platform.
           </div>
         </div>
       </footer>
 
-      {/* DEMO MODAL */}
+      {/* =========================================================================
+          MODALS: DEMO & VIDEO
+      ========================================================================= */}
       <AnimatePresence>
         {showDemoModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
-            onClick={() => setShowDemoModal(false)}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-lg rounded-2xl border p-8 shadow-2xl ${
-                theme === "dark" ? "border-[#D4AF37] bg-[#0A1128] text-white" : "border-[#D9CDB8] bg-white text-black"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`relative w-full max-w-lg p-8 rounded-2xl border shadow-2xl ${
+                theme === "dark"
+                  ? "bg-[#0A1128] border-[#D4AF37]/50 text-white"
+                  : theme === "contrast"
+                    ? "bg-white text-black border-2 border-black"
+                    : "bg-[#FAF7EE] text-[#1C1917] border-[#D9CDB8]"
               }`}
             >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold font-serif">Đăng Ký Trải Nghiệm Demo</h3>
-                  <p className="text-xs text-slate-400 font-sans mt-0.5">
-                    Đội ngũ chuyên gia sẽ kết nối và thiết lập kịch bản trong 15 phút
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDemoModal(false)}
-                  className="p-1.5 rounded-lg border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowDemoModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-lg opacity-60 hover:opacity-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <h3 className="text-xl font-bold font-serif mb-2">Đăng Ký Trải Nghiệm Demo</h3>
+              <p className="text-xs opacity-75 mb-6">
+                Chuyên viên cấp cao sẽ liên hệ trực tiếp để giới thiệu giải pháp phù hợp nhất.
+              </p>
 
-              <form onSubmit={handleDemoSubmit} className="space-y-4 font-sans text-sm">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  toast.success("Đăng ký thành công! Chúng tôi sẽ liên hệ trong vòng 24 giờ.");
+                  setShowDemoModal(false);
+                }}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block text-xs font-bold mb-1">Họ và tên *</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1">
+                    Họ và tên
+                  </label>
                   <input
                     required
                     type="text"
-                    value={demoForm.name}
-                    onChange={(e) => setDemoForm({ ...demoForm, name: e.target.value })}
-                    placeholder="VD: Nguyễn Văn An"
-                    className="w-full px-4 py-2.5 rounded-xl border bg-black/10 dark:bg-white/5 border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none"
+                    placeholder="VD: Nguyễn Văn A"
+                    className="w-full px-4 py-2.5 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1">Số điện thoại *</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1">
+                    Doanh nghiệp / Hiệp hội
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="VD: Công ty TNHH Cung Ứng..."
+                    className="w-full px-4 py-2.5 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1">
+                    Số điện thoại
+                  </label>
                   <input
                     required
                     type="tel"
-                    value={demoForm.phone}
-                    onChange={(e) => setDemoForm({ ...demoForm, phone: e.target.value })}
-                    placeholder="VD: 0912 345 678"
-                    className="w-full px-4 py-2.5 rounded-xl border bg-black/10 dark:bg-white/5 border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none"
+                    placeholder="VD: 0987654321"
+                    className="w-full px-4 py-2.5 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1">Email doanh nghiệp *</label>
-                  <input
-                    required
-                    type="email"
-                    value={demoForm.email}
-                    onChange={(e) => setDemoForm({ ...demoForm, email: e.target.value })}
-                    placeholder="VD: ceo@doanhnghiep.vn"
-                    className="w-full px-4 py-2.5 rounded-xl border bg-black/10 dark:bg-white/5 border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1">Hiệp hội / Doanh nghiệp</label>
-                  <input
-                    type="text"
-                    value={demoForm.org}
-                    onChange={(e) => setDemoForm({ ...demoForm, org: e.target.value })}
-                    placeholder="VD: Hội Doanh nhân Trẻ Hà Nội"
-                    className="w-full px-4 py-2.5 rounded-xl border bg-black/10 dark:bg-white/5 border-[#D4AF37]/30 focus:border-[#D4AF37] focus:outline-none"
-                  />
-                </div>
-
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full py-3 mt-4 rounded-xl font-bold uppercase tracking-wider bg-gradient-to-r from-[#D4AF37] to-[#8C653B] text-black shadow-lg hover:opacity-90 disabled:opacity-50"
+                  className="w-full py-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#D4AF37] text-black hover:bg-[#F3E5AB] transition mt-4"
                 >
-                  {submitting ? "Đang gửi thông tin..." : "Xác nhận đăng ký demo"}
+                  Xác Nhận Đăng Ký
                 </button>
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* VIDEO MODAL */}
-      <AnimatePresence>
         {showVideoModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
-            onClick={() => setShowVideoModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-4xl rounded-2xl border border-[#D4AF37]/50 bg-[#060C1B] p-4 shadow-2xl overflow-hidden"
-            >
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#D4AF37]/30 text-[#D4AF37]">
-                <span className="font-bold text-sm uppercase tracking-wider">
-                  Video Giới Thiệu Nền Tảng Business Connect (2 Phút)
-                </span>
-                <button
-                  onClick={() => setShowVideoModal(false)}
-                  className="p-1 rounded-lg hover:bg-white/10"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="relative w-full max-w-4xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/20">
+              <button
+                onClick={() => setShowVideoModal(false)}
+                className="absolute top-4 right-4 z-10 p-2 text-white/80 hover:text-white"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <div className="aspect-video flex flex-col items-center justify-center text-white p-8">
+                <Play className="h-16 w-16 text-[#D4AF37] mb-4 animate-pulse" />
+                <div className="font-serif text-lg">
+                  Giới Thiệu Nền Tảng Business Connect (2 Phút)
+                </div>
+                <div className="text-xs text-white/60 mt-1">
+                  Đang nạp luồng video chất lượng cao...
+                </div>
               </div>
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
-                <video
-                  src="/videos/vione-kyc-guide.mp4"
-                  controls
-                  autoPlay
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>

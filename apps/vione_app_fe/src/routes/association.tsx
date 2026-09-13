@@ -14,7 +14,7 @@ export const Route = createFileRoute("/association")({
   ssr: false,
   head: () => ({
     meta: [
-      { name: "theme-color", content: "#0a1834" },
+      { name: "theme-color", content: "#0B0F19" },
       { name: "apple-mobile-web-app-title", content: "ViOne Hội viên" },
     ],
     links: [{ rel: "manifest", href: MEMBER_MANIFEST_HREF }],

@@ -139,7 +139,9 @@ export function EventSponsors({ sponsors: propSponsors }: { sponsors?: Sponsor[]
               className={`rounded-2xl border ${meta.border} ${meta.bg} p-4 transition-all`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className={`inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider ${meta.text}`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider ${meta.text}`}
+                >
                   <span>{meta.icon}</span>
                   <span>{meta.label}</span>
                 </span>

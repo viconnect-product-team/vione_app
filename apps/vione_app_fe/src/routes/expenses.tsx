@@ -408,14 +408,14 @@ export function ExpensesPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700"
             >
               <RotateCcw className="h-4 w-4" />
-              + Lập Phiếu Tạm Ứng
+              Lập Phiếu Tạm Ứng
             </button>
             <button
               onClick={() => openCreate(false)}
               className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
             >
               <Plus className="h-4 w-4" />
-              - Lập Phiếu Chi
+              Lập Phiếu Chi
             </button>
           </div>
         }

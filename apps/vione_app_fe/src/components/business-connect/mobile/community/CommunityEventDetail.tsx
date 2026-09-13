@@ -271,8 +271,12 @@ export function CommunityEventDetail({
                       ST
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Tập đoàn Công nghệ SunTech Global</div>
-                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Nguyễn Văn Hùng (Chủ tịch HĐQT)</div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">
+                        Tập đoàn Công nghệ SunTech Global
+                      </div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">
+                        Nguyễn Văn Hùng (Chủ tịch HĐQT)
+                      </div>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400">
@@ -286,8 +290,12 @@ export function CommunityEventDetail({
                       HG
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Trầm Hương & Yến Sào Hoàng Gia</div>
-                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">200 hộp quà tặng VIP cho C-Level</div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">
+                        Trầm Hương & Yến Sào Hoàng Gia
+                      </div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">
+                        200 hộp quà tặng VIP cho C-Level
+                      </div>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400">
@@ -301,8 +309,12 @@ export function CommunityEventDetail({
                       TP
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">TPBank - Khối SME</div>
-                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Tài trợ hạ tầng Livestream & Âm thanh</div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">
+                        TPBank - Khối SME
+                      </div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">
+                        Tài trợ hạ tầng Livestream & Âm thanh
+                      </div>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300">
@@ -316,8 +328,12 @@ export function CommunityEventDetail({
                       AR
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">Artisan Coffee & Roastery</div>
-                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">Quầy pha chế Espresso & Teabreak</div>
+                      <div className="text-[13px] font-bold text-[var(--bc-mobile-text)]">
+                        Artisan Coffee & Roastery
+                      </div>
+                      <div className="text-[11px] text-[var(--bc-mobile-muted)]">
+                        Quầy pha chế Espresso & Teabreak
+                      </div>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-400">

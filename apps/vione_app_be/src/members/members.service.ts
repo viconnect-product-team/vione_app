@@ -307,17 +307,25 @@ export class MembersService {
     let rows: any[];
     if (assocId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT code, name, industry, region, type, status 
-        FROM public.members 
-        WHERE association_id = ${assocId}::uuid AND status = 'active'
-        ORDER BY name ASC
+        SELECT m.code, m.name, m.industry, m.region, m.type, m.status, m.user_id,
+               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
+        FROM public.members m
+        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
+        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
+        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
+        WHERE m.association_id = ${assocId}::uuid AND m.status = 'active'
+        ORDER BY m.name ASC
       `.catch(() => []);
     } else {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT code, name, industry, region, type, status 
-        FROM public.members 
-        WHERE status = 'active'
-        ORDER BY name ASC
+        SELECT m.code, m.name, m.industry, m.region, m.type, m.status, m.user_id,
+               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
+        FROM public.members m
+        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
+        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
+        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
+        WHERE m.status = 'active'
+        ORDER BY m.name ASC
       `.catch(() => []);
     }
 
@@ -328,6 +336,8 @@ export class MembersService {
       region: m.region ?? '',
       type: m.type === 'individual' ? 'individual' : 'company',
       verified: m.status === 'active',
+      userId: m.user_id ?? null,
+      avatar: m.avatar ?? null,
     }));
   }
 
@@ -353,6 +363,16 @@ export class MembersService {
       }
     }
 
+    // Resolve unified avatar from vione_users, user_profiles, or business_identities
+    const profileAvatars = await this.prisma.$queryRaw<any[]>`
+      SELECT COALESCE(up.avatar_url, bi.avatar_url) as avatar
+      FROM public.user_profiles up
+      LEFT JOIN public.business_identities bi ON bi.owner_user_id = up.user_id
+      WHERE up.user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+    const unifiedAvatar = user?.avatar_url || profileAvatars[0]?.avatar || null;
+
     if (rows.length > 0) {
       const m = rows[0];
       return {
@@ -374,7 +394,7 @@ export class MembersService {
         address: m.address ?? '',
         website: m.website ?? null,
         joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
-        avatar: user?.avatar_url ?? null,
+        avatar: unifiedAvatar,
       };
     }
 
@@ -467,6 +487,8 @@ export class MembersService {
         FROM public.event_registrations r
         LEFT JOIN public.events e ON r.event_id = e.id
         WHERE r.member_code = ${member.code}
+           OR (r.email IS NOT NULL AND r.email != '' AND r.email = ${member.email})
+           OR (r.member_name IS NOT NULL AND r.member_name = ${member.name})
         ORDER BY r.registered_at DESC
         LIMIT 50
       `.catch(() => []);

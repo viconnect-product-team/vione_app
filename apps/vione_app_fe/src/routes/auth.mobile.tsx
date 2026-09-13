@@ -179,11 +179,11 @@ function MobileAuthPage() {
       <AuthCardScanSheet
         open={scanOpen}
         onClose={() => setScanOpen(false)}
-        onResolved={(result) => {
+        onResult={(result: any) => {
           rememberScannedCard(result);
           if (result.email) setEmail(result.email);
           setScanOpen(false);
-          toast.success(t("bc.scan.cardRecognized"));
+          toast.success(t("bc.scan.cardRecognized" as any));
         }}
       />
     </>

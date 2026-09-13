@@ -12,6 +12,8 @@ const POOL = [
   "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=200&auto=format&fit=crop&q=80",
 ];
 
+import { resolveMediaUrl } from "@/lib/api-client";
+
 export function demoAvatar(seed: string): string {
   let hash = 0;
   const str = seed || "default_vione_seed";
@@ -21,21 +23,25 @@ export function demoAvatar(seed: string): string {
 
 /** Ảnh thật nếu có (hợp lệ và không chứa URL rác __l5e / relative path bị 404), ngược lại dùng ảnh demo tất định. */
 export function avatarOrDemo(url: string | null | undefined, seed: string): string {
+  const resolved = resolveMediaUrl(url);
   if (
-    url &&
-    typeof url === "string" &&
-    url.trim().length > 0 &&
-    !url.includes("__l5e") &&
-    !url.includes("undefined") &&
-    !url.includes("null") &&
-    !url.includes("demo-person-") &&
-    (url.startsWith("http://") ||
-      url.startsWith("https://") ||
-      url.startsWith("data:") ||
-      url.startsWith("/landing/") ||
-      url.startsWith("/assets/"))
+    resolved &&
+    typeof resolved === "string" &&
+    resolved.trim().length > 0 &&
+    !resolved.includes("__l5e") &&
+    !resolved.includes("undefined") &&
+    !resolved.includes("null") &&
+    !resolved.includes("demo-person-") &&
+    (resolved.startsWith("http://") ||
+      resolved.startsWith("https://") ||
+      resolved.startsWith("data:") ||
+      resolved.startsWith("/landing/") ||
+      resolved.startsWith("/assets/") ||
+      resolved.startsWith("/upload/") ||
+      resolved.startsWith("/api/upload/") ||
+      resolved.startsWith("/ceo1983-logo.png"))
   ) {
-    return url;
+    return resolved;
   }
   return demoAvatar(seed);
 }

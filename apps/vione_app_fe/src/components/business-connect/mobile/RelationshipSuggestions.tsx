@@ -15,7 +15,7 @@ import {
   useTodayRelationshipRecommendations,
 } from "@/hooks/use-relationship-intelligence";
 import { recordIntelInteraction } from "@/hooks/use-relationship-personalization";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { trackRelationshipIntel } from "@/lib/business-connect/mobile/relationship-intelligence.telemetry";
 import type { RelationshipRecommendation } from "@/lib/business-connect/mobile/relationship-intelligence.types";
@@ -43,9 +43,11 @@ function SuggestionRow({
 }) {
   const t = useT();
   const [hidden, setHidden] = useState(false);
+  const [avatarErr, setAvatarErr] = useState(false);
   const name = rec.person?.displayName?.trim() || "—";
   const suggestionText = rec.aiSuggestion ?? t("bc.mobile.intel.reconnect.suggestion");
   const reasonText = t("bc.mobile.intel.reason.lastInteraction", { days: rec.reason?.days ?? 0 });
+  const resolvedAvatar = resolveMediaUrl(rec.person.avatarUrl);
 
   if (hidden) return null;
 
@@ -62,11 +64,12 @@ function SuggestionRow({
           }}
           className={`flex min-w-0 flex-1 items-start gap-3 rounded-xl ${FOCUS}`}
         >
-          {rec.person.avatarUrl ? (
+          {resolvedAvatar && !avatarErr ? (
             <img
-              src={rec.person.avatarUrl}
+              src={resolvedAvatar}
               alt=""
               loading="lazy"
+              onError={() => setAvatarErr(true)}
               className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-[var(--bc-mobile-border)]"
             />
           ) : (

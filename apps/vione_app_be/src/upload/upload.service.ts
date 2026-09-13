@@ -28,14 +28,21 @@ export class UploadService {
       UPDATE public.user_profiles
       SET avatar_url = ${url}
       WHERE user_id = ${userId}::uuid
-    `;
+    `.catch(() => null);
     
     // Save url to database business_identities
     await this.prisma.$executeRaw`
       UPDATE public.business_identities
       SET avatar_url = ${url}
       WHERE owner_user_id = ${userId}::uuid
-    `;
+    `.catch(() => null);
+
+    // Save url to database vione_users (synchronize with dev server / local)
+    await this.prisma.$executeRaw`
+      UPDATE public.vione_users
+      SET avatar_url = ${url}
+      WHERE id = ${userId}::uuid
+    `.catch(() => null);
     
     return url;
   }
