@@ -31,6 +31,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { getMyMember, type MyMember } from "@/lib/member-app.functions";
 import { useT, useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
+import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { toast } from "sonner";
 
@@ -84,9 +85,12 @@ function ProfileScreen() {
     { mode: "contrast", icon: Contrast, label: "Tương phản", desc: "Độ tương phản cao" },
   ];
 
+  const { logout: authLogout } = useAuth();
+
   async function logout() {
     await signOutSession();
-    navigate({ to: "/association/login" as any });
+    authLogout?.();
+    navigate({ to: "/association/login" as any, replace: true });
   }
 
   return (

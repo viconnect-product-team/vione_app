@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
+  InvertCursor40px,
+  KineticTurntableTypography,
+  ImageMaskRevealSection,
+  HorizontalParallaxScroller,
+} from "./animations/EditorialBrutalismEffects";
+import {
   Sparkles,
   ArrowRight,
   Play,
@@ -395,6 +401,7 @@ export function BusinessConnectLandingV4() {
             : "bg-[#F1F5F9] text-slate-900"
       }`}
     >
+      <InvertCursor40px />
       {/* 3-LAYER EXECUTIVE GLASS BACKGROUND WITH 50% SCROLL PARALLAX */}
       <ExecutiveGlassThreeLayerBackground theme={theme} />
 
@@ -457,6 +464,17 @@ export function BusinessConnectLandingV4() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Version Switcher Pills */}
+            <div className="hidden lg:flex items-center gap-1.5 overflow-x-auto py-0.5">
+              <Link to="/business-connect/v1" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v1</Link>
+              <Link to="/business-connect/v2" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v2</Link>
+              <Link to="/business-connect/v3" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v3</Link>
+              <Link to="/business-connect/v4" className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow">v4 ★</Link>
+              <Link to="/business-connect/v5" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v5</Link>
+              <Link to="/business-connect/v6" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v6</Link>
+              <Link to="/business-connect/v7" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v7</Link>
+            </div>
+
             {/* Theme Switcher */}
             <div
               className={`flex items-center border p-1 rounded-xl backdrop-blur-md ${
@@ -511,7 +529,7 @@ export function BusinessConnectLandingV4() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)]"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]"
                   : theme === "contrast"
                     ? "bg-black text-white border-2 border-black"
                     : "bg-slate-900 text-white shadow-md hover:bg-slate-800"
@@ -561,7 +579,7 @@ export function BusinessConnectLandingV4() {
                 onClick={() => setShowDemoModal(true)}
                 className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 ${
                   theme === "dark"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:shadow-[0_0_40px_rgba(6,182,212,0.6)]"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)]"
                     : theme === "contrast"
                       ? "bg-black text-white border-2 border-black"
                       : "bg-slate-900 text-white shadow-xl hover:bg-slate-800"
@@ -668,75 +686,77 @@ export function BusinessConnectLandingV4() {
           3. PROBLEM SECTION (ASYMMETRIC STICKY LEFT COL 4 vs OVERLAPPING CARDS COL 8)
       ========================================================================= */}
       <AsymmetricScrollHijackSectionV4 id="van-de">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* ASYMMETRIC STICKY LEFT COLUMN */}
-          <div className="lg:col-span-4 lg:sticky lg:top-8 text-left">
-            <div className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">
-              NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
+        <ImageMaskRevealSection>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* ASYMMETRIC STICKY LEFT COLUMN */}
+            <div className="lg:col-span-4 lg:sticky lg:top-8 text-left">
+              <div className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">
+                NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+                Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
+              </h2>
+              <p className="text-sm opacity-80 leading-relaxed mb-6">
+                Các tổ chức kết nối thường tốn hàng trăm giờ chuẩn bị sự kiện nhưng thiếu hạ tầng số
+                để biến mối quan hệ giao tiếp ban đầu thành hợp đồng hợp tác có giá trị.
+              </p>
+              <div className="p-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/5 backdrop-blur-md text-xs text-cyan-300">
+                AUDIT: 5 Thách thức lớn trong vận hành hội viên
+              </div>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-              Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
-            </h2>
-            <p className="text-sm opacity-80 leading-relaxed mb-6">
-              Các tổ chức kết nối thường tốn hàng trăm giờ chuẩn bị sự kiện nhưng thiếu hạ tầng số
-              để biến mối quan hệ giao tiếp ban đầu thành hợp đồng hợp tác có giá trị.
-            </p>
-            <div className="p-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/5 backdrop-blur-md text-xs text-cyan-300">
-              AUDIT: 5 Thách thức lớn trong vận hành hội viên
-            </div>
-          </div>
 
-          {/* ASYMMETRIC OVERLAPPING RIGHT COLUMN */}
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {PROBLEMS_DATA.map((p, idx) => {
-              const isHovered = hoveredCard === p.id;
-              const isOffset = idx % 2 === 1;
-              return (
-                <div
-                  key={p.id}
-                  onMouseEnter={() => setHoveredCard(p.id)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                  className={`p-7 rounded-3xl border transition-all duration-300 backdrop-blur-xl relative overflow-hidden ${
-                    isOffset ? "md:-mt-6 lg:-mt-10" : ""
-                  } ${
-                    theme === "dark"
-                      ? `bg-white/5 border-white/10 hover:border-cyan-400/60 ${
-                          isHovered ? "shadow-[0_0_30px_rgba(6,182,212,0.25)]" : ""
-                        }`
-                      : theme === "contrast"
-                        ? "bg-white border-2 border-black"
-                        : "bg-white/75 border-white/80 shadow-lg hover:shadow-2xl"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold tracking-widest opacity-60">
-                      VẤN ĐỀ #0{p.id}
-                    </span>
-                    <div
-                      className={`h-7 w-7 rounded-full border flex items-center justify-center text-xs backdrop-blur-md ${
-                        theme === "dark"
-                          ? "border-cyan-400/40 text-cyan-300"
-                          : "border-slate-300 text-slate-700"
-                      }`}
-                    >
-                      0{p.id}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-bold mb-2">{p.title}</h3>
+            {/* ASYMMETRIC OVERLAPPING RIGHT COLUMN */}
+            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {PROBLEMS_DATA.map((p, idx) => {
+                const isHovered = hoveredCard === p.id;
+                const isOffset = idx % 2 === 1;
+                return (
                   <div
-                    className={`text-sm font-semibold mb-3 ${
-                      theme === "dark" ? "text-cyan-400" : "text-sky-700"
+                    key={p.id}
+                    onMouseEnter={() => setHoveredCard(p.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    className={`p-7 rounded-3xl border transition-all duration-300 backdrop-blur-xl relative overflow-hidden ${
+                      isOffset ? "md:-mt-6 lg:-mt-10" : ""
+                    } ${
+                      theme === "dark"
+                        ? `bg-white/5 border-white/10 hover:border-cyan-400/60 ${
+                            isHovered ? "shadow-[0_0_30px_rgba(6,182,212,0.25)]" : ""
+                          }`
+                        : theme === "contrast"
+                          ? "bg-white border-2 border-black"
+                          : "bg-white/75 border-white/80 shadow-lg hover:shadow-2xl"
                     }`}
                   >
-                    {p.tagline}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-bold tracking-widest opacity-60">
+                        VẤN ĐỀ #0{p.id}
+                      </span>
+                      <div
+                        className={`h-7 w-7 rounded-full border flex items-center justify-center text-xs backdrop-blur-md ${
+                          theme === "dark"
+                            ? "border-cyan-400/40 text-cyan-300"
+                            : "border-slate-300 text-slate-700"
+                        }`}
+                      >
+                        0{p.id}
+                      </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-2">{p.title}</h3>
+                    <div
+                      className={`text-sm font-semibold mb-3 ${
+                        theme === "dark" ? "text-cyan-400" : "text-sky-700"
+                      }`}
+                    >
+                      {p.tagline}
+                    </div>
+                    <p className="text-xs sm:text-sm opacity-80 leading-relaxed">{p.desc}</p>
                   </div>
-                  <p className="text-xs sm:text-sm opacity-80 leading-relaxed">{p.desc}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </ImageMaskRevealSection>
       </AsymmetricScrollHijackSectionV4>
 
       {/* =========================================================================
@@ -906,6 +926,8 @@ export function BusinessConnectLandingV4() {
               </div>
             </div>
           </div>
+          {/* Kinetic Turntable Typography */}
+          <KineticTurntableTypography />
         </div>
       </AsymmetricScrollHijackSectionV4>
 
@@ -980,6 +1002,9 @@ export function BusinessConnectLandingV4() {
         </div>
       </AsymmetricScrollHijackSectionV4>
 
+      {/* HORIZONTAL PARALLAX SCROLLER (BRUTALIST REVIEW SLIDER) */}
+      <HorizontalParallaxScroller items={REVIEWS} />
+
       {/* =========================================================================
           7. FOOTER
       ========================================================================= */}
@@ -1003,7 +1028,7 @@ export function BusinessConnectLandingV4() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_25px_rgba(245,158,11,0.4)]"
                   : theme === "contrast"
                     ? "bg-white text-black border-2 border-white"
                     : "bg-slate-900 text-white shadow-md"
@@ -1105,7 +1130,7 @@ export function BusinessConnectLandingV4() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 transition mt-4 shadow-lg"
+                  className="w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:shadow-[0_0_30px_rgba(245,158,11,0.6)] transition mt-4"
                 >
                   Xác Nhận Đăng Ký
                 </button>

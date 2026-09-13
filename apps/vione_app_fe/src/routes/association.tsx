@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberScreen } from "@/components/member/MemberShell";
@@ -20,6 +20,11 @@ export const Route = createFileRoute("/association")({
     links: [{ rel: "manifest", href: MEMBER_MANIFEST_HREF }],
   }),
   beforeLoad: async ({ location }) => {
+    // Nếu đang ở màn hình đăng nhập Hiệp hội, KHÔNG BAO GIỜ redirect vòng lặp
+    if (location.pathname === "/association/login" || location.pathname.startsWith("/association/login")) {
+      return;
+    }
+
     // Shortcut ViOne cũ có thể vẫn khởi động tại `/association`. Nhận diện bằng ngữ cảnh
     // trình duyệt và chuyển sang màn đăng nhập Connect-app, không dựa vào manifest.
     const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
@@ -31,13 +36,23 @@ export const Route = createFileRoute("/association")({
       localStorage.getItem("access_token")
     );
     if (!hasLocal) {
-      // Preserve the intended deep-link destination so we can return to it
-      // after authentication (handles custom domains + browser refresh).
+      if (isVioneLaunch) {
+        throw redirect({
+          to: "/vione/login",
+          search: {
+            redirect: "/connect-app",
+          },
+        });
+      }
+      const searchStr = typeof (location as any).searchStr === "string" ? (location as any).searchStr : "";
+      const target = location.pathname.startsWith("/association/login")
+        ? "/association"
+        : location.pathname + searchStr;
+
       throw redirect({
-        to: "/auth/mobile",
+        to: "/association/login",
         search: {
-          redirect: isVioneLaunch ? "/connect-app" : location.href,
-          portal: "association",
+          redirect: target,
         },
       });
     }
@@ -77,7 +92,15 @@ function useRenewalReminder() {
 }
 
 function MemberRoot() {
+  const routerState = useRouterState();
+  const isLoginPage = routerState.location.pathname.startsWith("/association/login");
   useRenewalReminder();
+
+  // Trang đăng nhập Hiệp hội hiển thị màn hình riêng, không hiển thị thanh Tab Bar hội viên
+  if (isLoginPage) {
+    return <Outlet />;
+  }
+
   return (
     <MemberScreen>
       <Outlet />

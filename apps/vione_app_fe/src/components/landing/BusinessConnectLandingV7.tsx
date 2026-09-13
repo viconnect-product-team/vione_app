@@ -390,6 +390,17 @@ export function BusinessConnectLandingV7() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Version Switcher Pills */}
+            <div className="hidden lg:flex items-center gap-1.5 overflow-x-auto py-0.5">
+              <Link to="/business-connect/v1" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v1</Link>
+              <Link to="/business-connect/v2" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v2</Link>
+              <Link to="/business-connect/v3" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v3</Link>
+              <Link to="/business-connect/v4" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v4</Link>
+              <Link to="/business-connect/v5" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v5</Link>
+              <Link to="/business-connect/v6" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v6</Link>
+              <Link to="/business-connect/v7" className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow">v7 ★</Link>
+            </div>
+
             {/* Theme Switcher */}
             <div
               className={`flex items-center border p-1 rounded-2xl backdrop-blur-md ${
@@ -444,7 +455,7 @@ export function BusinessConnectLandingV7() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)]"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]"
                   : theme === "contrast"
                     ? "bg-black text-white border-2 border-black"
                     : "bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700"
@@ -494,7 +505,7 @@ export function BusinessConnectLandingV7() {
                 onClick={() => setShowDemoModal(true)}
                 className={`inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 ${
                   theme === "dark"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:shadow-[0_0_40px_rgba(6,182,212,0.6)]"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)]"
                     : theme === "contrast"
                       ? "bg-black text-white border-2 border-black"
                       : "bg-blue-600 text-white shadow-xl shadow-blue-500/25 hover:bg-blue-700"
@@ -940,7 +951,7 @@ export function BusinessConnectLandingV7() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]"
                   : theme === "contrast"
                     ? "bg-white text-black border-2 border-white"
                     : "bg-blue-600 text-white shadow-md hover:bg-blue-700"
@@ -1042,7 +1053,7 @@ export function BusinessConnectLandingV7() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500 transition mt-4 shadow-lg"
+                  className="w-full py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold hover:brightness-105 transition mt-4 shadow-lg"
                 >
                   Xác Nhận Đăng Ký
                 </button>

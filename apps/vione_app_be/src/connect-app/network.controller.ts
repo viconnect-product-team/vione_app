@@ -181,4 +181,26 @@ export class NetworkController {
   async setPersonPlanStatus(@Request() req, @Param('planId') planId: string, @Body() body: { status: string }) {
     return this.connectAppService.setPersonPlanStatus(req.user.id, { planId, status: body.status });
   }
+
+  // --- BC-Mobile-6C: Personalization & Recommendations Settings ---
+  @Get('personalization/get')
+  async getPersonalization(@Request() req) {
+    return this.connectAppService.getPersonalization(req.user.id);
+  }
+
+  @Post('personalization/update')
+  async updatePersonalization(@Request() req, @Body() body: any) {
+    return this.connectAppService.updatePersonalizationPreferences(req.user.id, body);
+  }
+
+  @Post('personalization/record-interaction')
+  async recordPersonalizationInteraction(@Request() req, @Body() body: any) {
+    return this.connectAppService.recordPersonalizationInteraction(req.user.id, body);
+  }
+
+  @Post('personalization/reset')
+  async resetPersonalization(@Request() req) {
+    return this.connectAppService.resetPersonalization(req.user.id);
+  }
 }
+

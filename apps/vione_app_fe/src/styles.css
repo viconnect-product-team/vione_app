@@ -711,21 +711,21 @@ html.hc .bc-app {
   /* ── Business Connect — Translucent Obsidian Dark Glass & Champagne Gold ──────────────────
      Frosted Dark Glass (Đen mờ cao cấp) × Champagne Gold Gradient (Vàng đồng như nút ViOne). */
 
-  /* Backgrounds / surfaces — Matte Frosted Black (Đen mờ cao cấp, loại bỏ ánh đen xanh/navy) */
-  --bc-bg-deep: #050505;
-  --bc-bg-primary: #0A0A0B;
-  --bc-bg-secondary: #121214;
-  --bc-surface: rgba(18, 18, 20, 0.88);
-  --bc-surface-elevated: rgba(26, 26, 28, 0.92);
+  /* Backgrounds / surfaces — Executive Obsidian Navy & Frosted Glass (Loại bỏ màu đen than) */
+  --bc-bg-deep: #070B12;
+  --bc-bg-primary: #0B0F17;
+  --bc-bg-secondary: #0E1522;
+  --bc-surface: rgba(14, 21, 34, 0.90);
+  --bc-surface-elevated: rgba(19, 27, 41, 0.95);
 
-  --bc-mobile-bg: #0A0A0B;
-  --bc-mobile-bg-deep: #050505;
-  --bc-mobile-surface: rgba(18, 18, 20, 0.88);
-  --bc-mobile-surface-2: rgba(26, 26, 28, 0.92);
-  --bc-mobile-navy: #121214;
-  --bc-mobile-navy-deep: #080809;
-  --bc-mobile-app-gradient: linear-gradient(180deg, #0E0E10 0%, #070708 100%);
-  --bc-mobile-card-grad: linear-gradient(165deg, rgba(24, 24, 27, 0.88) 0%, rgba(14, 14, 16, 0.92) 100%);
+  --bc-mobile-bg: #0B0F17;
+  --bc-mobile-bg-deep: #070B12;
+  --bc-mobile-surface: rgba(14, 21, 34, 0.90);
+  --bc-mobile-surface-2: rgba(19, 27, 41, 0.95);
+  --bc-mobile-navy: #0E1522;
+  --bc-mobile-navy-deep: #070B12;
+  --bc-mobile-app-gradient: linear-gradient(180deg, #0B0F17 0%, #070B12 100%);
+  --bc-mobile-card-grad: linear-gradient(165deg, rgba(19, 27, 41, 0.92) 0%, rgba(14, 21, 34, 0.95) 100%);
 
   /* Text - High luminance white & vibrant champagne gold ViOne, no dim gray */
   --bc-text-primary: #FFFFFF;
@@ -1208,11 +1208,11 @@ textarea::placeholder {
 
 /* Translucent card with subtle gradient & unified hairline border */
 @utility bc-translucent-card {
-  background: linear-gradient(165deg, rgba(10, 16, 25, 0.96) 0%, rgba(7, 12, 19, 0.96) 50%, rgba(4, 8, 14, 0.97) 100%);
+  background: linear-gradient(165deg, rgba(19, 27, 41, 0.90) 0%, rgba(14, 21, 34, 0.94) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--bc-mobile-border);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(216, 178, 130, 0.18);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45);
 }
 
 html:not(.dark) .bc-translucent-card {
@@ -1245,7 +1245,7 @@ html.dark body > [data-radix-portal] [role="menu"],
 html.dark body > [data-radix-portal] [role="listbox"],
 html.dark body > div[role="dialog"],
 html.dark body > div[role="menu"] {
-  background: linear-gradient(165deg, rgba(10, 16, 25, 0.99) 0%, rgba(7, 12, 19, 0.99) 50%, rgba(4, 8, 14, 1.0) 100%) !important;
+  background: linear-gradient(165deg, rgba(19, 27, 41, 0.98) 0%, rgba(14, 21, 34, 0.99) 50%, rgba(11, 15, 23, 1.0) 100%) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-color: rgba(216, 178, 130, 0.35) !important;

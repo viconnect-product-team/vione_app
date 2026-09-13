@@ -328,8 +328,8 @@ function ConnectAppMePage() {
     try {
       await signOutSession(queryClient);
       await navigate({
-        to: "/auth",
-        search: { m: "1" as const, redirect: "/connect-app" },
+        to: "/vione/login" as any,
+        search: { redirect: "/connect-app" },
         replace: true,
       });
     } catch {

@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
+  InteractiveParticleNetworkCanvas,
+  RgbGlitchWrapper,
+  DecryptingText,
+  CircuitSpotlightCard,
+} from "./animations/CyberTechEffects";
+import {
   Sparkles,
   ArrowRight,
   Play,
@@ -465,6 +471,9 @@ export function BusinessConnectLandingV2() {
       {/* 3-LAYER BACKGROUND ARCHITECTURE */}
       <HeritageThreeLayerBackground theme={theme} />
 
+      {/* INTERACTIVE PARTICLE NETWORK CANVAS (CYBERNETIC REPULSE FORCE FIELD) */}
+      <InteractiveParticleNetworkCanvas />
+
       {/* STARDUST CURSOR PARTICLES */}
       <StardustCursorTrail theme={theme} />
 
@@ -488,19 +497,21 @@ export function BusinessConnectLandingV2() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Brand Logo */}
+          {/* Brand Logo with RGB Glitch */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div
-              className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-all duration-300 ${
-                theme === "dark"
-                  ? "border-[#D4AF37] bg-[#0A1128] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                  : theme === "contrast"
-                    ? "border-2 border-black bg-black text-white"
-                    : "border-[#C5A059] bg-[#FAF7EE] text-[#8C653B] shadow-sm"
-              }`}
-            >
-              <Building2 className="h-5 w-5" />
-            </div>
+            <RgbGlitchWrapper>
+              <div
+                className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-all duration-300 ${
+                  theme === "dark"
+                    ? "border-[#D4AF37] bg-[#0A1128] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                    : theme === "contrast"
+                      ? "border-2 border-black bg-black text-white"
+                      : "border-[#C5A059] bg-[#FAF7EE] text-[#8C653B] shadow-sm"
+                }`}
+              >
+                <Building2 className="h-5 w-5" />
+              </div>
+            </RgbGlitchWrapper>
             <div>
               <div
                 className={`text-base font-bold tracking-wider uppercase font-serif ${
@@ -596,6 +607,17 @@ export function BusinessConnectLandingV2() {
               </button>
             </div>
 
+            {/* Version Switcher Pills */}
+            <div className="hidden lg:flex items-center gap-1.5 overflow-x-auto py-0.5">
+              <Link to="/business-connect/v1" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v1</Link>
+              <Link to="/business-connect/v2" className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow">v2 ★</Link>
+              <Link to="/business-connect/v3" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v3</Link>
+              <Link to="/business-connect/v4" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v4</Link>
+              <Link to="/business-connect/v5" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v5</Link>
+              <Link to="/business-connect/v6" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v6</Link>
+              <Link to="/business-connect/v7" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v7</Link>
+            </div>
+
             <Link
               to="/auth"
               className="hidden sm:inline-flex rounded-xl px-4 py-2 text-xs font-bold font-sans uppercase tracking-wider hover:opacity-75 transition"
@@ -604,9 +626,9 @@ export function BusinessConnectLandingV2() {
             </Link>
             <button
               onClick={() => setShowDemoModal(true)}
-              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold font-sans tracking-wide uppercase transition-all duration-300 transform hover:-translate-y-0.5 ${
+              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold font-sans tracking-wide uppercase transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_20px_rgba(212,175,55,0.35)]"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:brightness-105"
                   : theme === "contrast"
                     ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
                     : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-md hover:shadow-lg"
@@ -624,9 +646,9 @@ export function BusinessConnectLandingV2() {
       ========================================================================= */}
       <LegacyRevealSection className="pt-36 sm:pt-44 pb-20 text-center">
         {/* Tagline */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-xs font-bold uppercase tracking-widest font-serif">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6 text-xs font-bold uppercase tracking-widest font-mono">
           <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-          <span>NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI</span>
+          <DecryptingText text="NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI" speed={22} />
         </div>
 
         {/* Headline */}
@@ -665,19 +687,21 @@ export function BusinessConnectLandingV2() {
 
         {/* CTAs */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-20">
-          <button
-            onClick={() => setShowDemoModal(true)}
-            className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 text-sm font-bold uppercase tracking-wider font-sans transition-all duration-300 transform hover:-translate-y-0.5 ${
-              theme === "dark"
-                ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-[0_0_30px_rgba(212,175,55,0.4)]"
-                : theme === "contrast"
-                  ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
-                  : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-xl hover:shadow-2xl"
-            }`}
-          >
-            <span>Đặt demo ngay</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <RgbGlitchWrapper>
+            <button
+              onClick={() => setShowDemoModal(true)}
+              className={`inline-flex items-center gap-3 rounded-xl px-8 py-4 text-sm font-bold uppercase tracking-wider font-sans transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer ${
+                theme === "dark"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-[0_0_30px_rgba(245,158,11,0.45)]"
+                  : theme === "contrast"
+                    ? "border-2 border-black bg-black text-white hover:bg-zinc-800"
+                    : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-xl hover:shadow-2xl"
+              }`}
+            >
+              <span>Đặt demo ngay</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </RgbGlitchWrapper>
 
           <button
             onClick={() => setShowVideoModal(true)}
@@ -787,8 +811,9 @@ export function BusinessConnectLandingV2() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {PROBLEMS.map((p) => {
             const isHovered = hoveredProblem === p.id;
+            const CardWrapper = (theme === "dark" ? CircuitSpotlightCard : "div") as any;
             return (
-              <div
+              <CardWrapper
                 key={p.id}
                 onMouseEnter={() => setHoveredProblem(p.id)}
                 onMouseLeave={() => setHoveredProblem(null)}
@@ -833,7 +858,7 @@ export function BusinessConnectLandingV2() {
                 >
                   {p.desc}
                 </p>
-              </div>
+              </CardWrapper>
             );
           })}
         </div>
@@ -1061,9 +1086,9 @@ export function BusinessConnectLandingV2() {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
             <button
               onClick={() => setShowDemoModal(true)}
-              className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider font-sans ${
+              className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-xs font-bold uppercase tracking-wider font-sans cursor-pointer ${
                 theme === "dark"
-                  ? "bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black shadow-lg"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-lg hover:brightness-105"
                   : theme === "contrast"
                     ? "border-2 border-white bg-white text-black hover:bg-zinc-200"
                     : "bg-gradient-to-r from-[#C5A059] to-[#8C653B] text-white shadow-lg"
@@ -1162,7 +1187,7 @@ export function BusinessConnectLandingV2() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#D4AF37] text-black hover:bg-[#F3E5AB] transition mt-4"
+                  className="w-full py-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 hover:brightness-105 transition mt-4 cursor-pointer"
                 >
                   Xác Nhận Đăng Ký
                 </button>

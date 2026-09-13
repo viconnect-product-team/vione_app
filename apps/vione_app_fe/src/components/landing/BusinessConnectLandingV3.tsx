@@ -2,6 +2,12 @@ import React, { useState, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
+  LiquidAuroraBackground,
+  HolographicFoilCard,
+  GooeySvgMorphEcosystem,
+  MagnifyingGlassLensStat,
+} from "./animations/FluidGlassEffects";
+import {
   Sparkles,
   ArrowRight,
   Play,
@@ -357,6 +363,9 @@ export function BusinessConnectLandingV3() {
       {/* 3-LAYER BACKGROUND WITH 50% SCROLL PARALLAX */}
       <EditorialThreeLayerBackground theme={theme} />
 
+      {/* DYNAMIC FLUID LIQUID AURORA MESH */}
+      <LiquidAuroraBackground />
+
       {/* SHUTTER BLINDS THEME TRANSITION */}
       <ShutterBlindsThemeTransition isDropping={isDropping} theme={theme} />
 
@@ -416,6 +425,17 @@ export function BusinessConnectLandingV3() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Version Switcher Pills */}
+            <div className="hidden lg:flex items-center gap-1.5 overflow-x-auto py-0.5">
+              <Link to="/business-connect/v1" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v1</Link>
+              <Link to="/business-connect/v2" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v2</Link>
+              <Link to="/business-connect/v3" className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow">v3 ★</Link>
+              <Link to="/business-connect/v4" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v4</Link>
+              <Link to="/business-connect/v5" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v5</Link>
+              <Link to="/business-connect/v6" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v6</Link>
+              <Link to="/business-connect/v7" className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-white/20 hover:text-amber-300">v7</Link>
+            </div>
+
             {/* Theme switcher */}
             <div
               className={`flex items-center border p-1 rounded-lg ${
@@ -467,7 +487,7 @@ export function BusinessConnectLandingV3() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-150 active:translate-x-0.5 active:translate-y-0.5 ${
                 theme === "dark"
-                  ? "bg-orange-500 text-black border border-orange-400 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold border border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]"
                   : theme === "contrast"
                     ? "bg-black text-white border-2 border-black"
                     : "bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
@@ -517,7 +537,7 @@ export function BusinessConnectLandingV3() {
                 onClick={() => setShowDemoModal(true)}
                 className={`inline-flex items-center gap-3 px-8 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-150 active:translate-x-1 active:translate-y-1 ${
                   theme === "dark"
-                    ? "bg-orange-500 text-black border border-orange-400 shadow-[6px_6px_0px_0px_rgba(255,255,255,0.2)]"
+                    ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold border border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:shadow-[0_0_35px_rgba(245,158,11,0.6)]"
                     : theme === "contrast"
                       ? "bg-black text-white border-2 border-black"
                       : "bg-black text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]"
@@ -586,40 +606,20 @@ export function BusinessConnectLandingV3() {
           </div>
         </div>
 
-        {/* OVERLAPPING STATS BENTO - PIERCING UPWARD WITH NEGATIVE MARGIN */}
+        {/* OVERLAPPING STATS BENTO WITH MAGNIFYING LENS */}
         <div
           className={`-mt-6 sm:-mt-10 lg:-mt-14 relative z-20 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 p-6 sm:p-8 border ${
             theme === "dark"
-              ? "bg-zinc-900 border-zinc-700 shadow-[8px_8px_0px_0px_rgba(249,115,22,0.35)]"
+              ? "bg-zinc-900 border-zinc-700 shadow-[8px_8px_0px_0px_rgba(245,158,11,0.35)]"
               : theme === "contrast"
                 ? "bg-white border-2 border-black"
                 : "bg-white border-zinc-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.18)]"
           }`}
         >
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">10,000+</div>
-            <div className="text-xs font-mono uppercase tracking-wider opacity-70 mt-1">
-              Doanh nhân & Hội viên
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">300+</div>
-            <div className="text-xs font-mono uppercase tracking-wider opacity-70 mt-1">
-              Hiệp hội & Tổ chức
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">50,000+</div>
-            <div className="text-xs font-mono uppercase tracking-wider opacity-70 mt-1">
-              Kết nối được tạo
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">20+</div>
-            <div className="text-xs font-mono uppercase tracking-wider opacity-70 mt-1">
-              Quốc gia & vùng lãnh thổ
-            </div>
-          </div>
+          <MagnifyingGlassLensStat number="10,000+" label="Doanh nhân & Hội viên" />
+          <MagnifyingGlassLensStat number="300+" label="Hiệp hội & Tổ chức" />
+          <MagnifyingGlassLensStat number="50,000+" label="Kết nối được tạo" />
+          <MagnifyingGlassLensStat number="20+" label="Quốc gia & vùng lãnh thổ" />
         </div>
       </AsymmetricScrollHijackSectionV3>
 
@@ -744,25 +744,25 @@ export function BusinessConnectLandingV3() {
             {SOLUTIONS_DATA.map((s, idx) => {
               const Icon = s.icon;
               return (
-                <div
+                <HolographicFoilCard
                   key={s.title}
                   className={`p-6 border transition-all duration-150 ${
                     theme === "dark"
-                      ? "bg-zinc-900/90 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.08)] hover:border-orange-500 hover:shadow-[6px_6px_0px_0px_rgba(249,115,22,0.3)]"
+                      ? "bg-zinc-900/90 border-zinc-700 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.08)] hover:border-amber-400 hover:shadow-[6px_6px_0px_0px_rgba(245,158,11,0.3)]"
                       : theme === "contrast"
                         ? "bg-white border-2 border-black"
                         : "bg-white border-zinc-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:border-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)]"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="p-2 border border-current/20 text-orange-500">
+                    <div className="p-2 border border-current/20 text-amber-400">
                       <Icon className="h-4 w-4" />
                     </div>
                     <span className="text-[10px] font-mono opacity-50">#0{idx + 1}</span>
                   </div>
                   <h3 className="text-base font-bold mb-1.5">{s.title}</h3>
                   <p className="text-xs opacity-80 leading-relaxed">{s.desc}</p>
-                </div>
+                </HolographicFoilCard>
               );
             })}
           </div>
@@ -809,6 +809,9 @@ export function BusinessConnectLandingV3() {
                   NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
                 </div>
               </div>
+
+              {/* Scroll-Triggered SVG Gooey Morphing Droplet Bursting into Pipes */}
+              <GooeySvgMorphEcosystem />
             </div>
 
             {/* ASYMMETRIC RIGHT PIERCING BOX */}
@@ -935,7 +938,7 @@ export function BusinessConnectLandingV3() {
               onClick={() => setShowDemoModal(true)}
               className={`inline-flex items-center gap-2 px-7 py-3.5 text-xs font-bold uppercase tracking-wider ${
                 theme === "dark"
-                  ? "bg-orange-500 text-black border border-orange-400 shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
+                  ? "bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold border border-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]"
                   : theme === "contrast"
                     ? "bg-white text-black border-2 border-white"
                     : "bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
@@ -1031,7 +1034,7 @@ export function BusinessConnectLandingV3() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-3 text-xs font-bold uppercase tracking-wider bg-orange-500 text-black hover:bg-orange-400 transition mt-4"
+                  className="w-full py-3 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold shadow-md hover:shadow-lg transition mt-4"
                 >
                   Xác Nhận Đăng Ký
                 </button>

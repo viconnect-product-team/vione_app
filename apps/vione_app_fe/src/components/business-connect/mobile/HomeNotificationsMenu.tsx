@@ -271,7 +271,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
                   disabled={markRead.isPending}
                   onClick={() => markRead.mutate({ id: n.id })}
                   title="Đánh dấu đã đọc"
-                  className="grid size-7.5 place-items-center rounded-lg border border-[var(--bc-mobile-border)] text-[var(--bc-mobile-accent,#D8B282)] hover:bg-[#D8B282]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] disabled:opacity-50 cursor-pointer"
+                  className="grid size-7.5 place-items-center rounded-lg border border-slate-200 dark:border-[var(--bc-mobile-border)] text-amber-600 dark:text-[var(--bc-mobile-accent,#D8B282)] hover:bg-amber-50 dark:hover:bg-[#D8B282]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] disabled:opacity-50 cursor-pointer"
                 >
                   <Check className="size-3.5" aria-hidden />
                 </button>
@@ -279,7 +279,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
                   type="button"
                   onClick={() => handleDelete(n.id)}
                   title="Xóa thông báo"
-                  className="grid size-7.5 place-items-center rounded-lg border border-white/10 text-white/40 hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="grid size-7.5 place-items-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 hover:text-rose-500 hover:border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -288,7 +288,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
           );
         })}
       </ul>
-      <div className="flex items-center gap-2 border-t border-[var(--bc-mobile-border)] p-2.5 bg-black/40">
+      <div className="flex items-center gap-2 border-t border-slate-100 dark:border-[var(--bc-mobile-border)] p-2.5 bg-slate-50/90 dark:bg-[#070B12]/80">
         <button
           type="button"
           disabled={markRead.isPending}
@@ -299,7 +299,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
             void q.refetch();
             toast.success("Đã đánh dấu tất cả là đã đọc");
           }}
-          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#D8B282]/50 bg-gradient-to-r from-[#D8B282]/15 to-[#C29B69]/10 text-[12px] font-bold text-[#F7D896] hover:bg-[#D8B282]/20 transition-all cursor-pointer disabled:opacity-60"
+          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-amber-400/60 dark:border-[#D8B282]/50 bg-gradient-to-r from-amber-400/20 to-amber-500/15 dark:from-[#D8B282]/20 dark:to-[#C29B69]/10 text-[12px] font-bold text-amber-700 dark:text-[#F7D896] hover:bg-amber-400/30 dark:hover:bg-[#D8B282]/25 transition-all cursor-pointer disabled:opacity-60 shadow-xs"
         >
           <CheckCheck className="size-3.5" aria-hidden />
           <span>Đánh dấu tất cả đã đọc</span>
@@ -307,7 +307,7 @@ function UnreadList({ onClose }: { onClose: () => void }) {
         <Link
           to="/connect-app/notifications"
           onClick={onClose}
-          className="inline-flex min-h-9 px-3.5 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-[12px] font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all"
+          className="inline-flex min-h-9 px-3.5 items-center justify-center rounded-xl bg-slate-200/70 hover:bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[12px] font-semibold text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white dark:hover:bg-white/10 transition-all shadow-xs"
         >
           <span>Xem tất cả</span>
         </Link>
@@ -351,11 +351,11 @@ export function HomeNotificationsMenu({ unreadCount: propCount }: { unreadCount:
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="relative grid place-items-center rounded-full text-[#d8c3b1] transition-colors hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
+        className="relative grid place-items-center rounded-full text-slate-600 dark:text-[#d8c3b1] transition-colors hover:bg-slate-100 dark:hover:bg-[#ffffff14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282]"
       >
-        <Bell className="h-5 w-5 text-[#d8c3b1]" strokeWidth={1.8} />
+        <Bell className="h-5 w-5 text-current" strokeWidth={1.8} />
         {hasUnread ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
+          <span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-solid border-white dark:border-[#12110f] bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] font-['Inter-Bold',Helvetica] text-[9.5px] font-bold leading-none text-[#050c15]">
             {unreadCount}
           </span>
         ) : null}
@@ -364,9 +364,9 @@ export function HomeNotificationsMenu({ unreadCount: propCount }: { unreadCount:
         <div
           role="menu"
           aria-label={t("bc.mobile.home.notifications.panel.title")}
-          className="absolute right-0 z-50 mt-2 w-[min(88vw,340px)] overflow-hidden rounded-2xl border border-[#D8B282]/20 bg-[linear-gradient(165deg,rgba(10,16,25,0.98)_0%,rgba(7,12,19,0.98)_50%,rgba(4,8,14,0.99)_100%)] backdrop-blur-xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.9)]"
+          className="absolute right-0 z-50 mt-2 w-[min(88vw,340px)] overflow-hidden rounded-2xl border border-slate-200 dark:border-[#D8B282]/20 bg-white dark:bg-[linear-gradient(165deg,rgba(11,15,23,0.98)_0%,rgba(14,21,34,0.98)_50%,rgba(7,11,18,0.99)_100%)] text-slate-900 dark:text-white backdrop-blur-xl shadow-2xl"
         >
-          <p className="border-b border-[var(--bc-mobile-border)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--bc-mobile-muted)]">
+          <p className="border-b border-slate-100 dark:border-[var(--bc-mobile-border)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-[var(--bc-mobile-muted)]">
             {t("bc.mobile.home.notifications.panel.title")}
           </p>
           <UnreadList onClose={() => setOpen(false)} />

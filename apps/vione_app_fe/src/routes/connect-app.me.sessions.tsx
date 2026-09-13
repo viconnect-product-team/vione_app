@@ -10,6 +10,7 @@ import { useLang, useT } from "@/lib/i18n";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
 import { MeSheet } from "@/components/business-connect/mobile/me/MeSheet";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   bcDeviceSessionsListFn,
   bcDeviceSessionRevokeFn,
@@ -69,7 +70,15 @@ function SessionsPage() {
     try {
       setSessions(await listSessions({ data: { deviceKey: getDeviceKey() } }));
     } catch {
-      setLoadFailed(true);
+      try {
+        const key = getDeviceKey();
+        const data = await fetchNestApi<DeviceSessionInfo[]>(
+          `/connect-app/me/device-sessions${key ? `?deviceKey=${key}` : ""}`
+        );
+        setSessions(data);
+      } catch {
+        setLoadFailed(true);
+      }
     }
   }, [listSessions]);
 
@@ -82,9 +91,18 @@ function SessionsPage() {
     setRevoking(true);
     setRevokeFailed(false);
     try {
-      const updated = await revokeSession({
-        data: { sessionId: pending.id, deviceKey: getDeviceKey() },
-      });
+      let updated: DeviceSessionInfo;
+      try {
+        updated = await revokeSession({
+          data: { sessionId: pending.id, deviceKey: getDeviceKey() },
+        });
+      } catch {
+        const key = getDeviceKey();
+        updated = await fetchNestApi<DeviceSessionInfo>(
+          `/connect-app/me/device-sessions/${pending.id}${key ? `?deviceKey=${key}` : ""}`,
+          { method: "DELETE" }
+        );
+      }
       setSessions((prev) => prev?.map((s) => (s.id === updated.id ? updated : s)) ?? prev);
       setPending(null);
     } catch {

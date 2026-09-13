@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Request, UseGuards, Headers
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('me')
+@Controller(['me', 'connect-app/me'])
 @UseGuards(JwtAuthGuard)
 export class NfcDeviceController {
   constructor(private readonly connectAppService: ConnectAppService) {}

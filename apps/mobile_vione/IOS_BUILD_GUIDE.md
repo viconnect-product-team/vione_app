@@ -35,10 +35,12 @@ const REMOTE_URL = 'http://14.225.217.232:5000';
   👉 [EAS Builds Dashboard](https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds)
 - **Trang quản lý TestFlight & App Store Connect**:
   👉 [App Store Connect TestFlight](https://appstoreconnect.apple.com/apps/6810608093/testflight/ios)
-- **File IPA Build 3 (Đã hoàn tất & Đang hoạt động trên TestFlight)**:
+- **File IPA Build 4 (Mới nhất - Đang xử lý trên TestFlight)**:
+  👉 [Download Build 4 .IPA (Direct Link)](https://expo.dev/artifacts/eas/BaxacCwYnCr_yU9AIMjrcOtJC48VYaAG3jaJnoa3Wcc.ipa)
+- **File IPA Build 3 (Đã phát hành TestFlight trước đó)**:
   👉 [Download Build 3 .IPA](https://expo.dev/artifacts/eas/-BMmwAUQczehQxzZYWV6fMMSYQH5k5zKy7hTKhLKpzA.ipa)
 - **File Android APK Debug cục bộ (Đã build sẵn)**:
-  👉 `apps/mobile/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
+  👉 `apps/mobile_vione/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
 
 ---
 

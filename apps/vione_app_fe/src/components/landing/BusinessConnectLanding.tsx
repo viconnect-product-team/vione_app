@@ -9,6 +9,13 @@ import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
 import {
+  useLenisSmoothScroll,
+  SpatialCustomCursor,
+  MagneticButton,
+  AppleTVParallaxCard,
+  SplitTypeReveal,
+} from "./animations/SpatialAppleEffects";
+import {
   Sparkles,
   Users2,
   Briefcase,
@@ -953,6 +960,7 @@ function TombStoneDoorTransition({
 }
 
 export function BusinessConnectLanding() {
+  useLenisSmoothScroll();
   const { lang } = useLang();
   // Full 3-Theme Switcher Support (Light / Dark Night-City / High-Contrast Cosmic Robot)
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -1139,6 +1147,7 @@ export function BusinessConnectLanding() {
       }`}
       style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
+      <SpatialCustomCursor />
       {/* Cửa đá đóng mở khi chuyển theme */}
       <TombStoneDoorTransition isOpen={isDoorOpen} />
 
@@ -1743,86 +1752,51 @@ export function BusinessConnectLanding() {
             </span>
           </div>
 
-          {/* 5 Version Switcher Pills */}
+          {/* 7 Version Switcher Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-            <span className="text-[11px] font-medium opacity-60 mr-1 hidden sm:inline">Chọn giao diện:</span>
+            <span className="text-[11px] font-medium opacity-60 mr-1 hidden sm:inline">Chọn mẫu:</span>
             <Link
               to="/business-connect/v1"
               className="px-3 py-1 rounded-full text-[11px] font-bold bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-sm border border-amber-400/50"
             >
-              v1 Thành Phố ★
+              v1 Apple Spatial ★
             </Link>
             <Link
               to="/business-connect/v2"
               className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
             >
-              v2 Tu Tiên
+              v2 Cyber Tech
             </Link>
             <Link
               to="/business-connect/v3"
               className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-purple-500/40 text-purple-400 hover:bg-purple-500/10"
             >
-              v3 Cổ Tích
+              v3 Fluid Glass
             </Link>
             <Link
               to="/business-connect/v4"
               className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
             >
-              v4 Cyber
+              v4 Brutalism
             </Link>
             <Link
               to="/business-connect/v5"
               className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
             >
-              v5 Hoàng Gia CEO
+              v5 Luxury Corp
             </Link>
-
-            {/* Theme Mode Switcher: Sáng / Tối / Tương phản */}
-            <div className={`flex items-center p-0.5 rounded-full border text-[10px] font-bold select-none ml-1 transition-all ${themeClass(
-              "bg-slate-900/80 border-[#D8B282]/40 text-slate-300",
-              "bg-amber-100/90 border-amber-300 text-amber-900",
-              "bg-black border-yellow-400 text-yellow-300"
-            )}`}>
-              <button
-                type="button"
-                onClick={() => handleSetTheme("light")}
-                title="Theme Sáng (Hoàng Gia)"
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full transition-all ${
-                  themeMode === "light"
-                    ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-sm font-black"
-                    : "text-amber-800 hover:text-amber-950"
-                }`}
-              >
-                <Sun className="w-3 h-3" />
-                <span>SÁNG</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSetTheme("dark")}
-                title="Theme Tối (Thành Phố Về Đêm)"
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full transition-all ${
-                  themeMode === "dark"
-                    ? "bg-gradient-to-r from-indigo-950 to-slate-900 text-[#F6E1C3] border border-[#D8B282]/50 shadow-[0_0_10px_rgba(216,178,130,0.3)] font-black"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Moon className="w-3 h-3" />
-                <span>TỐI</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSetTheme("contrast")}
-                title="Theme Tương Phản (Thiên Văn Vũ Trụ Robot)"
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full transition-all ${
-                  themeMode === "contrast"
-                    ? "bg-yellow-400 text-black shadow-[0_0_10px_rgba(250,204,21,0.5)] font-black"
-                    : "text-slate-400 hover:text-yellow-300"
-                }`}
-              >
-                <Contrast className="w-3 h-3" />
-                <span>TƯƠNG PHẢN</span>
-              </button>
-            </div>
+            <Link
+              to="/business-connect/v6"
+              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
+            >
+              v6 Monument
+            </Link>
+            <Link
+              to="/business-connect/v7"
+              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-pink-500/40 text-pink-400 hover:bg-pink-500/10"
+            >
+              v7 Horizon Fluid
+            </Link>
           </div>
         </div>
 
@@ -1883,54 +1857,6 @@ export function BusinessConnectLanding() {
 
               {/* Right Controls */}
               <div className="hidden sm:flex items-center gap-3">
-                {/* 3-Mode Theme Switcher: Sáng / Tối / Tương phản */}
-                <div
-                  className={`p-1 rounded-xl border flex items-center gap-1 text-xs font-bold transition-all shadow-sm ${themeClass(
-                    "bg-[#0A1128]/80 border-[#D8B282]/40 text-slate-200",
-                    "bg-amber-50 border-amber-200 text-amber-900",
-                    "bg-zinc-950 border-yellow-400 text-yellow-300"
-                  )}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSetTheme("light")}
-                    title="Theme Sáng (Hoàng Gia)"
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                      themeMode === "light"
-                        ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow font-black"
-                        : "text-slate-500 hover:text-amber-800"
-                    }`}
-                  >
-                    <Sun className="w-3.5 h-3.5" />
-                    <span className="font-mono text-[10px] uppercase tracking-wider">SÁNG</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetTheme("dark")}
-                    title="Theme Tối (Thành Phố Về Đêm)"
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                      themeMode === "dark"
-                        ? "bg-gradient-to-r from-indigo-950 to-slate-900 text-[#F6E1C3] border border-[#D8B282]/60 shadow-[0_0_12px_rgba(216,178,130,0.35)] font-black"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    <Moon className="w-3.5 h-3.5" />
-                    <span className="font-mono text-[10px] uppercase tracking-wider">TỐI</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetTheme("contrast")}
-                    title="Theme Tương Phản (Thiên Văn Vũ Trụ Robot)"
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-                      themeMode === "contrast"
-                        ? "bg-yellow-400 text-black shadow-[0_0_12px_rgba(250,204,21,0.5)] font-black"
-                        : "text-slate-400 hover:text-yellow-300"
-                    }`}
-                  >
-                    <Contrast className="w-3.5 h-3.5" />
-                    <span className="font-mono text-[10px] uppercase tracking-wider">T.PHẢN</span>
-                  </button>
-                </div>
 
                 {/* Minimalist Language Selector 🌐 VI ⌄ (Match Ảnh 2) */}
                 <div className="flex items-center">
@@ -1986,34 +1912,6 @@ export function BusinessConnectLanding() {
               <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold hover:text-[#C29B69]">Khách hàng</a>
               <a href="#ecosystem" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold hover:text-[#C29B69]">Hệ sinh thái</a>
               <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold hover:text-[#C29B69]">Tiếng nói</a>
-              <a href="#footer-cta" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold hover:text-[#C29B69]">Đăng ký</a>
-
-              <div className="pt-3 border-t border-slate-700/30 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">Giao diện:</span>
-                <div className="flex items-center gap-1 text-[11px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => { handleSetTheme("light"); setMobileMenuOpen(false); }}
-                    className={`px-2.5 py-1 rounded-md ${themeMode === "light" ? "bg-amber-400 text-slate-950 font-bold" : "text-slate-400"}`}
-                  >
-                    Sáng
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { handleSetTheme("dark"); setMobileMenuOpen(false); }}
-                    className={`px-2.5 py-1 rounded-md ${themeMode === "dark" ? "bg-indigo-950 text-[#F6E1C3] border border-[#D8B282]/50 font-bold" : "text-slate-400"}`}
-                  >
-                    Tối
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { handleSetTheme("contrast"); setMobileMenuOpen(false); }}
-                    className={`px-2.5 py-1 rounded-md ${themeMode === "contrast" ? "bg-yellow-400 text-black font-bold" : "text-slate-400"}`}
-                  >
-                    Tương phản
-                  </button>
-                </div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -2023,9 +1921,9 @@ export function BusinessConnectLanding() {
     {/* =========================================================================
         2. HERO SECTION: STRICTLY 2 SLIDES WITH RICH LUXURY ANIMATIONS
         ========================================================================= */}
-    <section id="hero" className="relative z-10 pt-32 pb-16 sm:pt-36 sm:pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="hero" className="relative z-10 pt-20 pb-12 sm:pt-24 sm:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Slide Indicator Tabs (2 Slides) */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-4 sm:mb-6">
           <div className={`inline-flex items-center p-1.5 rounded-full border backdrop-blur-xl shadow-lg gap-2 ${themeClass(
             "bg-[#040814]/85 border-[#D8B282]/40 shadow-[0_0_20px_rgba(216,178,130,0.2)]",
             "bg-white/95 border-[#D8B282]/50 shadow-md",
@@ -2080,12 +1978,12 @@ export function BusinessConnectLanding() {
               transition={{ duration: 0.45, ease: "easeInOut" }}
               onMouseEnter={() => setIsSlidePaused(true)}
               onMouseLeave={() => setIsSlidePaused(false)}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center"
             >
               {/* Left Column (7 cols): Bold Typography & Measurable Metrics */}
-              <div className="lg:col-span-7 text-left space-y-6">
+              <div className="lg:col-span-7 text-left space-y-4 sm:space-y-4.5">
                 <div
-                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase font-mono border backdrop-blur-md shadow-sm ${themeClass(
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black tracking-wider uppercase font-mono border backdrop-blur-md shadow-sm ${themeClass(
                     "border-[#D8B282]/50 text-[#F6E1C3] bg-[#D8B282]/15",
                     "border-[#D8B282]/60 text-amber-900 bg-amber-100 font-extrabold",
                     "border-yellow-400 text-yellow-300 bg-yellow-400/20"
@@ -2095,9 +1993,9 @@ export function BusinessConnectLanding() {
                   <span>NỀN TẢNG KẾT NỐI KINH DOANH B2B</span>
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.08]">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-[1.1]">
                   <span className={`block font-black ${themeClass("text-white", "text-[#0F172A]", "text-white")}`}>
-                    HIỂU ĐÚNG NGƯỜI.
+                    <SplitTypeReveal text="HIỂU ĐÚNG NGƯỜI." delay={0.1} />
                   </span>
                   <span
                     className={`block mt-1 font-black ${themeClass(
@@ -2106,7 +2004,7 @@ export function BusinessConnectLanding() {
                       "text-yellow-300"
                     )}`}
                   >
-                    MỞ RA CƠ HỘI THẬT.
+                    <SplitTypeReveal text="MỞ RA CƠ HỘI THẬT." delay={0.25} />
                   </span>
                   <span
                     className={`block mt-1 font-black ${themeClass(
@@ -2115,16 +2013,16 @@ export function BusinessConnectLanding() {
                       "text-yellow-400"
                     )}`}
                   >
-                    TĂNG TRƯỞNG THỰC CHẤT.
+                    <SplitTypeReveal text="TĂNG TRƯỞNG THỰC CHẤT." delay={0.4} />
                   </span>
                 </h1>
 
-                <p className={`text-base sm:text-lg leading-relaxed max-w-2xl font-medium ${themeClass("text-[#D4C3A3]/90", "text-slate-800", "text-yellow-100")}`}>
+                <p className={`text-sm sm:text-base leading-relaxed max-w-2xl font-medium ${themeClass("text-[#D4C3A3]/90", "text-slate-800", "text-yellow-100")}`}>
                   Business Connect giúp các hiệp hội, tổ chức và doanh nghiệp quản lý mạng lưới hội viên, kết nối đúng đối tác tiềm năng, chốt thương vụ B2B và đo lường ROI mạng lưới tức thì với trí tuệ nhân tạo AI.
                 </p>
 
                 {/* 3 Luxury Highlight Feature Badges */}
-                <div className="flex flex-wrap gap-2.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-0.5">
                   {[
                     "Hồ Sơ Doanh Nghiệp 360° & AI Match",
                     "Định Danh Số Thẻ Titanium NFC 1-Chạm",
@@ -2132,7 +2030,7 @@ export function BusinessConnectLanding() {
                   ].map((badge, bIdx) => (
                     <div
                       key={bIdx}
-                      className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 backdrop-blur-md shadow-sm ${themeClass(
+                      className={`px-3 py-1 rounded-xl border text-xs font-bold flex items-center gap-1.5 backdrop-blur-md shadow-sm ${themeClass(
                         "bg-[#0D162B]/80 border-[#D8B282]/30 text-[#F6E1C3]",
                         "bg-white/95 border-[#D8B282]/50 text-slate-900 font-extrabold shadow-sm",
                         "bg-black border-yellow-400 text-yellow-200"
@@ -2144,55 +2042,54 @@ export function BusinessConnectLanding() {
                   ))}
                 </div>
 
-                {/* 4 Strategic Metrics as Styled Highlight Square Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-4">
+                {/* 4 Strategic Metrics as Styled Apple TV Parallax Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
                   {[
                     { num: "10.000+", label: "Doanh nhân & Hội viên" },
                     { num: "300+", label: "Hiệp hội & Tổ chức" },
                     { num: "50.000+", label: "Kết nối thành công" },
                     { num: "20+", label: "Quốc gia & vùng lãnh thổ" },
                   ].map((stat, sIdx) => (
-                    <div
+                    <AppleTVParallaxCard
                       key={sIdx}
-                      className={`p-3.5 sm:p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.03] backdrop-blur-md text-left ${themeClass(
+                      title={stat.num}
+                      desc={stat.label}
+                      className={`p-3 rounded-2xl border transition-all duration-300 backdrop-blur-md text-left ${themeClass(
                         "bg-gradient-to-br from-[#0B152B]/90 via-[#070D1E]/90 to-[#02050E]/90 border-[#D8B282]/35 shadow-lg",
                         "bg-gradient-to-br from-white/95 via-[#FFFDF9]/95 to-[#F6EDE0]/95 border-[#D8B282]/50 shadow-md",
                         "bg-black border-yellow-400 text-yellow-300"
                       )}`}
-                    >
-                      <div className={`text-2xl sm:text-3xl font-black font-mono ${themeClass("text-[#F6E1C3]", "text-[#78350F]", "text-yellow-300")}`}>
-                        {stat.num}
-                      </div>
-                      <div className={`text-[11px] font-bold leading-tight mt-1 ${themeClass("text-slate-400", "text-slate-700", "text-yellow-100")}`}>
-                        {stat.label}
-                      </div>
-                    </div>
+                    />
                   ))}
                 </div>
 
-                {/* Primary CTA Buttons */}
-                <div className="flex flex-wrap items-center gap-4 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setDemoModalOpen(true)}
-                    className="px-7 py-4 rounded-full font-black text-sm tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer flex items-center gap-2"
-                  >
-                    <span>Đặt Demo Nền Tảng</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                {/* Primary CTA Buttons with Apple Magnetic Effect */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <MagneticButton strength={0.3}>
+                    <button
+                      type="button"
+                      onClick={() => setDemoModalOpen(true)}
+                      className="px-6 py-3 rounded-full font-black text-xs sm:text-sm tracking-wider uppercase bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      <span>Đặt Demo Nền Tảng</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </MagneticButton>
 
-                  <button
-                    type="button"
-                    onClick={() => changeSlide(1)}
-                    className={`inline-flex items-center gap-2.5 px-6 py-4 rounded-full font-bold text-sm border transition-all cursor-pointer ${themeClass(
-                      "border-[#D8B282]/50 text-[#F6E1C3] bg-[#0A1224]/80 hover:bg-[#0E1A33] hover:border-[#D8B282]",
-                      "border-2 border-[#D8B282]/60 text-slate-900 bg-white hover:bg-amber-50 font-extrabold shadow-sm",
-                      "border-yellow-400 text-yellow-300 bg-black"
-                    )}`}
-                  >
-                    <Play className="w-4 h-4 text-[#C29B69]" />
-                    <span>Xem Video AI Nói (Full Screen)</span>
-                  </button>
+                  <MagneticButton strength={0.25}>
+                    <button
+                      type="button"
+                      onClick={() => changeSlide(1)}
+                      className={`inline-flex items-center gap-2 px-5 py-3 rounded-full font-bold text-xs sm:text-sm border transition-all cursor-pointer ${themeClass(
+                        "border-[#D8B282]/50 text-[#F6E1C3] bg-[#0A1224]/80 hover:bg-[#0E1A33] hover:border-[#D8B282]",
+                        "border-2 border-[#D8B282]/60 text-slate-900 bg-white hover:bg-amber-50 font-extrabold shadow-sm",
+                        "border-yellow-400 text-yellow-300 bg-black"
+                      )}`}
+                    >
+                      <Play className="w-4 h-4 text-[#C29B69]" />
+                      <span>Xem Video AI Nói (Full Screen)</span>
+                    </button>
+                  </MagneticButton>
                 </div>
               </div>
 
@@ -3607,13 +3504,15 @@ export function BusinessConnectLanding() {
                 />
               </div>
               <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 hover:brightness-105 transition-all shadow-lg cursor-pointer"
-                >
-                  {submitting ? "Đang xử lý..." : "Xác Nhận Đặt Lịch Demo"}
-                </button>
+                <MagneticButton className="w-full">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 hover:brightness-105 transition-all shadow-lg cursor-pointer"
+                  >
+                    {submitting ? "Đang xử lý..." : "Xác Nhận Đặt Lịch Demo"}
+                  </button>
+                </MagneticButton>
               </div>
             </form>
           </div>

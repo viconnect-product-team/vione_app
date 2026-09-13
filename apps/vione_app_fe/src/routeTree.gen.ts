@@ -73,6 +73,7 @@ import { Route as BusinessConnectIndexRouteImport } from './routes/business-conn
 import { Route as AssociationIndexRouteImport } from './routes/association.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountSettingsIndexRouteImport } from './routes/account-settings.index'
+import { Route as VioneLoginRouteImport } from './routes/vione.login'
 import { Route as PlatformRenewalAuditRouteImport } from './routes/platform.renewal-audit'
 import { Route as PlatformPermissionsRouteImport } from './routes/platform.permissions'
 import { Route as PlatformIntroductionOperationsRouteImport } from './routes/platform.introduction-operations'
@@ -141,7 +142,6 @@ import { Route as BusinessConnectMemoryRouteImport } from './routes/business-con
 import { Route as BusinessConnectMeetingsRouteImport } from './routes/business-connect.meetings'
 import { Route as BusinessConnectConnectionsRouteImport } from './routes/business-connect.connections'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
-import { Route as AuthMobileRouteImport } from './routes/auth.mobile'
 import { Route as AssociationSettingsRouteImport } from './routes/association.settings'
 import { Route as AssociationRenewRouteImport } from './routes/association.renew'
 import { Route as AssociationProfileRouteImport } from './routes/association.profile'
@@ -557,6 +557,11 @@ const AccountSettingsIndexRoute = AccountSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AccountSettingsRoute,
 } as any)
+const VioneLoginRoute = VioneLoginRouteImport.update({
+  id: '/vione/login',
+  path: '/vione/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlatformRenewalAuditRoute = PlatformRenewalAuditRouteImport.update({
   id: '/platform/renewal-audit',
   path: '/platform/renewal-audit',
@@ -901,11 +906,6 @@ const BSlugRoute = BSlugRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthMobileRoute = AuthMobileRouteImport.update({
-  id: '/mobile',
-  path: '/mobile',
-  getParentRoute: () => AuthRoute,
 } as any)
 const AssociationSettingsRoute = AssociationSettingsRouteImport.update({
   id: '/settings',
@@ -1429,7 +1429,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/association': typeof AssociationRouteWithChildren
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/business-connect': typeof BusinessConnectRouteWithChildren
@@ -1494,7 +1494,6 @@ export interface FileRoutesByFullPath {
   '/association/profile': typeof AssociationProfileRoute
   '/association/renew': typeof AssociationRenewRouteWithChildren
   '/association/settings': typeof AssociationSettingsRoute
-  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
   '/business-connect/meetings': typeof BusinessConnectMeetingsRouteWithChildren
@@ -1563,6 +1562,7 @@ export interface FileRoutesByFullPath {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/vione/login': typeof VioneLoginRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -1656,7 +1656,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/checkin': typeof CheckinRoute
@@ -1708,7 +1708,6 @@ export interface FileRoutesByTo {
   '/association/products': typeof AssociationProductsRoute
   '/association/profile': typeof AssociationProfileRoute
   '/association/settings': typeof AssociationSettingsRoute
-  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/memory': typeof BusinessConnectMemoryRoute
   '/business-connect/my-card': typeof BusinessConnectMyCardRoute
@@ -1766,6 +1765,7 @@ export interface FileRoutesByTo {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/vione/login': typeof VioneLoginRoute
   '/account-settings': typeof AccountSettingsIndexRoute
   '/admin': typeof AdminIndexRoute
   '/association': typeof AssociationIndexRoute
@@ -1857,7 +1857,7 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/association': typeof AssociationRouteWithChildren
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/business-connect': typeof BusinessConnectRouteWithChildren
@@ -1922,7 +1922,6 @@ export interface FileRoutesById {
   '/association/profile': typeof AssociationProfileRoute
   '/association/renew': typeof AssociationRenewRouteWithChildren
   '/association/settings': typeof AssociationSettingsRoute
-  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
   '/business-connect/meetings': typeof BusinessConnectMeetingsRouteWithChildren
@@ -1991,6 +1990,7 @@ export interface FileRoutesById {
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
+  '/vione/login': typeof VioneLoginRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -2153,7 +2153,6 @@ export interface FileRouteTypes {
     | '/association/profile'
     | '/association/renew'
     | '/association/settings'
-    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
     | '/business-connect/meetings'
@@ -2222,6 +2221,7 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/vione/login'
     | '/account-settings/'
     | '/admin/'
     | '/association/'
@@ -2367,7 +2367,6 @@ export interface FileRouteTypes {
     | '/association/products'
     | '/association/profile'
     | '/association/settings'
-    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/memory'
     | '/business-connect/my-card'
@@ -2425,6 +2424,7 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/vione/login'
     | '/account-settings'
     | '/admin'
     | '/association'
@@ -2580,7 +2580,6 @@ export interface FileRouteTypes {
     | '/association/profile'
     | '/association/renew'
     | '/association/settings'
-    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
     | '/business-connect/meetings'
@@ -2649,6 +2648,7 @@ export interface FileRouteTypes {
     | '/platform/introduction-operations'
     | '/platform/permissions'
     | '/platform/renewal-audit'
+    | '/vione/login'
     | '/account-settings/'
     | '/admin/'
     | '/association/'
@@ -2745,7 +2745,7 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   AiRoute: typeof AiRoute
   AssociationRoute: typeof AssociationRouteWithChildren
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthRoute: typeof AuthRoute
   BenefitsRoute: typeof BenefitsRoute
   BusinessCardsRoute: typeof BusinessCardsRoute
   BusinessConnectRoute: typeof BusinessConnectRouteWithChildren
@@ -2804,6 +2804,7 @@ export interface RootRouteChildren {
   PlatformIntroductionOperationsRoute: typeof PlatformIntroductionOperationsRoute
   PlatformPermissionsRoute: typeof PlatformPermissionsRoute
   PlatformRenewalAuditRoute: typeof PlatformRenewalAuditRoute
+  VioneLoginRoute: typeof VioneLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
   MembersIndexRoute: typeof MembersIndexRoute
   PlatformIndexRoute: typeof PlatformIndexRoute
@@ -3265,6 +3266,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account-settings/'
       preLoaderRoute: typeof AccountSettingsIndexRouteImport
       parentRoute: typeof AccountSettingsRoute
+    }
+    '/vione/login': {
+      id: '/vione/login'
+      path: '/vione/login'
+      fullPath: '/vione/login'
+      preLoaderRoute: typeof VioneLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/platform/renewal-audit': {
       id: '/platform/renewal-audit'
@@ -3741,13 +3749,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/b/$slug'
       preLoaderRoute: typeof BSlugRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/auth/mobile': {
-      id: '/auth/mobile'
-      path: '/mobile'
-      fullPath: '/auth/mobile'
-      preLoaderRoute: typeof AuthMobileRouteImport
-      parentRoute: typeof AuthRoute
     }
     '/association/settings': {
       id: '/association/settings'
@@ -4502,16 +4503,6 @@ const AssociationRouteWithChildren = AssociationRoute._addFileChildren(
   AssociationRouteChildren,
 )
 
-interface AuthRouteChildren {
-  AuthMobileRoute: typeof AuthMobileRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthMobileRoute: AuthMobileRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 interface BusinessConnectConnectionsRouteChildren {
   BusinessConnectConnectionsPersonNodeIdRoute: typeof BusinessConnectConnectionsPersonNodeIdRoute
   BusinessConnectConnectionsIndexRoute: typeof BusinessConnectConnectionsIndexRoute
@@ -5082,7 +5073,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   AiRoute: AiRoute,
   AssociationRoute: AssociationRouteWithChildren,
-  AuthRoute: AuthRouteWithChildren,
+  AuthRoute: AuthRoute,
   BenefitsRoute: BenefitsRoute,
   BusinessCardsRoute: BusinessCardsRoute,
   BusinessConnectRoute: BusinessConnectRouteWithChildren,
@@ -5141,6 +5132,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlatformIntroductionOperationsRoute: PlatformIntroductionOperationsRoute,
   PlatformPermissionsRoute: PlatformPermissionsRoute,
   PlatformRenewalAuditRoute: PlatformRenewalAuditRoute,
+  VioneLoginRoute: VioneLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
   MembersIndexRoute: MembersIndexRoute,
   PlatformIndexRoute: PlatformIndexRoute,

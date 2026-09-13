@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
-  Building2,
   ChevronRight,
   Eye,
   EyeOff,
@@ -13,15 +12,12 @@ import {
   QrCode,
   RefreshCw,
   Shield,
-  Sparkles,
   X,
 } from "lucide-react";
-import { useLang, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import authBg from "@/assets/connect-auth-bg.jpg";
 import { ViOneLogo } from "./ViOneLogo";
 import { LuxuryLangSwitcher } from "@/components/LuxuryLangSwitcher";
-
-export type AppPortalType = "connect" | "association";
 
 type Props = {
   email: string;
@@ -42,8 +38,6 @@ type Props = {
   onScanCard: () => void;
   remember?: boolean;
   onRememberChange?: (v: boolean) => void;
-  appPortal?: AppPortalType;
-  onAppPortalChange?: (portal: AppPortalType) => void;
 };
 
 const NAVY = "#0A0A0B";
@@ -87,11 +81,8 @@ export function ConnectAppSignIn({
   onScanCard,
   remember: rememberProp,
   onRememberChange,
-  appPortal = "connect",
-  onAppPortalChange,
 }: Props) {
   const t = useT();
-  const { lang } = useLang();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLocal, setRememberLocal] = useState(true);
   const remember = rememberProp ?? rememberLocal;
@@ -102,34 +93,23 @@ export function ConnectAppSignIn({
   };
   const busy = loading || oauthPending !== null;
 
-  const isAssociation = appPortal === "association";
-
-  const fieldClass = isAssociation
-    ? "h-10 w-full rounded-xl border border-blue-200 bg-white pl-10 pr-10 text-[13.5px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20 shadow-xs"
-    : "h-10 w-full rounded-xl border border-[#D8B282]/30 bg-black/40 pl-10 pr-10 text-[13.5px] text-[#f5f7fa] outline-none transition-colors placeholder:text-[#D4C3A3]/40 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30";
+  const fieldClass =
+    "h-10 w-full rounded-xl border border-[#D8B282]/30 bg-black/40 pl-10 pr-10 text-[13.5px] text-[#f5f7fa] outline-none transition-colors placeholder:text-[#D4C3A3]/40 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30";
 
   return (
-    <main
-      className={`relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col justify-between select-none transition-colors duration-500 ${
-        isAssociation ? "bg-gradient-to-b from-[#F0F7FF] via-[#FFFFFF] to-[#EBF4FE] text-slate-900" : "bg-[#0A0A0B] text-[#f5f7fa]"
-      }`}
-    >
+    <main className="relative min-h-[100dvh] w-full overflow-y-auto flex flex-col justify-center select-none bg-[#0A0A0B] text-[#f5f7fa]">
       <img
         src={authBg}
         alt=""
         aria-hidden="true"
         width={1024}
         height={640}
-        className={`pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover transition-opacity duration-700 ${
-          isAssociation ? "opacity-10 mix-blend-multiply" : "opacity-60"
-        }`}
+        className="pointer-events-none fixed inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-60"
       />
       <div
-        className="pointer-events-none absolute inset-0 transition-all duration-700"
+        className="pointer-events-none fixed inset-0 transition-all duration-700"
         style={{
-          background: isAssociation
-            ? "radial-gradient(130% 75% at 50% 20%, #ffffff 0%, #e0f2fe 45%, #bae6fd 75%, #0284c7 150%)"
-            : `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 92%)`,
+          background: `radial-gradient(130% 75% at 50% 30%, transparent 20%, ${NAVY} 92%)`,
         }}
       />
 
@@ -138,17 +118,17 @@ export function ConnectAppSignIn({
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
         input:-webkit-autofill:active {
-          -webkit-text-fill-color: ${isAssociation ? "#0f172a" : "#f5f7fa"} !important;
+          -webkit-text-fill-color: #f5f7fa !important;
           transition: background-color 5000s ease-in-out 0s !important;
-          caret-color: ${isAssociation ? "#0284c7" : "#f5f7fa"} !important;
+          caret-color: #f5f7fa !important;
         }
       `}</style>
 
       <div
-        className="bc-auth-wrapper relative mx-auto flex h-full max-h-full w-full max-w-md flex-col justify-between px-5 py-2 overflow-hidden"
+        className="bc-auth-wrapper relative mx-auto flex min-h-[100dvh] md:min-h-0 w-full max-w-md flex-col justify-between md:justify-center md:gap-3 px-5 py-3 overflow-hidden my-auto"
         style={{
-          paddingTop: "max(6px, env(safe-area-inset-top))",
-          paddingBottom: "max(6px, env(safe-area-inset-bottom))",
+          paddingTop: "max(8px, env(safe-area-inset-top))",
+          paddingBottom: "max(8px, env(safe-area-inset-bottom))",
         }}
       >
         {/* Top bar: Language switcher */}
@@ -157,67 +137,17 @@ export function ConnectAppSignIn({
         </div>
 
         {/* Brand Header */}
-        <div className="flex flex-col items-center justify-center text-center shrink-0 my-0.5">
-          {isAssociation ? (
-            <div className="flex flex-col items-center justify-center">
-              <div className="relative w-15 h-15 sm:w-16 sm:h-16 rounded-2xl p-1.5 bg-white border-2 border-blue-500/30 shadow-[0_4px_20px_rgba(2,132,199,0.2)] flex items-center justify-center overflow-hidden">
-                <img
-                  src="/landing/ceo1983-official-logo.png"
-                  alt="Logo CLB Doanh Nhân CEO 1983"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="mt-1.5 text-[9.5px] font-black tracking-[0.25em] text-[#0284C7] uppercase">
-                CLB DOANH NHÂN CEO 1983
-              </div>
-              <h1 className="mt-0.5 font-bold text-[18px] sm:text-[20px] tracking-wide text-slate-900">
-                Cổng Hội Viên Hiệp Hội
-              </h1>
-              <div className="mt-0.5 text-[11px] sm:text-[12px] font-semibold text-blue-700">
-                Nâng tầm giá trị • Tiên phong kết nối
-              </div>
-              <p className="mx-auto mt-0.5 max-w-[19rem] text-center text-[11px] sm:text-[11.5px] leading-tight font-medium text-slate-600">
-                Không gian kết nối giao thương và thông tin chính thức CLB CEO 1983
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center py-2">
-              <ViOneLogo className="h-8 w-auto sm:h-9 transition-transform hover:scale-105 duration-300 drop-shadow-[0_4px_24px_rgba(216,178,130,0.6)]" />
-              <div className="mt-1 text-[9.5px] font-bold tracking-[0.25em] text-[#D8B282]">
-                BUSINESS CONNECT
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 2-Tab Segmented Switcher: ViOne vs Hiệp hội / CLB */}
-        <div className={`my-1.5 p-1 rounded-2xl backdrop-blur-md flex items-center gap-1 shadow-inner shrink-0 border transition-colors duration-300 ${
-          isAssociation ? "bg-blue-50/80 border-blue-200 shadow-md" : "bg-black/60 border-[#D8B282]/30"
-        }`}>
-          <button
-            type="button"
-            onClick={() => onAppPortalChange?.("connect")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
-              !isAssociation
-                ? "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] shadow-md font-bold"
-                : "text-slate-600 hover:text-slate-900 font-medium"
-            }`}
-          >
-            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${!isAssociation ? "text-[#050c15]" : "text-[#0284C7]"}`} />
-            <span className="truncate">Đăng nhập ViOne</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onAppPortalChange?.("association")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
-              isAssociation
-                ? "bg-gradient-to-r from-[#004B91] via-[#0284C7] to-[#0369A1] text-white border border-blue-400 shadow-md font-bold"
-                : "text-[#D4C3A3]/70 hover:text-white font-medium"
-            }`}
-          >
-            <Building2 className={`w-3.5 h-3.5 shrink-0 ${isAssociation ? "text-white" : "text-[#D8B282]"}`} />
-            <span className="truncate">Cổng Hiệp hội CEO 1983</span>
-          </button>
+        <div className="flex flex-col items-center justify-center text-center py-2 shrink-0">
+          <ViOneLogo className="h-8.5 w-auto sm:h-9.5 transition-transform hover:scale-105 duration-300 drop-shadow-[0_4px_24px_rgba(216,178,130,0.6)]" />
+          <div className="mt-1 text-[9.5px] font-bold tracking-[0.28em] text-[#D8B282] uppercase">
+            BUSINESS CONNECT
+          </div>
+          <h1 className="mt-2 font-serif text-[21px] sm:text-[23px] font-medium tracking-wide text-[#F6E1C3]">
+            Đăng nhập ViOne
+          </h1>
+          <p className="mt-0.5 text-[12px] text-[#D4C3A3]/80">
+            Cộng đồng doanh nhân tinh hoa & Kết nối giao thương
+          </p>
         </div>
 
         {/* Error */}
@@ -239,7 +169,7 @@ export function ConnectAppSignIn({
                   type="button"
                   onClick={onDismissError}
                   aria-label={t("bc.mobile.auth.dismissError")}
-                  className="-mr-1 -mt-1 flex h-5 w-5 items-center justify-center rounded-lg"
+                  className="-mr-1 -mt-1 flex h-5 w-5 items-center justify-center rounded-lg cursor-pointer"
                 >
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
@@ -252,7 +182,7 @@ export function ConnectAppSignIn({
                     type="button"
                     onClick={onRetry}
                     disabled={busy}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11.5px] font-medium disabled:opacity-60"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11.5px] font-medium disabled:opacity-60 cursor-pointer"
                     style={{ borderColor: "#8a4a4a", color: "#ffd9d4" }}
                   >
                     <RefreshCw className="h-3 w-3" aria-hidden="true" />
@@ -263,7 +193,7 @@ export function ConnectAppSignIn({
                   <button
                     type="button"
                     onClick={onSecondary}
-                    className="inline-flex h-7 items-center rounded-lg px-2 text-[11.5px] font-medium underline underline-offset-4"
+                    className="inline-flex h-7 items-center rounded-lg px-2 text-[11.5px] font-medium underline underline-offset-4 cursor-pointer"
                     style={{ color: "#ffd9d4" }}
                   >
                     {secondaryLabel}
@@ -274,18 +204,14 @@ export function ConnectAppSignIn({
           </div>
         ) : null}
 
-        {/* Social - Elongated buttons with full explicit text */}
+        {/* Social - Elongated buttons */}
         <div className="space-y-2 shrink-0 my-1">
           <button
             type="button"
             onClick={onGoogle}
             disabled={busy}
             aria-busy={oauthPending === "google"}
-            className={`flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 cursor-pointer ${
-              isAssociation
-                ? "border-blue-200 bg-white text-slate-800 hover:bg-blue-50/80 shadow-xs"
-                : "border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[#f5f7fa] hover:bg-white/[0.08] hover:border-[#D8B282]/60"
-            }`}
+            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 cursor-pointer border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[#f5f7fa] hover:bg-white/[0.08] hover:border-[#D8B282]/60 shadow-xs"
           >
             {oauthPending === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -299,11 +225,7 @@ export function ConnectAppSignIn({
             onClick={onApple}
             disabled={busy}
             aria-busy={oauthPending === "apple"}
-            className={`flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 cursor-pointer ${
-              isAssociation
-                ? "border-blue-200 bg-white text-slate-800 hover:bg-blue-50/80 shadow-xs"
-                : "border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[#f5f7fa] hover:bg-white/[0.08] hover:border-[#D8B282]/60"
-            }`}
+            className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border text-[13px] font-semibold transition-all active:opacity-80 disabled:opacity-60 cursor-pointer border-[#D8B282]/30 bg-white/[0.04] backdrop-blur-sm text-[#f5f7fa] hover:bg-white/[0.08] hover:border-[#D8B282]/60 shadow-xs"
           >
             {oauthPending === "apple" ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -316,9 +238,9 @@ export function ConnectAppSignIn({
 
         {/* Divider */}
         <div className="my-1 flex items-center gap-3 text-[11.5px] shrink-0">
-          <span className={`h-px flex-1 ${isAssociation ? "bg-blue-200" : "bg-[#D8B282]/20"}`} />
-          <span className={`font-medium ${isAssociation ? "text-slate-500" : "text-[#D4C3A3]/80"}`}>{t("bc.mobile.auth.or")}</span>
-          <span className={`h-px flex-1 ${isAssociation ? "bg-blue-200" : "bg-[#D8B282]/20"}`} />
+          <span className="h-px flex-1 bg-[#D8B282]/20" />
+          <span className="font-medium text-[#D4C3A3]/80">{t("bc.mobile.auth.or")}</span>
+          <span className="h-px flex-1 bg-[#D8B282]/20" />
         </div>
 
         {/* Form */}
@@ -330,12 +252,12 @@ export function ConnectAppSignIn({
           className="space-y-2 shrink-0"
         >
           <div className="space-y-1">
-            <label htmlFor="bc-auth-email" className={`block text-[12px] font-medium ${isAssociation ? "text-slate-800 font-semibold" : "text-[#D4C3A3]"}`}>
+            <label htmlFor="bc-auth-email" className="block text-[12px] font-medium text-[#D4C3A3]">
               {t("bc.mobile.auth.emailLabel")}
             </label>
             <div className="relative">
               <Mail
-                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isAssociation ? "text-[#0284C7]" : "text-[#D4C3A3]"}`}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#D4C3A3]"
                 aria-hidden="true"
               />
               <input
@@ -352,12 +274,12 @@ export function ConnectAppSignIn({
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="bc-auth-password" className={`block text-[12px] font-medium ${isAssociation ? "text-slate-800 font-semibold" : "text-[#D4C3A3]"}`}>
+            <label htmlFor="bc-auth-password" className="block text-[12px] font-medium text-[#D4C3A3]">
               {t("bc.mobile.auth.passwordLabel")}
             </label>
             <div className="relative">
               <Lock
-                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isAssociation ? "text-[#0284C7]" : "text-[#D4C3A3]"}`}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#D4C3A3]"
                 aria-hidden="true"
               />
               <input
@@ -375,7 +297,7 @@ export function ConnectAppSignIn({
                 aria-label={t(
                   showPassword ? "bc.mobile.auth.hidePassword" : "bc.mobile.auth.showPassword",
                 )}
-                className={`absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg cursor-pointer ${isAssociation ? "text-[#0284C7] hover:text-[#004B91]" : "text-[#D4C3A3]"}`}
+                className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg cursor-pointer text-[#D4C3A3]"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -388,13 +310,13 @@ export function ConnectAppSignIn({
               role="checkbox"
               aria-checked={remember}
               onClick={toggleRemember}
-              className={`flex items-center gap-2 text-[12.5px] cursor-pointer ${isAssociation ? "text-slate-700" : "text-[#D4C3A3]"}`}
+              className="flex items-center gap-2 text-[12.5px] cursor-pointer text-[#D4C3A3]"
             >
               <span
-                className={`flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border ${isAssociation ? "text-white" : "text-[#050c15]"}`}
+                className="flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border text-[#050c15]"
                 style={{
-                  background: remember ? (isAssociation ? "#0284C7" : GOLD) : "transparent",
-                  borderColor: remember ? (isAssociation ? "#0284C7" : GOLD) : isAssociation ? "rgba(2, 132, 199, 0.4)" : "rgba(216, 178, 130, 0.3)",
+                  background: remember ? GOLD : "transparent",
+                  borderColor: remember ? GOLD : "rgba(216, 178, 130, 0.3)",
                 }}
                 aria-hidden="true"
               >
@@ -415,7 +337,7 @@ export function ConnectAppSignIn({
             <Link
               to="/forgot-password"
               search={{ m: "1", email: email.trim() || undefined }}
-              className={`text-[12.5px] font-medium hover:underline ${isAssociation ? "text-[#0284C7] hover:text-[#004B91] font-semibold" : "text-[#E2D3B3]"}`}
+              className="text-[12.5px] font-medium hover:underline text-[#E2D3B3]"
             >
               {t("bc.mobile.auth.forgot")}
             </Link>
@@ -424,24 +346,18 @@ export function ConnectAppSignIn({
           <button
             type="submit"
             disabled={busy}
-            className={`relative flex h-10 w-full items-center justify-center rounded-xl text-[14.5px] font-bold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md ${
-              isAssociation
-                ? "bg-gradient-to-r from-[#004B91] via-[#0284C7] to-[#0369A1] text-white font-bold shadow-lg shadow-blue-500/25"
-                : "bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15]"
-            }`}
+            className="relative flex h-10 w-full items-center justify-center rounded-xl text-[14.5px] font-bold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15]"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className={`h-4 w-4 animate-spin ${isAssociation ? "text-white" : "text-[#050c15]"}`} /> {t("bc.mobile.auth.processing")}
+                <Loader2 className="h-4 w-4 animate-spin text-[#050c15]" /> {t("bc.mobile.auth.processing")}
               </span>
-            ) : isAssociation ? (
-              "Đăng nhập CLB CEO 1983"
             ) : (
               t("bc.mobile.auth.signIn")
             )}
             {!loading && (
               <ArrowRight
-                className={`absolute right-4 h-4 w-4 ${isAssociation ? "text-white" : "text-[#050c15]"}`}
+                className="absolute right-4 h-4 w-4 text-[#050c15]"
                 aria-hidden="true"
               />
             )}
@@ -453,15 +369,11 @@ export function ConnectAppSignIn({
           <Link
             to="/register"
             search={{ email: email.trim() || undefined }}
-            className={`relative flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-[13.5px] font-semibold transition-all active:scale-[0.99] cursor-pointer ${
-              isAssociation
-                ? "border-blue-200 bg-white text-blue-700 hover:bg-blue-50/80 shadow-xs"
-                : "border-[#D8B282]/40 bg-zinc-900/60 backdrop-blur-md text-[#E2D3B3] hover:bg-zinc-800/80"
-            }`}
+            className="relative flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-[13.5px] font-semibold transition-all active:scale-[0.99] cursor-pointer border-[#D8B282]/40 bg-zinc-900/60 backdrop-blur-md text-[#E2D3B3] hover:bg-zinc-800/80"
           >
-            <Shield className={`h-4 w-4 ${isAssociation ? "text-[#0284C7]" : "text-[#E2D3B3]"}`} aria-hidden="true" />
+            <Shield className="h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
             <span>{t("bc.mobile.auth.signup.createAccount")}</span>
-            <ChevronRight className={`absolute right-4 h-4 w-4 ${isAssociation ? "text-[#0284C7]" : "text-[#E2D3B3]"}`} aria-hidden="true" />
+            <ChevronRight className="absolute right-4 h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
           </Link>
         </div>
 
@@ -471,23 +383,22 @@ export function ConnectAppSignIn({
           onClick={onScanCard}
           className="flex w-full items-center justify-center gap-2.5 py-1 text-left shrink-0 cursor-pointer active:opacity-80"
         >
-          <QrCode className={`h-5 w-5 shrink-0 ${isAssociation ? "text-[#0284C7]" : "text-[#E2D3B3]"}`} aria-hidden="true" />
+          <QrCode className="h-5 w-5 shrink-0 text-[#E2D3B3]" aria-hidden="true" />
           <span>
-            <span className={`block text-[13px] font-bold ${isAssociation ? "text-slate-800" : "text-[#E2D3B3]"}`}>{t("bc.mobile.auth.scanTitle")}</span>
-            <span className={`block text-[11px] leading-tight ${isAssociation ? "text-slate-500" : "text-[#D4C3A3]/80"}`}>
+            <span className="block text-[13px] font-bold text-[#E2D3B3]">{t("bc.mobile.auth.scanTitle")}</span>
+            <span className="block text-[11px] leading-tight text-[#D4C3A3]/80">
               {t("bc.mobile.auth.scanSubtitle")}
             </span>
           </span>
         </button>
 
         {/* Footer: by ViConnect */}
-        <div className={`text-center py-1.5 text-[11px] font-semibold tracking-[0.25em] uppercase shrink-0 ${
-          isAssociation ? "text-slate-400" : "text-[#D8B282]/80"
-        }`}>
-          by ViConnect
+        <div className="flex flex-col items-center gap-1 shrink-0 py-1.5">
+          <div className="text-[11px] font-semibold tracking-[0.25em] uppercase text-[#D8B282]/80">
+            by ViConnect
+          </div>
         </div>
       </div>
     </main>
   );
 }
-

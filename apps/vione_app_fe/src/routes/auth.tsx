@@ -1,8 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getPostLoginRouteFn } from "@/lib/landing-route.functions";
 import { useT } from "@/lib/i18n";
 import { LuxuryLangSwitcher } from "@/components/LuxuryLangSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
@@ -11,53 +9,41 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Building2,
   Eye,
   EyeOff,
   Loader2,
-  Lock,
-  Mail,
-  QrCode,
-  Shield,
-  Sparkles,
   X,
 } from "lucide-react";
 import { ViOneLogo } from "@/components/business-connect/mobile/ViOneLogo";
-import {
-  ConnectAppSignIn,
-  type AppPortalType,
-} from "@/components/business-connect/mobile/ConnectAppSignIn";
-import { AuthCardScanSheet } from "@/components/business-connect/mobile/AuthCardScanSheet";
-import { rememberScannedCard } from "@/lib/business-connect/mobile/auth-scan";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
 import {
   applyRememberPreference,
   getRememberPreference,
   getRememberedEmail,
 } from "@/lib/business-connect/mobile/auth-session";
-import {
-  hasRememberedVioneAppContext,
-  isVioneStandaloneContext,
-  rememberVioneAppContext,
-  resolveVionePostLoginPath,
-  shouldUseVioneAuth,
-} from "@/lib/business-connect/mobile/vione-auth-context";
 import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { redirect?: string; m?: "1"; reason?: "expired"; portal?: "connect" | "association" } => ({
+  ): {
+    redirect?: string;
+    m?: "1";
+    reason?: "expired";
+    portal?: "connect" | "vione" | "association" | "crm" | "admin";
+  } => ({
     ...(typeof search.redirect === "string" ? { redirect: search.redirect } : {}),
     ...(search.m === "1" ? { m: "1" as const } : {}),
     ...(search.reason === "expired" ? { reason: "expired" as const } : {}),
     ...(search.portal === "association" ? { portal: "association" as const } : {}),
+    ...(search.portal === "connect" || search.portal === "vione" ? { portal: "connect" as const } : {}),
+    ...(search.portal === "crm" || search.portal === "admin" ? { portal: "crm" as const } : {}),
   }),
   head: () => ({
-    meta: [{ title: "Đăng nhập — ViOne" }],
+    meta: [{ title: "Đăng nhập Hệ thống CRM — ViOne" }],
   }),
-  component: AuthPage,
+  component: CrmAdminAuthPage,
 });
 
 function GoogleMark() {
@@ -85,16 +71,17 @@ function safeRedirect(target?: string): string | null {
     const url = new URL(target, window.location.origin);
     if (url.origin !== window.location.origin) return null;
     const path = url.pathname + url.search + url.hash;
+    if (path.startsWith("/auth") || path.includes("/login")) return null;
     return path.startsWith("/") && !path.startsWith("//") ? path : null;
   } catch {
     return null;
   }
 }
 
-function AuthPage() {
+function CrmAdminAuthPage() {
   const t = useT();
   const navigate = useNavigate();
-  const { redirect: redirectTo, m: mobileParam, reason, portal: searchPortal } = Route.useSearch();
+  const { redirect: redirectTo, reason, portal: searchPortal } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -104,100 +91,46 @@ function AuthPage() {
   const [oauthPending, setOauthPending] = useState<"google" | "apple" | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authErrorInfo, setAuthErrorInfo] = useState<AuthErrorInfo | null>(null);
-  const [lastAction, setLastAction] = useState<"password" | "google" | "apple" | null>(null);
-  const [scanOpen, setScanOpen] = useState(false);
   const [remember, setRemember] = useState(true);
   const { user, setAuthData } = useAuth();
-  const resolveRoute = useServerFn(getPostLoginRouteFn);
 
   const destPath = safeRedirect(redirectTo) ?? "";
 
-  const [appPortal, setAppPortal] = useState<AppPortalType>(() => {
-    if (searchPortal === "association" || destPath.startsWith("/m")) {
-      return "association";
-    }
-    return "connect";
-  });
-
-  const [isMobileScreen, setIsMobileScreen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      window.innerWidth <= 768
-    );
-  });
-
+  // Tách biệt hoàn toàn: nếu truy cập sang cổng khác, tự động chuyển về đúng route chuyên biệt
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileScreen(
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent,
-        ) || window.innerWidth <= 768,
-      );
-    };
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const isMobileAuth =
-    mobileParam === "1" ||
-    searchPortal === "association" ||
-    searchPortal === "connect" ||
-    destPath.startsWith("/m") ||
-    destPath.startsWith("/connect-app");
+    if (searchPortal === "association" || destPath.startsWith("/association") || destPath.startsWith("/m")) {
+      navigate({
+        to: "/association/login" as any,
+        search: { redirect: redirectTo },
+        replace: true,
+      });
+      return;
+    }
+    if (searchPortal === "connect" || searchPortal === "vione" || destPath.startsWith("/connect-app")) {
+      navigate({
+        to: "/vione/login" as any,
+        search: { redirect: redirectTo },
+        replace: true,
+      });
+      return;
+    }
+  }, [searchPortal, destPath, redirectTo, navigate]);
 
   async function goPostLogin() {
     const target = safeRedirect(redirectTo);
-
-    // If user explicitly selected Association portal on mobile, prioritize /m!
-    if (appPortal === "association" || searchPortal === "association") {
-      try {
-        localStorage.removeItem("bc.vione-app.context");
-      } catch {}
-      navigate({ to: "/m", replace: true });
+    if (target) {
+      navigate({ to: target as any, replace: true });
       return;
     }
-
-    // If explicit target given other than login pages
-    if (
-      target &&
-      target !== "/auth" &&
-      target !== "/login" &&
-      target !== "/connect-app/signin" &&
-      target !== "/m/login"
-    ) {
-      navigate({ to: target, replace: true });
-      return;
-    }
-
-    if (mobileParam === "1" || target?.startsWith("/m")) {
-      navigate({ to: "/m", replace: true });
-      return;
-    }
-
-    if (
-      searchPortal === "connect" ||
-      target?.startsWith("/connect-app") ||
-      (isMobileAuth && appPortal === "connect")
-    ) {
-      const dest = resolveVionePostLoginPath(safeRedirect(redirectTo), true);
-      navigate({ to: dest || "/connect-app", replace: true });
-      return;
-    }
-
-    // Default for /auth login is Web CRM (/)
+    // Default cho đăng nhập hệ thống CRM là trang chủ quản trị (/)
     navigate({ to: "/", replace: true });
   }
 
   useEffect(() => {
     if (reason !== "expired") return;
     setAuthErrorInfo(null);
-    if (isMobileAuth) {
-      setAuthError(t("auth.sessionExpired"));
-    } else {
-      toast.error(t("auth.sessionExpired"));
-    }
-  }, [reason, isMobileAuth]);
+    toast.error(t("auth.sessionExpired"));
+  }, [reason, t]);
 
   useEffect(() => {
     setRemember(getRememberPreference());
@@ -213,7 +146,7 @@ function AuthPage() {
 
   async function submit() {
     if (!email.trim()) {
-      setAuthError("Vui lòng nhập email hoặc tên đăng nhập");
+      setAuthError("Vui lòng nhập email hoặc tên đăng nhập quản trị");
       return;
     }
     if (!password) {
@@ -228,7 +161,6 @@ function AuthPage() {
     setLoading(true);
     setAuthError(null);
     setAuthErrorInfo(null);
-    setLastAction("password");
 
     try {
       if (mode === "signup") {
@@ -244,9 +176,7 @@ function AuthPage() {
           body: JSON.stringify({ email: email.trim(), password }),
         });
         if (!res?.access_token) {
-          throw new Error(
-            "Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.",
-          );
+          throw new Error("Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.");
         }
         setAuthData(res);
         applyRememberPreference(remember, email.trim());
@@ -255,9 +185,9 @@ function AuthPage() {
     } catch (e: any) {
       const info = classifyAuthError(e, { provider: "password" });
       setAuthErrorInfo(info);
-      setAuthError(
-        t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập thất bại",
-      );
+      const msg = t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập thất bại";
+      setAuthError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -350,7 +280,6 @@ function AuthPage() {
     setOauthPending(provider);
     setAuthError(null);
     setAuthErrorInfo(null);
-    setLastAction(provider);
 
     try {
       if (provider === "google") {
@@ -386,9 +315,9 @@ function AuthPage() {
     } catch (e: any) {
       const info = classifyAuthError(e, { provider });
       setAuthErrorInfo(info);
-      setAuthError(
-        t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập OAuth thất bại",
-      );
+      const msg = t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập OAuth thất bại";
+      setAuthError(msg);
+      toast.error(msg);
     } finally {
       setOauthPending(null);
     }
@@ -396,74 +325,7 @@ function AuthPage() {
 
   const busy = loading || oauthPending !== null;
 
-  if (isMobileAuth) {
-    return (
-      <>
-        <ConnectAppSignIn
-          email={email}
-          password={password}
-          loading={loading}
-          oauthPending={oauthPending}
-          errorMessage={authError}
-          errorHint={
-            authErrorInfo?.hintKey ? t(authErrorInfo.hintKey as Parameters<typeof t>[0]) : null
-          }
-          onRetry={
-            authErrorInfo?.retryable && lastAction
-              ? () => {
-                  setAuthError(null);
-                  setAuthErrorInfo(null);
-                  if (lastAction === "password") void submit();
-                  else void oauth(lastAction);
-                }
-              : null
-          }
-          secondaryLabel={
-            authErrorInfo?.secondaryAction === "forgotPassword" ? t("bc.mobile.auth.forgot") : null
-          }
-          onSecondary={
-            authErrorInfo?.secondaryAction === "forgotPassword"
-              ? () => navigate({ to: "/forgot-password", search: { m: "1" } })
-              : null
-          }
-          onDismissError={() => {
-            setAuthError(null);
-            setAuthErrorInfo(null);
-          }}
-          onEmailChange={setEmail}
-          onPasswordChange={setPassword}
-          onSubmit={submit}
-          onGoogle={() => void oauth("google")}
-          onApple={() => void oauth("apple")}
-          remember={remember}
-          onRememberChange={setRemember}
-          appPortal={appPortal}
-          onAppPortalChange={setAppPortal}
-          onScanCard={() => {
-            setAuthError(null);
-            setScanOpen(true);
-          }}
-        />
-        <AuthCardScanSheet
-          open={scanOpen}
-          onClose={() => setScanOpen(false)}
-          onResult={(result) => {
-            setScanOpen(false);
-            if (result.kind === "email") {
-              setEmail(result.email);
-              rememberScannedCard(result.card);
-              toast.success(t("bc.mobile.auth.scanFilled") || "Đã nhận diện danh thiếp!");
-              return;
-            }
-            navigate({ to: result.path });
-          }}
-        />
-      </>
-    );
-  }
-
-  const isAssociation = appPortal === "association";
-
+  // Giao diện đăng nhập thuần túy dành cho Hệ thống Quản trị Web CRM
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden flex items-center justify-center p-4 sm:p-6 bg-background text-foreground transition-colors duration-200">
       {/* Ambient Radial Depth Glow */}
@@ -484,7 +346,7 @@ function AuthPage() {
             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("auth.backToLanding")}</span>
+            <span>Quay lại Landing Page</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeSwitcher />
@@ -494,41 +356,18 @@ function AuthPage() {
 
         {/* Brand Crest & Headers */}
         <div className="mt-5 flex flex-col items-center justify-center text-center">
-          {isAssociation ? (
-            <div className="flex flex-col items-center justify-center">
-              <div className="relative w-16 h-16 rounded-2xl p-1.5 bg-white border-2 border-blue-500/30 shadow-[0_4px_20px_rgba(2,132,199,0.2)] flex items-center justify-center overflow-hidden">
-                <img
-                  src="/landing/ceo1983-official-logo.png"
-                  alt="Logo CLB Doanh Nhân CEO 1983"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="mt-2 text-[10px] font-black tracking-[0.25em] text-[#0284C7] uppercase">
-                CLB DOANH NHÂN CEO 1983
-              </div>
-              <h1 className="mt-2 font-bold text-[24px] sm:text-[28px] tracking-wide text-slate-900 dark:text-white">
-                Cổng Hội Viên Hiệp Hội
-              </h1>
-              <p className="mt-1 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-semibold text-blue-700 dark:text-blue-400">
-                Không gian kết nối giao thương và thông tin chính thức CLB CEO 1983
-              </p>
-            </div>
-          ) : (
-            <>
-              <ViOneLogo wordmarkOnly className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
-              <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
-                BUSINESS CONNECT
-              </div>
-              <h1 className="mt-3 font-serif text-[26px] sm:text-[30px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
-                {mode === "signin" ? t("auth.signInTitle") : t("auth.signUpTitle")}
-              </h1>
-              <p className="mt-1.5 max-w-[20rem] text-center text-[12.5px] sm:text-[13.5px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
-                {mode === "signin"
-                  ? t("auth.subtitle")
-                  : "Gia nhập mạng lưới doanh nhân tinh hoa ViOne"}
-              </p>
-            </>
-          )}
+          <ViOneLogo wordmarkOnly className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
+          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
+            HỆ THỐNG QUẢN TRỊ CRM
+          </div>
+          <h1 className="mt-3 font-serif text-[24px] sm:text-[28px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
+            {mode === "signin" ? "Đăng nhập Hệ thống" : "Đăng ký Quản trị viên"}
+          </h1>
+          <p className="mt-1.5 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
+            {mode === "signin"
+              ? "Cổng quản trị dành cho Quản lý & Ban Quản trị ViOne"
+              : "Đăng ký tài khoản quản trị hệ thống ViOne"}
+          </p>
         </div>
 
         {/* Error Alert */}
@@ -588,7 +427,7 @@ function AuthPage() {
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={isAssociation ? "email-hoi-vien@domain.com" : "admin@connect.vn"}
+              placeholder="admin@connect.vn"
               className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
             />
           </div>
@@ -629,36 +468,24 @@ function AuthPage() {
           <button
             type="submit"
             disabled={busy}
-            className={`relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md ${
-              isAssociation
-                ? "bg-gradient-to-r from-[#004B91] via-[#0284C7] to-[#0369A1] text-white shadow-blue-500/25"
-                : "text-[#1b1206]"
-            }`}
-            style={
-              isAssociation
-                ? undefined
-                : {
-                    background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-                    boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
-                  }
-            }
+            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md text-[#1b1206]"
+            style={{
+              background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
+              boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
+            }}
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className={`h-5 w-5 animate-spin ${isAssociation ? "text-white" : "text-[#1b1206]"}`} /> {t("auth.processing")}
+                <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("auth.processing")}
               </span>
             ) : mode === "signin" ? (
-              isAssociation ? (
-                "Đăng nhập Cổng Hội viên"
-              ) : (
-                t("auth.signInButton")
-              )
+              "Đăng nhập Hệ thống CRM"
             ) : (
-              t("auth.signUpButton")
+              "Đăng ký Quản trị viên"
             )}
             {!loading && (
               <ArrowRight
-                className={`absolute right-5 sm:right-6 h-5 w-5 ${isAssociation ? "text-white" : "text-[#1b1206]"}`}
+                className="absolute right-5 sm:right-6 h-5 w-5 text-[#1b1206]"
                 aria-hidden="true"
               />
             )}
@@ -753,22 +580,6 @@ function AuthPage() {
 
       {/* Hidden container for Google Identity popup fallback */}
       <div id="hidden-google-btn" className="hidden" />
-
-      {/* NFC / QR Card Scan Sheet */}
-      <AuthCardScanSheet
-        open={scanOpen}
-        onClose={() => setScanOpen(false)}
-        onResult={(result) => {
-          setScanOpen(false);
-          if (result.kind === "email") {
-            setEmail(result.email);
-            rememberScannedCard(result.card);
-            toast.success("Đã nhận diện danh thiếp!");
-            return;
-          }
-          navigate({ to: result.path });
-        }}
-      />
     </main>
   );
 }

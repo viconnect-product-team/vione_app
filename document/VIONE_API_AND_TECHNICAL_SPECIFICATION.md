@@ -869,11 +869,12 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
   - Layer 1 (Nội dung chính): Hiển thị sắc nét, tương phản cao.
   - Layer Decorative: Các hạt ánh sáng, HUD grid, và liquid blobs bay lơ lửng ngược chiều.
 
-### 9.2. Phân Hệ Hiệp Hội Doanh Nhân (CEO 1983)
-- **Biểu Tượng Thương Hiệu Chính Thức**: `/ceo1983-logo.png` (Hình ảnh số 1) áp dụng đồng bộ toàn bộ app hiệp hội.
-- **Tách Biệt Xác Thực**: 
-  - URL đăng nhập ViOne: `/auth/mobile`.
-  - URL đăng nhập Hiệp hội CEO 1983: `/association/login` (Giao diện riêng biệt, màu sắc đại diện Sapphire & Gold).
+### 9.2. Phân Hệ Đăng Nhập Độc Lập Tam Phân (Web CRM, ViOne Mobile & Hiệp Hội CEO 1983)
+- **Biểu Tượng Thương Hiệu Chính Thức**: `/ceo1983-logo.png` áp dụng đồng bộ toàn bộ app hiệp hội; `/vione-logo.svg` và `ViOneLogo` áp dụng cho ViOne.
+- **Tách Biệt Xác Thực 3 Màn Độc Lập (Không dùng chung nút/tab chuyển mobile)**: 
+  - **Màn Đăng nhập Hệ thống Web CRM riêng**: `/auth` (hoặc `/auth?portal=crm`) - Giao diện quản trị viên hệ thống CRM, Email/Username + Mật khẩu, Google & Apple OAuth, ThemeSwitcher.
+  - **Màn Đăng nhập App ViOne Mobile riêng**: `/vione/login` - Giao diện ViOne Mobile thuần túy độc quyền (nền đen `#0A0A0B`, chữ đồng `#D8B282`, hình nền `connect-auth-bg.jpg`, Logo ViOne Business Connect, quét danh thiếp NFC/QR code, Google/Apple OAuth). Hoàn toàn không có tab hay nút chuyển sang Hiệp hội.
+  - **Màn Đăng nhập App Hiệp hội CEO 1983 riêng**: `/association/login` - Giao diện hội viên CLB Doanh Nhân CEO 1983 độc quyền (nhận diện xanh Navy `#0B0F19`, Logo CEO 1983, form Email/Mã hội viên + Mật khẩu, kích hoạt tài khoản hội viên). Hoàn toàn không có nút chuyển sang ViOne.
 - **Cài Đặt & Ảnh Đại Diện (`/association/settings`)**:
   - Route độc lập, loại bỏ việc bấm nút Cài đặt bị chuyển hướng về ViOne.
   - Upload avatar trực tiếp lên MinIO bucket `vione-media` / `avatars`, đồng bộ tự động qua 3 bảng `user_profiles`, `business_identities`, `vione_users`.

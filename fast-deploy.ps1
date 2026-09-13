@@ -34,6 +34,7 @@ if (-not $SkipBuild) {
     if ($buildFE) {
         Write-Host "`n[0/5] Build Frontend (Web) cục bộ..." -ForegroundColor Cyan
         $env:NODE_OPTIONS="--max-old-space-size=8192"
+        $env:NEST_API_URL="http://backend:4000"
         
         # Chỉ chạy npm install nếu yêu cầu hoặc chưa có node_modules
         if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
@@ -83,7 +84,8 @@ function Compress-ToGzip {
         & $gzipPath -1 -f $TarPath
     } else {
         $outGz = "$TarPath.gz"
-        node -e "const fs = require('fs'); const zlib = require('zlib'); fs.createReadStream(process.argv[1]).pipe(zlib.createGzip({ level: 1 })).pipe(fs.createWriteStream(process.argv[2])).on('finish', () => fs.unlinkSync(process.argv[1]));" $TarPath $outGz
+        $nodeCompress = 'const fs = require("fs"); const zlib = require("zlib"); fs.createReadStream(process.argv[1]).pipe(zlib.createGzip({ level: 1 })).pipe(fs.createWriteStream(process.argv[2])).on("finish", () => fs.unlinkSync(process.argv[1]));'
+        node -e $nodeCompress $TarPath $outGz
     }
 }
 

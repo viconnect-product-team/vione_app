@@ -47,7 +47,8 @@ import {
   isDefaultTodayPreferences,
 } from "@/lib/business-connect/mobile/today-preferences";
 
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { avatarOrDemo, demoAvatar } from "@/lib/business-connect/mobile/demo-avatars";
 import { RelationshipSuggestions } from "./RelationshipSuggestions";
 import { ViOneLogo } from "./ViOneLogo";
 import { QuickMeetIcon, QuickScanIcon, QuickCardIcon } from "./NavIcons";
@@ -650,7 +651,8 @@ function Greeting({ identity }: { identity: BcMobileHomeIdentity }) {
   const mine = useMyIdentity({ enabled: Boolean(viewerUserId) });
   const profileIdentity = mine.data?.identity ?? null;
   const initials = initialsOf(profileIdentity || identity);
-  const avatarUrl = profileIdentity?.avatarUrl ?? identity.avatarUrl ?? null;
+  const rawAvatarUrl = profileIdentity?.avatarUrl ?? identity.avatarUrl ?? null;
+  const avatarUrl = avatarOrDemo(rawAvatarUrl, name);
   const role = [profileIdentity?.jobTitle, profileIdentity?.companyName]
     .filter((p): p is string => Boolean(p && p.trim()))
     .join(" · ");
@@ -672,10 +674,17 @@ function Greeting({ identity }: { identity: BcMobileHomeIdentity }) {
         <Link
           to="/connect-app/me"
           aria-label="Hồ sơ cá nhân"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] overflow-hidden"
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+            <img
+              src={avatarUrl}
+              alt=""
+              className="h-10 w-10 rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = demoAvatar(name);
+              }}
+            />
           ) : (
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] text-[14px] font-semibold text-[var(--bc-mobile-ivory)]">
               {initials ?? <User className="h-5 w-5" strokeWidth={1.6} />}

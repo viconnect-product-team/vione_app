@@ -267,73 +267,82 @@ function MemberRow({
   const t = useT();
   const subtitle = [member.jobTitle, member.companyName].filter(Boolean).join(" · ");
   return (
-    <li className="flex items-center gap-1">
+    <li className="flex items-center justify-between gap-2 border-b border-[var(--bc-mobile-border)]/60 py-1.5 last:border-b-0">
       <Link
         to="/connect-app/community/$communityId/members/$memberRef"
         params={{ communityId, memberRef: member.memberRef }}
         aria-label={`${t("bc.mobile.community.openMember")}: ${member.displayName}`}
-        className="flex min-h-[68px] flex-1 items-center gap-3 py-3 transition-colors duration-150 hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+        className="flex min-h-[58px] flex-1 items-center gap-3 py-1.5 min-w-0 transition-colors duration-150 hover:bg-[var(--bc-mobile-surface-2)]/50 rounded-xl px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
       >
         {member.avatarUrl ? (
           <img
             src={member.avatarUrl}
             alt=""
             loading="lazy"
-            className="h-11 w-11 shrink-0 rounded-full border border-[var(--bc-mobile-border)] object-cover"
+            className="h-11 w-11 shrink-0 rounded-full border border-[var(--bc-mobile-border)] object-cover shadow-xs"
           />
         ) : (
           <div
             aria-hidden="true"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)]"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border)]/70"
           >
             <UserRound className="h-5 w-5 text-[var(--bc-mobile-muted)]" strokeWidth={1.6} />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-[15px] font-medium text-[var(--bc-mobile-text)]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate text-[14.5px] font-semibold text-[var(--bc-mobile-text)]">
               {member.displayName}
-            </p>
+            </span>
             {member.role === "admin" ? (
-              <span className="shrink-0 rounded-full border border-[var(--bc-mobile-accent)]/40 bg-[var(--bc-mobile-accent)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--bc-mobile-accent)]">
+              <span className="shrink-0 rounded-full border border-[var(--bc-mobile-accent)]/40 bg-[var(--bc-mobile-accent)]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[var(--bc-mobile-accent)]">
                 {t("bc.mobile.community.members.role.admin")}
               </span>
             ) : null}
             {member.isSelf ? (
-              <span className="shrink-0 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--bc-mobile-muted)]">
+              <span className="shrink-0 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--bc-mobile-muted)]">
                 {t("bc.mobile.community.thisIsYou")}
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 truncate text-[13px] text-[var(--bc-mobile-muted)]">
+          <p className="mt-0.5 truncate text-[12.5px] text-[var(--bc-mobile-muted)] leading-tight">
             {subtitle || member.industryLabel || ""}
           </p>
         </div>
-        <ChevronRight
-          aria-hidden="true"
-          className="h-4 w-4 shrink-0 text-[var(--bc-mobile-muted)]"
-          strokeWidth={1.8}
-        />
       </Link>
-      {canManageRoles && !member.isSelf ? (
-        <button
-          type="button"
-          onClick={() => onChangeRole(member)}
-          aria-label={`${t("bc.mobile.community.members.role.change")}: ${member.displayName}`}
-          title={t(
-            member.role === "admin"
-              ? "bc.mobile.community.members.role.demote"
-              : "bc.mobile.community.members.role.promote",
-          )}
-          className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none ${
-            member.role === "admin"
-              ? "border-[var(--bc-mobile-accent)]/40 bg-[var(--bc-mobile-accent)]/10 text-[var(--bc-mobile-accent)]"
-              : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)]"
-          }`}
+
+      {/* Cột thao tác bên phải: Khiên đổi quyền (nếu có) + Mũi tên > luôn cố định mép phải */}
+      <div className="flex items-center gap-1.5 shrink-0 pl-1">
+        {canManageRoles && !member.isSelf ? (
+          <button
+            type="button"
+            onClick={() => onChangeRole(member)}
+            aria-label={`${t("bc.mobile.community.members.role.change")}: ${member.displayName}`}
+            title={t(
+              member.role === "admin"
+                ? "bc.mobile.community.members.role.demote"
+                : "bc.mobile.community.members.role.promote",
+            )}
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] cursor-pointer motion-reduce:transition-none ${
+              member.role === "admin"
+                ? "border-[var(--bc-mobile-accent)]/40 bg-[var(--bc-mobile-accent)]/10 text-[var(--bc-mobile-accent)] shadow-xs"
+                : "border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+            }`}
+          >
+            <ShieldCheck aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          </button>
+        ) : null}
+
+        <Link
+          to="/connect-app/community/$communityId/members/$memberRef"
+          params={{ communityId, memberRef: member.memberRef }}
+          aria-hidden="true"
+          tabIndex={-1}
+          className="p-1 text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)] transition-colors"
         >
-          <ShieldCheck aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
-        </button>
-      ) : null}
+          <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+        </Link>
+      </div>
     </li>
   );
 }

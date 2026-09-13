@@ -3734,8 +3734,266 @@ export class ConnectAppService implements OnModuleInit {
       }
     }
 
+    // Bổ sung thông báo từ Hiệp hội CEO 1983 (member_notifications, hội phí quá hạn, cơ hội, tin nhắn BQT)
+    try {
+      const members = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, full_name, email, dues_status, membership_tier, renewal_date
+        FROM public.members
+        WHERE user_id = ${userId}::uuid
+           OR LOWER(email) IN (SELECT LOWER(email) FROM public.users WHERE id = ${userId}::uuid)
+      `.catch(() => []);
+
+      const memberIds = members.map(m => m.id);
+      const memberCodes = members.map(m => m.code).filter(Boolean);
+
+      // 1. Lấy thông báo cá nhân từ hiệp hội (public.member_notifications)
+      const memNotifs = memberIds.length > 0
+        ? await this.prisma.$queryRaw<any[]>`
+            SELECT id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            FROM public.member_notifications
+            WHERE recipient_id::text = ANY(${memberIds}::text[]) OR recipient_id::text = ${userId}::text
+            ORDER BY created_at DESC
+            LIMIT 30
+          `.catch(() => [])
+        : await this.prisma.$queryRaw<any[]>`
+            SELECT id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            FROM public.member_notifications
+            WHERE recipient_id::text = ${userId}::text
+            ORDER BY created_at DESC
+            LIMIT 30
+          `.catch(() => []);
+
+      for (const mn of memNotifs) {
+        if (mn.dismissed) continue;
+        const isInvoice = mn.ref_type === 'invoice' || (mn.title && mn.title.toLowerCase().includes('phí'));
+        mapped.push({
+          id: `mem-notif-${mn.id}`,
+          recipientUserId: userId,
+          sourceDomain: isInvoice ? 'finance' : 'association',
+          sourceRecordId: mn.ref_id || mn.id,
+          eventKind: isInvoice ? 'invoice_reminder' : 'system_broadcast',
+          notificationKind: isInvoice ? 'overdue_payment_reminder' : 'system_broadcast',
+          titleKey: mn.title,
+          bodyKey: mn.body || '',
+          appScope: 'all',
+          targetApp: 'all',
+          safeDisplayData: {
+            invoiceId: isInvoice ? (mn.ref_id || mn.id) : undefined,
+            title: mn.title,
+            message: mn.body || '',
+            body: mn.body || '',
+            actionUrl: isInvoice ? '/association/renew/pay' : undefined,
+          },
+          action: {
+            kind: 'open_route',
+            labelKey: isInvoice ? 'Thanh toán phí' : 'bc.notif.action.view',
+            targetRoute: isInvoice ? '/association/renew/pay' : '/connect-app/notifications',
+            targetParams: null,
+            targetSearch: null,
+            requiresConfirmation: false,
+            canonicalCapability: null,
+          },
+          priority: isInvoice ? 'critical' : 'normal',
+          status: mn.read ? 'read' : 'delivered',
+          scheduledFor: null,
+          deliveredAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
+          readAt: mn.read && mn.created_at ? new Date(mn.created_at).toISOString() : null,
+          archivedAt: null,
+          expiredAt: null,
+          dedupeKey: `mem-notif-${mn.id}`,
+          schemaVersion: 1,
+          createdAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
+        });
+      }
+
+      // 2. Kiểm tra trạng thái hội phí quá hạn chưa thanh toán (tài khoản Lê Hoàng Long hoặc hội viên khác)
+      const overdueMember = members.find(m => m.dues_status === 'overdue');
+      if (overdueMember) {
+        const invRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, invoice_no, title, amount, due_date, status
+          FROM public.invoices
+          WHERE (member_id::text = ${overdueMember.id}::text OR user_id = ${userId}::uuid)
+            AND status IN ('overdue', 'unpaid', 'pending')
+          ORDER BY created_at DESC
+          LIMIT 1
+        `.catch(() => []);
+
+        const inv = invRows[0];
+        const invAmount = inv?.amount ? Number(inv.amount).toLocaleString('vi-VN') + ' đ' : 'Cần thanh toán';
+        const invTitle = 'Thông báo: Hội phí hội viên quá hạn chưa thanh toán';
+        const invBody = `Hội phí của hội viên ${overdueMember.full_name || 'CEO 1983'} (${invAmount}) đã quá hạn thanh toán. Vui lòng hoàn tất đóng phí để tiếp tục duy trì quyền lợi và kết nối B2B trên hệ thống.`;
+
+        // Chỉ thêm nếu chưa có thông báo tương đương
+        const alreadyHasOverdue = mapped.some(m => m.notificationKind === 'overdue_payment_reminder' || (m.titleKey && m.titleKey.includes('quá hạn')));
+        if (!alreadyHasOverdue) {
+          mapped.unshift({
+            id: `dues-overdue-${overdueMember.id}`,
+            recipientUserId: userId,
+            sourceDomain: 'finance',
+            sourceRecordId: inv?.id || overdueMember.id,
+            eventKind: 'invoice_reminder',
+            notificationKind: 'overdue_payment_reminder',
+            titleKey: invTitle,
+            bodyKey: invBody,
+            appScope: 'all',
+            targetApp: 'all',
+            safeDisplayData: {
+              invoiceId: inv?.id || overdueMember.id,
+              amount: inv?.amount || null,
+              message: invBody,
+              body: invBody,
+              actionUrl: '/association/renew/pay',
+              status: 'overdue',
+            },
+            action: {
+              kind: 'open_route',
+              labelKey: 'Thanh toán ngay',
+              targetRoute: '/association/renew/pay',
+              targetParams: null,
+              targetSearch: null,
+              requiresConfirmation: false,
+              canonicalCapability: null,
+            },
+            priority: 'critical',
+            status: 'delivered',
+            scheduledFor: null,
+            deliveredAt: new Date().toISOString(),
+            readAt: null,
+            archivedAt: null,
+            expiredAt: null,
+            dedupeKey: `dues-overdue-${overdueMember.id}`,
+            schemaVersion: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+
+      // 3. Cơ hội giao thương B2B mới nhất (public.opportunities)
+      const oppRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, title, description, type, budget_min, budget_max, region, industry, deadline, status, created_at, claimed_by_name
+        FROM public.opportunities
+        WHERE status = 'open'
+        ORDER BY created_at DESC
+        LIMIT 5
+      `.catch(() => []);
+
+      for (const opp of oppRows) {
+        const oppTitle = `[Cơ hội B2B] ${opp.title}`;
+        const oppBody = opp.description || `Cơ hội kinh doanh mới ngành ${opp.industry || 'B2B'} với ngân sách ${opp.budget_min ? Number(opp.budget_min).toLocaleString('vi-VN') + ' đ' : 'Thỏa thuận'}. Bấm để xem chi tiết và tiếp nhận!`;
+        mapped.push({
+          id: `opp-notif-${opp.id}`,
+          recipientUserId: userId,
+          sourceDomain: 'opportunity',
+          sourceRecordId: opp.id,
+          eventKind: 'opportunity_new',
+          notificationKind: 'opportunity_new',
+          titleKey: oppTitle,
+          bodyKey: oppBody,
+          appScope: 'all',
+          targetApp: 'all',
+          safeDisplayData: {
+            opportunityId: opp.id,
+            title: opp.title,
+            description: opp.description,
+            message: oppBody,
+            body: oppBody,
+          },
+          action: {
+            kind: 'open_route',
+            labelKey: 'Xem cơ hội',
+            targetRoute: `/connect-app/community/clb-ceo-1983/opportunities/${opp.id}`,
+            targetParams: null,
+            targetSearch: null,
+            requiresConfirmation: false,
+            canonicalCapability: null,
+          },
+          priority: 'high',
+          status: 'delivered',
+          scheduledFor: null,
+          deliveredAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
+          readAt: null,
+          archivedAt: null,
+          expiredAt: null,
+          dedupeKey: `opp-notif-${opp.id}`,
+          schemaVersion: 1,
+          createdAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
+        });
+      }
+
+      // 4. Tin nhắn từ Ban Quản Trị hệ thống (public.messages có from_id = 'ADMIN')
+      if (memberCodes.length > 0) {
+        const adminMessages = await this.prisma.$queryRaw<any[]>`
+          SELECT id, from_id, to_id, text, created_at
+          FROM public.messages
+          WHERE from_id = 'ADMIN' AND LOWER(to_id) = ANY(${memberCodes.map(c => c.toLowerCase())}::text[])
+          ORDER BY created_at DESC
+          LIMIT 5
+        `.catch(() => []);
+
+        for (const msg of adminMessages) {
+          const rawText = msg.text || '';
+          const cleanText = rawText.replace(/\[action:[^\]]+\]/g, '').trim() || 'Bạn có thông báo mới từ Ban Quản trị CLB CEO 1983.';
+          mapped.push({
+            id: `msg-admin-${msg.id}`,
+            recipientUserId: userId,
+            sourceDomain: 'system',
+            sourceRecordId: msg.id,
+            eventKind: 'system_broadcast',
+            notificationKind: 'system_broadcast',
+            titleKey: 'Tin nhắn từ Ban Quản Trị Hiệp Hội',
+            bodyKey: cleanText,
+            appScope: 'all',
+            targetApp: 'all',
+            safeDisplayData: {
+              title: 'Tin nhắn từ Ban Quản Trị Hiệp Hội',
+              message: cleanText,
+              body: cleanText,
+              actionUrl: '/association/messages',
+            },
+            action: {
+              kind: 'open_route',
+              labelKey: 'Xem tin nhắn',
+              targetRoute: '/association/messages',
+              targetParams: null,
+              targetSearch: null,
+              requiresConfirmation: false,
+              canonicalCapability: null,
+            },
+            priority: 'high',
+            status: 'delivered',
+            scheduledFor: null,
+            deliveredAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
+            readAt: null,
+            archivedAt: null,
+            expiredAt: null,
+            dedupeKey: `msg-admin-${msg.id}`,
+            schemaVersion: 1,
+            createdAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
+            updatedAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching association member notifications & opportunities:', err);
+    }
+
+    // Sắp xếp thống nhất theo thời gian tạo mới nhất
+    mapped.sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.deliveredAt || 0).getTime();
+      const timeB = new Date(b.createdAt || b.deliveredAt || 0).getTime();
+      return timeB - timeA;
+    });
+
+    if (unreadOnly) {
+      return mapped.filter(n => n.readAt === null && n.status !== 'read').slice(0, limit);
+    }
+
     return mapped.slice(0, limit);
   }
+
 
   async markNotificationsRead(userId: string, ids?: string[]) {
     if (ids && ids.length > 0) {

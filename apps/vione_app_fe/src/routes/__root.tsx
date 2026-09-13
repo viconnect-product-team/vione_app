@@ -411,7 +411,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (p.startsWith("/api") || p.startsWith("/_static") || p.startsWith("/assets") || p.startsWith("/public")) return;
       if (p.startsWith("/connect-app")) return;
 
-      // Allow public pages
+      // Allow public pages, dedicated login routes, and mobile association app
       if (
         p === "/auth" ||
         p === "/register" ||
@@ -422,7 +422,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         p === "/demo" ||
         p.startsWith("/h/") ||
         p.startsWith("/card/") ||
-        p === "/verify"
+        p === "/verify" ||
+        p === "/association/login" ||
+        p.startsWith("/association/login") ||
+        p === "/vione/login" ||
+        p.startsWith("/vione/login") ||
+        p.startsWith("/association")
       ) {
         return;
       }
@@ -505,22 +510,44 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/m/") ||
     pathname.startsWith("/card/") ||
     pathname === "/verify" ||
+    pathname === "/association/login" ||
+    pathname.startsWith("/association/login") ||
+    pathname === "/vione/login" ||
+    pathname.startsWith("/vione/login") ||
     (pathname === "/" && tenantHost);
 
   useEffect(() => {
     if (status === "out" && !isPublic) {
       const search = window.location.pathname + window.location.search;
-      navigate({
-        to: "/auth",
-        search: {
-          redirect: search,
-          ...(expired ? { reason: "expired" as const } : {}),
-          ...(search.startsWith("/connect-app") ? { m: "1" as const } : {}),
-        },
-        replace: true,
-      });
+      if (pathname.startsWith("/association") && !pathname.startsWith("/association/login")) {
+        navigate({
+          to: "/association/login" as any,
+          search: {
+            redirect: search,
+          },
+          replace: true,
+        });
+      } else if (pathname.startsWith("/connect-app") && !pathname.startsWith("/vione/login")) {
+        navigate({
+          to: "/vione/login" as any,
+          search: {
+            redirect: search,
+          },
+          replace: true,
+        });
+      } else if (!pathname.startsWith("/association/login") && !pathname.startsWith("/vione/login")) {
+        navigate({
+          to: "/auth",
+          search: {
+            redirect: search,
+            portal: "crm" as const,
+            ...(expired ? { reason: "expired" as const } : {}),
+          },
+          replace: true,
+        });
+      }
     }
-  }, [status, isPublic, navigate, expired]);
+  }, [status, isPublic, navigate, expired, pathname]);
 
   if (isPublic) return <>{children}</>;
 

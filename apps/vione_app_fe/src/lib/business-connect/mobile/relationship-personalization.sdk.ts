@@ -1,8 +1,9 @@
 // BC-Mobile-6C — RelationshipPersonalizationSDK: stable client façade.
 //
 // UI code uses this and never imports server functions directly.
-// Client-safe: statically imports only *.functions (RPC stubs) and types.
+// Resilient: uses TanStack Start server functions with direct fetchNestApi fallback.
 
+import { fetchNestApi } from "@/lib/api-client";
 import {
   bcRelPersonalizationGetFn,
   bcRelPersonalizationRecordInteractionFn,
@@ -19,20 +20,59 @@ import type {
 } from "./relationship-personalization.types";
 
 export const RelationshipPersonalizationSDK = {
-  get: (): Promise<BcMobileGetPersonalizationResult> => bcRelPersonalizationGetFn(),
+  get: async (): Promise<BcMobileGetPersonalizationResult> => {
+    try {
+      return await bcRelPersonalizationGetFn();
+    } catch {
+      return await fetchNestApi<BcMobileGetPersonalizationResult>("/connect-app/network/personalization/get");
+    }
+  },
 
-  update: (
+  update: async (
     input: UpdateRelationshipIntelPreferencesInput,
-  ): Promise<BcMobileUpdateRelationshipIntelPreferencesResult> =>
-    bcRelPersonalizationUpdateFn({ data: input }),
+  ): Promise<BcMobileUpdateRelationshipIntelPreferencesResult> => {
+    try {
+      return await bcRelPersonalizationUpdateFn({ data: input });
+    } catch {
+      return await fetchNestApi<BcMobileUpdateRelationshipIntelPreferencesResult>(
+        "/connect-app/network/personalization/update",
+        {
+          method: "POST",
+          body: JSON.stringify(input),
+        },
+      );
+    }
+  },
 
-  record: (
+  record: async (
     kind: RelationshipIntelInteractionKind,
     recommendationType?: "reconnect" | null,
-  ): Promise<BcMobileRecordInteractionResult> =>
-    bcRelPersonalizationRecordInteractionFn({ data: { kind, recommendationType } }),
+  ): Promise<BcMobileRecordInteractionResult> => {
+    try {
+      return await bcRelPersonalizationRecordInteractionFn({ data: { kind, recommendationType } });
+    } catch {
+      return await fetchNestApi<BcMobileRecordInteractionResult>(
+        "/connect-app/network/personalization/record-interaction",
+        {
+          method: "POST",
+          body: JSON.stringify({ kind, recommendationType }),
+        },
+      );
+    }
+  },
 
-  reset: (): Promise<BcMobileResetPersonalizationResult> => bcRelPersonalizationResetFn(),
+  reset: async (): Promise<BcMobileResetPersonalizationResult> => {
+    try {
+      return await bcRelPersonalizationResetFn();
+    } catch {
+      return await fetchNestApi<BcMobileResetPersonalizationResult>(
+        "/connect-app/network/personalization/reset",
+        {
+          method: "POST",
+        },
+      );
+    }
+  },
 };
 
 export type RelationshipPersonalizationSDKType = typeof RelationshipPersonalizationSDK;

@@ -10,6 +10,8 @@ import { ChevronLeft, RefreshCw, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
+import { BusinessConnectTopBar } from "@/components/business-connect/mobile/BusinessConnectTopBar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,19 +127,9 @@ export function IntelPersonalizationSettings() {
   const reconnectOff = preferences ? recsOff || !preferences.reconnectEnabled : false;
 
   return (
-    <div className="px-4 pb-8 pt-4">
-      <header className="flex items-center gap-2">
-        <Link
-          to="/connect-app/me"
-          aria-label={t("common.back")}
-          className={`inline-flex h-[44px] w-[44px] items-center justify-center rounded-lg text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] ${FOCUS}`}
-        >
-          <ChevronLeft aria-hidden="true" className="h-5 w-5" />
-        </Link>
-        <h1 className="text-[17px] font-semibold text-[var(--bc-mobile-text)]">
-          {t("bc.mobile.intelSettings.title")}
-        </h1>
-      </header>
+    <MobilePage>
+      <BusinessConnectTopBar title={t("bc.mobile.intelSettings.title")} back />
+      <div className="pt-4 pb-8">
 
       {initialLoading ? (
         <div
@@ -336,6 +328,8 @@ export function IntelPersonalizationSettings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </MobilePage>
   );
 }
+

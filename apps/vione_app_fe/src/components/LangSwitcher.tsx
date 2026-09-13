@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Globe } from "lucide-react";
 import { useLang, type Lang } from "@/lib/i18n";
 
 type Variant = "default" | "dropdown" | "overlay" | "inline";
@@ -34,22 +34,21 @@ export function LangSwitcher({
     };
   }, []);
 
-  const opts: { code: Lang; flag: string; label: string; full: string }[] = [
-    { code: "vi", flag: "🇻🇳", label: "VI", full: "Tiếng Việt" },
-    { code: "en", flag: "🇬🇧", label: "EN", full: "English" },
-    { code: "km", flag: "🇰🇭", label: "KM", full: "ភាសាខ្មែរ" },
-    { code: "my", flag: "🇲🇲", label: "MY", full: "မြန်မာဘာသာ" },
-    { code: "lo", flag: "🇱🇦", label: "LO", full: "ພາສາລາວ" },
-    { code: "ja", flag: "🇯🇵", label: "JA", full: "日本語" },
-    { code: "ko", flag: "🇰🇷", label: "KO", full: "한국어" },
-    { code: "zh", flag: "🇨🇳", label: "ZH", full: "中文" },
+  const opts: { code: Lang; label: string; full: string }[] = [
+    { code: "vi", label: "VI", full: "Tiếng Việt" },
+    { code: "en", label: "EN", full: "English" },
+    { code: "km", label: "KM", full: "ភាសាខ្មែរ" },
+    { code: "my", label: "MY", full: "မြန်မာဘာသာ" },
+    { code: "lo", label: "LO", full: "ພາສາລາວ" },
+    { code: "ja", label: "JA", full: "日本語" },
+    { code: "ko", label: "KO", full: "한국어" },
+    { code: "zh", label: "ZH", full: "中文" },
   ];
 
   const current = opts.find((o) => o.code === lang) ?? opts[0];
 
   const isDark = themeMode === "dark";
   const isContrast = themeMode === "contrast";
-  const isExplicitLight = themeMode === "light";
 
   // If explicit "inline" is requested
   if (variant === "inline") {
@@ -73,9 +72,6 @@ export function LangSwitcher({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span aria-hidden className="text-sm leading-none">
-                {o.flag}
-              </span>
               <span className={`tracking-wide ${showFullLabel ? "sm:hidden" : ""}`}>{o.label}</span>
               {showFullLabel && <span className="hidden tracking-wide sm:inline">{o.full}</span>}
             </button>
@@ -116,19 +112,18 @@ export function LangSwitcher({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Language: ${current.full}`}
-        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-xs transition-all focus:outline-none cursor-pointer ${triggerBtnClass}`}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold shadow-xs transition-all focus:outline-none cursor-pointer ${triggerBtnClass}`}
       >
-        <span className="text-sm leading-none">{current.flag}</span>
         <span className="uppercase tracking-wider text-[11px] font-extrabold">{current.label}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-[#B18B44] transition-transform duration-200" />
+        <ChevronDown className="h-3 w-3 text-[#B18B44] transition-transform duration-200" />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className={`vba-pop-in absolute right-0 z-[9999] mt-2 w-48 overflow-hidden rounded-2xl border p-1.5 ${dropdownMenuClass}`}
+          className={`vba-pop-in absolute right-0 z-[9999] mt-2 w-44 overflow-hidden rounded-2xl border p-1.5 ${dropdownMenuClass}`}
         >
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {opts.map((o) => {
               const active = lang === o.code;
               return (
@@ -139,13 +134,12 @@ export function LangSwitcher({
                     setLang(o.code);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
                     active ? activeItemClass : inactiveItemClass
                   }`}
                 >
-                  <span className="text-base leading-none">{o.flag}</span>
-                  <span className="flex-1 text-left">{o.full}</span>
-                  {active && <Check className="h-3.5 w-3.5 shrink-0 text-[#191A1C]" strokeWidth={2.5} />}
+                  <span className="text-left font-medium">{o.full}</span>
+                  {active && <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />}
                 </button>
               );
             })}
@@ -155,4 +149,3 @@ export function LangSwitcher({
     </div>
   );
 }
-

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/connect-app")({
     const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
     if (!token) {
       // Preserve the intended deep-link destination for post-auth return.
-      throw redirect({ to: "/auth", search: { redirect: location.href, m: "1" } });
+      throw redirect({ to: "/vione/login", search: { redirect: location.href } });
     }
   },
   head: () => ({

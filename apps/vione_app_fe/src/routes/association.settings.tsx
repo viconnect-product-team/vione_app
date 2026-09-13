@@ -22,6 +22,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { getMyMember, type MyMember } from "@/lib/member-app.functions";
 import { useTheme, type Theme } from "@/lib/theme";
+import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/association/settings")({
 
 function AssociationSettingsScreen() {
   const navigate = useNavigate();
+  const { logout: authLogout } = useAuth();
   const { theme, setTheme } = useTheme();
   const fetchMember = useServerFn(getMyMember);
   const { data: member, reload } = useServerData<MyMember | null>(() => fetchMember(), null);
@@ -133,7 +135,8 @@ function AssociationSettingsScreen() {
 
   const handleLogout = async () => {
     await signOutSession();
-    navigate({ to: "/association/login" as any });
+    authLogout?.();
+    navigate({ to: "/association/login" as any, replace: true });
   };
 
   const currentAvatar = avatarPreview || resolveMediaUrl(member?.avatar) || "/ceo1983-logo.png";

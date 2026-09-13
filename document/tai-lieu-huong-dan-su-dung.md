@@ -1,24 +1,37 @@
-# TÀI LIỆU HƯỚNG DẪN SỬ DỤNG HỆ THỐNG VIONE
-## HỆ THỐNG QUẢN TRỊ CRM — ỨNG DỤNG HỘI VIÊN HIỆP HỘI — MẠNG XÃ HỘI DOANH NHÂN VIONE CONNECT
-*Tài liệu Chuẩn mực Phân tích Nghiệp vụ (Master Business Analysis) & Sổ tay Vận hành Dành cho Ban Thư ký, Ban Chấp hành, Kế toán và Toàn thể Hội viên Doanh nhân*
+# TÀI LIỆU HƯỚNG DẪN SỬ DỤNG VẬN HÀNH HỆ THỐNG VIONE
+## HỆ THỐNG CRM QUẢN TRỊ — APP HỘI VIÊN HIỆP HỘI — MẠNG XÃ HỘI DOANH NHÂN VIONE CONNECT
+*Đặc Tả Chi Tiết Chức Năng Con & Báo Cáo Đánh Giá Trung Thực Hiện Trạng Tích Hợp API Bên Thứ 3*
+
+- **Người thực hiện nâng cấp**: **Phạm Văn Vũ**
+- **Ngày bắt đầu nâng cấp**: **11/09/2026**
+- **Ngày kết thúc dự kiến**: *Đang rà soát và đánh giá theo từng giai đoạn (Để trống)*
+- **Phiên bản tài liệu**: **Version 2.0 (Chuẩn hóa thực tế & Khớp kỹ thuật 100%)**
+
+---
+
+> [!CAUTION]
+> **ĐÁNH GIÁ TRUNG THỰC VỀ HIỆN TRẠNG KẾT NỐI API BÊN THỨ 3 (EXTERNAL APIS)**
+> 1. **Thanh toán VietQR & Ngân hàng**: Hệ thống **đã có mã QR động** hiển thị thông tin số tài khoản, số tiền và cú pháp chuyển khoản mẫu. Tuy nhiên, **CHƯA liên kết Open API ngân hàng** và **CHƯA có Webhook đối soát gạch nợ tự động**. Luồng thanh toán chuyển khoản **chưa thông tự động** — Ban Kế toán bắt buộc phải kiểm tra sao kê ngân hàng và bấm duyệt gạch nợ thủ công trong CRM.
+> 2. **Đăng nhập Google & Apple**: Đã có nút bấm giao diện trên Web & App, nhưng **CHƯA cấu hình Google Cloud Console OAuth 2.0 Client ID** và **Apple Developer Sign in with Apple Services ID**. Người dùng đăng nhập bằng Số điện thoại/Email và Mật khẩu hoặc mã OTP thử nghiệm.
+> 3. **Cuộc họp & Đặt phòng họp**: Mới có form đăng ký lịch phòng họp nội bộ lưu vào CSDL. **CHƯA tích hợp API cuộc họp trực tuyến bên ngoài** (Zoom API / Google Meet API).
+> 4. **Bản đồ chỉ đường**: Mới nhúng iframe bản đồ mẫu, **CHƯA liên kết Google Maps Platform API SDK Key** chính thức.
+> 5. **SMS OTP & Push Notification**: Đang dùng mã OTP kiểm thử nội bộ (bypass/dev), **CHƯA kết nối tổng đài viễn thông SMS Brandname** (eSMS/SpeedSMS/Twilio). Bản iOS chưa nạp chứng chỉ APNs Auth Key (.p8) lên Apple Developer.
 
 ---
 
 ## 📌 MỤC LỤC CHI TIẾT
 
-1. [TỔNG QUAN HỆ SINH THÁI & KIẾN TRÚC ĐA NỀN TẢNG](#1-tổng-quan-hệ-sinh-thái--kiến-trúc-đa-nền-tảng)
-   - 1.1. Tầm nhìn chiến lược & Ranh giới 3 phân hệ
-   - 1.2. Chuẩn mực Nhận diện Thương hiệu & Quy chuẩn Giao diện
+1. [TỔNG QUAN HỆ SINH THÁI & KIẾN TRÚC 3 PHÂN HỆ ĐỘC LẬP](#1-tổng-quan-hệ-sinh-thái--kiến-trúc-3-phân-hệ-độc-lập)
+   - 1.1. Tầm nhìn chiến lược & Ranh giới 3 phân hệ (CRM - App Hiệp Hội - App ViOne)
+   - 1.2. Bảng kiểm toán trung thực hiện trạng các API bên thứ 3 (External APIs)
    - 1.3. Cấu hình Tuyến đường (URL Routing) & Cơ chế Điều hướng Chuẩn hóa
 2. [MA TRẬN VAI TRÒ & PHÂN QUYỀN TRUY CẬP (RBAC & PERSONAS)](#2-ma-trận-vai-trò--phân-quyền-truy-cập-rbac--personas)
-   - 2.1. Danh sách Nhân vật Vận hành (Personas) & Tài khoản Thao tác
-   - 2.2. Ma trận Phân quyền Chức năng (Permission Matrix)
-3. [HÀNH TRÌNH NGƯỜI DÙNG KHÉP KÍN (END-TO-END USER JOURNEYS)](#3-hành-trình-người-dùng-khép-kín-end-to-end-user-journeys)
+3. [HÀNH TRÌNH NGƯỜI DÙNG & QUY TRÌNH ĐỐI SOÁT THỦ CÔNG](#3-hành-trình-người-dùng--quy-trình-đối-soát-thủ-công)
    - 3.1. Hành trình 1: Khách vãng lai ➔ Đăng ký gia nhập ➔ Thẩm định ➔ Cấp mã Hội viên
-   - 3.2. Hành trình 2: Quản lý Hội phí ➔ Xuất Hóa đơn ➔ Thanh toán VietQR ➔ Tự động Gia hạn (+1 năm)
+   - 3.2. Hành trình 2: Quản lý Hội phí ➔ Quét mã VietQR ➔ Kế toán đối soát sao kê ➔ Duyệt gia hạn (+1 năm)
    - 3.3. Hành trình 3: Tạo Sự kiện ➔ Xếp ghế Sân khấu ➔ Phát hành Vé QR ➔ Check-in Cổng Tốc độ cao
    - 3.4. Hành trình 4: Kết nối Giao thương B2B ➔ Trao đổi Danh thiếp NFC ➔ Nhắn tin ➔ Lịch hẹn 1-on-1
-4. [HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM QUẢN TRỊ (WEB CRM ADMIN PORTAL)](#4-hướng-dẫn-thao-tác-hệ-thống-crm-quản-trị-web-crm-admin-portal)
+4. [HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM QUẢN TRỊ (CRM ADMIN PORTAL)](#4-hướng-dẫn-thao-tác-hệ-thống-crm-quản-trị-crm-admin-portal)
    - 4.1. Dashboard & Thống kê Chỉ số Tổng quan (`/`)
    - 4.2. Quản trị Danh bạ & Hồ sơ Hội viên 360° (`/members`, `/members/$memberId`)
    - 4.3. Quản lý Doanh nghiệp Thành viên (`/companies`, `/companies/$companyId`)
@@ -26,26 +39,28 @@
    - 4.5. Quản lý Tài chính, Niên liễm & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
    - 4.6. Quản lý Quyền lợi, Đặc quyền & Nhà Tài trợ (`/benefits`, `/perks`, `/sponsors`, `/sponsor-packages`)
    - 4.7. Sàn Giao thương B2B Marketplace (`/marketplace`, `/marketplace/my-quotes`)
-   - 4.8. Truyền thông, Tài liệu & Biểu quyết (`/news`, `/documents`, `/voting`, `/email-marketing`)
+   - 4.8. Truyền thông, Tài liệu, Bầu cử & Đặt phòng họp (`/news`, `/documents`, `/voting`, `/meetings`, `/email-marketing`)
    - 4.9. Quản trị Nền tảng, Phân quyền & Kiểm toán Bất biến (`/platform/admins`, `/platform/audit`, `/platform/renewal-audit`)
-5. [HƯỚNG DẪN THAO TÁC ỨNG DỤNG HỘI VIÊN HIỆP HỘI (ASSOCIATION APP `/association`)](#5-hướng-dẫn-thao-tác-ứng-dụng-hội-viên-hiệp-hội-association-app-association)
-   - 5.1. Cổng Đăng nhập Mobile Chuẩn mực (`/auth/mobile/`)
+5. [HƯỚNG DẪN THAO TÁC APP HIỆP HỘI (CLB DOANH NHÂN CEO 1983 - `/association`)](#5-hướng-dẫn-thao-tác-app-hiệp-hội-clb-doanh-nhân-ceo-1983---association)
+   - 5.1. Cổng Đăng nhập Mobile (Luồng nội bộ SĐT/Email vs Google/Apple Login)
    - 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
    - 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
    - 5.4. Lịch Sự kiện, Vé Điện tử & QR Check-in (`/association/events`, `/association/checkin`)
-   - 5.5. Tra cứu & Nộp Niên liễm Trực tuyến VietQR (`/association/renew`, `/association/renew/pay`, `/association/renew/result`)
+   - 5.5. Tra cứu & Nộp Niên liễm VietQR (Quy trình quét mã và chờ duyệt thủ công)
    - 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
    - 5.7. Kho Đặc quyền Doanh nghiệp & Thư viện Tài liệu (`/association/perks`, `/association/library`)
    - 5.8. Hộp thư Trao đổi với Ban Thư ký & Hồ sơ Cá nhân (`/association/messages`, `/association/profile`)
-6. [HƯỚNG DẪN THAO TÁC ỨNG DỤNG MẠNG DOANH NHÂN VIONE CONNECT (`/connect-app`)](#6-hướng-dẫn-thao-tác-ứng-dụng-mạng-doanh-nhân-vione-connect-connect-app)
+   - 5.9. Ứng dụng Di động Native App (Android APK & iOS TestFlight)
+6. [HƯỚNG DẪN THAO TÁC APP MẠNG XÃ HỘI DOANH NHÂN VIONE CONNECT (`/connect-app`)](#6-hướng-dẫn-thao-tác-app-mạng-xã-hội-doanh-nhân-vione-connect-connect-app)
    - 6.1. Onboarding & Kích hoạt Danh thiếp Thông minh NFC (`/connect-app/activate`)
    - 6.2. Bảng tin B2B Social & Đăng Khoảnh khắc Doanh nghiệp (`/connect-app/moment`)
    - 6.3. Mạng lưới Quan hệ & Ghép nối AI Đối tác (`/connect-app/network`)
    - 6.4. Trò chuyện Mã hóa Trực tiếp & Trao đổi Profile (`/connect-app/inbox`)
-   - 6.5. Điều phối Cuộc hẹn Giao thương 1-on-1 (`/business-connect/meetings`)
-   - 6.6. Trung tâm Thẻ số Cá nhân & Bộ nhớ Quan hệ AI (`/connect-app/me`, `/business-connect/memory`)
+   - 6.5. Điều phối Cuộc hẹn Giao thương 1-on-1 (Lịch nội bộ vs Calendar API)
+   - 6.6. Trung tâm Thẻ số Cá nhân & Bộ nhớ Quan hệ Đối tác (`/connect-app/me`, `/business-connect/memory`)
+   - 6.7. Ứng dụng Native App (Bản APK Android & TestFlight iOS Build 4)
 7. [BẢNG MÃ TRẠNG THÁI NGHIỆP VỤ & TỪ ĐIỂN DỮ LIỆU](#7-bảng-mã-trạng-thái-nghiệp-vụ--từ-điển-dữ-liệu)
-8. [XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING & FAQS)](#8-xử-lý-sự-cố-thường-gặp-troubleshooting--faqs)
+8. [QUY TRÌNH ĐỐI SOÁT THỦ CÔNG & XỬ LÝ SỰ CỐ (TROUBLESHOOTING)](#8-quy-trình-đối-soát-thủ-công--xử-lý-sự-cố-troubleshooting)
 
 ---
 
@@ -90,16 +105,19 @@ Kiến trúc hệ thống phân định rành mạch 3 trụ cột:
 ## 1.2. Chuẩn mực Nhận diện Thương hiệu & Quy chuẩn Giao diện
 Để tránh nhầm lẫn giữa các phân hệ, hệ thống tuân thủ nghiêm ngặt 2 phong cách nhận diện:
 
-| Tiêu chí | Cổng Hội Viên Hiệp hội (`/association`) | Mạng Xã hội ViOne Connect (`/connect-app`) |
-| :--- | :--- | :--- |
-| **Gam màu chủ đạo** | **Royal Blue & Pure White** (Xanh `#004B91`, `#0284C7`, Nền `#F0F7FF`) | **Luxury Dark & Champagne Gold** (Nền đen mun `#0A0A0C`, Ánh kim `#E5B869`) |
-| **Biểu tượng Logo** | Logo Hiệp hội thành viên kết hợp Logo ViOne cách điệu | Chữ "O" đặc quyền có **khuyết vòm góc trên và chấm kim cương** |
-| **Đối tượng sử dụng** | Hội viên chính thức đã được phê duyệt của từng Hiệp hội | Toàn bộ cộng đồng doanh nhân, khách hàng mua thẻ số ViOne |
-| **Cổng đăng nhập** | `/auth/mobile` (Hỗ trợ nhập Mã hội viên, Email, Quét thẻ NFC/QR) | `/auth` (Hỗ trợ Google SSO, Apple ID, Email & Password) |
+| Tiêu chí | Cổng Hội Viên Hiệp hội (`/association`) | Mạng Xã hội ViOne Connect (`/connect-app`) | Hệ thống Quản trị Web CRM |
+| :--- | :--- | :--- | :--- |
+| **Gam màu chủ đạo** | **Luxury Dark & Champagne Gold** (Nền đen mun `#0A0A0B`, Ánh kim `#D8B282`, hình nền lụa nghệ thuật) kết hợp nhận diện CEO 1983 | **Luxury Dark & Champagne Gold** (Nền đen mun `#0A0A0B`, Ánh kim `#D8B282`) | **Clean Dashboard** (Giao diện thẻ chuyên nghiệp, hỗ trợ Theme Switcher) |
+| **Biểu tượng Logo** | Logo Hiệp hội Doanh nhân CEO 1983 trong viên nang ngọc trai mạ vàng | Logo ViOne Business Connect chữ "O" vòm khuyết | Logo ViOne & Hệ thống CRM |
+| **Đối tượng sử dụng** | Hội viên chính thức của CLB Doanh Nhân CEO 1983 | Toàn bộ cộng đồng doanh nhân, người dùng thẻ số ViOne | Ban Quản trị, Thư ký, Kế toán, Lãnh đạo Hiệp hội & Doanh nghiệp |
+| **Cổng đăng nhập** | `/association/login` (Mã hội viên / Email + Mật khẩu, kích hoạt tài khoản, quét thẻ NFC/QR) | `/vione/login` (Email + Mật khẩu, quét thẻ NFC/QR, Google & Apple OAuth) | `/auth` (Email / Username + Mật khẩu, Google & Apple OAuth, Theme Switcher) |
 
 ## 1.3. Cấu hình Tuyến đường (URL Routing) & Cơ chế Điều hướng Chuẩn hóa
-Nhằm tối ưu hóa trải nghiệm di động và bảo toàn tính toàn vẹn của hệ thống:
-- **Tuyến đường Đăng nhập Di động**: Được chuẩn hóa thành `/auth/mobile` (thay thế hoàn toàn `/m/login`).
+Nhằm tối ưu hóa trải nghiệm di động và đảm bảo tính độc lập tuyệt đối giữa các hệ thống:
+- **Tách biệt 3 Màn Đăng nhập Độc lập**:
+  - **Cổng Quản trị CRM**: `/auth` (hoặc `/auth?portal=crm`).
+  - **App ViOne Mobile**: `/vione/login` (không chứa tab switcher sang hiệp hội).
+  - **App Hiệp hội CEO 1983**: `/association/login` (không chứa nút chuyển sang ViOne).
 - **Tuyến đường App Hiệp hội**: Được chuyển đổi toàn bộ tiền tố từ `/m/*` sang `/association/*` (ví dụ: `/association/news`, `/association/events`, `/association/renew`, `/association/card`, `/association/members`).
 - **Cơ chế Tương thích Ngược (Backwards Compatibility)**: Toàn bộ liên kết cũ `/m/*` được cấu hình **HTTP 301 Client-side Redirect** tự động sang `/association/*`. Người dùng click vào link bookmark cũ sẽ không bao giờ bị lỗi 404 hay trắng màn hình.
 
@@ -166,28 +184,38 @@ sequenceDiagram
     Mail-->>Guest: Nhận thông báo kích hoạt & đường dẫn tải App
 ```
 
-## 3.2. Hành trình 2: Quản lý Hội phí ➔ Xuất Hóa đơn ➔ Thanh toán VietQR ➔ Tự động Gia hạn (+1 năm)
+## 3.2. Hành trình 2: Quản lý Hội phí ➔ Quét mã VietQR ➔ Kế toán đối soát sao kê ➔ Duyệt gia hạn (+1 năm)
+
+> [!WARNING]
+> **HIỆN TRẠNG LUỒNG THANH TOÁN**:
+> Mặc dù giao diện app đã sinh mã VietQR chuẩn chứa đầy đủ thông tin tài khoản, số tiền và mã hóa đơn, nhưng **hệ thống hiện tại CHƯA liên kết Open API ngân hàng** và **CHƯA có Webhook đối soát gạch nợ tự động**. Do đó, sau khi hội viên quét QR chuyển khoản qua app ngân hàng, **Ban Kế toán hiệp hội phải kiểm tra sao kê ngân hàng và bấm nút duyệt gạch nợ thủ công trong CRM**.
+
 ```mermaid
 sequenceDiagram
     autonumber
     actor Member as Hội viên M1983-005
     participant App as App Hội viên (/association/renew)
-    participant Gate as Cổng VietQR Napas 247
-    participant Hook as Webhook Handler (/api/webhook/payment)
-    participant DB as PostgreSQL DB
+    participant BankApp as App Ngân hàng của Hội viên
+    participant BankAcc as TK Ngân Hàng Hiệp Hội
     participant Acc as Kế toán Hiệp hội
+    participant CRM as CRM Tài Chính (/fees)
+    participant DB as PostgreSQL DB
 
-    Member->>App: Mở App, thấy cảnh báo "Hạn thẻ còn 15 ngày"
-    Member->>App: Nhấn "Gia hạn Niên liễm ngay" -> /association/renew/pay
-    App->>Gate: Yêu cầu sinh mã VietQR động (10,000,000 VND)
-    Gate-->>App: Trả về hình ảnh VietQR kèm mã tham chiếu TXN-VIONE-998822
-    Member->>Gate: Dùng App Ngân hàng quét QR và xác nhận chuyển khoản
-    Gate->>Hook: Bắn Webhook báo nhận tiền thành công
-    Hook->>DB: Giao dịch nguyên tử (ACID Transaction):
-    Note over DB: 1. UPDATE invoices SET status='paid', paid_at=CURRENT_DATE<br/>2. UPDATE members SET term_end=term_end + INTERVAL '1 year', renewed_at=CURRENT_DATE<br/>3. INSERT INTO renewal_audit_log (event_type='payment', amount=10000000)
-    Hook-->>App: Đẩy tín hiệu Realtime qua WebSocket
-    App-->>Member: Hiển thị màn hình Chúc mừng /association/renew/result & Cấp Thẻ hạn mới
-    Acc->>DB: Đối soát sổ quỹ tại /income & /finance-report
+    Member->>App: Mở App, thấy hóa đơn niên liễm cần đóng
+    Member->>App: Nhấn "Thanh toán ngay" -> /association/renew/pay
+    App-->>Member: Hiển thị mã VietQR động kèm cú pháp: "NL2026 M1983001"
+    Member->>BankApp: Mở app ngân hàng cá nhân, quét mã VietQR và xác nhận chuyển khoản
+    BankApp->>BankAcc: Tiền về tài khoản ngân hàng của Hiệp hội
+    Member->>App: Chụp ảnh Ủy nhiệm chi / Màn hình chuyển khoản thành công
+    Note over Member,Acc: Kế toán đối soát sao kê thực tế (Chưa có API Webhook tự động)
+    Acc->>BankAcc: Đăng nhập Internet Banking hiệp hội, kiểm tra tiền về
+    Acc->>CRM: Mở /fees, tìm hóa đơn tương ứng với cú pháp chuyển khoản
+    Acc->>CRM: Bấm nút "Xác nhận đã thanh toán thủ công"
+    CRM->>DB: UPDATE invoices SET status='paid', paid_at=NOW()
+    CRM->>DB: UPDATE members SET term_end=term_end + INTERVAL '1 year'
+    CRM->>DB: INSERT INTO renewal_audit_log (event_type='payment', amount=10000000)
+    App-->>Member: Thẻ hội viên được gia hạn thêm 1 năm (Active)
+    Acc->>CRM: Kiểm tra cập nhật sổ quỹ tại /income & /finance-report
 ```
 
 ## 3.3. Hành trình 3: Tạo Sự kiện ➔ Xếp ghế Sân khấu ➔ Phát hành Vé QR ➔ Check-in Cổng Tốc độ cao
@@ -319,12 +347,13 @@ sequenceDiagram
 
 # 5. HƯỚNG DẪN THAO TÁC ỨNG DỤNG HỘI VIÊN HIỆP HỘI (ASSOCIATION APP `/association`)
 
-## 5.1. Cổng Đăng nhập Mobile Chuẩn mực (`/auth/mobile/`)
-- **Đường dẫn chuẩn**: `http://<domain>/auth/mobile/`
+## 5.1. Cổng Đăng nhập App Hiệp hội Riêng biệt (`/association/login`)
+- **Đường dẫn chuẩn**: `http://<domain>/association/login`
+- **Giao diện nhận diện**: Tông màu Sapphire Navy (`#0B0F19`) đặc trưng, Logo CLB Doanh Nhân CEO 1983, nút chuyển ngôn ngữ `LuxuryLangSwitcher` tinh tế. Hoàn toàn độc lập, không có nút chuyển sang ViOne.
 - **Phương thức đăng nhập linh hoạt**:
-  1. **Nhập Mã Hội viên**: Nhập mã thẻ định danh (ví dụ `M1983-002`) và mật khẩu.
-  2. **Quét Thẻ NFC / Mã QR**: Chạm thẻ vật lý vào lưng điện thoại hoặc bật camera quét mã QR in trên thẻ để vào app ngay tức thì trong 1 giây.
-  3. **Chuyển đổi Hiệp hội**: Đối với doanh nhân sinh hoạt tại nhiều CLB, giao diện cho phép chọn đúng chi hội cần thao tác.
+  1. **Nhập Mã Hội viên hoặc Email**: Nhập mã thẻ định danh (ví dụ `M1983-002`) hoặc email đã đăng ký và mật khẩu.
+  2. **Kích hoạt Tài khoản Hội viên**: Nút "Kích hoạt tài khoản" dành riêng cho hội viên mới được Ban Thư ký phê duyệt.
+  3. **Quên mật khẩu & Hỗ trợ**: Liên kết phục hồi mật khẩu và hỗ trợ trực tiếp từ Ban Thư ký.
 
 ## 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
 - **Dashboard Di động**:

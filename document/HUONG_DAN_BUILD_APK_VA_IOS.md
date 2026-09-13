@@ -134,6 +134,8 @@ npm run mobile:ceo1983:ipa
 
 - **Theo dõi tiến trình và tải file trực tiếp tại Dashboard:**  
   👉 [EAS Builds Dashboard - ViOne Project](https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds)
+- **Tải trực tiếp file `.IPA` ViOne Build 4 mới nhất:**  
+  👉 [Download ViOne-Build-4.ipa](https://expo.dev/artifacts/eas/BaxacCwYnCr_yU9AIMjrcOtJC48VYaAG3jaJnoa3Wcc.ipa)
 - **Quản lý phiên bản trên TestFlight:**  
   👉 [App Store Connect TestFlight Portal](https://appstoreconnect.apple.com/apps/6810608093/testflight/ios)
 
