@@ -16,19 +16,19 @@ export function mapMember(r: Row): Member {
     industry: r.industry as Member["industry"],
     region: r.region as Member["region"],
     status: r.status as Member["status"],
-    joinedAt: r.joined_at as string,
-    feeYear: r.fee_year as number,
-    feePaid: r.fee_paid as boolean,
+    joinedAt: ((r.joined_at ?? r.joinedAt) as string) ?? "",
+    feeYear: Number(r.fee_year ?? r.feeYear ?? new Date().getFullYear()),
+    feePaid: Boolean(r.fee_paid ?? r.feePaid),
     address: (r.address as string) ?? "",
     website: (r.website as string) ?? undefined,
-    taxCode: (r.tax_code as string) ?? undefined,
-    employees: (r.employees as number) ?? undefined,
+    taxCode: ((r.tax_code ?? r.taxCode) as string) ?? undefined,
+    employees: ((r.employees as number) ?? undefined),
     about: (r.about as string) ?? "",
-    termEnd: (r.term_end as string) ?? undefined,
-    reminderCount: (r.reminder_count as number) ?? 0,
-    lastReminder: (r.last_reminder as string) ?? undefined,
-    renewedAt: (r.renewed_at as string) ?? undefined,
-    newTermEnd: (r.new_term_end as string) ?? undefined,
+    termEnd: ((r.term_end ?? r.termEnd) as string) ?? undefined,
+    reminderCount: Number(r.reminder_count ?? r.reminderCount ?? 0),
+    lastReminder: ((r.last_reminder ?? r.lastReminder) as string) ?? undefined,
+    renewedAt: ((r.renewed_at ?? r.renewedAt) as string) ?? undefined,
+    newTermEnd: ((r.new_term_end ?? r.newTermEnd) as string) ?? undefined,
   };
 }
 
@@ -59,23 +59,34 @@ export function toRecord(r: Row): RenewalRecord {
   const m = mapMember(r);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const termEnd = (r.term_end as string) ?? today.toISOString().slice(0, 10);
+  const rawTermEnd = (r.term_end ?? r.termEnd ?? m.termEnd) as string | undefined;
+  const termEnd = rawTermEnd
+    ? (rawTermEnd.includes("T") ? rawTermEnd.slice(0, 10) : rawTermEnd)
+    : today.toISOString().slice(0, 10);
   const daysLeft = daysBetween(today, termEnd);
+  const isRenewed = Boolean(r.renewed_at ?? r.renewedAt ?? m.renewedAt);
   let status: RenewalStatus;
-  if (r.renewed_at) status = "renewed";
+  if (isRenewed) status = "renewed";
   else if (daysLeft < 0) status = "overdue";
   else if (daysLeft <= 30) status = "due";
   else status = "upcoming";
+
+  const paymentStatus = ((r.payment_status ?? r.paymentStatus ?? (m.feePaid ? "paid" : "unpaid")) as string as RenewalRecord["paymentStatus"]) ?? "unpaid";
+  const lastReminder = ((r.last_reminder ?? r.lastReminder ?? m.lastReminder) as string) ?? undefined;
+  const reminderCount = Number(r.reminder_count ?? r.reminderCount ?? m.reminderCount ?? 0);
+  const newTermEnd = ((r.new_term_end ?? r.newTermEnd ?? m.newTermEnd) as string) ?? undefined;
+  const renewedAt = ((r.renewed_at ?? r.renewedAt ?? m.renewedAt) as string) ?? undefined;
+
   return {
     id: `RNW-${m.code}`,
     member: m,
     currentTermEnd: termEnd,
     daysLeft,
     status,
-    paymentStatus: (r.payment_status as string as RenewalRecord["paymentStatus"]) ?? "unpaid",
-    lastReminder: (r.last_reminder as string) ?? undefined,
-    reminderCount: (r.reminder_count as number) ?? 0,
-    newTermEnd: (r.new_term_end as string) ?? undefined,
-    renewedAt: (r.renewed_at as string) ?? undefined,
+    paymentStatus,
+    lastReminder,
+    reminderCount,
+    newTermEnd,
+    renewedAt,
   };
 }

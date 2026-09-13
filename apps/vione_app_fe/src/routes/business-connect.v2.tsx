@@ -5,10 +5,10 @@ export const Route = createFileRoute("/business-connect/v2")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Business Connect v2 — Tu Tiên & Tiên Cảnh Đông Phương | VIONE" },
+      { title: "Business Connect v2 — Apple-like Minimalism | VIONE" },
       {
         name: "description",
-        content: "Mẫu giao diện v2: Phong cách Tu Tiên, Kỳ Lân Tụ Hội, Tiên Cảnh Doanh Gia, mây núi ngút ngàn, sắc đỏ hồng chu sa và ngọc bích.",
+        content: "Mẫu giao diện v2: Phong cách Apple-style Minimalism (Light Mode), chữ Charcoal, Overlap Reveal scroll và Partial Background abstract crops.",
       },
     ],
   }),

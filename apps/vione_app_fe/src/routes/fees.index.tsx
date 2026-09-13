@@ -686,16 +686,18 @@ function FeesPage() {
         </>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <div className="relative overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0 text-sm">
+              <thead className="bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 <tr>
+                  <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
                   <SortHeader
                     label={t("fees.col.invoice")}
                     columnKey="invoice"
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
+                    className="sticky left-[56px] z-20 bg-secondary/90 border-b border-border"
                   />
                   <SortHeader
                     label={t("fees.col.member")}
@@ -703,6 +705,7 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
+                    className="border-b border-border"
                   />
                   <SortHeader
                     label={t("fees.col.amount")}
@@ -711,6 +714,7 @@ function FeesPage() {
                     sortDir={sortDir}
                     onSort={toggleSort}
                     align="right"
+                    className="border-b border-border"
                   />
                   <SortHeader
                     label={t("fees.col.due")}
@@ -718,6 +722,7 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
+                    className="border-b border-border"
                   />
                   <SortHeader
                     label={t("fees.col.paid")}
@@ -725,6 +730,7 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
+                    className="border-b border-border"
                   />
                   <SortHeader
                     label={t("fees.col.status")}
@@ -732,13 +738,14 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
+                    className="border-b border-border"
                   />
-                  <th className="px-4 py-3 text-right font-semibold">{t("fees.col.actions")}</th>
+                  <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right font-bold border-b border-border">{t("fees.col.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {tc.pageRows.map((r: any) => (
-                  <FeeRow key={r.id} r={r} onDelete={handleDelete} canManage={isAdmin} />
+                {tc.pageRows.map((r: any, idx: number) => (
+                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} canManage={isAdmin} />
                 ))}
               </tbody>
             </table>
@@ -1202,17 +1209,22 @@ function CreateInvoiceModal({
 
 function FeeRow({
   r,
+  index,
   onDelete,
   canManage,
 }: {
   r: FeeRecord;
+  index: number;
   onDelete: (r: FeeRecord) => void;
   canManage: boolean;
 }) {
   const t = useT();
   return (
-    <tr className="transition-colors hover:bg-accent/40">
-      <td className="px-4 py-3 font-mono text-[12px] font-semibold">
+    <tr className="group transition-colors hover:bg-accent/40 border-b border-border/50">
+      <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+        {index}
+      </td>
+      <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold group-hover:bg-muted/70 border-b border-border/50">
         <Link
           to="/fees/$invoiceId"
           params={{ invoiceId: r.id }}
@@ -1221,7 +1233,7 @@ function FeeRow({
           {r.invoiceNo}
         </Link>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 border-b border-border/50">
         <Link
           to="/companies/$companyId"
           params={{ companyId: r.member.id }}
@@ -1238,19 +1250,19 @@ function FeeRow({
           </div>
         </Link>
       </td>
-      <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums">
+      <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums border-b border-border/50">
         {formatVnd(r.amount)}
       </td>
-      <td className="px-4 py-3 text-muted-foreground">
+      <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
         {new Date(r.dueDate).toLocaleDateString("vi-VN")}
       </td>
-      <td className="px-4 py-3 text-muted-foreground">
+      <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
         {r.paidAt ? new Date(r.paidAt).toLocaleDateString("vi-VN") : "—"}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 border-b border-border/50">
         <StatusBadge s={r.status} />
       </td>
-      <td className="px-4 py-3">
+      <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
         <div className="flex items-center justify-end gap-1">
           {r.status !== "paid" ? (
             <>

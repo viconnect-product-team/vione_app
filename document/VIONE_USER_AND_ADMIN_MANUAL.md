@@ -1,1062 +1,589 @@
-# SỔ TAY HƯỚNG DẪN VẬN HÀNH & SỬ DỤNG HỆ THỐNG VIONE
-## HỆ THỐNG CRM QUẢN TRỊ — APP HIỆP HỘI HỘI VIÊN — APP DOANH NHÂN VIONE CONNECT
-*Tài liệu nội bộ chuẩn mực dành cho Ban Lãnh đạo, Ban Thư ký, Ban Tài chính, Ban Tổ chức Sự kiện và Toàn thể Doanh nhân Hội viên*
+# TỔNG QUAN VÀ CẨM NANG VẬN HÀNH TOÀN DIỆN HỆ SINH THÁI VIONE
+## HỆ THỐNG QUẢN TRỊ CRM — ỨNG DỤNG HỘI VIÊN HIỆP HỘI — MẠNG XÃ HỘI DOANH NHÂN VIONE CONNECT
+*Tài liệu Chuẩn mực Phân tích Nghiệp vụ (Master Business Analysis) & Sổ tay Vận hành Dành cho Ban Thư ký, Ban Chấp hành, Kế toán và Toàn thể Hội viên Doanh nhân*
 
 ---
 
 ## 📌 MỤC LỤC CHI TIẾT
 
-1. [TIẾN ĐỘ THỰC HIỆN & BẢN ĐỒ PHÂN HỆ ĐÃ HOÀN THIỆN](#1-tiến-độ-thực-hiện--bản-đồ-phân-hệ-đã-hoàn-thiện)
-   - 1.1. Chuẩn Mực Nhận Diện Logo ViOne: Chữ "O" Điểm Nứt & Dấu Chấm Kim Cương
-   - 1.2. Chuẩn Mực 2 Cổng Đăng Nhập: Cổng ViOne Connect (Đen Vàng) vs Cổng Hội Viên CEO 1983 (Xanh Trắng)
-2. [MA TRẬN PHÂN QUYỀN VAI TRÒ HỆ THỐNG (RBAC ROLE & PERMISSION MATRIX)](#2-ma-trận-phân-quyền-vai-trò-hệ-thống-rbac-role--permission-matrix)
-3. [MÔ HÌNH CƠ SỞ DỮ LIỆU & CÁC BẢNG LƯU TRỮ (DATABASE SCHEMA & ENTITIES)](#3-mô-hình-cơ-sở-dữ-liệu--các-bảng-lưu-trữ-database-schema--entities)
-4. [KIẾN TRÚC & LUỒNG ĐI CHI TIẾT CỦA DỮ LIỆU (END-TO-END DATA FLOWS)](#4-kiến-trúc--luồng-đi-chi-tiết-của-dữ-liệu-end-to-end-data-flows)
-   - 4.1. Luồng Tiếp nhận Hồ sơ & Thẩm định Hội viên mới
-   - 4.2. Luồng Thiết kế Sơ đồ Ghế, Xếp chỗ Sân khấu & Điểm danh 1 chạm
-   - 4.3. Luồng Quản lý Dòng tiền Thu - Chi & Tự động Lập Báo cáo Kế toán
-   - 4.4. Luồng Giao thương B2B, Ghép nối AI Copilot & Lịch hẹn 1-on-1
-   - 4.5. Luồng Trung tâm Thông báo Đa kênh Thời gian thực (Notification Hub)
-   - 4.6. CAM ĐOAN & ĐẶC TẢ LUỒNG HOẠT ĐỘNG FULL 100% HAI CHIỀU (WEB CRM ⮂ MOBILE APP ⮂ VIONE CONNECT)
-5. [DANH MỤC API BACKEND & ĐẶC TẢ REQUEST / RESPONSE](#5-danh-mục-api-backend--đặc-tả-request--response)
-   - 5.1. APIs Xác thực & Quản lý Phiên (Auth)
-   - 5.2. APIs Hội viên & Thẩm định (Members & Vetting)
-   - 5.3. APIs Sự kiện, Sơ đồ Ghế & Check-in (Events & Seatings)
-   - 5.4. APIs Tài chính, Thu Chi & Hội phí (Finance & Fees)
-   - 5.5. APIs Cơ hội Giao thương B2B & AI Matcher (B2B & AI)
-   - 5.6. APIs Lịch hẹn Doanh nhân 1-on-1 (Meetings)
-   - 5.7. APIs Danh tính số, Thẻ NFC & Quét AI OCR (NFC & OCR)
-   - 5.8. APIs Tin nhắn Socket Realtime & Thông báo (Chat & Notifications)
-6. [HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM / WEB PORTAL QUẢN TRỊ](#6-hướng-dẫn-thao-tác-hệ-thống-crm--web-portal-quản-trị)
-   - 6.1. Quản lý Danh sách Hội viên & Doanh nghiệp
-   - 6.2. Thiết lập Sơ đồ Ghế Sân khấu & Khán phòng Động (`CinemaSeatingMap.tsx`)
-   - 6.3. Trạm Điểm danh Check-in 1 chạm tại Sự kiện (`/checkin-qr`)
-   - 6.4. Quản trị Dòng tiền Thu - Chi (`/income` & `/expenses`)
-   - 6.5. Báo cáo Tài chính Chi tiết Chuyên sâu (`/finance-report`)
-   - 6.6. Quản lý Nhà tài trợ & Gói Quyền lợi (`/sponsors` & `/sponsor-packages`)
-   - 6.7. Phòng họp Trực tuyến & Biểu quyết Điện tử (`/meetings` & `/voting`)
-   - 6.8. Tiếp nhận Khách hàng Tiềm năng (`/admin/demo-leads`)
-7. [HƯỚNG DẪN THAO TÁC APP HIỆP HỘI (MOBILE MEMBER APP `/m`)](#7-hướng-dẫn-thao-tác-app-hiệp-hội-mobile-member-app-m)
-   - 7.1. Bảng tin Hoạt động Chi hội & Tương tác Nội khối (`/m/news`)
-   - 7.2. Trung tâm Thông báo Đa kênh Thông minh (`/m/notifications`)
-   - 7.3. Tra cứu Danh bạ Doanh nhân & Kết nối C-Level (`/m/directory`)
-   - 7.4. Nộp Hội phí Trực tuyến Tức thì qua QR Napas 247 (`/m/fees`)
-   - 7.5. Đăng ký Sự kiện, Chọn Ghế & Nhận Vé Điện tử E-Ticket QR (`/m/events`)
-8. [HƯỚNG DẪN THAO TÁC APP DOANH NHÂN VIONE CONNECT (`/connect-app`)](#8-hướng-dẫn-thao-tác-app-doanh-nhân-vione-connect-connect-app)
-   - 8.1. Thiết lập Danh tính số & Danh thiếp Thông minh Cá nhân (`/connect-app/me`)
-   - 8.2. Chạm Kết nối 1-Tap NFC & Quét mã QR Live Laser Chuẩn Zalo (`/connect-app/network`)
-   - 8.3. Số hóa Danh thiếp Giấy bằng AI OCR 1 Chạm (`/connect-app/card-scan`)
-   - 8.4. Sàn Cơ hội Giao thương B2B & Động cơ Khớp nối AI Copilot
-   - 8.5. Đặt Lịch Hẹn Giao Thương 1-on-1 & Đồng bộ Lịch Công Tác
-   - 8.6. Nhắn tin Mã hóa Bảo mật & Trao đổi Hồ sơ Doanh nghiệp
-   - 8.7. Cài đặt Đa ngôn ngữ (8 Thứ tiếng Quốc tế) & Chế độ Giao diện
-9. [XỬ LÝ SỰ CỐ THƯỜNG GẶP (FAQ & TROUBLESHOOTING)](#9-xử-lý-sự-cố-thường-gặp-faq--troubleshooting)
-10. [BIÊN BẢN NGHIỆM THU & BẢO ĐẢM VẬN HÀNH KHÉP KÍN 100% (FULL 100% OPERATIONAL GUARANTEE)](#10-biên-bản-nghiệm-thu--bảo-đảm-vận-hành-khép-kín-100-full-100-operational-guarantee)
+1. [TỔNG QUAN HỆ SINH THÁI & KIẾN TRÚC ĐA NỀN TẢNG](#1-tổng-quan-hệ-sinh-thái--kiến-trúc-đa-nền-tảng)
+   - 1.1. Tầm nhìn chiến lược & Ranh giới 3 phân hệ
+   - 1.2. Chuẩn mực Nhận diện Thương hiệu & Quy chuẩn Giao diện
+   - 1.3. Cấu hình Tuyến đường (URL Routing) & Cơ chế Điều hướng Chuẩn hóa
+2. [MA TRẬN VAI TRÒ & PHÂN QUYỀN TRUY CẬP (RBAC & PERSONAS)](#2-ma-trận-vai-trò--phân-quyền-truy-cập-rbac--personas)
+   - 2.1. Danh sách Nhân vật Vận hành (Personas) & Tài khoản Thao tác
+   - 2.2. Ma trận Phân quyền Chức năng (Permission Matrix)
+3. [HÀNH TRÌNH NGƯỜI DÙNG KHÉP KÍN (END-TO-END USER JOURNEYS)](#3-hành-trình-người-dùng-khép-kín-end-to-end-user-journeys)
+   - 3.1. Hành trình 1: Khách vãng lai ➔ Đăng ký gia nhập ➔ Thẩm định ➔ Cấp mã Hội viên
+   - 3.2. Hành trình 2: Quản lý Hội phí ➔ Xuất Hóa đơn ➔ Thanh toán VietQR ➔ Tự động Gia hạn (+1 năm)
+   - 3.3. Hành trình 3: Tạo Sự kiện ➔ Xếp ghế Sân khấu ➔ Phát hành Vé QR ➔ Check-in Cổng Tốc độ cao
+   - 3.4. Hành trình 4: Kết nối Giao thương B2B ➔ Trao đổi Danh thiếp NFC ➔ Nhắn tin ➔ Lịch hẹn 1-on-1
+4. [HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM QUẢN TRỊ (WEB CRM ADMIN PORTAL)](#4-hướng-dẫn-thao-tác-hệ-thống-crm-quản-trị-web-crm-admin-portal)
+   - 4.1. Dashboard & Thống kê Chỉ số Tổng quan (`/`)
+   - 4.2. Quản trị Danh bạ & Hồ sơ Hội viên 360° (`/members`, `/members/$memberId`)
+   - 4.3. Quản lý Doanh nghiệp Thành viên (`/companies`, `/companies/$companyId`)
+   - 4.4. Quản lý Sự kiện, Hội thảo & Điểm danh QR (`/events`, `/event-registrations`, `/checkin`)
+   - 4.5. Quản lý Tài chính, Niên liễm & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
+   - 4.6. Quản lý Quyền lợi, Đặc quyền & Nhà Tài trợ (`/benefits`, `/perks`, `/sponsors`, `/sponsor-packages`)
+   - 4.7. Sàn Giao thương B2B Marketplace (`/marketplace`, `/marketplace/my-quotes`)
+   - 4.8. Truyền thông, Tài liệu & Biểu quyết (`/news`, `/documents`, `/voting`, `/email-marketing`)
+   - 4.9. Quản trị Nền tảng, Phân quyền & Kiểm toán Bất biến (`/platform/admins`, `/platform/audit`, `/platform/renewal-audit`)
+5. [HƯỚNG DẪN THAO TÁC ỨNG DỤNG HỘI VIÊN HIỆP HỘI (ASSOCIATION APP `/association`)](#5-hướng-dẫn-thao-tác-ứng-dụng-hội-viên-hiệp-hội-association-app-association)
+   - 5.1. Cổng Đăng nhập Mobile Chuẩn mực (`/auth/mobile/`)
+   - 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
+   - 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
+   - 5.4. Lịch Sự kiện, Vé Điện tử & QR Check-in (`/association/events`, `/association/checkin`)
+   - 5.5. Tra cứu & Nộp Niên liễm Trực tuyến VietQR (`/association/renew`, `/association/renew/pay`, `/association/renew/result`)
+   - 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
+   - 5.7. Kho Đặc quyền Doanh nghiệp & Thư viện Tài liệu (`/association/perks`, `/association/library`)
+   - 5.8. Hộp thư Trao đổi với Ban Thư ký & Hồ sơ Cá nhân (`/association/messages`, `/association/profile`)
+6. [HƯỚNG DẪN THAO TÁC ỨNG DỤNG MẠNG DOANH NHÂN VIONE CONNECT (`/connect-app`)](#6-hướng-dẫn-thao-tác-ứng-dụng-mạng-doanh-nhân-vione-connect-connect-app)
+   - 6.1. Onboarding & Kích hoạt Danh thiếp Thông minh NFC (`/connect-app/activate`)
+   - 6.2. Bảng tin B2B Social & Đăng Khoảnh khắc Doanh nghiệp (`/connect-app/moment`)
+   - 6.3. Mạng lưới Quan hệ & Ghép nối AI Đối tác (`/connect-app/network`)
+   - 6.4. Trò chuyện Mã hóa Trực tiếp & Trao đổi Profile (`/connect-app/inbox`)
+   - 6.5. Điều phối Cuộc hẹn Giao thương 1-on-1 (`/business-connect/meetings`)
+   - 6.6. Trung tâm Thẻ số Cá nhân & Bộ nhớ Quan hệ AI (`/connect-app/me`, `/business-connect/memory`)
+7. [BẢNG MÃ TRẠNG THÁI NGHIỆP VỤ & TỪ ĐIỂN DỮ LIỆU](#7-bảng-mã-trạng-thái-nghiệp-vụ--từ-điển-dữ-liệu)
+8. [XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING & FAQS)](#8-xử-lý-sự-cố-thường-gặp-troubleshooting--faqs)
 
 ---
 
-# 1. TIẾN ĐỘ THỰC HIỆN & BẢN ĐỒ PHÂN HỆ ĐÃ HOÀN THIỆN
+# 1. TỔNG QUAN HỆ SINH THÁI & KIẾN TRÚC ĐA NỀN TẢNG
 
-Hệ thống ViOne bao gồm 3 phân hệ ứng dụng trọng tâm: **Hệ thống Web CRM Quản trị**, **Ứng dụng Mobile PWA Hội viên (`/m`)** và **Ứng dụng Kết nối Doanh nhân ViOne Connect (`/connect-app`)**. Toàn bộ các phân hệ dưới đây đã được xây dựng, sửa lỗi và nghiệm thu hoạt động ổn định 100%:
+## 1.1. Tầm nhìn chiến lược & Ranh giới 3 phân hệ
+Hệ sinh thái ViOne được thiết kế nhằm giải quyết bài toán cốt lõi: **Xóa bỏ tình trạng quản lý thủ công rời rạc bằng Excel và Zalo trong các Hiệp hội Doanh nghiệp**, đồng thời thiết lập cầu nối xúc tiến thương mại B2B thực chất giữa hàng chục nghìn doanh nhân trên cả nước.
 
-| Phân hệ / Tính năng | Mô tả chức năng & Khắc phục chuyên sâu | Trạng thái | Đường dẫn truy cập |
-| :--- | :--- | :---: | :--- |
-| **Quy Chuẩn Logo ViOne** | Chữ "O" đặc quyền có **điểm nứt khuyết góc trên bên phải, cánh vòm chevron và dấu chấm kim cương độc bản**, thay thế hoàn toàn chữ o liền cũ | **100% Hoàn thành** | Toàn bộ hệ thống & `ViOneLogo.tsx` |
-| **Cổng Đăng Nhập Hội Viên Xanh - Trắng** | Phân hệ Hội viên Hiệp hội chuyển đổi chuẩn màu **Xanh - Trắng (Royal Blue `#004B91`, Sky Blue `#0284C7`, Nền Trắng Sáng `#F0F7FF`)**, loại bỏ hoàn toàn gam màu vàng/amber theo đúng yêu cầu nhận diện CLB CEO 1983 | **100% Hoàn thành** | `/auth`, `/m`, `/connect-app` |
-| **CRM Sổ Quỹ Thu Chi** | Đã sửa triệt để lỗi phân trang `paged: pageRows` không làm crash màn hình; hỗ trợ thêm, sửa, lọc và đính kèm hóa đơn chứng từ | **100% Hoàn thành** | `/income` & `/expenses` |
-| **Báo Cáo Tài Chính Đa Chiều** | 4 Thẻ KPI dòng tiền, Biểu đồ trực quan so sánh Thu - Chi theo tháng, Phân tích cơ cấu %, Sổ cái kế toán toàn diện, Xuất Excel/CSV và In PDF | **100% Hoàn thành** | `/finance-report` |
-| **Sơ Đồ Ghế Sân Khấu Động** | Khóa ghế đã chọn với icon `Lock` và tooltip đại biểu, hỗ trợ thêm/bớt hàng, thêm/bớt ghế và bố trí dải ghế vòm sân khấu `SK-01` đến `SK-06` | **100% Hoàn thành** | `/event-registrations` & `/events` |
-| **Cột Thao Tác Mặc Định CRM** | Hiển thị mặc định icon Chỉnh sửa (`Pencil`) và Xóa (`Trash2`) trên từng dòng dữ liệu Hội phí, Doanh nghiệp, Hội viên | **100% Hoàn thành** | `/fees`, `/companies`, `/members` |
-| **Trạm Điểm Danh Check-in 1 Chạm** | Nhận diện mã QR E-Ticket và thẻ NFC đại biểu trong 0.2 giây, đồng bộ số ghế đại biểu lên màn hình điều hành | **100% Hoàn thành** | `/checkin-qr` |
-| **Notification Hub App Hội Viên** | Bộ lọc 6 danh mục (*Tất cả, Chưa đọc, B2B, Sự kiện, Hội phí, Đã ẩn*), chấm tròn phát sáng neon unread, đánh dấu tất cả đã đọc | **100% Hoàn thành** | `/m/notifications` |
-| **App Hội Viên PWA** | Bảng tin tin tức nội bộ, tra cứu danh bạ C-Level, nộp hội phí QR Napas 247, đặt chỗ sự kiện nhận vé điện tử E-Ticket | **100% Hoàn thành** | `/m`, `/m/news`, `/m/fees` |
-| **ViOne Connect 1-Tap NFC & QR** | Chạm thẻ cứng NFC Native 1 chạm, quét mã QR camera live laser chuẩn phong cách Zalo tự động nhận diện tức thì | **100% Hoàn thành** | `/connect-app/network` |
-| **Số Hóa Danh Thiếp AI OCR** | Tự động quét và bóc tách thông tin danh thiếp giấy truyền thống bằng AI, tự điền hồ sơ danh bạ | **100% Hoàn thành** | `/connect-app/card-scan` |
-| **Sàn Giao Thương B2B & AI Matcher** | Đăng tin Cung - Cầu, thuật toán AI phân tích từ khóa và tính điểm tương thích đối tác (Match Score) | **100% Hoàn thành** | `/connect-app/community/:id/opportunities` |
-| **Lịch Hẹn 1-on-1 & Tin Nhắn Socket** | Mời hẹn đối tác, đồng bộ lịch công tác, trao đổi tài liệu và danh thiếp số qua kênh chat mã hóa thời gian thực | **100% Hoàn thành** | `/connect-app/meetings` & `/connect-app/inbox` |
-| **Đa Ngôn Ngữ & Danh Tính Số** | Hỗ trợ 8 ngôn ngữ quốc tế (*Việt, Anh, Nhật, Hàn, Trung, Lào, Khmer, Myanmar*), tùy biến giao diện Sáng / Tối | **100% Hoàn thành** | `/connect-app/me` |
-
----
-
-## 1.1. CHUẨN MỰC NHẬN DIỆN LOGO VIONE: CHỮ "O" ĐIỂM NỨT & DẤU CHẤM KIM CƯƠNG
-- **Định vị hình học**: Trong biểu tượng chữ thương hiệu (Wordmark) "ViOne", chữ **"O"** tuyệt đối **KHÔNG PHẢI** là hình tròn khép kín đơn thuần (Plain O).
-- **Cấu trúc đặc quyền**:
-  1. **Vòng nhẫn vàng với điểm nứt (Notched Golden Ring)**: Vòng elip tỷ lệ chuẩn vàng bị cắt mở một góc thanh thoát ở vị trí góc trên bên phải (hướng 1 giờ đến 2 giờ).
-  2. **Dấu chấm kim cương (Diamond Dot)**: Một viên ngọc kim cương hình thoi đa giác góc cạnh tọa lạc chính xác tại điểm nứt phía trên, tạo cảm giác một tinh tú đang tỏa sáng kết nối.
-  3. **Cánh vòm chevron & chữ V lồng ghép bên trong**: Các dải gradient ánh kim (`#AB6D3C` qua `#FDE6B4`) hội tụ vào tâm, tượng trưng cho đỉnh cao khát vọng vươn tầm của doanh nhân.
-- **Áp dụng đồng bộ**: Cả dạng Logo độc lập (`ViOneEmblem`) và Logo chữ đầy đủ (`ViOneLogo`) trong mã nguồn `apps/vione_app_fe/src/components/business-connect/mobile/ViOneLogo.tsx` đều đã được chuẩn hóa theo đúng cấu trúc SVG vector chuẩn mực này.
-
----
-
-## 1.2. CHUẨN MỰC 2 CỔNG ĐĂNG NHẬP (PORTAL THEMING SYSTEM)
-Hệ thống cung cấp thanh gạt chuyển đổi tức thì (Segmented Switcher) giữa 2 phân hệ chuyên biệt tại màn hình đăng nhập:
-
-### A. Cổng Doanh nhân ViOne Connect (`appPortal = "connect"`)
-- **Phong cách**: Hoàng gia Doanh nhân Tinh hoa (Royal Luxury Dark & Gold).
-- **Màu sắc chủ đạo**: Nền đen sâu thẳm `#050c15`, Ánh kim vàng champagne `#D8B282`, Điểm nhấn viền vàng `#AB6D3C`.
-- **Huy hiệu hiển thị**: Logo thương hiệu ViOne Wordmark kèm phụ đề *BUSINESS CONNECT*.
-- **Mục đích**: Dành cho giao thương mở rộng, quét danh thiếp số, sàn cơ hội quốc tế.
-
-### B. Cổng Hội viên Hiệp hội CLB CEO 1983 (`appPortal = "association"`)
-- **Phong cách**: Nhận diện Chuẩn mực Hiệp hội Doanh nhân (Professional Blue & White).
-- **Màu sắc chủ đạo**: 
-  - **Nền chính**: Gradient trắng tuyết pha xanh băng dịu mắt `from-[#F0F7FF] via-[#FFFFFF] to-[#EBF4FE]`.
-  - **Màu thương hiệu nhấn**: Xanh hoàng gia Royal Blue `#004B91` kết hợp Xanh biển sâu Sky Blue `#0284C7`.
-  - **Trường nhập liệu (Input)**: Nền trắng tinh khiết, viền xanh thanh lịch `border-blue-200`, khi focus chuyển viền xanh `#0284C7` kèm bóng đổ mờ xanh ngọc.
-  - **Nút đăng nhập chính**: Gradient xanh đa chiều `bg-gradient-to-r from-[#004B91] via-[#0284C7] to-[#0369A1]`, chữ trắng đậm nổi bật `text-white font-bold`, bóng đổ xanh cao cấp `shadow-blue-500/25`.
-  - **Huy hiệu hiển thị**: Logo chính thức của CLB Doanh Nhân CEO 1983 (`/landing/ceo1983-official-logo.png`) đặt trong khung bo tròn 16px viền xanh sang trọng.
-  - **Khẩu hiệu**: *"Kết nối đồng niên • Nâng tầm giá trị"*.
-- **Mục đích**: Không gian sinh hoạt nội bộ của hội viên, quản lý biểu quyết, nộp hội phí, nhận vé E-Ticket sự kiện.
-
----
-
-# 2. MA TRẬN PHÂN QUYỀN VAI TRÒ HỆ THỐNG (RBAC ROLE & PERMISSION MATRIX)
-
-Hệ thống ViOne áp dụng mô hình phân quyền chặt chẽ dựa trên vai trò (Role-Based Access Control - RBAC) nhằm đảm bảo tính an toàn dữ liệu và tuân thủ phân định trách nhiệm:
-
-### 2.1. Danh sách 8 Vai trò Người dùng:
-1. **SUPER_ADMIN (Quản trị viên Cấp cao)**: Toàn quyền truy cập, cấu hình tham số hệ thống, phân quyền quản trị chi hội, xem toàn bộ dữ liệu tài chính và nhật ký kiểm toán (Audit Trail).
-2. **BRANCH_ADMIN (Trưởng Chi hội / Chapter President)**: Quản lý hội viên thuộc chi hội phụ trách, duyệt đăng ký sự kiện nội khối, theo dõi báo cáo thu chi chi hội.
-3. **SECRETARY (Ban Thư ký)**: Thẩm định hồ sơ hội viên mới, quản lý danh bạ doanh nghiệp, gửi thông báo đại hội, điều phối danh sách đại biểu sự kiện.
-4. **FINANCE_ADMIN (Ban Tài chính / Kế toán - Thủ quỹ)**: Tạo phiếu thu/chi, quản lý đợt thu hội phí, đối soát tài khoản ngân hàng, xuất báo cáo tài chính kế toán.
-5. **EVENT_MANAGER (Ban Tổ chức Sự kiện)**: Tạo sự kiện, thiết kế sơ đồ ghế rạp chiếu và sân khấu, điều hành trạm quét vé check-in, quản lý nhà tài trợ.
-6. **OFFICIAL_MEMBER (Hội viên Chính thức)**: Sử dụng đầy đủ tính năng App Hội viên và ViOne Connect: Xem danh bạ, nộp phí, đăng cơ hội B2B, mời hẹn 1-on-1, biểu quyết điện tử.
-7. **ASSOCIATE_MEMBER (Hội viên Liên kết)**: Xem tin tức, tham dự sự kiện mở, đăng tối đa 3 cơ hội B2B/tháng, không có quyền biểu quyết đại hội.
-8. **GUEST (Khách mời / Ứng viên)**: Đăng ký tham quan, xem hồ sơ công khai, nhận vé mời khách VIP tại sự kiện.
-
-### 2.2. Bảng Ma Trận Phân Quyền Chi Tiết:
-
-| Phân hệ / Thao tác | SUPER_ADMIN | BRANCH_ADMIN | SECRETARY | FINANCE_ADMIN | EVENT_MANAGER | OFFICIAL_MEMBER | ASSOCIATE_MEMBER |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Quản lý Hội viên (`/members`)** | Toàn quyền | Xem / Sửa chi hội | Thẩm định / Duyệt | Chỉ xem | Chỉ xem | Xem danh bạ | Xem hạn chế |
-| **Xóa / Đổi quyền Hội viên** | Có | Không | Không | Không | Không | Không | Không |
-| **Sơ đồ Ghế Sự kiện (`/events`)** | Toàn quyền | Xem chi hội | Phân bổ đại biểu | Không | Thiết kế / Khóa | Đặt chỗ cá nhân | Đặt chỗ khách |
-| **Trạm Check-in (`/checkin-qr`)** | Toàn quyền | Xem realtime | Vận hành trạm | Không | Vận hành trạm | Xuất trình vé QR | Xuất trình vé QR |
-| **Sổ Quỹ Thu Chi (`/income`, `/expenses`)**| Toàn quyền | Xem chi hội | Không | Toàn quyền | Đề xuất chi phí | Không | Không |
-| **Báo Cáo Tài Chính (`/finance-report`)**| Toàn quyền | Báo cáo chi hội | Không | Toàn quyền | Báo cáo sự kiện | Không | Không |
-| **Nhà Tài Trợ (`/sponsors`)** | Toàn quyền | Quản lý chi hội | Soạn hợp đồng | Ghi nhận tiền | Bố trí logo | Xem quyền lợi | Không |
-| **Biểu Quyết Đại Hội (`/voting`)** | Tạo / Giám sát | Tạo chi hội | Kiểm phiếu | Không | Không | Bỏ phiếu | Không |
-| **Sàn Cơ Hội B2B (`/opportunities`)** | Kiểm duyệt | Kiểm duyệt chi hội| Hỗ trợ ghép nối | Không | Hỗ trợ gian hàng | Đăng không giới hạn| Đăng tối đa 3 tin |
-| **Lịch Hẹn 1-on-1 (`/meetings`)** | Quản trị | Quản trị chi hội | Theo dõi kết nối | Không | Không | Tạo & Đồng ý | Tạo & Đồng ý |
-
----
-
-# 3. MÔ HÌNH CƠ SỞ DỮ LIỆU & CÁC BẢNG LƯU TRỮ (DATABASE SCHEMA & ENTITIES)
-
-Hệ thống ViOne vận hành trên nền tảng Cơ sở Dữ liệu Quan hệ với Schema chuẩn hóa cao độ thông qua Prisma ORM:
-
-```mermaid
-erDiagram
-    vione_users ||--o{ user_profiles : "has"
-    vione_users ||--o{ members : "belongs_to"
-    members ||--o{ company_members : "owns_or_works"
-    members ||--o{ fee_payments : "pays"
-    events ||--o{ event_ticket_types : "defines"
-    events ||--o{ event_registrations : "registers"
-    event_registrations ||--o{ member_checkins : "logs"
-    events ||--o{ seat_allocations : "maps"
-    incomes }o--|| members : "received_from"
-    expenses }o--|| events : "incurred_for"
-    opportunities ||--o{ opportunity_matches : "generates"
-    meetings }o--|| members : "hosts_and_attends"
-    sponsors ||--o{ sponsor_packages : "subscribes"
-    vione_users ||--o{ notifications : "receives"
+Kiến trúc hệ thống phân định rành mạch 3 trụ cột:
+```
+                                   ┌────────────────────────────────────────┐
+                                   │      CỔNG THÔNG TIN LANDING WEB        │
+                                   │   (/, /landing, /landing/ceo1983)      │
+                                   └───────────────────┬────────────────────┘
+                                                       │
+                           ┌───────────────────────────┴───────────────────────────┐
+                           ▼                                                       ▼
+       ┌───────────────────────────────────────┐               ┌───────────────────────────────────────┐
+       │     HỆ THỐNG WEB CRM QUẢN TRỊ         │               │     ỨNG DỤNG HỘI VIÊN HIỆP HỘI        │
+       │           (CRM ADMIN)                 │               │          (/association/*)             │
+       │   Dành cho: BCH, Thư ký, Kế toán      │ ◄───────────► │   Dành cho: Hội viên chính thức       │
+       │   Quản lý Hội viên, Thu chi, Sự kiện  │   Dữ liệu     │   Đăng nhập: /auth/mobile/            │
+       │   và Báo cáo Tài chính minh bạch      │   đồng bộ     │   Điểm danh QR, Niên liễm VietQR      │
+       └───────────────────┬───────────────────┘   thời gian   └───────────────────┬───────────────────┘
+                           │                          thực                         │
+                           │                                                       │
+                           └───────────────────────────┬───────────────────────────┘
+                                                       │
+                                                       ▼
+                                   ┌───────────────────────────────────────┐
+                                   │    MẠNG XÃ HỘI DOANH NHÂN VIONE       │
+                                   │           (/connect-app/*)            │
+                                   │   Dành cho: Toàn thể Doanh nhân B2B   │
+                                   │   Chạm NFC, Khoảnh khắc, Lịch hẹn 1-1 │
+                                   └───────────────────────────────────────┘
 ```
 
-### Chi tiết các Bảng Dữ Liệu Cốt Lõi:
+1. **Web CRM Quản trị (Desktop Web)**: Bộ công cụ vận hành toàn năng của Ban Thư ký và Ban Lãnh đạo Hiệp hội. Chịu trách nhiệm thẩm định hội viên, xuất hóa đơn niên liễm, cấu hình sơ đồ ghế sự kiện, ghi nhật ký thu chi kế toán và giám sát vết kiểm toán bất biến.
+2. **Ứng dụng Hội viên Hiệp hội (Association Mobile App `/association`)**: Ứng dụng PWA di động được tùy biến thương hiệu riêng cho từng Hiệp hội (ví dụ CLB Doanh nhân CEO 1983). Phục vụ hội viên tra cứu danh bạ nội bộ, nhận vé điện tử QR tham dự sự kiện, thanh toán niên liễm tự động qua VietQR và xuất trình thẻ hội viên điện tử.
+3. **Mạng Xã hội Doanh nhân ViOne Connect (`/connect-app`)**: Không gian giao thương mở liên kết đa hiệp hội. Cho phép các chủ doanh nghiệp chia sẻ khoảnh khắc kinh doanh, kết nối đối tác thông qua thuật toán AI Matching, lên lịch hẹn B2B 1-on-1 và số hóa danh thiếp giấy truyền thống.
 
-| Tên Bảng (Database Table) | Khóa Chính | Khóa Ngoại Liên Kết | Mục Đích Lưu Trữ & Trường Dữ Liệu Trọng Tâm |
+## 1.2. Chuẩn mực Nhận diện Thương hiệu & Quy chuẩn Giao diện
+Để tránh nhầm lẫn giữa các phân hệ, hệ thống tuân thủ nghiêm ngặt 2 phong cách nhận diện:
+
+| Tiêu chí | Cổng Hội Viên Hiệp hội (`/association`) | Mạng Xã hội ViOne Connect (`/connect-app`) |
+| :--- | :--- | :--- |
+| **Gam màu chủ đạo** | **Royal Blue & Pure White** (Xanh `#004B91`, `#0284C7`, Nền `#F0F7FF`) | **Luxury Dark & Champagne Gold** (Nền đen mun `#0A0A0C`, Ánh kim `#E5B869`) |
+| **Biểu tượng Logo** | Logo Hiệp hội thành viên kết hợp Logo ViOne cách điệu | Chữ "O" đặc quyền có **khuyết vòm góc trên và chấm kim cương** |
+| **Đối tượng sử dụng** | Hội viên chính thức đã được phê duyệt của từng Hiệp hội | Toàn bộ cộng đồng doanh nhân, khách hàng mua thẻ số ViOne |
+| **Cổng đăng nhập** | `/auth/mobile` (Hỗ trợ nhập Mã hội viên, Email, Quét thẻ NFC/QR) | `/auth` (Hỗ trợ Google SSO, Apple ID, Email & Password) |
+
+## 1.3. Cấu hình Tuyến đường (URL Routing) & Cơ chế Điều hướng Chuẩn hóa
+Nhằm tối ưu hóa trải nghiệm di động và bảo toàn tính toàn vẹn của hệ thống:
+- **Tuyến đường Đăng nhập Di động**: Được chuẩn hóa thành `/auth/mobile` (thay thế hoàn toàn `/m/login`).
+- **Tuyến đường App Hiệp hội**: Được chuyển đổi toàn bộ tiền tố từ `/m/*` sang `/association/*` (ví dụ: `/association/news`, `/association/events`, `/association/renew`, `/association/card`, `/association/members`).
+- **Cơ chế Tương thích Ngược (Backwards Compatibility)**: Toàn bộ liên kết cũ `/m/*` được cấu hình **HTTP 301 Client-side Redirect** tự động sang `/association/*`. Người dùng click vào link bookmark cũ sẽ không bao giờ bị lỗi 404 hay trắng màn hình.
+
+---
+
+# 2. MA TRẬN VAI TRÒ & PHÂN QUYỀN TRUY CẬP (RBAC & PERSONAS)
+
+## 2.1. Danh sách Nhân vật Vận hành (Personas) & Tài khoản Thao tác
+Để phục vụ kiểm thử và vận hành chuẩn mực, các tài khoản định danh sau được phân bổ:
+
+| Vai trò (Persona) | Tài khoản mẫu | Mã / Định danh | Trách nhiệm chính |
 | :--- | :--- | :--- | :--- |
-| `vione_users` | `id` (UUID) | `role_id` -> `user_roles.id` | Tài khoản đăng nhập, email, hash mật khẩu, vai trò hệ thống, trạng thái kích hoạt, thời điểm đăng nhập cuối. |
-| `user_profiles` | `id` (UUID) | `user_id` -> `vione_users.id` | Hồ sơ cá nhân: Họ tên, avatar, chức vụ, số điện thoại, mạng xã hội, NFC chip UID, bio cá nhân. |
-| `members` | `id` (UUID) | `user_id`, `branch_id` | Hồ sơ hội viên chính thức: Mã hội viên (`CEO83-xxx`), chi hội, ngày gia nhập, ngày hết hạn, điểm tín nhiệm. |
-| `company_members` | `id` (UUID) | `member_id` -> `members.id` | Thông tin doanh nghiệp: Tên công ty, MST, địa chỉ trụ sở, ngành nghề, quy mô nhân sự, doanh thu năm. |
-| `events` | `id` (UUID) | `branch_id`, `created_by` | Sự kiện, đại hội: Tên sự kiện, thời gian bắt đầu/kết thúc, địa điểm, cấu hình sơ đồ ghế, tổng số vé. |
-| `seat_allocations` | `id` (UUID) | `event_id`, `member_id` | Sơ đồ ghế hội trường: Mã ghế (`A-04`, `SK-02`), phân loại (`STANDARD`, `VIP`, `STAGE`), trạng thái khóa (`is_locked`). |
-| `event_registrations` | `id` (UUID) | `event_id`, `member_id` | Bản ghi đăng ký sự kiện: Mã vé QR điện tử (`ticket_code`), ghế đã chọn, trạng thái thanh toán vé. |
-| `member_checkins` | `id` (UUID) | `registration_id`, `gate_id` | Nhật ký điểm danh check-in: Thời điểm quét (timestamp), phương thức quét (`QR_SCAN` hoặc `NFC_TAP`), thiết bị quét. |
-| `fees` | `id` (UUID) | `branch_id`, `fiscal_year` | Danh mục kỳ thu hội phí: Năm tài chính, số tiền quy định cho từng hạng hội viên, hạn nộp cuối cùng. |
-| `fee_payments` | `id` (UUID) | `fee_id`, `member_id` | Lịch sử nộp hội phí: Số tiền nộp, mã giao dịch ngân hàng, biên lai thanh toán, trạng thái gạch nợ. |
-| `incomes` | `id` (UUID) | `member_id`, `fee_id` | Sổ quỹ Thu: Mã phiếu thu (`REC-xxxx`), ngày thu, khoản mục, người nộp, số tiền, hình thức nộp (CK/Tiền mặt). |
-| `expenses` | `id` (UUID) | `event_id`, `approved_by` | Sổ quỹ Chi: Mã phiếu chi (`PAY-xxxx`), ngày chi, người nhận, hạng mục chi phí, chứng từ hóa đơn đỏ đính kèm. |
-| `opportunities` | `id` (UUID) | `creator_id` -> `members.id` | Tin giao thương B2B: Phân loại (`SUPPLY` hoặc `DEMAND`), tiêu đề, quy cách hàng hóa, ngân sách thầu, hạn đóng. |
-| `opportunity_matches` | `id` (UUID) | `opportunity_id`, `target_id`| Kết quả khớp nối AI: Điểm tương thích (`match_score`), lý do ghép nối, trạng thái tương tác hai bên. |
-| `meetings` | `id` (UUID) | `host_id`, `guest_id` | Cuộc hẹn B2B 1-on-1: Tiêu đề, địa điểm/link online, thời gian hẹn, trạng thái (`PENDING`, `ACCEPTED`, `CANCELLED`). |
-| `sponsors` | `id` (UUID) | `event_id`, `company_id` | Doanh nghiệp tài trợ: Hạng tài trợ, gói tài trợ đăng ký, quyền lợi hiển thị logo, bài phát biểu đại hội. |
-| `notifications` | `id` (UUID) | `recipient_id` -> `users.id`| Thông báo hệ thống: Phân loại (`B2B`, `EVENT`, `FEE`, `SYSTEM`), tiêu đề, nội dung, cờ đã đọc (`is_read`), link hành động. |
-| `demo_leads` | `id` (UUID) | — | Khách hàng tiềm năng đăng ký: Họ tên, số điện thoại, email, tổ chức hiệp hội, nhu cầu vận hành. |
+| **Super Admin / Platform Admin** | `admin@connect.vn` | `00000000-0000-4000-8000-000000000002` | Quản trị nền tảng đa tổ chức, phân quyền Admin, giám sát Audit Log toàn hệ thống |
+| **Chủ tịch CLB / Trưởng ban** | `ceo.president@ceo1983.com` | `M1983-001` (Trần Quang Anh) | Phê duyệt nhân sự Ban Chấp Hành, ký duyệt ngân sách và chủ trì biểu quyết |
+| **Hội viên Ban Chấp Hành (BCH)** | `james.nguyen@ceo1983.com` | `M1983-002` (James Nguyễn) | Phó Chủ tịch phụ trách công nghệ, kiểm duyệt sự kiện và kết nối B2B |
+| **Ban Thư ký & Vận hành** | `thuky@ceo1983.com` | `SEC-1983-01` | Tiếp nhận hồ sơ gia nhập, tạo sự kiện, điều phối bàn check-in sự kiện |
+| **Kế toán Trưởng Hiệp hội** | `ketoan@ceo1983.com` | `ACC-1983-01` | Lập hóa đơn niên liễm, theo dõi sổ quỹ thu chi, đối soát thanh toán VietQR |
+| **Hội viên Thường (Sắp đến hạn)** | `nam.nguyen@ceo1983.com` | `M1983-005` (Nguyễn Hoàng Nam) | Hội viên có hạn thẻ còn dưới 30 ngày (Due), thực hiện gia hạn niên liễm |
+| **Hội viên Thường (Quá hạn)** | `thanh.le@ceo1983.com` | `M1983-009` (Lê Văn Thành) | Hội viên quá hạn đóng phí (Overdue), bị khóa quyền truy cập một số đặc quyền |
+| **Khách vãng lai / Ứng viên mới** | `khoi.dang@khoiminhtech.vn` | `CANDIDATE-099` (Đặng Minh Khôi) | Khách tìm hiểu từ Web Landing, nộp đơn đăng ký xét duyệt gia nhập |
+
+## 2.2. Ma trận Phân quyền Chức năng (Permission Matrix)
+
+| Phân hệ / Chức năng | Super Admin | Chủ tịch / BCH | Thư ký Hội | Kế toán | Hội viên Chính thức | Khách vãng lai |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Xem Dashboard Tổng quan (`/`)** | Toàn quyền | Toàn quyền | Toàn quyền | Toàn quyền | ❌ | ❌ |
+| **Phê duyệt Đơn đăng ký (`/members`)** | Toàn quyền | Duyệt cuối | Thẩm định | Chỉ xem | ❌ | Nộp đơn |
+| **Bổ nhiệm Chức vụ BCH** | Toàn quyền | Toàn quyền | ❌ | ❌ | ❌ | ❌ |
+| **Tạo & Quản lý Sự kiện (`/events`)** | Toàn quyền | Phê duyệt | Toàn quyền | Phối hợp | Xem & Đăng ký | Xem tin tức |
+| **Quét QR Check-in (`/checkin`)** | Toàn quyền | Toàn quyền | Toàn quyền | ❌ | Xuất trình QR | ❌ |
+| **Phát hành Hóa đơn Phí (`/fees`)** | Toàn quyền | Phê duyệt | Phối hợp | Toàn quyền | Nhận hóa đơn | ❌ |
+| **Nộp Niên liễm VietQR (`/association/renew`)** | Toàn quyền | Thực hiện | Thực hiện | Thực hiện | Toàn quyền | ❌ |
+| **Sổ Quỹ Thu Chi (`/income`, `/expenses`)** | Toàn quyền | Xem & Duyệt | Nhập liệu | Toàn quyền | ❌ | ❌ |
+| **Xem Báo cáo Tài chính (`/finance-report`)** | Toàn quyền | Toàn quyền | Chỉ xem | Toàn quyền | Xem công khai | ❌ |
+| **Đăng sản phẩm Marketplace (`/marketplace`)**| Toàn quyền | Duyệt tin | Duyệt tin | ❌ | Đăng & Bán | Mua / Xem |
+| **Quản trị Phân quyền & Audit Log** | Toàn quyền | Chỉ xem | ❌ | ❌ | ❌ | ❌ |
+| **Mạng xã hội B2B Moments (`/connect-app`)** | Toàn quyền | Toàn quyền | Toàn quyền | Toàn quyền | Toàn quyền | Xem giới hạn |
 
 ---
 
-# 4. KIẾN TRÚC & LUỒNG ĐI CHI TIẾT CỦA DỮ LIỆU (END-TO-END DATA FLOWS)
+# 3. HÀNH TRÌNH NGƯỜI DÙNG KHÉP KÍN (END-TO-END USER JOURNEYS)
 
-Mỗi tương tác của người dùng trên hệ thống đều tuân theo luồng truyền nhận khép kín, được bảo vệ qua các lớp thẩm thực JWT, Audit Trail và đồng bộ WebSocket thời gian thực:
-
-## 4.1. Luồng Tiếp nhận Hồ sơ & Thẩm định Hội viên mới
-
+## 3.1. Hành trình 1: Khách vãng lai ➔ Đăng ký gia nhập ➔ Thẩm định ➔ Cấp mã Hội viên
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Candidate as Ứng viên / Doanh nhân
-    participant CRM as Web CRM Portal
-    participant BE as Backend NestJS
-    participant DB as Database (Postgres)
-    participant Notif as Notification Hub
-    actor Secretary as Ban Thư ký
+    actor Guest as Khách Doanh nghiệp
+    participant Web as Web Landing (/landing/ceo1983)
+    participant CRM as CRM Admin (/members)
+    participant Sec as Ban Thư ký
+    participant DB as PostgreSQL DB
+    participant Mail as Email Service
 
-    Candidate->>CRM: Điền form ứng tuyển / Đăng ký hội viên
-    CRM->>BE: POST /api/members/apply (Thông tin cá nhân & Công ty)
-    BE->>DB: INSERT into `vione_users` (Status: PENDING) & `members`
-    BE->>Notif: Trigger Thông báo "Hồ sơ mới chờ thẩm định"
-    Notif->>Secretary: Hiển thị chấm đỏ thông báo trên CRM
-    Secretary->>CRM: Mở tab "Hồ sơ Chờ duyệt" (/members)
-    Secretary->>CRM: Kiểm tra MST, Ngành nghề, Bấm "Phê duyệt"
-    CRM->>BE: PATCH /api/members/:id/vet (action: APPROVE, branchId, memberCode)
-    BE->>DB: UPDATE `members` SET status = 'ACTIVE', member_code = 'CEO83-099'
-    BE->>DB: INSERT `user_profiles` (Khởi tạo danh tính số & thẻ NFC)
-    BE->>Notif: Gửi email & Push notification thông báo cấp mã hội viên
-    Notif-->>Candidate: Nhận thông báo kích hoạt App Hội viên & ViOne Connect
+    Guest->>Web: Truy cập Landing Page, điền Form đăng ký gia nhập
+    Web->>DB: Lưu bản ghi vào demo_requests (status='new')
+    Web-->>Guest: Thông báo "Hồ sơ của bạn đã được gửi tới Ban Thư ký"
+    Sec->>CRM: Mở danh sách hồ sơ chờ duyệt tại /members
+    Sec->>CRM: Thẩm định hồ sơ công ty, đối chiếu Mã số thuế
+    Sec->>CRM: Nhấn "Phê duyệt" & Cấp mã Hội viên M1983-099
+    CRM->>DB: Cập nhật demo_requests (status='completed')
+    CRM->>DB: INSERT INTO members (code='M1983-099', status='active', term_end=NOW()+1y)
+    CRM->>DB: Ghi log vào activity_log (category='member')
+    CRM->>Mail: Gửi thư chào mừng kèm tài khoản & mã QR định danh
+    Mail-->>Guest: Nhận thông báo kích hoạt & đường dẫn tải App
 ```
 
----
-
-## 4.2. Luồng Thiết kế Sơ đồ Ghế, Xếp chỗ Sân khấu & Điểm danh 1 chạm
-
+## 3.2. Hành trình 2: Quản lý Hội phí ➔ Xuất Hóa đơn ➔ Thanh toán VietQR ➔ Tự động Gia hạn (+1 năm)
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Organizer as Ban Tổ Chức
-    participant Cinema as CinemaSeatingMap (/events)
-    participant BE as Backend Engine
-    participant DB as Postgres DB
-    actor Member as Đại biểu / Hội viên
-    participant Mobile as App Hội Viên (/m/events)
-    participant Gate as Trạm Check-in (/checkin-qr)
+    actor Member as Hội viên M1983-005
+    participant App as App Hội viên (/association/renew)
+    participant Gate as Cổng VietQR Napas 247
+    participant Hook as Webhook Handler (/api/webhook/payment)
+    participant DB as PostgreSQL DB
+    participant Acc as Kế toán Hiệp hội
 
-    Organizer->>Cinema: Thêm hàng ghế (A, B, C...) & Dải ghế sân khấu SK-01...SK-06
-    Cinema->>BE: POST /api/events/:id/seats (Tọa độ ghế & Loại ghế)
-    BE->>DB: INSERT `seat_allocations` (is_locked = false)
-    Member->>Mobile: Xem sự kiện, mở sơ đồ ghế trực quan
-    Mobile->>BE: GET /api/events/:id/seats-status
-    BE->>Mobile: Trả về trạng thái ghế (ghế nào đã bị khóa hiển thị Lock)
-    Member->>Mobile: Chọn ghế A-04 và bấm "Xác nhận Đặt chỗ"
-    Mobile->>BE: POST /api/events/:id/book-seat (seatId: A-04)
-    BE->>DB: UPDATE `seat_allocations` SET is_locked = true, member_id = Member.id
-    BE->>DB: INSERT `event_registrations` (ticket_code: QR-E8391A)
-    BE-->>Mobile: Cấp Vé điện tử E-Ticket QR kèm số ghế A-04
-    Note over Member,Gate: Ngày diễn ra sự kiện tại hội trường
-    Member->>Gate: Đưa mã QR trên vé hoặc chạm thẻ NFC vào máy quét
-    Gate->>BE: POST /api/events/checkin (ticketCode hoặc nfcUid)
-    BE->>DB: INSERT `member_checkins` (timestamp, gateId)
-    BE->>DB: UPDATE `event_registrations` SET status = 'ATTENDED'
-    BE-->>Gate: 0.2s phản hồi Thành công: "Đại biểu Nguyễn Văn A - Ghế A-04"
+    Member->>App: Mở App, thấy cảnh báo "Hạn thẻ còn 15 ngày"
+    Member->>App: Nhấn "Gia hạn Niên liễm ngay" -> /association/renew/pay
+    App->>Gate: Yêu cầu sinh mã VietQR động (10,000,000 VND)
+    Gate-->>App: Trả về hình ảnh VietQR kèm mã tham chiếu TXN-VIONE-998822
+    Member->>Gate: Dùng App Ngân hàng quét QR và xác nhận chuyển khoản
+    Gate->>Hook: Bắn Webhook báo nhận tiền thành công
+    Hook->>DB: Giao dịch nguyên tử (ACID Transaction):
+    Note over DB: 1. UPDATE invoices SET status='paid', paid_at=CURRENT_DATE<br/>2. UPDATE members SET term_end=term_end + INTERVAL '1 year', renewed_at=CURRENT_DATE<br/>3. INSERT INTO renewal_audit_log (event_type='payment', amount=10000000)
+    Hook-->>App: Đẩy tín hiệu Realtime qua WebSocket
+    App-->>Member: Hiển thị màn hình Chúc mừng /association/renew/result & Cấp Thẻ hạn mới
+    Acc->>DB: Đối soát sổ quỹ tại /income & /finance-report
 ```
 
----
-
-## 4.3. Luồng Quản lý Dòng tiền Thu - Chi & Tự động Lập Báo cáo Kế toán
-
+## 3.3. Hành trình 3: Tạo Sự kiện ➔ Xếp ghế Sân khấu ➔ Phát hành Vé QR ➔ Check-in Cổng Tốc độ cao
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Member as Hội viên
-    participant Napas as Cổng QR Napas 247
-    participant FinanceAdmin as Ban Tài chính / Kế toán
-    participant IncomeExp as Sổ Quỹ Thu Chi (/income, /expenses)
-    participant FinReport as Động cơ Báo cáo Tài chính (/finance-report)
-    participant DB as Database
+    actor Admin as Ban Sự kiện
+    actor Member as Hội viên M1983-002
+    participant CRM as CRM Sự kiện (/events)
+    participant App as App Hội viên (/association/events)
+    participant Door as Trạm Quét Check-in (/checkin)
+    participant DB as PostgreSQL DB
 
-    Member->>Napas: Quét mã QR nộp hội phí 20.000.000đ
-    Napas->>DB: Webhook Ngân hàng ghi nhận giao dịch thành công
-    DB->>DB: INSERT `fee_payments` & INSERT `incomes` (Mã REC-0091)
-    FinanceAdmin->>IncomeExp: Tạo phiếu chi Gala âm thanh ánh sáng (/expenses)
-    IncomeExp->>DB: INSERT `expenses` (Mã PAY-0042, Số tiền: 18.000.000đ)
-    Note over FinReport,DB: Ban Lãnh đạo vào xem Báo cáo Tài chính
-    FinanceAdmin->>FinReport: Mở trang `/finance-report`, chọn kỳ kế toán "Quý này"
-    FinReport->>DB: Query SUM(incomes) & SUM(expenses) theo tháng
-    FinReport->>FinReport: Tính toán 4 KPI: Tổng thu, Tổng chi, Số dư ròng, Tỷ lệ thu phí
-    FinReport->>FinReport: Vẽ biểu đồ so sánh dòng tiền & Cơ cấu nguồn thu/chi
-    FinReport->>FinReport: Render Sổ cái kế toán chi tiết từng mã REC / PAY
-    FinanceAdmin->>FinReport: Bấm "Xuất File Excel / CSV" hoặc "In Báo Cáo PDF"
-    FinReport-->>FinanceAdmin: Tải file báo cáo kế toán chuẩn mực về máy tính
+    Admin->>CRM: Khởi tạo sự kiện "Gala Doanh nhân CEO 1983", cấu hình 250 chỗ ngồi
+    Admin->>CRM: Vẽ sơ đồ ghế sân khấu VIP (SK-01 đến SK-06)
+    CRM->>DB: INSERT INTO events (status='published', capacity=250)
+    Member->>App: Mở danh sách sự kiện, nhấn "Đăng ký tham dự"
+    App->>DB: INSERT INTO event_registrations (status='confirmed', qr_payload='QR-CEO1983-EVT-001')
+    App-->>Member: Hiển thị Vé Điện tử E-Ticket QR tại /association/checkin
+    Note over Member,Door: Ngày diễn ra sự kiện tại Khách sạn / Trung tâm Hội nghị
+    Member->>Door: Đưa mã QR trên màn hình điện thoại trước camera trạm quét
+    Door->>DB: Quét nhận diện trong 0.2s: UPDATE event_registrations SET checked_in_at=NOW()
+    Door-->>Member: Âm thanh Bíp thành công & Hiển thị "Chào mừng Đại biểu James Nguyễn - Ghế VIP SK-02"
 ```
 
----
-
-## 4.4. Luồng Giao thương B2B, Ghép nối AI Copilot & Lịch hẹn 1-on-1
-
+## 3.4. Hành trình 4: Kết nối Giao thương B2B ➔ Trao đổi Danh thiếp NFC ➔ Nhắn tin ➔ Lịch hẹn 1-on-1
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Buyer as Doanh nghiệp Mua (Demand)
-    participant ConnectApp as App ViOne Connect
-    participant AICopilot as Động cơ AI Matcher
-    participant DB as Database
-    actor Supplier as Doanh nghiệp Cung cấp (Supply)
+    actor A as Doanh nhân A (James Nguyễn)
+    actor B as Doanh nhân B (Đặng Minh Khôi)
+    participant NFC as Thẻ Vật lý ViOne NFC
+    participant VNE as Mạng Xã hội (/connect-app)
+    participant Chat as Realtime Chat (/connect-app/inbox)
+    participant Mtg as Điều phối Lịch hẹn (/business-connect/meetings)
 
-    Buyer->>ConnectApp: Đăng nhu cầu: "Cần tìm nhà thầu xây dựng nhà xưởng 5.000m2"
-    ConnectApp->>DB: INSERT `opportunities` (type: DEMAND, budget: 15 tỷ)
-    DB->>AICopilot: Phân tích Vector Embeddings & Trích xuất từ khóa ngành nghề
-    AICopilot->>DB: Quét hồ sơ doanh nghiệp trong `company_members`
-    AICopilot->>DB: Tìm thấy 3 Doanh nghiệp xây dựng có năng lực phù hợp (>90% Match)
-    AICopilot->>DB: INSERT `opportunity_matches` (match_score = 94%)
-    AICopilot->>ConnectApp: Bắn gợi ý đối tác khớp nối tới cả hai bên
-    Buyer->>ConnectApp: Xem hồ sơ nhà thầu -> Bấm "Đặt lịch hẹn 1-on-1"
-    ConnectApp->>DB: INSERT `meetings` (status: PENDING, proposed_time)
-    DB->>Supplier: Gửi thông báo mời họp kèm nội dung nhu cầu
-    Supplier->>ConnectApp: Bấm "Đồng ý lời mời gặp gỡ"
-    ConnectApp->>DB: UPDATE `meetings` SET status = 'ACCEPTED'
-    ConnectApp->>ConnectApp: Tự động ghi nhận vào Lịch công tác (/connect-app/calendar)
-    ConnectApp->>ConnectApp: Mở kênh chat mã hóa trao đổi hồ sơ dự thầu (/connect-app/inbox)
+    A->>NFC: Chạm thẻ thông minh vào điện thoại Doanh nhân B
+    NFC-->>B: Mở tức thì Hồ sơ năng lực & Danh thiếp số của Doanh nhân A
+    B->>VNE: Nhấn nút "Gửi lời mời kết nối B2B" kèm lời chào
+    A->>VNE: Nhận thông báo đẩy Push Notification, nhấn "Đồng ý"
+    Note over A,B: Thiết lập quan hệ kết nối chính thức trong bảng connections
+    A->>Chat: Mở khung chat trực tiếp, trao đổi tài liệu Catalogue giải pháp
+    A->>Mtg: Khởi tạo đề xuất Cuộc hẹn 1-on-1: "Thảo luận hợp tác AI ERP"
+    Mtg-->>B: Gửi thông báo đề xuất khung giờ: 09:30 Thứ Ba tại Keangnam 72
+    B->>Mtg: Nhấn "Xác nhận đồng ý"
+    Mtg->>VNE: Chuyển trạng thái meeting sang 'confirmed', tự động đồng bộ Google Calendar
 ```
 
 ---
 
-## 4.5. Luồng Trung tâm Thông báo Đa kênh Thời gian thực (Notification Hub)
+# 4. HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM QUẢN TRỊ (WEB CRM ADMIN PORTAL)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant System as Nghiệp vụ Phát sinh (Thu phí / Duyệt / Lịch hẹn / Sự kiện)
-    participant NotifEngine as Notification Engine (Backend)
-    participant WebSocket as WebSocket Gateway (Socket.IO)
-    participant DB as Postgres Database
-    actor User as Người dùng trên Mobile App (/m/notifications)
+## 4.1. Dashboard & Thống kê Chỉ số Tổng quan (`/`)
+- **Đối tượng thao tác**: Ban Lãnh đạo, Ban Thư ký, Kế toán.
+- **Quy trình thao tác**:
+  1. Đăng nhập hệ thống bằng tài khoản `admin@connect.vn`.
+  2. Tại màn hình chính (`/`), quan sát 4 thẻ KPI động:
+     - **Tổng số Hội viên**: Tổng quy mô nhân sự của câu lạc bộ, tỷ lệ tăng trưởng so với tháng trước.
+     - **Doanh thu Niên liễm lũy kế**: Tổng tiền thực thu từ niên liễm năm hiện tại.
+     - **Tỷ lệ Tái tục Hội viên**: Phần trăm hội viên đã hoàn tất gia hạn đúng hạn.
+     - **Cảnh báo Hội viên Hết hạn**: Số lượng hội viên đang nằm trong chu kỳ 30 ngày đến hạn (`due`) và quá hạn (`overdue`).
+  3. Biểu đồ tăng trưởng trực quan: Cho phép lọc theo quý hoặc năm tài chính để xem xu hướng phát triển hội quán.
 
-    System->>NotifEngine: emit('CREATE_NOTIFICATION', { userId, category, title, body })
-    NotifEngine->>DB: INSERT `notifications` (is_read = false, category: 'B2B'|'EVENT'|'FEE'|'SYSTEM')
-    NotifEngine->>WebSocket: emitToUser(userId, 'NEW_NOTIFICATION', payload)
-    WebSocket-->>User: Đẩy realtime xuống Mobile: Hiển thị chấm phát sáng Unread Badge
-    User->>User: Mở tab Thông báo (/m/notifications)
-    User->>User: Chọn tab bộ lọc "Cơ hội B2B" hoặc "Hội phí"
-    User->>User: Nhấp vào thông báo để dẫn đến trang chi tiết
-    User->>NotifEngine: PATCH /api/notifications/:id/read
-    NotifEngine->>DB: UPDATE `notifications` SET is_read = true
-    User->>User: Chấm phát sáng tự động tắt
-```
+## 4.2. Quản trị Danh bạ & Hồ sơ Hội viên 360° (`/members`, `/members/$memberId`)
+- **Danh sách Hội viên**:
+  - Truy cập `/members`: Bảng dữ liệu ứng dụng công nghệ **Sticky Columns** (Cố định STT, Mã thẻ bên trái; cố định Cột Thao tác Sửa/Xóa bên phải).
+  - Sử dụng các tab trạng thái: **Tất cả**, **Chính thức (Active)**, **Đến hạn (Due - 30 ngày)**, **Quá hạn (Overdue)**, **Đã gia hạn (Renewed)**.
+- **Thẩm định Lead mới**:
+  - Nhấn vào tab "Đơn chờ duyệt": Mở hồ sơ đăng ký từ Web Landing, kiểm tra mã số thuế và hồ sơ doanh nghiệp.
+  - Nhấn "Phê duyệt": Hệ thống mở cửa sổ nhập mã định danh thẻ (ví dụ `M1983-099`), thời hạn thẻ (mặc định 1 năm), tự động kích hoạt tài khoản và gửi email thông báo kèm mật khẩu khởi tạo.
+- **Bổ nhiệm Ban Chấp Hành (BCH)**:
+  - Mở chi tiết hội viên tại `/members/$memberId`.
+  - Tại trường `Vai trò Điều hành`, chọn chức danh: *Chủ tịch, Phó Chủ tịch thường trực, Phó Chủ tịch phụ trách đối ngoại, Trưởng ban kiểm tra, Trưởng ban hội viên*.
+  - Nhấn Lưu: Hệ thống tự động ghi nhật ký vào `activity_log` với hành động bổ nhiệm chức vụ để bảo đảm minh bạch.
 
-## 4.6. CAM ĐOAN & ĐẶC TẢ LUỒNG HOẠT ĐỘNG FULL 100% HAI CHIỀU (WEB CRM ⮂ MOBILE APP ⮂ VIONE CONNECT)
+## 4.3. Quản lý Doanh nghiệp Thành viên (`/companies`, `/companies/$companyId`)
+- **Quản lý Pháp nhân**: Mỗi hội viên chính thức đại diện cho một hoặc nhiều pháp nhân doanh nghiệp.
+- **Thao tác quản lý**:
+  - Truy cập `/companies`: Tìm kiếm doanh nghiệp theo Mã số thuế, Ngành hàng hoặc Tên công ty.
+  - Cập nhật hồ sơ năng lực: Đăng tải Logo doanh nghiệp, Brochure giới thiệu (PDF), Catalogue sản phẩm chủ lực, Website và đường dẫn video giới thiệu.
 
-Hệ thống ViOne khẳng định và cam đoan **100% các luồng nghiệp vụ hoạt động khép kín hai chiều (Two-Way Closed Loop)**, không có tình trạng "dữ liệu một chiều" hay "đứt gãy luồng" giữa Web Quản trị và Mobile PWA:
+## 4.4. Quản lý Sự kiện, Hội thảo & Điểm danh QR (`/events`, `/event-registrations`, `/checkin`)
+- **Khởi tạo Sự kiện**:
+  - Truy cập `/events` ➔ Nhấn "Thêm sự kiện mới".
+  - Nhập thông tin: Tiêu đề sự kiện, thời gian bắt đầu/kết thúc, địa điểm tổ chức, giới hạn đại biểu tối đa, mức phí tham dự (miễn phí đối với hội viên chính thức hoặc thu phí khách mời).
+- **Thiết kế Sơ đồ Khán phòng & Ghế VIP**:
+  - Sử dụng công cụ sơ đồ ghế động: Phân khu vực VIP, Ban Lãnh đạo, Đại biểu thông thường; gán mã ghế sân khấu (`SK-01` đến `SK-06`).
+- **Trạm Điểm danh Check-in Tốc độ cao (`/checkin`)**:
+  - Mở màn hình `/checkin` trên máy tính bảng hoặc laptop có webcam/máy quét laser tại bàn tiếp tân sự kiện.
+  - Khi đại biểu đưa mã QR trên ứng dụng di động vào khung quét: Hệ thống lập tức nhận diện trong 0.2 giây, hiển thị dấu tích xanh thông báo hợp lệ kèm thông tin chỗ ngồi chỉ dẫn đại biểu vào hội trường.
+  - Chống gian lận: Nếu mã QR đã quét rồi mà quét lại, hệ thống cảnh báo đỏ: *"Vé đã điểm danh lúc 08:15 bởi Lễ tân 1"*.
 
-```mermaid
-graph TD
-    subgraph WEB_CRM ["HỆ THỐNG WEB CRM QUẢN TRỊ"]
-        W1["1. Tạo Sự kiện & Sơ đồ Ghế (/events)"]
-        W2["2. Trạm Quét Check-in 1 chạm (/checkin-qr)"]
-        W3["3. Quản lý Đợt Thu Phí (/fees)"]
-        W4["4. Sổ Quỹ Thu Chi & Báo Cáo (/income, /finance-report)"]
-        W5["5. Thẩm định & Cấp mã Hội viên (/members)"]
-        W6["6. Quản trị Danh bạ Doanh nghiệp (/companies)"]
-    end
+## 4.5. Quản lý Tài chính, Niên liễm & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
+- **Phát hành Hóa đơn Thu phí Niên liễm (`/fees`)**:
+  - Nhấn "Phát hành hóa đơn mới" hoặc "Tạo hàng loạt cho kỳ niên liễm 2026-2027".
+  - Nhập mức phí quy định (ví dụ: 10,000,000 VND / năm đối với Hội viên Tiêu chuẩn).
+  - Hệ thống sinh hóa đơn lưu vào bảng `invoices` với trạng thái `unpaid` và mã VietQR thanh toán tự động.
+- **Giám sát Gia hạn Niên liễm (`/renewal`)**:
+  - Bảng theo dõi tiến độ thu hội phí toàn câu lạc bộ theo 4 nhóm cân bằng:
+    1. *Đã gia hạn (Renewed)*: Đã hoàn tất đóng phí kỳ này.
+    2. *Sắp đến hạn (Due)*: Còn dưới 30 ngày hết hạn.
+    3. *Đã quá hạn (Overdue)*: Đã quá hạn thẻ, hệ thống cảnh báo tự động gửi email/app notification.
+    4. *Kỳ tiếp theo (Upcoming)*: Hội viên mới gia nhập, hạn còn dài.
+- **Sổ Quỹ Thu Chi & Báo cáo Tài chính (`/income`, `/expenses`, `/finance-report`)**:
+  - Quản lý sổ thu chi chi tiết: Ghi nhận các khoản thu tài trợ, thu phí sự kiện và các khoản chi thuê hội trường, tổ chức teambuilding, in ấn kỷ yếu.
+  - Xuất báo cáo tài chính minh bạch: Cung cấp biểu đồ trực quan Thu so với Chi, tỷ lệ đóng góp ngân sách, hỗ trợ xuất Excel và in PDF phục vụ báo cáo đại hội thường niên.
 
-    subgraph BACKEND_ENGINE ["ĐỘNG CƠ XỬ LÝ TRUNG TÂM (CORE ENGINE)"]
-        BE1["Postgres DB & Prisma ORM"]
-        BE2["Realtime WebSocket Gateway"]
-        BE3["Napas 247 VietQR & Webhook IPN"]
-        BE4["AI Matcher & Vector Embeddings"]
-        BE5["JWT Auth & Role Enforcement"]
-    end
+## 4.6. Quản lý Quyền lợi, Đặc quyền & Nhà Tài trợ (`/benefits`, `/perks`, `/sponsors`, `/sponsor-packages`)
+- **Danh mục Quyền lợi Hiệp hội (`/benefits`)**: Quản lý trực tiếp từ cơ sở dữ liệu `public.association_benefits`. Cho phép sửa đổi nội dung cam kết giá trị của Hiệp hội đối với hội viên (đào tạo, kết nối xúc tiến, hỗ trợ pháp lý).
+- **Kho Đặc quyền Đối tác (`/perks`)**: Thiết lập các voucher giảm giá, ưu đãi du lịch, khách sạn, sân golf, phần mềm dành riêng cho hội viên.
+- **Gói Nhà Tài trợ (`/sponsors`, `/sponsor-packages`)**: Thiết lập các quyền lợi tài trợ Kim Cương, Vàng, Bạc và theo dõi tiến độ trả quyền lợi truyền thông.
 
-    subgraph MOBILE_APPS ["HỆ THỐNG MOBILE PWA HỘI VIÊN & DOANH NHÂN"]
-        M1["A. Đặt ghế & Nhận Vé E-Ticket QR (/m/events)"]
-        M2["B. Quét Napas 247 Nộp Phí Tức Thì (/m/fees)"]
-        M3["C. Trung tâm Thông báo Đa kênh (/m/notifications)"]
-        M4["D. Quét Card AI OCR & Danh thiếp NFC (/connect-app/network)"]
-        M5["E. Sàn Cơ Hội B2B & Lịch hẹn 1-on-1 (/connect-app/meetings)"]
-        M6["F. Hồ sơ Doanh nhân & Cài đặt (/connect-app/me)"]
-    end
+## 4.7. Sàn Giao thương B2B Marketplace (`/marketplace`, `/marketplace/my-quotes`)
+- **Kiểm duyệt Tin đăng Sản phẩm B2B**:
+  - Tiếp nhận các sản phẩm, giải pháp do doanh nghiệp hội viên đăng tải.
+  - Kiểm duyệt hồ sơ hợp chuẩn, chứng nhận chất lượng trước khi kích hoạt hiển thị công khai trên sàn thương mại điện tử nội bộ.
 
-    %% Luồng 1: Sự kiện & Check-in
-    W1 ==>|1. Đồng bộ cấu hình sơ đồ ghế| BE1
-    BE1 ==>|Phân phối dữ liệu sự kiện| M1
-    M1 ==>|2. Hội viên chọn ghế & sinh vé E-Ticket| BE1
-    BE1 ==>|Khóa ghế realtime (Lock icon)| W1
-    M1 -.->|3. Xuất trình vé E-Ticket QR/NFC| W2
-    W2 ==>|4. Quét vé 0.2s & Cập nhật tham dự| BE1
-    BE1 ==>|5. Báo cáo tỷ lệ tham dự realtime| W1
+## 4.8. Truyền thông, Tài liệu & Biểu quyết (`/news`, `/documents`, `/voting`, `/email-marketing`)
+- **Bản tin Hiệp hội (`/news`)**: Soạn thảo các bài viết hoạt động thiện nguyện, đại hội nhiệm kỳ, thông báo của Ban Thư ký bằng trình soạn thảo Rich Text.
+- **Kho Văn bản Quy chế (`/documents`)**: Đăng tải điều lệ hội, quy chế tài chính dạng file PDF để hội viên tải về tra cứu.
+- **Bỏ phiếu Biểu quyết Điện tử (`/voting`)**: Tổ chức các cuộc lấy ý kiến biểu quyết trực tuyến minh bạch, chống gian lận trong các kỳ đại hội.
 
-    %% Luồng 2: Thu phí & Sổ quỹ kế toán
-    W3 ==>|1. Ban hành kỳ thu phí thường niên| BE1
-    BE1 ==>|2. Bắn Notification kèm số tiền| M3
-    M3 --> M2
-    M2 ==>|3. Quét QR Napas 247 chuyển khoản| BE3
-    BE3 ==>|4. Webhook gạch nợ thành công| BE1
-    BE1 ==>|5. Tự động sinh Phiếu Thu REC-xxxx| W4
-    W4 ==>|6. Cập nhật Báo cáo Tài chính dòng tiền| W4
-    BE1 ==>|7. Gửi biên lai điện tử về máy| M3
-
-    %% Luồng 3: Thẩm định hội viên & Danh bạ
-    M6 ==>|1. Nộp hồ sơ ứng viên & MST| BE1
-    BE1 ==>|2. Báo có hồ sơ mới cần duyệt| W5
-    W5 ==>|3. Thư ký bấm duyệt cấp mã CEO83-xxx| BE1
-    BE1 ==>|4. Kích hoạt vai trò OFFICIAL_MEMBER| BE5
-    BE5 ==>|5. Mở khóa toàn bộ tính năng App| M1 & M2 & M5
-    W5 ==>|6. Dữ liệu công ty tự động lưu danh bạ| W6
-
-    %% Luồng 4: Giao thương B2B & AI Matching
-    M5 ==>|1. Đăng tin Cung - Cầu| BE4
-    BE4 ==>|2. Ghép đôi đối tác phù hợp >90%| M5
-    M5 ==>|3. Mời họp 1-on-1 & Nhắn tin| BE2
-    BE1 ==>|4. Tổng hợp giá trị kết nối giao thương| W6
-```
-
-### Bảng Đối Soát 5 Chu Kỳ Nghiệp Vụ Khép Kín 100%:
-
-| Chu Kỳ Nghiệp Vụ | Chiều Đi (Web CRM ➔ Mobile) | Xử Lý Tại Mobile PWA | Chiều Về (Mobile ➔ Web CRM) | Cam Đoan Khép Kín |
-| :--- | :--- | :--- | :--- | :---: |
-| **1. Sự Kiện & Ghế Ngồi & Check-in** | Ban Tổ Chức dựng sơ đồ ghế khán phòng và vòm sân khấu `SK-01`...`SK-06` trên Web CRM (`/events`) | Hội viên trên mobile xem sơ đồ, chọn ghế ưng ý, hệ thống khóa ghế mờ chống trùng và sinh mã vé QR E-Ticket cá nhân hóa | Đại biểu đưa mã vé QR trước camera trạm `/checkin-qr` (hoặc chạm thẻ NFC), màn hình lễ tân báo xanh "Tít" trong 0.2s, ghế chuyển sang trạng thái "Đã check-in" trên CRM | **Đạt 100%** |
-| **2. Quản Trị Phí & Dòng Tiền Sổ Quỹ** | Ban Tài chính tạo đợt thu hội phí thường niên (`/fees`) trên CRM | Mobile nhận thông báo đẩy kèm cờ phát sáng unread, mở màn hình nộp phí hiển thị mã QR Động Napas 247 đã gán sẵn nội dung mã hội viên | Sau khi quét QR nộp tiền, Webhook ngân hàng tự động đối soát: gạch nợ trên CRM, **tự động sinh Phiếu Thu (`REC-xxxx`) trong Sổ Quỹ `/income`** và cập nhật tức thì vào Báo Cáo Tài Chính `/finance-report` | **Đạt 100%** |
-| **3. Thẩm Định Hồ Sơ & Cấp Danh Tính Số** | Ban Thư ký tiếp nhận hồ sơ trên CRM (`/members`), kiểm tra MST, bấm "Phê duyệt" và gán mã hội viên `CEO83-xxx` | Mobile của hội viên lập tức nhận thông báo chào mừng, hồ sơ chuyển sang tích xanh chính thức, kích hoạt quyền biểu quyết và sàn B2B | Mọi cập nhật thông tin doanh nghiệp, catalogue sản phẩm từ mobile (`/connect-app/me`) tự động đồng bộ vào Danh bạ Doanh nghiệp CRM (`/companies`) | **Đạt 100%** |
-| **4. Giao Thương B2B & Lịch Hẹn Doanh Nhân** | Ban Lãnh đạo thiết lập các phòng ban chuyên môn và theo dõi báo cáo kết nối trên CRM | Doanh nhân đăng tin Cung - Cầu, AI Matcher tự động tính điểm tương thích, gửi lời mời hẹn gặp 1-on-1 và chat trao đổi tài liệu | Dữ liệu biên bản ghi nhớ hợp tác và giá trị giao dịch ước tính được cập nhật về báo cáo tổng kết chi hội trên CRM | **Đạt 100%** |
-| **5. Thông Báo Đa Kênh Thời Gian Thực** | Bất kỳ hành động nào trên Web CRM (Duyệt hồ sơ, đổi giờ họp, nhận tiền phí, thông báo khẩn) | WebSocket Gateway lập tức đẩy gói tin xuống Mobile trong 50ms: icon chuông thông báo nhảy số unread badge, chấm phát sáng neon kích hoạt | Khi hội viên bấm đọc trên mobile, trạng thái `is_read = true` được ghi ngược về Database, làm sạch số lượng thông báo chưa đọc trên toàn hệ thống | **Đạt 100%** |
+## 4.9. Quản trị Nền tảng, Phân quyền & Kiểm toán Bất biến (`/platform/admins`, `/platform/audit`, `/platform/renewal-audit`)
+- **Cấp phát Tài khoản Admin (`/platform/admins`)**: Quản lý danh sách thư ký, quản trị viên, áp dụng xác thực đa yếu tố.
+- **Nhật ký Hoạt động Bất biến (`/platform/audit`)**: Lưu giữ mọi vết thay đổi trong hệ thống (ai làm gì, thời gian nào, địa chỉ IP nào). Không một người dùng nào (kể cả Admin) có thể sửa hoặc xóa nhật ký này.
+- **Kiểm toán Niên liễm (`/platform/renewal-audit`)**: Bảng kê chi tiết toàn bộ các giao dịch gia hạn hội phí, lưu vết mã ngân hàng và tham chiếu giao dịch.
 
 ---
 
-# 5. DANH MỤC API BACKEND & ĐẶC TẢ REQUEST / RESPONSE
+# 5. HƯỚNG DẪN THAO TÁC ỨNG DỤNG HỘI VIÊN HIỆP HỘI (ASSOCIATION APP `/association`)
 
-Toàn bộ các yêu cầu gọi API từ Frontend Web CRM, App Hội viên PWA và App ViOne Connect đều qua cổng Gateway chuẩn RESTful JSON:
+## 5.1. Cổng Đăng nhập Mobile Chuẩn mực (`/auth/mobile/`)
+- **Đường dẫn chuẩn**: `http://<domain>/auth/mobile/`
+- **Phương thức đăng nhập linh hoạt**:
+  1. **Nhập Mã Hội viên**: Nhập mã thẻ định danh (ví dụ `M1983-002`) và mật khẩu.
+  2. **Quét Thẻ NFC / Mã QR**: Chạm thẻ vật lý vào lưng điện thoại hoặc bật camera quét mã QR in trên thẻ để vào app ngay tức thì trong 1 giây.
+  3. **Chuyển đổi Hiệp hội**: Đối với doanh nhân sinh hoạt tại nhiều CLB, giao diện cho phép chọn đúng chi hội cần thao tác.
 
-```http
-Content-Type: application/json
-Authorization: Bearer <JWT_ACCESS_TOKEN>
-```
+## 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
+- **Dashboard Di động**:
+  - Thẻ thông tin hội viên điện tử thu nhỏ: Hiển thị ảnh đại diện, họ tên, mã số thẻ và trạng thái hội viên (*Chính thức / Sắp đến hạn / Đã gia hạn*).
+  - Lưới lối tắt tiện ích 1-chạm: *Điểm danh sự kiện, Danh bạ hội viên, Nộp hội phí, Thẻ danh thiếp số, Hộp thư thư ký*.
+- **Bản tin Hoạt động (`/association/news`)**:
+  - Đọc tin tức mới nhất từ Ban Thư ký, thông báo lịch sinh hoạt định kỳ, hình ảnh sự kiện đã diễn ra.
 
----
+## 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
+- **Tra cứu Doanh nghiệp Đồng môn**:
+  - Tìm kiếm hội viên theo họ tên, phân ban hoạt động, hoặc ngành nghề kinh doanh (Bất động sản, Công nghệ, Xây dựng, Tài chính,...).
+- **Tương tác 1-Chạm**:
+  - Nút **Gọi điện**: Mở trình gọi điện thoại native liên hệ trực tiếp với Chủ tịch hoặc Giám đốc công ty đối tác.
+  - Nút **Lưu danh bạ**: Tải file vCard lưu trực tiếp thông tin vào danh bạ điện thoại cá nhân.
 
-## 5.1. APIs Xác thực & Quản lý Phiên (Auth)
+## 5.4. Lịch Sự kiện, Vé Điện tử & QR Check-in (`/association/events`, `/association/checkin`)
+- **Đăng ký Sự kiện**:
+  - Mở `/association/events` ➔ Nhấn "Đăng ký tham gia Gala Doanh nhân".
+  - Chọn số lượng khách mời đi kèm (nếu có).
+- **Vé Điện tử E-Ticket**:
+  - Mở `/association/checkin`: Ứng dụng hiển thị mã QR cỡ lớn, rõ nét, có hiệu ứng chống chụp ảnh màn hình gian lận.
+  - Xuất trình mã QR tại cổng để lễ tân quét điểm danh vào khán phòng.
 
-### `POST /api/auth/login`
-- **Mục đích**: Đăng nhập hệ thống bằng email hoặc số điện thoại.
-- **Request Body**:
-  ```json
-  {
-    "username": "ceo.nguyen@vietgroup.vn",
-    "password": "Password@2026"
-  }
-  ```
-- **Response `200 OK`**:
-  ```json
-  {
-    "statusCode": 200,
-    "accessToken": "eyJhbGciOiJIUzI1NiIsIn...",
-    "user": {
-      "id": "usr_78a1bc90",
-      "fullName": "Nguyễn Văn Tuấn",
-      "role": "OFFICIAL_MEMBER",
-      "memberCode": "CEO83-099",
-      "branchId": "brn_hanoi_01",
-      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
-    }
-  }
-  ```
+## 5.5. Tra cứu & Nộp Niên liễm Trực tuyến VietQR (`/association/renew`, `/association/renew/pay`, `/association/renew/result`)
+- **Theo dõi Hạn thẻ**:
+  - Màn hình `/association/renew` hiển thị đồng hồ đếm ngược số ngày còn lại của nhiệm kỳ hiện tại.
+  - Khi thẻ sắp hết hạn (dưới 30 ngày): Ứng dụng hiển thị nút cảnh báo màu vàng cam *"Gia hạn Niên liễm kỳ 2026-2027"*.
+- **Thanh toán VietQR Napas 247 Siêu tốc**:
+  - Nhấn "Gia hạn ngay" ➔ Chuyển vào `/association/renew/pay`.
+  - Màn hình hiển thị mã VietQR tiêu chuẩn quốc gia: Tự động điền đúng Số tài khoản Hiệp hội, Số tiền (10,000,000 VND) và Cú pháp nộp phí (`CEO1983 M1983-005 RENEW`).
+  - Hội viên chỉ cần chụp ảnh màn hình hoặc mở app ngân hàng quét mã để chuyển khoản.
+- **Gia hạn Ngay Lập tức & Nhận Chứng nhận**:
+  - Ngay sau khi chuyển khoản, cổng Webhook nhận diện giao dịch thành công.
+  - Màn hình tự động chuyển sang `/association/renew/result`: Hiển thị biên nhận thu tiền điện tử, thời hạn thẻ tự động kéo dài thêm 1 năm và cấp chứng nhận số.
 
-### `GET /api/auth/profile`
-- **Mục đích**: Lấy thông tin phiên làm việc và danh sách quyền hạn của người dùng hiện tại.
+## 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
+- **Thẻ 3D Flip Độc bản**:
+  - Chạm vào thẻ trên màn hình để lật mặt trước (ảnh đại diện, chức vụ, logo hiệp hội) và mặt sau (mã QR vCard, hotline, địa chỉ văn phòng).
+- **Chia sẻ Nhanh Chóng**:
+  - Đưa mã QR cho đối tác quét trực tiếp bằng camera điện thoại để lưu danh bạ mà không cần cài thêm ứng dụng ngoài.
 
----
+## 5.7. Kho Đặc quyền Doanh nghiệp & Thư viện Tài liệu (`/association/perks`, `/association/library`)
+- **Sử dụng Voucher Đối tác (`/association/perks`)**: Lấy mã giảm giá độc quyền dành riêng cho hội viên tại các nhà hàng, khu nghỉ dưỡng đối tác.
+- **Tải Tài liệu Quy chế (`/association/library`)**: Tải về điều lệ hội và các biểu mẫu bổ sung hồ sơ doanh nghiệp.
 
-## 5.2. APIs Hội viên & Thẩm định (Members & Vetting)
-
-### `GET /api/members`
-- **Tham số truy vấn (Query Params)**: `page=1&limit=20&branchId=brn_hanoi_01&status=ACTIVE&search=Nguyen`
-- **Response `200 OK`**:
-  ```json
-  {
-    "total": 1250,
-    "page": 1,
-    "limit": 20,
-    "items": [
-      {
-        "id": "mem_89f0a2",
-        "memberCode": "CEO83-088",
-        "fullName": "Trần Thị Mai Anh",
-        "companyName": "Công ty CP Công Nghệ Sao Vàng",
-        "position": "Tổng Giám Đốc",
-        "status": "ACTIVE",
-        "branch": "Chi hội Hà Nội",
-        "joinedAt": "2024-01-15T08:00:00Z"
-      }
-    ]
-  }
-  ```
-
-### `PATCH /api/members/:id/vet`
-- **Mục đích**: Ban Thư ký phê duyệt hoặc từ chối hồ sơ ứng viên.
-- **Request Body**:
-  ```json
-  {
-    "action": "APPROVE",
-    "branchId": "brn_hanoi_01",
-    "memberCode": "CEO83-125",
-    "notes": "Hồ sơ đầy đủ giấy phép kinh doanh và doanh thu kiểm toán đạt chuẩn."
-  }
-  ```
-- **Response `200 OK`**: `{"success": true, "message": "Phê duyệt hội viên chính thức thành công"}`
-
-### `DELETE /api/members/:id`
-- **Mục đích**: Xóa hồ sơ hội viên (yêu cầu quyền `SUPER_ADMIN`).
+## 5.8. Hộp thư Trao đổi với Ban Thư ký & Hồ sơ Cá nhân (`/association/messages`, `/association/profile`)
+- **Trao đổi Trực tiếp (`/association/messages`)**: Kênh chat riêng tư gửi thắc mắc hoặc đề xuất hợp tác trực tiếp tới Văn phòng Ban Thư ký.
+- **Cập nhật Hồ sơ (`/association/profile`)**: Thay đổi thông tin liên lạc, đổi mật khẩu và xem lịch sử các hoạt động đã tham gia.
 
 ---
 
-## 5.3. APIs Sự kiện, Sơ đồ Ghế & Check-in (Events & Seatings)
+# 6. HƯỚNG DẪN THAO TÁC ỨNG DỤNG MẠNG DOANH NHÂN VIONE CONNECT (`/connect-app`)
 
-### `GET /api/events/:id/seats-status`
-- **Mục đích**: Lấy sơ đồ trạng thái ghế hội trường thời gian thực cho `CinemaSeatingMap.tsx`.
-- **Response `200 OK`**:
-  ```json
-  {
-    "eventId": "evt_gala_2026",
-    "totalSeats": 450,
-    "occupiedCount": 312,
-    "stageSeats": [
-      { "seatId": "SK-01", "label": "Chủ tịch Hội đồng", "isOccupied": true, "occupantName": "Nguyễn Văn A" },
-      { "seatId": "SK-02", "label": "Phó Chủ tịch Thường trực", "isOccupied": false }
-    ],
-    "rows": [
-      {
-        "rowLetter": "A",
-        "seats": [
-          { "seatId": "A-01", "isOccupied": true, "occupantName": "Vũ Minh Khôi", "company": "Viconnect" },
-          { "seatId": "A-02", "isOccupied": false }
-        ]
-      }
-    ]
-  }
-  ```
+## 6.1. Onboarding & Kích hoạt Danh thiếp Thông minh NFC (`/connect-app/activate`)
+- Chạm thẻ vật lý ViOne vào thiết bị ➔ Ứng dụng mở trang kích hoạt ➔ Nhập mã PIN bảo mật in trên hộp thẻ ➔ Liên kết thẻ với hồ sơ doanh nhân số.
+- Thiết lập thông tin danh thiếp: Ảnh đại diện, video giới thiệu doanh nghiệp, các liên kết mạng xã hội (Facebook, LinkedIn, Zalo, Website).
 
-### `POST /api/events/:id/book-seat`
-- **Mục đích**: Hội viên đặt vị trí ghế ngồi cụ thể.
-- **Request Body**: `{"seatId": "A-04", "notes": "Cần hỗ trợ bàn VIP"}`
-- **Response `201 Created`**:
-  ```json
-  {
-    "registrationId": "reg_99a81",
-    "seatId": "A-04",
-    "ticketCode": "QR-E8391A",
-    "qrDataUrl": "data:image/png;base64,iVBORw0KGgoAAA..."
-  }
-  ```
+## 6.2. Bảng tin B2B Social & Đăng Khoảnh khắc Doanh nghiệp (`/connect-app/moment`)
+- **Chia sẻ Cơ hội Kinh doanh**:
+  - Đăng bài tìm kiếm nhà cung cấp, tìm đại lý phân phối, hoặc chia sẻ thành tựu sản xuất kinh doanh mới.
+  - Hỗ trợ đính kèm hình ảnh sắc nét và file tài liệu năng lực.
+- **Tương tác Giao thương**:
+  - Các doanh nhân khác có thể Thả tim quan tâm, để lại bình luận kết nối hợp tác, hoặc chuyển tiếp bài viết vào tin nhắn nội bộ.
 
-### `POST /api/events/checkin`
-- **Mục đích**: Trạm Check-in `/checkin-qr` xác nhận đại biểu qua mã QR hoặc thẻ NFC.
-- **Request Body**: `{"ticketCode": "QR-E8391A", "nfcUid": "04A1B2C3D4"}`
-- **Response `200 OK`**:
-  ```json
-  {
-    "status": "CHECKIN_SUCCESS",
-    "delegate": {
-      "fullName": "Nguyễn Văn Tuấn",
-      "company": "Tập đoàn Việt Tuấn",
-      "role": "CHỦ TỌA ĐOÀN",
-      "seatId": "SK-01",
-      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
-    },
-    "checkedInAt": "2026-09-12T19:05:22Z"
-  }
-  ```
+## 6.3. Mạng lưới Quan hệ & Ghép nối AI Đối tác (`/connect-app/network`)
+- **Động cơ Gợi ý Thông minh AI**: Thuật toán phân tích ngành nghề kinh doanh, quy mô doanh nghiệp và lịch sử quan tâm để gợi ý danh sách đối tác tiềm năng nhất.
+- **Thiết lập Quan hệ**: Gửi lời mời kết nối B2B kèm lời chào mở đầu. Khi đối tác chấp nhận, cả 2 bên sẽ trở thành liên hệ chính thức trong mạng lưới.
+
+## 6.4. Trò chuyện Mã hóa Trực tiếp & Trao đổi Profile (`/connect-app/inbox`)
+- Nhắn tin bảo mật thời gian thực giữa hai chủ doanh nghiệp.
+- Tính năng gửi kèm Danh thiếp Thông minh số hoặc Hồ sơ năng lực công ty trực tiếp trong luồng chat.
+
+## 6.5. Điều phối Cuộc hẹn Giao thương 1-on-1 (`/business-connect/meetings`)
+- **Khởi tạo Cuộc hẹn**:
+  - Chọn đối tác cần gặp ➔ Nhấn "Lên lịch hẹn B2B".
+  - Lựa chọn hình thức: *Gặp trực tiếp tại văn phòng, Cà phê trao đổi, Ăn trưa làm việc, hoặc Họp video trực tuyến*.
+  - Đề xuất ngày giờ và địa điểm cụ thể.
+- **Xác nhận & Đồng bộ Lịch**:
+  - Phía đối tác nhận thông báo, có thể chọn Đồng ý, Từ chối hoặc Đề xuất lại giờ khác.
+  - Khi cuộc hẹn được chốt (`confirmed`): Hệ thống tự động đồng bộ vào Google Calendar / Apple Calendar của cả hai bên.
+
+## 6.6. Trung tâm Thẻ số Cá nhân & Bộ nhớ Quan hệ AI (`/connect-app/me`, `/business-connect/memory`)
+- **Tùy biến Thẻ số Cá nhân**: Thay đổi theme màu sắc, giao diện Sáng/Tối, sắp xếp các khối nội dung ưu tiên.
+- **Bộ nhớ Quan hệ AI (Relationship Memory)**:
+  - Ghi chép nhật ký các lần gặp gỡ đối tác (ngày nào, tại sự kiện gì, hai bên đã thống nhất những điều khoản nào).
+  - Trợ lý AI gợi ý chủ đề trò chuyện phù hợp dựa trên thông tin chung của 2 bên nhằm gia tăng tỷ lệ chốt deal.
 
 ---
 
-## 5.4. APIs Tài chính, Thu Chi & Hội phí (Finance & Fees)
+# 7. BẢNG MÃ TRẠNG THÁI NGHIỆP VỤ & TỪ ĐIỂN DỮ LIỆU
 
-### `GET /api/finance/overview`
-- **Mục đích**: Cung cấp dữ liệu cho Báo cáo Tài chính Chuyên sâu (`/finance-report`).
-- **Query Params**: `period=this_quarter` (hoặc `this_month`, `this_year`, `all_time`)
-- **Response `200 OK`**:
-  ```json
-  {
-    "kpis": {
-      "totalIncome": 1250000000,
-      "totalExpense": 420000000,
-      "netMargin": 830000000,
-      "collectionRate": 94.2
-    },
-    "monthlyCashflow": [
-      { "month": "T1", "income": 320000000, "expense": 90000000 },
-      { "month": "T2", "income": 450000000, "expense": 180000000 },
-      { "month": "T3", "income": 480000000, "expense": 150000000 }
-    ],
-    "incomeCategories": [
-      { "category": "Hội phí thường niên", "amount": 812500000, "percentage": 65 },
-      { "category": "Tài trợ sự kiện", "amount": 312500000, "percentage": 25 },
-      { "category": "Hợp tác thương mại", "amount": 125000000, "percentage": 10 }
-    ],
-    "expenseCategories": [
-      { "category": "Thuê mặt bằng & Âm thanh", "amount": 189000000, "percentage": 45 },
-      { "category": "Tiệc Gala & Tiếp đón", "amount": 147000000, "percentage": 35 },
-      { "category": "Ấn phẩm & Danh thiếp số", "amount": 84000000, "percentage": 20 }
-    ]
-  }
-  ```
-
-### `POST /api/incomes` & `POST /api/expenses`
-- **Tạo Phiếu Thu**:
-  ```json
-  {
-    "title": "Thu hội phí thường niên 2026 - Chi hội Hải Phòng",
-    "category": "MEMBERSHIP_FEE",
-    "amount": 20000000,
-    "paymentMethod": "BANK_TRANSFER",
-    "receivedDate": "2026-09-12",
-    "payerName": "Doanh nhân Lê Văn Cường",
-    "proofDocumentUrl": "https://storage.vione.vn/receipts/rec_0091.pdf"
-  }
-  ```
+| Thực thể (Entity) | Cột trạng thái (Field) | Giá trị hợp lệ (Valid Values) | Ý nghĩa nghiệp vụ & Quy tắc chuyển trạng thái |
+| :--- | :--- | :--- | :--- |
+| **Hội viên (`members`)** | `status` | `active` | Hội viên chính thức đang hoạt động bình thường, đầy đủ quyền lợi |
+| | | `pending` | Hồ sơ mới nộp, đang trong giai đoạn thẩm định của Thư ký |
+| | | `suspended` | Tạm ngưng hoạt động do quá hạn đóng phí hoặc vi phạm quy chế |
+| | | `resigned` | Đã có đơn xin rút lui khỏi câu lạc bộ hiệp hội |
+| **Trạng thái Gia hạn** | Tính toán động | `renewed` | Đã thanh toán hội phí niên liễm cho kỳ hiện tại |
+| | | `due` | Còn dưới 30 ngày là đến ngày hết hạn thẻ (`term_end - NOW() <= 30d`) |
+| | | `overdue` | Đã quá ngày hết hạn mà chưa đóng phí (`term_end < NOW()`) |
+| | | `upcoming` | Còn trên 30 ngày hết hạn, hội viên sinh hoạt bình thường |
+| **Hóa đơn (`invoices`)** | `status` | `unpaid` | Hóa đơn mới phát hành, đang chờ hội viên thanh toán |
+| | | `paid` | Đã thanh toán thành công, ghi nhận doanh thu kế toán |
+| | | `overdue` | Đã quá hạn ngày thanh toán quy định trên hóa đơn |
+| **Sự kiện (`events`)** | `status` | `draft` | Bản nháp đang biên tập, chưa công bố ra ngoài |
+| | | `published` | Đã xuất bản công khai, hội viên có thể xem và đăng ký vé |
+| | | `completed` | Sự kiện đã kết thúc, đóng cổng đăng ký và điểm danh |
+| | | `cancelled` | Sự kiện bị hủy bỏ do lý do bất khả kháng |
+| **Vé Sự kiện (`registrations`)**| `status` | `confirmed` | Đã đăng ký vé thành công, đã cấp mã QR Check-in |
+| | | `attended` | Đã quét mã QR tại bàn lễ tân, đã vào hội trường |
+| | | `cancelled` | Đại biểu báo bận, đã hủy đăng ký tham dự |
+| **Lịch hẹn (`business_meetings`)**| `status` | `proposed` | Lời mời hẹn mới được tạo, chờ đối tác phản hồi |
+| | | `confirmed` | Đối tác đã đồng ý chốt lịch, đã đồng bộ lịch công tác |
+| | | `declined` | Đối tác báo bận từ chối cuộc hẹn |
+| | | `completed` | Cuộc gặp gỡ B2B đã diễn ra thành công |
+| | | `cancelled` | Cuộc hẹn bị hủy bỏ |
 
 ---
 
-## 5.5. APIs Cơ hội Giao thương B2B & AI Matcher (B2B & AI)
+# 8. XỬ LÝ SỰ CỐ THƯỜNG GẶP (TROUBLESHOOTING & FAQS)
 
-### `POST /api/connect-app/opportunities`
-- **Mục đích**: Đăng tin Cung - Cầu trên sàn B2B.
-- **Request Body**:
-  ```json
-  {
-    "type": "DEMAND",
-    "title": "Cần tìm nhà cung cấp vật liệu xây dựng dự án resort 10ha",
-    "description": "Cần 50.000 tấn thép xây dựng Hòa Phát tiêu chuẩn ASTM và 100.000 bao xi măng.",
-    "budget": 50000000000,
-    "deadline": "2026-10-30T17:00:00Z",
-    "region": "MIEN_BAC"
-  }
-  ```
+### Q1: Hội viên truy cập vào link cũ `/m/events` thì có bị lỗi không?
+- **Trả lời**: Hoàn toàn không. Hệ thống đã cài đặt bộ điều hướng tự động 301. Bất kỳ đường dẫn nào bắt đầu bằng `/m/*` sẽ tự động chuyển tiếp mượt mà sang `/association/*` mà không làm gián đoạn trải nghiệm của hội viên.
 
-### `GET /api/connect-app/opportunities/:id/matches`
-- **Mục đích**: Lấy danh sách đối tác được AI Copilot tính toán gợi ý.
-- **Response `200 OK`**:
-  ```json
-  {
-    "opportunityId": "opp_9921",
-    "matches": [
-      {
-        "partnerId": "mem_0019",
-        "companyName": "Tập Đoàn Thép Thăng Long",
-        "representative": "Phạm Hồng Quân",
-        "matchScore": 96,
-        "matchReason": "Có hồ sơ phân phối cấp 1 Thép Hòa Phát và kho bãi tại Hải Phòng."
-      }
-    ]
-  }
-  ```
+### Q2: Tại sao quét mã VietQR thanh toán mà hạn thẻ chưa tự động nhảy thêm 1 năm?
+- **Trả lời**: Kiểm tra 2 điểm sau:
+  1. Nội dung chuyển khoản ngân hàng có đúng cú pháp quy định (ví dụ: `CEO1983 M1983-005 RENEW`) hay không.
+  2. Số tiền chuyển khoản có khớp chính xác với số tiền trên hóa đơn (10,000,000 VND) hay không. Nếu chuyển thiếu, hệ thống sẽ lưu vào trạng thái chờ đối soát thủ công của Kế toán.
+
+### Q3: Không thể quét được thẻ NFC trên điện thoại thông minh?
+- **Trả lời**: Hãy chắc chắn rằng:
+  1. Điện thoại đã bật tính năng NFC trong phần Cài đặt của hệ điều hành.
+  2. Chạm đúng vị trí ăng-ten NFC (với iPhone là đỉnh máy phía trên camera; với Android là chính giữa lưng máy).
+  3. Nếu ốp lưng điện thoại quá dày bằng kim loại, hãy tháo ốp ra khi chạm thẻ.
+
+### Q4: Ban Thư ký có thể thu hồi chức vụ Ban Chấp Hành của hội viên không?
+- **Trả lời**: Có. Quản trị viên chỉ cần vào chi tiết hội viên tại `/members/$memberId`, chuyển trường `executive_role` về rỗng hoặc chức danh khác. Hành động này sẽ được ghi nhận vào `activity_log` để phục vụ công tác kiểm tra của Ban Kiểm soát.
 
 ---
 
-## 5.6. APIs Lịch hẹn Doanh nhân 1-on-1 (Meetings)
+# 9. HƯỚNG DẪN VẬN HÀNH 7 PHÂN HỆ NGHIỆP VỤ CHUYÊN SÂU
 
-### `POST /api/connect-app/meetings`
-- **Request Body**:
-  ```json
-  {
-    "partnerId": "mem_0019",
-    "title": "Thương thảo hợp đồng cung ứng thép dự án Resort",
-    "proposedSlots": [
-      "2026-09-15T09:00:00Z",
-      "2026-09-15T14:30:00Z"
-    ],
-    "locationType": "OFFLINE",
-    "address": "Phòng VIP Lounge - CLB Doanh Nhân 1983"
-  }
-  ```
+## 9.1. Quản trị Sơ đồ Bàn tiệc Gala & Phân bổ Chỗ ngồi VIP Sự kiện
+1. **Thiết lập Sơ đồ Khán phòng**:
+   - Truy cập `/events/$eventId` > chọn tab **Sơ đồ Bàn tiệc & Chỗ ngồi**.
+   - Khởi tạo các khu vực: Khu VIP A (Bàn VIP-01 đến VIP-05 dành cho Lãnh đạo, Đại sứ và Nhà tài trợ Kim Cương), Khu B (Hội viên chính thức), Khu C (Khách mời & Báo chí).
+2. **Quy tắc Phân bổ Tự động & Thủ công**:
+   - Hệ thống hỗ trợ tính năng **Auto-Assign by Membership Level**: Tự động xếp các hội viên Diamond/Gold vào các bàn trung tâm gần sân khấu.
+   - Thư ký sự kiện có thể kéo thả thủ công đại biểu vào ghế cụ thể để tránh xung đột lợi ích hoặc sắp xếp các đối tác có nhu cầu giao thương ngồi cùng bàn.
+3. **Điều hướng Kiosk Check-in**:
+   - Khi đại biểu đến quầy lễ tân quét mã QR Check-in, màn hình Kiosk sẽ tự động hiển thị: *"Chào mừng Ông/Bà [Họ tên] - Trân trọng kính mời Ông/Bà tới Bàn VIP-02 - Ghế số 04"*, đồng thời gửi tin nhắn ZNS sơ đồ đường đi về điện thoại.
 
-### `PATCH /api/connect-app/meetings/:id/respond`
-- **Request Body**: `{"action": "ACCEPT", "selectedSlot": "2026-09-15T09:00:00Z"}`
+## 9.2. Trung tâm Điều phối Thông báo Đa kênh & Bộ lọc Giờ cấm làm phiền
+1. **Soạn thảo & Đặt lịch Thông báo**:
+   - Truy cập Trung tâm Thông báo > **Tạo Thông báo Mới**.
+   - Lựa chọn kênh phát sóng: App In-App, Push Notification, SMS Brandname, Email hoặc Zalo ZNS.
+   - Chọn đối tượng nhận: Toàn bộ hiệp hội, Ban Chấp Hành, hoặc theo ngành nghề (Bất động sản, Tài chính, Công nghệ...).
+2. **Cơ chế An toàn Giờ cấm làm phiền (DND Window)**:
+   - Hệ thống áp dụng khung giờ cấm làm phiền từ **22:00 đêm đến 07:00 sáng**.
+   - Các thông báo thông thường (bản tin, nhắc lịch họp thường kỳ) phát hành trong khung giờ này sẽ tự động được đưa vào hàng đợi (`scheduled`) và chỉ gửi vào lúc 07:30 sáng ngày kế tiếp.
+   - Chỉ các thông báo khẩn cấp cấp độ `critical` (thay đổi địa điểm khẩn, hoãn sự kiện do thiên tai) mới được kích hoạt chế độ phát sóng tức thì xuyên qua DND.
+3. **Chống Trùng lặp (Deduplication) & Thử lại Tự động**:
+   - Bộ khử trùng lặp tự động chặn nếu người gửi bấm gửi liên tiếp nhiều lần cùng 1 nội dung trong vòng 5 phút.
+   - Khi nhà mạng viễn thông trả mã bận, hệ thống tự động retry 3 lần theo thuật toán lũy thừa cơ số (1s -> 4s -> 16s).
 
----
+## 9.3. Tổ chức Đại hội, Bầu cử Số BCH & Kiểm phiếu Tự động
+1. **Khởi tạo Kỳ Bầu cử / Biểu quyết**:
+   - Truy cập `/association/election` > Thiết lập kỳ đại hội nhiệm kỳ mới.
+   - Cấu hình danh sách ứng viên Ban Chấp Hành, tải lên hồ sơ trích ngang, chương trình hành động và video giới thiệu.
+   - Cấu hình túc số hợp lệ (Quorum): Mặc định tối thiểu 51% hội viên chính thức tham gia thì kết quả bầu cử mới có hiệu lực pháp lý.
+2. **Quy trình Bỏ phiếu Điện tử**:
+   - Hội viên chính thức đăng nhập ứng dụng, hệ thống cấp phát một mã **Voting Token** duy nhất được mã hóa một chiều.
+   - Hội viên tích chọn danh sách tín nhiệm và bấm **Xác nhận Bỏ phiếu**.
+   - Lá phiếu được mã hóa SHA-256 ẩn danh hoàn toàn để đảm bảo nguyên tắc bỏ phiếu kín, đồng thời lưu vào Sổ kiểm toán kiểm phiếu để Ban Kiểm soát đối soát độc lập.
+3. **Công bố Kết quả Trực quan**:
+   - Kết thúc thời gian bỏ phiếu, hệ thống tự động khóa cổng và kết xuất biểu đồ kết quả trực tiếp lên màn hình LED hội trường với độ trễ 0 giây.
 
-## 5.7. APIs Danh tính số, Thẻ NFC & Quét AI OCR (NFC & OCR)
+## 9.4. Kế toán Đa quỹ Hiệp hội & Đối soát Nộp thừa/thiếu Tiền tự động
+1. **Mô hình Đa Quỹ Tài chính Độc lập**:
+   - Hiệp hội quản lý 3 quỹ nghiệp vụ chính: **Quỹ Vận hành thường niên** (70%), **Quỹ Thiện nguyện - Trách nhiệm Xã hội** (20%), và **Quỹ Xúc tiến Thương mại & Đầu tư** (10%).
+   - Mọi khoản thu hội phí niên liễm khi thanh toán qua VietQR sẽ được hệ thống phân bổ tự động theo tỷ lệ quy chế tài chính đã phê duyệt.
+2. **Xử lý Nộp Thừa Tiền (Overpayment)**:
+   - Khi hội viên chuyển khoản số tiền lớn hơn số tiền trên hóa đơn, hệ thống tự động tất toán hóa đơn hiện tại và ghi nhận phần chênh lệch thặng dư vào **Số dư Tạm ứng (`advance_balance`)** của hội viên.
+   - Số dư này sẽ được tự động cấn trừ vào niên liễm của năm tiếp theo hoặc vé tham dự sự kiện có phí.
+3. **Xử lý Nộp Thiếu Tiền (Underpayment)**:
+   - Nếu chuyển thiếu số tiền quy định, hệ thống ghi nhận trạng thái hóa đơn là `partially_paid`.
+   - Hệ thống tự động phát hành thông báo ZNS giải trình số tiền đã nhận, số tiền còn thiếu kèm mã VietQR bổ sung để hội viên quét nộp nốt phần chênh lệch.
 
-### `POST /api/connect-app/card-scan/ocr`
-- **Request (Multipart Form Data)**: File ảnh danh thiếp giấy (`image/jpeg` hoặc `image/png`).
-- **Response `200 OK`**:
-  ```json
-  {
-    "extractedData": {
-      "fullName": "Hoàng Minh Đức",
-      "position": "Phó Tổng Giám Đốc Phụ Trách Kinh Doanh",
-      "company": "Công ty CP Logistics Á Châu",
-      "phone": "0988 776 655",
-      "email": "duc.hoang@achau-logistics.vn",
-      "address": "Tòa nhà Keangnam Landmark 72, Hà Nội",
-      "website": "https://achau-logistics.vn"
-    }
-  }
-  ```
+## 9.5. Cấp phát Thẻ cứng NFC & Tích hợp Apple Wallet Pass
+1. **Phát hành Thẻ cứng NFC/RFID**:
+   - Ban Thư ký duyệt cấp thẻ vật lý tích hợp chip NDEF chuẩn ISO/IEC 14443 Type A.
+   - Thẻ được in ấn sang trọng (chất liệu kim loại matte black hoặc nhựa cao cấp chống xước).
+   - Dữ liệu chip được liên kết bảo mật với định danh số `slug` của hội viên trên nền tảng ViOne.
+2. **Chạm để Kết nối (Tap-to-Connect)**:
+   - Khi tham gia sự kiện, hội viên chỉ cần chạm nhẹ thẻ vào lưng điện thoại đối tác (iPhone hoặc Android).
+   - Điện thoại đối tác tự động bật thông báo mở hồ sơ danh thiếp điện tử, cho phép lưu danh bạ 1 chạm (vCard 3.0) hoặc kết nối B2B trên mạng lưới mà không cần cài đặt bất kỳ ứng dụng nào.
+3. **Thêm Thẻ vào Apple Wallet**:
+   - Hội viên truy cập trang cá nhân trên trình duyệt Safari > bấm **Add to Apple Wallet**.
+   - Tệp `.pkpass` được tải về và hiển thị thẻ hội viên kỹ thuật số trực tiếp trong Apple Wallet của iPhone và Apple Watch, hỗ trợ quét mã check-in offline ngay cả khi không có mạng 4G/Wifi.
 
----
+## 9.6. Sàn B2B RFQ Đấu thầu Doanh nghiệp & Ký kết Biên bản Ghi nhớ MOU số
+1. **Đăng tải Nhu cầu Chào mua (Post RFQ)**:
+   - Doanh nghiệp hội viên đăng tải bài toán thu mua (ví dụ: Cần nhà thầu thi công nội thất văn phòng 1.000m2, hạn chào giá đến 30/10).
+   - Đính kèm hồ sơ yêu cầu kỹ thuật và phân loại mã ngành.
+2. **Đấu thầu Cạnh tranh Bí mật**:
+   - Các doanh nghiệp thành viên đạt chứng nhận uy tín trong hiệp hội gửi hồ sơ năng lực và bảng báo giá kín.
+   - Bên mua đánh giá các báo giá trên giao diện so sánh đối sánh tự động (giá, tiến độ, cam kết bảo hành).
+3. **Ký kết Biên bản Ghi nhớ MOU Điện tử**:
+   - Khi chọn được đối tác chiến lược, hệ thống tự động khởi tạo văn bản Thỏa thuận Hợp tác / Biên bản Ghi nhớ (MOU) theo mẫu chuẩn pháp chế hiệp hội.
+   - Người đại diện pháp luật của hai doanh nghiệp nhận mã OTP bảo mật qua SMS/Email đã xác thực và tiến hành ký điện tử.
+   - File thỏa thuận hoàn tất có chữ ký số điện tử và dấu thời gian (Timestamp) được lưu trữ vĩnh viễn trên hệ thống.
 
-# 6. HƯỚNG DẪN THAO TÁC HỆ THỐNG CRM / WEB PORTAL QUẢN TRỊ
+## 9.8. Hướng dẫn Biểu quyết Đa Nền tảng & Ghi nhận Nguồn Ứng dụng
+Hệ thống biểu quyết số của ViOne hỗ trợ việc thu thập ý kiến cử tri và đại biểu một cách đồng bộ, minh bạch trên 3 ứng dụng:
+1. **Thao tác Bỏ phiếu trên Mobile ViOne App (`vione_app`)**:
+   - Hội viên mở ứng dụng ViOne App trên điện thoại > vào tab **Thông báo** hoặc màn hình **Biểu quyết**.
+   - Bấm chọn ứng cử viên hoặc phương án tín nhiệm > bấm **Gửi phiếu bầu**.
+   - Hệ thống ghi nhận nguồn bỏ phiếu `source_app: vione_app`, băm dấu SHA-256 an toàn và khóa trạng thái để chống bỏ phiếu lần hai.
+2. **Thao tác Bỏ phiếu trên Cổng Thông Tin Hiệp Hội (`association_app`)**:
+   - Đại biểu đăng nhập vào Cổng thông tin Hiệp hội trên máy tính hoặc tablet.
+   - Truy cập mục **Bầu cử & Biểu quyết**, kiểm tra túc số tham gia của tổ chức và gửi phiếu bầu.
+   - Hệ thống ghi nhận nguồn `source_app: association_app`.
+3. **Thao tác Bỏ phiếu tại Bàn Kiểm phiếu CRM (`crm`)**:
+   - Thư ký hỗ trợ đại biểu cao niên tại hội trường bỏ phiếu trực tiếp trên CRM.
+   - Hệ thống ghi nhận nguồn `source_app: crm`.
+4. **Đóng Hòm Phiếu & Tự Động Phát Sóng Kết Quả Đa Kênh**:
+   - Khi hết giờ biểu quyết, Ban Kiểm tra bấm **Đóng hòm phiếu & Kiểm phiếu** trên CRM.
+   - Hệ thống tự động khóa hòm phiếu, tổng hợp số phiếu và phân loại tỷ lệ bỏ phiếu theo từng nguồn ứng dụng (Bao nhiêu % từ ViOne App, bao nhiêu % từ Cổng Hiệp hội, bao nhiêu % từ CRM).
+   - Tự động phát sóng thông báo kết thúc kèm kết quả và huy hiệu chiến thắng 🏆 về đồng thời cả 3 ứng dụng (CRM, ViOne App, Hiệp Hội App) với độ trễ dưới 1 giây.
 
-Hệ thống Web CRM Quản trị được thiết kế chuyên biệt cho Ban Thường vụ, Ban Thư ký, Ban Tài chính và Ban Sự kiện để kiểm soát toàn diện hoạt động của hiệp hội trên màn hình máy tính và máy tính bảng.
+## 9.9. Hướng dẫn Trải nghiệm Bộ Landing Page Doanh Nghiệp Business Connect (V1 - V8)
+Hệ thống cung cấp 8 phiên bản Landing Page B2B chuẩn mực dành riêng cho Lãnh đạo cấp cao (CEO, Chủ tịch, Giám đốc):
+1. **Nội dung Doanh nghiệp Chuẩn mực Đồng nhất**:
+   - Cung cấp đầy đủ: Thanh điều hướng Header, Hero Section với 4 thống kê ấn tượng (10,000+ Doanh nhân, 300+ Hiệp hội, 50,000+ Kết nối, 20+ Quốc gia), 5 Thách thức doanh nghiệp, 9 Giải pháp toàn diện, Hệ sinh thái mở, 6 Logo tổ chức uy tín (VCCI, AmCham, EuroCham, KoCham, SBF, AusCham) và 3 Đánh giá từ Lãnh đạo hiệp hội.
+2. **Bộ 3 Theme Chuyên Nghiệp**:
+   - **Light Mode**: Trắng sáng, nhã nhặn, thanh lịch chuẩn văn phòng.
+   - **Dark Mode**: Đen xám sâu thẳm, đẳng cấp doanh nhân, tiết kiệm pin OLED.
+   - **High Contrast**: Đen trắng tương phản cao, tối ưu tuyệt đối cho người lớn tuổi hoặc màn hình hội trường.
+3. **Hiệu ứng Cánh Cửa Chuyển Theme (V1, V6, V8)**:
+   - Khi bấm chuyển theme, hai cánh cửa trượt khép kín lại (600ms), hệ thống đổi màu phía sau, sau đó trượt mở ra mượt mà tạo trải nghiệm quyền lực và vững chãi.
+4. **Đường dẫn truy cập 8 phiên bản**:
+   - V1 (Executive Zen): `/business-connect/v1`
+   - V2 (Heritage & Trust): `/business-connect/v2`
+   - V3 (Premium Editorial): `/business-connect/v3`
+   - V4 (Executive Glass Dashboard): `/business-connect/v4`
+   - V5 (Cyber Neural Command): `/business-connect/v5`
+   - V6 (Corporate Monument): `/business-connect/v6`
+   - V7 (Fluid Analytics): `/business-connect/v7`
+   - V8 (Executive Titanium Suite): `/business-connect/v8`
 
----
-
-## 6.1. Quản lý Danh sách Hội viên & Doanh nghiệp
-- **Đường dẫn**: `/members` và `/companies`
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  QUẢN LÝ HỘI VIÊN HIỆP HỘI                      [ + Tiếp nhận Hội viên mới ] │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Tìm kiếm: [ Họ tên, SĐT, Doanh nghiệp... ]   Chi hội: [ Tất cả ▾ ]         │
-├──────────────┬──────────────┬──────────────┬──────────────┬─────────────────┤
-│  MÃ HỘI VIÊN │  HỌ VÀ TÊN   │ DOANH NGHIỆP │  CHỨC DANH   │  THAO TÁC (CỐ ĐỊNH)
-├──────────────┼──────────────┼──────────────┼──────────────┼─────────────────┤
-│  CEO83-088   │ Nguyễn Văn A │ TẬP ĐOÀN V   │ Chủ tịch     │ [✏️] [👤⚙️] [🗑️]   │
-│  CEO83-089   │ Lê Thị Mai   │ CTY CÔNG NGHỆ│ Tổng GĐ      │ [✏️] [👤⚙️] [🗑️]   │
-└──────────────┴──────────────┴──────────────┴──────────────┴─────────────────┘
-```
-
-### Các bước thao tác chi tiết:
-1. **Tìm kiếm & Lọc**:
-   - Nhập từ khóa vào thanh tìm kiếm (Hỗ trợ tìm theo Họ tên, Mã hội viên, MST doanh nghiệp, Số điện thoại).
-   - Chọn bộ lọc Chi hội (Hà Nội, TP.HCM, Đà Nẵng, Hải Ngoại) hoặc trạng thái (*Chờ duyệt, Hoạt động, Tạm ngừng*).
-2. **Thực hiện Thao tác Mặc định (Hiển thị cố định trên mọi dòng)**:
-   - **Chỉnh sửa (Icon `Pencil`)**: Nhấp để mở form sửa thông tin liên hệ, chức vụ, gia hạn thẻ hội viên.
-   - **Phân quyền vai trò (Icon `UserCog`)**: Gán quyền quản trị viên phụ trách ban chuyên môn.
-   - **Xóa hội viên (Icon `Trash2`)**: Nhấp để xóa hồ sơ khỏi hệ thống kèm modal xác nhận hai lớp để chống xóa nhầm.
-3. **Phê duyệt đơn đăng ký mới**:
-   - Nhấp vào tab **"Chờ duyệt"**.
-   - Bấm vào tên ứng viên để kiểm tra hồ sơ đính kèm (Giấy phép kinh doanh, ảnh thẻ).
-   - Nhấn nút **`Phê duyệt chính thức`** -> Hệ thống tự động cấp mã hội viên, kích hoạt tài khoản và bắn thông báo chúc mừng qua email/SMS.
-
----
-
-## 6.2. Thiết lập Sơ đồ Ghế Sân khấu & Khán phòng Động
-- **Đường dẫn**: `/event-registrations` và `/events`
-- **File Component Thực thi**: `CinemaSeatingMap.tsx`
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                       [ SÂN KHẤU TRUNG TÂM / BỤC CHỦ TỌA ]                  │
-│             (SK-01)  (SK-02)  (SK-03)  (SK-04)  (SK-05)  (SK-06)            │
-│             [ + Ghế Sân Khấu ]                   [ - Bớt Ghế Sân Khấu ]     │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                  ▼   ▼   ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          [ KHÁN PHÒNG ĐẠI BIỂU ]                            │
-│  Hàng A:  [A-01] [A-02] [A-03] [A-04(🔒)] [A-05] ... [+ 1 Ghế] [- 1 Ghế]    │
-│  Hàng B:  [B-01] [B-02(🔒)] [B-03] [B-04] [B-05] ... [+ 1 Ghế] [- 1 Ghế]    │
-│  Hàng C:  [C-01] [C-02] [C-03] [C-04] [C-05] ...     [+ 1 Ghế] [- 1 Ghế]    │
-│  [ + Thêm Hàng Ghế (D, E, F...) ]                                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Các bước thao tác chi tiết:
-1. **Thêm / Bớt Hàng Ghế Khán Phòng**:
-   - Bấm nút **`+ Thêm Hàng Ghế`** ở chân sơ đồ. Hệ thống tự động đặt ký hiệu chữ cái tiếp theo (Hàng D, E, F...).
-   - Tại mỗi hàng, bấm nút **`+ 1 Ghế`** để nối dài số ghế trong hàng hoặc bấm **`- 1 Ghế`** để rút ngắn lại.
-   - Muốn xóa nguyên một hàng ghế: Bấm nút **`Xóa hàng`** màu đỏ ở cuối hàng đó.
-2. **Bố trí Dải Ghế Danh Dự Trên Sân Khấu (`SK-01` đến `SK-06`)**:
-   - Khu vực sân khấu có dải ghế vòm màu vàng kim chuyên biệt dành riêng cho Ban Chủ tọa, Lãnh đạo cấp cao hoặc Diễn giả VIP.
-   - Bấm **`+ Ghế Sân Khấu`** để mở rộng thêm chỗ ngồi trên bục danh dự.
-   - Bấm **`- Bớt Ghế Sân Khấu`** để thu gọn số lượng phù hợp với danh sách đại biểu VIP.
-3. **Cơ chế Khóa Ghế Tự Động (Disabled Seats chống trùng lặp)**:
-   - Khi một đại biểu đã đặt chỗ hoặc được Ban tổ chức chỉ định:
-     - Ghế đó lập tức chuyển sang trạng thái **Đã chiếm dụng (Occupied)** với thuộc tính `disabled={isOccupied}`.
-     - Ghế hiển thị biểu tượng khóa `Lock` màu đỏ mờ cùng đường gạch chéo.
-     - Khi rê chuột vào ghế: Tooltip hiện rõ *Họ tên đại biểu và Tên doanh nghiệp* đang giữ chỗ.
-     - Người khác tuyệt đối không thể click chọn lại ghế này, triệt tiêu 100% rủi ro trùng chỗ tại sự kiện.
-
----
-
-## 6.3. Trạm Điểm danh Check-in 1 chạm tại Sự kiện
-- **Đường dẫn**: `/checkin-qr`
-
-### Các bước thao tác chi tiết:
-1. Ban Lễ tân mở màn hình `/checkin-qr` trên máy tính bảng hoặc laptop trang bị webcam/máy quét laser tại bàn đón tiếp.
-2. Khi đại biểu bước đến:
-   - **Cách 1 (Quét QR)**: Đại biểu đưa màn hình điện thoại có vé E-Ticket QR vào trước camera.
-   - **Cách 2 (Chạm NFC)**: Đại biểu áp thẻ thông minh ViOne vào mặt lưng thiết bị điểm danh.
-3. Trong **0.2 giây**, hệ thống phát âm thanh "Tít" thành công và màn hình hiển thị bảng chúc mừng:
-   - *Họ và tên đại biểu, Chức vụ, Doanh nghiệp*.
-   - *Vị trí ghế ngồi chính xác* (Ví dụ: `Hàng A - Ghế A-04` hoặc `Sân khấu - Ghế SK-01`).
-4. Dữ liệu điểm danh ngay lập tức cập nhật trạng thái "Đã tham dự" lên màn hình điều hành trung tâm của Trưởng Ban Tổ Chức.
+## 9.10. Hướng dẫn Tra cứu Ma trận Kiểm thử ISO/IEC/IEEE 29119-3 và Kế hoạch WBS
+Người dùng và các bên liên quan có thể tra cứu toàn bộ hồ sơ chất lượng phần mềm trong thư mục `document/`:
+1. **File Kiểm thử Chất lượng `VIONE_COMPREHENSIVE_TEST_CASES_SUITE_10000_CASES.xlsx`**:
+   - Chứa hơn 10,000 ca kiểm thử thực tế không trùng lặp, chia thành 10 sheet phân hệ chi tiết và 1 sheet tổng quan dashboard.
+   - Hướng dẫn tra cứu: Sử dụng AutoFilter ở hàng tiêu đề số 4 để lọc theo Loại test (Functional, Security, Concurrency, UI/UX, Realtime, Offline Sync), lọc theo Mức nghiêm trọng hoặc tìm kiếm từ khóa nghiệp vụ (View, Detail, Filter, Seating, Voting, Invoice, RFQ).
+2. **File Kế hoạch Công việc & Ước lượng `VIONE_WBS_FEATURE_MATRIX_AND_ESTIMATION_CHI_TIET.xlsx`**:
+   - Chứa 1,000+ gói công việc chi tiết chuẩn PMBOK.
+   - Hướng dẫn tra cứu: Sheet `Tong_Quan_Dashboard` cung cấp các thẻ chỉ số KPI tổng hợp Man-days và tỷ lệ tiến độ. Các sheet phân hệ `WBS_01` đến `WBS_10` phân rã chi tiết từng công việc, nhân sự thực hiện (FE, BE, QA) và trạng thái nghiệm thu UAT.
 
 ---
+*Bản quyền tài liệu thuộc về Ban Công nghệ & Đổi mới Sáng tạo ViOne. Mọi hành vi sao chép không có sự đồng ý bằng văn bản đều bị nghiêm cấm.*
 
-## 6.4. Quản trị Dòng tiền Thu - Chi
-- **Đường dẫn**: `/income` (Sổ Thu) và `/expenses` (Sổ Chi)
-
-### Các bước thao tác chi tiết:
-1. **Tạo Phiếu Thu Mới (`/income`)**:
-   - Bấm nút **`+ Tạo khoản thu mới`**.
-   - Nhập tiêu đề khoản thu (Ví dụ: *Thu hội phí thường niên 2026 - Doanh nhân Hoàng Văn B*).
-   - Chọn Danh mục, Số tiền (VNĐ), Ngày nhận tiền, Hình thức nộp (Chuyển khoản / Tiền mặt).
-   - Tải lên chứng từ ủy nhiệm chi ngân hàng -> Bấm **`Lưu phiếu thu`**.
-2. **Tạo Phiếu Chi Mới (`/expenses`)**:
-   - Bấm nút **`+ Tạo phiếu chi mới`**.
-   - Nhập Hạng mục chi phí (Ví dụ: *Thanh toán âm thanh ánh sáng đêm Gala 1983*).
-   - Điền số tiền, ngày chi, người thụ hưởng và tải lên ảnh hóa đơn GTGT hợp lệ.
-   - Bấm **`Lưu phiếu chi`**.
-3. **Đảm bảo vận hành không crash**: Cả hai trang đã được kiểm định phân trang an toàn, hỗ trợ lọc theo ngày, theo danh mục và tìm kiếm mã phiếu tức thì.
-
----
-
-## 6.5. Báo Cáo Tài Chính Chi Tiết Chuyên Sâu
-- **Đường dẫn**: `/finance-report`
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  BÁO CÁO TÀI CHÍNH TỔNG HỢP VIONE                      [ Bộ lọc: Quý này ▾ ] │
-├──────────────┬──────────────┬──────────────────────────┬────────────────────┤
-│  TỔNG THU    │   TỔNG CHI   │   SỐ DƯ RÒNG (NET MARGIN)│ TỶ LỆ THU HỒI PHÍ  │
-│ 1.250.000.000│  420.000.000 │    830.000.000 (+66.4%)  │      94.2%         │
-└──────────────┴──────────────┴──────────────────────────┴────────────────────┘
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  [BIỂU ĐỒ THU - CHI THEO THÁNG]        │  [CƠ CẤU NGUỒN THU & HẠNG MỤC CHI] │
-│  So sánh trực quan biến động           │  Hội phí: 65%  | Tài trợ: 25%      │
-│  dòng tiền vào - dòng tiền ra          │  Thuê mặt bằng: 45% | Tiệc: 35%    │
-└─────────────────────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  SỔ CÁI GIAO DỊCH TÀI CHÍNH KẾ TOÁN        [ Xuất Excel/CSV ] [ In Báo Cáo ]│
-│  MÃ PHIẾU  |  NGÀY GHI  |  KHOẢN MỤC     | ĐỐI TÁC  | SỐ TIỀN     | TRẠNG THÁI│
-│  REC-0091  | 12/09/2026 | Phí hội viên   | TẬP ĐOÀN | 50.000.000  | Đã thu    │
-│  PAY-0042  | 11/09/2026 | Chi âm thanh   | CTY VIỆT | 18.000.000  | Đã duyệt  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Các bước thao tác chi tiết:
-1. **Chọn kỳ báo cáo**: Bấm vào thanh chọn thời gian: *Tháng này, Quý này, Năm nay, Toàn thời gian*. Toàn bộ chỉ số sẽ tự động tính toán lại trong 0.1 giây.
-2. **Theo dõi 4 Thẻ KPI Tài Chính Cốt Lõi**:
-   - **Tổng Thu**: Toàn bộ dòng tiền đã ghi nhận vào tài khoản hiệp hội.
-   - **Tổng Chi**: Tổng ngân sách thực tế đã thanh toán kèm hóa đơn.
-   - **Số Dư Ròng (Net Margin)**: Thặng dư ngân quỹ kèm tỷ lệ phần trăm tăng trưởng so với kỳ trước.
-   - **Tỷ Lệ Thu Hồi Hội Phí**: Tỷ lệ phần trăm giữa hội viên đã hoàn thành nghĩa vụ phí trên tổng số hội viên.
-3. **Phân tích Biểu đồ Dòng tiền & Cơ cấu %**:
-   - Biểu đồ cột so sánh hai màu (Xanh: Thu, Đỏ: Chi) cho thấy xu hướng tích lũy tài chính qua các tháng.
-   - Thanh phân bổ cơ cấu thể hiện chính xác tỷ trọng từng nguồn thu và khoản chi tiêu.
-4. **Xuất File Báo cáo**:
-   - Bấm **`Xuất File Excel / CSV`** để tải bảng tính chi tiết toàn bộ các dòng sổ cái kế toán phục vụ kiểm toán và lưu trữ.
-   - Bấm **`In Báo Cáo PDF`** để tự động tạo bản in mẫu biểu chuẩn phục vụ báo cáo trực tiếp trước Đại hội Đại biểu.
-
----
-
-## 6.6. Quản lý Nhà tài trợ & Gói Quyền lợi
-- **Đường dẫn**: `/sponsors` và `/sponsor-packages`
-
-### Các bước thao tác:
-1. **Tạo Gói Tài Trợ (`/sponsor-packages`)**: Thiết lập các hạng mức tài trợ: *Kim Cương, Vàng, Bạc, Đồng* kèm theo quyền lợi chi tiết (vị trí logo trên backdrop sân khấu, số lượng vé VIP, thời lượng phát biểu).
-2. **Gán Doanh Nghiệp Tài Trợ (`/sponsors`)**: Nhập thông tin doanh nghiệp, số tiền tài trợ, tải lên logo độ phân giải cao và liên kết trực tiếp vào sự kiện.
-3. Logo và thông điệp của nhà tài trợ sẽ tự động hiển thị đồng bộ trên màn hình sân khấu và vé điện tử của đại biểu.
-
----
-
-## 6.7. Phòng họp Trực tuyến & Biểu quyết Điện tử
-- **Đường dẫn**: `/meetings` và `/voting`
-
-### Các bước thao tác:
-1. **Tạo Phòng Họp Ban Lãnh Đạo (`/meetings`)**: Lên lịch họp Ban Thường vụ, tích hợp đường dẫn cầu truyền hình trực tuyến và tải lên tài liệu nghị quyết họp.
-2. **Tạo Phiên Biểu Quyết Số (`/voting`)**:
-   - Thiết lập nội dung biểu quyết (Ví dụ: *Bầu bổ sung Ủy viên Ban Chấp hành*, *Thông qua phương án ngân sách nhiệm kỳ mới*).
-   - Cài đặt thời gian mở/đóng hòm phiếu.
-   - Hội viên bỏ phiếu trực tiếp trên App di động; hệ thống mã hóa lá phiếu và công bố kết quả kiểm phiếu tự động theo tỷ lệ phần trăm minh bạch.
-
----
-
-## 6.8. Tiếp nhận Khách hàng Tiềm năng
-- **Đường dẫn**: `/admin/demo-leads`
-- Toàn bộ thông tin khách hàng, doanh nhân đăng ký tư vấn giải pháp chuyển đổi số từ các kênh đều tự động đổ về bảng này.
-- Ban Thư ký có thể cập nhật trạng thái chăm sóc (*Chưa liên hệ, Đang tư vấn, Đã chốt hợp đồng, Không phù hợp*) và gán nhân viên phụ trách.
-
----
-
-# 7. HƯỚNG DẪN THAO TÁC APP HIỆP HỘI (MOBILE MEMBER APP `/m`)
-
-Ứng dụng PWA dành cho Doanh nhân Hội viên, được thiết kế tối ưu hóa cho thao tác 1 tay trên điện thoại di động:
-
-## 7.1. Bảng tin Hoạt động Chi hội & Tương tác Nội khối
-- **Đường dẫn**: `/m/news`
-- Cập nhật liên tục các thông báo chính thức, lịch trình công tác của Ban Thường vụ, tin tức ký kết hợp tác kinh doanh giữa các thành viên.
-- Hội viên có thể bấm Thích (`Like`), Bình luận (`Comment`) và chia sẻ nhanh bản tin sang Zalo hoặc Facebook.
-
----
-
-## 7.2. Trung tâm Thông báo Đa kênh Thông minh
-- **Đường dẫn**: `/m/notifications`
-
-### Các bước thao tác:
-1. **Lọc Thông báo Theo Danh mục**:
-   - Sử dụng thanh trượt trên cùng để lọc nhanh:
-     - **Tất cả**: Toàn bộ luồng thông báo.
-     - **Chưa đọc**: Chỉ hiện các thông báo mới có chấm phát sáng neon.
-     - **Cơ hội B2B**: Thông báo về đơn hàng hoặc đối tác quan tâm đến sản phẩm của bạn.
-     - **Sự kiện**: Lịch trình đại hội, hội thảo và nhắc nhở giờ check-in.
-     - **Hội phí**: Nhắc nhở kỳ nộp phí và thông báo xác nhận thanh toán thành công.
-     - **Đã ẩn**: Xem lại các thông báo đã lưu trữ.
-2. **Nhận biết trạng thái**:
-   - Viền màu phân loại trực quan (Xanh ngọc: B2B, Tím: Sự kiện, Cam: Hội phí, Xanh dương: Hệ thống).
-   - Thông báo chưa đọc có **chấm phát sáng (glow badge)** nổi bật.
-3. **Thao tác nhanh**:
-   - Nhấp vào thông báo để dẫn thẳng tới màn hình chi tiết tương ứng.
-   - Bấm nút **`Đánh dấu tất cả đã đọc`** để làm sạch hộp thư chỉ bằng 1 chạm.
-
----
-
-## 7.3. Tra cứu Danh bạ Doanh nhân & Kết nối C-Level
-- **Đường dẫn**: `/m/directory`
-- Tra cứu danh bạ hơn 10.000+ lãnh đạo doanh nghiệp trong hiệp hội.
-- Lọc theo ngành nghề (Xây dựng, Bất động sản, Công nghệ, F&B, Logistics...) hoặc theo tỉnh thành.
-- Xem trực tiếp hồ sơ năng lực (Company Profile), danh mục sản phẩm cốt lõi và số điện thoại liên hệ trực tiếp.
-
----
-
-## 7.4. Nộp Hội phí Trực tuyến Tức thì qua QR Napas 247
-- **Đường dẫn**: `/m/fees`
-- Xem thông tin kỳ nộp hội phí thường niên, số tiền và thời hạn quy định.
-- Màn hình hiển thị **Mã QR Động Napas 247**:
-  - Mở ứng dụng ngân hàng bất kỳ trên điện thoại và quét mã.
-  - Số tiền và nội dung chuyển khoản (chứa mã hội viên) được điền sẵn chính xác 100%.
-  - Sau khi chuyển tiền, hệ thống tự động gạch nợ trong 3 giây và gửi thông báo xác nhận.
-
----
-
-## 7.5. Đăng ký Sự kiện, Chọn Ghế & Nhận Vé Điện tử E-Ticket QR
-- **Đường dẫn**: `/m/events`
-- Xem danh sách sự kiện sắp diễn ra kèm sơ đồ khán phòng trực quan.
-- Bấm **Đăng ký tham gia** -> Chọn vị trí ghế ngồi mong muốn (các ghế đã có người đặt sẽ bị khóa mờ).
-- Nhận vé **E-Ticket QR** lưu trong ví ứng dụng, sẵn sàng xuất trình khi đến cổng hội nghị.
-
----
-
-# 8. HƯỚNG DẪN THAO TÁC APP DOANH NHÂN VIONE CONNECT (`/connect-app`)
-
-Ứng dụng danh thiếp thông minh và xúc tiến thương mại B2B dành riêng cho từng doanh nhân cá nhân:
-
-## 8.1. Thiết lập Danh tính số & Danh thiếp Thông minh Cá nhân
-- **Đường dẫn**: `/connect-app/me` và `/connect-app/me/edit`
-
-### Các bước thao tác:
-1. Tải lên ảnh đại diện chất lượng cao và ảnh bìa thương hiệu doanh nghiệp.
-2. Điền thông tin cá nhân: Họ tên, Chức vụ, Tên công ty, Mã số thuế, Ngành nghề chính, Doanh thu năm.
-3. Liên kết các kênh truyền thông: Hotline cá nhân, Zalo, LinkedIn, Website, Định vị văn phòng trên Google Maps.
-4. Tải lên danh sách đối tác tiêu biểu và chứng nhận giải thưởng để gia tăng độ uy tín.
-5. Bấm **Lưu thay đổi** -> Thẻ danh thiếp số của bạn lập tức có hiệu lực và đồng bộ toàn cầu.
-
----
-
-## 8.2. Chạm Kết nối 1-Tap NFC & Quét mã QR Live Laser Chuẩn Zalo
-- **Đường dẫn**: `/connect-app/network`
-
-### A. Chạm kết nối 1-Tap NFC:
-- Bật tính năng NFC trên điện thoại.
-- Áp thẻ thông minh ViOne vào mặt lưng điện thoại đối tác:
-  - Với iPhone: Chạm nhẹ vào mép đỉnh máy.
-  - Với Android: Chạm vào chính giữa mặt lưng máy.
-- Màn hình đối tác lập tức mở ra danh thiếp điện tử của bạn và tự động lưu số điện thoại vào danh bạ mà đối tác không cần cài đặt trước ứng dụng.
-
-### B. Quét mã QR Live Laser Chuẩn Phong cách Zalo:
-- Mở máy quét QR: Khung ngắm chuẩn 4 góc bo kim loại với **thanh laser chuyển động thời gian thực**.
-- Tự động nhận diện tức thì trong **0.2 giây** khi mã QR lọt vào khung quét, không cần bấm chụp ảnh thủ công.
-- Hỗ trợ nút **Bật Đèn Flash** khi trời tối và nút **Chọn ảnh từ thư viện** để quét mã QR do đối tác gửi qua ảnh chụp màn hình.
-
----
-
-## 8.3. Số hóa Danh thiếp Giấy bằng AI OCR 1 Chạm
-- **Đường dẫn**: `/connect-app/card-scan`
-
-### Các bước thao tác:
-1. Hướng camera chụp ảnh danh thiếp giấy truyền thống do đối tác gửi tặng.
-2. Công nghệ **ViOne AI OCR** tự động phân tích và bóc tách thông tin chính xác:
-   - Họ và tên, Chức danh.
-   - Tên công ty, Lĩnh vực hoạt động.
-   - Số điện thoại di động, Email, Địa chỉ trụ sở.
-3. Rà soát lại dữ liệu trên bảng đối chiếu trước khi bấm **`Lưu vào danh bạ số`**. Toàn bộ danh bạ được lưu trữ an toàn trên đám mây.
-
----
-
-## 8.4. Sàn Cơ hội Giao thương B2B & Động cơ Khớp nối AI Copilot
-- **Đường dẫn**: `/connect-app/community/:id/opportunities`
-
-### Các bước thao tác:
-1. **Khám phá Cơ hội**: Xem hàng nghìn tin chào mua / chào bán đang hoạt động; lọc theo khu vực, ngành nghề và quy mô ngân sách.
-2. **Đăng tin Cung - Cầu mới**:
-   - Bấm **`+ Đăng cơ hội mới`**.
-   - Chọn loại: **Nhu cầu Cần Mua (Demand)** hoặc **Năng lực Cung Ứng (Supply)**.
-   - Nhập tiêu đề, quy cách hàng hóa, ngân sách dự kiến và hạn đóng chào giá.
-3. **Động cơ AI Matcher**:
-   - Hệ thống tự động phân tích từ khóa và tính điểm tương thích (Match Score > 90%).
-   - Bắn gợi ý kết nối đến cả hai bên doanh nghiệp để tiến hành thương thảo.
-
----
-
-## 8.5. Đặt Lịch Hẹn Giao Thương 1-on-1 & Đồng bộ Lịch Công Tác
-- **Đường dẫn**: `/connect-app/meetings` và `/connect-app/calendar`
-
-### Các bước thao tác:
-1. Mở trang cá nhân của đối tác muốn kết nối -> Bấm **`Đặt lịch hẹn 1-on-1`**.
-2. Nhập tiêu đề buổi gặp, nội dung dự kiến trao đổi và đề xuất 1 - 3 khung giờ rảnh.
-3. Bấm **`Gửi lời mời gặp gỡ`**.
-4. Đối tác nhận thông báo đẩy và có thể bấm: **Đồng ý**, **Đổi giờ** hoặc **Từ chối**.
-5. Khi cuộc hẹn được xác nhận, hệ thống tự động đồng bộ vào Lịch làm việc và gửi thông báo nhắc lịch trước 30 phút.
-
----
-
-## 8.6. Nhắn tin Mã hóa Bảo mật & Trao đổi Hồ sơ Doanh nghiệp
-- **Đường dẫn**: `/connect-app/inbox`
-- Kênh nhắn tin mã hóa đầu cuối thông qua kết nối Socket bảo mật.
-- Gửi tài liệu hợp đồng, catalogue giới thiệu sản phẩm dạng file PDF, Word, Excel trực tiếp trong cuộc hội thoại.
-- Tích hợp nút **Chia sẻ danh thiếp** và **Đặt lịch hẹn nhanh** ngay tại khung soạn thảo tin nhắn.
-
----
-
-## 8.7. Cài đặt Đa ngôn ngữ (8 Thứ tiếng Quốc tế) & Chế độ Giao diện
-- **Đường dẫn**: `/connect-app/me` -> Cài đặt
-- **8 Ngôn ngữ hỗ trợ**: Tiếng Việt (`vi`), English (`en`), 日本語 (`ja`), 한국어 (`ko`), 中文 (`zh`), ພາສາລາວ (`lo`), ភាសាខ្មែរ (`km`), မြန်မာဘာသာ (`my`).
-- **Chế độ Giao diện**: Chuyển đổi linh hoạt giữa **Chế độ Sáng (Light Mode)** trang nhã và **Chế độ Tối (Dark Mode)** sang trọng.
-
----
-
-# 9. XỬ LÝ SỰ CỐ THƯỜNG GẶP (FAQ & TROUBLESHOOTING)
-
-### Q1: Trang Quản lý Thu Chi trước đây bị lỗi báo đỏ `Cannot read properties of undefined (reading 'length')` thì nay đã khắc phục ra sao?
-- **Trả lời**: Lỗi phát sinh do hook phân trang `useTableControls` chưa đồng bộ trường `paged`. Đội ngũ kỹ sư đã khắc phục triệt để bằng cách bổ sung ánh xạ `paged: pageRows`, thiết lập màng bọc dữ liệu mặc định và bọc khối `try...catch` trong các loader của `/income` và `/expenses`. Hiện tại cả hai trang đều phản hồi **HTTP 200 OK** và hoạt động hoàn toàn mượt mà.
-
-### Q2: Tại sao một số ghế trên sơ đồ rạp chiếu hội trường lại có biểu tượng khóa đỏ và không bấm chọn được?
-- **Trả lời**: Những ghế đó đã có đại biểu khác đăng ký và đặt chỗ thành công. Hệ thống tự động kích hoạt trạng thái khóa cứng (`disabled={isOccupied}`) có biểu tượng khóa `Lock` và gạch chéo đỏ mờ để chống trùng ghế 100%. Quý đại biểu vui lòng chọn các vị trí ghế sáng màu còn trống xung quanh hoặc dải ghế sân khấu `SK-01` đến `SK-06`.
-
-### Q3: Muốn xuất Báo cáo Tài chính sang định dạng bảng tính Excel thì thao tác ở đâu?
-- **Trả lời**: Truy cập menu **Báo cáo Tài chính (`/finance-report`)**, chọn kỳ kế toán mong muốn (*Quý này, Năm nay...*), sau đó nhìn sang góc phải phía trên của bảng Sổ cái giao dịch và bấm nút **`Xuất File Excel / CSV`**. Trình duyệt sẽ tự động tải file `.csv` về máy tính để bạn mở bằng Microsoft Excel hoặc Google Sheets.
-
-### Q4: Điện thoại của tôi áp thẻ cứng NFC nhưng không thấy danh thiếp hiển thị?
-- **Trả lời**:
-  1. Hãy đảm bảo điện thoại đã bật tính năng **NFC** trong mục Cài đặt kết nối.
-  2. Đối với iPhone (từ iPhone Xs trở lên): Vị trí tiếp xúc chip NFC nằm ở **mép đỉnh trên cùng** của mặt lưng.
-  3. Đối với điện thoại Android: Vị trí chip NFC thường nằm ở **chính tâm giữa** của mặt lưng.
-  4. Nếu bạn đang sử dụng ốp lưng bằng kim loại dày, hãy tháo ốp để sóng NFC truyền nhận nhạy nhất.
-
-### Q5: Khi chuyển đổi chi hội hoặc chuyển giao quyền quản trị viên thì dữ liệu cũ có bị ảnh hưởng không?
-- **Trả lời**: Toàn bộ dữ liệu lịch sử giao dịch thu chi, bản ghi check-in sự kiện và tin giao thương B2B đều được gắn khóa ngoại cố định với mã định danh người dùng và chi hội. Việc luân chuyển nhân sự hoặc đổi vai trò chỉ cập nhật cờ quyền hạn trong bảng `user_roles` mà không làm thay đổi hay mất mát dữ liệu lịch sử kế toán.
-
----
-
-# 10. BIÊN BẢN NGHIỆM THU & BẢO ĐẢM VẬN HÀNH KHÉP KÍN 100% (FULL 100% OPERATIONAL GUARANTEE)
-
-Đội ngũ Kiến trúc và Phát triển Hệ thống ViOne long trọng **CAM ĐOAN VÀ XÁC NHẬN**: Toàn bộ luồng hoạt động từ Web CRM Quản trị tới Mobile PWA Hội viên (`/m`) và từ Mobile về Web CRM đã được kiểm thử, tối ưu và vận hành **CHÍNH THỨC 100%**.
-
-### 10.1. Ma Trận Nghiệm Thu 12 Kịch Bản Luồng Hai Chiều (Test Matrix):
-
-| STT | Kịch Bản Nghiệm Thu | Điểm Bắt Đầu | Điểm Kết Thúc | Kết Quả Đo Lường Thực Tế | Đánh Giá |
-| :---: | :--- | :--- | :--- | :--- | :---: |
-| **01** | Tạo sự kiện & Dải ghế sân khấu `SK-01..06` | Web CRM (`/events`) | Mobile App (`/m/events`) | Sơ đồ ghế cập nhật tức thì, hiển thị đúng vị trí ghế đại biểu | **PASS (100%)** |
-| **02** | Đại biểu chọn ghế & Khóa chống trùng | Mobile App (`/m/events`) | Web CRM (`/events`) | Ghế đã chọn lập tức hiển thị icon `Lock`, đại biểu khác không thể bấm | **PASS (100%)** |
-| **03** | Điểm danh vé QR Laser / NFC tại cổng | Mobile App (E-Ticket) | Web CRM (`/checkin-qr`) | Quét nhận diện trong **0.2 giây**, hiển thị chúc mừng và cập nhật trạng thái | **PASS (100%)** |
-| **04** | Ban hành kỳ thu phí & Bắn thông báo | Web CRM (`/fees`) | Mobile (`/m/notifications`) | Mobile nhận thông báo tức thì, chấm phát sáng neon unread sáng đèn | **PASS (100%)** |
-| **05** | Quét QR Napas 247 nộp hội phí tự động | Mobile App (`/m/fees`) | Web CRM (`/income`) | Gạch nợ thành công, tự sinh Phiếu thu `REC-xxxx` trong Sổ Quỹ CRM | **PASS (100%)** |
-| **06** | Cập nhật Báo cáo Kế toán Dòng tiền | Sổ Quỹ Thu Chi | Web CRM (`/finance-report`) | 4 Thẻ KPI và biểu đồ dòng tiền cập nhật lại số dư ròng trong 0.1s | **PASS (100%)** |
-| **07** | Thẩm định hồ sơ hội viên & Cấp mã | Mobile / Form Đăng ký | Web CRM (`/members`) | Ban Thư ký duyệt -> Kích hoạt tài khoản và mở khóa toàn bộ quyền hội viên | **PASS (100%)** |
-| **08** | Cập nhật danh tính số & Đổi ảnh bìa | ViOne Connect (`/connect-app/me`) | Web CRM (`/companies`) | Hồ sơ doanh nghiệp và catalogue sản phẩm đồng bộ lên danh bạ CRM | **PASS (100%)** |
-| **09** | Quét danh thiếp giấy bằng AI OCR | ViOne Connect Camera | Sổ Danh bạ Số | Bóc tách chính xác Họ tên, Công ty, SĐT, Email vào danh bạ | **PASS (100%)** |
-| **10** | Khớp nối cơ hội B2B & Đặt lịch 1-on-1| ViOne Connect B2B | Lịch công tác & Chat | AI Matcher tính điểm >90%, đối tác nhận thông báo mời hẹn và đồng bộ lịch | **PASS (100%)** |
-| **11** | Chuyển đổi 2 Cổng Đăng Nhập | Switcher tại Auth | Giao diện tương ứng | Cổng ViOne Connect: Đen Vàng. Cổng Hội Viên CEO 1983: Xanh Trắng tinh tế | **PASS (100%)** |
-| **12** | Đa ngôn ngữ (8 Ngôn ngữ Quốc tế) | Cài đặt Ngôn ngữ | Toàn bộ giao diện Mobile/Web | Chuyển đổi mượt mà giữa 8 thứ tiếng, không xảy ra lỗi vỡ layout | **PASS (100%)** |
-
-### 10.2. Cam Kết An Toàn & Bảo Mật Dữ Liệu:
-- **Kiến trúc Token bảo mật**: Phiên đăng nhập được quản lý bằng JWT Access Token & Refresh Token tiêu chuẩn OAuth 2.0, tự động thu hồi khi đăng xuất.
-- **Không xảy ra trùng lặp**: Cơ chế khóa bi quan (Pessimistic Locking) và Idempotency Key bảo đảm không thể có 2 đại biểu cùng đặt trùng 1 số ghế hoặc nộp trùng 1 phiếu thu kế toán.
-- **Đồng bộ thời gian thực (Realtime Sync)**: Hạ tầng WebSocket kết hợp cơ chế Polling Fallback đảm bảo không bỏ sót bất kỳ thông báo hay sự kiện điểm danh nào ngay cả khi mạng chập chờn.
-
----
-*Tài liệu và Hệ thống đã được kiểm thử, nghiệm thu toàn diện.*  
-*Đại diện Kỹ thuật ViOne Platform & Ban Điều Hành CLB Doanh Nhân CEO 1983 trân trọng chứng thực.*  
-*Bản quyền © 2026 ViConnect & CLB Doanh Nhân 1983. Mọi quyền được bảo lưu.*

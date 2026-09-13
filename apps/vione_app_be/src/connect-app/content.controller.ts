@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -10,6 +10,31 @@ export class ContentController {
   @Get('news')
   async listNews() {
     return this.connectAppService.listPublishedNews();
+  }
+
+  @Get('admin/news')
+  async listAdminNews() {
+    return this.connectAppService.listAdminNews();
+  }
+
+  @Post('admin/news')
+  async createAdminNews(@Body() body: any) {
+    return this.connectAppService.createNewsAdmin(body);
+  }
+
+  @Put('admin/news/:id')
+  async updateAdminNewsPut(@Param('id') id: string, @Body() body: any) {
+    return this.connectAppService.updateNewsAdmin(id, body);
+  }
+
+  @Patch('admin/news/:id')
+  async updateAdminNewsPatch(@Param('id') id: string, @Body() body: any) {
+    return this.connectAppService.updateNewsAdmin(id, body);
+  }
+
+  @Delete('admin/news/:id')
+  async deleteAdminNews(@Param('id') id: string) {
+    return this.connectAppService.deleteNewsAdmin(id);
   }
 
   @Get('perks')
@@ -42,3 +67,4 @@ export class ContentController {
     return this.connectAppService.getPerkById(id);
   }
 }
+

@@ -38,6 +38,11 @@ export class VotingController {
     return this.votingService.updatePoll(req.user.id || req.user.sub, id, body);
   }
 
+  @Post('polls/:id/close')
+  async closePoll(@Request() req: any, @Param('id') id: string) {
+    return this.votingService.closePoll(req.user.id || req.user.sub, id);
+  }
+
   @Delete('polls/:id')
   async deletePoll(@Request() req: any, @Param('id') id: string) {
     return this.votingService.deletePoll(req.user.id || req.user.sub, id);
@@ -49,6 +54,11 @@ export class VotingController {
     @Param('id') id: string,
     @Body() body: CastVoteDto,
   ) {
-    return this.votingService.castVote(req.user.id || req.user.sub, id, body.optionId);
+    return this.votingService.castVote(
+      req.user.id || req.user.sub,
+      id,
+      body.optionId,
+      body.sourceApp,
+    );
   }
 }

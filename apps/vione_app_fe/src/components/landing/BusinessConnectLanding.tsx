@@ -899,6 +899,59 @@ const TESTIMONIALS = [
   },
 ];
 
+// TOMB STONE DOOR TRANSITION (Theme Change Door Closing/Opening Animation like V6)
+function TombStoneDoorTransition({
+  isOpen,
+  onCycleComplete,
+}: {
+  isOpen: boolean;
+  onCycleComplete?: () => void;
+}) {
+  return (
+    <AnimatePresence onExitComplete={onCycleComplete}>
+      {!isOpen && (
+        <motion.div
+          className="fixed inset-0 z-[99999] flex pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          {/* Left Tomb Stone Door */}
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: "0%" }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative h-full w-1/2 border-r-4 border-[#D4AF37] bg-gradient-to-r from-[#1E1610] via-[#2A1D13] to-[#120B06] shadow-2xl flex items-center justify-end pr-8"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
+            <div className="text-right font-serif text-5xl tracking-widest text-[#D4AF37]/40 select-none">
+              𓋹 𓂀 𓀀 𓃀 𓄿 𓅓 𓆑
+            </div>
+            <div className="absolute bottom-0 right-0 h-32 w-32 bg-amber-600/20 blur-2xl animate-pulse" />
+          </motion.div>
+
+          {/* Right Tomb Stone Door */}
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: "0%" }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative h-full w-1/2 border-l-4 border-[#D4AF37] bg-gradient-to-l from-[#1E1610] via-[#2A1D13] to-[#120B06] shadow-2xl flex items-center justify-start pl-8"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
+            <div className="text-left font-serif text-5xl tracking-widest text-[#D4AF37]/40 select-none">
+              𓇌 𓈖 𓉐 𓊪 𓋹 𓍯 𓎛
+            </div>
+            <div className="absolute bottom-0 left-0 h-32 w-32 bg-amber-600/20 blur-2xl animate-pulse" />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function BusinessConnectLanding() {
   const { lang } = useLang();
   // Full 3-Theme Switcher Support (Light / Dark Night-City / High-Contrast Cosmic Robot)
@@ -912,11 +965,20 @@ export function BusinessConnectLanding() {
     return "light";
   });
 
+  const [isDoorOpen, setIsDoorOpen] = useState(true);
+
   const handleSetTheme = (mode: ThemeMode) => {
-    setThemeMode(mode);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("vione_bc_theme", mode);
-    }
+    if (mode === themeMode) return;
+    setIsDoorOpen(false);
+    setTimeout(() => {
+      setThemeMode(mode);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("vione_bc_theme", mode);
+      }
+    }, 600);
+    setTimeout(() => {
+      setIsDoorOpen(true);
+    }, 1200);
   };
   const { showHeader, headerStyle, resetTimer } = useAutoHideHeader(3000);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1077,6 +1139,9 @@ export function BusinessConnectLanding() {
       }`}
       style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
+      {/* Cửa đá đóng mở khi chuyển theme */}
+      <TombStoneDoorTransition isOpen={isDoorOpen} />
+
       {/* CSS KEYFRAMES: PENDULUM HANGING LAMPS, 3D INCLINED PLANETS, CEO1983 ORBIT & GEARS */}
       <style>{`
         /* Hanging Lamp Pendulum Sway */

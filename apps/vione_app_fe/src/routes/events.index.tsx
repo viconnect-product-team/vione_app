@@ -3,6 +3,8 @@ import {
   CalendarDays,
   Download,
   LayoutGrid,
+  List,
+  Eye,
   MapPin,
   Pencil,
   Plus,
@@ -20,6 +22,8 @@ import { PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventWizard } from "@/components/dashboard/EventWizard";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   type EventItem,
 } from "@/lib/events.functions";
@@ -234,6 +238,25 @@ function EventsPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [q, status, type, bucket, events]);
 
+  const accessors = useMemo(
+    () => ({
+      name: (e: EventItem) => e.name,
+      date: (e: EventItem) => e.date,
+      type: (e: EventItem) => e.type,
+      location: (e: EventItem) => e.location,
+      status: (e: EventItem) => e.status,
+      registered: (e: EventItem) => e.registered,
+      capacity: (e: EventItem) => e.capacity,
+    }),
+    [],
+  );
+
+  const tc = useTableControls(filtered, accessors, {
+    initialPageSize: 10,
+    initialSortKey: "date",
+    initialSortDir: "asc",
+  });
+
   // Featured = soonest upcoming, non-cancelled event (visual highlight only).
   const featured = useMemo(() => {
     const today = startOfDay(new Date()).getTime();
@@ -413,6 +436,20 @@ function EventsPage() {
             <div className="col-span-2 flex items-center gap-1 rounded-lg border border-border bg-background p-1 sm:col-span-1">
               <button
                 type="button"
+                onClick={() => changeView("table")}
+                aria-label="Xem bảng"
+                aria-pressed={view === "table"}
+                title="Xem bảng"
+                className={`grid h-9 flex-1 place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 sm:h-8 sm:w-8 sm:flex-none ${
+                  view === "table"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <List className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
                 onClick={() => changeView("cards")}
                 aria-label={t("events.view.cards")}
                 aria-pressed={view === "cards"}
@@ -527,20 +564,157 @@ function EventsPage() {
             }
           />
         )
+      ) : view === "table" ? (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+          <div className="overflow-x-auto relative">
+            <table className="w-full text-sm border-separate border-spacing-0">
+              <thead>
+                <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                    STT
+                  </th>
+                  <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                    Mã
+                  </th>
+                  <th className="px-4 py-3 border-b border-border">Tên sự kiện</th>
+                  <th className="px-4 py-3 border-b border-border">Thời gian & Địa điểm</th>
+                  <th className="px-4 py-3 border-b border-border">Phân loại</th>
+                  <th className="px-4 py-3 border-b border-border">Đăng ký / Sức chứa</th>
+                  <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+                  <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tc.pageRows.map((e: any, idx: number) => {
+                  const tone = STATUS_TONE[e.status] ?? STATUS_TONE.upcoming;
+                  const d = new Date(e.date);
+                  return (
+                    <tr
+                      key={e.id}
+                      className="group border-b border-border transition-all duration-150 hover:bg-secondary/60 cursor-pointer"
+                      onClick={(evt) => {
+                        if ((evt.target as HTMLElement).closest("a,button")) return;
+                        router.navigate({ to: "/events/$eventId", params: { eventId: e.id } });
+                      }}
+                    >
+                      <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                        {(tc.page - 1) * tc.pageSize + idx + 1}
+                      </td>
+                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                        EV-{e.id.slice(0, 6).toUpperCase()}
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <div className="font-semibold text-foreground text-xs">{e.name}</div>
+                        <div className="text-[11px] text-muted-foreground line-clamp-1">{e.description}</div>
+                      </td>
+                      <td className="px-4 py-3 text-xs border-b border-border">
+                        <div className="font-medium text-foreground">
+                          {d.toLocaleDateString("vi-VN")} {e.time ? `• ${e.time}` : ""}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="truncate max-w-[180px]">{e.location || "Online"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <span className="inline-flex rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          {t(TYPE_KEY[e.type as EventItem["type"]] ?? "events.type.forum")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <div className="text-xs font-semibold text-foreground">
+                          {e.registered} / {e.capacity}
+                        </div>
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-secondary mt-1">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{
+                              width: `${Math.min(100, Math.round((e.registered / (e.capacity || 1)) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                          style={{ background: tone.bg, color: tone.fg }}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone.fg }} />
+                          {t(STATUS_KEY[e.status as EventItem["status"]] ?? "events.status.upcoming")}
+                        </span>
+                      </td>
+                      <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                        <div className="inline-flex items-center gap-1">
+                          <Link
+                            to="/events/$eventId"
+                            params={{ eventId: e.id }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Link>
+                          <button
+                            onClick={() => {
+                              setEditing(e);
+                              setOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(e)}
+                            disabled={deletingId === e.id}
+                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            page={tc.page}
+            pageCount={tc.pageCount}
+            pageSize={tc.pageSize}
+            total={tc.total}
+            from={tc.from}
+            to={tc.to}
+            onPage={tc.setPage}
+            onPageSize={tc.setPageSize}
+          />
+        </div>
       ) : view === "cards" ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((e: any) => (
-            <EventCard
-              key={e.id}
-              event={e}
-              deleting={deletingId === e.id}
-              onEdit={() => {
-                setEditing(e);
-                setOpen(true);
-              }}
-              onDelete={() => onDelete(e)}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {tc.pageRows.map((e: any) => (
+              <EventCard
+                key={e.id}
+                event={e}
+                deleting={deletingId === e.id}
+                onEdit={() => {
+                  setEditing(e);
+                  setOpen(true);
+                }}
+                onDelete={() => onDelete(e)}
+              />
+            ))}
+          </div>
+          <Pagination
+            page={tc.page}
+            pageCount={tc.pageCount}
+            pageSize={tc.pageSize}
+            total={tc.total}
+            from={tc.from}
+            to={tc.to}
+            onPage={tc.setPage}
+            onPageSize={tc.setPageSize}
+          />
         </div>
       ) : (
         <CalendarView events={filtered} />

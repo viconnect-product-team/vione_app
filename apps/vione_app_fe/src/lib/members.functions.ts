@@ -196,6 +196,7 @@ const RoleAndDeptSchema = z.object({
   memberId: z.string().min(1),
   executiveRole: z.string().min(1),
   department: z.string().min(1),
+  associationId: z.string().optional(),
 });
 
 /** Cập nhật vai trò ban điều hành & phòng ban */
@@ -203,6 +204,19 @@ export const updateMemberRoleAndDeptFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => RoleAndDeptSchema.parse(d))
   .handler(async ({ data, context }) => {
+    const token = (context as any)?.token;
+    try {
+      const res = await fetchNestApiFromServer<any>(`/members/${data.memberId}/role-dept`, token, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+      if (res && res.ok) {
+        return { ok: true };
+      }
+    } catch (e) {
+      console.warn("Fallback to direct db update for role-dept:", e);
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
     
@@ -215,7 +229,7 @@ export const updateMemberRoleAndDeptFn = createServerFn({ method: "POST" })
       })
       .eq("id", data.memberId);
 
-    // Update memberships
+    // Update memberships & user_roles
     const { data: m } = await admin
       .from("members")
       .select("user_id")
@@ -223,13 +237,22 @@ export const updateMemberRoleAndDeptFn = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (m?.user_id) {
+      const sysRole = (data.executiveRole === 'president' || data.executiveRole === 'vice_president' || data.executiveRole === 'secretary') ? 'admin' : 'member';
       await admin
         .from("memberships")
         .update({
           executive_role: data.executiveRole,
           department: data.department,
+          role: sysRole,
         })
         .eq("user_id", m.user_id);
+
+      await admin
+        .from("user_roles")
+        .upsert({
+          user_id: m.user_id,
+          role: sysRole,
+        }, { onConflict: "user_id" });
     }
 
     return { ok: true };

@@ -9,8 +9,17 @@ export type VoteOption = {
   id: string;
   title: string;
   votesCount: number;
+  vioneVotes?: number;
+  associationVotes?: number;
+  crmVotes?: number;
   percentage: number;
   isLeading: boolean;
+};
+
+export type VoteSourceStats = {
+  vioneApp: number;
+  associationApp: number;
+  crm: number;
 };
 
 export type Vote = {
@@ -25,6 +34,8 @@ export type Vote = {
   options: string[];
   optionDetails: VoteOption[];
   myVote?: string | null;
+  myVoteSource?: string | null;
+  sourceStats?: VoteSourceStats;
 };
 
 export const listVotesFn = createServerFn({ method: "GET" })
@@ -39,9 +50,19 @@ export const listVotesFn = createServerFn({ method: "GET" })
             id: typeof o === "string" ? o : String(o.id || ""),
             title: typeof o === "string" ? o : String(o.title || ""),
             votesCount: typeof o === "string" ? 0 : Number(o.votesCount ?? o.votes_count ?? 0),
+            vioneVotes: typeof o === "string" ? 0 : Number(o.vioneVotes ?? o.vione_votes ?? 0),
+            associationVotes: typeof o === "string" ? 0 : Number(o.associationVotes ?? o.association_votes ?? 0),
+            crmVotes: typeof o === "string" ? 0 : Number(o.crmVotes ?? o.crm_votes ?? 0),
             percentage: typeof o === "string" ? 0 : Number(o.percentage ?? 0),
             isLeading: typeof o === "string" ? false : Boolean(o.isLeading),
           }));
+
+          const sourceStats: VoteSourceStats = r.sourceStats || {
+            vioneApp: optionDetails.reduce((sum, o) => sum + (o.vioneVotes || 0), 0),
+            associationApp: optionDetails.reduce((sum, o) => sum + (o.associationVotes || 0), 0),
+            crm: optionDetails.reduce((sum, o) => sum + (o.crmVotes || 0), 0),
+          };
+
           return {
             id: r.id,
             title: r.title,
@@ -54,6 +75,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
             options: optionDetails.map((o) => o.title),
             optionDetails,
             myVote: r.myVote || null,
+            myVoteSource: r.myVoteSource || null,
+            sourceStats,
           };
         });
       }
@@ -80,6 +103,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
         options: [],
         optionDetails: [],
         myVote: null,
+        myVoteSource: null,
+        sourceStats: { vioneApp: 0, associationApp: 0, crm: 0 },
       }));
     } catch {
       return [];
@@ -92,13 +117,14 @@ export const castVoteFn = createServerFn({ method: "POST" })
     const d = data as Record<string, unknown>;
     const pollId = String(d.pollId ?? "").trim();
     const optionId = String(d.optionId ?? "").trim();
+    const sourceApp = d.sourceApp ? String(d.sourceApp).trim() : "crm";
     if (!pollId || !optionId) throw new Error("Thiếu mã bình chọn hoặc phương án");
-    return { pollId, optionId };
+    return { pollId, optionId, sourceApp };
   })
   .handler(async ({ data, context }) => {
     return fetchNestApiFromServer(`/voting/polls/${data.pollId}/vote`, context.token, {
       method: "POST",
-      body: JSON.stringify({ optionId: data.optionId }),
+      body: JSON.stringify({ optionId: data.optionId, sourceApp: data.sourceApp }),
     });
   });
 
@@ -108,6 +134,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
     const d = data as Record<string, unknown>;
     const title = String(d.title ?? "").trim();
     const type = String(d.type ?? "policy");
+    const targetAudience = String(d.targetAudience ?? "all");
     const startsAt = String(d.startsAt ?? "").trim();
     const endsAt = String(d.endsAt ?? "").trim();
     const options = Array.isArray(d.options)
@@ -120,7 +147,7 @@ export const createVoteFn = createServerFn({ method: "POST" })
     if (options.length < 2) throw new Error("Cần ít nhất 2 lựa chọn");
     if (options.length > 20) throw new Error("Tối đa 20 lựa chọn");
     if (!["policy", "election", "amendment"].includes(type)) throw new Error("Loại không hợp lệ");
-    return { title, type, startsAt, endsAt, options };
+    return { title, type, targetAudience, startsAt, endsAt, options };
   })
   .handler(async ({ data, context }) => {
     return fetchNestApiFromServer("/voting/polls", context.token, {
@@ -149,6 +176,19 @@ export const updateVoteFn = createServerFn({ method: "POST" })
     return fetchNestApiFromServer(`/voting/polls/${id}`, context.token, {
       method: "PUT",
       body: JSON.stringify(body),
+    });
+  });
+
+export const closeVoteFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((data: unknown) => {
+    const id = String((data as Record<string, unknown>).id ?? "").trim();
+    if (!id) throw new Error("Thiếu mã bình chọn");
+    return { id };
+  })
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(`/voting/polls/${data.id}/close`, context.token, {
+      method: "POST",
     });
   });
 

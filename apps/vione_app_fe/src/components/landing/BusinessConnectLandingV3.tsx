@@ -1,590 +1,697 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Zap,
+  Play,
+  X,
+  Sun,
+  Moon,
+  Contrast,
   Users,
   Building2,
-  Coins,
-  Wallet,
-  Clock,
-  Landmark,
-  PieChart,
-  LineChart,
-  LayoutDashboard,
-  KeyRound,
-  Layers,
-  Award,
-  Crown,
-  TrendingDown,
   TrendingUp,
-  X,
-  Check,
-  Percent,
-  Banknote,
-  ShieldAlert,
+  Globe2,
+  Calendar,
+  Layers,
   BookOpen,
+  BarChart3,
+  Bot,
+  Share2,
+  CheckCircle2,
+  ChevronRight,
+  ShieldCheck,
+  Terminal,
+  Grid,
+  Zap,
 } from "lucide-react";
-import { BusinessConnectPartnersSection } from "./BusinessConnectPartnersSection";
 import { toast } from "sonner";
-import { useAutoHideHeader } from "./useAutoHideHeader";
-import { KineticWords, KineticTitleBox } from "./KineticTypography";
+
+type ThemeMode = "light" | "dark" | "contrast";
+
+// =========================================================================
+// TECHNICAL GRID BACKGROUND (Vercel / Stripe High-Precision Enterprise)
+// =========================================================================
+function TechnicalGridBackground({ theme }: { theme: ThemeMode }) {
+  if (theme === "contrast") {
+    return <div className="pointer-events-none fixed inset-0 z-0 bg-white" />;
+  }
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {/* Precision architectural dot and line grid */}
+      <div
+        className={`absolute inset-0 ${
+          theme === "dark"
+            ? "bg-[#0A0A0A] bg-[linear-gradient(to_right,#1f293720_1px,transparent_1px),linear-gradient(to_bottom,#1f293720_1px,transparent_1px)] bg-[size:32px_32px]"
+            : "bg-[#FAFAFA] bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] bg-[size:32px_32px]"
+        }`}
+      />
+      {/* Subtle top ambient glow */}
+      <div
+        className={`absolute top-0 left-1/2 -translate-x-1/2 h-[500px] w-[900px] rounded-full blur-[140px] pointer-events-none ${
+          theme === "dark" ? "bg-gradient-to-b from-orange-500/10 via-purple-500/5 to-transparent" : "bg-gradient-to-b from-slate-200/50 to-transparent"
+        }`}
+      />
+    </div>
+  );
+}
+
+// 5 PROBLEMS - PART 1 EXACT
+const PROBLEMS_DATA = [
+  {
+    num: "01",
+    title: "Thông tin phân tán",
+    desc: "Khó tìm đúng người trong mạng lưới do dữ liệu lưu trữ rải rác trên danh bạ, Zalo và nhiều file Excel rời rạc.",
+  },
+  {
+    num: "02",
+    title: "Khó duy trì quan hệ",
+    desc: "Thiếu công cụ nhắc nhở và theo dõi tương tác, khiến sợi dây liên kết giữa các thành viên dần nguội lạnh.",
+  },
+  {
+    num: "03",
+    title: "Bỏ lỡ cơ hội",
+    desc: "Không kịp nắm bắt cơ hội phù hợp khi hội viên có nhu cầu hợp tác hoặc cung ứng dịch vụ cấp thiết.",
+  },
+  {
+    num: "04",
+    title: "Thiếu kết nối thực chất",
+    desc: "Nhiều sự kiện nhưng khó tạo giá trị sau sự kiện, giao lưu xã giao bề nổi thiếu cơ chế xúc tiến 1-on-1.",
+  },
+  {
+    num: "05",
+    title: "Khó đo lường hiệu quả",
+    desc: "Không biết mối quan hệ mang lại giá trị gì, thiếu hệ thống số hóa ghi nhận doanh thu và cơ hội giao thương.",
+  },
+];
+
+// 9 SOLUTIONS - PART 1 EXACT
+const SOLUTIONS_DATA = [
+  {
+    icon: Users,
+    title: "Quản lý hội viên",
+    desc: "Hồ sơ 360°, phân nhóm thông minh, tra cứu nhanh năng lực doanh nghiệp và ban điều hành.",
+  },
+  {
+    icon: Layers,
+    title: "CRM & Quan hệ",
+    desc: "Theo dõi lịch sử, ghi chú, nhắc nhở tương tác và quản lý mức độ gắn kết bền chặt.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Cơ hội kinh doanh",
+    desc: "Quản lý pipeline, matching thông minh, ghi nhận lời cảm ơn doanh thu và đo lường thành công.",
+  },
+  {
+    icon: Calendar,
+    title: "Sự kiện",
+    desc: "Tổ chức, quản lý, kết nối trước - trong - sau sự kiện, check-in QR siêu tốc và sơ đồ chỗ ngồi VIP.",
+  },
+  {
+    icon: Building2,
+    title: "Cộng đồng & Nhóm",
+    desc: "Không gian kết nối theo ngành, chủ đề chuyên sâu, phân ban chuyên môn và câu lạc bộ trực thuộc.",
+  },
+  {
+    icon: BookOpen,
+    title: "Tri thức & Nội dung",
+    desc: "Chia sẻ chuyên gia, tài liệu hội thảo, thư viện biểu mẫu pháp lý và bản tin kinh tế độc quyền.",
+  },
+  {
+    icon: BarChart3,
+    title: "Báo cáo & Phân tích",
+    desc: "Đo lường hiệu quả kết nối và ROI mạng lưới, bảng điều khiển KPI giao thương hiệp hội minh bạch.",
+  },
+  {
+    icon: Bot,
+    title: "AI Copilot",
+    desc: "Tìm kiếm thông minh, gợi ý kết nối chuẩn xác theo ngành nghề và tóm tắt biên bản họp tự động.",
+  },
+  {
+    icon: Share2,
+    title: "Tích hợp & Mở rộng",
+    desc: "Kết nối liền mạch với hệ thống khác CRM, email marketing, calendar và hóa đơn điện tử VAT.",
+  },
+];
+
+const CLIENT_LOGOS = [
+  "VCCI",
+  "AmCham",
+  "EuroCham",
+  "KoCham",
+  "Singapore Business Federation",
+  "AusCham",
+];
+
+const TESTIMONIALS_DATA = [
+  {
+    quote: "Business Connect giúp Hiệp hội Du lịch chuyển đổi số toàn diện. Việc kết nối giữa hơn 1,200 doanh nghiệp hội viên diễn ra chuẩn xác và tạo ra doanh thu thực tế rõ rệt.",
+    author: "Nguyễn Thị Lan",
+    role: "Chủ tịch Hiệp hội Du lịch VN",
+    badge: "1,200+ Hội viên",
+  },
+  {
+    quote: "Hệ thống CRM và matching cơ hội kinh doanh giúp công ty tôi tìm được đúng các đối tác cung ứng tin cậy trong các hiệp hội công nghiệp lớn chỉ trong vài tuần.",
+    author: "Trần Minh Quân",
+    role: "CEO, Công ty Sản xuất Việt",
+    badge: "Doanh nghiệp Tiêu biểu",
+  },
+  {
+    quote: "Tôi tiết kiệm được 80% thời gian mở rộng quan hệ. Thay vì phát danh thiếp giấy tràn lan, Business Connect trao đúng giá trị cho đúng người lãnh đạo cần gặp.",
+    author: "Lê Hoàng Anh",
+    role: "Doanh nhân, Hội viên VIP",
+    badge: "Hội viên VIP",
+  },
+];
 
 export function BusinessConnectLandingV3() {
-  // STRICTLY FIXED LIGHT THEME
-  const themeMode = "light";
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [demoForm, setDemoForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    org: "",
-    note: "",
-  });
-
-  // Auto-hiding header after 3s
-  const { showHeader, headerStyle, resetTimer } = useAutoHideHeader(3000);
+  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [demoEmail, setDemoEmail] = useState("");
+  const [demoName, setDemoName] = useState("");
+  const [demoOrg, setDemoOrg] = useState("");
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Đăng ký thành công! Đội ngũ tư vấn ROI của Business Connect sẽ liên hệ trong 24h.");
-    setDemoModalOpen(false);
-    setDemoForm({ name: "", phone: "", email: "", org: "", note: "" });
+    if (!demoEmail) {
+      toast.error("Vui lòng nhập email doanh nghiệp!");
+      return;
+    }
+    toast.success("Đặt lịch demo thành công! Ban tư vấn cấp cao ViOne sẽ liên hệ trong 15 phút.");
+    setIsDemoModalOpen(false);
+    setDemoEmail("");
+    setDemoName("");
+    setDemoOrg("");
+  };
+
+  // Theme styling helpers
+  const themeClasses = {
+    light: "bg-[#FAFAFA] text-[#0A0A0A]",
+    dark: "bg-[#0A0A0A] text-[#EDEDED] dark",
+    contrast: "bg-white text-black contrast",
+  };
+
+  const cardClasses = {
+    light: "bg-white border border-neutral-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.08)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)] transition-all",
+    dark: "bg-[#141414] border border-neutral-800 shadow-[4px_4px_0px_0px_rgba(249,115,22,0.1)] hover:border-orange-500/40 hover:shadow-[6px_6px_0px_0px_rgba(249,115,22,0.2)] transition-all",
+    contrast: "bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000000] hover:shadow-[6px_6px_0px_0px_#000000] transition-all",
   };
 
   return (
-    <div
-      className="min-h-screen font-sans bg-[#F4F9F5] text-slate-900 relative overflow-x-hidden selection:bg-emerald-200 selection:text-emerald-950"
-      style={{
-        fontFamily: "'Plus Jakarta Sans', 'Be Vietnam Pro', system-ui, -apple-system, sans-serif",
-      }}
-    >
-      {/* Luxury Architectural & Financial Atmosphere Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.12),transparent_70%)]" />
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-amber-400/10 blur-3xl" />
-        <div className="absolute top-1/3 left-0 w-80 h-80 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0596690d_1px,transparent_1px),linear-gradient(to_bottom,#0596690d_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_40%,#000_60%,transparent_100%)] opacity-80" />
-      </div>
+    <div className={`min-h-screen font-sans transition-colors duration-200 relative overflow-x-hidden ${themeClasses[theme]}`}>
+      <TechnicalGridBackground theme={theme} />
 
-      {/* =========================================================================
-          SECTION 1: HEADER (Tự ẩn sau 3s, di chuột hoặc scroll thì hiện lại)
-          Theme Sang Trọng Emerald & Gold, Chữ Đen Tuyền Sắc Nét
-          ========================================================================= */}
-      <header
-        style={headerStyle}
-        onMouseEnter={resetTimer}
-        className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-white/95 border-b border-emerald-100 shadow-[0_2px_15px_rgba(5,150,105,0.06)] transition-colors duration-500"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/business-connect/v3" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-amber-500 flex items-center justify-center text-white font-black shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition-transform">
-              <Coins className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight block leading-tight text-slate-950">
-                  BUSINESS <span className="text-emerald-600">CONNECT</span>
-                </span>
-                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  V3 ROI BENTO
-                </span>
+      {/* ========================================================================= */}
+      {/* 1. HEADER (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-colors ${
+        theme === "dark" ? "bg-[#0A0A0A]/90 border-neutral-800" : theme === "contrast" ? "bg-white border-b-2 border-black" : "bg-white/90 border-neutral-200"
+      }`}>
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link to="/business-connect/v3" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-xl rounded-none border border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
+                V3
               </div>
-              <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-emerald-700">
-                TỐI ƯU CHI PHÍ • GIA TĂNG LỢI NHUẬN • BỀN VỮNG
-              </span>
-            </div>
-          </Link>
+              <div>
+                <span className="font-extrabold text-xl tracking-tight block">BUSINESS CONNECT</span>
+                <span className="text-[10px] tracking-widest uppercase text-neutral-500 font-mono">Premium Editorial</span>
+              </div>
+            </Link>
 
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-700">
-            <a href="#challenges" className="hover:text-emerald-600 transition-colors">Thách thức ROI</a>
-            <a href="#solutions" className="hover:text-emerald-600 transition-colors">Giải pháp Bento</a>
-            <a href="#performance" className="hover:text-emerald-600 transition-colors">Báo cáo Hiệu suất</a>
-            <a href="#partners" className="hover:text-emerald-600 transition-colors">Đối tác chiến lược</a>
-            <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-sans">
-              VI / EN
-            </span>
-          </nav>
+            {/* Navigation links - Part 1 exact */}
+            <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold tracking-wide">
+              <a href="#giai-phap" className="hover:text-orange-500 transition-colors">Giải pháp</a>
+              <a href="#khach-hang" className="hover:text-orange-500 transition-colors">Khách hàng</a>
+              <a href="#cau-chuyen" className="hover:text-orange-500 transition-colors">Câu chuyện</a>
+              <a href="#bang-gia" className="hover:text-orange-500 transition-colors">Bảng giá</a>
+              <a href="#tai-nguyen" className="hover:text-orange-500 transition-colors">Tài nguyên</a>
+              <a href="#ve-chung-toi" className="hover:text-orange-500 transition-colors">Về chúng tôi</a>
+            </nav>
+          </div>
 
-          <div className="flex items-center gap-3">
-            {/* Emerald Luxury Badge */}
-            <div
-              className="px-3 py-1.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-800 flex items-center gap-1.5 text-xs font-bold select-none"
-              title="Theme Emerald Gold"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-mono text-[10px] uppercase tracking-wider">EMERALD BENTO</span>
+          <div className="flex items-center gap-4">
+            {/* 3 Themes Switcher */}
+            <div className={`flex items-center p-1 border ${
+              theme === "dark" ? "border-neutral-800 bg-neutral-900" : "border-neutral-300 bg-neutral-100"
+            }`}>
+              <button
+                onClick={() => setTheme("light")}
+                className={`p-1.5 text-xs font-bold transition-all ${theme === "light" ? "bg-white text-black shadow-sm" : "text-neutral-500"}`}
+                title="Light Mode (Stripe White)"
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={`p-1.5 text-xs font-bold transition-all ${theme === "dark" ? "bg-orange-500 text-black shadow-sm" : "text-neutral-500"}`}
+                title="Dark Mode (Vercel Obsidian)"
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setTheme("contrast")}
+                className={`p-1.5 text-xs font-bold transition-all ${theme === "contrast" ? "bg-black text-white" : "text-neutral-500"}`}
+                title="High Contrast (Corporate Brutalism)"
+              >
+                <Contrast className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             <Link
-              to="/connect-app"
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border text-slate-800 bg-white hover:bg-emerald-50 border-emerald-200 shadow-sm transition-all"
+              to="/auth"
+              className="text-sm font-bold px-4 py-2 hover:opacity-80 transition-opacity hidden sm:inline-block"
             >
-              <Users className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Đăng nhập</span>
+              Đăng nhập
             </Link>
 
             <button
-              onClick={() => setDemoModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-105 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 transition-all cursor-pointer border border-emerald-400"
+              onClick={() => setIsDemoModalOpen(true)}
+              className="px-5 py-2.5 bg-black dark:bg-white text-white dark:text-black font-bold text-sm tracking-wide border border-black dark:border-white shadow-[3px_3px_0px_0px_rgba(249,115,22,0.8)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_0px_rgba(249,115,22,0.8)] transition-all flex items-center gap-2"
             >
-              Nhận tư vấn tối ưu ROI →
+              <span>Đặt demo</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* =========================================================================
-          SECTION 1: HERO SECTION (Cố định làm nền - Sticky Section)
-          Khi người dùng cuộn xuống, Section 2 sẽ từ dưới đáy trượt lên đè lên Hero!
-          ========================================================================= */}
-      <section
-        id="hero"
-        className="sticky top-0 z-10 min-h-[95vh] flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-center"
-      >
-        <div className="max-w-5xl mx-auto space-y-8 relative z-10">
-          {/* Kinetic Badge */}
-          <motion.div
-            initial={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border-2 text-xs font-mono font-bold tracking-wider uppercase shadow-sm bg-white/90 border-emerald-200 text-emerald-800"
-          >
-            <Sparkles className="w-4 h-4 text-emerald-600 animate-pulse" />
-            <span>ĐỘT PHÁ QUẢN TRỊ ROI • TỐI ƯU HÓA CHI PHÍ DOANH NGHIỆP</span>
-          </motion.div>
-
-          {/* Kinetic Headline with Word-by-Word Emergence */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight font-serif text-slate-950">
-            <KineticWords
-              text="Cắt giảm 70% lãng phí. Gia tăng 300% hiệu suất liên kết thương mại."
-              highlightIndices={[0, 1, 2, 7, 8]}
-              highlightClass="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-500 font-extrabold"
-            />
-          </h1>
-
-          {/* Kinetic Subtitle */}
-          <motion.p
-            initial={{ y: 25, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="text-base sm:text-xl leading-relaxed max-w-3xl mx-auto text-slate-700 font-normal"
-          >
-            Mô hình Bento ROI của Business Connect tái định nghĩa cách các Hiệp hội và Doanh nghiệp vận hành: loại bỏ triệt để điểm mù chi phí, số hóa mạng lưới giao thương và tạo ra lợi nhuận đo lường được từng ngày.
-          </motion.p>
-
-          {/* Action CTAs */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-          >
-            <button
-              onClick={() => setDemoModalOpen(true)}
-              className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-600/20 hover:scale-105 transition-all cursor-pointer border-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white border-emerald-400 flex items-center gap-2"
+      {/* ========================================================================= */}
+      {/* 2. HERO SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24 md:py-32 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-4xl">
+            {/* Tagline */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="inline-flex items-center gap-2 px-3 py-1 bg-neutral-200/70 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-mono font-bold tracking-widest uppercase mb-6"
             >
-              <span>Tính toán ROI Doanh Nghiệp Bạn</span>
+              <span className="w-2 h-2 bg-orange-500 rounded-none inline-block animate-pulse" />
+              NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+              className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.05] uppercase mb-8"
+            >
+              Hiểu đúng người. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-purple-600">
+                Mở ra cơ hội thật.
+              </span>
+            </motion.h1>
+
+            {/* Subtext */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+              className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 font-normal leading-relaxed mb-10 max-w-3xl"
+            >
+              Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+              className="flex flex-wrap items-center gap-4 mb-16"
+            >
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-8 py-4 bg-black dark:bg-white text-white dark:text-black font-extrabold text-base tracking-wide border-2 border-black dark:border-white shadow-[5px_5px_0px_0px_#f97316] hover:shadow-[2px_2px_0px_0px_#f97316] hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-3"
+              >
+                <span>Đặt demo ngay</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => toast.info("Video giới thiệu 2 phút dành riêng cho Lãnh đạo Doanh nghiệp đang được tải.")}
+                className="px-7 py-4 bg-transparent border-2 border-neutral-300 dark:border-neutral-700 hover:border-black dark:hover:border-white font-bold text-base tracking-wide flex items-center gap-3 transition-colors"
+              >
+                <Play className="w-4 h-4 fill-current text-orange-500" />
+                <span>Xem video (2 phút)</span>
+              </button>
+            </motion.div>
+
+            {/* 4 Stats - Part 1 exact */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 border-t border-neutral-200 dark:border-neutral-800">
+              <div>
+                <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-orange-500">10,000+</div>
+                <div className="text-xs sm:text-sm font-semibold text-neutral-500 mt-1 uppercase tracking-wider">Doanh nhân & Hội viên</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-neutral-900 dark:text-neutral-100">300+</div>
+                <div className="text-xs sm:text-sm font-semibold text-neutral-500 mt-1 uppercase tracking-wider">Hiệp hội & Tổ chức</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-neutral-900 dark:text-neutral-100">50,000+</div>
+                <div className="text-xs sm:text-sm font-semibold text-neutral-500 mt-1 uppercase tracking-wider">Kết nối được tạo</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-neutral-900 dark:text-neutral-100">20+</div>
+                <div className="text-xs sm:text-sm font-semibold text-neutral-500 mt-1 uppercase tracking-wider">Quốc gia & vùng lãnh thổ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 3. PROBLEM SECTION (PART 1 EXACT - 5 CARDS) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-16">
+            <span className="text-xs font-mono font-bold tracking-widest text-orange-500 uppercase block mb-3">
+              NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase max-w-2xl">
+              Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {PROBLEMS_DATA.map((p, idx) => (
+              <motion.div
+                key={p.num}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.08, ease: "easeOut" }}
+                className={`p-6 flex flex-col justify-between ${cardClasses[theme]}`}
+              >
+                <div>
+                  <div className="font-mono text-2xl font-black text-neutral-400 mb-4">{p.num}</div>
+                  <h3 className="text-lg font-bold uppercase tracking-tight mb-3 text-neutral-900 dark:text-white">
+                    {p.title}
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-normal">
+                    {p.desc}
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800 text-xs font-mono font-bold text-orange-500 flex items-center gap-1">
+                  <span>THÁCH THỨC B2B</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. SOLUTION SECTION (PART 1 EXACT - 9 CARDS) */}
+      {/* ========================================================================= */}
+      <section id="giai-phap" className="relative z-10 py-24 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div>
+              <span className="text-xs font-mono font-bold tracking-widest text-orange-500 uppercase block mb-3">
+                GIẢI PHÁP BUSINESS CONNECT
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase">
+                Quản lý kết nối. Tạo ra cơ hội.
+              </h2>
+              <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 mt-4 max-w-3xl leading-relaxed">
+                Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực chất.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
+              className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-orange-500 hover:text-orange-400 transition-colors whitespace-nowrap"
+            >
+              <span>Khám phá tính năng</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
 
-            <a
-              href="#challenges"
-              className="px-7 py-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-2 border-emerald-200 bg-white/80 text-slate-800 hover:border-emerald-500 hover:bg-emerald-50 shadow-sm"
-            >
-              <LineChart className="w-4 h-4 text-emerald-600" />
-              <span>Xem Báo Cáo Đo Lường</span>
-            </a>
-          </motion.div>
-
-          {/* Scroll Down Hint indicating bottom-up stacking section */}
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="pt-8 text-xs font-mono font-bold text-emerald-600 flex items-center justify-center gap-2"
-          >
-            <span>CUỘN ĐỂ KÉO PHÂN HỆ TIẾP THEO TỪ DƯỚI LÊN</span>
-            <span className="text-base">↓</span>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 2: THÁCH THỨC & LÃNG PHÍ ROI (Kéo từ dưới lên đè lên Section 1)
-          Stacking Card: relative z-20 rounded-t-[40px] shadow-2xl bg-white
-          ========================================================================= */}
-      <section
-        id="challenges"
-        className="relative z-20 rounded-t-[40px] sm:rounded-t-[50px] shadow-[0_-25px_60px_rgba(5,150,105,0.08)] bg-white border-t border-emerald-100 py-24 sm:py-32"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <KineticTitleBox
-            badge="NHẬN DIỆN LỖ HỔNG LỢI NHUẬN"
-            title="Doanh nghiệp bạn đang thất thoát bao nhiêu phần trăm ngân sách mỗi năm?"
-            subtitle="Phần lớn các tổ chức và hiệp hội đang duy trì các công cụ rời rạc, gây lãng phí hàng tỷ đồng chi phí nhân sự và bỏ lỡ những thương vụ B2B giá trị cao."
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Bento Card 1 */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-7 rounded-3xl bg-gradient-to-b from-amber-50/30 via-emerald-50/20 to-white border border-emerald-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-                  <TrendingDown className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-slate-950">
-                  <KineticWords text="Chi phí vận hành thủ công phình to" />
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Nhân sự mất 45% thời gian nhập liệu, đối soát danh bạ và gửi email thủ công thay vì tập trung tạo ra doanh thu.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-emerald-100 flex items-center justify-between text-xs font-mono font-bold text-amber-800">
-                <span>LÃNG PHÍ:</span>
-                <span>~45% Giờ công</span>
-              </div>
-            </motion.div>
-
-            {/* Bento Card 2 */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-7 rounded-3xl bg-gradient-to-b from-amber-50/30 via-emerald-50/20 to-white border border-emerald-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                  <Banknote className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-slate-950">
-                  <KineticWords text="Bỏ lỡ cơ hội chốt deal nội khối" />
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Thiếu sàn ghép cung cầu AI khiến các hội viên mua ngoài với chi phí đắt đỏ thay vì trao đổi giá ưu đãi trong liên minh.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-emerald-100 flex items-center justify-between text-xs font-mono font-bold text-emerald-800">
-                <span>THẤT THOÁT:</span>
-                <span>Hàng tỷ VNĐ/năm</span>
-              </div>
-            </motion.div>
-
-            {/* Bento Card 3 */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="p-7 rounded-3xl bg-gradient-to-b from-amber-50/30 via-emerald-50/20 to-white border border-emerald-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-                  <Clock className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-slate-950">
-                  <KineticWords text="Độ trễ thông tin tiếp cận đối tác" />
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Mất 5-7 ngày để tìm được thông tin người đại diện có thẩm quyền ký kết, giảm 60% xác suất thắng thầu.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-emerald-100 flex items-center justify-between text-xs font-mono font-bold text-amber-800">
-                <span>ĐỘ TRỄ:</span>
-                <span>+5 đến 7 ngày</span>
-              </div>
-            </motion.div>
-
-            {/* Bento Card 4 */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="p-7 rounded-3xl bg-gradient-to-b from-amber-50/30 via-emerald-50/20 to-white border border-emerald-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                  <ShieldAlert className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold font-serif text-slate-950">
-                  <KineticWords text="Rủi ro phân mảnh dữ liệu CRM" />
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Dữ liệu nằm rải rác trên Zalo, Excel, không kiểm soát được dòng tương tác khi nhân viên kinh doanh nghỉ việc.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-emerald-100 flex items-center justify-between text-xs font-mono font-bold text-emerald-800">
-                <span>RỦI RO:</span>
-                <span>Mất tệp khách VIP</span>
-              </div>
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SOLUTIONS_DATA.map((sol, idx) => {
+              const Icon = sol.icon;
+              return (
+                <motion.div
+                  key={sol.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: idx * 0.05, ease: "easeOut" }}
+                  className={`p-8 group ${cardClasses[theme]}`}
+                >
+                  <div className="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center mb-6 text-neutral-900 dark:text-white group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-black uppercase tracking-tight mb-3">
+                    {sol.title}
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-normal">
+                    {sol.desc}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION 3: GIẢI PHÁP BENTO ROI (Chạy từ TRÁI VÀO - Slide in from Left)
-          ========================================================================= */}
-      <section id="solutions" className="relative py-24 bg-[#F0FDF4] border-t border-emerald-100 overflow-hidden">
-        <motion.div
-          initial={{ x: -140, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16"
-        >
-          <KineticTitleBox
-            badge="PHÂN HỆ BENTO ĐỘT PHÁ"
-            title="Hệ thống 6 trụ cột tối ưu hóa dòng tiền và lợi nhuận B2B"
-            subtitle="Tích hợp liền mạch toàn bộ các công cụ xúc tiến thương mại, CRM và tự động hóa trong một kiến trúc trực quan, dễ dùng."
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Bento Col 1 */}
-            <div className="p-8 rounded-3xl bg-white border border-emerald-100 shadow-sm space-y-4 hover:border-emerald-400 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                <Coins className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-serif text-slate-950">
-                <KineticWords text="Sàn Deal Flow AI Nội Khối" />
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Tự động bắt cặp cung - cầu với tỷ lệ chính xác 98%, gửi thông báo tức thì khi có thành viên trong liên minh cần mua sản phẩm/dịch vụ bạn cung cấp.
-              </p>
-              <div className="pt-4 border-t border-emerald-100 text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> Tăng gấp 3 lần tỷ lệ chốt hợp đồng
-              </div>
-            </div>
-
-            {/* Bento Col 2 */}
-            <div className="p-8 rounded-3xl bg-white border border-emerald-100 shadow-sm space-y-4 hover:border-emerald-400 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                <LayoutDashboard className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-serif text-slate-950">
-                <KineticWords text="CRM Đối Tác B2B Chuyên Biệt" />
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Quản lý lịch sử gặp gỡ, nhật ký hợp tác, chấm điểm mức độ tin cậy và tự động nhắc nhở thời điểm vàng để tái ký hợp đồng kinh doanh.
-              </p>
-              <div className="pt-4 border-t border-emerald-100 text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> 100% dữ liệu đối tác thuộc về tổ chức
-              </div>
-            </div>
-
-            {/* Bento Col 3 */}
-            <div className="p-8 rounded-3xl bg-white border border-emerald-100 shadow-sm space-y-4 hover:border-emerald-400 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                <PieChart className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl font-bold font-serif text-slate-950">
-                <KineticWords text="Đo Lường ROI Thời Gian Thực" />
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Bảng phân tích trực quan tính toán chính xác số tiền tiết kiệm được, số lượng kết nối mới và tổng doanh số phát sinh từ liên minh.
-              </p>
-              <div className="pt-4 border-t border-emerald-100 text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                <Check className="w-4 h-4" /> Minh bạch tài chính từng thương vụ
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 4: BÁO CÁO HIỆU SUẤT & ROI (Chạy từ PHẢI VÀO - Slide in from Right)
-          ========================================================================= */}
-      <section id="performance" className="relative py-24 bg-white border-t border-emerald-100 overflow-hidden">
-        <motion.div
-          initial={{ x: 140, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16"
-        >
-          <KineticTitleBox
-            badge="BẢNG ĐIỀU HÀNH HIỆU SUẤT"
-            title="Dữ liệu kiểm chứng thực tế từ hơn 300 Hiệp hội và Doanh nghiệp"
-            subtitle="Kết quả định lượng cụ thể sau 6 tháng chuyển đổi sang nền tảng Business Connect."
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-8 rounded-3xl bg-emerald-50/60 border border-emerald-100 text-center space-y-2 hover:border-emerald-300 transition-colors">
-              <span className="text-5xl font-black font-mono text-emerald-700 block">70%</span>
-              <p className="text-sm font-bold text-slate-900 font-serif">Giảm chi phí vận hành</p>
-              <p className="text-xs text-slate-600">Tự động hóa 100% hồ sơ hội viên</p>
-            </div>
-
-            <div className="p-8 rounded-3xl bg-emerald-50/60 border border-emerald-100 text-center space-y-2 hover:border-emerald-300 transition-colors">
-              <span className="text-5xl font-black font-mono text-emerald-700 block">300%</span>
-              <p className="text-sm font-bold text-slate-900 font-serif">Tăng hiệu quả kết nối</p>
-              <p className="text-xs text-slate-600">Nhờ thuật toán AI gợi ý đối tác</p>
-            </div>
-
-            <div className="p-8 rounded-3xl bg-emerald-50/60 border border-emerald-100 text-center space-y-2 hover:border-emerald-300 transition-colors">
-              <span className="text-5xl font-black font-mono text-emerald-700 block">&lt;1s</span>
-              <p className="text-sm font-bold text-slate-900 font-serif">Tốc độ Check-in NFC</p>
-              <p className="text-xs text-slate-600">Đón tiếp lễ tân hội nghị nghìn người</p>
-            </div>
-
-            <div className="p-8 rounded-3xl bg-emerald-50/60 border border-emerald-100 text-center space-y-2 hover:border-emerald-300 transition-colors">
-              <span className="text-5xl font-black font-mono text-emerald-700 block">98%</span>
-              <p className="text-sm font-bold text-slate-900 font-serif">Hài lòng từ lãnh đạo</p>
-              <p className="text-xs text-slate-600">Minh bạch chỉ số và bảo mật cao</p>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 5: ĐỐI TÁC CHIẾN LƯỢC (Chạy từ TRÁI VÀO - Slide in from Left)
-          ========================================================================= */}
-      <section id="partners" className="relative py-24 bg-[#F0FDF4] border-t border-emerald-100 overflow-hidden">
-        <motion.div
-          initial={{ x: -140, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12"
-        >
-          <div className="text-center space-y-3">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200">
-              ĐỐI TÁC HỆ SINH THÁI
+      {/* ========================================================================= */}
+      {/* 5. ECOSYSTEM SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className={`p-10 md:p-16 border ${
+            theme === "dark" ? "bg-[#111111] border-neutral-800" : theme === "contrast" ? "bg-white border-2 border-black" : "bg-neutral-100 border-neutral-300"
+          }`}>
+            <span className="text-xs font-mono font-bold tracking-widest text-orange-500 uppercase block mb-3">
+              HỆ SINH THÁI KẾT NỐI KINH DOANH
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black font-serif text-slate-950">
-              Đồng hành cùng các tập đoàn và hiệp hội hàng đầu
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase mb-6">
+              Cùng nhau tạo ra giá trị lớn hơn
             </h2>
-          </div>
-          <BusinessConnectPartnersSection themeMode="light" />
-        </motion.div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 6: VỀ CHÚNG TÔI & ĐĂNG KÝ (Chạy từ PHẢI VÀO - Slide in from Right)
-          ========================================================================= */}
-      <section id="about" className="relative py-24 bg-white border-t border-emerald-100 overflow-hidden">
-        <motion.div
-          initial={{ x: 140, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8"
-        >
-          <div className="p-10 sm:p-14 rounded-3xl bg-gradient-to-tr from-emerald-50 via-white to-amber-50/40 border-2 border-emerald-200 shadow-xl space-y-6">
-            <h2 className="text-3xl sm:text-5xl font-black font-serif text-slate-950">
-              <KineticWords text="Sẵn sàng tối ưu hóa dòng tiền và doanh số B2B?" />
-            </h2>
-            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
-              Đăng ký ngay hôm nay để nhận báo cáo phân tích ROI chuyên sâu và lộ trình triển khai chi tiết cho tổ chức của bạn.
+            <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-4xl leading-relaxed mb-8">
+              Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà đầu tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực và cơ hội kinh doanh.
             </p>
-            <div className="pt-4">
+
+            <div className="p-6 bg-black dark:bg-neutral-900 text-white border border-neutral-800 mb-8 inline-block shadow-[4px_4px_0px_0px_#f97316]">
+              <div className="text-sm md:text-base font-black tracking-widest uppercase text-orange-400">
+                NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
               <button
-                onClick={() => setDemoModalOpen(true)}
-                className="px-9 py-4 rounded-2xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-105 text-white shadow-xl shadow-emerald-500/25 hover:scale-105 transition-all cursor-pointer border border-emerald-400"
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-6 py-3 bg-orange-500 text-white font-extrabold text-sm uppercase tracking-wider flex items-center gap-2 hover:bg-orange-600 transition-colors"
               >
-                Nhận Báo Cáo Tư Vấn ROI Miễn Phí →
+                <span>Xem hệ sinh thái</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* =========================================================================
-          FOOTER (Chân trang)
-          ========================================================================= */}
-      <footer className="py-16 bg-[#F0FDF4] border-t border-emerald-100 text-slate-600 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-emerald-100">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20">
-                <Coins className="w-4 h-4" />
-              </div>
-              <span className="text-lg font-black font-serif text-slate-950">Business Connect V3 Bento</span>
+      {/* ========================================================================= */}
+      {/* 6. CLIENT & TESTIMONIAL SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section id="khach-hang" className="relative z-10 py-24 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Header 1 & Logos */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-mono font-bold tracking-widest text-orange-500 uppercase block mb-2">
+                ĐƯỢC TIN TƯỞNG BỞI CÁC HIỆP HỘI VÀ DOANH NGHIỆP
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight">
+                Những tổ chức tiên phong đã lựa chọn
+              </h3>
             </div>
-            <p className="text-slate-500">Kiến trúc Bento ROI tối ưu hóa lợi nhuận và kết nối B2B bền vững.</p>
+            <a href="#tat-ca-khach-hang" className="text-sm font-bold text-orange-500 hover:underline flex items-center gap-1">
+              <span>Xem tất cả khách hàng</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between text-slate-500">
-            <p>© 2026 Business Connect V3. All rights reserved.</p>
-            <div className="flex gap-6 mt-4 sm:mt-0 font-bold">
-              <Link to="/business-connect/v1" className="hover:text-emerald-700">V1 Classic</Link>
-              <Link to="/business-connect/v2" className="hover:text-emerald-700">V2 Zen</Link>
-              <Link to="/business-connect/v3" className="text-emerald-700 underline font-extrabold">V3 Bento</Link>
-              <Link to="/business-connect/v4" className="hover:text-emerald-700">V4 Cyber</Link>
-              <Link to="/business-connect/v5" className="hover:text-emerald-700">V5 Sovereign</Link>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-24">
+            {CLIENT_LOGOS.map((name) => (
+              <div
+                key={name}
+                className={`p-6 flex items-center justify-center text-center font-bold text-xs uppercase tracking-wider border ${
+                  theme === "dark" ? "border-neutral-800 bg-neutral-900/60 text-neutral-400" : "border-neutral-200 bg-white text-neutral-700"
+                }`}
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+
+          {/* Header 2 & 3 Reviews */}
+          <div id="cau-chuyen" className="mb-12">
+            <span className="text-xs font-mono font-bold tracking-widest text-orange-500 uppercase block mb-2">
+              CÂU CHUYỆN THÀNH CÔNG
+            </span>
+            <h3 className="text-2xl sm:text-4xl font-black uppercase tracking-tight">
+              Kết nối đúng. Tăng trưởng thật.
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS_DATA.map((t) => (
+              <div
+                key={t.author}
+                className={`p-8 flex flex-col justify-between ${cardClasses[theme]}`}
+              >
+                <div>
+                  <div className="inline-block px-2.5 py-1 bg-neutral-200 dark:bg-neutral-800 text-[10px] font-mono font-bold tracking-wider uppercase mb-6 text-orange-500">
+                    {t.badge}
+                  </div>
+                  <p className="text-base text-neutral-700 dark:text-neutral-300 leading-relaxed italic mb-8">
+                    "{t.quote}"
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                  <div className="font-extrabold text-base text-neutral-900 dark:text-white uppercase tracking-tight">
+                    {t.author}
+                  </div>
+                  <div className="text-xs text-neutral-500 mt-0.5">
+                    {t.role}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 7. FOOTER (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <footer className="relative z-10 py-24 bg-neutral-950 text-white border-t border-neutral-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase mb-6">
+              Sẵn sàng mở ra nhiều cơ hội hơn?
+            </h2>
+            <p className="text-base sm:text-lg text-neutral-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Hãy để Business Connect đồng hành cùng hiệp hội hoặc doanh nghiệp của bạn.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-8 py-4 bg-orange-500 text-black font-black text-base uppercase tracking-wider shadow-[4px_4px_0px_0px_#ffffff] hover:bg-orange-400 hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-3"
+              >
+                <span>Đặt demo ngay</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-8 py-4 bg-transparent border-2 border-neutral-700 hover:border-white font-bold text-base uppercase tracking-wider text-white transition-colors"
+              >
+                Liên hệ tư vấn
+              </button>
+            </div>
+
+            <div className="pt-10 border-t border-neutral-800 text-xs font-mono text-neutral-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>© 2026 VIONE B2B PLATFORM. TẤT CẢ QUYỀN ĐƯỢC BẢO LƯU.</div>
+              <div className="flex items-center gap-6">
+                <span>ISO 27001 BẢO MẬT</span>
+                <span>ENTERPRISE SLA 99.9%</span>
+              </div>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Demo Modal */}
-      {demoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in font-sans">
-          <div className="relative w-full max-w-md rounded-3xl border-2 p-7 shadow-2xl bg-white border-emerald-200 text-slate-900">
-            <button
-              onClick={() => setDemoModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-black cursor-pointer"
+      {/* ========================================================================= */}
+      {/* DEMO MODAL */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {isDemoModalOpen && (
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDemoModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative z-10 w-full max-w-lg bg-neutral-900 border border-neutral-700 p-8 text-white shadow-[8px_8px_0px_0px_#f97316]"
             >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-2xl font-black mb-1 font-serif text-slate-950">
-              Tư Vấn Tối Ưu ROI V3
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Điền thông tin để chuyên gia Business Connect liên hệ gửi bảng tính toán ROI chi tiết cho tổ chức.
-            </p>
-            <form onSubmit={handleDemoSubmit} className="space-y-3 text-left">
-              <div>
-                <label className="block text-xs font-bold mb-1">Họ và tên Lãnh Đạo *</label>
-                <input
-                  type="text"
-                  required
-                  value={demoForm.name}
-                  onChange={(e) => setDemoForm({ ...demoForm, name: e.target.value })}
-                  placeholder="VD: Nguyễn Văn A"
-                  className="w-full h-11 px-3.5 rounded-xl border border-emerald-200 text-sm outline-none focus:border-emerald-500 bg-emerald-50/40 text-slate-900"
-                />
+              <div className="flex items-center justify-between mb-6 border-b border-neutral-800 pb-4">
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Đăng Ký Đặt Lịch Demo</h3>
+                  <p className="text-xs text-neutral-400 font-mono mt-1">Dành riêng cho Lãnh đạo Hiệp hội & Doanh nghiệp</p>
+                </div>
+                <button
+                  onClick={() => setIsDemoModalOpen(false)}
+                  className="p-1 text-neutral-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Số điện thoại *</label>
-                <input
-                  type="tel"
-                  required
-                  value={demoForm.phone}
-                  onChange={(e) => setDemoForm({ ...demoForm, phone: e.target.value })}
-                  placeholder="VD: 0912345678"
-                  className="w-full h-11 px-3.5 rounded-xl border border-emerald-200 text-sm outline-none focus:border-emerald-500 bg-emerald-50/40 text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Tên Tổ Chức / Doanh Nghiệp</label>
-                <input
-                  type="text"
-                  value={demoForm.org}
-                  onChange={(e) => setDemoForm({ ...demoForm, org: e.target.value })}
-                  placeholder="VD: CÔNG TY TNHH ABC"
-                  className="w-full h-11 px-3.5 rounded-xl border border-emerald-200 text-sm outline-none focus:border-emerald-500 bg-emerald-50/40 text-slate-900"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all mt-4 cursor-pointer shadow-xl border bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-105 text-white border-emerald-400"
-              >
-                Nhận Báo Cáo Tính Toán ROI
-              </button>
-            </form>
+
+              <form onSubmit={handleDemoSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase text-neutral-400 mb-1.5">Họ và tên</label>
+                  <input
+                    type="text"
+                    required
+                    value={demoName}
+                    onChange={(e) => setDemoName(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                    className="w-full px-4 py-3 bg-neutral-950 border border-neutral-700 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono uppercase text-neutral-400 mb-1.5">Email doanh nghiệp</label>
+                  <input
+                    type="email"
+                    required
+                    value={demoEmail}
+                    onChange={(e) => setDemoEmail(e.target.value)}
+                    placeholder="ceo@enterprise.com"
+                    className="w-full px-4 py-3 bg-neutral-950 border border-neutral-700 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono uppercase text-neutral-400 mb-1.5">Tên Hiệp hội / Doanh nghiệp</label>
+                  <input
+                    type="text"
+                    required
+                    value={demoOrg}
+                    onChange={(e) => setDemoOrg(e.target.value)}
+                    placeholder="Hiệp hội Doanh nghiệp TP.HCM"
+                    className="w-full px-4 py-3 bg-neutral-950 border border-neutral-700 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-orange-500 text-black font-black uppercase tracking-wider text-sm hover:bg-orange-400 transition-colors shadow-[4px_4px_0px_0px_#ffffff]"
+                  >
+                    Xác nhận đặt demo
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

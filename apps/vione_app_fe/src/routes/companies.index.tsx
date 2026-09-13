@@ -255,7 +255,17 @@ function CompaniesPage() {
     }
   };
 
-  const base = useMemo(() => MEMBERS.filter((m) => m.type === "company"), [MEMBERS]);
+  const base = useMemo(
+    () =>
+      MEMBERS.filter(
+        (m) =>
+          !m.type ||
+          m.type === "company" ||
+          (m.type as string) === "enterprise" ||
+          (m.type as string) === "corporate",
+      ),
+    [MEMBERS],
+  );
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -736,16 +746,19 @@ function CompanyTable({
   const t = useT();
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="relative overflow-x-auto">
+        <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
-            <tr className="bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr className="bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+              <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã DN</th>
               <SortHeader
                 label={t("tbl.name")}
                 columnKey="name"
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
+                className="border-b border-border"
               />
               <SortHeader
                 label={t("tbl.industry")}
@@ -753,6 +766,7 @@ function CompanyTable({
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
+                className="border-b border-border"
               />
               <SortHeader
                 label={t("tbl.region")}
@@ -760,6 +774,7 @@ function CompanyTable({
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
+                className="border-b border-border"
               />
               <SortHeader
                 label={t("companies.kpi.employees")}
@@ -767,6 +782,7 @@ function CompanyTable({
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
+                className="border-b border-border"
               />
               <SortHeader
                 label={t("tbl.status")}
@@ -774,19 +790,26 @@ function CompanyTable({
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
+                className="border-b border-border"
               />
-              <th className="px-4 py-3 text-right font-semibold">{t("tbl.actions")}</th>
+              <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right font-bold border-b border-border">{t("tbl.actions")}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((m) => {
+            {rows.map((m, idx) => {
               const s = statusStyle[m.status];
               return (
-                <tr key={m.id} className="border-t border-border transition hover:bg-muted/30">
-                  <td className="px-4 py-3">
+                <tr key={m.id} className="group border-b border-border/50 transition hover:bg-muted/30">
+                  <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                    {(tc.page - 1) * tc.pageSize + idx + 1}
+                  </td>
+                  <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
+                    {m.code}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
                     <div className="flex items-center gap-3">
                       <div
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-bold text-primary-foreground"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-bold text-primary-foreground shrink-0"
                         style={{ background: "var(--gradient-primary)" }}
                       >
                         {initials(m.name).toUpperCase()}
@@ -794,17 +817,17 @@ function CompanyTable({
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-foreground">{m.name}</div>
                         <div className="truncate text-[11px] text-muted-foreground">
-                          {m.code} · {m.taxCode ?? "-"}
+                          {m.taxCode ? `MST: ${m.taxCode}` : "-"}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-foreground">{t(m.industry)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t(m.region)}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">
+                  <td className="px-4 py-3 text-foreground border-b border-border/50">{t(m.industry)}</td>
+                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{t(m.region)}</td>
+                  <td className="px-4 py-3 font-medium text-foreground border-b border-border/50">
                     {(m.employees ?? 0).toLocaleString("vi-VN")}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-border/50">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.bg} ${s.text}`}
                     >
@@ -812,7 +835,7 @@ function CompanyTable({
                       {t(`status.${m.status}` as TKey)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="sticky right-0 z-10 bg-card px-4 py-3 text-right group-hover:bg-muted/70 border-b border-border/50">
                     <div className="flex items-center justify-end gap-1.5">
                       <Link
                         to="/companies/$companyId"

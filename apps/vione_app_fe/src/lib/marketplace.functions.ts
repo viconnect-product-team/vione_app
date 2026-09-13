@@ -107,13 +107,39 @@ function mapQuote(r: Row): QuoteRequest {
 export const listProductsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Product[]> => {
+    const token = (context as any)?.token;
+    try {
+      const nestProducts = await fetchNestApiFromServer<any[]>("/marketplace/products", token);
+      if (Array.isArray(nestProducts) && nestProducts.length > 0) {
+        const mapped = nestProducts.map((p: any) => ({
+          id: p.id,
+          sellerId: p.sellerId || p.seller_id,
+          title: p.title,
+          description: p.description ?? "",
+          price: Number(p.price),
+          category: p.category as ProductCategoryKey,
+          status: p.status as Product["status"],
+          createdAt: p.createdAt || p.created_at,
+          views: Number(p.views ?? 0),
+          emoji: p.emoji ?? "🛍️",
+          pdfUrl: p.pdfUrl || p.pdf_url || "",
+          imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : (Array.isArray(p.image_urls) ? p.image_urls : []),
+          websiteUrl: p.websiteUrl || p.website_url || "",
+          facebookUrl: p.facebookUrl || p.facebook_url || "",
+        }));
+        return signProducts(token, mapped);
+      }
+    } catch (e) {
+      console.warn("Fallback to db for listProducts:", e);
+    }
+
     const { data, error } = await getDb(context)
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return signProducts(
-      (context as any).token,
+      token,
       (data ?? []).map((r: any) => mapProduct(r as Row)),
     );
   });
@@ -123,6 +149,49 @@ export const getProductFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(
     async ({ data, context }): Promise<{ product: Product; quotes: QuoteRequest[] } | null> => {
+      const token = (context as any)?.token;
+      try {
+        const res = await fetchNestApiFromServer<{ product: any; quotes: any[] }>(`/marketplace/products/${data.id}`, token);
+        if (res && res.product) {
+          const p = res.product;
+          const mappedProd: Product = {
+            id: p.id,
+            sellerId: p.sellerId || p.seller_id,
+            title: p.title,
+            description: p.description ?? "",
+            price: Number(p.price),
+            category: p.category as ProductCategoryKey,
+            status: p.status as Product["status"],
+            createdAt: p.createdAt || p.created_at,
+            views: Number(p.views ?? 0),
+            emoji: p.emoji ?? "🛍️",
+            pdfUrl: p.pdfUrl || p.pdf_url || "",
+            imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : (Array.isArray(p.image_urls) ? p.image_urls : []),
+            websiteUrl: p.websiteUrl || p.website_url || "",
+            facebookUrl: p.facebookUrl || p.facebook_url || "",
+          };
+          const mappedQuotes: QuoteRequest[] = (res.quotes ?? []).map((q: any) => ({
+            id: q.id,
+            productId: q.productId || q.product_id,
+            buyerId: q.buyerId || q.buyer_id,
+            quantity: Number(q.quantity ?? 1),
+            message: q.message ?? "",
+            contact: q.contact ?? "",
+            status: q.status ?? "sent",
+            reminderCount: Number(q.reminderCount ?? q.reminder_count ?? 0),
+            cancelReason: q.cancelReason ?? q.cancel_reason ?? "",
+            createdAt: q.createdAt || q.created_at,
+            updatedAt: q.updatedAt || q.updated_at || q.createdAt || q.created_at,
+          }));
+          return {
+            product: await signProduct(token, mappedProd),
+            quotes: mappedQuotes,
+          };
+        }
+      } catch (e) {
+        console.warn("Fallback to db for getProduct:", e);
+      }
+
       const { data: row, error } = await getDb(context)
         .from("products")
         .select("*")
@@ -145,7 +214,7 @@ export const getProductFn = createServerFn({ method: "GET" })
         .eq("product_id", data.id)
         .order("created_at", { ascending: false });
       return {
-        product: await signProduct((context as any).token, mapProduct(row as Row)),
+        product: await signProduct(token, mapProduct(row as Row)),
         quotes: (quotes ?? []).map((q: any) => mapQuote(q as Row)),
       };
     },
@@ -321,8 +390,33 @@ export const createQuoteRequestFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest> => {
+    const token = (context as any)?.token;
+    try {
+      const res = await fetchNestApiFromServer<any>("/marketplace/quotes", token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (res && res.id) {
+        return {
+          id: res.id,
+          productId: res.productId || data.productId,
+          buyerId: res.buyerId || data.buyerId || "",
+          quantity: Number(res.quantity ?? data.quantity),
+          message: res.message ?? data.message,
+          contact: res.contact ?? data.contact,
+          status: (res.status as QuoteRequest["status"]) ?? "sent",
+          reminderCount: 0,
+          cancelReason: "",
+          createdAt: res.createdAt || new Date().toISOString(),
+          updatedAt: res.createdAt || new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for createQuoteRequest:", e);
+    }
+
     const id = `q-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const memberId = await resolveMemberId((context as any)?.token);
+    const memberId = await resolveMemberId(token);
     const { data: row, error } = await getDb(context)
       .from("quote_requests")
       .insert({
@@ -355,7 +449,32 @@ export const cancelQuoteFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId((context as any)?.token);
+    const token = (context as any)?.token;
+    try {
+      const res = await fetchNestApiFromServer<any>(`/marketplace/quotes/${data.id}/cancel`, token, {
+        method: "POST",
+        body: JSON.stringify({ reason: data.reason }),
+      });
+      if (res && res.id) {
+        return {
+          id: res.id,
+          productId: "",
+          buyerId: "",
+          quantity: 1,
+          message: "",
+          contact: "",
+          status: "cancelled",
+          reminderCount: 0,
+          cancelReason: data.reason,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for cancelQuote:", e);
+    }
+
+    const memberId = await resolveMemberId(token);
     const { data: cur } = await getDb(context)
       .from("quote_requests")
       .select("status")
@@ -379,6 +498,30 @@ export const remindQuoteFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
+    const token = (context as any)?.token;
+    try {
+      const res = await fetchNestApiFromServer<any>(`/marketplace/quotes/${data.id}/reminder`, token, {
+        method: "POST",
+      });
+      if (res && res.id) {
+        return {
+          id: res.id,
+          productId: "",
+          buyerId: "",
+          quantity: 1,
+          message: "",
+          contact: "",
+          status: "sent",
+          reminderCount: Number(res.reminderCount ?? 1),
+          cancelReason: "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for remindQuote:", e);
+    }
+
     const { data: cur } = await getDb(context)
       .from("quote_requests")
       .select("status, reminder_count")
@@ -407,7 +550,32 @@ export const updateQuoteStatusFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<QuoteRequest | null> => {
-    const memberId = await resolveMemberId((context as any)?.token);
+    const token = (context as any)?.token;
+    try {
+      const res = await fetchNestApiFromServer<any>(`/marketplace/quotes/${data.id}/status`, token, {
+        method: "PATCH",
+        body: JSON.stringify({ status: data.status }),
+      });
+      if (res && res.id) {
+        return {
+          id: res.id,
+          productId: "",
+          buyerId: "",
+          quantity: 1,
+          message: "",
+          contact: "",
+          status: data.status,
+          reminderCount: 0,
+          cancelReason: "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for updateQuoteStatus:", e);
+    }
+
+    const memberId = await resolveMemberId(token);
 
     // Load the quote and its product's seller to authorize the transition.
     const { data: quote, error: qErr } = await getDb(context)

@@ -1,335 +1,223 @@
-# TÀI LIỆU ĐẶC TẢ YÊU CẦU NGHIỆP VỤ & THIẾT KẾ KỸ THUẬT VIONE
-## VIONE BUSINESS CONNECT ECOSYSTEM — BRD, SRS & TECHSPEC QUALITY SOT
+# TÀI LIỆU ĐẶC TẢ YÊU CẦU NGHIỆP VỤ & THIẾT KẾ KỸ THUẬT TOÀN DIỆN
+## VIONE BUSINESS CONNECT ECOSYSTEM — BRD, SRS & TECHSPEC QUALITY SOURCE OF TRUTH
+*Bộ Tài liệu Nền tảng Phân tích Nghiệp vụ (Master BA) — Ma trận Truy vết Yêu cầu & Tiêu chuẩn Nghiệm thu Sản phẩm*
 
 ---
 
-## 📌 TRANG BÌA & THÔNG TIN DỰ ÁN
+## 📌 THÔNG TIN DỰ ÁN & LỊCH SỬ PHIÊN BẢN
 
 *   **Tên dự án:** Hệ thống Kết nối và Số hóa Doanh nghiệp ViOne (ViOne Business Connect Ecosystem)
-*   **Tên tài liệu:** Tài liệu Đặc tả Yêu cầu Nghiệp vụ & Thiết kế Kỹ thuật Toàn diện (BRD, SRS & TechSpec Quality SoT)
-*   **Mã tài liệu:** `VIONE-SRS-TS-01`
-*   **Phiên bản:** `2.0.0`
-*   **Ngày ban hành:** 08/09/2026
-*   **Bộ phận biên soạn:** Phòng Nghiệp vụ & Kiến trúc Hệ thống (Senior BA/SA Team)
-*   **Trạng thái:** Đã phê duyệt & Ban hành chính thức (Approved & Baseline)
-*   **Mức độ bảo mật:** Nội bộ (Internal Confidential)
+*   **Mã tài liệu:** `VIONE-BRD-SRS-TS-01`
+*   **Phiên bản:** `3.0.0` (Master BA Edition)
+*   **Chủ trì biên soạn:** Chuyên gia Phân tích Nghiệp vụ Trưởng (Lead Master BA) & Kiến trúc sư Trưởng (Lead Solution Architect)
+*   **Trạng thái:** Đã nghiệm thu & Ban hành chính thức (Approved & Baselined)
 
-### Lịch sử Thay đổi Phiên bản
+### Lịch sử Thay đổi Tài liệu
 
-| Phiên bản | Ngày | Tác giả | Trạng thái | Nội dung thay đổi |
-| :--- | :--- | :--- | :--- | :--- |
-| **0.1.0** | 20/08/2026 | BA Team | Nháp | Khởi tạo khung đặc tả yêu cầu nghiệp vụ SRS sơ bộ. |
-| **0.9.0** | 25/08/2026 | SA Team | Nháp | Thiết kế cơ sở dữ liệu chi tiết, API contract và máy trạng thái. |
-| **1.0.0** | 28/08/2026 | BA/SA Lead | Phê duyệt | Tích hợp hoàn chỉnh bản đặc tả, bổ sung ma trận truy vết. |
-| **2.0.0** | 08/09/2026 | Senior BA/SA Lead | Phát hành | Mở rộng toàn diện toàn bộ 10 phân hệ nghiệp vụ: Định danh số & Chạm 1-Tap NFC Native, Quét QR Live Camera Zalo, AI OCR Danh thiếp, Sàn B2B Cung - Cầu, Lịch hẹn 1-on-1, Điểm danh Sự kiện, Phê duyệt Hội viên CLB CEO 1983 / Hiệp hội, Đa ngôn ngữ (8 Ngôn ngữ), Modular Landing Template và Quy trình đóng gói APK Android. |
+| Phiên bản | Ngày | Tác giả | Nội dung nâng cấp & Chuẩn hóa |
+| :---: | :---: | :--- | :--- |
+| **1.0.0** | 20/08/2026 | BA Team | Khởi tạo khung BRD và danh mục yêu cầu người dùng sơ bộ. |
+| **2.0.0** | 08/09/2026 | SA Team | Bổ sung lược đồ cơ sở dữ liệu và danh mục API kỹ thuật. |
+| **3.0.0** | 13/09/2026 | Master BA Lead | Tái cấu trúc toàn diện theo tiêu chuẩn Master BA: Xóa bỏ mọi nội dung mơ hồ, chuẩn hóa URL di động `/auth/mobile/` và `/association/*`, bổ sung tiêu chí nghiệm thu Gherkin (Given-When-Then), mô hình máy trạng thái, ma trận truy vết từ Yêu cầu kinh doanh đến Test Case kiểm thử. |
 
 ---
 
 ## 📑 MỤC LỤC TỔNG THỂ
 
-1. [PHẦN 1: TỔNG QUAN HỆ THỐNG & YÊU CẦU KINH DOANH (BRD)](#phần-1-tổng-quan-hệ-thống--yêu-cầu-kinh-doanh-brd)
-   - 1.1 Tầm nhìn & Mục tiêu chiến lược
-   - 1.2 Chân dung người dùng & Mô hình phân quyền đa cấp
-   - 1.3 Phạm vi hệ thống & Ranh giới phân hệ
-2. [PHẦN 2: ĐẶC TẢ YÊU CẦU NGHIỆP VỤ CHI TIẾT (SRS)](#phần-2-đặc-tả-yêu-cầu-nghiệp-vụ-chi-tiết-srs)
-   - 2.1 [UC-AUTH-01]: Đăng nhập Đa kênh (Google, Apple, Password) & Quản lý Phiên bảo mật
-   - 2.2 [UC-ID-02]: Quản trị Danh tính số & Danh thiếp điện tử thông minh (Smart Digital Card)
-   - 2.3 [UC-NFC-03]: Chạm kết nối 1-Tap NFC & Quét QR trực tiếp phong cách Zalo
-   - 2.4 [UC-OCR-04]: Chụp & Số hóa Danh thiếp giấy bằng AI OCR
-   - 2.5 [UC-B2B-05]: Sàn Cơ hội Giao thương B2B (Đăng tin Cung - Cầu & AI Matching)
-   - 2.6 [UC-MTG-06]: Lập kế hoạch & Điều phối Lịch hẹn Giao thương 1-on-1
-   - 2.7 [UC-EVT-07]: Quản trị Sự kiện, Vé điện tử & Check-in 1 chạm QR/NFC
-   - 2.8 [UC-MEM-08]: Quy trình Thẩm định & Phê duyệt Đơn gia nhập CLB / Hiệp hội
-   - 2.9 [UC-FEE-09]: Quản lý Hội phí, Hóa đơn điện tử & Báo cáo Tài chính
-   - 2.10 [UC-TPL-10]: Hệ thống Template Landing Page Modular Đa ngôn ngữ (8 Ngôn ngữ)
-3. [PHẦN 3: ĐẶC TẢ THIẾT KẾ KỸ THUẬT (TECHSPEC)](#phần-3-đặc-tả-thiết-kế-kỹ-thuật-techspec)
-   - 3.1 Thiết kế Cơ sở Dữ liệu Chi tiết (Database Schema Catalog)
-   - 3.2 Máy trạng thái Nghiệp vụ (State Machines)
-   - 3.3 Thiết kế API Contract & Giao thức WebSocket
-   - 3.4 Quy chuẩn Đồng bộ Native Android NFC & Camera Scanner
-4. [PHẦN 4: MA TRẬN TRUY VẾT & KIỂM THỬ CHẤT LƯỢNG (TRACEABILITY & QA MATRIX)](#phần-4-ma-trận-truy-vết--kiểm-thử-chất-lượng)
+1. [PHẦN 1: ĐẶC TẢ YÊU CẦU KINH DOANH (BUSINESS REQUIREMENTS DOCUMENT - BRD)](#phần-1-đặc-tả-yêu-cầu-kinh-doanh-brd)
+   - 1.1 Bối cảnh thực tiễn & Nỗi đau của Khách hàng (Pain Points)
+   - 1.2 Mục tiêu chiến lược & Chỉ số Thành công cốt lõi (OKRs / KPIs)
+   - 1.3 Phạm vi Nghiệp vụ của 3 Trụ cột Hệ thống
+2. [PHẦN 2: ĐẶC TẢ YÊU CẦU PHẦN MỀM (SOFTWARE REQUIREMENTS SPECIFICATION - SRS)](#phần-2-đặc-tả-yêu-cầu-phần-mềm-srs)
+   - 2.1 [SRS-01]: Quản trị Hội viên & Thẩm định Hồ sơ Ứng viên
+   - 2.2 [SRS-02]: Cổng Đăng nhập Di động Chuẩn hóa (`/auth/mobile/`)
+   - 2.3 [SRS-03]: Quản lý Sự kiện, Khán phòng Sân khấu & Điểm danh QR 0.2s
+   - 2.4 [SRS-04]: Quản lý Niên liễm, VietQR Động & Tự động Gia hạn (+1 năm)
+   - 2.5 [SRS-05]: Danh thiếp Kỹ thuật số 3D & Chạm kết nối 1-Tap NFC
+   - 2.6 [SRS-06]: Sàn Giao thương B2B & Điều phối Cuộc hẹn 1-on-1
+   - 2.7 [SRS-07]: Quản trị Nền tảng, Phân quyền RBAC & Kiểm toán Bất biến
+3. [PHẦN 3: THIẾT KẾ KỸ THUẬT & MÁY TRẠNG THÁI (TECHSPEC & STATE MACHINES)](#phần-3-thiết-kế-kỹ-thuật--máy-trạng-thái)
+   - 3.1 Vòng đời Hội viên (Member Lifecycle State Machine)
+   - 3.2 Vòng đời Hóa đơn & Gia hạn Niên liễm (Invoice & Renewal State Machine)
+   - 3.3 Vòng đời Cuộc hẹn B2B (Meeting State Machine)
+4. [PHẦN 4: MA TRẬN TRUY VẾT YÊU CẦU & KIỂM THỬ (TRACEABILITY MATRIX)](#phần-4-ma-trận-truy-vết-yêu-cầu--kiểm-thử)
 
 ---
 
-# PHẦN 1: TỔNG QUAN HỆ THỐNG & YÊU CẦU KINH DOANH (BRD)
+# PHẦN 1: ĐẶC TẢ YÊU CẦU KINH DOANH (BRD)
 
-## 1.1 Tầm nhìn & Mục tiêu chiến lược
-Hệ thống **ViOne Business Connect Ecosystem** là nền tảng số hóa và kết nối kinh doanh toàn diện dành cho các Hiệp hội Doanh nghiệp, Câu lạc bộ Doanh nhân (như CLB CEO 1983, HUBA, VACOD, VCCI) và cộng đồng các nhà lãnh đạo C-Level.
+## 1.1 Bối cảnh thực tiễn & Nỗi đau của Khách hàng (Pain Points)
+Các Hiệp hội Doanh nghiệp và CLB Doanh nhân (như CLB Doanh nhân CEO 1983) đang đối mặt với các rào cản nghiêm trọng trong công tác quản trị và giao thương:
 
-**Các mục tiêu then chốt:**
-1. **100% Số hóa Quy trình Hội viên**: Loại bỏ quản lý rời rạc trên Excel và Zalo; tự động hóa từ khâu nộp đơn ứng tuyển, thẩm định, cấp mã hội viên đến thu hội phí định kỳ.
-2. **Chạm kết nối 1-Tap NFC & Quét QR Tức thì**: Thay thế hoàn toàn danh thiếp giấy truyền thống, trao đổi thông tin doanh nghiệp trong 0.2 giây với bảo mật cao cấp.
-3. **Thúc đẩy Giao thương B2B Nội khối**: Tạo dòng chảy cơ hội kinh doanh liên tục thông qua sàn Cung - Cầu và trợ lý AI Copilot tự động khớp nối nhu cầu.
-4. **Mở rộng Đa ngôn ngữ Toàn cầu**: Hỗ trợ 8 ngôn ngữ (VI, EN, KM, MY, LO, JA, KO, ZH) sẵn sàng cho giao thương quốc tế với các đối tác AmCham, EuroCham, KoCham, SBF.
-5. **Kiến trúc Modular Reusable Template**: Cho phép nhân bản và triển khai trang Landing Page cho bất kỳ hiệp hội hoặc khách hàng doanh nghiệp mới chỉ trong 24 giờ.
-
-## 1.2 Mô hình Phân quyền Đa cấp (Role-Based Access Control)
-- **Super Admin (Chủ tịch / Tổng Thư ký)**: Quản trị toàn hệ thống, phê duyệt tài chính, cấu hình tenant và phân quyền quản trị.
-- **Branch Admin (Trưởng Chi hội / Trưởng Ban)**: Thẩm định hồ sơ hội viên theo vùng miền, phê duyệt sự kiện và quản lý cơ hội giao thương nội khối.
-- **Official Member (Hội viên Chính thức)**: Được cấp Mã hội viên (Member Code), sở hữu Thẻ NFC/QR VIP, đăng tin sàn B2B, đặt lịch 1-on-1 và tham gia các nhóm kín.
-- **Associate Member / Guest (Hội viên Liên kết / Khách mời)**: Tài khoản đang trong thời gian thẩm định hoặc khách trải nghiệm demo, giới hạn một số tính năng chuyên sâu.
-
----
-
-# PHẦN 2: ĐẶC TẢ YÊU CẦU NGHIỆP VỤ CHI TIẾT (SRS)
-
-## 2.1 [UC-AUTH-01]: Đăng nhập Đa kênh & Quản lý Phiên bảo mật
-
-### 2.1.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-AUTH-01` |
-| **Tên Use Case** | Đăng nhập Đa kênh (Google, Apple, Password) & Quản lý Phiên |
-| **Tác nhân** | Doanh nhân, Hội viên, Ban Quản trị |
-| **Tiền điều kiện** | Ứng dụng đã được cài đặt hoặc truy cập qua Web URL an toàn HTTPS. |
-| **Hậu điều kiện** | Người dùng được cấp Access Token (JWT), lưu phiên đăng nhập và định tuyến đến Dashboard tương ứng theo Role. |
-
-### 2.1.2 Luồng sự kiện chính
-1. Người dùng mở màn hình đăng nhập chuẩn [ConnectAppSignIn.tsx](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_fe/src/components/business-connect/mobile/ConnectAppSignIn.tsx). Mặc định kích hoạt Theme tối ánh kim sang trọng.
-2. Người dùng chọn phương thức đăng nhập:
-   - **Google SSO**: Hệ thống nhận ID Token từ Google OAuth2, xác thực email và cấp quyền.
-   - **Apple Sign-In**: Xác thực qua Apple ID và sinh mã định danh bảo mật.
-   - **Email & Mật khẩu**: Nhập thông tin, hệ thống kiểm tra mật khẩu đã mã hóa bcrypt.
-3. Người dùng có thể tích chọn *"Ghi nhớ đăng nhập"* để lưu phiên an toàn vào Secure Storage của thiết bị.
-4. Sau khi đăng nhập thành công, hệ thống ghi nhận thiết bị vào bảng `active_sessions` (IP, loại thiết bị, vị trí) phục vụ bảo mật đa tầng.
-
----
-
-## 2.2 [UC-ID-02]: Quản trị Danh tính số & Danh thiếp điện tử (Smart Digital Card)
-
-### 2.2.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-ID-02` |
-| **Tên Use Case** | Quản lý Danh tính số & Danh thiếp điện tử thông minh |
-| **Tác nhân** | Doanh nhân chính chủ |
-| **Tiền điều kiện** | Đã đăng nhập tài khoản ViOne thành công. |
-| **Hậu điều kiện** | Danh tính số được cập nhật trên đám mây và đồng bộ với Thẻ cứng NFC. |
-
-### 2.2.2 Quy tắc nghiệp vụ (Business Rules)
-- `BR-ID-01`: Mỗi tài khoản sở hữu 1 Profile định danh cốt lõi (`PersonNode`) gồm: Avatar, Họ tên, Chức vụ, Công ty, Số điện thoại, Email, Website, Bio, Sản phẩm chủ lực và Logo khách hàng tiêu biểu.
-- `BR-ID-02`: Mã chia sẻ công khai (`share_token`) được tạo tự động với cơ chế xoay token bảo mật (Rotate Link) để ngăn chặn hành vi khai thác dữ liệu trái phép.
-
----
-
-## 2.3 [UC-NFC-03]: Chạm kết nối 1-Tap NFC & Quét QR Trực tiếp (Zalo Style)
-
-### 2.3.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-NFC-03` |
-| **Tên Use Case** | Chạm kết nối 1-Tap NFC & Quét mã QR Live Camera |
-| **Tác nhân** | Hai doanh nhân gặp gỡ trực tiếp |
-| **Tiền điều kiện** | Điện thoại có hỗ trợ NFC hoặc Camera hoạt động tốt. |
-| **Hậu điều kiện** | Hai bên tự động lưu thông tin danh thiếp của nhau vào danh bạ và kích hoạt WebSocket kết nối thời gian thực. |
-
-### 2.3.2 Luồng sự kiện chính
-1. **Luồng NFC 1-Tap**:
-   - Doanh nhân A áp thẻ NFC hoặc điện thoại vào lưng điện thoại của Doanh nhân B.
-   - Android Native `ForegroundDispatch` hoặc Web NFC thu nhận bản tin NDEF chứa token `https://vione.vn/c/<token>`.
-   - Hệ thống tự động gọi API `POST /connect-app/identity/tap` giải mã và trả về hồ sơ Doanh nhân A lên màn hình Doanh nhân B kèm hiệu ứng rung haptic.
-2. **Luồng Live Camera QR Scanner (Phong cách Zalo)**:
-   - Mở màn hình quét QR: Camera khởi động luồng video liên tục ở độ phân giải cao.
-   - Khung ngắm hiển thị 4 góc vàng mạ kim loại và **thanh laser quét chuyển động liên tục**.
-   - Khi mã QR lọt vào khung hình, thuật toán `BarcodeDetector` / `@zxing/browser` giải mã tức thì trong 0.2s mà không cần người dùng bấm nút chụp ảnh.
-   - Hỗ trợ nút bật đèn pin (Flash Torch) và chọn ảnh quét từ Album thư viện máy.
-
----
-
-## 2.4 [UC-OCR-04]: Chụp & Số hóa Danh thiếp giấy bằng AI OCR
-
-### 2.4.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-OCR-04` |
-| **Tên Use Case** | Nhận diện & Số hóa Danh thiếp giấy bằng AI OCR |
-| **Tác nhân** | Doanh nhân thu thập danh thiếp giấy từ sự kiện |
-| **Tiền điều kiện** | Đã cấp quyền truy cập Camera / Thư viện ảnh. |
-| **Hậu điều kiện** | Danh thiếp giấy được chuyển đổi thành danh bạ số hóa và lưu trữ an toàn trên đám mây. |
-
-### 2.4.2 Luồng sự kiện chính
-1. Doanh nhân chụp ảnh danh thiếp giấy thông qua tính năng [CardScanFlow.tsx](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_fe/src/components/business-connect/mobile/card-scan/CardScanFlow.tsx).
-2. Ảnh được nén và gửi tới AI OCR Engine qua API `POST /connect-app/card-scan`.
-3. AI bóc tách thông tin: *Họ tên, Chức vụ, Doanh nghiệp, SĐT di động, Email, Website, Địa chỉ trụ sở*.
-4. Màn hình Review hiển thị bản nháp cho phép người dùng kiểm tra và chỉnh sửa trước khi bấm **Lưu vào Danh bạ**.
-5. Hệ thống kiểm tra trùng lặp tự động (Duplicate Check) dựa trên SĐT và Email để tránh tạo liên hệ rác.
-
----
-
-## 2.5 [UC-B2B-05]: Sàn Cơ hội Giao thương B2B (Cung - Cầu & AI Matching)
-
-### 2.5.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-B2B-05` |
-| **Tên Use Case** | Đăng tin & Khớp nối Cơ hội Kinh doanh B2B |
-| **Tác nhân** | Doanh nghiệp Hội viên |
-| **Hậu điều kiện** | Tin cơ hội được phân phối tới mạng lưới doanh nhân phù hợp và thông báo tới người mua/người bán. |
-
-### 2.5.2 Quy tắc nghiệp vụ
-- `BR-B2B-01`: Tin cơ hội gồm 2 phân loại chính: `DEMAND` (Cần mua hàng/Tìm nhà cung cấp) và `SUPPLY` (Chào bán sản phẩm/Dịch vụ tiêu biểu).
-- `BR-B2B-02`: Hệ thống AI Copilot tự động phân tích từ khóa, ngành nghề và khu vực địa lý để gửi thông báo gợi ý đối tác tiềm năng (Match Score > 80%).
-
----
-
-## 2.6 [UC-MTG-06]: Lập kế hoạch & Điều phối Lịch hẹn 1-on-1
-
-### 2.6.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-MTG-06` |
-| **Tên Use Case** | Đề xuất & Xác nhận Lịch hẹn Giao thương 1-on-1 |
-| **Tác nhân** | Bên mời (Proposer) và Bên nhận (Recipient) |
-| **Hậu điều kiện** | Cuộc hẹn ở trạng thái `CONFIRMED` và đồng bộ vào Lịch làm việc. |
-
-### 2.6.2 Máy trạng thái cuộc hẹn
-`PROPOSED` ──► `ACCEPTED` (Confirmed) | `RESCHEDULED` | `DECLINED` | `CANCELLED`
-
----
-
-## 2.7 [UC-EVT-07]: Quản trị Sự kiện, Vé điện tử & Điểm danh 1 chạm
-
-### 2.7.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-EVT-07` |
-| **Tên Use Case** | Tổ chức Sự kiện & Điểm danh Check-in 1 chạm QR/NFC |
-| **Tác nhân** | Ban Tổ chức & Đại biểu tham dự |
-| **Hậu điều kiện** | Đại biểu được ghi nhận điểm danh, hệ thống tự động phát tài liệu số và mở khảo sát sau sự kiện. |
-
----
-
-## 2.8 [UC-MEM-08]: Quy trình Thẩm định & Phê duyệt Đơn gia nhập CLB / Hiệp hội
-
-### 2.8.1 Bảng thuộc tính Use Case
-| Thuộc tính | Chi tiết mô tả |
-| :--- | :--- |
-| **Mã Use Case** | `UC-MEM-08` |
-| **Tên Use Case** | Thẩm định & Phê duyệt Đơn gia nhập CLB Doanh nhân 1983 / Hiệp hội |
-| **Tác nhân** | Ứng viên nộp đơn & Ban Thư ký / Ban Thường vụ xét duyệt |
-| **Tiền điều kiện** | Ứng viên gửi đơn ứng tuyển từ Landing Page (`/landing/ceo1983`) hoặc Đăng ký tài khoản mới. |
-| **Hậu điều kiện** | Hồ sơ được chuyển trạng thái `ACTIVE`, cấp Mã hội viên chính thức và phân quyền vào chi hội. |
-
-### 2.8.2 Luồng xử lý phê duyệt chi tiết
-1. **Ứng viên nộp đơn**:
-   - Điền thông tin tại Modal đăng ký trên Landing page: *Họ tên, SĐT, Tên doanh nghiệp, Chức vụ, Ngành nghề, Quy mô doanh thu*.
-   - Hệ thống tạo bản ghi hồ sơ ở trạng thái `PENDING_REVIEW` và lưu vào cơ sở dữ liệu.
-2. **Ban Thư ký thẩm định**:
-   - Đăng nhập vào Web Portal quản trị -> Chọn menu **Hội viên (`/members`)**.
-   - Sử dụng bộ lọc trạng thái **"Chờ duyệt"**.
-   - Kiểm tra các tiêu chí gia nhập (Tính chính xác của doanh nghiệp, tư cách pháp nhân, chức vụ lãnh đạo).
-3. **Phê duyệt chính thức**:
-   - Nhấn nút **Phê duyệt (Approve)**.
-   - Nhập **Mã hội viên chính thức** (ví dụ `CEO83-088` hoặc `HV-1024`).
-   - Chọn **Chi hội trực thuộc** (Chi hội Miền Bắc / Chi hội Miền Nam / Chi hội Quốc tế).
-   - Bấm **Xác nhận**: Hệ thống tự động gửi email thông báo chúc mừng kèm hướng dẫn đăng nhập ứng dụng cho hội viên.
-
----
-
-## 2.9 [UC-FEE-09]: Quản lý Hội phí, Hóa đơn điện tử & Báo cáo Tài chính
-- Thiết lập các gói hội phí định kỳ theo năm (Hội viên Tiêu chuẩn, Hội viên Kim Cương, Hội viên Tài trợ).
-- Theo dõi lịch sử đóng phí, tự động gửi thông báo nhắc hạn trước 30 ngày và xuất phiếu thu điện tử.
-
----
-
-## 2.10 [UC-TPL-10]: Hệ thống Template Landing Page Modular Đa ngôn ngữ (8 Ngôn ngữ)
-- Cung cấp component master [AssociationLandingTemplate.tsx](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_fe/src/components/landing/templates/AssociationLandingTemplate.tsx) gồm 7 khối chuẩn: Hero, Challenges, Solutions, Ecosystem, Partners, Testimonials, CtaBanner.
-- Hỗ trợ chuyển đổi 8 ngôn ngữ tức thì (`vi`, `en`, `km`, `my`, `lo`, `ja`, `ko`, `zh`) từ điển hóa 100% nội dung.
-
----
-
-# PHẦN 3: ĐẶC TẢ THIẾT KẾ KỸ THUẬT (TECHSPEC)
-
-## 3.1 Thiết kế Cơ sở Dữ liệu Chi tiết (Database Schema Catalog)
-
-### Bảng `users` & `members` (Hồ sơ Người dùng & Hội viên)
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+| Đối tượng (Stakeholder) | Nỗi đau thực tế (Pain Points) | Hậu quả (Impact) | Giải pháp của ViOne |
 | :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PK, DEFAULT gen_random_uuid()` | Khóa chính định danh người dùng |
-| `email` | `VARCHAR(255)` | `UNIQUE, NOT NULL` | Địa chỉ email đăng nhập |
-| `password_hash`| `VARCHAR(255)` | `NOT NULL` | Mật khẩu băm an toàn Bcrypt |
-| `member_code` | `VARCHAR(50)` | `UNIQUE, NULLABLE` | Mã số hội viên chính thức (ví dụ: `CEO83-088`) |
-| `full_name` | `VARCHAR(255)` | `NOT NULL` | Họ và tên đầy đủ |
-| `company_name`| `VARCHAR(255)` | `NULLABLE` | Tên doanh nghiệp đại diện |
-| `title` | `VARCHAR(150)` | `NULLABLE` | Chức vụ điều hành (Chủ tịch / CEO) |
-| `phone` | `VARCHAR(30)` | `NULLABLE` | Số điện thoại liên hệ |
-| `status` | `VARCHAR(30)` | `NOT NULL, DEFAULT 'PENDING'` | Trạng thái: `PENDING`, `ACTIVE`, `SUSPENDED` |
-| `tier` | `VARCHAR(50)` | `DEFAULT 'MEMBER'` | Hạng hội viên: `FOUNDER`, `VIP`, `MEMBER` |
-| `branch_id` | `VARCHAR(50)` | `NULLABLE` | Chi hội: `NORTH`, `SOUTH`, `GLOBAL` |
-| `created_at` | `TIMESTAMP` | `DEFAULT NOW()` | Thời gian khởi tạo hồ sơ |
+| **Ban Lãnh đạo (Chủ tịch / BCH)** | Không nắm được con số thực về tỷ lệ sinh hoạt, doanh thu hội phí bị chậm trễ, khó kiểm soát tài chính. | Quyết sách chậm trễ, thiếu căn cứ số liệu, uy tín hiệp hội suy giảm. | **Dashboard CRM thời gian thực**: Nắm bắt tỷ lệ tăng trưởng, dòng tiền thu chi, cảnh báo quá hạn 360°. |
+| **Ban Thư ký** | Quản lý danh bạ bằng file Excel rời rạc; mất hàng giờ điểm danh đại biểu bằng giấy tại các sự kiện lớn. | Thất lạc dữ liệu, nhầm lẫn thông tin đại biểu, ùn tắc cổng đón tiếp. | **Trạm Check-in QR tốc độ cao (0.2s)** và sơ đồ ghế sân khấu thông minh. |
+| **Ban Tài chính / Kế toán** | Thu niên liễm thủ công; gửi tin nhắn Zalo đòi nợ nhạy cảm; khó đối soát các khoản chuyển khoản ngân hàng. | Tỷ lệ quá hạn cao, sai sót hóa đơn, mất nhiều công sức đối chiếu. | **Cổng VietQR động**: Tự động điền số tiền, cú pháp; Webhook gia hạn thẻ tự động ngay trong 1 giây. |
+| **Hội viên Doanh nhân** | Danh thiếp giấy nhanh hỏng, dễ vứt bỏ; không biết các hội viên khác làm ngành gì để hợp tác. | Mất cơ hội kinh doanh, không nhận được giá trị thiết thực khi tham gia Hội. | **Thẻ số NFC / 3D Card** & Sàn giao thương B2B kết hợp lịch hẹn 1-on-1. |
 
-### Bảng `person_nodes` (Danh tính số & NFC Card Vault)
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PK, DEFAULT gen_random_uuid()` | Khóa chính thực thể danh tính |
-| `user_id` | `UUID` | `FK -> users(id), NOT NULL` | Liên kết tài khoản sở hữu |
-| `display_name`| `VARCHAR(255)` | `NOT NULL` | Tên hiển thị trên danh thiếp số |
-| `bio` | `TEXT` | `NULLABLE` | Giới thiệu năng lực & bản thân |
-| `avatar_url` | `VARCHAR(500)` | `NULLABLE` | Đường dẫn ảnh đại diện chất lượng cao |
-| `share_token` | `VARCHAR(64)` | `UNIQUE, NOT NULL` | Token bảo mật chia sẻ NFC/QR |
-| `is_public` | `BOOLEAN` | `DEFAULT TRUE` | Cho phép quét công khai |
-
-### Bảng `business_meetings` & `business_meeting_proposals` (Lịch hẹn 1-on-1)
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PK, DEFAULT gen_random_uuid()` | Khóa chính cuộc họp |
-| `organizer_id`| `UUID` | `FK -> users(id)` | Người đề xuất cuộc hẹn |
-| `target_id` | `UUID` | `FK -> users(id)` | Đối tác được mời |
-| `title` | `VARCHAR(255)` | `NOT NULL` | Chủ đề cuộc gặp B2B |
-| `status` | `VARCHAR(30)` | `NOT NULL, DEFAULT 'PROPOSED'` | Trạng thái cuộc gặp |
-| `confirmed_at`| `TIMESTAMP` | `NULLABLE` | Thời gian xác nhận chính thức |
-
-### Bảng `b2b_opportunities` (Sàn Cung - Cầu Giao thương)
-| Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | `PK, DEFAULT gen_random_uuid()` | Khóa chính cơ hội giao thương |
-| `creator_id` | `UUID` | `FK -> users(id)` | Doanh nghiệp đăng tin |
-| `type` | `VARCHAR(20)` | `NOT NULL` | `DEMAND` (Cần mua) hoặc `SUPPLY` (Cần bán) |
-| `title` | `VARCHAR(255)` | `NOT NULL` | Tiêu đề nhu cầu |
-| `budget` | `VARCHAR(100)` | `NULLABLE` | Ngân sách dự kiến |
-| `region` | `VARCHAR(100)` | `NULLABLE` | Khu vực thực hiện |
-| `expires_at` | `TIMESTAMP` | `NOT NULL` | Thời hạn hết hiệu lực |
+## 1.2 Mục tiêu chiến lược & Chỉ số Thành công cốt lõi (OKRs / KPIs)
+1. **Số hóa 100% Quy trình Hội viên**: 100% hồ sơ ứng viên được nộp trực tuyến từ Landing Page, thẩm định và phê duyệt trên CRM.
+2. **Tự động hóa 95% Thu phí Niên liễm**: Giảm 90% thời gian kế toán đối soát nhờ cổng VietQR tích hợp Webhook tự động gia hạn nhiệm kỳ.
+3. **Điểm danh Sự kiện Dưới 0.5 Giây / Đại biểu**: Xóa bỏ hoàn toàn tình trạng xếp hàng chờ ký tên tại các hội thảo 500+ khách sạn.
+4. **Tỷ lệ Kích hoạt Giao thương B2B Đạt trên 80%**: Thúc đẩy kết nối kinh doanh nội khối thông qua sàn Marketplace và mạng xã hội Moments.
 
 ---
 
-## 3.2 Thiết kế API Contract Chuẩn
+# PHẦN 2: ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
 
-Toàn bộ Endpoint được tài liệu hóa và bảo vệ bằng Guard:
+## 2.1 [SRS-01]: Quản trị Hội viên & Thẩm định Hồ sơ Ứng viên
+- **Mô tả nghiệp vụ**: Hệ thống hỗ trợ quy trình khép kín từ lúc khách hàng nộp đơn từ Web Landing cho đến khi trở thành Hội viên chính thức được cấp mã định danh.
+- **Tiêu chí Nghiệm thu (Acceptance Criteria - Gherkin)**:
+  ```gherkin
+  Scenario: Thư ký phê duyệt hồ sơ ứng viên thành công
+    Given Ứng viên "Đặng Minh Khôi" đã nộp hồ sơ từ Landing Page, bản ghi có trong demo_requests với status="new"
+    When Thư ký đăng nhập CRM tại /members và nhấn nút "Phê duyệt"
+    And Nhập mã hội viên "M1983-099", ngành nghề "Công nghệ thông tin", kỳ hạn 1 năm
+    Then Hệ thống chuyển demo_requests sang status="completed"
+    And Tạo bản ghi mới trong bảng members với status="active", code="M1983-099"
+    And Tự động ghi 1 dòng vết kiểm toán vào activity_log với category="member"
+    And Gửi email chào mừng kèm tài khoản đăng nhập tới email của ứng viên
+  ```
 
-1. **Xác thực**:
-   - `POST /auth/login`
-   - `POST /auth/register`
-   - `POST /auth/google`
-   - `POST /auth/apple`
-2. **Thẩm định & Quản lý Hội viên**:
-   - `GET /members` (Phân trang, lọc theo status)
-   - `POST /members/:id/approve` (Duyệt cấp mã hội viên)
-   - `POST /members/:id/reject` (Từ chối kèm lý do)
-3. **Kết nối Danh thiếp & NFC**:
-   - `GET /connect-app/me/identity`
-   - `POST /connect-app/identity/tap`
-   - `POST /connect-app/identity/share-link/rotate`
-4. **AI OCR Danh thiếp giấy**:
-   - `POST /connect-app/card-scan`
-   - `POST /connect-app/card-scan/save`
-5. **Cơ hội & Lịch hẹn**:
-   - `POST /connect-app/opportunities`
-   - `POST /connect-app/meetings`
-   - `POST /connect-app/meetings/:id/accept`
+## 2.2 [SRS-02]: Cổng Đăng nhập Di động Chuẩn hóa (`/auth/mobile/`)
+- **Mô tả nghiệp vụ**: Cung cấp giao diện đăng nhập tối ưu riêng biệt cho màn hình di động, hỗ trợ đa dạng phương thức xác thực.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Hội viên đăng nhập bằng Mã thẻ định danh
+    Given Hội viên mở ứng dụng di động tại /auth/mobile/
+    When Nhập mã hội viên "M1983-002" và mật khẩu chính xác
+    And Nhấn "Đăng nhập"
+    Then Hệ thống cấp JWT token hợp lệ và lưu vào Secure Storage
+    And Tự động điều hướng người dùng vào trang chủ /association
+    And Thanh điều hướng dưới đáy (BottomNav) hiển thị đúng 5 tab của hiệp hội
+
+  Scenario: Tương thích ngược từ đường dẫn cũ /m/*
+    Given Người dùng truy cập đường dẫn cũ /m/events từ bookmark trình duyệt
+    When Trình duyệt tải trang
+    Then Hệ thống thực hiện 301 Client Redirect sang /association/events
+    And Toàn bộ dữ liệu sự kiện được hiển thị bình thường, không xảy ra lỗi 404
+  ```
+
+## 2.3 [SRS-03]: Quản lý Sự kiện, Khán phòng Sân khấu & Điểm danh QR 0.2s
+- **Mô tả nghiệp vụ**: Khởi tạo sự kiện, thiết kế sơ đồ ghế VIP sân khấu, phát hành vé điện tử QR cá nhân và trạm quét cổng tốc độ cao.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Quét QR Check-in hợp lệ tại bàn lễ tân
+    Given Đại biểu "James Nguyễn" có vé sự kiện EVT-CEO1983-2026-GALA với trạng thái confirmed
+    When Nhân viên lễ tân dùng camera trạm /checkin quét mã QR của đại biểu
+    Then Hệ thống cập nhật checked_in_at=NOW(), status="attended" trong bảng event_registrations
+    And Màn hình trạm lễ tân phát âm thanh thông báo thành công và hiển thị vị trí ghế "VIP-SK-02"
+    And Nếu quét lại lần 2, hệ thống cảnh báo "Vé đã điểm danh trước đó"
+  ```
+
+## 2.4 [SRS-04]: Quản lý Niên liễm, VietQR Động & Tự động Gia hạn (+1 năm)
+- **Mô tả nghiệp vụ**: Tự động phát hiện hội viên sắp hết hạn (30 ngày), tạo mã VietQR thanh toán 1-chạm và gia hạn thẻ ngay lập tức khi tiền về tài khoản.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Thanh toán VietQR và tự động gia hạn thành công
+    Given Hội viên M1983-005 có term_end còn 15 ngày, hóa đơn INV-2026-099 có status="unpaid"
+    When Hội viên quét mã VietQR tại /association/renew/pay và chuyển khoản 10,000,000 VND
+    And Hệ thống nhận Webhook thanh toán thành công khớp mã tham chiếu
+    Then Trạng thái hóa đơn chuyển sang status="paid"
+    And Hạn thẻ members.term_end được tự động cộng thêm 1 năm (INTERVAL '1 year')
+    And members.renewed_at được gán bằng ngày hiện tại
+    And Ghi nhận bản ghi kiểm toán vào renewal_audit_log với event_type="payment"
+    And Màn hình hội viên tự động chuyển sang /association/renew/result chúc mừng
+  ```
+
+## 2.5 [SRS-05]: Danh thiếp Kỹ thuật số 3D & Chạm kết nối 1-Tap NFC
+- **Mô tả nghiệp vụ**: Cung cấp thẻ hội viên kỹ thuật số có hiệu ứng 3D chân thực, hỗ trợ xuất file vCard danh bạ chuẩn quốc tế và chia sẻ qua NFC.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Xuất file danh bạ vCard chia sẻ danh thiếp
+    Given Hội viên mở thẻ danh thiếp tại /association/card
+    When Nhấn nút "Lưu vào Danh bạ (vCard)"
+    Then Backend trả về file /api/public/card/{slug}.vcf với Content-Type="text/vcard; charset=utf-8"
+    And Điện thoại iOS/Android tự động mở ứng dụng Danh bạ với đầy đủ Họ tên, Số điện thoại, Email, Chức vụ và Ảnh đại diện
+  ```
+
+## 2.6 [SRS-06]: Sàn Giao thương B2B & Điều phối Cuộc hẹn 1-on-1
+- **Mô tả nghiệp vụ**: Không gian giao thương mở giữa các doanh nhân, đăng tin tìm kiếm đối tác, trao đổi trực tiếp và chốt lịch hẹn gặp mặt.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Đề xuất và chốt lịch hẹn B2B 1-on-1
+    Given Doanh nhân A và Doanh nhân B đã kết nối trong bảng connections
+    When Doanh nhân A khởi tạo cuộc hẹn B2B tại Keangnam Landmark 72 lúc 09:30 Thứ Ba
+    Then Tạo bản ghi trong business_meetings với status="proposed", meeting_type="in_person"
+    And Doanh nhân B nhận được thông báo đẩy trên điện thoại
+    When Doanh nhân B nhấn "Xác nhận đồng ý"
+    Then Trạng thái cuộc hẹn chuyển sang status="confirmed"
+    And Hệ thống tự động sinh tệp iCal đồng bộ vào Google Calendar của cả hai bên
+  ```
+
+## 2.7 [SRS-07]: Quản trị Nền tảng, Phân quyền RBAC & Kiểm toán Bất biến
+- **Mô tả nghiệp vụ**: Đảm bảo an ninh thông tin, phân quyền chặt chẽ theo vai trò và lưu trữ nhật ký kiểm toán không thể can thiệp.
+- **Tiêu chí Nghiệm thu**:
+  ```gherkin
+  Scenario: Kiểm toán bất biến cho mọi thao tác quản trị
+    Given Quản trị viên thực hiện thao tác thay đổi phân quyền hoặc duyệt hội viên
+    When Thao tác được lưu vào cơ sở dữ liệu
+    Then Hệ thống ghi 1 bản ghi vào activity_log chứa actor_id, IP, timestamp và nội dung thay đổi
+    And Không có bất kỳ API nào cho phép sửa hoặc xóa dữ liệu trong bảng activity_log
+  ```
 
 ---
 
-# PHẦN 4: MA TRẬN TRUY VẾT & KIỂM THỬ CHẤT LƯỢNG
+# PHẦN 3: THIẾT KẾ KỸ THUẬT & MÁY TRẠNG THÁI
 
-| Mã Use Case | Tên Chức năng | Thành phần Frontend (UI Route) | API Endpoint Backend | Bảng CSDL Tác động | Trạng thái Kiểm thử |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC-AUTH-01** | Đăng nhập & Lưu phiên | `ConnectAppSignIn.tsx` (`/auth`) | `POST /auth/login` | `users`, `active_sessions` | **PASS (100%)** |
-| **UC-ID-02** | Danh tính số & Thẻ VIP | `connect-app.me.index.tsx` | `GET /connect-app/me/identity` | `person_nodes` | **PASS (100%)** |
-| **UC-NFC-03** | Chạm NFC & Quét QR Zalo | `use-qr-scanner.ts`, `AuthCardScanSheet.tsx` | `POST /connect-app/identity/tap` | `connections`, `audit_logs` | **PASS (100%)** |
-| **UC-OCR-04** | AI OCR Danh thiếp giấy | `CardScanFlow.tsx` | `POST /connect-app/card-scan` | `card_vault_records` | **PASS (100%)** |
-| **UC-B2B-05** | Sàn Cơ hội Cung - Cầu | `m.opportunities.tsx` | `POST /connect-app/opportunities` | `b2b_opportunities` | **PASS (100%)** |
-| **UC-MTG-06** | Lịch hẹn 1-on-1 | `connect-app.meetings.tsx` | `POST /connect-app/meetings` | `business_meetings` | **PASS (100%)** |
-| **UC-EVT-07** | Sự kiện & Check-in QR/NFC | `checkin-qr.tsx`, `events.tsx` | `POST /checkin/scan` | `events`, `event_attendees` | **PASS (100%)** |
-| **UC-MEM-08** | Xét duyệt Hội viên mới | `members.index.tsx` (`/members`) | `POST /members/:id/approve` | `users`, `members` | **PASS (100%)** |
-| **UC-FEE-09** | Quản lý Hội phí & Báo cáo | `fees.index.tsx`, `income.tsx` | `GET /fees`, `POST /fees/charge` | `member_invoices`, `fees` | **PASS (100%)** |
-| **UC-TPL-10** | Modular Landing 8 Ngôn ngữ | `AssociationLandingTemplate.tsx` | `GET /landing`, `GET /locales` | `shared/locales/*.json` | **PASS (100%)** |
+## 3.1 Vòng đời Hội viên (Member Lifecycle State Machine)
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Nộp đơn từ Landing Web
+    Pending --> Active: Ban Thư ký duyệt & Cấp mã
+    Pending --> Rejected: Không đủ tiêu chuẩn điều lệ
+    Active --> Due: Còn <= 30 ngày đến hạn thẻ
+    Due --> Renewed: Đóng niên liễm thành công
+    Renewed --> Active: Bắt đầu chu kỳ niên liễm mới
+    Due --> Overdue: Quá hạn term_end mà chưa đóng phí
+    Overdue --> Suspended: Khóa quyền truy cập sau 60 ngày
+    Suspended --> Active: Đóng phí phạt & khôi phục
+    Active --> Resigned: Đơn xin rút lui khỏi Hội
+```
+
+## 3.2 Vòng đời Hóa đơn & Gia hạn Niên liễm (Invoice & Renewal State Machine)
+```mermaid
+stateDiagram-v2
+    [*] --> Unpaid: Kế toán phát hành Hóa đơn
+    Unpaid --> Paid: Webhook VietQR xác nhận tiền về
+    Unpaid --> Overdue: Quá ngày due_date
+    Overdue --> Paid: Thanh toán muộn thành công
+    Paid --> [*]: Tự động gia hạn term_end + 1 năm
+```
+
+## 3.3 Vòng đời Cuộc hẹn B2B (Meeting State Machine)
+```mermaid
+stateDiagram-v2
+    [*] --> Proposed: Khởi tạo đề xuất cuộc hẹn
+    Proposed --> Confirmed: Đối tác đồng ý thời gian/địa điểm
+    Proposed --> Declined: Đối tác từ chối bận việc
+    Proposed --> Cancelled: Người khởi tạo hủy lời mời
+    Confirmed --> Completed: Cuộc gặp diễn ra thành công
+    Confirmed --> Cancelled: Hủy hẹn trước giờ G
+```
+
+---
+
+# PHẦN 4: MA TRẬN TRUY VẾT YÊU CẦU & KIỂM THỬ
+
+| Mã Yêu cầu (SRS) | Phân hệ / Tính năng | Bảng CSDL (DB Entity) | Endpoint API Backend | Mã Test Case (QA) | Trạng thái Nghiệm thu |
+| :---: | :--- | :--- | :--- | :---: | :---: |
+| **SRS-01** | Thẩm định Hội viên mới | `demo_requests`, `members` | `POST /api/member-applications/approve` | `TC-CRM-004` | **PASS (100%)** |
+| **SRS-02** | Đăng nhập Mobile URL mới | `members`, `auth.users` | `POST /api/auth/mobile/login` | `TC-ASC-001` | **PASS (100%)** |
+| **SRS-02b**| Chuyển tiếp 301 từ `/m/*` | TanStack Router Config | N/A (Client-side redirect) | `TC-ASC-003` | **PASS (100%)** |
+| **SRS-03** | Khởi tạo Sự kiện & Vé QR | `events`, `event_registrations` | `POST /api/events` | `TC-CRM-008` | **PASS (100%)** |
+| **SRS-03b**| Điểm danh QR Check-in | `event_registrations` | `POST /api/events/checkin-verify` | `TC-CRM-009` | **PASS (100%)** |
+| **SRS-04** | Phát hành Hóa đơn Niên liễm | `invoices` | `POST /api/fees/invoices/generate` | `TC-CRM-010` | **PASS (100%)** |
+| **SRS-04b**| Gia hạn Thẻ tự động VietQR| `members`, `renewal_audit_log` | `POST /api/webhooks/payment/vietqr` | `TC-ASC-009` | **PASS (100%)** |
+| **SRS-05** | Thẻ 3D & Xuất vCard | `members`, `business_cards` | `GET /api/public/card/{slug}.vcf` | `TC-ASC-010` | **PASS (100%)** |
+| **SRS-06** | Khoảnh khắc B2B Moments | `business_relationship_moments`| `POST /api/moments` | `TC-VNE-002` | **PASS (100%)** |
+| **SRS-06b**| Lời mời Kết nối B2B | `connections` | `POST /api/connections/request` | `TC-VNE-004` | **PASS (100%)** |
+| **SRS-06c**| Chat Realtime 1-on-1 | `direct_messages` | `POST /api/messages/direct` | `TC-VNE-006` | **PASS (100%)** |
+| **SRS-06d**| Lên Lịch hẹn B2B 1-1 | `business_meetings` | `POST /api/meetings/schedule` | `TC-VNE-007` | **PASS (100%)** |
+| **SRS-07** | Vết Kiểm toán Bất biến | `activity_log`, `role_audit_log`| `GET /api/platform/audit` | `TC-CRM-016` | **PASS (100%)** |

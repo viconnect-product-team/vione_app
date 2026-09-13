@@ -564,63 +564,67 @@ export function ExpensesPage() {
 
       {/* Main Expense Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground">
+        <div className="relative overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-left text-sm">
+          <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">Mã phiếu chi</th>
-              <th className="px-4 py-3">Ngày chi</th>
-              <th className="px-4 py-3">Danh mục</th>
-              <th className="px-4 py-3">Nội dung chi</th>
-              <th className="px-4 py-3">Người nhận / Đơn vị</th>
-              <th className="px-4 py-3 text-right">Số tiền</th>
-              <th className="px-4 py-3 text-center">Tạm ứng & Hoàn ứng</th>
-              <th className="px-4 py-3 text-right font-bold text-rose-600">Chi thực tế</th>
-              <th className="px-4 py-3">Hình thức</th>
-              <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3 text-center">Tải hóa đơn</th>
-              <th className="px-4 py-3 text-right">Thao tác</th>
+              <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+              <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã phiếu chi</th>
+              <th className="px-4 py-3 border-b border-border">Ngày chi</th>
+              <th className="px-4 py-3 border-b border-border">Danh mục</th>
+              <th className="px-4 py-3 border-b border-border">Nội dung chi</th>
+              <th className="px-4 py-3 border-b border-border">Người nhận / Đơn vị</th>
+              <th className="px-4 py-3 text-right border-b border-border">Số tiền</th>
+              <th className="px-4 py-3 text-center border-b border-border">Tạm ứng & Hoàn ứng</th>
+              <th className="px-4 py-3 text-right font-bold text-rose-600 border-b border-border">Chi thực tế</th>
+              <th className="px-4 py-3 border-b border-border">Hình thức</th>
+              <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+              <th className="px-4 py-3 text-center border-b border-border">Tải hóa đơn</th>
+              <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {(tc?.paged || []).length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-12 text-center text-muted-foreground">
+                <td colSpan={13} className="py-12 text-center text-muted-foreground">
                   Không tìm thấy khoản chi nào phù hợp
                 </td>
               </tr>
             ) : (
-              (tc?.paged || []).map((tx) => {
+              (tc?.paged || []).map((tx, idx) => {
                 const isAdvance = tx.category === "advance" || (tx.advanceAmount && tx.advanceAmount > 0);
                 const advVal = tx.advanceAmount || (tx.category === "advance" ? tx.amount : 0);
                 const refVal = tx.refundAmount || 0;
                 const netExpense = advVal > 0 ? advVal - refVal : tx.amount;
 
                 return (
-                  <tr key={tx.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-foreground">
+                  <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
+                    <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                      {(tc.page - 1) * tc.pageSize + idx + 1}
+                    </td>
+                    <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
                       {tx.id}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
                       {tx.date}
                     </td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-4 py-3 text-xs border-b border-border/50">
                       {isAdvance ? (
                         <Pill tone="warn">Tạm ứng</Pill>
                       ) : (
                         <span className="capitalize">{tx.category}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium max-w-xs truncate">
+                    <td className="px-4 py-3 text-xs font-medium max-w-xs truncate border-b border-border/50">
                       {tx.description || "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-foreground">
+                    <td className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
                       {tx.recipient || "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap border-b border-border/50">
                       {fmt.money(tx.amount)}
                     </td>
-                    <td className="px-4 py-3 text-center text-xs whitespace-nowrap">
+                    <td className="px-4 py-3 text-center text-xs whitespace-nowrap border-b border-border/50">
                       {isAdvance ? (
                         <div className="inline-flex flex-col items-center">
                           <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
@@ -634,7 +638,7 @@ export function ExpensesPage() {
                             <button
                               type="button"
                               onClick={() => openRefundModal(tx)}
-                              className="mt-0.5 text-[10px] font-bold text-primary underline hover:text-primary/80"
+                              className="mt-0.5 text-[10px] font-bold text-primary underline hover:text-primary/80 cursor-pointer"
                             >
                               Gửi lại tiền thừa
                             </button>
@@ -644,17 +648,17 @@ export function ExpensesPage() {
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap border-b border-border/50">
                       -{fmt.money(netExpense)}
                     </td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-4 py-3 text-xs border-b border-border/50">
                       {tx.method === "cash" ? (
                         <Pill tone="success">Tiền mặt</Pill>
                       ) : (
                         <Pill tone="info">Chuyển khoản</Pill>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-4 py-3 text-xs border-b border-border/50">
                       {tx.status === "completed" ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -669,7 +673,7 @@ export function ExpensesPage() {
                     </td>
 
                     {/* Column Tải Hóa Đơn on every row (User requirement) */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center border-b border-border/50">
                       <button
                         type="button"
                         onClick={() =>
@@ -696,7 +700,7 @@ export function ExpensesPage() {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <td className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
                       <div className="flex items-center justify-end gap-1.5">
                         {isAdvance && (
                           <button

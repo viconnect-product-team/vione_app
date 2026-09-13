@@ -2215,10 +2215,6 @@ export class ConnectAppService implements OnModuleInit {
       this.prisma.$queryRaw<any[]>`
         SELECT COUNT(id)::int as count FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid AND status != 'read' AND read_at IS NULL
-          AND (
-            app_scope = 'vione_app' OR app_scope = 'all' OR target_app = 'vione_app' OR target_app = 'all'
-            OR (app_scope IS NULL AND target_app IS NULL AND source_domain NOT IN ('association', 'crm_admin', 'crm'))
-          )
       `.catch(() => [{ count: 0 }]),
       this.prisma.$queryRaw<any[]>`
         SELECT COUNT(id)::int as count FROM public.user_connections
@@ -3465,10 +3461,6 @@ export class ConnectAppService implements OnModuleInit {
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
           AND (${!unreadOnly} OR (status != 'read' AND read_at IS NULL))
-          AND (
-            app_scope = 'vione_app' OR app_scope = 'all' OR app_scope = 'crm' OR target_app = 'vione_app' OR target_app = 'all' OR target_app = 'crm'
-            OR app_scope IS NULL
-          )
         ORDER BY created_at DESC
         LIMIT ${limit}
       `.catch((err) => {
@@ -9148,37 +9140,7 @@ export class ConnectAppService implements OnModuleInit {
     }
   }
 
-  async requestProductQuote(userId: string, body: { productId: string; quantity?: number; message?: string }) {
-    try {
-      const mems = await this.prisma.$queryRaw<any[]>`
-        SELECT id, phone, contact, association_id FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
-      `.catch(() => []);
-      const phone = mems[0]?.phone || mems[0]?.contact || userId;
-      const buyerId = mems[0]?.id || null;
-      const assocId = mems[0]?.association_id || null;
 
-      await this.prisma.$executeRaw`
-        INSERT INTO public.quote_requests (
-          id, product_id, buyer_id, quantity, message, contact, status, association_id, created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(),
-          ${body.productId.includes('-') && body.productId.length === 36 ? body.productId : '00000000-0000-0000-0000-000000000001'}::uuid,
-          ${buyerId ? buyerId : null}::uuid,
-          ${body.quantity ?? 1},
-          ${body.message || 'Tôi muốn nhận báo giá sản phẩm này.'},
-          ${phone},
-          'pending',
-          ${assocId ? assocId : null}::uuid,
-          now(),
-          now()
-        )
-      `.catch(() => null);
-
-      return { ok: true };
-    } catch {
-      return { ok: true };
-    }
-  }
 
   // â”€â”€ Content: News & Perks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async listPublishedNews() {
@@ -10007,6 +9969,572 @@ export class ConnectAppService implements OnModuleInit {
 
     return { ok: true, count: taggedUserIds.length };
   }
+
+  // ==========================================
+  // Two-Way Business Notification Dispatcher
+  // ==========================================
+  async dispatchBusinessNotification(params: {
+    userId: string;
+    memberId?: string;
+    title: string;
+    body: string;
+    sourceDomain: string;
+    sourceRecordId: string;
+    eventKind: string;
+    notificationKind: string;
+    targetRoute?: string;
+    priority?: string;
+  }) {
+    const notifId = require('crypto').randomUUID();
+    const dedupeKey = `${params.sourceDomain}-${params.sourceRecordId}-${Date.now()}`;
+    const safeData = JSON.stringify({
+      title: params.title,
+      body: params.body,
+      targetRoute: params.targetRoute || '/connect-app',
+    });
+
+    // 1. ViOne business_notifications
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.business_notifications (
+        id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+        title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        $1::uuid, $2::uuid, $3, $4, $5, $6,
+        $7, $8, $9::jsonb, $10, 'delivered', $11, 'all', 'all', NOW(), NOW()
+      )
+    `, notifId, params.userId, params.sourceDomain, params.sourceRecordId, params.eventKind, params.notificationKind,
+       params.title, params.body, safeData, params.priority || 'normal', dedupeKey).catch(() => {});
+
+    // 2. Association member_notifications
+    const recipientId = params.memberId || params.userId;
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.member_notifications (
+        id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, false, false, $4, $5, NOW()
+      )
+    `, recipientId, params.title, params.body, params.sourceDomain, params.sourceRecordId).catch(() => {});
+
+    // 3. Realtime gateway emit
+    try {
+      this.gateway.emitNotification(String(params.userId), {
+        id: notifId,
+        title: params.title,
+        body: params.body,
+        action: { targetRoute: params.targetRoute || '/connect-app' },
+        safeDisplayData: { title: params.title, body: params.body },
+      });
+    } catch {}
+
+    return { ok: true, notifId };
+  }
+
+  // ==========================================
+  // Admin News Methods
+  // ==========================================
+  async listAdminNews() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, title, category, author, published_at, views, status, excerpt, content, association_id, created_at, updated_at
+      FROM public.news
+      ORDER BY created_at DESC
+    `.catch((err) => {
+      console.error(`listAdminNews error: ${err?.message}`);
+      return [];
+    });
+
+    return rows.map((n) => ({
+      id: n.code || n.id,
+      code: n.code,
+      title: n.title,
+      category: n.category ?? '',
+      author: n.author ?? '',
+      publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+      views: Number(n.views ?? 0),
+      status: n.status ?? 'draft',
+      excerpt: n.excerpt ?? '',
+      content: n.content ?? '',
+      associationId: n.association_id,
+      createdAt: n.created_at ? new Date(n.created_at).toISOString() : '',
+    }));
+  }
+
+  async createNewsAdmin(data: any) {
+    const code = data.code || `NEWS-${Date.now().toString().slice(-6)}`;
+    const rows = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, views, association_id, created_at, updated_at)
+      VALUES (
+        ${code},
+        ${data.title},
+        ${data.category ?? ''},
+        ${data.author ?? 'Ban Truyền Thông'},
+        ${data.publishedAt || new Date().toISOString().slice(0, 10)},
+        ${data.status ?? 'published'},
+        ${data.excerpt ?? ''},
+        ${data.content ?? ''},
+        0,
+        ${data.associationId ? data.associationId : null}::uuid,
+        NOW(),
+        NOW()
+      )
+      RETURNING *
+    `;
+    const n = rows[0];
+    return {
+      id: n.code || n.id,
+      code: n.code,
+      title: n.title,
+      category: n.category ?? '',
+      author: n.author ?? '',
+      publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+      views: Number(n.views ?? 0),
+      status: n.status ?? 'published',
+      excerpt: n.excerpt ?? '',
+      content: n.content ?? '',
+      associationId: n.association_id,
+    };
+  }
+
+  async updateNewsAdmin(id: string, data: any) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.news
+      SET
+        title = COALESCE(${data.title}, title),
+        category = COALESCE(${data.category}, category),
+        author = COALESCE(${data.author}, author),
+        published_at = COALESCE(${data.publishedAt}, published_at),
+        status = COALESCE(${data.status}, status),
+        excerpt = COALESCE(${data.excerpt}, excerpt),
+        content = COALESCE(${data.content}, content),
+        updated_at = NOW()
+      WHERE code = ${id} OR id::text = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    const n = rows[0];
+    return {
+      id: n.code || n.id,
+      code: n.code,
+      title: n.title,
+      category: n.category ?? '',
+      author: n.author ?? '',
+      publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+      views: Number(n.views ?? 0),
+      status: n.status ?? 'published',
+      excerpt: n.excerpt ?? '',
+      content: n.content ?? '',
+      associationId: n.association_id,
+    };
+  }
+
+  async deleteNewsAdmin(id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.news WHERE code = ${id} OR id::text = ${id}
+    `;
+    return { ok: true };
+  }
+
+  // ==========================================
+  // Marketplace Products & Quotes Methods
+  // ==========================================
+  async listMarketplaceProducts(query?: any) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.products
+      ORDER BY created_at DESC
+    `.catch((err) => {
+      console.error(`listMarketplaceProducts error: ${err?.message}`);
+      return [];
+    });
+
+    return rows.map((r) => ({
+      id: r.id,
+      sellerId: r.seller_id,
+      title: r.title,
+      description: r.description ?? '',
+      price: Number(r.price ?? 0),
+      category: r.category ?? 'mk.cat.other',
+      status: r.status ?? 'active',
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+      views: Number(r.views ?? 0),
+      emoji: r.emoji ?? '🛍️',
+      pdfUrl: r.pdf_url ?? '',
+      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []),
+      websiteUrl: r.website_url ?? '',
+      facebookUrl: r.facebook_url ?? '',
+      associationId: r.association_id,
+    }));
+  }
+
+  async getMarketplaceProductById(id: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.products WHERE id = ${id} LIMIT 1
+    `.catch(() => []);
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    // Bump views
+    await this.prisma.$executeRaw`
+      UPDATE public.products SET views = COALESCE(views, 0) + 1 WHERE id = ${id}
+    `.catch(() => {});
+
+    const quotes = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.quote_requests WHERE product_id = ${id} ORDER BY created_at DESC
+    `.catch(() => []);
+
+    return {
+      product: {
+        id: r.id,
+        sellerId: r.seller_id,
+        title: r.title,
+        description: r.description ?? '',
+        price: Number(r.price ?? 0),
+        category: r.category ?? 'mk.cat.other',
+        status: r.status ?? 'active',
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+        views: Number(r.views ?? 0) + 1,
+        emoji: r.emoji ?? '🛍️',
+        pdfUrl: r.pdf_url ?? '',
+        imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []),
+        websiteUrl: r.website_url ?? '',
+        facebookUrl: r.facebook_url ?? '',
+        associationId: r.association_id,
+      },
+      quotes: quotes.map((q) => ({
+        id: q.id,
+        productId: q.product_id,
+        buyerId: q.buyer_id,
+        quantity: Number(q.quantity ?? 1),
+        message: q.message ?? '',
+        contact: q.contact ?? '',
+        status: q.status ?? 'sent',
+        reminderCount: Number(q.reminder_count ?? 0),
+        cancelReason: q.cancel_reason ?? '',
+        createdAt: q.created_at ? new Date(q.created_at).toISOString() : '',
+        updatedAt: q.updated_at ? new Date(q.updated_at).toISOString() : '',
+      })),
+    };
+  }
+
+  async createMarketplaceProduct(userId: string, data: any) {
+    const id = data.id || `prod-${Date.now()}`;
+    const sellerId = data.sellerId || userId;
+    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : [];
+    const rows = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.products (
+        id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, website_url, facebook_url, association_id, created_at, updated_at
+      ) VALUES (
+        ${id}, ${sellerId}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+        ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
+        ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+        ${data.associationId ? data.associationId : 'c1983000-0000-4000-8000-000000001983'}::uuid, NOW(), NOW()
+      )
+      RETURNING *
+    `;
+    const r = rows[0];
+    return {
+      id: r.id,
+      sellerId: r.seller_id,
+      title: r.title,
+      description: r.description ?? '',
+      price: Number(r.price ?? 0),
+      category: r.category ?? 'mk.cat.other',
+      status: r.status ?? 'active',
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+      views: 0,
+      emoji: r.emoji ?? '🛍️',
+      pdfUrl: r.pdf_url ?? '',
+      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : [],
+      websiteUrl: r.website_url ?? '',
+      facebookUrl: r.facebook_url ?? '',
+    };
+  }
+
+  async updateMarketplaceProduct(userId: string, id: string, data: any) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.products
+      SET
+        title = COALESCE(${data.title}, title),
+        description = COALESCE(${data.description}, description),
+        price = COALESCE(${data.price !== undefined ? Number(data.price) : null}, price),
+        category = COALESCE(${data.category}, category),
+        status = COALESCE(${data.status}, status),
+        emoji = COALESCE(${data.emoji}, emoji),
+        pdf_url = COALESCE(${data.pdfUrl}, pdf_url),
+        website_url = COALESCE(${data.websiteUrl}, website_url),
+        facebook_url = COALESCE(${data.facebookUrl}, facebook_url),
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return {
+      id: r.id,
+      sellerId: r.seller_id,
+      title: r.title,
+      description: r.description ?? '',
+      price: Number(r.price ?? 0),
+      category: r.category ?? 'mk.cat.other',
+      status: r.status ?? 'active',
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+      views: Number(r.views ?? 0),
+      emoji: r.emoji ?? '🛍️',
+      pdfUrl: r.pdf_url ?? '',
+      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : [],
+      websiteUrl: r.website_url ?? '',
+      facebookUrl: r.facebook_url ?? '',
+    };
+  }
+
+  async deleteMarketplaceProduct(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.products WHERE id = ${id}
+    `;
+    return { ok: true };
+  }
+
+  async toggleProductSold(userId: string, id: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.products
+      SET status = CASE WHEN status = 'sold' THEN 'active' ELSE 'sold' END,
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return { id: r.id, status: r.status };
+  }
+
+  async listProductQuotes(userId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT q.*, p.title as product_title, p.price as product_price
+      FROM public.quote_requests q
+      LEFT JOIN public.products p ON q.product_id = p.id
+      ORDER BY q.created_at DESC
+    `.catch(() => []);
+
+    return rows.map((q) => ({
+      id: q.id,
+      productId: q.product_id,
+      productTitle: q.product_title ?? '',
+      productPrice: Number(q.product_price ?? 0),
+      buyerId: q.buyer_id,
+      quantity: Number(q.quantity ?? 1),
+      message: q.message ?? '',
+      contact: q.contact ?? '',
+      status: q.status ?? 'sent',
+      reminderCount: Number(q.reminder_count ?? 0),
+      cancelReason: q.cancel_reason ?? '',
+      createdAt: q.created_at ? new Date(q.created_at).toISOString() : '',
+      updatedAt: q.updated_at ? new Date(q.updated_at).toISOString() : '',
+    }));
+  }
+
+  async requestProductQuote(userId: string, data: any) {
+    const id = `quote-${Date.now()}`;
+    const rows = await this.prisma.$queryRaw<any[]>`
+      INSERT INTO public.quote_requests (
+        id, product_id, buyer_id, quantity, message, contact, status, reminder_count, created_at, updated_at
+      ) VALUES (
+        ${id}, ${data.productId}, ${userId}::uuid, ${Number(data.quantity ?? 1)},
+        ${data.message ?? ''}, ${data.contact ?? ''}, 'sent', 0, NOW(), NOW()
+      )
+      RETURNING *
+    `;
+
+    // 2-Way Notification: Push to product seller (both ViOne & Association App)
+    try {
+      const prodRows = await this.prisma.$queryRaw<any[]>`
+        SELECT p.title, p.seller_id, m.user_id as seller_user_id, m.id as member_id
+        FROM public.products p
+        LEFT JOIN public.members m ON (m.user_id = p.seller_id OR m.id::text = p.seller_id::text)
+        WHERE p.id = ${data.productId} LIMIT 1
+      `.catch(() => []);
+
+      if (prodRows.length > 0 && prodRows[0].seller_id) {
+        const prod = prodRows[0];
+        const targetUserId = prod.seller_user_id || prod.seller_id;
+        const targetMemberId = prod.member_id || prod.seller_id;
+        const notifTitle = 'Yêu cầu báo giá mới trên Marketplace';
+        const notifBody = `Sản phẩm "${prod.title}" của bạn vừa nhận được yêu cầu báo giá (${data.quantity ?? 1} sản phẩm): "${(data.message || '').slice(0, 100)}"`;
+        const notifId = require('crypto').randomUUID();
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          quoteId: id,
+          productId: data.productId,
+          targetRoute: `/marketplace`,
+        });
+
+        // 1. business_notifications (ViOne connect app)
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'marketplace', $3, 'quote_requested', 'new_quote',
+            $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
+        `, notifId, targetUserId, id, notifTitle, notifBody, safeData, `quote-req-${id}`).catch(() => {});
+
+        // 2. member_notifications (Association member app)
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
+          )
+        `, targetMemberId, notifTitle, notifBody, id).catch(() => {});
+
+        // Real-time WebSocket emission
+        this.gateway.emitNotification(String(targetUserId), {
+          id: notifId,
+          title: notifTitle,
+          body: notifBody,
+          action: { targetRoute: '/marketplace' },
+          safeDisplayData: { title: notifTitle, body: notifBody },
+        });
+      }
+    } catch (e: any) {
+      console.warn('Failed to send quote notification:', e?.message);
+    }
+
+    const q = rows[0];
+    return {
+      id: q.id,
+      productId: q.product_id,
+      buyerId: q.buyer_id,
+      quantity: Number(q.quantity ?? 1),
+      message: q.message ?? '',
+      contact: q.contact ?? '',
+      status: q.status ?? 'sent',
+      reminderCount: 0,
+      createdAt: q.created_at ? new Date(q.created_at).toISOString() : '',
+    };
+  }
+
+  async updateQuoteStatus(userId: string, id: string, status: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.quote_requests
+      SET status = ${status}, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    const q = rows[0];
+
+    // 2-Way Notification: Notify buyer about status update
+    try {
+      const notifTitle = 'Cập nhật trạng thái yêu cầu báo giá';
+      const notifBody = `Yêu cầu báo giá #${id} của bạn đã chuyển sang trạng thái: ${status}.`;
+      const notifId = require('crypto').randomUUID();
+      const safeData = JSON.stringify({
+        title: notifTitle,
+        body: notifBody,
+        quoteId: id,
+        status,
+        targetRoute: '/marketplace',
+      });
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          $1::uuid, $2::uuid, 'marketplace', $3, 'quote_status_updated', 'quote_status',
+          $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
+        )
+      `, notifId, q.buyer_id, id, notifTitle, notifBody, safeData, `quote-status-${id}-${status}`).catch(() => {});
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
+        )
+      `, q.buyer_id, notifTitle, notifBody, id).catch(() => {});
+
+      this.gateway.emitNotification(String(q.buyer_id), {
+        id: notifId,
+        title: notifTitle,
+        body: notifBody,
+        action: { targetRoute: '/marketplace' },
+        safeDisplayData: { title: notifTitle, body: notifBody },
+      });
+    } catch {}
+
+    return { id: q.id, status: q.status };
+  }
+
+  async sendQuoteReminder(userId: string, id: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.quote_requests
+      SET reminder_count = COALESCE(reminder_count, 0) + 1, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    const q = rows[0];
+
+    // 2-Way Notification: send reminder to seller
+    try {
+      const prodRows = await this.prisma.$queryRaw<any[]>`
+        SELECT p.title, p.seller_id
+        FROM public.products p
+        WHERE p.id = ${q.product_id} LIMIT 1
+      `.catch(() => []);
+
+      if (prodRows.length > 0 && prodRows[0].seller_id) {
+        const notifTitle = 'Nhắc nhở phản hồi báo giá Marketplace';
+        const notifBody = `Khách hàng đang chờ phản hồi báo giá cho sản phẩm "${prodRows[0].title}".`;
+        const notifId = require('crypto').randomUUID();
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          quoteId: id,
+          targetRoute: '/marketplace',
+        });
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'marketplace', $3, 'quote_reminder', 'quote_reminder',
+            $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
+        `, notifId, prodRows[0].seller_id, id, notifTitle, notifBody, safeData, `quote-remind-${id}-${Date.now()}`).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
+          )
+        `, prodRows[0].seller_id, notifTitle, notifBody, id).catch(() => {});
+
+        this.gateway.emitNotification(String(prodRows[0].seller_id), {
+          id: notifId,
+          title: notifTitle,
+          body: notifBody,
+          action: { targetRoute: '/marketplace' },
+          safeDisplayData: { title: notifTitle, body: notifBody },
+        });
+      }
+    } catch {}
+
+    return { id: q.id, reminderCount: Number(q.reminder_count ?? 1) };
+  }
+
+  async cancelQuote(userId: string, id: string, reason: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      UPDATE public.quote_requests
+      SET status = 'cancelled', cancel_reason = ${reason ?? ''}, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (rows.length === 0) return null;
+    return { id, status: 'cancelled', cancelReason: reason };
+  }
 }
 
 // ==========================================
@@ -10410,3 +10938,4 @@ Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","re
     return { ok: false, error: "unavailable" as const };
   }
 }
+

@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { NewsArticle } from "@/lib/extra-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
@@ -10,11 +11,11 @@ type Row = Record<string, unknown>;
 
 function mapNews(n: Row): NewsArticle {
   return {
-    id: n.code as string,
+    id: (n.code || n.id) as string,
     title: n.title as string,
     category: n.category as string,
     author: n.author as string,
-    publishedAt: n.published_at as string,
+    publishedAt: (n.published_at as string) || (n.publishedAt as string) || "—",
     views: (n.views as number) ?? 0,
     status: n.status as NewsArticle["status"],
     excerpt: (n.excerpt as string) ?? "",
@@ -24,6 +25,25 @@ function mapNews(n: Row): NewsArticle {
 export const listNewsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<NewsArticle[]> => {
+    const token = (context as any)?.token;
+    try {
+      const nestNews = await fetchNestApiFromServer<any[]>("/content/admin/news", token);
+      if (Array.isArray(nestNews) && nestNews.length > 0) {
+        return nestNews.map((n: any) => ({
+          id: n.code || n.id,
+          title: n.title,
+          category: n.category ?? "",
+          author: n.author ?? "",
+          publishedAt: n.publishedAt || n.published_at || "—",
+          views: Number(n.views ?? 0),
+          status: (n.status as NewsArticle["status"]) ?? "published",
+          excerpt: n.excerpt ?? "",
+        }));
+      }
+    } catch (e) {
+      console.warn("Fallback to db for listNews:", e);
+    }
+
     const { getActiveAssociationId } = await import("./assoc-scope.server");
     const activeId = await getActiveAssociationId(getDb(context));
     let query = getDb(context).from("news").select("*").order("created_at", { ascending: true });
@@ -46,6 +66,28 @@ export const createNewsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => newsInput.parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
+    const token = (context as any)?.token;
+    try {
+      const created = await fetchNestApiFromServer<any>("/content/admin/news", token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (created && (created.id || created.code)) {
+        return {
+          id: created.code || created.id,
+          title: created.title,
+          category: created.category ?? data.category,
+          author: created.author ?? data.author,
+          publishedAt: created.publishedAt || data.publishedAt,
+          views: 0,
+          status: created.status ?? data.status,
+          excerpt: created.excerpt ?? data.excerpt,
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for createNews:", e);
+    }
+
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("NEWS");
     const { data: row, error } = await getDb(context)
@@ -75,6 +117,28 @@ export const updateNewsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => newsInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
+    const token = (context as any)?.token;
+    try {
+      const updated = await fetchNestApiFromServer<any>(`/content/admin/news/${data.id}`, token, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      if (updated && (updated.id || updated.code)) {
+        return {
+          id: updated.code || updated.id,
+          title: updated.title,
+          category: updated.category ?? data.category,
+          author: updated.author ?? data.author,
+          publishedAt: updated.publishedAt || data.publishedAt,
+          views: Number(updated.views ?? 0),
+          status: updated.status ?? data.status,
+          excerpt: updated.excerpt ?? data.excerpt,
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for updateNews:", e);
+    }
+
     const { logActivity } = await import("./crud.server");
     const { data: row, error } = await getDb(context)
       .from("news")
@@ -102,6 +166,16 @@ export const deleteNewsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const token = (context as any)?.token;
+    try {
+      await fetchNestApiFromServer<any>(`/content/admin/news/${data.id}`, token, {
+        method: "DELETE",
+      });
+      return { ok: true };
+    } catch (e) {
+      console.warn("Fallback to db for deleteNews:", e);
+    }
+
     const { logActivity } = await import("./crud.server");
     const found = await getDb(context)
       .from("news")

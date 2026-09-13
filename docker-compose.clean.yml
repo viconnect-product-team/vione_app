@@ -9,6 +9,7 @@ services:
       - PORT=8080
       - HOST=0.0.0.0
       - NITRO_HOST=0.0.0.0
+      - NEST_API_URL=http://backend:4000
     ports:
       - "${TARGET_PROD_PORT_FRONTEND:-5000}:8080"
     depends_on:

@@ -12,9 +12,21 @@ const codeFromId = (id: string) => id.replace(/^RNW-/, "");
 const NO_PERMISSION =
   "Không thể cập nhật hội viên — bạn không có quyền quản trị trong không gian làm việc này.";
 
+import { fetchNestApiFromServer } from "@/lib/api-client";
+
 export const listRenewalsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<RenewalRecord[]> => {
+    const token = (context as any)?.token;
+    try {
+      const nestMembers = await fetchNestApiFromServer<any[]>("/members", token);
+      if (Array.isArray(nestMembers) && nestMembers.length > 0) {
+        return nestMembers.map((r: any) => toRecord(r as Row));
+      }
+    } catch (e) {
+      console.warn("Fallback to db for listRenewals:", e);
+    }
+
     const { getActiveAssociationId } = await import("./assoc-scope.server");
     const activeId = await getActiveAssociationId(getDb(context));
     let query = getDb(context).from("members").select("*").order("code", { ascending: true });
@@ -29,6 +41,18 @@ export const renewMembershipFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
+    const token = (context as any)?.token;
+    try {
+      const renewed = await fetchNestApiFromServer<any>(`/members/${code}/renew`, token, {
+        method: "POST",
+      });
+      if (renewed) {
+        return toRecord(renewed as Row);
+      }
+    } catch (e) {
+      console.warn("Fallback to db for renewMembership:", e);
+    }
+
     const { data: cur, error: cErr } = await getDb(context)
       .from("members")
       .select("term_end")
@@ -96,6 +120,18 @@ export const sendRenewalReminderFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
+    const token = (context as any)?.token;
+    try {
+      const reminded = await fetchNestApiFromServer<any>(`/members/${code}/remind`, token, {
+        method: "POST",
+      });
+      if (reminded) {
+        return toRecord(reminded as Row);
+      }
+    } catch (e) {
+      console.warn("Fallback to db for sendRenewalReminder:", e);
+    }
+
     const { data: cur, error: cErr } = await getDb(context)
       .from("members")
       .select("reminder_count")

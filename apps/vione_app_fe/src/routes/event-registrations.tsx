@@ -283,170 +283,182 @@ export function RegPage() {
       </div>
 
       {/* Main Table */}
-      <TableShell
-        columns={[
-          { label: "Mã ĐK", key: "code" },
-          { label: "Người tham gia", key: "member" },
-          "Chỗ ngồi / Bàn VIP",
-          { label: "Hạng vé", key: "ticket" },
-          "Thanh toán & Phí",
-          "Check-in",
-          { label: "Trạng thái", key: "status" },
-          "Thao tác quản trị",
-        ]}
-        sort={{ sortKey: tc.sortKey, sortDir: tc.sortDir, onSort: tc.toggleSort }}
-        footer={
-          <Pagination
-            page={tc.page}
-            pageCount={tc.pageCount}
-            pageSize={tc.pageSize}
-            total={tc.total}
-            from={tc.from}
-            to={tc.to}
-            onPage={tc.setPage}
-            onPageSize={tc.setPageSize}
-          />
-        }
-      >
-        {tc.pageRows.map((r: any) => {
-          const isPaid = r.paymentStatus === "paid";
-          const isCancelled = r.status === "cancelled";
-          const reminderCount = Number(r.reminderCount || 0);
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+        <div className="relative overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã ĐK</th>
+                <th className="px-4 py-3 border-b border-border">Người tham gia</th>
+                <th className="px-4 py-3 border-b border-border">Chỗ ngồi / Bàn VIP</th>
+                <th className="px-4 py-3 border-b border-border">Hạng vé</th>
+                <th className="px-4 py-3 border-b border-border">Thanh toán & Phí</th>
+                <th className="px-4 py-3 border-b border-border">Check-in</th>
+                <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">Thao tác quản trị</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {tc.pageRows.map((r: any, idx: number) => {
+                const isPaid = r.paymentStatus === "paid";
+                const isCancelled = r.status === "cancelled";
+                const reminderCount = Number(r.reminderCount || 0);
 
-          return (
-            <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
-              <td className="px-4 py-3 font-mono text-[12px] font-bold text-primary">{r.id}</td>
-              <td className="px-4 py-3">
-                <div className="font-semibold text-foreground">{r.memberName}</div>
-                <div className="text-[11px] text-muted-foreground">{r.email} · {r.memberCode}</div>
-              </td>
+                return (
+                  <tr key={r.id} className="group border-b border-border/50 transition hover:bg-secondary/40">
+                    <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                      {(tc.page - 1) * tc.pageSize + idx + 1}
+                    </td>
+                    <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-bold text-primary group-hover:bg-muted/70 border-b border-border/50">
+                      {r.id}
+                    </td>
+                    <td className="px-4 py-3 border-b border-border/50">
+                      <div className="font-semibold text-foreground">{r.memberName}</div>
+                      <div className="text-[11px] text-muted-foreground">{r.email} · {r.memberCode}</div>
+                    </td>
 
-              {/* Chỗ ngồi / Bàn VIP */}
-              <td className="px-4 py-3">
-                {r.seatAssignment ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {r.seatAssignment}
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">Chưa xếp chỗ</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleOpenSeating(r)}
-                  className="ml-2 text-[11px] text-primary underline hover:opacity-80"
-                >
-                  {r.seatAssignment ? "Đổi" : "+ Xếp"}
-                </button>
-              </td>
+                    {/* Chỗ ngồi / Bàn VIP */}
+                    <td className="px-4 py-3 border-b border-border/50">
+                      {r.seatAssignment ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {r.seatAssignment}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Chưa xếp chỗ</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSeating(r)}
+                        className="ml-2 text-[11px] text-primary underline hover:opacity-80 cursor-pointer"
+                      >
+                        {r.seatAssignment ? "Đổi" : "+ Xếp"}
+                      </button>
+                    </td>
 
-              <td className="px-4 py-3">
-                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
-                  <Tag className="h-3 w-3" />
-                  {r.ticketType || "VIP Pass"}
-                </span>
-              </td>
+                    <td className="px-4 py-3 border-b border-border/50">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
+                        <Tag className="h-3 w-3" />
+                        {r.ticketType || "VIP Pass"}
+                      </span>
+                    </td>
 
-              {/* Thanh toán & Phí */}
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                      isPaid
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                        : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                    }`}
-                  >
-                    {isPaid ? "Đã nộp" : "Chờ thanh toán"}
-                  </span>
-                  <span className="text-xs font-semibold text-foreground">
-                    {fmt.money(r.paymentAmount || 500000)}
-                  </span>
-                </div>
-                {!isPaid && !isCancelled && (
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
-                    Nhắc: {reminderCount}/3 lần {reminderCount >= 2 && <span className="text-rose-600 font-bold">(Sắp hủy)</span>}
-                  </div>
-                )}
-              </td>
+                    {/* Thanh toán & Phí */}
+                    <td className="px-4 py-3 border-b border-border/50">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                              isPaid
+                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                                : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            }`}
+                          >
+                            {isPaid ? "Đã nộp" : "Chờ thanh toán"}
+                          </span>
+                          <span className="text-xs font-semibold text-foreground">
+                            {fmt.money(r.paymentAmount || 500000)}
+                          </span>
+                        </div>
+                        {!isPaid && !isCancelled && (
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">
+                            Nhắc: {reminderCount}/3 lần {reminderCount >= 2 && <span className="text-rose-600 font-bold">(Sắp hủy)</span>}
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
-              {/* Checkin status */}
-              <td className="px-4 py-3">
-                {r.checkedInAt ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã check-in
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Chưa đến</span>
-                )}
-              </td>
+                    {/* Checkin status */}
+                    <td className="px-4 py-3 border-b border-border/50">
+                      {r.checkedInAt ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Đã check-in
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Chưa đến</span>
+                      )}
+                    </td>
 
-              <td className="px-4 py-3">
-                <Pill color={isPaid ? "success" : isCancelled ? "danger" : "warning"}>
-                  {isCancelled ? "Đã hủy" : isPaid ? "Hợp lệ" : "Chờ phí"}
-                </Pill>
-              </td>
+                    <td className="px-4 py-3 border-b border-border/50">
+                      <Pill color={isPaid ? "success" : isCancelled ? "danger" : "warning"}>
+                        {isCancelled ? "Đã hủy" : isPaid ? "Hợp lệ" : "Chờ phí"}
+                      </Pill>
+                    </td>
 
-              {/* Action Buttons */}
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1.5">
-                  {/* Xem QR checkin */}
-                  <button
-                    onClick={() => handleOpenQr(r)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-secondary"
-                    title="Xem mã QR Check-in"
-                  >
-                    <QrCode className="h-3.5 w-3.5" />
-                    QR
-                  </button>
+                    {/* Action Buttons */}
+                    <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Xem QR checkin */}
+                        <button
+                          onClick={() => handleOpenQr(r)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-secondary cursor-pointer"
+                          title="Xem mã QR Check-in"
+                        >
+                          <QrCode className="h-3.5 w-3.5" />
+                          QR
+                        </button>
 
-                  {/* Xem khảo sát Google Form */}
-                  <button
-                    onClick={() => handleOpenFormSurvey(r)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
-                    title="Xem phiếu thông tin & khảo sát Google Form"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Form
-                  </button>
+                        {/* Xem khảo sát Google Form */}
+                        <button
+                          onClick={() => handleOpenFormSurvey(r)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:text-purple-300 cursor-pointer"
+                          title="Xem phiếu thông tin & khảo sát Google Form"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Form
+                        </button>
 
-                  {/* Thu tiền mặt tại chỗ nếu chưa nộp */}
-                  {!isPaid && !isCancelled && (
-                    <button
-                      onClick={() => handleWalkInCashPayment(r)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
-                      title="Thu tiền mặt tại bàn tiếp đón và tự động lưu Quản lý thu"
-                    >
-                      <Coins className="h-3.5 w-3.5" />
-                      Thu tiền mặt
-                    </button>
-                  )}
+                        {/* Thu tiền mặt tại chỗ nếu chưa nộp */}
+                        {!isPaid && !isCancelled && (
+                          <button
+                            onClick={() => handleWalkInCashPayment(r)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 cursor-pointer"
+                            title="Thu tiền mặt tại bàn tiếp đón và tự động lưu Quản lý thu"
+                          >
+                            <Coins className="h-3.5 w-3.5" />
+                            Thu tiền mặt
+                          </button>
+                        )}
 
-                  {/* Nhắc nhở thanh toán 3 ngày */}
-                  {!isPaid && !isCancelled && (
-                    <button
-                      onClick={() => handleSendReminder(r)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
-                      title="Gửi thông báo nhắc nhở thanh toán theo luồng đếm ngược"
-                    >
-                      <Bell className="h-3.5 w-3.5" />
-                      Nhắc
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-        {tc.total === 0 && (
-          <tr>
-            <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Không tìm thấy đăng ký nào.
-            </td>
-          </tr>
-        )}
-      </TableShell>
+                        {/* Nhắc nhở thanh toán 3 ngày */}
+                        {!isPaid && !isCancelled && (
+                          <button
+                            onClick={() => handleSendReminder(r)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-400 cursor-pointer"
+                            title="Gửi thông báo nhắc nhở thanh toán theo luồng đếm ngược"
+                          >
+                            <Bell className="h-3.5 w-3.5" />
+                            Nhắc
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {tc.total === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Không tìm thấy đăng ký nào.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
+      </div>
 
       {/* Seating Assignment Modal with Cinema-Style Graphical Map */}
       {seatingModalOpen && selectedReg && (

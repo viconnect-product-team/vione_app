@@ -5,10 +5,10 @@ export const Route = createFileRoute("/business-connect/v3")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Business Connect v3 — Cổ Tích Huyền Bí & Thế Giới Diệu Kỳ | VIONE" },
+      { title: "Business Connect v3 — Neobrutalism (Đậm Chất Startup) | VIONE" },
       {
         name: "description",
-        content: "Mẫu giao diện v3: Phong cách Cổ Tích Diệu Kỳ, Amethyst Violet, Rose Pink, Cyan Stardust và Enchanted Magic Core.",
+        content: "Mẫu giao diện v3: Phong cách Neobrutalism, nền be (#FDF7E4), viền đen dày, bóng đổ cứng khối, dải phân cách Solid Wipe và sticker cutout trôi nổi.",
       },
     ],
   }),

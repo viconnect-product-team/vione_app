@@ -1,1031 +1,706 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Zap,
-  Users,
-  Building2,
-  Clock,
-  Landmark,
+  Play,
+  X,
   Sun,
   Moon,
-  Database,
-  LineChart,
-  LayoutDashboard,
-  Cpu,
-  Award,
-  Crown,
-  TrendingDown,
-  X,
-  Check,
-  Activity,
-  Gauge,
-  GitPullRequest,
-  EyeOff,
-  Flame,
-  Rocket,
+  Contrast,
+  Users,
+  Building2,
+  TrendingUp,
+  Globe2,
+  Calendar,
+  Layers,
+  BookOpen,
+  BarChart3,
   Bot,
-  UserCheck,
-  ShieldAlert,
-  Radio,
+  Share2,
+  ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  Lock,
 } from "lucide-react";
-import { BusinessConnectPartnersSection } from "./BusinessConnectPartnersSection";
-import { useAutoHideHeader } from "./useAutoHideHeader";
 import { toast } from "sonner";
 
-/** Themed Cyberpunk / Command HUD Scenery Cut Component (45° Chamfered Angular Cuts) */
-function CyberSectionSceneryCut({
-  themeMode,
-  side = "right",
-  ratio = "2/3",
-  id,
-}: {
-  themeMode: "light" | "dark";
-  side?: "left" | "right";
-  ratio?: "1/2" | "2/3";
-  id: string;
-}) {
-  const imgSrc = themeMode === "dark" ? "/landing/cyberpunk_dark_bg.jpg" : "/landing/cyberpunk_light_bg.jpg";
-  const clipId = `cyberClip_${id}`;
-  const gradId = `cyberGrad_${id}`;
+type ThemeMode = "light" | "dark" | "contrast";
 
-  const clipPathD =
-    side === "right"
-      ? ratio === "2/3"
-        ? "M 0.35,0 L 0.50,0.25 L 0.38,0.55 L 0.48,0.75 L 0.28,1.0 L 1,1 L 1,0 Z"
-        : "M 0.50,0 L 0.62,0.25 L 0.52,0.55 L 0.60,0.75 L 0.42,1.0 L 1,1 L 1,0 Z"
-      : ratio === "2/3"
-      ? "M 0,0 L 0.65,0 L 0.50,0.25 L 0.62,0.55 L 0.52,0.75 L 0.72,1.0 L 0,1 Z"
-      : "M 0,0 L 0.50,0 L 0.38,0.25 L 0.48,0.55 L 0.40,0.75 L 0.58,1.0 L 0,1 Z";
-
-  const boundaryLineD =
-    side === "right"
-      ? ratio === "2/3"
-        ? "M 504,0 L 720,250 L 547,550 L 691,750 L 403,1000"
-        : "M 720,0 L 892,250 L 748,550 L 864,750 L 604,1000"
-      : ratio === "2/3"
-      ? "M 936,0 L 720,250 L 892,550 L 748,750 L 1036,1000"
-      : "M 720,0 L 547,250 L 691,550 L 576,750 L 835,1000";
+// =========================================================================
+// EXECUTIVE GLASS DASHBOARD BACKGROUND (City Bokeh / Frosted Glass Depth)
+// =========================================================================
+function ExecutiveGlassBackground({ theme }: { theme: ThemeMode }) {
+  if (theme === "contrast") {
+    return <div className="pointer-events-none fixed inset-0 z-0 bg-white" />;
+  }
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
-      <svg className="absolute w-0 h-0" aria-hidden="true">
-        <defs>
-          <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-            <path d={clipPathD} />
-          </clipPath>
-        </defs>
-      </svg>
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {/* Heavy blurred financial district lighting simulation */}
       <div
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ clipPath: `url(#${clipId})` }}
-      >
-        <img
-          src={imgSrc}
-          alt="Cyberpunk Command Atmosphere"
-          className={`w-full h-full object-cover ${
-            side === "right" ? "object-right-top" : "object-left-top"
-          } transition-all duration-700 ${
-            themeMode === "dark"
-              ? "opacity-75 filter brightness-100 contrast-120 saturate-110"
-              : "opacity-55 filter brightness-105 contrast-105"
-          }`}
-        />
-        {/* Soft edge fade into pure background */}
-        <div
-          className={`absolute inset-0 transition-colors duration-700 ${
-            side === "right"
-              ? themeMode === "dark"
-                ? "bg-gradient-to-l from-transparent via-[#040810]/40 to-[#040810]/95"
-                : "bg-gradient-to-l from-transparent via-[#F8FAFC]/40 to-[#F8FAFC]/95"
-              : themeMode === "dark"
-                ? "bg-gradient-to-r from-transparent via-[#040810]/40 to-[#040810]/95"
-                : "bg-gradient-to-r from-transparent via-[#F8FAFC]/40 to-[#F8FAFC]/95"
-          }`}
-        />
-        <div
-          className={`absolute inset-0 transition-colors duration-700 ${
-            themeMode === "dark"
-              ? "bg-gradient-to-b from-[#040810]/50 via-transparent to-[#040810]/75"
-              : "bg-gradient-to-b from-[#F8FAFC]/50 via-transparent to-[#F8FAFC]/75"
-          }`}
-        />
-      </div>
+        className={`absolute inset-0 ${
+          theme === "dark"
+            ? "bg-[#0B0F19] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(30,58,138,0.35),rgba(255,255,255,0))]"
+            : "bg-[#F1F5F9] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(148,163,184,0.3),rgba(255,255,255,0))]"
+        }`}
+      />
 
-      {/* Laser Cyan / Emerald Neon 45° Chamfered Boundary Line */}
-      <svg
-        viewBox="0 0 1440 1000"
-        fill="none"
-        preserveAspectRatio="none"
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      >
-        <path
-          d={boundaryLineD}
-          stroke={`url(#${gradId})`}
-          strokeWidth="2.5"
-          className="opacity-90 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]"
-        />
-        <path
-          d={boundaryLineD}
-          stroke={themeMode === "dark" ? "#67E8F9" : "#0891B2"}
-          strokeWidth="1"
-          strokeDasharray="6 6"
-          className="opacity-50"
-        />
-        <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={themeMode === "dark" ? "#A7F3D0" : "#10B981"} stopOpacity="0.3" />
-            <stop offset="35%" stopColor={themeMode === "dark" ? "#06B6D4" : "#0891B2"} stopOpacity="0.95" />
-            <stop offset="75%" stopColor={themeMode === "dark" ? "#10B981" : "#059669"} stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#047857" stopOpacity="0.2" />
-          </linearGradient>
-        </defs>
-      </svg>
+      {/* Subtle multidimensional ambient orbs */}
+      <div
+        className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[130px] ${
+          theme === "dark" ? "bg-indigo-900/30" : "bg-sky-200/50"
+        }`}
+      />
+      <div
+        className={`absolute bottom-1/3 right-1/4 w-[450px] h-[450px] rounded-full blur-[150px] ${
+          theme === "dark" ? "bg-purple-900/25" : "bg-indigo-100/60"
+        }`}
+      />
     </div>
   );
 }
 
+// 5 PROBLEMS - PART 1 EXACT
+const PROBLEMS_DATA = [
+  {
+    id: 1,
+    title: "Thông tin phân tán",
+    desc: "Khó tìm đúng người trong mạng lưới do dữ liệu lưu trữ rải rác trên danh bạ, Zalo và nhiều file Excel rời rạc.",
+  },
+  {
+    id: 2,
+    title: "Khó duy trì quan hệ",
+    desc: "Thiếu công cụ nhắc nhở và theo dõi tương tác, khiến sợi dây liên kết giữa các thành viên dần nguội lạnh.",
+  },
+  {
+    id: 3,
+    title: "Bỏ lỡ cơ hội",
+    desc: "Không kịp nắm bắt cơ hội phù hợp khi hội viên có nhu cầu hợp tác hoặc cung ứng dịch vụ cấp thiết.",
+  },
+  {
+    id: 4,
+    title: "Thiếu kết nối thực chất",
+    desc: "Nhiều sự kiện nhưng khó tạo giá trị sau sự kiện, giao lưu xã giao bề nổi thiếu cơ chế xúc tiến 1-on-1.",
+  },
+  {
+    id: 5,
+    title: "Khó đo lường hiệu quả",
+    desc: "Không biết mối quan hệ mang lại giá trị gì, thiếu hệ thống số hóa ghi nhận doanh thu và cơ hội giao thương.",
+  },
+];
+
+// 9 SOLUTIONS - PART 1 EXACT
+const SOLUTIONS_DATA = [
+  {
+    icon: Users,
+    title: "Quản lý hội viên",
+    desc: "Hồ sơ 360°, phân nhóm thông minh, tra cứu nhanh năng lực doanh nghiệp và ban điều hành.",
+  },
+  {
+    icon: Layers,
+    title: "CRM & Quan hệ",
+    desc: "Theo dõi lịch sử, ghi chú, nhắc nhở tương tác và quản lý mức độ gắn kết bền chặt.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Cơ hội kinh doanh",
+    desc: "Quản lý pipeline, matching thông minh, ghi nhận lời cảm ơn doanh thu và đo lường thành công.",
+  },
+  {
+    icon: Calendar,
+    title: "Sự kiện",
+    desc: "Tổ chức, quản lý, kết nối trước - trong - sau sự kiện, check-in QR siêu tốc và sơ đồ chỗ ngồi VIP.",
+  },
+  {
+    icon: Building2,
+    title: "Cộng đồng & Nhóm",
+    desc: "Không gian kết nối theo ngành, chủ đề chuyên sâu, phân ban chuyên môn và câu lạc bộ trực thuộc.",
+  },
+  {
+    icon: BookOpen,
+    title: "Tri thức & Nội dung",
+    desc: "Chia sẻ chuyên gia, tài liệu hội thảo, thư viện biểu mẫu pháp lý và bản tin kinh tế độc quyền.",
+  },
+  {
+    icon: BarChart3,
+    title: "Báo cáo & Phân tích",
+    desc: "Đo lường hiệu quả kết nối và ROI mạng lưới, bảng điều khiển KPI giao thương hiệp hội minh bạch.",
+  },
+  {
+    icon: Bot,
+    title: "AI Copilot",
+    desc: "Tìm kiếm thông minh, gợi ý kết nối chuẩn xác theo ngành nghề và tóm tắt biên bản họp tự động.",
+  },
+  {
+    icon: Share2,
+    title: "Tích hợp & Mở rộng",
+    desc: "Kết nối liền mạch với hệ thống khác CRM, email marketing, calendar và hóa đơn điện tử VAT.",
+  },
+];
+
+const CLIENT_LOGOS = [
+  "VCCI",
+  "AmCham",
+  "EuroCham",
+  "KoCham",
+  "Singapore Business Federation",
+  "AusCham",
+];
+
+const TESTIMONIALS_DATA = [
+  {
+    quote: "Business Connect giúp Hiệp hội Du lịch chuyển đổi số toàn diện. Việc kết nối giữa hơn 1,200 doanh nghiệp hội viên diễn ra chuẩn xác và tạo ra doanh thu thực tế rõ rệt.",
+    author: "Nguyễn Thị Lan",
+    role: "Chủ tịch Hiệp hội Du lịch VN",
+    badge: "1,200+ Hội viên",
+  },
+  {
+    quote: "Hệ thống CRM và matching cơ hội kinh doanh giúp công ty tôi tìm được đúng các đối tác cung ứng tin cậy trong các hiệp hội công nghiệp lớn chỉ trong vài tuần.",
+    author: "Trần Minh Quân",
+    role: "CEO, Công ty Sản xuất Việt",
+    badge: "Doanh nghiệp Tiêu biểu",
+  },
+  {
+    quote: "Tôi tiết kiệm được 80% thời gian mở rộng quan hệ. Thay vì phát danh thiếp giấy tràn lan, Business Connect trao đúng giá trị cho đúng người lãnh đạo cần gặp.",
+    author: "Lê Hoàng Anh",
+    role: "Doanh nhân, Hội viên VIP",
+    badge: "Hội viên VIP",
+  },
+];
+
 export function BusinessConnectLandingV4() {
-  // Support Dark / Light Theme (defaulting to Dark Cyberpunk HUD)
-  const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
-  const { showHeader, headerStyle, resetTimer } = useAutoHideHeader(3000);
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [demoForm, setDemoForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    org: "",
-    note: "",
-  });
+  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [demoEmail, setDemoEmail] = useState("");
+  const [demoName, setDemoName] = useState("");
+  const [demoOrg, setDemoOrg] = useState("");
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Đăng ký thành công! Đội ngũ kỹ sư Business Connect sẽ hỗ trợ lên lịch Demo Bứt phá trong 24h.");
-    setDemoModalOpen(false);
-    setDemoForm({ name: "", phone: "", email: "", org: "", note: "" });
+    if (!demoEmail) {
+      toast.error("Vui lòng nhập email doanh nghiệp!");
+      return;
+    }
+    toast.success("Đặt lịch demo thành công! Chuyên gia ViOne sẽ liên hệ trong 15 phút.");
+    setIsDemoModalOpen(false);
+    setDemoEmail("");
+    setDemoName("");
+    setDemoOrg("");
+  };
+
+  // Glass card styles
+  const glassCardClasses = {
+    light: "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] hover:border-sky-300/80 hover:bg-white/85 transition-all duration-300",
+    dark: "bg-[#111827]/70 backdrop-blur-xl border border-slate-700/60 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-indigo-500/50 hover:bg-[#111827]/85 transition-all duration-300",
+    contrast: "bg-white border-2 border-black shadow-none",
+  };
+
+  const textPrimary = {
+    light: "text-slate-900",
+    dark: "text-white",
+    contrast: "text-black",
+  };
+
+  const textMuted = {
+    light: "text-slate-600",
+    dark: "text-slate-300",
+    contrast: "text-neutral-800",
   };
 
   return (
-    <div
-      className={`min-h-screen font-sans transition-colors duration-500 relative overflow-x-hidden selection:bg-cyan-500 selection:text-slate-950 ${
-        themeMode === "dark" ? "bg-[#030712] text-slate-100" : "bg-[#F8FAFC] text-[#020617]"
-      }`}
-      style={{
-        fontFamily: "'Space Grotesk', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-      }}
-    >
-      {/* Cyberpunk HUD Grid Overlay */}
-      {themeMode === "dark" && (
-        <div className="fixed inset-0 pointer-events-none z-0 bg-[linear-gradient(to_right,#06b6d412_1px,transparent_1px),linear-gradient(to_bottom,#06b6d412_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_75%_60%_at_50%_35%,#000_70%,transparent_100%)]" />
-      )}
+    <div className={`min-h-screen font-sans transition-colors duration-200 relative ${
+      theme === "dark" ? "bg-[#0B0F19] text-white" : theme === "contrast" ? "bg-white text-black" : "bg-[#F8FAFC] text-slate-900"
+    }`}>
+      <ExecutiveGlassBackground theme={theme} />
 
-      {/* Cyber Keyframe Animations */}
-      <style>{`
-        @keyframes cyberPulse {
-          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(6,182,212,0.4)); }
-          50% { transform: scale(1.08); filter: drop-shadow(0 0 20px rgba(6,182,212,0.8)); }
-        }
-        @keyframes cyberFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
-        }
-        @keyframes cyberScan {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes cyberPing {
-          0% { transform: scale(0.95); opacity: 0.9; }
-          50% { transform: scale(1.3); opacity: 0.3; }
-          100% { transform: scale(0.95); opacity: 0.9; }
-        }
-        .anim-cyber-pulse { animation: cyberPulse 3s ease-in-out infinite; }
-        .anim-cyber-float { animation: cyberFloat 4s ease-in-out infinite; }
-        .anim-cyber-scan { animation: cyberScan 12s linear infinite; }
-        .anim-cyber-ping { animation: cyberPing 2s cubic-bezier(0,0,0.2,1) infinite; }
-      `}</style>
-
-      {/* =========================================================================
-          SECTION 1: HEADER (Tự ẩn sau 3s, di chuột hoặc scroll thì hiện lại)
-          BUSINESS CONNECT | Nhạy bén - Bứt tốc - Dẫn đầu (Theme Sáng / Tối Linh Hoạt)
-          ========================================================================= */}
-      <header
-        style={headerStyle}
-        onMouseEnter={resetTimer}
-        className={`fixed top-0 inset-x-0 z-50 backdrop-blur-md border-b transition-colors duration-500 ${
-          themeMode === "dark"
-            ? "bg-[#030712]/90 border-cyan-950/80 shadow-[0_2px_25px_rgba(6,182,212,0.15)]"
-            : "bg-[#F8FAFC]/95 border-slate-200 shadow-[0_2px_15px_rgba(0,0,0,0.04)]"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/business-connect/v4" className="flex items-center gap-3 group">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black shadow-lg transition-transform group-hover:scale-105 border ${
-              themeMode === "dark"
-                ? "bg-slate-900 border-cyan-500/50 text-cyan-400 shadow-cyan-500/30"
-                : "bg-cyan-100 border-cyan-300 text-cyan-800 shadow-cyan-500/10"
-            }`}>
-              <Activity className="w-5 h-5 anim-cyber-pulse text-cyan-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xl font-black tracking-tight block leading-tight ${
-                  themeMode === "dark" ? "text-white" : "text-slate-950"
-                }`}>
-                  BUSINESS <span className="text-cyan-500">CONNECT</span>
-                </span>
-                <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold border ${
-                  themeMode === "dark"
-                    ? "bg-cyan-950/80 text-cyan-300 border-cyan-700/60"
-                    : "bg-cyan-100 text-cyan-800 border-cyan-300"
-                }`}>
-                  V4 CYBER HUD
-                </span>
+      {/* ========================================================================= */}
+      {/* 1. HEADER (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <header className={`sticky top-0 z-50 transition-colors backdrop-blur-md border-b ${
+        theme === "dark" ? "bg-[#0B0F19]/80 border-slate-800" : theme === "contrast" ? "bg-white border-b-2 border-black" : "bg-white/80 border-slate-200"
+      }`}>
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link to="/business-connect/v4" className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-sky-500/20">
+                V4
               </div>
-              <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-cyan-500">
-                NHẠY BÉN • BỨT TỐC • DẪN ĐẦU
-              </span>
-            </div>
-          </Link>
+              <div>
+                <span className="font-extrabold text-xl tracking-tight block">BUSINESS CONNECT</span>
+                <span className="text-[10px] tracking-wider uppercase text-sky-500 font-semibold">Glass Dashboard</span>
+              </div>
+            </Link>
 
-          <nav className={`hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider ${
-            themeMode === "dark" ? "text-slate-300" : "text-slate-700"
-          }`}>
-            <a href="#solutions" className="hover:text-cyan-400 transition-colors">Giải pháp</a>
-            <a href="#ecosystem" className="hover:text-cyan-400 transition-colors">Hệ sinh thái Mở</a>
-            <a href="#testimonials" className="hover:text-cyan-400 transition-colors">Khách hàng Tiên phong</a>
-            <a href="#about" className="hover:text-cyan-400 transition-colors">Về chúng tôi</a>
-            <span className={`text-[11px] px-2 py-0.5 rounded border ${
-              themeMode === "dark"
-                ? "bg-cyan-950/60 border-cyan-800 text-cyan-400"
-                : "bg-cyan-500/10 border-cyan-500/20 text-cyan-700"
+            <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold">
+              <a href="#giai-phap" className="hover:text-sky-500 transition-colors">Giải pháp</a>
+              <a href="#khach-hang" className="hover:text-sky-500 transition-colors">Khách hàng</a>
+              <a href="#cau-chuyen" className="hover:text-sky-500 transition-colors">Câu chuyện</a>
+              <a href="#bang-gia" className="hover:text-sky-500 transition-colors">Bảng giá</a>
+              <a href="#tai-nguyen" className="hover:text-sky-500 transition-colors">Tài nguyên</a>
+              <a href="#ve-chung-toi" className="hover:text-sky-500 transition-colors">Về chúng tôi</a>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Theme selector */}
+            <div className={`flex items-center p-1 rounded-xl border ${
+              theme === "dark" ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-slate-100/80"
             }`}>
-              VI / EN
-            </span>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle Button (Sáng / Tối) */}
-            <button
-              onClick={() => setThemeMode(themeMode === "dark" ? "light" : "dark")}
-              className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
-                themeMode === "dark"
-                  ? "bg-slate-900 border-cyan-500/50 text-cyan-300 hover:bg-slate-800 shadow-[0_0_12px_rgba(6,182,212,0.3)]"
-                  : "bg-cyan-50 border-cyan-200 text-cyan-800 hover:bg-cyan-100 shadow-sm"
-              }`}
-              title="Chuyển đổi theme Sáng / Tối"
-            >
-              {themeMode === "dark" ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="font-mono text-[10px] uppercase tracking-wider">THEME TỐI</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-cyan-700" />
-                  <span className="font-mono text-[10px] uppercase tracking-wider">THEME SÁNG</span>
-                </>
-              )}
-            </button>
+              <button
+                onClick={() => setTheme("light")}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all ${theme === "light" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"}`}
+                title="Light: Kính mờ trên nền Bạc"
+              >
+                <Sun className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all ${theme === "dark" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400"}`}
+                title="Dark: Kính đen xám trên nền Gradient"
+              >
+                <Moon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setTheme("contrast")}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all ${theme === "contrast" ? "bg-black text-white" : "text-slate-400"}`}
+                title="Contrast: Giao diện phẳng"
+              >
+                <Contrast className="w-4 h-4" />
+              </button>
+            </div>
 
             <Link
-              to="/connect-app"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                themeMode === "dark"
-                  ? "text-slate-200 bg-slate-900/80 hover:bg-slate-800 border-slate-700"
-                  : "text-slate-800 bg-white hover:bg-slate-50 border-slate-300 shadow-sm"
-              }`}
+              to="/auth"
+              className="text-sm font-semibold px-3 py-2 hover:opacity-80 transition-opacity hidden sm:inline-block"
             >
-              <Users className="w-3.5 h-3.5 text-cyan-500" />
-              <span>Đăng nhập</span>
+              Đăng nhập
             </Link>
 
             <button
-              onClick={() => setDemoModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 shadow-lg shadow-cyan-500/20 hover:scale-105 transition-all cursor-pointer border border-cyan-300"
+              onClick={() => setIsDemoModalOpen(true)}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-sm tracking-wide shadow-md shadow-sky-500/25 hover:opacity-95 transition-opacity flex items-center gap-2"
             >
-              Lên lịch Demo Bứt phá →
+              <span>Đặt demo</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* =========================================================================
-          SECTION 2: HERO BANNER (Màn hình chính đầu trang)
-          ========================================================================= */}
-      <section
-        id="hero"
-        className={`relative pt-32 pb-24 md:pt-40 md:pb-32 border-b transition-colors duration-500 overflow-hidden ${
-          themeMode === "dark"
-            ? "bg-[#040810] border-slate-800 text-slate-100"
-            : "bg-[#F8FAFC] border-slate-200 text-[#020617]"
-        }`}
-      >
-        <CyberSectionSceneryCut themeMode={themeMode} side="right" ratio="2/3" id="v4Hero" />
+      {/* ========================================================================= */}
+      {/* 2. HERO SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24 md:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-4xl">
+            {/* Tagline */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-xs font-bold tracking-widest uppercase mb-6"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI
+            </motion.div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl space-y-8 text-left">
-            {/* Badge */}
-            <div className={`inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-mono font-bold tracking-wider uppercase border shadow-sm ${
-              themeMode === "dark"
-                ? "bg-cyan-950/70 border-cyan-700/50 text-cyan-300"
-                : "bg-cyan-50 border-cyan-300 text-cyan-800"
-            }`}>
-              <Gauge className="w-4 h-4 text-cyan-500 anim-cyber-pulse" />
-              <span>NỀN TẢNG QUẢN TRỊ QUAN HỆ KHÁCH HÀNG TỐC ĐỘ CAO</span>
-            </div>
-
-            {/* H1 Heading */}
-            <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.12] tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Nắm bắt thời cơ. <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 font-mono">
-                Bứt phá giới hạn.
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-8"
+            >
+              Hiểu đúng người. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-500">
+                Mở ra cơ hội thật.
               </span>
-            </h1>
+            </motion.h1>
 
-            {/* Description */}
-            <p className={`text-base sm:text-lg leading-relaxed max-w-2xl font-normal ${
-              themeMode === "dark" ? "text-slate-300" : "text-slate-700"
-            }`}>
-              Business Connect mang đến bộ máy vận hành linh hoạt, giúp Ban Giám đốc xóa bỏ mọi độ trễ trong luồng dữ liệu, phản ứng tức thời với thị trường và đẩy nhanh tốc độ triển khai chiến lược kinh doanh.
-            </p>
+            {/* Subtext */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className={`text-lg md:text-xl ${textMuted[theme]} font-normal leading-relaxed mb-10 max-w-3xl`}
+            >
+              Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.
+            </motion.p>
 
-            {/* Action CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-4 mb-16"
+            >
               <button
-                onClick={() => setDemoModalOpen(true)}
-                className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-sm shadow-xl shadow-cyan-500/30 hover:scale-102 transition-all cursor-pointer flex items-center justify-center gap-2.5 border border-cyan-300"
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-8 py-4 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 text-white font-bold text-base shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all flex items-center gap-3"
               >
-                <span>Yêu cầu Demo cấp cao</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Đặt demo ngay</span>
+                <ArrowRight className="w-5 h-5" />
               </button>
 
-              <Link
-                to="/connect-app"
-                className={`px-7 py-4 rounded-xl border-2 font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm ${
-                  themeMode === "dark"
-                    ? "border-slate-800 hover:border-cyan-500 bg-slate-900/80 text-slate-200"
-                    : "border-slate-300 hover:border-cyan-600 bg-white text-slate-900"
-                }`}
-              >
-                <Cpu className="w-4 h-4 text-cyan-500" />
-                <span>Khám phá Tốc độ hệ thống</span>
-              </Link>
-            </div>
-
-            {/* 3 Metrics with Animated Icons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-8 border-t border-cyan-500/20">
-              <div className={`p-4 rounded-xl border flex items-center gap-3.5 ${
-                themeMode === "dark" ? "bg-slate-900/70 border-slate-800" : "bg-white/90 border-slate-200 shadow-sm"
-              }`}>
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0">
-                  <Users className="w-6 h-6 text-cyan-400 anim-cyber-pulse" />
-                </div>
-                <div>
-                  <p className={`text-xl font-black font-mono ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>10,000+</p>
-                  <p className={`text-xs ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>Nhà lãnh đạo cấp tiến</p>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border flex items-center gap-3.5 ${
-                themeMode === "dark" ? "bg-slate-900/70 border-slate-800" : "bg-white/90 border-slate-200 shadow-sm"
-              }`}>
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0">
-                  <Cpu className="w-6 h-6 text-cyan-400 anim-cyber-scan" />
-                </div>
-                <div>
-                  <p className={`text-xl font-black font-mono ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>&lt; 50ms</p>
-                  <p className={`text-xs ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>Truy vấn siêu hiệu suất</p>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border flex items-center gap-3.5 ${
-                themeMode === "dark" ? "bg-slate-900/70 border-slate-800" : "bg-white/90 border-slate-200 shadow-sm"
-              }`}>
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0">
-                  <Zap className="w-6 h-6 text-cyan-400 anim-cyber-ping" />
-                </div>
-                <div>
-                  <p className={`text-xl font-black font-mono ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>Hàng triệu</p>
-                  <p className={`text-xs ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>Cơ hội kết nối tức thì</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 3: PAIN POINTS (Nêu vấn đề/Thách thức)
-          ========================================================================= */}
-      <section
-        id="challenges"
-        className={`py-24 border-b transition-colors duration-500 relative overflow-hidden ${
-          themeMode === "dark" ? "bg-[#02050A] border-slate-800 text-slate-100" : "bg-[#F1F5F9] border-slate-200 text-[#020617]"
-        }`}
-      >
-        <CyberSectionSceneryCut themeMode={themeMode} side="right" ratio="2/3" id="v4PainPoints" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-left mb-14 space-y-3 max-w-3xl">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-bold uppercase border ${
-              themeMode === "dark"
-                ? "bg-red-950/60 border-red-800/60 text-red-400"
-                : "bg-red-50 border-red-200 text-red-700"
-            }`}>
-              <TrendingDown className="w-3.5 h-3.5 anim-cyber-ping" />
-              <span>NHỮNG THÁCH THỨC TRONG QUẢN TRỊ VẬN HÀNH DOANH NGHIỆP QUY MÔ LỚN</span>
-            </div>
-            {/* GUARANTEED HIGH CONTRAST HEADING */}
-            <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Nút thắt cổ chai nào đang làm chậm nhịp độ mở rộng?
-            </h2>
-            <p className={`text-base font-normal ${themeMode === "dark" ? "text-slate-300" : "text-slate-700"}`}>
-              Nhận diện 4 điểm nghẽn nghiêm trọng làm tê liệt tốc độ phản hồi và đánh mất lợi thế dẫn đầu thị trường.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1 */}
-            <div className={`rounded-2xl p-6 border transition-all space-y-5 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-red-500/50 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-red-400 shadow-md"
-            }`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-                    <Gauge className="w-6 h-6 text-red-400 anim-cyber-pulse" />
-                  </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                    themeMode === "dark" ? "bg-slate-800 text-red-400" : "bg-red-50 text-red-700"
-                  }`}>
-                    NÚT THẮT #01
-                  </span>
-                </div>
-                <h3 className={`text-lg font-black leading-snug ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Phản ứng dữ liệu chậm chạp
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Việc tra cứu thông tin phân tán khiến đội ngũ mất đi sự nhạy bén, để vuột mất những tệp khách hàng tiềm năng vào tay đối thủ.
-                </p>
-              </div>
-              <div className={`pt-4 border-t text-[11px] font-mono flex items-center justify-between ${
-                themeMode === "dark" ? "border-slate-800 text-red-400/80" : "border-slate-100 text-red-700"
-              }`}>
-                <span>HẬU QUẢ:</span>
-                <span className="font-bold">Mất khách vào đối thủ</span>
-              </div>
-            </div>
-
-            {/* Card 2 */}
-            <div className={`rounded-2xl p-6 border transition-all space-y-5 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-amber-500/50 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-amber-400 shadow-md"
-            }`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-amber-400 anim-cyber-float" />
-                  </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                    themeMode === "dark" ? "bg-slate-800 text-amber-400" : "bg-amber-50 text-amber-700"
-                  }`}>
-                    NÚT THẮT #02
-                  </span>
-                </div>
-                <h3 className={`text-lg font-black leading-snug ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Chuỗi quy trình trì trệ
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Các điểm chạm khách hàng bị gián đoạn do sự phối hợp thủ công, làm kéo dài chu kỳ bán hàng một cách không cần thiết.
-                </p>
-              </div>
-              <div className={`pt-4 border-t text-[11px] font-mono flex items-center justify-between ${
-                themeMode === "dark" ? "border-slate-800 text-amber-400/80" : "border-slate-100 text-amber-700"
-              }`}>
-                <span>HẬU QUẢ:</span>
-                <span className="font-bold">Kéo dài chu kỳ chốt</span>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className={`rounded-2xl p-6 border transition-all space-y-5 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-purple-500/50 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-purple-400 shadow-md"
-            }`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-                    <GitPullRequest className="w-6 h-6 text-purple-400 anim-cyber-pulse" />
-                  </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                    themeMode === "dark" ? "bg-slate-800 text-purple-400" : "bg-purple-50 text-purple-700"
-                  }`}>
-                    NÚT THẮT #03
-                  </span>
-                </div>
-                <h3 className={`text-lg font-black leading-snug ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Mở rộng quy mô vướng mắc
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Khi nhân sự tăng lên, việc thiếu một cơ chế quản trị và phân quyền chuẩn xác làm hệ thống vận hành trở nên ì ạch và rối ren.
-                </p>
-              </div>
-              <div className={`pt-4 border-t text-[11px] font-mono flex items-center justify-between ${
-                themeMode === "dark" ? "border-slate-800 text-purple-400/80" : "border-slate-100 text-purple-700"
-              }`}>
-                <span>HẬU QUẢ:</span>
-                <span className="font-bold">Vận hành ì ạch</span>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div className={`rounded-2xl p-6 border transition-all space-y-5 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/50 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-400 shadow-md"
-            }`}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <EyeOff className="w-6 h-6 text-cyan-400 anim-cyber-ping" />
-                  </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                    themeMode === "dark" ? "bg-slate-800 text-cyan-400" : "bg-cyan-50 text-cyan-700"
-                  }`}>
-                    NÚT THẮT #04
-                  </span>
-                </div>
-                <h3 className={`text-lg font-black leading-snug ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Điểm mù điều hành tức thời
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Sự thiếu vắng của các chỉ số thời gian thực khiến Lãnh đạo không thể can thiệp kịp thời vào các chiến dịch đang chạy chệch hướng.
-                </p>
-              </div>
-              <div className={`pt-4 border-t text-[11px] font-mono flex items-center justify-between ${
-                themeMode === "dark" ? "border-slate-800 text-cyan-400/80" : "border-slate-100 text-cyan-700"
-              }`}>
-                <span>HẬU QUẢ:</span>
-                <span className="font-bold">Can thiệp trễ hạn</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 4: FEATURES & SOLUTIONS (Tính năng & Giải pháp)
-          ========================================================================= */}
-      <section
-        id="solutions"
-        className={`py-24 border-b transition-colors duration-500 relative overflow-hidden ${
-          themeMode === "dark" ? "bg-[#040810] border-slate-800 text-slate-100" : "bg-[#F8FAFC] border-slate-200 text-[#020617]"
-        }`}
-      >
-        <CyberSectionSceneryCut themeMode={themeMode} side="left" ratio="1/2" id="v4Solutions" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16 space-y-4 max-w-3xl mx-auto">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-bold uppercase border ${
-              themeMode === "dark"
-                ? "bg-cyan-950/70 border-cyan-700/50 text-cyan-300"
-                : "bg-cyan-50 border-cyan-300 text-cyan-800"
-            }`}>
-              <Sparkles className="w-3.5 h-3.5 anim-cyber-pulse text-cyan-400" />
-              <span>LỢI THẾ CẠNH TRANH TỪ BUSINESS CONNECT</span>
-            </div>
-            {/* GUARANTEED HIGH CONTRAST HEADING */}
-            <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Giải phóng tốc độ. Dẫn dắt thị trường.
-            </h2>
-            <p className={`text-base font-normal ${themeMode === "dark" ? "text-slate-300" : "text-slate-700"}`}>
-              Một giải pháp SaaS kiến trúc mở, được tinh chỉnh để mang lại hiệu suất truy xuất tối đa, giúp doanh nghiệp luôn đi trước một bước.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-            {/* Feature 1 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <UserCheck className="w-6 h-6 text-cyan-400 anim-cyber-pulse" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Hồ sơ Khách hàng Tức thời
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Hợp nhất dữ liệu đa kênh ngay lập tức, cung cấp bức tranh toàn cảnh không độ trễ để ra quyết định ngay tại điểm chạm.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> 0ms Latency Profile
-              </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-cyan-400 anim-cyber-scan" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Trung tâm Điều hành Live
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Hệ thống chỉ số trực quan cập nhật theo từng giây, giúp Ban Giám đốc bám sát nhịp đập kinh doanh của toàn hệ thống.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> Live Second-by-Second Telemetry
-              </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6 text-cyan-400 anim-cyber-ping" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Phân quyền Cấu trúc Động
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Quản lý quyền truy cập linh hoạt nhưng chặt chẽ, cho phép triển khai nhân sự mới và mở rộng quy mô một cách thần tốc, an toàn.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> Dynamic Scale & Safety
-              </div>
-            </div>
-
-            {/* Feature 4 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <Flame className="w-6 h-6 text-cyan-400 anim-cyber-float" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Luồng Công việc Agile
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Tự động hóa các khâu phối hợp liên phòng ban, xóa bỏ thời gian chờ đợi và tăng tốc độ phản hồi khách hàng lên mức tối đa.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> Zero-Delay Cross-Department Flow
-              </div>
-            </div>
-
-            {/* Feature 5 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-cyan-400 anim-cyber-pulse" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Đường ống Bán hàng Tốc độ cao
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Theo dõi sát sao tiến độ chốt deal với khả năng xử lý lượng dữ liệu khổng lồ mượt mà, giúp dự báo và thúc đẩy doanh thu nhanh chóng.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> High-Throughput Sales Funnel
-              </div>
-            </div>
-
-            {/* Feature 6 */}
-            <div className={`rounded-2xl p-7 border transition-all space-y-4 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/80 backdrop-blur-md border-slate-800 hover:border-cyan-500/60 shadow-lg"
-                : "bg-white/95 backdrop-blur-md border-slate-200 hover:border-cyan-500 shadow-md"
-            }`}>
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                  <Bot className="w-6 h-6 text-cyan-400 anim-cyber-pulse" />
-                </div>
-                <h3 className={`text-xl font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                  Trợ lý AI Đi trước Đón đầu
-                </h3>
-                <p className={`text-xs leading-relaxed ${themeMode === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-                  Khai thác sức mạnh máy học để nhận diện sớm các xu hướng và rủi ro, hỗ trợ Lãnh đạo chủ động tung đòn bẩy chiến lược.
-                </p>
-              </div>
-              <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 text-[11px] font-mono text-cyan-500 font-bold">
-                <Check className="w-3.5 h-3.5" /> Predictive Machine Learning
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 5: INTEGRATION (Khả năng Tích hợp hệ thống)
-          ========================================================================= */}
-      <section
-        id="ecosystem"
-        className={`py-24 border-b transition-colors duration-500 relative overflow-hidden ${
-          themeMode === "dark" ? "bg-[#02050A] border-slate-800 text-slate-100" : "bg-[#F1F5F9] border-slate-200 text-[#020617]"
-        }`}
-      >
-        <CyberSectionSceneryCut themeMode={themeMode} side="right" ratio="2/3" id="v4Integration" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-bold uppercase border ${
-              themeMode === "dark"
-                ? "bg-cyan-950/70 border-cyan-700/50 text-cyan-300"
-                : "bg-cyan-50 border-cyan-300 text-cyan-800"
-            }`}>
-              <Radio className="w-3.5 h-3.5 anim-cyber-ping text-cyan-400" />
-              <span>KIẾN TRÚC MỞ - SẴN SÀNG MỞ RỘNG CÙNG DOANH NGHIỆP</span>
-            </div>
-            {/* GUARANTEED HIGH CONTRAST HEADING */}
-            <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Tăng tốc độ tích hợp, loại bỏ gián đoạn
-            </h2>
-            <p className={`text-base sm:text-lg leading-relaxed font-normal ${
-              themeMode === "dark" ? "text-slate-300" : "text-slate-700"
-            }`}>
-              Sở hữu hệ thống API hiện đại, Business Connect cho phép cắm-và-chạy (plug-and-play) với mọi nền tảng quản trị lõi của doanh nghiệp. Đảm bảo tính liên tục của hệ sinh thái số và rút ngắn thời gian triển khai (time-to-market).
-            </p>
-
-            {/* Visual Integration Nodes */}
-            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className={`p-5 rounded-2xl border text-center space-y-2 ${
-                themeMode === "dark" ? "bg-slate-900/80 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
-              }`}>
-                <Landmark className="w-8 h-8 mx-auto text-cyan-400 anim-cyber-pulse" />
-                <h4 className={`text-sm font-bold ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>Hệ thống ERP</h4>
-                <p className={`text-[11px] ${themeMode === "dark" ? "text-slate-400" : "text-slate-500"}`}>Plug & Play Connector</p>
-              </div>
-
-              <div className={`p-5 rounded-2xl border text-center space-y-2 ${
-                themeMode === "dark" ? "bg-slate-900/80 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
-              }`}>
-                <Building2 className="w-8 h-8 mx-auto text-cyan-400 anim-cyber-float" />
-                <h4 className={`text-sm font-bold ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>Tài Chính & Kế Toán</h4>
-                <p className={`text-[11px] ${themeMode === "dark" ? "text-slate-400" : "text-slate-500"}`}>Auto Sync Giao Dịch</p>
-              </div>
-
-              <div className={`p-5 rounded-2xl border text-center space-y-2 ${
-                themeMode === "dark" ? "bg-slate-900/80 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
-              }`}>
-                <Users className="w-8 h-8 mx-auto text-cyan-400 anim-cyber-ping" />
-                <h4 className={`text-sm font-bold ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>Quản Trị Nhân Sự</h4>
-                <p className={`text-[11px] ${themeMode === "dark" ? "text-slate-400" : "text-slate-500"}`}>HRM & KPI Stream</p>
-              </div>
-
-              <div className={`p-5 rounded-2xl border text-center space-y-2 ${
-                themeMode === "dark" ? "bg-slate-900/80 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
-              }`}>
-                <Zap className="w-8 h-8 mx-auto text-cyan-400 anim-cyber-scan" />
-                <h4 className={`text-sm font-bold ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>High-Speed API</h4>
-                <p className={`text-[11px] ${themeMode === "dark" ? "text-slate-400" : "text-slate-500"}`}>Webhook Event Mesh</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 6: TESTIMONIALS (Lời chứng thực & Khách hàng tiêu biểu)
-          ========================================================================= */}
-      <section
-        id="testimonials"
-        className={`py-24 border-b transition-colors duration-500 relative overflow-hidden ${
-          themeMode === "dark" ? "bg-[#040810] border-slate-800 text-slate-100" : "bg-[#F8FAFC] border-slate-200 text-[#020617]"
-        }`}
-      >
-        <CyberSectionSceneryCut themeMode={themeMode} side="left" ratio="1/2" id="v4Testimonials" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16 space-y-3 max-w-3xl mx-auto">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-bold uppercase border ${
-              themeMode === "dark"
-                ? "bg-cyan-950/70 border-cyan-700/50 text-cyan-300"
-                : "bg-cyan-50 border-cyan-300 text-cyan-800"
-            }`}>
-              <Award className="w-3.5 h-3.5 text-cyan-400 anim-cyber-pulse" />
-              <span>SỰ LỰA CHỌN CỦA CÁC TỔ CHỨC TIÊN PHONG</span>
-            </div>
-            {/* GUARANTEED HIGH CONTRAST HEADING */}
-            <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Chất xúc tác cho sự bứt phá
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Testimonial 1 */}
-            <div className={`rounded-3xl p-8 sm:p-10 border transition-all space-y-6 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/85 backdrop-blur-md border-slate-800 shadow-xl"
-                : "bg-white/95 backdrop-blur-md border-slate-200 shadow-md"
-            }`}>
-              <blockquote className={`text-base sm:text-lg italic leading-relaxed font-mono ${
-                themeMode === "dark" ? "text-slate-200" : "text-slate-800"
-              }`}>
-                "Tốc độ xử lý dữ liệu và khả năng mở rộng kiến trúc của nền tảng này thật đáng kinh ngạc. Chúng tôi đã có thể đáp ứng khối lượng giao dịch tăng gấp ba lần mà hệ thống vẫn vận hành mượt mà."
-              </blockquote>
-              <div className="flex items-center gap-4 pt-4 border-t border-slate-500/20">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center shrink-0">
-                  <Cpu className="w-6 h-6 text-cyan-400 anim-cyber-pulse" />
-                </div>
-                <div>
-                  <h4 className={`text-base font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                    Giám đốc Công nghệ (CTO)
-                  </h4>
-                  <p className="text-xs text-cyan-500 font-mono font-bold">Fintech & High-Volume Platform</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 2 */}
-            <div className={`rounded-3xl p-8 sm:p-10 border transition-all space-y-6 flex flex-col justify-between ${
-              themeMode === "dark"
-                ? "bg-slate-900/85 backdrop-blur-md border-slate-800 shadow-xl"
-                : "bg-white/95 backdrop-blur-md border-slate-200 shadow-md"
-            }`}>
-              <blockquote className={`text-base sm:text-lg italic leading-relaxed font-mono ${
-                themeMode === "dark" ? "text-slate-200" : "text-slate-800"
-              }`}>
-                "Khả năng nhìn thấy các chỉ số kinh doanh real-time đã thay đổi hoàn toàn cách chúng tôi điều hành. Tốc độ ra quyết định nay chỉ tính bằng phút thay vì bằng tuần."
-              </blockquote>
-              <div className="flex items-center gap-4 pt-4 border-t border-slate-500/20">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center shrink-0">
-                  <Crown className="w-6 h-6 text-cyan-400 anim-cyber-float" />
-                </div>
-                <div>
-                  <h4 className={`text-base font-black ${themeMode === "dark" ? "text-white" : "text-slate-950"}`}>
-                    Chủ tịch HĐQT
-                  </h4>
-                  <p className="text-xs text-cyan-500 font-mono font-bold">Tập đoàn Phân phối & Bán lẻ Công nghệ</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Partners Section */}
-      <section id="partners">
-        <BusinessConnectPartnersSection />
-      </section>
-
-      {/* =========================================================================
-          SECTION 7: FOOTER CTA (Kêu gọi hành động cuối trang)
-          ========================================================================= */}
-      <footer id="about" className={`py-20 border-t transition-colors duration-500 text-center ${
-        themeMode === "dark" ? "bg-[#02050A] border-slate-800 text-slate-300" : "bg-[#F1F5F9] border-slate-200 text-slate-700"
-      }`}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="space-y-4 max-w-3xl mx-auto">
-            {/* GUARANTEED HIGH CONTRAST HEADING */}
-            <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${
-              themeMode === "dark" ? "text-white" : "text-slate-950"
-            }`}>
-              Sẵn sàng đưa tổ chức bứt tốc dẫn đầu?
-            </h2>
-            <p className={`text-base leading-relaxed ${themeMode === "dark" ? "text-slate-300" : "text-slate-600"}`}>
-              Trang bị ngay cho doanh nghiệp của bạn một nền tảng quản trị tinh gọn, linh hoạt và không có độ trễ.
-            </p>
-            <div className="pt-4 flex justify-center">
               <button
-                onClick={() => setDemoModalOpen(true)}
-                className="px-9 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-2xl shadow-cyan-500/30 hover:scale-105 transition-all cursor-pointer border border-cyan-300 flex items-center gap-2"
+                onClick={() => toast.info("Video giới thiệu 2 phút đang chuẩn bị phát.")}
+                className={`px-7 py-4 rounded-xl border ${
+                  theme === "dark" ? "border-slate-700 bg-slate-800/40" : "border-slate-300 bg-white/70"
+                } backdrop-blur-md font-semibold text-base flex items-center gap-3 hover:bg-slate-200/50 transition-colors`}
               >
-                <span>Khởi động tư vấn chiến lược</span>
+                <Play className="w-4 h-4 fill-current text-sky-500" />
+                <span>Xem video (2 phút)</span>
+              </button>
+            </motion.div>
+
+            {/* 4 Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 border-t border-slate-200/60 dark:border-slate-800">
+              <div>
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-sky-500">10,000+</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Doanh nhân & Hội viên</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">300+</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Hiệp hội & Tổ chức</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">50,000+</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Kết nối được tạo</div>
+              </div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">20+</div>
+                <div className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Quốc gia & vùng lãnh thổ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 3. PROBLEM SECTION (PART 1 EXACT - 5 CARDS) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-16">
+            <span className="text-xs font-bold tracking-widest text-sky-500 uppercase block mb-3">
+              NHIỀU TỔ CHỨC VẪN ĐANG GẶP NHỮNG VẤN ĐỀ NÀY
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-2xl">
+              Quản lý quan hệ kinh doanh vẫn còn nhiều thách thức
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {PROBLEMS_DATA.map((p, idx) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.08 }}
+                className={`p-6 rounded-2xl flex flex-col justify-between ${glassCardClasses[theme]}`}
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm mb-4">
+                    0{p.id}
+                  </div>
+                  <h3 className="text-lg font-bold tracking-tight mb-2">
+                    {p.title}
+                  </h3>
+                  <p className={`text-sm ${textMuted[theme]} leading-relaxed`}>
+                    {p.desc}
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-slate-800/80 text-xs font-semibold text-sky-500 flex items-center gap-1">
+                  <span>Thách thức quản trị</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. SOLUTION SECTION (PART 1 EXACT - 9 CARDS) */}
+      {/* ========================================================================= */}
+      <section id="giai-phap" className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div>
+              <span className="text-xs font-bold tracking-widest text-sky-500 uppercase block mb-3">
+                GIẢI PHÁP BUSINESS CONNECT
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                Quản lý kết nối. Tạo ra cơ hội.
+              </h2>
+              <p className={`text-base sm:text-lg ${textMuted[theme]} mt-4 max-w-3xl leading-relaxed`}>
+                Một nền tảng toàn diện giúp hiệp hội, tổ chức và doanh nhân hiểu khách hàng, kết nối đúng người, xây dựng quan hệ bền vững và biến mối quan hệ thành cơ hội kinh doanh thực chất.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
+              className="inline-flex items-center gap-2 text-sm font-bold text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap"
+            >
+              <span>Khám phá tính năng</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SOLUTIONS_DATA.map((sol, idx) => {
+              const Icon = sol.icon;
+              return (
+                <motion.div
+                  key={sol.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: idx * 0.05 }}
+                  className={`p-8 rounded-2xl ${glassCardClasses[theme]}`}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500/20 to-indigo-500/20 text-sky-500 flex items-center justify-center mb-6">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold tracking-tight mb-3">
+                    {sol.title}
+                  </h3>
+                  <p className={`text-sm ${textMuted[theme]} leading-relaxed font-normal`}>
+                    {sol.desc}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. ECOSYSTEM SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className={`p-10 md:p-16 rounded-3xl ${glassCardClasses[theme]}`}>
+            <span className="text-xs font-bold tracking-widest text-sky-500 uppercase block mb-3">
+              HỆ SINH THÁI KẾT NỐI KINH DOANH
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6">
+              Cùng nhau tạo ra giá trị lớn hơn
+            </h2>
+            <p className={`text-base sm:text-lg ${textMuted[theme]} max-w-4xl leading-relaxed mb-8`}>
+              Business Connect kết nối hội viên, hiệp hội, doanh nghiệp, chuyên gia, đối tác, nhà đầu tư và các tổ chức quốc tế trong một hệ sinh thái mở, để cùng chia sẻ tri thức, nguồn lực và cơ hội kinh doanh.
+            </p>
+
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-purple-500/10 border border-sky-500/20 mb-8 inline-block">
+              <div className="text-sm md:text-base font-extrabold tracking-wider uppercase text-sky-500">
+                NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.
+              </div>
+            </div>
+
+            <div>
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-sm flex items-center gap-2 hover:opacity-95 transition-opacity"
+              >
+                <span>Xem hệ sinh thái</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Slogan Ticker */}
-          <div className={`py-4 px-6 rounded-2xl border text-xs font-mono font-bold tracking-widest uppercase flex flex-wrap items-center justify-center gap-6 ${
-            themeMode === "dark"
-              ? "bg-slate-900/60 border-slate-800 text-cyan-400"
-              : "bg-white/80 border-slate-300 text-cyan-900 shadow-sm"
-          }`}>
-            <span>TỐC ĐỘ BỨT PHÁ</span>
-            <span>•</span>
-            <span>LINH HOẠT VẬN HÀNH</span>
-            <span>•</span>
-            <span>DẪN ĐẦU THỊ TRƯỜNG</span>
+      {/* ========================================================================= */}
+      {/* 6. CLIENT & TESTIMONIAL SECTION (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <section id="khach-hang" className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold tracking-widest text-sky-500 uppercase block mb-2">
+                ĐƯỢC TIN TƯỞNG BỞI CÁC HIỆP HỘI VÀ DOANH NGHIỆP
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                Những tổ chức tiên phong đã lựa chọn
+              </h3>
+            </div>
+            <a href="#tat-ca-khach-hang" className="text-sm font-bold text-sky-500 hover:underline flex items-center gap-1">
+              <span>Xem tất cả khách hàng</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
 
-          <div className="pt-8 border-t border-slate-500/20 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-            <p>© 2026 Business Connect V4. All rights reserved.</p>
-            <div className="flex gap-6 mt-4 sm:mt-0">
-              <Link to="/business-connect/v1" className="hover:text-cyan-400">V1 Classic</Link>
-              <Link to="/business-connect/v2" className="hover:text-cyan-400">V2 Zen</Link>
-              <Link to="/business-connect/v3" className="hover:text-cyan-400">V3 Bento</Link>
-              <Link to="/business-connect/v4" className="text-cyan-400 font-bold">V4 Cyber</Link>
-              <Link to="/business-connect/v5" className="hover:text-cyan-400">V5 Sovereign</Link>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-24">
+            {CLIENT_LOGOS.map((name) => (
+              <div
+                key={name}
+                className={`p-6 rounded-xl flex items-center justify-center text-center font-bold text-xs uppercase tracking-wider ${glassCardClasses[theme]}`}
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+
+          {/* Header 2 & 3 Reviews */}
+          <div id="cau-chuyen" className="mb-12">
+            <span className="text-xs font-bold tracking-widest text-sky-500 uppercase block mb-2">
+              CÂU CHUYỆN THÀNH CÔNG
+            </span>
+            <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+              Kết nối đúng. Tăng trưởng thật.
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS_DATA.map((t) => (
+              <div
+                key={t.author}
+                className={`p-8 rounded-2xl flex flex-col justify-between ${glassCardClasses[theme]}`}
+              >
+                <div>
+                  <div className="inline-block px-3 py-1 rounded-full bg-sky-500/10 text-sky-500 text-xs font-semibold mb-6">
+                    {t.badge}
+                  </div>
+                  <p className={`text-base leading-relaxed italic mb-8 ${textPrimary[theme]}`}>
+                    "{t.quote}"
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800">
+                  <div className="font-extrabold text-base tracking-tight">
+                    {t.author}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {t.role}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 7. FOOTER (PART 1 EXACT) */}
+      {/* ========================================================================= */}
+      <footer className="relative z-10 py-24 border-t border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6">
+              Sẵn sàng mở ra nhiều cơ hội hơn?
+            </h2>
+            <p className={`text-base sm:text-lg ${textMuted[theme]} mb-10 max-w-2xl mx-auto leading-relaxed`}>
+              Hãy để Business Connect đồng hành cùng hiệp hội hoặc doanh nghiệp của bạn.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className="px-8 py-4 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 text-white font-bold text-base shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all flex items-center gap-3"
+              >
+                <span>Đặt demo ngay</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
+                className={`px-8 py-4 rounded-xl border ${
+                  theme === "dark" ? "border-slate-700 bg-slate-800/40" : "border-slate-300 bg-white"
+                } font-bold text-base hover:bg-slate-200/50 transition-colors`}
+              >
+                Liên hệ tư vấn
+              </button>
+            </div>
+
+            <div className="pt-10 border-t border-slate-200/60 dark:border-slate-800 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>© 2026 VIONE B2B PLATFORM. TẤT CẢ QUYỀN ĐƯỢC BẢO LƯU.</div>
+              <div className="flex items-center gap-6">
+                <span>BẢO MẬT ĐA TẦNG</span>
+                <span>ENTERPRISE SLA 99.9%</span>
+              </div>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Demo Modal */}
-      {demoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono">
-          <div className={`relative w-full max-w-md rounded-2xl border p-7 shadow-2xl ${
-            themeMode === "dark" ? "bg-slate-900 border-cyan-800 text-white" : "bg-white border-slate-200 text-slate-950"
-          }`}>
-            <button
-              onClick={() => setDemoModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+      {/* DEMO MODAL */}
+      <AnimatePresence>
+        {isDemoModalOpen && (
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDemoModalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-8 shadow-2xl"
             >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-black mb-1">Khởi Động Demo Bứt Phá V4</h3>
-            <p className="text-xs text-slate-400 mb-5 font-sans">
-              Điền thông tin để đội ngũ kỹ sư giải pháp thiết lập môi trường Sandbox tốc độ cao dành riêng cho tổ chức bạn.
-            </p>
-            <form onSubmit={handleDemoSubmit} className="space-y-3.5 text-left font-sans">
-              <div>
-                <label className="block text-xs font-bold mb-1">Họ và tên Lãnh Đạo *</label>
-                <input
-                  type="text"
-                  required
-                  value={demoForm.name}
-                  onChange={(e) => setDemoForm({ ...demoForm, name: e.target.value })}
-                  placeholder="VD: Nguyễn Văn A"
-                  className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none ${
-                    themeMode === "dark" ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                  }`}
-                />
+              <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold">Đăng Ký Đặt Lịch Demo</h3>
+                  <p className="text-xs text-slate-500 mt-1">Dành riêng cho Lãnh đạo Hiệp hội & Doanh nghiệp</p>
+                </div>
+                <button
+                  onClick={() => setIsDemoModalOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Số điện thoại *</label>
-                <input
-                  type="tel"
-                  required
-                  value={demoForm.phone}
-                  onChange={(e) => setDemoForm({ ...demoForm, phone: e.target.value })}
-                  placeholder="VD: 0912345678"
-                  className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none ${
-                    themeMode === "dark" ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                  }`}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">Tên Tổ Chức / Tập Đoàn</label>
-                <input
-                  type="text"
-                  value={demoForm.org}
-                  onChange={(e) => setDemoForm({ ...demoForm, org: e.target.value })}
-                  placeholder="VD: TẬP ĐOÀN CÔNG NGHỆ B2B"
-                  className={`w-full h-11 px-3.5 rounded-xl border text-sm outline-none ${
-                    themeMode === "dark" ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                  }`}
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all mt-4 cursor-pointer shadow-lg shadow-cyan-500/25"
-              >
-                Kích Hoạt Sandbox & Gửi Lịch Hẹn
-              </button>
-            </form>
+
+              <form onSubmit={handleDemoSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Họ và tên</label>
+                  <input
+                    type="text"
+                    required
+                    value={demoName}
+                    onChange={(e) => setDemoName(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Email doanh nghiệp</label>
+                  <input
+                    type="email"
+                    required
+                    value={demoEmail}
+                    onChange={(e) => setDemoEmail(e.target.value)}
+                    placeholder="ceo@enterprise.com"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Tên Hiệp hội / Doanh nghiệp</label>
+                  <input
+                    type="text"
+                    required
+                    value={demoOrg}
+                    onChange={(e) => setDemoOrg(e.target.value)}
+                    placeholder="Hiệp hội Doanh nghiệp TP.HCM"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-sm shadow-md hover:opacity-95 transition-opacity"
+                  >
+                    Xác nhận đặt demo
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

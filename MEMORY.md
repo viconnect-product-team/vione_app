@@ -1,498 +1,410 @@
 # System Memory & Architecture
 
 ## 1. Current State
-- **Frontend**: TanStack React Start, running correctly with React 19, TailwindCSS 4, and Radix UI.
-- **Backend**: NestJS API with Prisma ORM. Ported core business card model logic from frontend.
-- **Mobile app**: Cấu hình native Capacitor được đặt tại `apps/vione_app_mobile/` và cấu hình ứng dụng web được thiết lập đổi tên định danh thành `vione_app` (appName: `vione_app`, appId: `connect.vn.vione_app`).
-- **Deployment**: Quy trình deploy chạy thông qua [fast-deploy.ps1](file:///d:/download/IT_CODE_DATA/vione_app/fast-deploy.ps1) lên server Linux (`14.225.217.232`).
-- **Styling System**: Tích hợp phong cách thiết kế màu nâu ấm / ánh vàng (champagne gold) sang trọng từ mẫu UNICOM Dashboard vào hệ thống CSS Token (`.vione-tone` và `.bc-app`) của ứng dụng, bổ sung hiệu ứng kính mờ (glassmorphism), lưới nền mờ và hoạt ảnh nhấp nháy.
+- **Frontend**: TanStack React Start, running with React 19, TailwindCSS 4, and Radix UI.
+- **Backend**: NestJS API with Prisma ORM. Core business logic, association management, and card models ported from frontend to backend.
+- **Mobile app**: Native Capacitor configuration located at `apps/vione_app_mobile/` with unified app identification `vione_app` (appName: `vione_app`, appId: `connect.vn.vione_app`).
+- **Deployment**: Automated deployment pipeline executed via `fast-deploy.ps1` to remote Linux server (`14.225.217.232`).
+- **Styling System**: Luxury warm gold / champagne gold design system adapted from UNICOM Dashboard into CSS tokens (`.vione-tone` and `.bc-app`), featuring glassmorphism, subtle grid patterns, and pulsing micro-animations.
 
 ## 2. Architectural Decisions (ADR)
-- **Monorepo Strategy**: Turborepo is used to orchestrate `@vibe/vione_app_fe`, `@vibe/vione_app_be` (NestJS), `@vibe/vione_app_mobile`, and `@vibe/db`.
-- **Backend Replacement**: Moving from direct Supabase calls in the frontend to a dedicated NestJS backend using Prisma for data access.
-- **Deployment Strategy**: 
-  - To prevent OOM (Out Of Memory) issues on the server during Docker builds, the frontend is built locally on Windows with increased memory limit (`--max-old-space-size=8192`).
-  - Docker images are saved as `.tar` archives, transferred via SCP, and loaded on the remote server via SSH.
-  - Tên định danh dự án thống nhất dùng `vione_app` cho toàn bộ các khâu biên dịch, đóng gói và chạy Docker.
+- **Monorepo Strategy**: Turborepo orchestrates `@vibe/vione_app_fe`, `@vibe/vione_app_be` (NestJS), `@vibe/vione_app_mobile`, and `@vibe/db`.
+- **Backend Migration**: Moving from client-side Supabase calls to a dedicated NestJS backend utilizing Prisma ORM for type-safe data access.
+- **Strict Git Rule (AGENTS.md Compliance)**: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn chỉ được lưu cục bộ (local). Người dùng toàn quyền chủ động kiểm tra và commit.
+- **Mandatory Synchronization Discipline**: Mỗi lần thực hiện bất kỳ thay đổi kiến trúc, tính năng, sửa lỗi hoặc điều chỉnh luồng, BẮT BUỘC:
+  1. Cập nhật `MEMORY.md` với chi tiết kỹ thuật, nguyên nhân, cách phòng tránh.
+  2. Cập nhật Cursor Rules / Roles (`.cursorrules`) với convention và vai trò mới.
+  3. Bổ sung/hiệu chỉnh các tài liệu kỹ thuật trong `document/` (cả markdown và rebuild file `.docx`) nếu phát hiện sai lệch hoặc có cập nhật technical.
+- **Routing Ecosystem Architecture**:
+  - **Mobile Login**: `/auth/mobile/` (hỗ trợ cả `/auth/mobile`) cung cấp giao diện đăng nhập tối ưu cho mobile, thẻ NFC/QR, chuyển đổi đa hiệp hội.
+  - **Association App**: Đổi toàn bộ đường dẫn từ `/m/*` sang `/association/*` (24 sub-routes). Đường dẫn `/m/*` tự động chuyển hướng 301 client-side sang `/association/*`.
+  - **Business Connect App**: `/connect-app/*` (Mạng xã hội doanh nhân, Moments B2B, Danh bạ đối tác, Kết nối 1-on-1).
+  - **CRM Admin Portal**: `/dashboard`, `/members`, `/fees`, `/events`, `/income`, `/expenses`, `/benefits`, `/perks`, `/marketplace`, v.v.
+- **Deployment Strategy**:
+  - To prevent Out Of Memory (OOM) failures during remote Docker builds, the frontend is compiled locally on Windows with an expanded heap limit (`--max-old-space-size=8192`).
+  - Docker images are saved as `.tar` archives, securely transferred via SCP, and loaded into remote Docker daemon via SSH.
+  - Uniform project identifier `vione_app` is maintained across build, packaging, and Docker operations.
+
 
 ## 3. Server & Docker Configuration
 - **Port Mapping**:
   - **Frontend** (`app_frontend_prod`): Host `5000` -> Container `8080`.
   - **Backend** (`app_backend_prod`): Host `5001` -> Container `4000`.
-- **Networking**: Both containers use the `target_network` bridge network.
-- **Environment Variables**: No env vars are hardcoded. `.env.production` is SCP'd to the server and renamed to `.env`, which `docker-compose.clean.yml` relies on.
+- **Networking**: Both containers share the `target_network` bridge network.
+- **Environment Variables**: Managed via `.env.production`, transferred via SCP to the remote server as `.env`, loaded by `docker-compose.clean.yml`.
 
 ## 4. Caveats & Gotchas
-- **Database Permissions**: The production DB (`jdbc:postgresql://113.20.107.184:6432/postgres`) currently has a known permission issue `42501` for the role `app1`.
-- **Line Endings (CRLF vs LF)**: Windows `.env` and `docker-compose.yml` files are transferred to a Linux server. The deployment script uses `sed -i 's/\r//g'` to fix line endings remotely. Ensure files are saved with LF line endings if modifying them directly on the server.
-- **Prisma Schema vs NestJS**: The users schema in `packages/db/prisma/schema.prisma` is minimal (`id`, `username`, `password`). When generating or migrating code, ensure that legacy fields (like `password_salt` or `email`) are not assumed unless explicitly added to the Prisma schema.
-- **Database Types**: BigInt vs String types in DB IDs have caused issues in the past. Standardize on String for IDs.
-- **Relative URL for Assets**: Absolute URLs like `window.location.origin/api/...` cause issues when changing domains or ports (CORS/localhost conflicts). Always use relative paths (e.g. `/api/...`) for endpoints like avatar upload and retrieval.
+- **Database Permissions**: The production DB (`jdbc:postgresql://113.20.107.184:6432/postgres`) previously encountered permission issue `42501` for role `app1`.
+- **Line Endings (CRLF vs LF)**: Configuration files (`.env`, `docker-compose.yml`) edited on Windows can contain CRLF endings. Remote deployment scripts apply `sed -i 's/\r//g'` to normalize to LF line endings.
+- **Prisma Schema vs NestJS**: Database schemas must maintain clean synchronization. Legacy fields should not be referenced in controllers unless declared in `schema.prisma`.
+- **Database ID Types**: Standardize on `String` (UUID) across all models to prevent BigInt vs String parsing discrepancies.
+- **Relative URLs for Assets**: Avoid hardcoding `window.location.origin` in API calls. Use relative routes (e.g. `/api/...`) to prevent CORS and port-forwarding issues.
 
 ## 5. Troubleshooting & Bug Fixes Log
 
-| Váº¥n Ä‘á» / Lá»—i gáº·p pháº£i (Issue) | NguyĂªn nhĂ¢n gá»‘c rá»… (Root Cause) | Giáº£i phĂ¡p / CĂ¡ch fix triá»‡t Ä‘á»ƒ (Solution) | CĂ¡ch phĂ²ng trĂ¡nh (Prevention) |
+| Issue / Symptom | Root Cause | Solution | Prevention |
 | :--- | :--- | :--- | :--- |
-| **Backend crash / Máº¥t UI** cĂ¡c trang (Trang chá»§, TĂ´i...) trĂªn Server Dev máº·c dĂ¹ API tráº£ vá» 200. | `Dockerfile.frontend` á»Ÿ root sá»­ dá»¥ng `node:20-alpine`, khĂ´ng há»— trá»£ `WebSocket` toĂ n cá»¥c trĂªn server. CĂ¡c server function hoáº·c middleware Supabase/realtime gá»i `globalThis.WebSocket` bá»‹ lá»—i `undefined`. | NĂ¢ng cáº¥p cáº£ `Dockerfile.frontend` vĂ  `Dockerfile.backend` lĂªn sá»­ dá»¥ng base image `node:22-alpine` (há»— trá»£ native WebSocket máº·c Ä‘á»‹nh). | LuĂ´n Ä‘á»“ng nháº¥t phiĂªn báº£n Node.js (phiĂªn báº£n 22+ LTS) giá»¯a mĂ´i trÆ°á»ng local phĂ¡t triá»ƒn vĂ  container runtime. |
-| **Lá»—i kĂ©o áº£nh Node 22 (Internal Server Error 500)** khi cháº¡y script deploy: `failed to fetch oauth token... 500`. | Docker Hub gáº·p sá»± cá»‘ káº¿t ná»‘i táº¡m thá»i hoáº·c cache thĂ´ng tin xĂ¡c thá»±c (session token) cá»§a Docker Desktop bá»‹ lá»—i/háº¿t háº¡n. | Cháº¡y `docker logout` Ä‘á»ƒ xĂ³a cache session lá»—i vĂ  táº£i á»Ÿ cháº¿ Ä‘á»™ náº·c danh, hoáº·c cháº¡y `docker pull node:22-alpine` thá»§ cĂ´ng trÆ°á»›c, hoáº·c restart Docker Desktop. | ÄÄƒng xuáº¥t Docker Hub cá»¥c bá»™ náº¿u khĂ´ng sá»­ dá»¥ng private registry Ä‘á»ƒ trĂ¡nh kiá»ƒm tra token xĂ¡c thá»±c. |
-| **KhĂ´ng lÆ°u Ä‘Æ°á»£c Cookie auth trĂªn Server Dev (HTTP)**, ngÆ°á»i dĂ¹ng liĂªn tá»¥c bá»‹ vÄƒng Ä‘Äƒng nháº­p. | Thuá»™c tĂ­nh Cookie `secure` Ä‘Æ°á»£c báº­t cá»©ng (`SameSite=Lax; secure`) trong `AuthContext.tsx` vĂ  `auth.tsx`, khiáº¿n trĂ¬nh duyá»‡t cháº·n khĂ´ng lÆ°u cookie khi cháº¡y qua HTTP (`http://14.225.217.232:5000`). | Äá»•i thĂ nh set thuá»™c tĂ­nh `secure` Ä‘á»™ng: chá»‰ báº­t khi giao thá»©c káº¿t ná»‘i thá»±c táº¿ lĂ  HTTPS (`window.location.protocol === 'https:'`). | KhĂ´ng Ä‘Æ°á»£c báº­t cá»©ng thuá»™c tĂ­nh `secure` cho cookie á»Ÿ cĂ¡c mĂ´i trÆ°á»ng phĂ¡t triá»ƒn/testing cháº¡y qua cá»•ng HTTP thĂ´ng thÆ°á»ng. |
-| **KhĂ´ng truy cáº­p Ä‘Æ°á»£c Frontend tá»« ngoĂ i Host** (Connection Refused). | Nitro / Node server máº·c Ä‘á»‹nh chá»‰ bind tá»›i `127.0.0.1` (localhost) bĂªn trong container, khiáº¿n docker daemon khĂ´ng thá»ƒ Ă¡nh xáº¡ cá»•ng. | ThĂªm biáº¿n mĂ´i trÆ°á»ng `HOST=0.0.0.0` vĂ  `NITRO_HOST=0.0.0.0` vĂ o cáº¥u hĂ¬nh service trong `docker-compose.clean.yml`. | LuĂ´n cáº¥u hĂ¬nh Host/Bind Address cho má»i web server cháº¡y trong Docker lĂ  `0.0.0.0`. |
-| **Lá»—i biĂªn dá»‹ch / trĂ¹ng láº·p Vite plugins** khi build. | Khai bĂ¡o thá»§ cĂ´ng cĂ¡c plugin Vite (PWA, react, tailwind) trong `apps/vione_app_fe/vite.config.ts` Ä‘Ă¨ lĂªn preset cáº¥u hĂ¬nh trá»n gĂ³i `@lovable.dev/vite-tanstack-config`. | RĂºt gá»n `apps/vione_app_fe/vite.config.ts` vá» dáº¡ng cáº¥u hĂ¬nh trá»‘ng `export default defineConfig({})` Ä‘á»ƒ preset tá»± quáº£n lĂ½ plugin. | KhĂ´ng khai bĂ¡o trĂ¹ng cĂ¡c plugin Ä‘Ă£ Ä‘Æ°á»£c quáº£n lĂ½ bá»Ÿi preset cáº¥u hĂ¬nh chung. |
-| **Backend crash / Máº¥t UI** cĂ¡c trang (Trang chá»§, TĂ´i...) trĂªn Server Dev máº·c dĂ¹ API tráº£ vá»  200. | `Dockerfile.frontend` á»Ÿ root sá»­ dá»¥ng `node:20-alpine`, khĂ´ng há»— trá»£ `WebSocket` toĂ n cá»¥c trĂªn server. CĂ¡c server function hoáº·c middleware Supabase/realtime gá» i `globalThis.WebSocket` bá»‹ lá»—i `undefined`. | NĂ¢ng cáº¥p cáº£ `Dockerfile.frontend` vĂ  `Dockerfile.backend` lĂªn sá»­ dá»¥ng base image `node:22-alpine` (há»— trá»£ native WebSocket máº·c Ä‘á»‹nh). | LuĂ´n Ä‘á»“ng nháº¥t phiĂªn báº£n Node.js (phiĂªn báº£n 22+ LTS) giá»¯a mĂ´i trÆ°á» ng local phĂ¡t triá»ƒn vĂ  container runtime. |
-| **Lá»—i kĂ©o áº£nh Node 22 (Internal Server Error 500)** khi cháº¡y script deploy: `failed to fetch oauth token... 500`. | Docker Hub gáº·p sá»± cá»‘ káº¿t ná»‘i táº¡m thá» i hoáº·c cache thĂ´ng tin xĂ¡c thá»±c (session token) cá»§a Docker Desktop bá»‹ lá»—i/háº¿t háº¡n. | Cháº¡y `docker logout` Ä‘á»ƒ xĂ³a cache session lá»—i vĂ  táº£i á»Ÿ cháº¿ Ä‘á»™ náº·c danh, hoáº·c cháº¡y `docker pull node:22-alpine` thá»§ cĂ´ng trÆ°á»›c, hoáº·c restart Docker Desktop. | Ä Äƒng xuáº¥t Docker Hub cá»¥c bá»™ náº¿u khĂ´ng sá»­ dá»¥ng private registry Ä‘á»ƒ trĂ¡nh kiá»ƒm tra token xĂ¡c thá»±c. |
-| **KhĂ´ng lÆ°u Ä‘Æ°á»£c Cookie auth trĂªn Server Dev (HTTP)**, ngÆ°á» i dĂ¹ng liĂªn tá»ục bá»‹ vÄƒng Ä‘Äƒng nháº­p. | Thuá»™c tĂ­nh Cookie `secure` Ä‘Æ°á» c báº­t cá»©ng (`SameSite=Lax; secure`) trong `AuthContext.tsx` vĂ  `auth.tsx`, khiáº¿n trĂ¬nh duyá»‡t cháº·n khĂ´ng lÆ°u cookie khi cháº¡y qua HTTP (`http://14.225.217.232:5000`). | Ä Ä•i thĂ nh set thuá»™c tĂ­nh `secure` Ä‘á»™ng: chá»‰ báº­t khi giao thá»©c káº¿t ná»‘i thá»±c táº¿ lĂ  HTTPS (`window.location.protocol === 'https:'`). | KhĂ´ng Ä‘Æ°á» c báº­t cá»©ng thuá»™c tĂ­nh `secure` cho cookie á»Ÿ cĂ¡c mĂ´i trÆ°á» ng phĂ¡t triá»ƒn/testing cháº¡y qua cá»•ng HTTP thĂ´ng thÆ°á» ng. |
-| **KhĂ´ng truy cáº­p Ä‘Æ°á» c Frontend tá»« ngoĂ i Host** (Connection Refused). | Nitro / Node server máº·c Ä‘á»‹nh chá»‰ bind tá»›i `127.0.0.1` (localhost) bĂªn trong container, khiáº¿n docker daemon khĂ´ng thá»ƒ Ă¡nh xáº¡ cá»•ng. | ThĂªm biáº¿n mĂ´i trÆ°á» ng `HOST=0.0.0.0` vĂ  `NITRO_HOST=0.0.0.0` vĂ o cáº¥u hĂ¬nh service trong `docker-compose.clean.yml`. | LuĂ´n cáº¥u hĂ¬nh Host/Bind Address cho má» i web server cháº¡y trong Docker lĂ  `0.0.0.0`. |
-| **Lá»—i biĂªn dá»‹ch / trĂ¹ng láº·p Vite plugins** khi build. | Khai bĂ¡o thá»§ cĂ´ng cĂ¡c plugin Vite (PWA, react, tailwind) trong `apps/vione_app_fe/vite.config.ts` Ä‘Ă¨ lĂªn preset cáº¥u hĂ¬nh trá» n gĂ³i `@lovable.dev/vite-tanstack-config`. | RĂºt gá» n `apps/vione_app_fe/vite.config.ts` vá»  dáº¡ng cáº¥u hĂ¬nh trá»‘ng `export default defineConfig({})` Ä‘á»ƒ preset tá»± quáº£n lĂ½ plugin. | KhĂ´ng khai bĂ¡o trĂ¹ng cĂ¡c plugin Ä‘Ă£ Ä‘Æ°á» c quáº£n lĂ½ bá»Ÿi preset cáº¥u hĂ¬nh chung. |
-| **Lá»—i cĂº phĂ¡p Prisma do dbgenerated** trong migrations. | Khai bĂ¡o cĂ¡c giĂ¡ trá»‹ máº·c Ä‘á»‹nh phá»©c táº¡p báº±ng `dbgenerated()` (nhÆ° `CURRENT_DATE`, `regexp_replace`) khĂ´ng tÆ°Æ¡ng thĂ­ch hoĂ n toĂ n á»Ÿ má»™t sá»‘ mĂ´i trÆ°á» ng DB/Prisma. | Thay tháº¿ báº±ng `@default(now())` cho trÆ°á» ng DateTime hoáº·c Ä‘Æ¡n giáº£n hĂ³a schema, bá»  cĂ¡c hĂ m `dbgenerated` phá»©c táº¡p. | Æ¯u tiĂªn dĂ¹ng cĂ¡c hĂ m máº·c Ä‘á»‹nh chuáº©n cá»§a Prisma (`now()`, `uuid()`) thay vĂ¬ cĂ¡c hĂ m raw SQL Ä‘Ă·c thĂ¹ cá»§a DBMS. |
-| **Script deploy bĂ¡o lá»—i cĂº phĂ¡p láº¡ trĂªn Linux** sau khi truyá» n file tá»« Windows. | File cáº¥u hĂ¬nh (`.env`, `docker-compose.yml`) lÆ°u trĂªn Windows dĂ¹ng kĂ½ tá»± xuá»‘ng dĂ²ng `\r\n` (CRLF) lĂ m Linux bash/docker lá»—i phĂ¢n tĂ­ch cĂº phĂ¡p. | ThĂªm lá»‡nh `sed -i 's/\r//g' .env docker-compose.yml` vĂ o chuá»—i lá»‡nh SSH thá»±c thi tá»« xa trÆ°á»›c khi cháº¡y docker-compose. | Thiáº¿t láº­p IDE (VSCode, Cursor) máº·c Ä‘á»‹nh lÆ°u tá»‡p dáº¡ng LF (`\n`), Ä‘áº·c biá»‡t vá»›i cĂ¡c tá»‡p cáº¥u hĂ¬nh vĂ  bash script. |
-| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó không tạo server HTTP mà thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file  apps/vione_app_fe/nitro.config.ts để ép build ra dạng Node.js standalone server chạy độc lập. | Đảm bảo khai báo rõ preset: 'node-server' trong các dự án build SSR cho container chạy Node.js. |
-| **Lỗi Prisma P1013 (unsupported startup parameter: search_path)** khi backend chạy. | Kết nối Prisma tới Supabase thông qua pooler (PgBouncer) ở port 6432, yêu cầu phải báo cho Prisma biết đang dùng PgBouncer. | Thêm tham số ?pgbouncer=true (hoặc &pgbouncer=true) vào cuối chuỗi DATABASE_URL. | Luôn thêm pgbouncer=true khi dùng Connection Pooler của Supabase (thường là port 6432). |
-| **Lỗi Prisma báo sai port (invalid port number) dù URL đúng** (Error validating datasource). | File .env.production lưu trên Windows bị dính ký tự vô hình BOM (Byte Order Mark), làm hỏng chuỗi biến môi trường khi đọc trên Linux. | Chuyển định dạng mã hóa file .env về "UTF-8" (không BOM) thay vì "UTF-8 with BOM" trong VSCode/Cursor. | Thiết lập IDE (VSCode) luôn lưu tệp UTF-8 thuần ("files.encoding": "utf8"). |
-| **Lá»—i chuyá»ƒn Ä‘á»•i Theme khĂ´ng pháº£n há»“i / máº£t Ä‘á»™ tÆ°Æ¡ng pháº£n** á»Ÿ má»™t sá»‘ vĂ¹ng giao diá»‡n. | CĂ¡c lá»›p bá» c .vione-tone vĂ  .bc-app trÆ°á»›c Ä‘Ă¢y Ä‘á»‹nh nghÄ©a cĂ¡c biáº¿n mĂ u CSS tÄ©nh khĂ´ng pháº£n há»“i (unconditional overrides), Ä‘Ă¨ lĂªn cĂ¡c thuá»™c tĂ­nh .dark vĂ  .hc cá»§a tháº» html. | Chuyá»ƒn Ä‘á»•i Ä‘á»‹nh nghÄ©a biáº¿n trong .vione-tone vĂ  .bc-app thĂ nh 3 tráº¡ng thĂ¡i rĂµ rĂ ng: máº·c Ä‘á»‹nh (Light Mode), .dark (Dark Mode), vĂ  .hc (High Contrast Mode). | TrĂ¡nh khai bĂ¡o biáº¿n mĂ u Ä‘Ă¨ tÄ©nh á»Ÿ cáº¥p container; náº¿u cĂ³, pháº£i Ä‘á»‹nh nghÄ©a rĂµ theo cĂ¡c class/selector tráº¡ng thĂ¡i cá»§a theme. |
-| **CĂ¡c hiá»‡u á»©ng chuyá»ƒn trang, hoáº¡t áº£nh vĂ²ng xoay orbit vĂ  dot nháº¥p nhĂ¡y khĂ´ng cháº¡y** dĂ¹ Ä‘Ă£ báº­t Visual Effects trĂªn Windows. | File styles.css cĂ³ chá»©a media query @media (prefers-reduced-motion: reduce) Ä‘Ă¨ 	ransition-duration: 0.01ms !important lĂªn má» i pháº£n tá»­ dÆ°á»›i lá»›p .bc-app, khiáº¿n trĂ¬nh duyá»‡t táº¯t hoĂ n toĂ n hoáº¡t áº£nh do nháº­n diá»‡n sai hoáº·c thiáº¿t láº£p giáº£m chuyá»ƒn Ä‘á»™ng Ä‘Æ°á»£c kĂ­ch hoáº·c ngáº§m. | Loáº¡i bá»  hoĂ n toĂ n khá»‘i @media (prefers-reduced-motion: reduce) Ä‘Ă¨ thá» i lÆ°á»£ng chuyá»ƒn Ä‘á»™ng cá»§a Connect App Ä‘á»ƒ cho phĂ©p hoáº¡t áº£nh vĂ  chuyá»ƒn trang cháº¡y mÆ°á»£t mĂ  theo Ä‘Ăºng thiáº¿t káº¿. | Thiáº¿t káº¿ chuyá»ƒn Ä‘á»™ng mÆ°á»£t mĂ  vá»›i thá» i lÆ°á»£ng tá»‘i Æ°u (150ms-250ms) thay vĂ¬ táº¯t cá»©ng hoáº¡t áº£nh qua prefers-reduced-motion á»Ÿ má»©c á»©ng dá»¥ng náº¿u muá»‘n Ä‘áº£m báº£o tĂ­nh tháº©m má»¹ cao nháº¥t. |
-| **Lỗi khởi tạo cuộc hẹn demo (Prisma 22P02)** | Lịch hẹn demo sử dụng kiểu `'general'` vốn không tồn tại trong danh sách ENUM `business_meeting_type` của database. | Đổi giá trị chèn sang `'networking'::public.business_meeting_type` (được database chấp nhận). | Luôn kiểm tra các giá trị ENUM thực tế trong database trước khi thực hiện raw query. |
+| **Backend crash / Missing UI** on Dev Server even when API returns HTTP 200. | Root `Dockerfile.frontend` used `node:20-alpine`, lacking global `WebSocket` support in Node runtime. Server functions calling `globalThis.WebSocket` failed with `undefined`. | Upgraded `Dockerfile.frontend` and `Dockerfile.backend` to base image `node:22-alpine` (native WebSocket enabled by default). | Standardize Node.js version (22+ LTS) between local environment and container base images. |
+| **Node 22 Image Pull Error (HTTP 500)** during deploy script execution. | Docker Hub intermittent connection issue or stale Docker Desktop session auth tokens. | Ran `docker logout` to purge cached credentials, or pre-pulled `docker pull node:22-alpine`, or restarted Docker daemon. | Log out of Docker Hub when private registry credentials are not required. |
+| **Auth Cookie Not Persisting on Dev Server (HTTP)**, user repeatedly logged out. | Cookie `secure` attribute was hardcoded (`SameSite=Lax; secure`) in `AuthContext.tsx`, causing browsers to reject cookies over plain HTTP (`http://14.225.217.232:5000`). | Updated `secure` flag to be dynamic: enabled only when actual protocol is HTTPS (`window.location.protocol === 'https:'`). | Avoid hardcoding `secure` cookie flags in development/staging environments serving over HTTP. |
+| **Frontend Inaccessible from External Host** (Connection Refused). | Nitro/Node server defaulted to binding `127.0.0.1` inside container, preventing Docker port mapping to host interfaces. | Added environment variables `HOST=0.0.0.0` and `NITRO_HOST=0.0.0.0` in `docker-compose.clean.yml`. | Always configure host bind addresses to `0.0.0.0` for containerized web servers. |
+| **Vite Plugin Collision / Duplication** during build. | Manual plugin declarations in `vite.config.ts` collided with `@lovable.dev/vite-tanstack-config` preset. | Simplified `apps/vione_app_fe/vite.config.ts` to clean `export default defineConfig({})` to let preset manage plugins. | Avoid duplicate plugin registrations when using full-featured wrapper presets. |
+| **Prisma Syntax Error with `dbgenerated()`** during migrations. | Complex default values using `dbgenerated()` (e.g., `CURRENT_DATE`, `regexp_replace`) had cross-version portability quirks. | Replaced with standard Prisma defaults (`@default(now())`) or simplified schema declarations. | Prefer standard Prisma default functions (`now()`, `uuid()`) over DBMS-specific SQL functions. |
+| **Deploy Script Syntax Errors on Linux** after Windows file transfer. | Windows CRLF line endings (`\r\n`) broke bash script execution on Linux. | Added `sed -i 's/\r//g' .env docker-compose.yml` to SSH command chain prior to launching docker-compose. | Configure IDE to enforce Unix LF line endings across repository configuration files. |
+| **Frontend Container Crash Loop (Exit 0)** on Docker startup. | Nitro defaulted to Cloudflare preset (exporting fetch handler only). When Node executed `index.mjs`, no HTTP listener started and process exited cleanly. | Added `preset: 'node-server'` in `apps/vione_app_fe/nitro.config.ts` to generate standalone Node HTTP server. | Explicitly specify `preset: 'node-server'` in SSR applications intended for Docker/Node containers. |
+| **Prisma Error P1013 (unsupported startup parameter: search_path)** on backend launch. | Prisma connecting to Supabase PgBouncer pooler on port 6432 without notifying Prisma of the pooler mode. | Appended `?pgbouncer=true` parameter to the `DATABASE_URL` connection string. | Always append `?pgbouncer=true` when connecting via Supabase connection poolers. |
+| **Prisma Invalid Port Number Error** despite correct URL. | Windows `.env.production` file contained an invisible UTF-8 Byte Order Mark (BOM) header. | Converted file encoding to UTF-8 without BOM in editor. | Enforce standard UTF-8 without BOM across all project configuration files. |
+| **Theme Switching Lag / Color Inversion** in specific UI sections. | Parent classes `.vione-tone` and `.bc-app` used static unconditional color variable overrides, clobbering `.dark` and `.hc` classes. | Restructured variables in `.vione-tone` and `.bc-app` into 3 explicit states: default (Light), `.dark` (Dark), and `.hc` (High Contrast). | Scope theme variables to theme state selectors rather than unconditional container rules. |
+| **Cosmic Orbit and Pulsing Animations Stalled** despite OS motion settings. | CSS included an aggressive `@media (prefers-reduced-motion: reduce)` block forcing `transition-duration: 0.01ms !important`. | Removed blunt reduction block to ensure smooth, intended luxury micro-animations. | Tune motion durations (150ms-250ms) rather than completely disabling animation systems. |
+| **Demo Meeting Creation Failure (Prisma 22P02)**. | Hardcoded meeting type `'general'` did not exist in database ENUM `business_meeting_type`. | Updated value to valid enum `'networking'::public.business_meeting_type`. | Verify database ENUM declarations before executing raw SQL queries or hardcoded inserts. |
+| **Membership Renewal Status Flattening** (10 due, 0 overdue). | Backend `members.service.ts` stripped `term_end` field during transformation, defaulting calculation to 30 days due. | Exposed both camelCase and snake_case properties (`term_end`, `termEnd`, `renewed_at`, `renewedAt`) and added fallback parsing in `renewals-calc.ts`. | Ensure API transfer objects preserve critical date fields required for client-side calculations. |
+| **Admin Member Recognition in Association Network**. | `currentMemberId` resolved to `null` because `me.id` was not matched against member records. | Added multi-field resolution checking `me.id`, `me.member_id`, and `me.memberId` in networking loader. | Support both user ID and member ID bindings for administrative accounts holding association memberships. |
+| **TanStack Route Generator Cache Skip (`routeTree.gen.ts`)**. | `generator.run()` memory caching occasionally skips physical disk flush when many routes are added/deleted. | Updated `scripts/gen-routes.mjs` to extract `res.routeTreeContent` directly and force write via `fs.writeFile`. | Always verify `routeTree.gen.ts` reflects new routes on disk after bulk route changes. |
+| **Windows Word `.docx` File Lock (Error -4094 UNKNOWN)**. | Windows indexer or preview handlers lock open `.docx` files during script overwrite. | Write output to `.docx.tmp` first, then atomically rename/replace with `fs.renameSync`. | Avoid direct overwriting of binary files that may be inspected by Windows OS services. |
+| **PostgreSQL XOR Constraint `brm_target_xor` Violation**. | Inserting B2B Moments with `target_kind = 'connection'` but missing `target_user_id`. | Strictly ensure `target_user_id` is populated when target kind is set to connection. | Verify PostgreSQL table check/XOR constraints before writing seed or automated test scripts. |
+| **Database Status Enum Check Constraints**. | `demo_requests.status`, `invoices.status`, `renewal_audit_log.event_type` enforce strict domain checks. | Aligned test payloads to valid values: `demo_requests` ('new', 'contacted'), `invoices` ('unpaid', 'paid'), `renewal_audit_log` ('payment'). | Validate table constraints via SQL inspection prior to writing workflow transition tests. |
+| **Quản lý Doanh nghiệp (`/companies`) hiển thị 0 dữ liệu**. | Dữ liệu `public.members` lưu `type: 'enterprise'` hoặc `'corporate'`, nhưng NestJS backend `listMembers` và Frontend filter lại lọc cứng `type === 'company'`. | 1) Cập nhật `members.service.ts` chuẩn hóa `r.type` ('enterprise'/'corporate' -> 'company') và lọc cả 3 loại khi client gửi `type=company`. 2) Chạy enrichment bổ sung mã số thuế, website, quy mô nhân sự, địa chỉ cho toàn bộ 17 doanh nghiệp hội viên. 3) Cập nhật memo `base` tại `companies.index.tsx` chấp nhận cả 3 type. | Luôn chuẩn hóa phân loại `type` tại cả tầng API DTO mapping và client-side filter. |
+| **Quyền lợi Hội viên (`/benefits`) hiển thị 0 dữ liệu & lỗi lưu**. | Trang gọi `useServerFn` với `supabaseAdmin`, nhưng backend remote Supabase không cấp `SUPABASE_SERVICE_ROLE_KEY` tại frontend runtime. | Bổ sung bộ API CRUD quản trị chuyên dụng trên NestJS backend: `GET/POST/PUT/DELETE /api/members/benefits/admin` truy vấn trực tiếp bảng `public.association_benefits` qua Prisma. Frontend `/benefits` chuyển hoàn toàn sang `fetchNestApi`. | Tránh dùng `useServerFn` phụ thuộc Supabase service role key trực tiếp trên frontend; dùng NestJS API controller bảo mật bằng JWT. |
+| **Business Connect Landing V2 - V7 Creative Animation & Theme Sync**. | Cần hỗ trợ 7 phiên bản landing nghệ thuật với hiệu ứng chuyển section phức tạp (Lật sách 3D, Panel Drop Bounce Comic, Wipe sương mù kính mưa, Glitch Snap Cyber, Cửa đá Ai Cập, Bong bóng nổ scale 100vw). | Xây dựng kiến trúc cuộn nâng cao bằng Framer Motion (`useScroll`, `useTransform`, `perspective: 1000px`, `clip-path: inset()`, `motion.div`), kết hợp 3 theme mode riêng cho từng version, thay thế rừng chữ bằng icon động/GIF tương tác và tooltip/popover. | Tuân thủ nghiêm ngặt quy tắc Visual thay thế Text và cấu trúc Advanced Scroll Architecture cho landing page tương tác cao. |
+| **Đồng bộ Biểu quyết CRM với ViOne App & Hiệp hội App (Multi-App Voting Sync)** | CRM tạo biểu quyết nhưng không phân phối thông báo đến người liên quan, không phân định được nguồn bỏ phiếu từ app nào, và khi kết thúc không tự phát thông báo kết quả. | 1) Thêm cột `source_app VARCHAR(50) DEFAULT 'vione_app'` vào `public.poll_votes`. 2) Bổ sung logic phân phối thông báo theo `targetAudience` (`all`, `members`, `non_members`) tới `public.business_notifications` và `public.member_notifications` khi tạo poll. 3) Lưu nguồn bỏ phiếu (`'vione_app'`, `'association_app'`, `'crm'`) và tính toán tỷ lệ kênh tham gia thời gian thực. 4) Bổ sung API `POST /api/voting/polls/:id/close` tự động xác định Winner 🏆 và phát thông báo kết quả hoàn tất kèm breakdown tới người dùng trên cả 3 nền tảng. | Định nghĩa rõ ràng luồng tương tác 3 nền tảng và luôn lưu metadata nhận diện kênh (`source_app`) để kiểm toán và phân tích đa kênh. |
+
+
 
 ## 6. Supabase & Lovable Integration Status
-Dưới đây là chi tiết về mức độ liên quan và các chức năng hiện tại của hệ thống đối với **Supabase** và **Lovable**:
 
-### 6.1. Liên quan đến Supabase
-Mặc dù hệ thống đang chuyển dịch sang sử dụng NestJS Backend chuyên biệt và Prisma ORM để quản lý dữ liệu, Supabase vẫn đóng vai trò quan trọng ở các phần sau:
-- **Cơ sở dữ liệu (PostgreSQL)**: Cơ sở dữ liệu chính của dự án vẫn chạy trên hạ tầng **Supabase PostgreSQL**. Chuỗi kết nối `DATABASE_URL` kết nối qua cổng Pooler `6432` của Supabase (yêu cầu cấu hình tham số `?pgbouncer=true` để tránh lỗi Prisma `P1013`).
-- **Quản lý Schema & Migrations**: Schema cơ sở dữ liệu được định nghĩa và đồng bộ bằng **Supabase CLI**. Thư mục [supabase/migrations](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/supabase/migrations) chứa toàn bộ hơn 170+ tệp SQL Migrations gốc của dự án.
-- **Xác thực (Authentication)**: Frontend (`apps/vione_app_fe`) vẫn giữ một số logic xác thực trực tiếp và kiểm tra phiên bản phiên làm việc qua `supabase.auth` (ví dụ: `supabase.auth.getUser()`, `signOut()`, `resetPasswordForEmail()`). Phía NestJS backend đã tự thiết lập cơ chế JWT (`/auth/login`, `/auth/register`) nhưng frontend vẫn đồng bộ lưu trữ token bằng các cookie `sb-access-token` và `sb-refresh-token`.
-- **Lưu trữ tệp tin (Storage)**: Frontend trực tiếp gọi client SDK của Supabase qua `supabase.storage` để tải tài liệu (`documents` bucket), hình ảnh khoảnh khắc (Moments), ảnh danh thiếp (AI Card Import), và các tài nguyên đa phương tiện khác.
-- **Tính năng Realtime**: Sử dụng các kênh Realtime của Supabase (`supabase.channel`, `supabase.removeChannel`) để đăng ký nhận sự kiện realtime thay đổi dữ liệu (như tin nhắn, Check-in sự kiện, Trạng thái biểu quyết và Marketplace).
+### 6.1. Supabase Role & Resources
+While application logic has transitioned to the NestJS backend and Prisma ORM, Supabase infrastructure continues to support core storage and real-time features:
+- **Database (PostgreSQL)**: Primary database runs on Supabase PostgreSQL infrastructure. Connected via port `6432` with `?pgbouncer=true`.
+- **Migrations**: Database schema history managed in `supabase/migrations/` containing 170+ foundational SQL migration scripts.
+- **Authentication**: Frontend maintains backward compatibility with `supabase.auth` session tokens (`sb-access-token`, `sb-refresh-token`) alongside NestJS JWT endpoints.
+- **File Storage**: Direct integration with Supabase Storage buckets for documents, moments media, and AI business card scan uploads.
+- **Realtime Channels**: WebSocket real-time subscriptions for instant chat messages, event check-in counts, and marketplace live bidding.
 
-### 6.2. Liên quan đến Lovable
-**Lovable** chủ yếu đóng vai trò là nền tảng khởi tạo ứng dụng ban đầu, công cụ sinh mã AI, và cổng AI Gateway:
-- **Vite Configuration Preset**: Frontend vẫn sử dụng `@lovable.dev/vite-tanstack-config` làm preset cấu hình chính trong `vite.config.ts` để tối ưu hóa và đóng gói ứng dụng TanStack Router.
-- **Lovable AI Gateway**: Tính năng nhập danh thiếp bằng AI (AI Card Import) và các gợi ý AI của phần Business Connect gọi trực tiếp tới cổng AI Gateway của Lovable qua endpoint `https://ai.gateway.lovable.dev/v1/chat/completions` (sử dụng biến môi trường bảo mật `LOVABLE_API_KEY` ở server-side).
-- **Domain & Webhook cũ**: Các tài liệu thiết lập và kiểm thử vẫn chứa các tham chiếu URL đến môi trường Lovable Cloud (như `qlhh.lovable.app`, `project--*.lovable.app`). Ngoài ra, tệp SQL migration cũ có chứa trigger gọi webhook đồng bộ tiến trình tới domain Lovable app.
+### 6.2. Lovable AI & Tooling
+- **Vite Configuration Preset**: Frontend utilizes `@lovable.dev/vite-tanstack-config` as base configuration for TanStack Router optimization.
+- **AI Gateway Integration**: AI Business Card scanner and relationship intelligence suggestions interface with Lovable AI Gateway endpoint (`https://ai.gateway.lovable.dev/v1/chat/completions`) using server-side `LOVABLE_API_KEY`.
 
 ## 7. NestJS Migration & Mobile-Only Routing
 
-### 7.1. Chuyển dịch toàn bộ từ Supabase sang NestJS RESTful
-- Mọi chức năng thuộc 4 nhóm chính bao gồm Trang chủ, Cộng đồng, Mạng lưới và Trang cá nhân (`/connect-app/`, `/connect-app/community/`, `/connect-app/network/`, `/connect-app/me/`) đã được cấu trúc lại hoàn toàn để gọi trực tiếp các API RESTful trên cổng của NestJS backend (`/api/*`) thay vì gọi trực tiếp Supabase qua SDK hoặc client RPCs.
-- Các API SDK của danh thiếp (`business-card.sdk.ts`), liên hệ (`lead.service.ts`), thông báo và dữ liệu cá nhân hoàn toàn độc lập với Supabase Gateway, giúp ngăn ngừa các lỗi phân giải khóa JWT không tương thích chữ ký giữa cổng Supabase và backend NestJS.
+### 7.1. RESTful API Architecture
+- Core modules including Home, Community, Network, and Profile (`/connect-app/*`) interface directly with NestJS RESTful endpoints (`/api/*`).
+- Specialized services for business cards, CRM leads, notifications, and user profiles operate independently of direct client-side database connections, securing authentication tokens and business rules.
 
-### 7.2. Phân tách chuyển hướng theo thiết bị (Mobile vs Desktop)
-- Các thiết lập chuyển hướng từ trang chủ `/` sang ứng dụng di động `/connect-app` và cơ chế bảo vệ bảo mật route hiện tại chỉ áp dụng duy nhất đối với các thiết bị di động (kiểm tra `userAgent` và chiều rộng màn hình `window.innerWidth <= 768`).
-- Trên máy tính (desktop), khách truy cập chưa đăng nhập sẽ được điều hướng bình thường về trang landing (`/landing`), các trang dashboard quản trị và các hệ thống con khác hoạt động độc lập bình thường.
+### 7.2. Device-Aware Routing (Mobile vs Desktop)
+- Automatic redirects from root `/` to `/connect-app` apply exclusively to mobile viewports (`window.innerWidth <= 768` and mobile user agents).
+- Desktop visitors access landing pages (`/landing`), executive CRM dashboards (`/members`, `/fees`, `/events`, `/income`, `/expenses`), and administrative tools.
 
-### 7.3. Hướng dẫn thiết lập & Chạy dự án
-- Dự án sử dụng hệ quản lý gói **Bun** thay thế cho npm/yarn để giải quyết hoisting module hiệu quả trong cấu hình Turborepo monorepo.
-- Khởi động môi trường dev: `bun run dev` (chạy song song cả frontend và backend).
-- Biên dịch sản phẩm frontend: `bun run build` tại thư mục `apps/vione_app_fe`.
+### 7.3. Development & Build Commands
+- Monorepo package orchestration managed by **Bun** or **npm**.
+- Local development server: `npm run dev` or `bun run dev` (concurrent frontend and backend).
+- Production build: `npm run build` in `apps/vione_app_be` and `apps/vione_app_fe`.
 
-### 7.4. Chia sẻ kho lưu trữ MinIO giữa Dev Server và Local
-- Cấu hình `MINIO_ENDPOINT` và `MINIO_PORT` trong tệp `.env` cục bộ (local) được cập nhật để kết nối trực tiếp tới máy chủ Dev (`14.225.217.232` cổng `9050`). Điều này cho phép môi trường Windows phát triển local và server chạy dev chia sẻ chung toàn bộ cơ sở hạ tầng lưu trữ tệp tin (ảnh danh thiếp, hình ảnh avatar, v.v.), loại bỏ nhu cầu chạy container MinIO cục bộ trên Windows.
+### 7.4. Shared MinIO Storage Infrastructure
+- `MINIO_ENDPOINT` and `MINIO_PORT` in local development connect directly to dev server (`14.225.217.232:9050`), sharing storage buckets across development and staging without requiring local MinIO containers.
 
+## 8. Landing Pages Architecture & Visual Standards
 
-## 8. Landing Pages Architecture, Theme-Bound Backgrounds & Cosmic Orbit Animations
+### 8.1. Routes & Public Bypass
+- Routes:
+  - `/landing` -> `src/routes/landing.index.tsx` (Default Business Connect Landing).
+  - `/landing/business-connect` -> `BusinessConnectLanding.tsx`.
+  - `/landing/ceo-1983` -> `Ceo1983Landing.tsx` (CEO 1983 Association Landing).
+- Unauthenticated access is explicitly permitted for `/landing` routes in `apps/vione_app_fe/src/routes/__root.tsx`.
 
-### 8.1. Landing Pages & Routing Configuration
-- **Routes & Aliases**:
-  - `/landing` -> `src/routes/landing.index.tsx` (Mặc định dẫn đến Business Connect Landing).
-  - `/landing/business-connect` & `/landing/bussiness-connect` (hỗ trợ alias lỗi gõ) -> `BusinessConnectLanding.tsx`.
-  - `/landing/ceo-1983` -> `Ceo1983Landing.tsx` (Landing page chuẩn hiệp hội CEO 1983).
-- **Public Access Bypass**:
-  - File `apps/vione_app_fe/src/routes/__root.tsx` sử dụng điều kiện `p.startsWith("/landing")` và `pathname.startsWith("/landing")` để cho phép mọi người dùng chưa đăng nhập truy cập tất cả landing pages mà không bị chuyển hướng về login hay mobile app.
-  - Khi thêm route landing mới, phải chạy `node scripts/gen-routes.mjs` để sinh lại file `src/routeTree.gen.ts`.
+### 8.2. Theme-Bound Backgrounds
+Background imagery is strictly bound to the active theme without manual override toggles:
+1. **High Contrast**: Geometric 3D Gold Facets (`/landing/ceo1983-contrast.jpg` / `/landing/business-cta-bg.jpg`).
+2. **Light Mode**: Silky Ivory Pearl Luxury Gold (`/landing/business-hero-light.jpg` / `/landing/ceo1983-hero-light.jpg`).
+3. **Dark Mode**: Obsidian Gold Luxury Facets (`/landing/ceo1983-hero-bg.jpg` / `/landing/business-saas-dark.jpg`).
 
-### 8.2. Quy Tắc Ràng Buộc Background Theo Theme (Theme-Bound Backgrounds)
-Tuyệt đối không dùng nút chọn background thủ công (đã gỡ bỏ). Toàn bộ ảnh nền landing page được gắn chặt trực tiếp theo 3 chế độ Theme:
-1. **Tương phản (High Contrast / Onyx)**:
-   - File: `/landing/ceo1983-contrast.jpg` (Geometric 3D Dark Gold Facets - Ảnh 1).
-2. **Sáng (Light Mode / Ivory Pearl)**:
-   - File: `/landing/business-hero-light.jpg` (Silky Ivory Pearl Gold Luxury Waves - Ảnh 2).
-3. **Tối (Dark Mode / Obsidian Hoàng Kim)**:
-   - File: `/landing/ceo1983-hero-bg.jpg` (Obsidian Gold Luxury Facets - Ảnh 3).
-- Áp dụng thống nhất cho cả `Ceo1983Landing.tsx` và `BusinessConnectLanding.tsx` / `LandingHero.tsx`.
+### 8.3. Dual Orbital Ring System
+- **Inner Orbit (Radius 125px)**: Clockwise rotation (`ceo-orbit-spin-slow` 45s).
+- **Outer Orbit (Radius 195px)**: Counter-clockwise rotation (`ceo-orbit-spin-reverse-slow` 65s).
+- **Counter-Rotation**: Child nodes apply inverse rotation (`ceo-orbit-counter-slow` and `ceo-orbit-counter-reverse`) keeping typography and icons upright at all times.
+- **Hover Pause**: Interaction pauses animation (`animation-play-state: paused`) on hover to enable node inspection.
 
-### 8.3. Hệ Sinh Thái Vũ Trụ Radar (Cosmic Skyline Orbit Radar Ecosystem)
-- **Background Section**:
-  - File: `/landing/ecosystem-cosmic-skyline.jpg` (Không gian vũ trụ sâu thẳm kết hợp đường chân trời tòa nhà chọc trời phát sáng công nghệ tương lai).
-- **Hoạt ảnh quỹ đạo xoay tròn (Dual Orbital Ring System)**:
-  - **Vòng trong (Inner Orbit - Radius 125px)**: Xoay thuận chiều kim đồng hồ (`orbitSpinClockwise` / `ceo-orbit-spin-slow` 45s).
-  - **Vòng ngoài (Outer Orbit - Radius 195px)**: Xoay ngược chiều kim đồng hồ (`orbitSpinCounter` / `ceo-orbit-spin-reverse-slow` 65s).
-  - **Chống lộn ngược icon/chữ (Counter-Rotation)**: Mỗi node con trên quỹ đạo được áp dụng hoạt ảnh xoay ngược chiều tương ứng (`ceo-orbit-counter-slow` và `ceo-orbit-counter-reverse`) để icon và chữ luôn luôn đứng thẳng hàng, dễ đọc.
-  - **Tương tác**: Hỗ trợ di chuột vào để tạm dừng (`animation-play-state: paused`) và bấm vào từng node để xem chi tiết liên minh kết nối.
+## 9. Universal Dashboard Table Standards
+All CRM dashboard tables (`/renewal`, `/members`, `/companies`, `/fees`, `/income`, `/expenses`, `/events`, `/event-registrations`, `/sponsors`, `/benefits`, `/perks`, `/marketplace`, `/documents`, `/platform/permissions`) adhere to a unified UI/UX standard:
+1. **Search & Filter Bar**: Instant client-side and URL-synced multi-criteria filtering.
+2. **Sticky STT (Sequence Number)**: Fixed to left edge (`sticky left-0 z-20` on header, `sticky left-0 z-10` on cells) with opaque backgrounds to prevent horizontal bleed.
+3. **Sticky Code / ID (Mã)**: Fixed immediately adjacent to STT (`sticky left-[56px] z-20` on header, `sticky left-[56px] z-10` on cells).
+4. **Sticky Actions (Thao tác)**: Fixed to right edge (`sticky right-0 z-20` on header, `sticky right-0 z-10` on cells).
+5. **Horizontal Scrolling**: Wrapped in `relative overflow-x-auto` container with `border-separate border-spacing-0` table layout.
+6. **Pagination Controls**: Standard `<Pagination ... />` component supporting page jumps, next/previous buttons, and configurable page sizes.
 
-### 8.4. Tích Hợp Video KYC & Showcase 3D
-- Video KYC (`/landing/video_vione_kyc.mp4` và `/landing/video_vione_kyc_1.mp4`) được nhúng trong modal player 1080p và video switcher tab trên Business Connect Landing.
-- Component `LandingInteractiveShowcase.tsx` tự động chuyển slide 3D với 9 phân hệ giải pháp và API redirect demo.
+## 10. Multi-Tenant SaaS Architecture & Realtime Notifications
 
+### 10.1. Multi-Tenant Association Model
+- Data isolation enforced by `association_id` (Tenant ID) across members, board structures, internal news, benefits, and financial ledgers.
+- Unified digital identity enables executive members to belong to multiple associations with seamless switching.
 
-## 9. Multi-Tenant SaaS Architecture & Realtime Notification Lifecycle
+### 10.2. Realtime WebSocket Gateway Pipeline
+- **User-Level Channel (`user:<userId>`)**: Direct 1-to-1 interactions (connection requests, chat messages, mentions).
+- **Association-Level Channel (`assoc:<associationId>`)**: Broadcasts to association administrators (membership applications, fee payments, sponsorship inquiries).
+- **Actionable Notification Redirection**:
+  - New member application -> Navigates to `/members?status=pending`.
+  - Fee payment received -> Navigates to `/fees`.
+  - Connection request -> Navigates to `/connect-app/network`.
+  - Event registration -> Navigates to `/events` or `/event-registrations`.
 
-### 9.1. Định Hướng Kiến Trúc Multi-Tenant B2B/B2C SaaS
-- **Toàn bộ hệ thống ViOne được định hướng và thiết kế theo mô hình SaaS (Software-as-a-Service) đa tổ chức (Multi-Tenant)**:
-  - **Tenant / Association Scope**: Mỗi hiệp hội, liên minh doanh nghiệp hoặc tổ chức (ví dụ: CEO 1983, Hội Doanh Nghiệp Trẻ, v.v.) được định danh bởi `association_id` (Tenant ID). Toàn bộ dữ liệu thành viên, ban điều hành, bài viết nội bộ, phòng ban và tài chính được phân tách và bảo vệ bởi Row Level Security (RLS) và Scoped Middleware ở backend (`requireNestAuth` + `assoc-scope`).
-  - **Unified Cross-Tenant Identity**: Người dùng cá nhân (Executive User) sở hữu một danh tính số duy nhất (Digital Business Identity) có thể tham gia nhiều tổ chức, chuyển đổi qua lại nhanh chóng giữa các hiệp hội mà không cần đăng ký lại tài khoản.
-  - **B2B Executive CRM + B2C Mobile Networking**: Kết hợp sức mạnh CRM quản trị doanh nghiệp/hiệp hội cho ban lãnh đạo trên Desktop Web với trải nghiệm kết nối chạm thông minh, danh thiếp điện tử NFC và mạng xã hội kết nối riêng tư cho từng cá nhân trên Mobile.
+## 11. Mobile App Build & Release Guide (iOS & Android)
 
-### 9.2. Mối Liên Hệ Giữa Mobile App (`/connect-app/*`) và Web CRM (`/`, `/dashboard`, `/business-connect/*`)
-1. **Ứng Dụng Mobile Connect App (`/connect-app/*`)**:
-   - **Tập trung vào trải nghiệm cá nhân (Executive Networking)**: Chạm NFC danh thiếp, quét mã QR, quản lý danh bạ cá nhân, xem và xử lý lời mời kết nối tức thì, nhắn tin thời gian thực, bảng tin khoảnh khắc (Moments), lịch hẹn thông minh và trí tuệ quan hệ (Relationship Intelligence).
-   - **Giao diện & Trải nghiệm**: Phong cách "Executive Minimal Luxury" tông màu hoàng kim ấm (`.vione-tone`, `.bc-app`), hỗ trợ cử chỉ vuốt chạm, bottom action sheets, chuyển trang mượt mà không giật lag.
-2. **Hệ Thống Web CRM / Admin Dashboard (`/`, `/dashboard`, `/business-connect/*`)**:
-   - **Tập trung vào vận hành hiệp hội & CRM doanh nghiệp**: Quản lý hội viên, phân hạng hội viên, phân bổ tài chính, quản lý nhà tài trợ, tạo chiến dịch thông báo toàn hiệp hội (`/notifications`), báo cáo phân tích quan hệ kinh doanh, và quản trị tổ chức.
-   - **Giao diện & Trải nghiệm**: Bảng điều khiển Desktop chuyên nghiệp với Topbar Notification Popover (`NotificationCenter`), Trung tâm thông báo Business Connect toàn màn hình (`BcNotificationCenter`), Kanban Board cơ hội kinh doanh và công cụ lọc nâng cao.
-
-### 9.3. Vòng Đời Lời Mời Kết Nối & WebSocket Realtime Notification
-1. **Luồng Khởi Tạo & Thông Báo**:
-   - Khi Người dùng A gửi lời mời kết nối tới Người dùng B (`/api/me/connections/request`):
-     - Bản ghi kết nối được tạo trong `public.user_connections` với trạng thái `pending`.
-     - Bản ghi thông báo được lưu vào `public.business_notifications` của Người dùng B.
-     - Backend Gateway (`ConnectAppGateway`) phát sự kiện WebSocket tới phòng `user:<userIdB>`:
-       - `connection:requested` (dữ liệu tóm tắt người gửi).
-       - `notification:new` (thông báo mới thời gian thực).
-2. **Luồng Chấp Nhận / Từ Chối Lời Mời (Handshake Resolution)**:
-   - Khi Người dùng B bấm **"Đồng ý kết nối" (Accept)**:
-     - `public.user_connections.status` chuyển thành `'accepted'`, đồng thời tạo luồng chat trực tiếp (Conversation Thread) giữa A và B.
-     - Dữ liệu `safe_display_data.connectionStatus` trong bảng `business_notifications` được cập nhật thành `'accepted'` và đánh dấu đã đọc (`status = 'read'`).
-     - Backend Gateway phát sự kiện `connection:accepted` và `notification:updated` tới cả hai người dùng.
-     - **UI Trạng Thái Hoàn Thiện**: Toàn bộ thẻ thông báo và danh sách lời mời ngay lập tức ẩn 2 nút "Đồng ý / Từ chối", hiển thị huy hiệu cố định **`✓ Đã kết nối`**, đồng thời mở các nút hành động nhanh **"Nhắn tin" (Message)** và **"Trang cá nhân" (Profile)**.
-   - Khi Người dùng B bấm **"Từ chối" (Decline)**:
-     - `public.user_connections.status` chuyển thành `'declined'`.
-     - `safe_display_data.connectionStatus` cập nhật thành `'declined'`.
-     - Backend Gateway phát `connection:declined` và `notification:updated`.
-     - **UI Trạng Thái Hoàn Thiện**: Ẩn nút xác nhận, hiển thị huy hiệu **`✕ Đã từ chối`**.
-3. **Luồng Xóa Thông Báo (Delete Notification)**:
-   - Mỗi thông báo trên cả Mobile App (`connect-app.notifications.tsx`, `HomeNotificationsMenu.tsx`) và Web CRM (`NotificationCenter.tsx`, `BcNotificationCenter.tsx`) đều có nút icon thùng rác (`Trash2`).
-   - Gọi endpoint `DELETE /api/me/notifications/:id` hoặc `POST /api/me/notifications/delete`.
-   - Backend xóa bản ghi và phát WebSocket `notification:deleted` để đồng bộ xóa trên tất cả thiết bị đang mở của người dùng.
-
-## 10. Bảng Tin Khoảnh Khắc Doanh Nhân (Facebook-Grade Moments Stream) & Bình Luận Đính Kèm Ảnh
-
-### 10.1. Luồng Đăng Khoảnh Khắc (Post Moment - Facebook Style Workflow)
-- **Vị trí tích hợp**: Trực tiếp tại Tab Network (`/connect-app/network`) và Bảng tin khoảnh khắc (`/connect-app/moment`), hiển thị khung nhập nhanh phong cách Facebook: *"Hôm nay bạn có cơ hội, thành tựu hay cuộc gặp gỡ nào muốn chia sẻ?"*.
-- **Các thành phần dữ liệu phong phú**:
-  1. **Nội dung bài viết (Text Note)**: Hỗ trợ tự động giãn dòng, gõ ký tự xuống dòng thoải mái.
-  2. **Tải lên nhiều hình ảnh (Multi-Photo Upload)**: Đính kèm tối đa 6 hình ảnh với khung xem trước (preview thumbnail), xóa ảnh trực tiếp trước khi đăng, và tải trực tiếp lên kho lưu trữ backend NestJS (`/connect-app/relationship-moments`) hoặc fallback base64 an toàn.
-  3. **Gắn thẻ đối tác / Bạn bè (Tag Connections)**: Modal chuyên dụng chọn đối tác từ danh bạ mạng lưới kinh doanh, có thanh tìm kiếm trực tiếp, hiển thị ảnh đại diện và tên công ty. Đồng thời hỗ trợ gõ nhanh ký tự `@` để tìm kiếm và gắn thẻ trực tiếp vào bài.
-  4. **Huy hiệu cảm xúc / Hoạt động kinh doanh (Business Emotions & Activities)**:
-     - 🤝 *Ký hợp đồng* / ☕ *Gặp gỡ đối tác* / 🚀 *Dự án mới* / 💡 *Cơ hội kinh doanh*
-     - 🏆 *Thành tựu* / 📈 *Tăng trưởng* / 🥂 *Tiệc giao lưu* / 🎯 *Mục tiêu mới*
-  5. **Check-in vị trí (Location)**: Gợi ý các địa điểm doanh nhân tiêu biểu (Khách sạn JW Marriott, Trung tâm Hội nghị Quốc gia, Landmark 81, TP. HCM, Hà Nội, Đà Nẵng) hoặc nhập tự do.
-  6. **Quyền riêng tư (Privacy Scope)**: Công khai (Toàn mạng lưới), Chỉ kết nối (Bạn bè), hoặc Chỉ mình tôi (Riêng tư).
-- **Quy trình xử lý backend**:
-  - Giai đoạn Chuẩn bị (`POST /connect-app/moment/` -> `bcMobileMomentPrepareFn`): Cấp phát `clientToken` chống trùng lặp, tạo bản ghi `moment` với trạng thái `pending`.
-  - Giai đoạn Hoàn tất (`POST /connect-app/moment/:id/finalize` -> `bcMobileMomentFinalizeFn`): Xác nhận ảnh và chuyển trạng thái `active`.
-  - Giai đoạn Bắn thông báo (`POST /connect-app/moments/notify-tags`): Gửi thông báo WebSocket tới toàn bộ người dùng được gắn thẻ trong bài đăng.
-
-### 10.2. Bình Luận Kèm Hình Ảnh (Comments with Photo Attachments)
-- **Khung nhập bình luận nâng cao (`MomentCommentInput.tsx`)**:
-  - Tích hợp nút icon đính kèm hình ảnh (`ImageIcon`).
-  - Hỗ trợ chọn ảnh từ thư viện/máy ảnh, hiển thị khung preview thu nhỏ kèm nút hủy (`X`).
-  - Tự động tải ảnh lên server khi gửi bình luận (`uploadFileToNest`), liên kết `photoUrl` vào bản ghi bình luận.
-- **Hiển thị & Tương tác bình luận (`MomentCommentItem.tsx`)**:
-  - Bình luận hiển thị đầy đủ hình ảnh đính kèm bo tròn góc cao cấp.
-  - Hỗ trợ bấm vào ảnh để phóng to toàn màn hình (Full-screen Lightbox) với nút đóng tiện lợi.
-  - Giữ nguyên đầy đủ cây phản hồi phân cấp (nested replies) và gắn thẻ `@mention`.
-
-### 10.3. Luồng Chỉnh Sửa Khoảnh Khắc Toàn Diện (Full Facebook-Grade Moment Editing)
-- **Tương đương 100% chức năng tạo mới (`MomentManageSheet.tsx`)**:
-  - Cho phép sửa toàn bộ các trường dữ liệu: Nội dung ghi chú, thời điểm diễn ra (`occurredAt`), check-in vị trí (`placeLabel`), quyền riêng tư (`visibility`), người liên quan/đối tác (`targetPersonId`).
-  - **Quản lý đa ảnh nâng cao**: Giữ lại các ảnh cũ đã tải lên, xóa ảnh cũ theo nhu cầu, thêm ảnh mới từ thiết bị (tối đa 6 ảnh), tải trực tiếp lên Nest storage và lưu liên kết `photoUrls`.
-  - **Gắn thẻ đối tác & Cảm xúc**: Chọn đối tác liên quan từ danh bạ mạng lưới, cập nhật huy hiệu cảm xúc kinh doanh (Ký hợp đồng, Gặp gỡ đối tác, Dự án mới, v.v.).
-  - **Xóa khoảnh khắc**: Tích hợp nút xóa bài kèm dialog xác nhận bảo mật (`AlertDialog`), xóa sạch bản ghi khoảnh khắc, ảnh media, bình luận và lượt thích liên quan trong cơ sở dữ liệu.
-
-### 10.4. Phân Định Thanh Tương Tác Mạng Xã Hội & Menu Quản Lý Bài Đăng
-- **Thanh tương tác dưới chân thẻ bài viết (`MomentActionBar.tsx`)**:
-  - Chuẩn hoá theo phong cách mạng xã hội hiện đại (Facebook/LinkedIn):
-    1. **Thích (Like)**: Thả tim và cập nhật bộ đếm thích thời gian thực.
-    2. **Bình luận (Comment)**: Mở cây bình luận 3 tầng có đính kèm ảnh và `@mention`.
-    3. **Chia sẻ (Share)**: Hỗ trợ Native Web Share hoặc tự động sao chép link khoảnh khắc kèm thông báo toast.
-    4. **Lưu bài viết (Bookmark)**: Lưu khoảnh khắc vào danh sách bài viết đã lưu / ghi nhớ cá nhân.
-- **Menu mở rộng (`...` Dropdown)**:
-  - Dành riêng cho các hành động quản trị:
-    - **Sửa khoảnh khắc**: Chỉ hiển thị cho chính chủ sở hữu bài đăng (`isOwner`), mở `MomentManageSheet`.
-    - **Xoá khoảnh khắc**: Chỉ hiển thị cho chính chủ sở hữu, mở `AlertDialog` xác nhận xoá.
-    - **Xem hồ sơ** và **Sao chép liên kết** cho tất cả người xem.
-  - Loại bỏ hoàn toàn lỗi gắn nhầm nút "Ghi nhớ" ở chân thẻ mở sang modal "Sửa khoảnh khắc".
-
-
-## 11. Kiến Trúc Thông Báo Realtime Toàn Diện Cho Web CRM & Mobile (WebSocket Notification Pipeline + Interactive Redirect)
-
-### 11.1. Hạ Tầng WebSocket Đa Tầng (Multi-Tier WebSocket Gateway)
-- **Tầng 1 - Định tuyến theo Người dùng (`user:<userId>`)**: Dành cho các tương tác cá nhân 1-1 (Lời mời kết nối mới, phản hồi kết nối, tin nhắn trực tiếp, gắn thẻ trong khoảnh khắc).
-- **Tầng 2 - Định tuyến theo Tổ chức / Hiệp hội (`assoc:<associationId>`)**: Dành cho ban quản trị và nhân sự vận hành hiệp hội. Khi có sự kiện phát sinh trong hiệp hội (Đăng ký thành viên mới, gia hạn hội phí, đăng ký tài trợ), tất cả quản trị viên trong phòng hiệp hội đều nhận thông báo tức thì.
-- **Tầng 3 - Phát sóng CRM Toàn hệ thống (`emitToAll`)**: Đảm bảo các phiên làm việc trên Web CRM Desktop luôn nhận được dữ liệu realtime mà không bị rớt kết nối do thay đổi phòng.
-
-### 11.2. Cơ Chế Chuyển Hướng Tương Tác Hành Động (Actionable Notification Redirection)
-Tất cả thông báo từ Web CRM tới Mobile đều được gắn thuộc tính `targetRoute` chuẩn xác theo luồng nghiệp vụ:
-- **Đăng ký hội viên mới vào Hiệp hội / CLB (ví dụ: CLB Doanh Nhân CEO 1983)**:
-  - Thông báo: *"Đăng ký hội viên mới: [Họ tên] - [Tên doanh nghiệp]"*.
-  - `targetRoute`: **`/members?status=pending`** -> Bấm vào thông báo sẽ tự động đánh dấu đã đọc và chuyển hướng ban quản trị thẳng tới màn hình Quản lý hội viên ở bộ lọc **Chờ duyệt**, sẵn sàng bấm phê duyệt.
-- **Nộp / Thanh toán hội phí (Fee Payment)**:
-  - Thông báo: *"Hội viên [Họ tên] đã thanh toán hội phí [Năm]"*.
-  - `targetRoute`: **`/fees`** -> Dẫn thẳng tới sổ theo dõi thu nộp hội phí.
-- **Lời mời kết nối đối tác mới**:
-  - Thông báo: *"Doanh nhân [Họ tên] vừa gửi cho bạn một lời mời kết nối kinh doanh"*.
-  - `targetRoute`: **`/connect-app/network`** -> Dẫn tới màn hình Mạng lưới để xem hồ sơ và phê duyệt.
-- **Đăng ký sự kiện / Hội thảo**:
-  - `targetRoute`: **`/events`** -> Dẫn tới danh sách người đăng ký sự kiện.
-- **Tương tác click thông minh**:
-  - Trên Web CRM (`NotificationCenter.tsx`): Bấm vào bất kỳ dòng thông báo nào sẽ đóng popover, đánh dấu đã đọc và điều hướng router TanStack tới đúng trang đích.
-  - Trên Mobile App (`BcNotificationCenter.tsx`): Bấm vào thông báo sẽ kích hoạt điều hướng mượt mà tới module tương ứng.
-
-## 12. Tinh Chỉnh Giao Diện Hoàng Kim Sang Trọng (Luxury Gold UI & Navigation)
-- **Nút V-Button nổi ở giữa thanh điều hướng đáy (Floating Gold V-Button)**:
-  - Thiết kế gradient kim loại vàng đồng sang trọng (`linear-gradient(135deg, #C29B69, #F6E1C3 50%, #D8B282)`), viền bóng hoàng kim quý phái (`box-shadow: 0 4px 20px rgba(194, 155, 105, 0.4)`), đồng bộ tuyệt đối với nhận diện thương hiệu ViOne toàn app.
-- **Sửa lỗi viền/focus của thanh điều hướng đáy**:
-  - Loại bỏ các viền đen/nâu thô khi chọn tab, thay thế bằng hiệu ứng active glow và chỉ báo tinh tế, hài hòa trên cả 3 theme.
-
-## 13. Mặc Định Theme Tối (Default Dark Mode Standard)
-- Toàn bộ ứng dụng ViOne (`/connect-app/*`), ứng dụng các hiệp hội (CLB CEO 1983, Hội Doanh Nghiệp Trẻ), và Web CRM (`/dashboard`, `/notifications`) được thiết lập mặc định ở chế độ **Theme Tối** (`dark`).
-- Khởi tạo đồng bộ ngay tại `RootShell` (`routes/__root.tsx`), `ThemeProvider` (`lib/theme.tsx`), và class `dark` của thẻ `<html>`.
-
-## 14. Tính Toán Thời Gian Tương Tác Realtime Cho "Cần Giữ Kết Nối" (Realtime Nurture Intelligence)
-- Loại bỏ hoàn toàn các giá trị cố định / hardcoded (`90 + idx * 10`).
-- Dữ liệu ngày chưa liên hệ được tính toán chính xác 100% theo thời gian thực từ cơ sở dữ liệu:
-  - Lấy thời điểm tương tác gần nhất giữa 2 người dùng qua `last_moment_at` (khoảnh khắc gần nhất), `last_message_at` (tin nhắn gần nhất), hoặc `uc.updated_at` / `uc.created_at` (thời điểm kết nối thành công).
-  - Công thức: `const days = Math.max(1, Math.floor((now.getTime() - lastInteractionTime) / (1000 * 60 * 60 * 24)));`.
-  - Sinh ra câu nhắc nhở AI chính xác: *"AI nhắc nhở: Đã X ngày chưa tương tác cùng [Tên đối tác]..."*.
-
-## 15. Luồng Đăng Ký Hội Viên CLB & Bắn Thông Báo Hai Chiều (Landing -> Web CRM Bell Icon -> Member App)
-
-### 15.1. Khi Khách / Doanh Nhân Nộp Đơn Gia Nhập CLB trên Landing Page (`/landing/ceo1983` hoặc `/landing/business-connect`)
-1. **Frontend Landing (`submitClubApplication`)**:
-   - Gửi payload đăng ký lên endpoint backend `POST /api/connect-app/club-application`.
-2. **Backend Gateway & Dispatcher (`notifyAssociationAdmins` trong `connect-app.service.ts`)**:
-   - Truy vấn toàn bộ danh sách quản trị viên có thẩm quyền:
-     - Quản trị viên hiệp hội trong bảng `public.memberships` (vai trò `admin`, `president`, `vice_president`, `secretary`).
-     - Quản trị viên cấp nền tảng / tenant trong bảng `public.user_roles` (`platform_admin`, `tenant_admin`, `admin`).
-     - Tài khoản quản trị trong `public.vione_users` (có email chứa `%admin%` như `admin2@connect.vn`, `admin@connect.vn`).
-   - Lưu thông báo đồng thời vào:
-     - `public.notifications` (hệ thống thông báo toàn CRM).
-     - `public.business_notifications` (thông báo in-app định danh cho từng `user_id` quản trị).
-   - Phát sóng sự kiện WebSocket (`emitToAll` và `emitToRoom` `assoc:<associationId>` / `user:<adminId>`) với `targetRoute: "/members?status=pending"`.
-3. **Web CRM Topbar Bell Icon (`NotificationCenter.tsx` + `listNotificationsFn`)**:
-   - Khi Admin (`admin2@connect.vn` hoặc bất kỳ tài khoản có quyền duyệt) đăng nhập vào Web CRM (`/members`), icon chuông thông báo lập tức hiển thị badge đỏ và danh sách thông báo:
-     *"Đăng ký gia nhập CLB CEO 1983: [Họ Tên] - [Tên Doanh Nghiệp]"*.
-   - Bấm vào thông báo sẽ tự động đánh dấu đã đọc và chuyển hướng thẳng đến bảng Quản lý hội viên lọc theo `status=pending` (`/members?status=pending`), sẵn sàng thao tác duyệt.
-
-### 15.2. Khi Admin Phê Duyệt hoặc Từ Chối Hội Viên trên Web CRM (`/members`)
-1. **Backend Approval Workflow (`updateMember` trong `members.service.ts`)**:
-   - Khi Admin chuyển trạng thái hội viên thành `active` (hoặc `rejected`), backend tự động tìm `user_id` tương ứng của hội viên đó.
-   - Bắn thông báo kết quả vào `public.business_notifications` cho tài khoản hội viên:
-     - Duyệt thành công: *"Hồ sơ gia nhập CLB của bạn đã được phê duyệt chính thức. Chào mừng bạn gia nhập mạng lưới liên minh C-Level!"*.
-     - Gắn `targetRoute: "/m"` hoặc `/connect-app/me`.
-   - Phát sóng WebSocket `user:<applicantUserId>` để cập nhật tức thì.
-2. **Mobile Member App (`/m` hoặc `/connect-app`)**:
-   - Người dùng đăng nhập vào app sẽ nhận được thông báo in-app báo đã được duyệt thành viên chính thức.
-
----
-
-## 16. Tiêu Chuẩn 3 Chế Độ Giao Diện & Độ Tương Phản Cao Chế Độ Sáng (Landing High-Contrast Light Mode Standards)
-
-### 16.1. Quy Chuẩn Nhãn 3 Theme (Theme Switcher Mode Labels)
-Nhãn chuyển đổi theme phải tuân thủ nghiêm ngặt ngôn ngữ hiển thị:
-- **Tiếng Việt (`vi`)**:
-  - `modeDark`: **Tối**
-  - `modeLight`: **Sáng**
-  - `modeContrast`: **Tương phản cao**
-- **Tiếng Anh (`en`)**:
-  - `modeDark`: **Dark**
-  - `modeLight`: **Light**
-  - `modeContrast`: **High Contrast**
-- **Tiếng Trung (`zh`)**:
-  - `modeDark`: **暗色**
-  - `modeLight`: **亮色**
-  - `modeContrast`: **高对比度**
-- **Tiếng Nhật (`ja`)**:
-  - `modeDark`: **ダーク**
-  - `modeLight`: **ライト**
-  - `modeContrast`: **高コントラスト**
-- **Tiếng Hàn (`ko`)**:
-  - `modeDark`: **다크**
-  - `modeLight`: **라이트**
-  - `modeContrast`: **고대비**
-
-### 16.2. Tiêu Chuẩn Độ Tương Phản Chế Độ Sáng (Light Mode High-Contrast Rule)
-- **CẤM** sử dụng gradient chữ màu trắng/vàng kem (`from-white`, `from-[#FFFFFF]`, `via-[#FFF8E7]`, `to-[#FCE19F]`) cố định mà không bọc `themeClass`. Ở chế độ Sáng, chữ màu trắng trên nền sáng sẽ bị mờ/tàng hình.
-- **Tiêu chuẩn màu ở Chế độ Sáng (Light Mode / Sáng)**:
-  - Tiêu đề chính (H1/H2/H3): Sử dụng màu đen than đậm `#0F172A` (`text-[#0F172A]`) hoặc gradient than chì sâu (`from-[#0F172A] via-[#1E293B] to-[#334155]`).
-  - Điểm nhấn vàng đồng / highlight: Chuyển sang màu hổ phách đậm sắc nét (`from-[#B45309] via-[#D97706] to-[#92400E]`).
-  - Nội dung mô tả / phụ đề: Sử dụng `text-[#334155]` hoặc `text-[#475569]`.
-  - Nền thẻ / Bento cards: Sử dụng nền trắng tinh khiết `#FFFFFF` hoặc ngà sang `#FAF8F5`, viền vi tế `border-amber-900/15`, đổ bóng êm `shadow-[0_8px_30px_rgba(0,0,0,0.06)]`.
-
----
-
-## 17. Phân Định Background Riêng Biệt Cho Landing CEO 1983 và Business Connect SaaS (Anti-Plagiarism & Brand Exclusivity)
-
-- **Landing CLB CEO 1983 (`/landing/ceo1983`)**:
-  - Sở hữu bộ ảnh nền đặc quyền phong cách Hoàng Gia VIP 24K Gold, lụa đen và huy hiệu lãnh đạo:
-    - Chế độ Tối (Dark): `/landing/ceo1983-hero-dark.jpg`
-    - Chế độ Sáng (Light): `/landing/ceo1983-hero-light.jpg`
-    - Chế độ Tương phản (Contrast): `/landing/ceo1983-contrast.jpg`
-- **Landing ViOne Business Connect SaaS (`/landing/business-connect`)**:
-  - Sở hữu bộ ảnh nền công nghệ Cyber Tech Grid, mạng lưới Blueprint SaaS và giao thương B2B:
-    - Chế độ Tối (Dark): `/landing/business-saas-dark.jpg`
-    - Chế độ Sáng (Light): `/landing/business-saas-light.jpg`
-    - Chế độ Tương phản (Contrast): `/landing/business-cta-bg.jpg`
-- **Tuyệt đối không dùng chung background giữa 2 landing page** để đảm bảo tính độc bản thương hiệu và bản quyền thiết kế.
-
----
-
-## 18. Cẩm Nang Toàn Diện Build & Phát Hành Mobile App (iOS & Android) - Sổ Tay Cho AI & Developer
-
-### 18.1. Nguyên Lý Kiến Trúc Mobile (Live Remote Server Mode)
-- **Vị trí source code mobile**: `apps/mobile/` (gói `@vibe/vione_app_mobile`).
-- **Nền tảng**: Capacitor 7 + React/Vite/TanStack.
-- **Cấu hình máy chủ từ xa ([capacitor.config.ts](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/mobile/capacitor.config.ts))**:
+### 11.1. Live Remote Server Architecture
+- **Platform**: Capacitor 7 + React/Vite/TanStack.
+- **Remote Host Configuration** (`capacitor.config.ts`):
   - `USE_REMOTE_SERVER = true`
   - `REMOTE_URL = 'http://14.225.217.232:5000'`
   - `CLEARTEXT = true`
-- **QUY TẮC VÀNG VỀ BUILD APP**:
-  - **Sửa giao diện / Logic Frontend**: **KHÔNG CẦN BUILD LẠI APP NATIVE!** Chỉ cần deploy web frontend lên server `14.225.217.232:5000` (dùng `fast-deploy.ps1`), ứng dụng mobile trên máy người dùng sẽ tự động cập nhật ngay khi mở lại app.
-  - **Khi nào MỚI CẦN build lại file cài đặt (.ipa / .apk)?**:
-    1. Thay đổi App Icon hoặc Splash Screen.
-    2. Cài thêm hoặc cập nhật thư viện Native Plugin (Push notifications, Bluetooth, NFC, In-app purchase,...).
-    3. Thay đổi URL máy chủ từ xa (ví dụ: chuyển từ IP sang domain chính thức `https://app.vione.vn`).
-    4. Nâng số hiệu phiên bản lớn (Version / Build Number) để phát hành chính thức lên App Store / Google Play.
+- **Core Principle**: UI and frontend logic updates deployed to the web server immediately reflect in mobile apps without recompiling native binaries. Native `.ipa` / `.apk` rebuilds are only required for native plugin modifications, splash screen/icon updates, or version bumps.
 
----
+### 11.2. App Identification & Credentials
+- **App Name**: `ViOne Connect`
+- **Display Name (iOS)**: `Vione Business Connect`
+- **Bundle ID**: `ViOneBusinessConnect`
+- **Apple ID**: `6810608093`
+- **Developer Account**: `tuanna@unicomhub.com`
+- **EAS Project**: `@unicom-vibe-coding-team/vione` (Project ID: `3b83c509-f641-4560-a8e5-33dfd5940f89`)
 
-### 18.2. Thông Tin Định Danh & Tài Khoản Phát Hành
-
-| Hạng mục | Giá trị cấu hình | Ghi chú |
-| :--- | :--- | :--- |
-| **App Name** | `ViOne Connect` | Tên nội bộ / hiển thị bundle |
-| **Display Name (iOS)** | `Vione Business Connect` | Tên xuất hiện dưới icon trên màn hình iPhone |
-| **Bundle Identifier (App ID)** | `ViOneBusinessConnect` | Bắt buộc giữ nguyên cho cả iOS và Android |
-| **Apple ID (App Store Connect)** | `6810608093` | Mã định danh app trên App Store Connect |
-| **Apple Developer Account** | `tuanna@unicomhub.com` | Tài khoản Developer quản lý |
-| **App Store Connect API Key ID** | `4Q734PS4PG` | Đã lưu tại `apps/mobile/credentials/AuthKey_4Q734PS4PG.p8` (được .gitignore bảo vệ) |
-| **Issuer ID** | `6c7d5137-21b1-4bae-96d2-3cc761483dbc` | Dùng cho xác thực tự động không cần OTP |
-| **Expo / EAS Project** | `@unicom-vibe-coding-team/vione` | Project ID: `3b83c509-f641-4560-a8e5-33dfd5940f89` |
-
----
-
-### 18.3. Quy Trình Build iOS Production & Đẩy TestFlight (Qua EAS Cloud)
-
-#### A. Yêu Cầu & Lưu Ý Bắt Buộc (Apple 2026 Policy)
-1. **Xcode & SDK**: Apple từ chối tất cả bản build dưới **Xcode 26 / iOS 26 SDK**. Trong [eas.json](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/mobile/eas.json) bắt buộc cấu hình:
-   ```json
-   "image": "macos-sequoia-15.6-xcode-26.2",
-   "node": "20.18.0"
-   ```
-2. **Bỏ qua node-gyp / sharp trên macOS**: File `.npmrc` ở root và `apps/mobile/.npmrc` phải có dòng `ignore-scripts=true` để tránh lỗi biên dịch C++ native của `sharp` trên máy chủ macOS của Expo.
-3. **Tự động kích hoạt TestFlight (Không bị hỏi App Encryption)**: Đã cấu hình `<key>ITSAppUsesNonExemptEncryption</key><false/>` trong `Info.plist`. Sau khi Apple xử lý xong, build sẽ chuyển sang trạng thái sẵn sàng kiểm thử mà không cần chọn thủ công.
-
-#### B. Các Lệnh Build & Upload iOS (Chạy tại `apps/mobile`)
-- **Lệnh 1: Build file `.ipa` trên Cloud (Khuyên dùng)**:
-  ```powershell
-  cd apps/mobile
-  npx eas-cli build --profile production --platform ios --non-interactive
-  ```
-- **Lệnh 2: Tự động submit file `.ipa` mới nhất lên Apple TestFlight**:
-  ```powershell
-  cd apps/mobile
-  npx eas-cli submit -p ios --latest --non-interactive
-  ```
-- **Lệnh 3: Trọn gói Build + Auto-submit lên TestFlight (Chạy 1 lệnh)**:
+### 11.3. Build Commands
+- **iOS Production (EAS Cloud)**:
   ```powershell
   cd apps/mobile
   npx eas-cli build --profile production --platform ios --auto-submit --non-interactive
   ```
-
-#### C. Link Web Quản Lý Sản Phẩm & Tải File iOS
-- **Trang theo dõi tiến trình Build & Tải trực tiếp file `.ipa`**:
-  👉 [EAS Builds Dashboard](https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds)
-- **Trang quản lý TestFlight & App Store Connect**:
-  👉 [App Store Connect TestFlight](https://appstoreconnect.apple.com/apps/6810608093/testflight/ios)
-- **File IPA Build 3 (Đã phát hành thành công lên TestFlight)**:
-  👉 [Download Build 3 .IPA](https://expo.dev/artifacts/eas/-BMmwAUQczehQxzZYWV6fMMSYQH5k5zKy7hTKhLKpzA.ipa)
-
----
-
-### 18.4. Quy Trình Build Android (Cục Bộ Bằng Gradle)
-
-#### A. Các Lệnh Build Android
-- **Đồng bộ code web và cấu hình sang Android**:
+- **Android Debug**:
   ```powershell
   cd apps/mobile
   npx cap sync android
-  ```
-- **Build file APK Debug (Cài ngay vào máy Android thử nghiệm)**:
-  ```powershell
-  cd apps/mobile/android
+  cd android
   .\gradlew assembleDebug
   ```
-- **Build file APK / AAB Release (Để phát hành Google Play)**:
+- **Android Release**:
   ```powershell
   cd apps/mobile/android
   .\gradlew assembleRelease
   ```
 
-#### B. Thư Mục Lấy File Sản Phẩm Android
-- **File APK Debug đã build sẵn**:
-  `apps/mobile/android/app/build/outputs/apk/debug/ViOne-Connect-v1.0-debug.apk`
-- **Thư mục chứa bản Release**:
-  `apps/mobile/android/app/build/outputs/apk/release/`
-  `apps/mobile/android/app/build/outputs/bundle/release/` (file `.aab` cho Google Play Console)
+## 12. Quality Assurance & Project Estimation Matrix Standards (110 Flows & WBS)
 
----
+### 12.1. 110 Deep Flows E2E Automation Testing
+- **E2E Test Engine**: `scratch/test_110_deep_flows.js` executing 110 comprehensive integration and database state-machine validation steps across the entire ecosystem with **100% Pass Rate (110/110)**:
+  1. **Landing & Lead Acquisition** (Flows 001 - 010): Public bypass, theme switching, demo requests, contact inquiries, multi-association selector.
+  2. **CRM Quản lý Hội viên & Phân ban BCH** (Flows 011 - 025): Full CRUD, approved/pending/rejected states, board assignments, department filtering, Excel export/import simulation.
+  3. **CRM Quản lý Niên liễm, Thu phí VietQR & Kế toán** (Flows 026 - 040): Invoicing, VietQR generator, payment webhook simulation, idempotent processing, renewal audit logs (`renewal_audit_log.amount_paid`).
+  4. **CRM Quản lý Sự kiện & Điểm danh QR Check-in** (Flows 041 - 055): Event lifecycle, ticket tiers, QR payload generation, real-time check-in updates, attendance rate analytics.
+  5. **CRM Quyền lợi, Nhà tài trợ & Sàn B2B Marketplace** (Flows 056 - 070): Sponsor tier assignment, bilingual benefits (`title_vi`/`title_en`), product status lifecycle (`active`/`sold`/`draft`), contact exchange leads.
+  6. **App Hiệp Hội Doanh Nhân `/association/*`** (Flows 071 - 085): Digital membership card, QR exchange, election voting, internal news, association documents, executive networking.
+  7. **ViOne Connect Mạng Xã Hội B2B `/connect-app/*`** (Flows 086 - 100): B2B feed, Moments (`owner_user_id`, `occurred_at`), 1-on-1 meeting scheduling (`business_meeting_type`), chat messaging, notification routing.
+  8. **Bảo Mật, Phân Quyền RBAC, API Guards & Recovery** (Flows 101 - 110): Role checks (Admin, Board, Member, Guest), route protection, soft delete / archive recovery, audit logging.
 
-### 18.5. Tóm Tắt Quy Trình Làm Việc Hàng Ngày Cho AI & Dev
+### 12.2. ExcelJS Workbook Generation Technical Caveats & Fixes
+- **Missing Column Headers Bug**: Calling `ws.columns = [...]` sets column definitions on Row 1. If Rows 1-2 are subsequently merged to create a banner header, the column labels on Row 1 are obliterated. Creating Row 4 as an empty row caused `eachCell` to encounter 0 cells, resulting in blank headers.
+  - **Resolution**: Explicitly assign title, font, background fill, alignment, and border to each cell `A4:Q4`, followed by defining auto-filter bounds `ws.autoFilter = 'A4:Q4'`.
+- **Interactive Data Validation Dropdowns**: Dropdowns for `Trạng thái Dev`, `Trạng thái Kiểm thử`, `Trạng thái Nghiệm thu`, and `Mức độ ưu tiên` must be embedded using `cell.dataValidation = { type: 'list', allowBlank: true, formulae: ['"Val1,Val2,Val3"'] }`.
+- **Windows File Lock Prevention**: When generating `document/*.xlsx` files, if files are currently open in Excel on the user's workstation (`EBUSY`), generation gracefully outputs to `_CHI_TIET.xlsx` and `_110_FLOWS.xlsx` and logs notice to avoid build termination.
 
-```
-[Khi sửa UI/Tính năng Frontend]
-         │
-         ▼
-Sửa code trong apps/vione_app_fe
-         │
-         ▼
-Deploy lên server 14.225.217.232 (chạy fast-deploy.ps1)
-         │
-         ▼
-XONG! Mở app trên điện thoại là thấy giao diện mới ngay lập tức.
-(Không cần build lại iOS/Android)
+### 12.3. Exact Database Schema & Check Constraints Discovered
+- `products`: Column `status` check constraint `products_status_check` strictly allows `['active', 'sold', 'draft']` (DO NOT use `'approved'`).
+- `business_relationship_moments`: Column `owner_user_id` (UUID), `occurred_at` (Timestamp NOT NULL), check constraint `status` strictly allows `['pending', 'active']` (DO NOT use `'published'`). Target XOR constraint `brm_target_xor` requires `target_user_id` when `target_kind = 'connection'`.
+- `renewal_audit_log`: Column is `amount_paid` (BigInt, NOT `amount`). `user_id` is NOT NULL. `event_type` check constraint strictly allows `['payment', 'idempotent_noop', 'failure']`.
+- `members`: Primary identifier `id` is text (e.g. `'MEM-1983-xxx'`), name column is `name` (NOT `full_name`). Required fields: `type`, `level`, `status`, `joined_at`, `fee_year`.
+- `business_notifications`: Check constraint `business_notifications_priority_check` strictly allows `['critical', 'high', 'normal', 'informational']` (DO NOT use `'urgent'`). Check constraint `business_notifications_status_check` strictly allows `['pending', 'scheduled', 'delivered', 'read', 'archived', 'expired', 'cancelled']`. There is NO boolean `is_read` column; mark read via `status = 'read'` and `read_at = NOW()`.
+
+## 13. Creative Landing Page Upgrades (V2, V3, V4, V5) - Visual-First Paradigm
+All 4 Business Connect landing page variants have been elevated to international creative studio-grade standards with custom animations, 3 distinct themes each (Light, Dark, Contrast), and strict compliance with the **Visual-First Rule** (No text walls, text hidden behind interactive artifacts/GIFs/Popovers):
+
+### 13.1. Phiên bản 1 (V2 - Tiên Hiệp & Tu Tiên: Huyễn Hoặc, Mây Mù, Linh Khí)
+- **File**: `apps/vione_app_fe/src/components/landing/BusinessConnectLandingV2.tsx`
+- **Themes**:
+  - Light: Nền Ngọc bích nhạt (`#E6F4EA`), chữ xám sẫm, viền thẻ màu vàng kim (`#D4AF37`).
+  - Dark: Nền Tử mây (`#0B071A` - Tím đen sâu), chữ trắng phát sáng nhẹ linh khí.
+  - High Contrast: Tranh Thủy Mặc sơn thủy, nền trắng xuyến chỉ, nét cọ bút lông đen đậm, bỏ hiệu ứng mờ/bóng.
+- **Visual-First & Interactive Artifacts**:
+  - `Canvas Flowing Mist`: Lớp sương mù cuộn chảy và lá trúc rơi bay lơ lửng toàn trang ở `opacity-30`.
+  - 5 Thẻ Ngọc Giản Niêm Phong (Sealed Jade Slips) cho section "Vấn đề": Ẩn text mô tả, khi hover/click thì bùa chú mở niêm phong hiện text phân tích.
+  - 9 Vòng Tròn Pháp Bảo / Trận Pháp Xoay Chậm (Rotating Bagua Talismans) cho section "Giải pháp": Ẩn toàn bộ text dài; khi hover vào tâm trận pháp, luồng linh khí kích hoạt kiếm trận xoay bảo vệ và mở Popover văn tự cổ mô tả tính năng.
+  - Typography Mặc Huyết: Hiệu ứng chữ loang mực như mực tàu ngấm vào giấy xuyến chỉ.
+
+### 13.2. Phiên bản 2 (V3 - Cổ Tích Nhiệm Màu: Phép Thuật, Sách Cổ, Đom Đóm)
+- **File**: `apps/vione_app_fe/src/components/landing/BusinessConnectLandingV3.tsx`
+- **Themes**:
+  - Light: Rừng thần tiên ban ngày (Xanh ngọc lục bảo và vàng nắng).
+  - Dark: Rừng đêm ma thuật (Tím dạ quang, nấm phát quang, đom đóm lấp lánh).
+  - High Contrast: Sách ma thuật cổ (Grimoire da thuộc, chữ đen gothic cổ điển).
+- **Visual-First & Interactive Artifacts**:
+  - `Wand Cursor`: Con trỏ gậy thần tiên rắc chùm bụi sao lấp lánh khi di chuyển.
+  - 5 Lọ Thuốc Phép Sủi Bọt (Magic Potion Flasks) cho section "Vấn đề": Ẩn text dài; khi hover/click lọ thuốc sủi bọt khí ma thuật và vỡ tung (Magic Puff Reveal) phát tán đoạn văn mô tả.
+  - 9 Hạt Giống Thần Kỳ / Hoa Phát Quang (Magic Seed Blooms) cho section "Giải pháp": Các node sinh thái nở hoa và phát quang nhịp nhàng, mở cánh hoa lộ ra giải pháp công nghệ.
+  - Layout Sách Khổng Lồ 2/3: Nội dung đặt trong trang sách da thuộc cổ, lề sách chiếm 1/3 khung hình.
+
+### 13.3. Phiên bản 3 (V4 - Hoạt Hình & Comic: Pop Art, Nổi Loạn, Halftone)
+- **File**: `apps/vione_app_fe/src/components/landing/BusinessConnectLandingV4.tsx`
+- **Themes**:
+  - Light: Pop Art rực rỡ, viền đen siêu dày `border-4`, shadow cứng lệch một bên (`shadow-[6px_6px_0px_#000]`).
+  - Dark: Comic Gotham đêm, nền đen bóng huyền bí, viền tím neon nổi loạn.
+  - High Contrast: Manga Nhật Bản, trắng đen nguyên bản và screentone pattern chấm bi.
+- **Visual-First & Interactive Artifacts**:
+  - `Speed Lines Canvas`: Khắp nền chèn tia hành động tốc độ Manga dynamic.
+  - 5 Thẻ Nhân Vật Biểu Cảm Cường Điệu cho section "Vấn đề": Ôm đầu bốc hỏa, khóc tuyết, giật mình sấm sét; text chi tiết ẩn hoàn toàn, chỉ bung ra dưới dạng Bong Bóng Thoại (Comic Speech Bubble) khi bấm vào nhân vật.
+  - 9 Huy Hiệu Comic Badge cho section "Giải pháp": Chứa icon động hoạt hình, hover nảy lên kèm hiệu ứng rung rinh.
+  - BAM! POW! Action Buttons: Hover/click CTA nảy tưng bừng kèm huy hiệu xẹt tia chớp "POW!" & "BAM!".
+
+### 13.4. Phiên bản 4 (V5 - Mưa & Kính Đọng Nước: Melancholy, Khúc Xạ)
+- **File**: `apps/vione_app_fe/src/components/landing/BusinessConnectLandingV5.tsx`
+- **Themes**:
+  - Light: Cửa sổ chiều mưa, nền xám bạc u buồn thanh lịch (`#E2E8F0` / `#94A3B8`).
+  - Dark: Mưa đêm Cyber, thành phố nhòe đèn neon tím xanh khúc xạ qua giọt nước.
+  - High Contrast: Đen trắng loang lổ, độ tương phản khúc xạ quang học gắt.
+- **Visual-First & Interactive Artifacts**:
+  - `Rain Canvas`: Giọt nước mưa chảy dọc theo bề mặt kính cửa sổ với khúc xạ quang học.
+  - `Ripple Click`: Click chuột tạo sóng nước lan tỏa làm biến dạng nhẹ ảnh nền.
+  - 5 Thấu Kính Giọt Nước cho section "Vấn đề": Thẻ Bento lồi cong, chữ và hình khúc xạ phồng ở tâm và thu nhỏ ở rìa.
+  - 9 Cửa Kính Đọng Hơi Sương (Condensation Fog) cho section "Giải pháp": Text bị che khuất sau lớp sương mù; con trỏ chuột đóng vai trò "giẻ lau" (Squeegee Wiper) quệt sạch hơi nước để lộ rõ text bên trong.
+
+## 14. Enterprise QA Test Suite: 1,000+ Comprehensive Flows
+- **Master Workbook**: `document/VIONE_COMPREHENSIVE_TEST_CASES_SUITE_10000_CASES.xlsx`, `document/VIONE_COMPREHENSIVE_TEST_CASES_SUITE_1000_FLOWS.xlsx` & `document/VIONE_COMPREHENSIVE_TEST_CASES_SUITE.xlsx` (**10,110 Test Cases** phân bổ trên 10 worksheets chuyên sâu).
+- **Quy chuẩn Định dạng**:
+  - Dòng 4 đặt Header tường minh: Mã Test Case, Phân hệ, Loại Test, Kịch bản Kiểm thử, Tiền điều kiện, Các bước thực hiện, Dữ liệu đầu vào, Kết quả mong đợi, Thực tế ghi nhận, Mức độ nghiêm trọng, Mức độ ưu tiên, Trạng thái, API Endpoint / UI Route.
+  - Bộ lọc tự động (AutoFilter) kích hoạt toàn bộ dải từ dòng 4 tới dòng cuối trên tất cả các sheet.
+  - Data Validation dropdowns cho Mức độ nghiêm trọng (`Blocker, Critical, Major, Minor`), Ưu tiên (`P1, P2, P3, P4`), Trạng thái (`Passed, Failed, In Progress, Blocked`).
+  - Phân màu chuẩn quốc tế: Trạng thái Đạt (Passed) mang màu Xanh Emerald (`#DCFCE7` / `#166534`), Đang tiến hành (`#DBEAFE` / `#1E40AF`), Blocker mang màu Đỏ (`#FEE2E2` / `#991B1B`).
+- **Phạm Vi 10 Phân Hệ Chuyên Sâu (Không bloat landing page)**:
+  1. `TC_01_AUTH_ACCOUNT_CRUD` (1,020 cases): Tài khoản, đăng ký, đăng nhập, logout thiết bị, 2FA TOTP, đổi mật khẩu, upload avatar/banner nén ảnh, Universal CRUD (Create, Read, Update, Soft Delete, Thùng rác Restore, Xóa vĩnh viễn, Thao tác hàng loạt Bulk, Audit Logging).
+  2. `TC_02_SEARCH_PAGE_THEMES` (1,010 cases): Phân trang Offset/Limit/Cursor/Infinite Scroll, bảo toàn bộ lọc khi đổi trang & F5, tìm kiếm tức thì Debounce 300ms, tiếng Việt có dấu/không dấu (unaccent), chống SQLi/XSS, chuyển đổi 3 theme Light (Vàng cát), Dark (Đêm sao neon cyan), High Contrast (Phiến đá khắc), đồng bộ OS theme, chống nhấp nháy FOUC.
+  3. `TC_03_NETWORK_CONNECTIONS` (1,005 cases): Gửi/chấp nhận/từ chối/hủy lời mời kết nối, chặn/bỏ chặn, tính toán kết nối chung Mutual Connections, gắn nhãn tag, ghi chú riêng tư, quét QR/NFC chạm kết nối tức thì.
+  4. `TC_04_MOMENTS_COMMUNITY` (1,010 cases): Tạo bài viết nhiều ảnh nén Canvas <1MB, gắn thẻ @mention, check-in địa điểm, reaction realtime WebSocket, bình luận lồng nhau đa cấp (nested replies), quản trị nhóm cộng đồng, ghim bài viết, kiểm duyệt nội dung.
+  5. `TC_05_MESSAGING_VIDEOCALL` (1,015 cases): Chat 1-1 realtime qua WebSocket, chỉ báo đang soạn tin (typing indicator), thu hồi tin nhắn trong 15 phút, gửi file tài liệu 50MB, ghi âm tin nhắn thoại (voice note), gọi video 1-1 WebRTC P2P, chia sẻ màn hình 1080p, bật/tắt mic/cam.
+  6. `TC_06_CRM_OPPORTUNITY_LEAD` (1,010 cases): Trao cơ hội kinh doanh nội bộ/chéo chi hội, cập nhật tiến độ pipeline, ghi nhận lời cảm ơn doanh thu (Thank You Note/TYFCB), bảng kéo thả Kanban Drag & Drop, thuật toán chấm điểm Lead Scoring, chuyển đổi lead thành hội viên, timeline lịch sử tương tác.
+  7. `TC_07_EMAIL_TEMPLATES_MKT` (1,005 cases): Trình soạn thảo email kéo thả WYSIWYG, trộn trường dữ liệu động `{{name}}`, `{{company}}`, `{{invoice_no}}`, phân khúc người nhận theo chi hội/hạng thẻ, hàng đợi gửi mail bất đồng bộ BullMQ/Redis chống nghẽn CPU/spam, đo lường open rate bằng tracking pixel 1x1, theo dõi click rate CTR.
+  8. `TC_08_MARKETPLACE_B2B_RFQ` (1,010 cases): Đăng tải sản phẩm kèm HS code & bảng giá sỉ, kiểm duyệt sản phẩm, đăng yêu cầu báo giá RFQ, nhà cung cấp nộp bảng chào giá, giỏ đàm phán hợp đồng, ký kết MOU điện tử có xác thực OTP, đánh giá nhà cung cấp 5 sao.
+  9. `TC_09_FINANCE_VAT_EXCEL` (1,010 cases): Tự động tra cứu mã số thuế qua API Tổng cục Thuế, phát hành hóa đơn điện tử VAT (thuế suất 8% & 10%), tạo mã VietQR động Napas 24/7, đối soát tự động webhook ngân hàng, xử lý thừa/thiếu tiền, xuất danh sách ra file Excel `.xlsx`, import hàng loạt từ Excel với kiểm tra validate chi tiết từng dòng.
+  10. `TC_10_EVENTS_SEATING_VOTE` (1,015 cases): Thiết kế sơ đồ bàn ghế VIP 2D, khóa chỗ ngồi phân tán chống trùng ghế bằng Redis SETNX, quét mã vé check-in kiosk <0.5s, check-in offline lưu IndexedDB tự đồng bộ khi có mạng, bỏ phiếu điện tử ẩn danh khắc dấu SHA-256 chống gian lận, kiểm phiếu tự động hiển thị biểu đồ trực tiếp.
+
+## 15. Master WBS Work Estimation Matrix (1,000+ Tasks)
+- **Master Workbook**: `document/VIONE_WBS_FEATURE_MATRIX_AND_ESTIMATION_CHI_TIET.xlsx` & `document/VIONE_WBS_FEATURE_MATRIX_AND_ESTIMATION.xlsx`.
+- **Cấu trúc**: 11 sheets gồm Dashboard tổng quan + 10 sheets phân hệ chuyên sâu (**1,020 Tasks** chi tiết theo chuẩn PMO quốc tế).
+- **Đặc điểm PMO**:
+  - Ước lượng chi tiết theo Man-days cho Frontend, Backend, QA Testing và tổng nỗ lực (Total Man-days).
+  - Công thức động Excel: `=SUM(...)`, `=AVERAGE(...)`, `=COUNTA(...)` liên kết tự động giữa Dashboard và 10 phân hệ.
+  - Dropdown trạng thái và phân màu thẩm mỹ cao (Navy/Slate/Emerald/Indigo).
+
+## 16. Comprehensive Test Data Seeding & Cleanup
+- **Script**: `scratch/clean_and_seed_comprehensive_test_data.js`.
+- **Nguyên tắc**: Dọn dẹp dữ liệu rác, bảo vệ tài khoản nòng cốt:
+  - `admin@connect.vn` (UUID: `00000000-0000-4000-8000-000000000002` / Mã: `M1983-002` - James Nguyễn - Phó Chủ tịch Thường trực)
+  - `board@connect.vn` (UUID: `00000000-0000-4000-8000-000000000001` - Trần Thị Lan - Phó Chủ tịch)
+  - `member@connect.vn` (UUID: `00000000-0000-4000-8000-000000000005` / Mã: `M1983-005` - Nguyễn Hoàng Nam - Ủy viên BCH)
+  - `guest@connect.vn` (UUID: `00000000-0000-4000-8000-000000000010`)
+  - Hiệp hội: `c1983000-0000-4000-8000-000000001983` (CLB Doanh Nhân 1983 - CEO 1983)
+- **Tình trạng Kiểm thử Tự động**:
+  - `scratch/test_110_deep_flows.js`: 110/110 Flows PASSED (100%).
+  - `scratch/test_deep_subfeatures_suite.js`: 28/28 Flows PASSED (100%).
+  - `scratch/generate_mega_enterprise_qa_10000_testcases.js`: 10,110/10,110 Test Cases Generated (100%).
+
+## 17. Business Connect SaaS Landing V6: Kim Tự Tháp Huyền Bí (Sa Mạc, Khắc Đá & Giải Mã Cổ Đại)
+- **Đường dẫn Route**: `/business-connect/v6` và chuyển đổi trực tiếp trên thanh điều hướng của `/business-connect`.
+- **Triết lý Thiết kế**:
+  - **3 Themes Đột Phá**:
+    - *Light Mode*: Sa mạc ban ngày, nền vàng cát ấm (`#FEF3C7`, `#F59E0B`), chữ nâu đá vôi (`#78350F`, `#451A03`), nút bấm và viền thẻ mạ Vàng kim lấp lánh (Gold foil sheen).
+    - *Dark Mode*: Đêm Ai Cập cổ đại kết hợp công nghệ ma thuật ngoài hành tinh, nền xanh tím sao đêm (`#070A14`, `#0F172A`), viền thẻ phát sáng Neon Cyan (`#06B6D4`, `#22D3EE`).
+    - *High Contrast*: Phiến đá điêu khắc cổ trắng tinh (`#FFFFFF`), chữ và icon viền đen sậm nứt nẻ gồ ghề (`#09090B`), loại bỏ hoàn toàn shadow/blur/hạt cát cho người khiếm thị.
+  - **Bố trí Background**:
+    - Kim Tự Tháp khổng lồ chiếm 2/3 khung hình bên phải (tỷ lệ vàng uy nghi).
+    - Góc trần hầm mộ nhìn từ dưới lên, ánh sáng chiếu qua các khe hở (layout vát chéo 1/2).
+    - Lớp Sandstorm/Blowing sand overlay (`opacity-20`) thổi ngang màn hình; lớp heatwave distortion méo nhẹ không gian phía sau Kim Tự Tháp.
+  - **Animation Chuyển Section Đột Phá**:
+    - Cửa đá hầm mộ khổng lồ đầy ký tự cổ đóng sập lại ở giữa (kèm hiệu ứng rung lắc shake và bụi rơi vãi), sau đó mở toang ra để lộ section mới.
+    - Decrypting Hieroglyphs: Text mô tả vấn đề/giải pháp được thay thế bằng ký tự tượng hình phát sáng nhịp nhàng. Khi hover, ký tự xoay nhanh và giải mã (decrypt) thành tiếng Việt hiện đại.
+    - Scarab Cursor: Con trỏ chuột hình bọ hung vàng/cyan, di chuột tạo vệt cát vàng rơi rụng theo trọng lực (Particle gravity).
+    - 3D Obelisk Hover: Thẻ giải pháp nhô cao 3D như trụ đá Obelisk vươn lên khỏi sa mạc.
+
+## 18. Business Connect Landing Creative Ecosystem (V1 - V7 Standard)
+- **Đồng bộ Kiến trúc Frontend / Creative Developer**:
+  - Tuân thủ cấu trúc cuộn nâng cao (`useScroll`, `useTransform`, `perspective: 1000px`, `clip-path: inset()`, `sticky top-0`). Không dùng cuộn CSS mặc định cho các màn hình trình diễn đặc biệt.
+  - **Quy tắc Visual thay thế Text**: Tuyệt đối không để rừng chữ. 5 Vấn đề và 9 Giải pháp sử dụng hình ảnh GIF/Icon động/Mô hình tương tác làm chủ đạo. Chi tiết ẩn và chỉ hiển thị qua Tooltip, Popover, hoặc modal giải mã tương tác.
+  - **Nội dung chuẩn xác 100%**:
+    - Header: `Giải pháp, Khách hàng, Câu chuyện, Bảng giá, Tài nguyên, Về chúng tôi | Đăng nhập, Đặt demo ->`
+    - Hero Tagline: `NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI` | Headline: `Hiểu đúng người. Mở ra cơ hội thật.` | Subtext: `Business Connect giúp quản lý mối quan hệ, kết nối đúng người, đúng thời điểm nhờ AI.` | Nút: `[Đặt demo ngay ->], [Xem video]` | KPI: `10,000+ Hội viên, 300+ Tổ chức, 50,000+ Kết nối, 20+ Quốc gia`.
+    - Vấn đề: 5 mục: (1) Thông tin phân tán, (2) Khó duy trì quan hệ, (3) Bỏ lỡ cơ hội, (4) Thiếu kết nối thực chất, (5) Khó đo lường hiệu quả.
+    - Giải pháp: 9 mục: Quản lý hội viên, CRM & Quan hệ, Cơ hội kinh doanh, Sự kiện, Cộng đồng & Nhóm, Tri thức & Nội dung, Báo cáo & Phân tích, AI Copilot, Tích hợp & Mở rộng.
+    - Hệ sinh thái: `Cùng nhau tạo ra giá trị lớn hơn` | `NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.`
+    - Khách hàng: `Những tổ chức tiên phong đã lựa chọn` (VCCI, AmCham, EuroCham, JCCI, KoCham, BNI) | Testimonials: `Kết nối đúng. Tăng trưởng thật.` (Nguyễn Thị Lan, Trần Minh Quân, Lê Hoàng Anh).
+    - Footer: `Sẵn sàng mở ra nhiều cơ hội hơn?` | `[Đặt demo ngay ->] [Liên hệ tư vấn]`.
+- **Tổng hợp 7 phiên bản chủ đề sáng tạo**:
+  1. **V1 - Tiên Hiệp & Tu Tiên**: Thăng thiên Parallax (Z-axis scale/Y trồi), linh khí viền thẻ, sương mù trôi, mực ngấm.
+  2. **V2 - Cổ Tích Nhiệm Màu**: Lật sách 3D (`perspective: 1000px`, `rotateY(-180deg)`), 5 lọ thuốc phép tương tác sủi bọt, đũa phép sao trời (Wand cursor stardust). 3 Themes: Rừng ngọc / Rừng đêm / Giấy da cổ Gothic.
+  3. **V3 - Hoạt Hình & Comic**: Rơi khung tranh nảy tưng bừng (Panel drop bounce `spring: 0.6`), halftone dots, speed action lines, bong bóng thoại (Speech bubble) popover, nút BAM/POW. 3 Themes: Đỏ Vàng Comic / Gotham Tím Neon / Manga Trắng Đen.
+  4. **V4 - Mưa & Kính Đọng Nước**: Wipe fog clip-path (`clip-path: inset()`), gạt nước lộ nội dung bên trong, lau sương mù kính (Fog wipe reveal), giọt nước lồi 3D méo icon bên dưới. 3 Themes: Cửa sổ mưa / Mưa đêm Cyber / Loang lổ khúc xạ gắt.
+  5. **V5 - Deep Tech & Cybernetics**: Glitch snap, interactive neural network canvas, terminal decoder (chạy chuỗi mã ngẫu nhiên rồi dịch thành tiếng Việt), chuột spotlight soi rọi bo mạch. 3 Themes: Kim loại trắng bạc / Đen Neon Cam / Terminal Xanh lá.
+  6. **V6 - Kim Tự Tháp**: Cửa đá hầm mộ đóng sập mở toang, bọ hung Scarab cursor thả bụi cát trọng lực, giải mã ký tự tượng hình Hieroglyphs xoay chuyển sang tiếng Việt. 3 Themes: Vàng cát / Đêm sao / Phiến đá điêu khắc.
+  7. **V7 - Bong Bóng Bay**: Bubble lift-off (trôi từ dưới lên trong khối cầu 50% border-radius rồi nổ scale 100vw bung ra section), bọt xà phòng trôi nổi toàn trang, click nổ confetti. 3 Themes: Bầu trời Pastel / Đêm sâu bọt khí Cyan / Vector Solid viền đen.
+
+## 19. Enterprise Corporate B2B Landing Pages Architecture (V1 - V8) & QA Suite Perfection
+
+### 19.1. Executive Corporate Standard (Strict B2B SaaS)
+- **Target Persona**: CEOs, Chairmen, Board of Directors, and Association Leaders.
+- **Design Philosophy**: Sang trọng, nghiêm túc, đẳng cấp tập đoàn (Executive Luxury). Tuyệt đối loại bỏ các chi tiết huyễn hoặc, hoạt hình, trò chơi điện tử hoặc thế giới ảo. Hiệu ứng nền làm nền tinh tế cho dữ liệu và nội dung.
+- **100% Exact Copy & Section Hierarchy**:
+  1. *Header*: Giải pháp | Khách hàng | Câu chuyện | Bảng giá | Tài nguyên | Về chúng tôi || Đăng nhập | [Đặt demo ->]
+  2. *Hero Section*:
+     - Tagline: `NỀN TẢNG KẾT NỐI KINH DOANH THẾ HỆ MỚI`
+     - Headline: `Hiểu đúng người. Mở ra cơ hội thật.`
+     - Subtext: `Business Connect giúp các hiệp hội, tổ chức và doanh nhân quản lý mối quan hệ, kết nối đúng người, đúng thời điểm và tạo ra nhiều cơ hội kinh doanh hơn với sức mạnh của AI.`
+     - CTAs: `[Đặt demo ngay ->]` | `[Xem video (2 phút)]`
+     - 4 Corporate Stats: `10,000+ Doanh nhân & Hội viên` | `300+ Hiệp hội & Tổ chức` | `50,000+ Kết nối được tạo` | `20+ Quốc gia & vùng lãnh thổ`
+  3. *Problem Section* (5 thẻ bento): (1) Thông tin phân tán, (2) Khó duy trì quan hệ, (3) Bỏ lỡ cơ hội, (4) Thiếu kết nối thực chất, (5) Khó đo lường hiệu quả.
+  4. *Solution Section* (9 thẻ tính năng doanh nghiệp): Quản lý hội viên (360), CRM & Quan hệ, Cơ hội kinh doanh, Sự kiện, Cộng đồng & Nhóm, Tri thức & Nội dung, Báo cáo & Phân tích, AI Copilot, Tích hợp & Mở rộng.
+  5. *Ecosystem Section*: `Cùng nhau tạo ra giá trị lớn hơn` | `NHIỀU KẾT NỐI HƠN. NHIỀU CƠ HỘI HƠN. NHIỀU GIÁ TRỊ HƠN.`
+  6. *Clients & Testimonials*:
+     - Header 1: `Những tổ chức tiên phong đã lựa chọn` (Logos: VCCI, AmCham, EuroCham, KoCham, Singapore Business Federation, AusCham).
+     - Header 2: `Kết nối đúng. Tăng trưởng thật.` (Reviews: Nguyễn Thị Lan - Chủ tịch Hiệp hội Du lịch VN; Trần Minh Quân - CEO Công ty Sản xuất Việt; Lê Hoàng Anh - Doanh nhân, Hội viên VIP).
+  7. *Footer*: `Sẵn sàng mở ra nhiều cơ hội hơn?` | `[Đặt demo ngay ->]` | `[Liên hệ tư vấn]`.
+
+### 19.2. Detail of Versions & Architectural Fixes
+- **V1 (Executive Zen - `BusinessConnectLanding.tsx`)**:
+  - *Constraint*: STRICT RULE: "cấm động vào và sửa gì ở V1 chỉ sửa hiệu ứng chuyển theme sáng tối tương phản cao ở V1".
+  - *Implementation*: Giữ nguyên 100% layout, nội dung, animations gốc; chỉ bổ sung hiệu ứng cửa đá trượt (`TombStoneDoorTransition`) khi người dùng chuyển theme giữa Light / Dark / High Contrast giống cơ chế đóng mở của V6.
+- **V2 (Heritage & Trust - `BusinessConnectLandingV2.tsx`)**:
+  - *Bug Fix*: Trước đây container bao toàn trang áp dụng `useTransform(scrollYProgress, [0, 0.4, 0.7, 1], [0, -15, -60, -120])` trên thuộc tính `rotateY` với `perspective: 1000px`, khiến khi cuộn chuột cả trang bị lật ngược vào không gian 3D tối tăm và mất giao diện.
+  - *Solution*: Đã loại bỏ hoàn toàn thuộc tính xoay 3D trên container; thay thế bằng `LegacyRevealSection` chuyển cảnh cuộn sang trọng kiểu lật mở hồ sơ (Slide up & Reveal) với gia tốc mượt, kết hợp hạt sáng vàng kim lơ lửng chậm (Gold Particles) và chòm sao kết nối (Constellation Network) ở phần Hệ sinh thái.
+- **V3 (Premium Editorial - `BusinessConnectLandingV3.tsx`)**:
+  - Lưới kỹ thuật Stripe/Vercel (Subtle technical grid), hiệu ứng cuộn dứt khoát Snap & Slide (easeOut), thẻ giải pháp có hiệu ứng Hover đẩy khối vật lý (Offset shadow) đậm chất báo chí tài chính.
+- **V4 (Executive Glass Dashboard - `BusinessConnectLandingV4.tsx`)**:
+  - Kính mờ cao cấp đa tầng (Frosted glassmorphism), video/bokeh mờ cực độ cảnh đô thị trung tâm tài chính ban đêm, hiệu ứng cuộn xếp chồng thẻ (Stacking Cards Effect).
+- **V6 (Corporate Monument - `BusinessConnectLandingV6.tsx`)**:
+  - Tỷ lệ Vàng kiến trúc, phiến đá cẩm thạch nguyên khối (Marble White/Sand) và Đen Obsidian ánh Bronze. Khối hình học đa diện 3D xoay chậm, hiệu ứng cửa đá đóng mở quyền lực khi chuyển theme sáng/tối.
+- **V7 (Fluid Analytics - `BusinessConnectLandingV7.tsx`)**:
+  - Trắng sứ & Xanh đại dương thẫm, Aura mesh gradient chuyển động mềm mại như chất lỏng, đường phân cách SVG Morphing, thẻ bo tròn lớn (`rounded-3xl`), điểm kết nối hội tụ như giọt thủy ngân.
+- **V8 (Executive Titanium Suite - `BusinessConnectLandingV8.tsx`)**:
+  - Đỉnh cao flagship B2B kết hợp kim loại Titanium, sợi carbon chìm và đồng bộ trực tiếp với CRM Admin, ViOne App và Hiệp Hội App.
+
+### 19.3. Elimination of Duplication in QA Test Cases Suite (ISO/IEC/IEEE 29119-3)
+- **Problem Diagnosed**: Trong ảnh chụp màn hình người dùng gửi (`media_1789278618814.png`), sheet `TC_10_EVENTS_SEATING_VOTE` có các dòng từ 8 đến 13 lặp lại y hệt nội dung dòng 1 đến 7 do vòng lặp modulo `(i - 1) % themes.length` khi danh mục mẫu chỉ có 7 phần tử.
+- **Complete Resolution**:
+  - Tái thiết kế toàn bộ script sinh test case `scratch/generate_mega_enterprise_qa_10000_testcases.js`.
+  - Mở rộng thư viện hoạt động lên 30+ tác vụ chuyên biệt cho từng sheet (Bao gồm đầy đủ các thao tác: VIEW danh sách, VIEW chi tiết, Search, Filter, Sort, Pagination, Export Excel, Import CSV, Kiểm tra quyền hạn RBAC, Concurrency, WebSocket realtime, Kiosk check-in offline, và đặc biệt là Kiểm tra Phân định Nguồn Biểu quyết `source_app`).
+  - Kết hợp với 20+ bộ test data biến thiên, người dùng đại diện, kích thước tệp và điều kiện biên, tạo ra **10,110 Test Cases hoàn toàn độc nhất 100%**, không còn bất kỳ dòng nào bị trùng lặp.
+  - Đảm bảo định dạng chuẩn mực như ảnh: Row 1 Banner tiêu đề phân hệ, Row 2 Tiêu chuẩn ISO/IEC/IEEE 29119-3, Row 4 Header 13 cột với AutoFilter, Freeze Panes ở row 4, Dropdown Data Validation cho Severity, Priority, Status.
+
+### 19.4. Enterprise WBS Work Packages & Effort Estimation (PMBOK 7 / ISO 21500)
+- **Tập tin chuẩn**: `document/VIONE_WBS_FEATURE_MATRIX_AND_ESTIMATION_CHI_TIET.xlsx` (134 KB, 1,020 Work Packages).
+- **Phân kỳ Vòng đời 5 Giai đoạn**:
+  1. *Architecture & Schema*: Thiết kế ERD, migrate Prisma, cấu trúc Redis cache.
+  2. *Frontend Engineering*: Giao diện web/mobile, responsive, theme switcher, Framer Motion.
+  3. *Backend & Services*: NestJS controller, service, transactional query, business logic.
+  4. *Integration & Security*: RBAC, JWT, rate limit, logging, webhook ngân hàng, 2FA.
+  5. *QA & UAT*: Automation test, load test, kiểm thử giao diện và ký nghiệm thu.
+- **Công thức Động Excel**: Tích hợp hàm `=SUM(...)`, `=AVERAGE(...)`, `=COUNTA(...)` trên Sheet `Tong_Quan_Dashboard` tự động tổng hợp số ngày công FE, BE, QA và chi phí dự toán từ 10 sheets chi tiết.
+
+### 19.5. Multi-App Voting Source Attribution Architecture
+- **Mục tiêu**: Đồng bộ biểu quyết từ CRM tới ViOne App và Hiệp Hội App, nhận diện người dùng bình chọn từ ứng dụng nào, và tự động thông báo kết quả khi kết thúc.
+- **Kỹ thuật**:
+  - Thêm cột `source_app` (`vione_app`, `association_app`, `crm`) vào bảng `public.poll_votes`.
+  - Tự động phát thông báo tới `business_notifications` và `member_notifications` dựa trên `targetAudience`.
+  - Endpoint `POST /api/voting/polls/:id/close` xác định Winner 🏆 và phát thông báo kết thúc kèm breakdown tỷ lệ tham gia theo kênh về cả 3 ứng dụng.
 
 
-[Khi cần đổi Icon/Splash/Plugin hoặc phát hành bản Store mới]
-         │
-         ├──> [Android] cd apps/mobile/android ; .\gradlew assembleDebug
-         │              => Lấy APK tại: apps/mobile/android/app/build/outputs/apk/debug/
-         │
-         └──> [iOS]     cd apps/mobile ; npx eas-cli build --profile production --platform ios --auto-submit --non-interactive
-                        => Tải IPA tại: https://expo.dev/accounts/unicom-vibe-coding-team/projects/vione/builds
-                        => Kiểm tra TestFlight tại: https://appstoreconnect.apple.com/apps/6810608093/testflight/ios
-```
 
----
 
-## 19. Khắc Phục Lỗi Crash Backend NestJS (:5001 ERR_CONNECTION_REFUSED)
-
-### 19.1. Triệu chứng & Log Lỗi
-- **Triệu chứng**: Giao diện đăng nhập trên Server Dev (`http://14.225.217.232:5000`) và iOS báo *"Không có kết nối mạng ổn định"*. F12 Console xuất hiện lỗi:
-  - `net::ERR_CONNECTION_REFUSED :5001/api/auth/login`
-  - `WebSocket connection to 'ws://14.225.217.232:5001/socket.io/...' failed`
-- **Log gốc từ container backend**:
-  ```text
-  Error: Cannot find module '/app/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node'
-  Require stack:
-  - /app/node_modules/bcrypt/bcrypt.js
-  - /app/apps/vione_app_be/dist/src/auth/auth.service.js
-  - /app/apps/vione_app_be/dist/src/main.js
-  ```
-
-### 19.2. Nguyên nhân
-- Khi thêm tệp `.npmrc` (`ignore-scripts=true`) cho quá trình build iOS trên Expo, Docker backend vô tình sao chép tệp này vào container.
-- Lệnh `npm ci` trong `Dockerfile.backend` bị áp dụng cờ `ignore-scripts=true`, khiến quá trình biên dịch module C++ của thư viện `bcrypt` bị bỏ qua. Kết quả là container backend sập ngay khi vừa nạp thư viện.
-
-### 19.3. Giải pháp đã xử lý triệt để
-1. **Thêm `.npmrc` vào [.dockerignore](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/.dockerignore)**: Không cho Docker sao chép file cấu hình npmrc từ máy chủ phát triển vào container.
-2. **Cập nhật [Dockerfile.backend](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/Dockerfile.backend)**:
-   ```dockerfile
-   RUN npm ci --ignore-scripts=false && npm rebuild bcrypt
-   ```
-3. **Cập nhật [apps/vione_app_be/src/main.ts](file:///d:/download/VICONNECT/VIONE_PROJECT/vione_app/apps/vione_app_be/src/main.ts)**:
-   - `await app.listen(port, '0.0.0.0');` (Đảm bảo bind đúng `0.0.0.0` thay vì loopback `127.0.0.1` trong container).
-   - `origin: true` trong CORS để tương thích với `credentials: true`.
-4. **Quy trình deploy cập nhật lại**:
-   Chạy `.\fast-deploy.ps1` (lưu ý không dùng `-FrontendOnly` khi cần đẩy bản sửa lỗi backend).
 
 

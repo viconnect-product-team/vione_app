@@ -23,6 +23,7 @@ import {
   updateVoteFn,
   deleteVoteFn,
   castVoteFn,
+  closeVoteFn,
   type Vote,
   type VoteOption,
 } from "@/lib/voting.functions";
@@ -148,20 +149,36 @@ function VotingPage() {
   const [remotePref, setRemotePref] = useState<OpenMode | null>(null);
   const deleteVote = useServerFn(deleteVoteFn);
   const castVote = useServerFn(castVoteFn);
+  const closeVote = useServerFn(closeVoteFn);
   const loadPref = useServerFn(getVotingOpenPrefFn);
   const savePref = useServerFn(setVotingOpenPrefFn);
   const [votingOptionId, setVotingOptionId] = useState<string | null>(null);
+  const [closingId, setClosingId] = useState<string | null>(null);
 
   async function handleVote(pollId: string, optionId: string) {
     setVotingOptionId(optionId);
     try {
-      await castVote({ data: { pollId, optionId } });
+      await castVote({ data: { pollId, optionId, sourceApp: "crm" } });
       toast.success("Đã ghi nhận biểu quyết thành công!");
       await router.invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Không thể gửi biểu quyết");
     } finally {
       setVotingOptionId(null);
+    }
+  }
+
+  async function handleClosePoll(id: string) {
+    if (!confirm("Bạn có chắc chắn muốn kết thúc cuộc biểu quyết này? Kết quả chung cuộc sẽ được chốt và tự động phát thông báo kết quả tới cả ViOne App và Hiệp hội App.")) return;
+    setClosingId(id);
+    try {
+      await closeVote({ data: { id } });
+      toast.success("Đã kết thúc biểu quyết & phát thông báo kết quả tới ViOne App và Hiệp hội App!");
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể kết thúc biểu quyết");
+    } finally {
+      setClosingId(null);
     }
   }
 
@@ -383,20 +400,31 @@ function VotingPage() {
         {paged.map((v) => {
           const pct = v.eligible > 0 ? Math.round((v.voted / v.eligible) * 100) : 0;
           const status = deriveStatus(v.startsAt, v.endsAt);
+          const isClosed = v.status === "closed" || status === "closed";
           return (
-            <Card key={v.id} className="p-5">
+            <Card key={v.id} className={`p-5 transition-all ${isClosed ? "border-emerald-500/30 bg-card/80" : ""}`}>
               <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="mb-1 flex items-center gap-2">
-                    <Pill color={STATUS_COLOR[status]}>{t(STATUS_KEY[status])}</Pill>
+                    <Pill color={isClosed ? "neutral" : STATUS_COLOR[status]}>
+                      {isClosed ? "Đã kết thúc" : t(STATUS_KEY[status])}
+                    </Pill>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[v.type])}
                     </span>
-                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400">
-                      🎯 Dành cho: Người ngoài hiệp hội
+                    <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                      🌐 Đẩy thông báo: ViOne App & Hiệp hội App
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground">{v.title}</h3>
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <span>{v.title}</span>
+                    {isClosed && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <Trophy className="size-3" />
+                        <span>Kết quả chung cuộc</span>
+                      </span>
+                    )}
+                  </h3>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {fmt.date(v.startsAt)} → {fmt.date(v.endsAt)}
                   </div>
@@ -412,35 +440,60 @@ function VotingPage() {
                             key={opt.id}
                             className={`p-2.5 rounded-xl border transition-all ${
                               opt.isLeading
-                                ? "bg-amber-500/10 border-amber-500/40 shadow-xs"
+                                ? isClosed
+                                  ? "bg-emerald-500/10 border-emerald-500/40 shadow-xs"
+                                  : "bg-amber-500/10 border-amber-500/40 shadow-xs"
                                 : "bg-secondary/40 border-border"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2 mb-1.5">
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleVote(v.id, opt.id)}
-                                  disabled={votingOptionId === opt.id}
-                                  className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
-                                    v.myVote === opt.id
-                                      ? "border-amber-500 bg-amber-500 text-white"
-                                      : "border-muted-foreground hover:border-primary"
-                                  }`}
-                                  title="Bấm để bình chọn cho phương án này"
-                                >
-                                  {v.myVote === opt.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                </button>
+                                {!isClosed ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVote(v.id, opt.id)}
+                                    disabled={votingOptionId === opt.id}
+                                    className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                                      v.myVote === opt.id
+                                        ? "border-amber-500 bg-amber-500 text-white"
+                                        : "border-muted-foreground hover:border-primary"
+                                    }`}
+                                    title="Bấm để bình chọn cho phương án này"
+                                  >
+                                    {v.myVote === opt.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                  </button>
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full flex items-center justify-center">
+                                    {opt.isLeading ? "🏆" : "•"}
+                                  </div>
+                                )}
                                 <span className="text-xs font-semibold text-foreground">{opt.title}</span>
                                 {opt.isLeading && (
-                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9.5px] font-bold">
-                                    👑 Dẫn đầu
+                                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[9.5px] font-bold border ${
+                                    isClosed
+                                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                                      : "bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                                  }`}>
+                                    {isClosed ? "🏆 Phương án được chọn" : "👑 Dẫn đầu"}
                                   </span>
                                 )}
                               </div>
                               <div className="flex items-center gap-2 text-xs">
                                 <span className="text-muted-foreground text-[11px]">({opt.votesCount} phiếu)</span>
-                                <span className={`font-black text-xs ${opt.isLeading ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
+                                {(opt.vioneVotes || opt.associationVotes || opt.crmVotes) ? (
+                                  <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] text-muted-foreground ml-1">
+                                    <span className="text-sky-600 dark:text-sky-400 font-medium">📱{opt.vioneVotes || 0}</span> •
+                                    <span className="text-amber-600 dark:text-amber-400 font-medium">🏛️{opt.associationVotes || 0}</span> •
+                                    <span className="text-slate-500 font-medium">💻{opt.crmVotes || 0}</span>
+                                  </span>
+                                ) : null}
+                                <span className={`font-black text-xs ${
+                                  opt.isLeading
+                                    ? isClosed
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-amber-600 dark:text-amber-400"
+                                    : "text-foreground"
+                                }`}>
                                   {opt.percentage.toFixed(1)}%
                                 </span>
                               </div>
@@ -451,7 +504,9 @@ function VotingPage() {
                                 style={{
                                   width: `${Math.max(opt.percentage, 1)}%`,
                                   background: opt.isLeading
-                                    ? "linear-gradient(90deg, #F59E0B, #D97706)"
+                                    ? isClosed
+                                      ? "linear-gradient(90deg, #10B981, #059669)"
+                                      : "linear-gradient(90deg, #F59E0B, #D97706)"
                                     : "var(--gradient-primary)",
                                 }}
                               />
@@ -504,6 +559,40 @@ function VotingPage() {
                   className="h-full rounded-full"
                   style={{ width: `${pct}%`, background: "var(--gradient-primary)" }}
                 />
+              </div>
+
+              {/* Thống kê nguồn bỏ phiếu và nút kết thúc biểu quyết */}
+              <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-foreground/80">Kênh bỏ phiếu:</span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-700 dark:text-sky-400 font-medium border border-sky-500/20">
+                    📱 ViOne App: <strong>{v.sourceStats?.vioneApp ?? 0}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20">
+                    🏛️ Hiệp hội App: <strong>{v.sourceStats?.associationApp ?? 0}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-400 font-medium border border-slate-500/20">
+                    💻 CRM: <strong>{v.sourceStats?.crm ?? 0}</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {!isClosed ? (
+                    <button
+                      type="button"
+                      onClick={() => handleClosePoll(v.id)}
+                      disabled={closingId === v.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border border-red-500/30 text-xs font-bold cursor-pointer transition-all shadow-2xs"
+                    >
+                      <CheckCircle2 className="size-3.5" />
+                      <span>{closingId === v.id ? "Đang xử lý..." : "Kết thúc biểu quyết"}</span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] border border-emerald-500/30">
+                      ✓ Đã kết thúc & Công bố kết quả
+                    </span>
+                  )}
+                </div>
               </div>
             </Card>
           );
@@ -561,7 +650,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const updateVote = useServerFn(updateVoteFn);
   const [title, setTitle] = useState(vote?.title ?? "");
   const [type, setType] = useState<Vote["type"]>(vote?.type ?? "policy");
-  const [targetAudience, setTargetAudience] = useState("non_members");
+  const [targetAudience, setTargetAudience] = useState("all");
   const [startsAt, setStartsAt] = useState(vote?.startsAt ?? "");
   const [endsAt, setEndsAt] = useState(vote?.endsAt ?? "");
   const [options, setOptions] = useState<string[]>(
@@ -581,7 +670,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
       if (vote) {
         await updateVote({ data: { id: vote.id, title, type, startsAt, endsAt, options } });
       } else {
-        await createVote({ data: { title, type, startsAt, endsAt, options } });
+        await createVote({ data: { title, type, targetAudience, startsAt, endsAt, options } });
       }
       await router.invalidate();
       onClose();
@@ -650,14 +739,12 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
               onChange={(e) => setTargetAudience(e.target.value)}
               className={inputCls}
             >
-              <option value="non_members">
-                🎯 Chỉ người không tham gia hiệp hội (Khách mời sự kiện / Non-members)
-              </option>
-              <option value="all">🌐 Toàn thể cộng đồng & Hội viên</option>
+              <option value="all">🌐 Toàn thể cộng đồng & Hội viên (ViOne App & Hiệp hội App)</option>
               <option value="members">⭐ Chỉ hội viên chính thức hiệp hội</option>
+              <option value="non_members">🎯 Người ngoài hiệp hội (Khách mời sự kiện)</option>
             </select>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              * Theo quy định biểu quyết sự kiện, chỉ gửi thông báo biểu quyết cho người chưa tham gia hiệp hội để khảo sát khách quan.
+              * Hệ thống sẽ tự động phát thông báo thời gian thực tới ViOne App và Hiệp hội App cho các đối tượng liên quan đã chọn.
             </p>
           </div>
 

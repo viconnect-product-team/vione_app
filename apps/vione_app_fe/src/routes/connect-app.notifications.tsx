@@ -4,7 +4,7 @@
 
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Bell, Check, CheckCheck, Loader2, Undo2, Trash2, MessageSquare, X, CheckCircle2, Sparkles, AlertTriangle, ArrowRight } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, Undo2, Trash2, MessageSquare, X, CheckCircle2, Sparkles, AlertTriangle, ArrowRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { hasTKey, useLang, useT } from "@/lib/i18n";
@@ -125,9 +125,9 @@ function ConnectAppNotificationsPage() {
       setVotedPolls((prev) => ({ ...prev, [pollId]: optionId }));
       await fetchNestApi(`/voting/polls/${pollId}/vote`, {
         method: "POST",
-        body: JSON.stringify({ optionId }),
+        body: JSON.stringify({ optionId, sourceApp: "vione_app" }),
       });
-      toast.success("Đã ghi nhận biểu quyết của bạn!");
+      toast.success("Đã ghi nhận biểu quyết của bạn qua ViOne App!");
     } catch (e: any) {
       toast.error(e?.message || "Không thể gửi biểu quyết");
     }
@@ -314,6 +314,11 @@ function ConnectAppNotificationsPage() {
                 n.sourceDomain === "voting" ||
                 n.eventKind === "poll_created" ||
                 Boolean(n.safeDisplayData?.pollId);
+              const isPollClosed =
+                n.eventKind === "poll_closed" ||
+                n.notificationKind === "poll_result" ||
+                (n.sourceDomain === "voting" && n.safeDisplayData?.status === "closed") ||
+                Boolean(n.safeDisplayData?.winner);
               const isInvoiceReminder =
                 n.notificationKind === "overdue_payment_reminder" ||
                 n.sourceDomain === "finance" ||
@@ -410,11 +415,16 @@ function ConnectAppNotificationsPage() {
                       </p>
                     ) : null}
 
-                    {/* Thẻ biểu quyết tương tác trực tiếp */}
-                    {isPollNotification && n.safeDisplayData?.options && (
-                      <div className="mt-3 p-3 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-2">
-                        <div className="text-[11.5px] font-bold text-amber-800 dark:text-amber-300">
-                          Bình chọn ý kiến của bạn:
+                    {/* Thẻ biểu quyết tương tác trực tiếp (Đang mở) */}
+                    {isPollNotification && !isPollClosed && n.safeDisplayData?.options && (
+                      <div className="mt-3 p-3.5 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11.5px] font-bold text-amber-800 dark:text-amber-300">
+                            Bình chọn ý kiến của bạn:
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/20">
+                            📱 Bỏ phiếu qua ViOne App
+                          </span>
                         </div>
                         <div className="space-y-1.5">
                           {n.safeDisplayData.options.map((opt: any) => {
@@ -447,7 +457,69 @@ function ConnectAppNotificationsPage() {
                         {votedPolls[n.safeDisplayData.pollId || n.sourceRecordId] && (
                           <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
                             <CheckCircle2 className="size-3.5" />
-                            <span>Đã ghi nhận biểu quyết thành công.</span>
+                            <span>Đã ghi nhận biểu quyết thành công qua ViOne App.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Thẻ kết quả biểu quyết đã kết thúc */}
+                    {isPollClosed && n.safeDisplayData?.options && (
+                      <div className="mt-3 p-3.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[12px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                            <Trophy className="size-4 text-emerald-600 dark:text-emerald-400" />
+                            <span>Kết quả biểu quyết (Đã kết thúc)</span>
+                          </div>
+                          <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">
+                            {n.safeDisplayData.totalVotes || 0} lượt bầu
+                          </span>
+                        </div>
+
+                        {n.safeDisplayData.winner && (
+                          <div className="p-2.5 rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                              🏆 Phương án chiến thắng: {n.safeDisplayData.winner.title}
+                            </span>
+                            <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                              {n.safeDisplayData.winner.percentage}%
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="space-y-2 pt-1">
+                          {n.safeDisplayData.options.map((opt: any) => {
+                            const isWinner = n.safeDisplayData.winner?.id === opt.id || opt.isLeading;
+                            return (
+                              <div key={opt.id} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={`font-medium ${isWinner ? "font-bold text-emerald-800 dark:text-emerald-300" : "text-slate-700 dark:text-slate-300"}`}>
+                                    {opt.title} {isWinner && "✓"}
+                                  </span>
+                                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                                    {opt.votesCount || opt.votes_count || 0} phiếu ({opt.percentage || 0}%)
+                                  </span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${isWinner ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-500"}`}
+                                    style={{ width: `${Math.max(Number(opt.percentage || 0), 2)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {n.safeDisplayData.sourceStats && (
+                          <div className="pt-2 border-t border-emerald-500/20 flex flex-wrap items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300">
+                            <span className="font-semibold">Nguồn tham gia:</span>
+                            <span className="px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 font-medium">
+                              📱 ViOne: {n.safeDisplayData.sourceStats.vioneApp || 0}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-medium">
+                              🏛️ Hiệp hội: {n.safeDisplayData.sourceStats.associationApp || 0}
+                            </span>
                           </div>
                         )}
                       </div>

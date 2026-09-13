@@ -808,88 +808,96 @@ function DocsPage() {
                 </>
               )
             ) : (
-              <TableShell
-                columns={[
-                  { label: t("doc.col.name"), key: "name" },
-                  { label: t("doc.col.cat"), key: "cat" },
-                  { label: t("doc.col.type"), key: "type" },
-                  t("doc.col.size"),
-                  { label: t("doc.col.uploader"), key: "uploader" },
-                  { label: t("doc.col.date"), key: "date" },
-                  t("common.actions"),
-                ]}
-                sort={{ sortKey: tc.sortKey, sortDir: tc.sortDir, onSort: tc.toggleSort }}
-                footer={
-                  <Pagination
-                    page={tc.page}
-                    pageCount={tc.pageCount}
-                    pageSize={tc.pageSize}
-                    total={tc.total}
-                    from={tc.from}
-                    to={tc.to}
-                    onPage={tc.setPage}
-                    onPageSize={tc.setPageSize}
-                  />
-                }
-              >
-                {tc.pageRows.map((d) => (
-                  <tr
-                    key={d.id}
-                    className="border-b border-border last:border-0 hover:bg-secondary/40"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <TypeGlyph d={d} size="sm" />
-                        <Link
-                          to="/documents/$docId"
-                          params={{ docId: d.id }}
-                          className="font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+                <div className="relative overflow-x-auto">
+                  <table className="w-full border-separate border-spacing-0 text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+                        <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">{t("doc.col.name")}</th>
+                        <th className="px-4 py-3 border-b border-border">{t("doc.col.cat")}</th>
+                        <th className="px-4 py-3 border-b border-border">{t("doc.col.type")}</th>
+                        <th className="px-4 py-3 border-b border-border">{t("doc.col.size")}</th>
+                        <th className="px-4 py-3 border-b border-border">{t("doc.col.uploader")}</th>
+                        <th className="px-4 py-3 border-b border-border">{t("doc.col.date")}</th>
+                        <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">{t("common.actions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {tc.pageRows.map((d, idx) => (
+                        <tr
+                          key={d.id}
+                          className="group border-b border-border/50 transition hover:bg-secondary/40"
                         >
-                          {d.name}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-foreground">{d.category}</td>
-                    <td className="px-4 py-3 text-[11px] font-semibold uppercase text-muted-foreground">
-                      {d.type}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{d.size}</td>
-                    <td className="px-4 py-3 text-foreground">{d.uploadedBy}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{fmt.date(d.uploadedAt)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <PinButton d={d} />
-                        <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                          <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                          {t("common.download")}
-                        </button>
-                        {canWrite && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEditing(d);
-                                setOpen(true);
-                              }}
-                              aria-label={t("doc.edit")}
-                              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                            <button
-                              onClick={() => onDelete(d)}
-                              disabled={deletingId === d.id}
-                              aria-label={t("doc.delete")}
-                              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </TableShell>
+                          <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                            {(tc.page - 1) * tc.pageSize + idx + 1}
+                          </td>
+                          <td className="sticky left-[56px] z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                            <div className="flex items-center gap-3">
+                              <TypeGlyph d={d} size="sm" />
+                              <Link
+                                to="/documents/$docId"
+                                params={{ docId: d.id }}
+                                className="font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                {d.name}
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-foreground border-b border-border/50">{d.category}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold uppercase text-muted-foreground border-b border-border/50">
+                            {d.type}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{d.size}</td>
+                          <td className="px-4 py-3 text-foreground border-b border-border/50">{d.uploadedBy}</td>
+                          <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{fmt.date(d.uploadedAt)}</td>
+                          <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                            <div className="flex items-center justify-end gap-1">
+                              <PinButton d={d} />
+                              <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                                {t("common.download")}
+                              </button>
+                              {canWrite && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setEditing(d);
+                                      setOpen(true);
+                                    }}
+                                    aria-label={t("doc.edit")}
+                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </button>
+                                  <button
+                                    onClick={() => onDelete(d)}
+                                    disabled={deletingId === d.id}
+                                    aria-label={t("doc.delete")}
+                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  page={tc.page}
+                  pageCount={tc.pageCount}
+                  pageSize={tc.pageSize}
+                  total={tc.total}
+                  from={tc.from}
+                  to={tc.to}
+                  onPage={tc.setPage}
+                  onPageSize={tc.setPageSize}
+                />
+              </div>
             )}
           </section>
         </div>

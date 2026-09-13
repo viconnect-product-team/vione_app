@@ -696,6 +696,41 @@ export class EventsService {
       UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventId}
     `.catch(() => null);
 
+    try {
+      const notifTitle = 'Đăng ký sự kiện thành công';
+      const notifBody = `Bạn đã đăng ký thành công vé tham dự sự kiện "${event.title || 'Sự kiện'}". Mã vé của bạn: ${regId}.`;
+      const notifId = require('crypto').randomUUID();
+      const dedupeKey = `event-reg-${regId}-${Date.now()}`;
+      const safeData = JSON.stringify({
+        title: notifTitle,
+        body: notifBody,
+        eventId,
+        eventTitle: event.title,
+        registrationId: regId,
+        targetRoute: `/events/${eventId}`,
+      });
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          $1::uuid, $2::uuid, 'event', $3, 'event_registered', 'ticket_confirmed',
+          $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
+        )
+      `, notifId, userId, eventId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, false, false, 'event', $4, NOW()
+        )
+      `, memberRows[0]?.id || userId, notifTitle, notifBody, eventId).catch(() => {});
+    } catch (e: any) {
+      console.warn('Failed to send event registration notification:', e?.message);
+    }
+
     return { ok: true, registrationId: regId };
   }
 
@@ -907,6 +942,46 @@ export class EventsService {
           SET checked_in_at = now(), updated_at = now()
           WHERE id = ${attendeeId}
         `.catch(() => null);
+
+        // Dispatch 2-way business notification
+        try {
+          const userRows = await this.prisma.$queryRaw<any[]>`
+            SELECT id FROM public.vione_users WHERE email = ${cur.email} LIMIT 1
+          `.catch(() => []);
+          const targetUserId = userRows[0]?.id;
+          if (targetUserId) {
+            const notifTitle = 'Check-in sự kiện thành công';
+            const notifBody = `Chào mừng ${cur.name} đã đến tham dự sự kiện! Vị trí chỗ ngồi của bạn: ${cur.seat_assignment || 'Khu vực Tiêu chuẩn'}.`;
+            const notifId = require('crypto').randomUUID();
+            const dedupeKey = `checkin-${attendeeId}-${Date.now()}`;
+            const safeData = JSON.stringify({
+              title: notifTitle,
+              body: notifBody,
+              seatAssignment: cur.seat_assignment,
+              ticketType: cur.ticket_type,
+            });
+
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.business_notifications (
+                id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+                title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+              ) VALUES (
+                $1::uuid, $2::uuid, 'event', $3, 'event_checkin', 'checkin_success',
+                $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+              )
+            `, notifId, targetUserId, attendeeId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.member_notifications (
+                id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+              ) VALUES (
+                gen_random_uuid(), $1, $2, $3, false, false, 'checkin', $4, NOW()
+              )
+            `, targetUserId, notifTitle, notifBody, attendeeId).catch(() => {});
+          }
+        } catch (e: any) {
+          console.warn('Failed to send checkin notification:', e?.message);
+        }
       }
       await this.prisma.$executeRaw`
         INSERT INTO public.checkin_logs (id, attendee_id, result, created_at)

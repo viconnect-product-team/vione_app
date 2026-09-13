@@ -114,7 +114,19 @@ export const acceptMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => acceptInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
-    return sdk.accept(data.meetingId, data.proposalVersion, { mutationKey: data.mutationKey });
+    const res = await sdk.accept(data.meetingId, data.proposalVersion, { mutationKey: data.mutationKey });
+    try {
+      const { logActivity } = await import("./crud.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const db = ((context as any).supabase as any) || supabaseAdmin;
+      await logActivity(db, {
+        action: "Chấp nhận cuộc họp",
+        target: data.meetingId,
+        category: "meeting",
+        user: (context as any).user?.email || "admin@connect.vn",
+      });
+    } catch {}
+    return res;
   });
 
 const declineInput = z.object({
@@ -129,10 +141,22 @@ export const declineMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => declineInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
-    return sdk.decline(data.meetingId, data.proposalVersion, {
+    const res = await sdk.decline(data.meetingId, data.proposalVersion, {
       reason: data.reason,
       mutationKey: data.mutationKey,
     });
+    try {
+      const { logActivity } = await import("./crud.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const db = ((context as any).supabase as any) || supabaseAdmin;
+      await logActivity(db, {
+        action: "Từ chối cuộc họp",
+        target: data.meetingId,
+        category: "meeting",
+        user: (context as any).user?.email || "admin@connect.vn",
+      });
+    } catch {}
+    return res;
   });
 
 const tentativeInput = z.object({ meetingId: uuid, proposalVersion: version, mutationKey });
@@ -159,11 +183,23 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => cancelInput.parse(d))
   .handler(async ({ data, context }): Promise<BusinessMeetingMutationResult> => {
     const sdk = await sdkFor(context as unknown as Ctx);
-    return sdk.cancel(data.meetingId, {
+    const res = await sdk.cancel(data.meetingId, {
       reason: data.reason,
       expectedVersion: data.expectedVersion,
       mutationKey: data.mutationKey,
     });
+    try {
+      const { logActivity } = await import("./crud.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const db = ((context as any).supabase as any) || supabaseAdmin;
+      await logActivity(db, {
+        action: "Hủy cuộc họp",
+        target: data.meetingId,
+        category: "meeting",
+        user: (context as any).user?.email || "admin@connect.vn",
+      });
+    } catch {}
+    return res;
   });
 
 const finalizeInput = z.object({

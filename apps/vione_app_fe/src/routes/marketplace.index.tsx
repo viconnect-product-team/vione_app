@@ -34,6 +34,8 @@ import {
 } from "@/components/dashboard/StateKit";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import { useServerData } from "@/hooks/use-server-data";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   CATEGORIES,
   getSeller,
@@ -863,6 +865,24 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
     return sortProducts(list, sort);
   }, [tab, cat, query, all, mine, sort, pinnedOnly, pinned]);
 
+  const accessors = useMemo(
+    () => ({
+      title: (p: Product) => p.title,
+      category: (p: Product) => p.category,
+      price: (p: Product) => p.price,
+      views: (p: Product) => p.views,
+      status: (p: Product) => p.status,
+      createdAt: (p: Product) => p.createdAt,
+    }),
+    [],
+  );
+
+  const tc = useTableControls(visible, accessors, {
+    initialPageSize: 12,
+    initialSortKey: "createdAt",
+    initialSortDir: "desc",
+  });
+
   // Discovery sections show only on the browse tab with no active filters.
   const browsePool = useMemo(() => all.filter((p) => p.sellerId !== CURRENT_USER_ID), [all]);
   const showDiscovery = tab === "browse" && !hasFilters;
@@ -1163,31 +1183,152 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
               />
             )
           ) : view === "list" ? (
-            <div className="space-y-3">
-              {visible.map((p) => (
-                <ProductRow
-                  key={p.id}
-                  product={p}
-                  pinned={pinned.has(p.id)}
-                  onTogglePin={() => togglePin(p.id)}
-                  {...bindCardActions(p)}
-                />
-              ))}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+              <div className="overflow-x-auto relative">
+                <table className="w-full text-sm border-separate border-spacing-0">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                        STT
+                      </th>
+                      <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                        Mã
+                      </th>
+                      <th className="px-4 py-3 border-b border-border">Sản phẩm / Dịch vụ</th>
+                      <th className="px-4 py-3 border-b border-border">Danh mục</th>
+                      <th className="px-4 py-3 border-b border-border text-right">Giá niêm yết</th>
+                      <th className="px-4 py-3 border-b border-border">Người đăng</th>
+                      <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+                      <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tc.pageRows.map((p, idx) => {
+                      const seller = getSeller(p.sellerId);
+                      const isMine = p.sellerId === CURRENT_USER_ID;
+                      return (
+                        <tr
+                          key={p.id}
+                          className="group border-b border-border transition-all duration-150 hover:bg-secondary/60 cursor-pointer"
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest("a,button,input")) return;
+                            navigate({ to: "/marketplace/$productId", params: { productId: p.id } });
+                          }}
+                        >
+                          <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                            {(tc.page - 1) * tc.pageSize + idx + 1}
+                          </td>
+                          <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                            SP-{p.id.slice(0, 6).toUpperCase()}
+                          </td>
+                          <td className="px-4 py-3 border-b border-border">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl shrink-0">{p.emoji || "🛍️"}</span>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-foreground text-xs line-clamp-1">{p.title}</div>
+                                <div className="text-[11px] text-muted-foreground line-clamp-1">{p.description}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs border-b border-border">
+                            <Pill color="primary">{t(p.category)}</Pill>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-bold text-foreground text-right border-b border-border font-mono">
+                            {fmt.money(p.price)}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border">
+                            <div>{seller?.name || "Thành viên"}</div>
+                            <div className="text-[10px] text-muted-foreground/70">{fmt.date(p.createdAt)}</div>
+                          </td>
+                          <td className="px-4 py-3 border-b border-border">
+                            <Pill color={STATUS_COLOR[p.status]}>{t(STATUS_KEY[p.status])}</Pill>
+                          </td>
+                          <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <Link
+                                to="/marketplace/$productId"
+                                params={{ productId: p.id }}
+                                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Link>
+                              {isMine ? (
+                                <>
+                                  <button
+                                    onClick={() => setEditing(p)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleting(p)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    navigate({
+                                      to: "/marketplace/$productId",
+                                      params: { productId: p.id },
+                                      search: { quote: true },
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
+                                  style={{ background: "var(--gradient-primary)" }}
+                                >
+                                  <FileText className="h-3.5 w-3.5" /> Báo giá
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                page={tc.page}
+                pageCount={tc.pageCount}
+                pageSize={tc.pageSize}
+                total={tc.total}
+                from={tc.from}
+                to={tc.to}
+                onPage={tc.setPage}
+                onPageSize={tc.setPageSize}
+              />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visible.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  selectable={tab === "mine" && selectMode}
-                  selected={selected.has(p.id)}
-                  onToggleSelect={() => toggleSelect(p.id)}
-                  pinned={pinned.has(p.id)}
-                  onTogglePin={() => togglePin(p.id)}
-                  {...bindCardActions(p)}
-                />
-              ))}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {tc.pageRows.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    selectable={tab === "mine" && selectMode}
+                    selected={selected.has(p.id)}
+                    onToggleSelect={() => toggleSelect(p.id)}
+                    pinned={pinned.has(p.id)}
+                    onTogglePin={() => togglePin(p.id)}
+                    {...bindCardActions(p)}
+                  />
+                ))}
+              </div>
+              <Pagination
+                page={tc.page}
+                pageCount={tc.pageCount}
+                pageSize={tc.pageSize}
+                total={tc.total}
+                from={tc.from}
+                to={tc.to}
+                onPage={tc.setPage}
+                onPageSize={tc.setPageSize}
+              />
             </div>
           )}
         </>

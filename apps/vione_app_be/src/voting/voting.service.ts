@@ -9,10 +9,12 @@ export class CreatePollDto {
   options!: string[];
   startDate?: string;
   endDate?: string;
+  targetAudience?: string; // 'all' | 'members' | 'non_members'
 }
 
 export class CastVoteDto {
   optionId!: string;
+  sourceApp?: string; // 'vione_app' | 'association_app' | 'crm'
 }
 
 @Injectable()
@@ -24,6 +26,9 @@ export class VotingService {
       id: String(o.id),
       title: String(o.title || ''),
       votesCount: Number(o.votes_count || 0),
+      vioneVotes: Number(o.vione_votes || 0),
+      associationVotes: Number(o.association_votes || 0),
+      crmVotes: Number(o.crm_votes || 0),
       percentage: 0,
       isLeading: false,
     }));
@@ -44,11 +49,20 @@ export class VotingService {
         (SELECT json_agg(json_build_object(
           'id', o.id,
           'title', o.title,
-          'votes_count', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id)
+          'votes_count', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id),
+          'vione_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND (pv.source_app = 'vione_app' OR pv.source_app IS NULL)),
+          'association_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'association_app'),
+          'crm_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'crm')
         ))
          FROM public.poll_options o WHERE o.poll_id = p.id) as options,
         (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote,
-        (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes
+        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote_source,
+        (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes,
+        json_build_object(
+          'vioneApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND (pv.source_app = 'vione_app' OR pv.source_app IS NULL)),
+          'associationApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'association_app'),
+          'crm', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'crm')
+        ) as source_stats
       FROM public.polls p
       ORDER BY p.created_at DESC
     `.catch(async () => {
@@ -60,6 +74,12 @@ export class VotingService {
     return rows.map((r) => {
       const options = this.computeOptionsWithStats(r.options || []);
       const totalVotes = options.reduce((sum, o) => sum + o.votesCount, 0);
+      const sourceStats = r.source_stats || {
+        vioneApp: options.reduce((sum, o) => sum + o.vioneVotes, 0),
+        associationApp: options.reduce((sum, o) => sum + o.associationVotes, 0),
+        crm: options.reduce((sum, o) => sum + o.crmVotes, 0),
+      };
+
       return {
         id: r.id,
         title: r.title,
@@ -67,7 +87,9 @@ export class VotingService {
         status: r.status || 'open',
         options,
         myVote: r.my_vote || null,
+        myVoteSource: r.my_vote_source || null,
         totalVotes,
+        sourceStats,
         createdAt: r.created_at,
         endDate: r.end_date || null,
       };
@@ -80,11 +102,20 @@ export class VotingService {
         (SELECT json_agg(json_build_object(
           'id', o.id,
           'title', o.title,
-          'votes_count', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id)
+          'votes_count', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id),
+          'vione_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND (pv.source_app = 'vione_app' OR pv.source_app IS NULL)),
+          'association_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'association_app'),
+          'crm_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'crm')
         ))
          FROM public.poll_options o WHERE o.poll_id = p.id) as options,
         (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote,
-        (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes
+        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote_source,
+        (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes,
+        json_build_object(
+          'vioneApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND (pv.source_app = 'vione_app' OR pv.source_app IS NULL)),
+          'associationApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'association_app'),
+          'crm', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'crm')
+        ) as source_stats
       FROM public.polls p
       WHERE p.id = ${id}::uuid
       LIMIT 1
@@ -94,6 +125,11 @@ export class VotingService {
     const r = rows[0];
     const options = this.computeOptionsWithStats(r.options || []);
     const totalVotes = options.reduce((sum, o) => sum + o.votesCount, 0);
+    const sourceStats = r.source_stats || {
+      vioneApp: options.reduce((sum, o) => sum + o.vioneVotes, 0),
+      associationApp: options.reduce((sum, o) => sum + o.associationVotes, 0),
+      crm: options.reduce((sum, o) => sum + o.crmVotes, 0),
+    };
 
     return {
       id: r.id,
@@ -102,30 +138,34 @@ export class VotingService {
       status: r.status || 'open',
       options,
       myVote: r.my_vote || null,
+      myVoteSource: r.my_vote_source || null,
       totalVotes,
+      sourceStats,
       createdAt: r.created_at,
       endDate: r.end_date || null,
     };
   }
 
-  async castVote(userId: string, pollId: string, optionId: string) {
+  async castVote(userId: string, pollId: string, optionId: string, sourceApp: string = 'vione_app') {
     if (!pollId || !optionId) {
       throw new BadRequestException('pollId and optionId are required');
     }
 
+    const validSource = sourceApp === 'association_app' || sourceApp === 'crm' ? sourceApp : 'vione_app';
     const voteId = crypto.randomUUID();
+
     await this.prisma.$executeRaw`
-      INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, created_at)
-      VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, now())
-      ON CONFLICT (poll_id, user_id) DO UPDATE SET option_id = ${optionId}::uuid, created_at = now()
+      INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, source_app, created_at)
+      VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, ${validSource}, now())
+      ON CONFLICT (poll_id, user_id) DO UPDATE SET option_id = ${optionId}::uuid, source_app = ${validSource}, created_at = now()
     `.catch(async () => {
       // If table lacks unique constraint on (poll_id, user_id), delete old vote first
       await this.prisma.$executeRaw`
         DELETE FROM public.poll_votes WHERE poll_id = ${pollId}::uuid AND user_id = ${userId}::uuid
       `.catch(() => {});
       await this.prisma.$executeRaw`
-        INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, created_at)
-        VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, now())
+        INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, source_app, created_at)
+        VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, ${validSource}, now())
       `.catch(() => {});
     });
 
@@ -170,18 +210,34 @@ export class VotingService {
       createdOptions.push({ id: optId, title: optTitle });
     }
 
-    // Broadcast in-app interactive poll notification to all members and users
+    // Broadcast in-app interactive poll notification to relevant members and users
     try {
-      const users = await this.prisma.$queryRaw<any[]>`
-        SELECT DISTINCT u.id FROM (
-          SELECT id FROM public.vione_users
-          UNION
-          SELECT user_id as id FROM public.members WHERE user_id IS NOT NULL
-        ) u
-      `.catch(() => [] as any[]);
+      let users: any[] = [];
+      const audience = data.targetAudience || 'all';
+
+      if (audience === 'members') {
+        users = await this.prisma.$queryRaw<any[]>`
+          SELECT DISTINCT user_id as id FROM public.members WHERE user_id IS NOT NULL
+        `.catch(() => [] as any[]);
+      } else if (audience === 'non_members') {
+        users = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.vione_users 
+          WHERE id NOT IN (SELECT user_id FROM public.members WHERE user_id IS NOT NULL)
+        `.catch(async () => {
+          return this.prisma.$queryRaw<any[]>`SELECT id FROM public.vione_users LIMIT 50`.catch(() => [] as any[]);
+        });
+      } else {
+        users = await this.prisma.$queryRaw<any[]>`
+          SELECT DISTINCT u.id FROM (
+            SELECT id FROM public.vione_users
+            UNION
+            SELECT user_id as id FROM public.members WHERE user_id IS NOT NULL
+          ) u
+        `.catch(() => [] as any[]);
+      }
 
       const notifTitle = `[Biểu quyết mới] ${data.title}`;
-      const notifBody = data.description || 'Tham gia biểu quyết ý kiến ngay trên ứng dụng.';
+      const notifBody = data.description || 'Tham gia biểu quyết ý kiến ngay trên ứng dụng ViOne & Hiệp hội.';
       const safeDisplayData = JSON.stringify({
         title: data.title,
         body: notifBody,
@@ -189,9 +245,11 @@ export class VotingService {
         options: createdOptions,
         type: 'poll',
         targetRoute: '/voting',
+        status: 'open',
       });
 
       for (const u of users) {
+        if (!u.id) continue;
         const dedupeKey = `poll-notif-${pollId}-${u.id}`;
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.business_notifications (
@@ -218,12 +276,81 @@ export class VotingService {
     return this.getPollById(userId, pollId);
   }
 
+  async closePoll(userId: string, id: string) {
+    if (!id) throw new BadRequestException('ID is required');
+
+    // 1. Mark poll as closed
+    await this.prisma.$executeRaw`
+      UPDATE public.polls
+      SET status = 'closed', updated_at = now()
+      WHERE id = ${id}::uuid
+    `.catch(() => {});
+
+    // 2. Fetch finalized poll details with options & source stats
+    const poll = await this.getPollById(userId, id);
+    const leadingOption = poll.options.find((o: any) => o.isLeading) || poll.options[0] || null;
+
+    // 3. Broadcast final results to both ViOne App and Association App
+    try {
+      const users = await this.prisma.$queryRaw<any[]>`
+        SELECT DISTINCT u.id FROM (
+          SELECT id FROM public.vione_users
+          UNION
+          SELECT user_id as id FROM public.members WHERE user_id IS NOT NULL
+        ) u
+      `.catch(() => [] as any[]);
+
+      const notifTitle = `[Kết quả biểu quyết] ${poll.title}`;
+      const notifBody = `Biểu quyết đã kết thúc. Phương án dẫn đầu: "${leadingOption?.title || 'Đã đóng'}" (${leadingOption?.percentage || 0}%). Tổng số: ${poll.totalVotes} lượt (${poll.sourceStats?.vioneApp || 0} ViOne, ${poll.sourceStats?.associationApp || 0} Hiệp hội).`;
+
+      const safeDisplayData = JSON.stringify({
+        title: poll.title,
+        body: notifBody,
+        pollId: id,
+        status: 'closed',
+        winner: leadingOption,
+        options: poll.options,
+        totalVotes: poll.totalVotes,
+        sourceStats: poll.sourceStats,
+        type: 'poll_result',
+        targetRoute: '/voting',
+      });
+
+      for (const u of users) {
+        if (!u.id) continue;
+        const dedupeKey = `poll-result-${id}-${u.id}`;
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, 'voting', $2, 'poll_closed', 'poll_result',
+            $3, $4, $5::jsonb, 'high', 'delivered', $6, 'all', 'all', NOW(), NOW()
+          )
+        `, u.id, id, notifTitle, notifBody, safeDisplayData, dedupeKey).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'poll_result', $4, NOW()
+          )
+        `, u.id, notifTitle, notifBody, id).catch(() => {});
+      }
+    } catch (err: any) {
+      console.warn('[VotingService] Error broadcasting poll close notification:', err?.message);
+    }
+
+    return poll;
+  }
+
   async updatePoll(userId: string, id: string, data: any) {
     if (!id) throw new BadRequestException('ID is required');
     await this.prisma.$executeRaw`
       UPDATE public.polls
       SET title = COALESCE(${data.title}, title),
           description = COALESCE(${data.description || null}, description),
+          status = COALESCE(${data.status || null}, status),
           updated_at = now()
       WHERE id = ${id}::uuid
     `.catch(() => {});

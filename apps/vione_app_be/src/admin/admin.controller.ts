@@ -138,6 +138,24 @@ export class AdminController {
   ) {
     return this.adminService.deleteNotification(id);
   }
+
+  // ── EMAIL MARKETING CAMPAIGNS ─────────────────────────────────────────
+
+  @Get('campaigns')
+  async listCampaigns() {
+    return this.adminService.listCampaigns();
+  }
+
+  @Post('campaigns')
+  async createCampaign(@Body() body: any) {
+    return this.adminService.createCampaign(body);
+  }
+
+  @Delete('campaigns/:id')
+  async deleteCampaign(@Param('id') id: string) {
+    return this.adminService.deleteCampaign(id);
+  }
 }
+
 
 

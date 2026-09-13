@@ -53,6 +53,7 @@ import { Route as BusinessConnectRouteImport } from './routes/business-connect'
 import { Route as BusinessCardsRouteImport } from './routes/business-cards'
 import { Route as BenefitsRouteImport } from './routes/benefits'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AssociationRouteImport } from './routes/association'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AccountSettingsRouteImport } from './routes/account-settings'
@@ -69,6 +70,7 @@ import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
 import { Route as ConnectAppIndexRouteImport } from './routes/connect-app.index'
 import { Route as CompaniesIndexRouteImport } from './routes/companies.index'
 import { Route as BusinessConnectIndexRouteImport } from './routes/business-connect.index'
+import { Route as AssociationIndexRouteImport } from './routes/association.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountSettingsIndexRouteImport } from './routes/account-settings.index'
 import { Route as PlatformRenewalAuditRouteImport } from './routes/platform.renewal-audit'
@@ -123,6 +125,9 @@ import { Route as CompanySlugRouteImport } from './routes/company.$slug'
 import { Route as CompaniesCompanyIdRouteImport } from './routes/companies.$companyId'
 import { Route as CardCodeRouteImport } from './routes/card.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as BusinessConnectV8RouteImport } from './routes/business-connect.v8'
+import { Route as BusinessConnectV7RouteImport } from './routes/business-connect.v7'
+import { Route as BusinessConnectV6RouteImport } from './routes/business-connect.v6'
 import { Route as BusinessConnectV5RouteImport } from './routes/business-connect.v5'
 import { Route as BusinessConnectV4RouteImport } from './routes/business-connect.v4'
 import { Route as BusinessConnectV3RouteImport } from './routes/business-connect.v3'
@@ -136,6 +141,22 @@ import { Route as BusinessConnectMemoryRouteImport } from './routes/business-con
 import { Route as BusinessConnectMeetingsRouteImport } from './routes/business-connect.meetings'
 import { Route as BusinessConnectConnectionsRouteImport } from './routes/business-connect.connections'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
+import { Route as AuthMobileRouteImport } from './routes/auth.mobile'
+import { Route as AssociationRenewRouteImport } from './routes/association.renew'
+import { Route as AssociationProfileRouteImport } from './routes/association.profile'
+import { Route as AssociationProductsRouteImport } from './routes/association.products'
+import { Route as AssociationPerksRouteImport } from './routes/association.perks'
+import { Route as AssociationOpportunitiesRouteImport } from './routes/association.opportunities'
+import { Route as AssociationNotificationsRouteImport } from './routes/association.notifications'
+import { Route as AssociationNewsRouteImport } from './routes/association.news'
+import { Route as AssociationMessagesRouteImport } from './routes/association.messages'
+import { Route as AssociationMembersRouteImport } from './routes/association.members'
+import { Route as AssociationLibraryRouteImport } from './routes/association.library'
+import { Route as AssociationHistoryRouteImport } from './routes/association.history'
+import { Route as AssociationEventsRouteImport } from './routes/association.events'
+import { Route as AssociationCheckinRouteImport } from './routes/association.checkin'
+import { Route as AssociationCardRouteImport } from './routes/association.card'
+import { Route as AssociationBusinessCardsRouteImport } from './routes/association.business-cards'
 import { Route as AdminDemoLeadsRouteImport } from './routes/admin.demo-leads'
 import { Route as AdminCtaAnalyticsRouteImport } from './routes/admin.cta-analytics'
 import { Route as AdminBusinessCardsRouteImport } from './routes/admin.business-cards'
@@ -152,6 +173,8 @@ import { Route as ConnectAppInboxIndexRouteImport } from './routes/connect-app.i
 import { Route as ConnectAppCommunityIndexRouteImport } from './routes/connect-app.community.index'
 import { Route as BusinessConnectMeetingsIndexRouteImport } from './routes/business-connect.meetings.index'
 import { Route as BusinessConnectConnectionsIndexRouteImport } from './routes/business-connect.connections.index'
+import { Route as AssociationRenewIndexRouteImport } from './routes/association.renew.index'
+import { Route as AssociationPerksIndexRouteImport } from './routes/association.perks.index'
 import { Route as AdminBusinessCardsIndexRouteImport } from './routes/admin.business-cards.index'
 import { Route as OpportunitiesIdEditRouteImport } from './routes/opportunities.$id.edit'
 import { Route as MRenewResultRouteImport } from './routes/m.renew.result'
@@ -182,6 +205,11 @@ import { Route as BusinessConnectIntroductionsDeliveriesRouteImport } from './ro
 import { Route as BusinessConnectIntroductionsAnalyticsRouteImport } from './routes/business-connect.introductions.analytics'
 import { Route as BusinessConnectIntroductionsTargetPersonNodeIdRouteImport } from './routes/business-connect.introductions.$targetPersonNodeId'
 import { Route as BusinessConnectConnectionsPersonNodeIdRouteImport } from './routes/business-connect.connections.$personNodeId'
+import { Route as AssociationRenewResultRouteImport } from './routes/association.renew.result'
+import { Route as AssociationRenewPayRouteImport } from './routes/association.renew.pay'
+import { Route as AssociationRenewHistoryRouteImport } from './routes/association.renew.history'
+import { Route as AssociationRenewAuditRouteImport } from './routes/association.renew.audit'
+import { Route as AssociationPerksIdRouteImport } from './routes/association.perks.$id'
 import { Route as AdminBusinessCardsAuditRouteImport } from './routes/admin.business-cards.audit'
 import { Route as ConnectAppCommunityCommunityIdIndexRouteImport } from './routes/connect-app.community.$communityId.index'
 import { Route as ConnectNetworkRequestsSentRouteImport } from './routes/connect.network.requests.sent'
@@ -427,6 +455,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssociationRoute = AssociationRouteImport.update({
+  id: '/association',
+  path: '/association',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -506,6 +539,11 @@ const BusinessConnectIndexRoute = BusinessConnectIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BusinessConnectRoute,
+} as any)
+const AssociationIndexRoute = AssociationIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AssociationRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
@@ -778,6 +816,21 @@ const CTokenRoute = CTokenRouteImport.update({
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessConnectV8Route = BusinessConnectV8RouteImport.update({
+  id: '/v8',
+  path: '/v8',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV7Route = BusinessConnectV7RouteImport.update({
+  id: '/v7',
+  path: '/v7',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
+const BusinessConnectV6Route = BusinessConnectV6RouteImport.update({
+  id: '/v6',
+  path: '/v6',
+  getParentRoute: () => BusinessConnectRoute,
+} as any)
 const BusinessConnectV5Route = BusinessConnectV5RouteImport.update({
   id: '/v5',
   path: '/v5',
@@ -847,6 +900,89 @@ const BSlugRoute = BSlugRouteImport.update({
   path: '/b/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthMobileRoute = AuthMobileRouteImport.update({
+  id: '/mobile',
+  path: '/mobile',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AssociationRenewRoute = AssociationRenewRouteImport.update({
+  id: '/renew',
+  path: '/renew',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationProfileRoute = AssociationProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationProductsRoute = AssociationProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationPerksRoute = AssociationPerksRouteImport.update({
+  id: '/perks',
+  path: '/perks',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationOpportunitiesRoute =
+  AssociationOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AssociationRoute,
+  } as any)
+const AssociationNotificationsRoute =
+  AssociationNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AssociationRoute,
+  } as any)
+const AssociationNewsRoute = AssociationNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationMessagesRoute = AssociationMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationMembersRoute = AssociationMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationLibraryRoute = AssociationLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationHistoryRoute = AssociationHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationEventsRoute = AssociationEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationCheckinRoute = AssociationCheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationCardRoute = AssociationCardRouteImport.update({
+  id: '/card',
+  path: '/card',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationBusinessCardsRoute =
+  AssociationBusinessCardsRouteImport.update({
+    id: '/business-cards',
+    path: '/business-cards',
+    getParentRoute: () => AssociationRoute,
+  } as any)
 const AdminDemoLeadsRoute = AdminDemoLeadsRouteImport.update({
   id: '/admin/demo-leads',
   path: '/admin/demo-leads',
@@ -931,6 +1067,16 @@ const BusinessConnectConnectionsIndexRoute =
     path: '/',
     getParentRoute: () => BusinessConnectConnectionsRoute,
   } as any)
+const AssociationRenewIndexRoute = AssociationRenewIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AssociationRenewRoute,
+} as any)
+const AssociationPerksIndexRoute = AssociationPerksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AssociationPerksRoute,
+} as any)
 const AdminBusinessCardsIndexRoute = AdminBusinessCardsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -1097,6 +1243,31 @@ const BusinessConnectConnectionsPersonNodeIdRoute =
     path: '/$personNodeId',
     getParentRoute: () => BusinessConnectConnectionsRoute,
   } as any)
+const AssociationRenewResultRoute = AssociationRenewResultRouteImport.update({
+  id: '/result',
+  path: '/result',
+  getParentRoute: () => AssociationRenewRoute,
+} as any)
+const AssociationRenewPayRoute = AssociationRenewPayRouteImport.update({
+  id: '/pay',
+  path: '/pay',
+  getParentRoute: () => AssociationRenewRoute,
+} as any)
+const AssociationRenewHistoryRoute = AssociationRenewHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AssociationRenewRoute,
+} as any)
+const AssociationRenewAuditRoute = AssociationRenewAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AssociationRenewRoute,
+} as any)
+const AssociationPerksIdRoute = AssociationPerksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AssociationPerksRoute,
+} as any)
 const AdminBusinessCardsAuditRoute = AdminBusinessCardsAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -1245,7 +1416,8 @@ export interface FileRoutesByFullPath {
   '/account-settings': typeof AccountSettingsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
-  '/auth': typeof AuthRoute
+  '/association': typeof AssociationRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/business-connect': typeof BusinessConnectRouteWithChildren
@@ -1293,6 +1465,22 @@ export interface FileRoutesByFullPath {
   '/admin/business-cards': typeof AdminBusinessCardsRouteWithChildren
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/association/business-cards': typeof AssociationBusinessCardsRoute
+  '/association/card': typeof AssociationCardRoute
+  '/association/checkin': typeof AssociationCheckinRoute
+  '/association/events': typeof AssociationEventsRoute
+  '/association/history': typeof AssociationHistoryRoute
+  '/association/library': typeof AssociationLibraryRoute
+  '/association/members': typeof AssociationMembersRoute
+  '/association/messages': typeof AssociationMessagesRoute
+  '/association/news': typeof AssociationNewsRoute
+  '/association/notifications': typeof AssociationNotificationsRoute
+  '/association/opportunities': typeof AssociationOpportunitiesRoute
+  '/association/perks': typeof AssociationPerksRouteWithChildren
+  '/association/products': typeof AssociationProductsRoute
+  '/association/profile': typeof AssociationProfileRoute
+  '/association/renew': typeof AssociationRenewRouteWithChildren
+  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
   '/business-connect/meetings': typeof BusinessConnectMeetingsRouteWithChildren
@@ -1306,6 +1494,9 @@ export interface FileRoutesByFullPath {
   '/business-connect/v3': typeof BusinessConnectV3Route
   '/business-connect/v4': typeof BusinessConnectV4Route
   '/business-connect/v5': typeof BusinessConnectV5Route
+  '/business-connect/v6': typeof BusinessConnectV6Route
+  '/business-connect/v7': typeof BusinessConnectV7Route
+  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1360,6 +1551,7 @@ export interface FileRoutesByFullPath {
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
   '/admin/': typeof AdminIndexRoute
+  '/association/': typeof AssociationIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
@@ -1373,6 +1565,11 @@ export interface FileRoutesByFullPath {
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/platform/': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
+  '/association/perks/$id': typeof AssociationPerksIdRoute
+  '/association/renew/audit': typeof AssociationRenewAuditRoute
+  '/association/renew/history': typeof AssociationRenewHistoryRoute
+  '/association/renew/pay': typeof AssociationRenewPayRoute
+  '/association/renew/result': typeof AssociationRenewResultRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
   '/business-connect/introductions/$targetPersonNodeId': typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   '/business-connect/introductions/analytics': typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -1403,6 +1600,8 @@ export interface FileRoutesByFullPath {
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
   '/admin/business-cards/': typeof AdminBusinessCardsIndexRoute
+  '/association/perks/': typeof AssociationPerksIndexRoute
+  '/association/renew/': typeof AssociationRenewIndexRoute
   '/business-connect/connections/': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings/': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community/': typeof ConnectAppCommunityIndexRoute
@@ -1443,7 +1642,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/checkin': typeof CheckinRoute
@@ -1480,6 +1679,20 @@ export interface FileRoutesByTo {
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/association/business-cards': typeof AssociationBusinessCardsRoute
+  '/association/card': typeof AssociationCardRoute
+  '/association/checkin': typeof AssociationCheckinRoute
+  '/association/events': typeof AssociationEventsRoute
+  '/association/history': typeof AssociationHistoryRoute
+  '/association/library': typeof AssociationLibraryRoute
+  '/association/members': typeof AssociationMembersRoute
+  '/association/messages': typeof AssociationMessagesRoute
+  '/association/news': typeof AssociationNewsRoute
+  '/association/notifications': typeof AssociationNotificationsRoute
+  '/association/opportunities': typeof AssociationOpportunitiesRoute
+  '/association/products': typeof AssociationProductsRoute
+  '/association/profile': typeof AssociationProfileRoute
+  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/memory': typeof BusinessConnectMemoryRoute
   '/business-connect/my-card': typeof BusinessConnectMyCardRoute
@@ -1491,6 +1704,9 @@ export interface FileRoutesByTo {
   '/business-connect/v3': typeof BusinessConnectV3Route
   '/business-connect/v4': typeof BusinessConnectV4Route
   '/business-connect/v5': typeof BusinessConnectV5Route
+  '/business-connect/v6': typeof BusinessConnectV6Route
+  '/business-connect/v7': typeof BusinessConnectV7Route
+  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1536,6 +1752,7 @@ export interface FileRoutesByTo {
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings': typeof AccountSettingsIndexRoute
   '/admin': typeof AdminIndexRoute
+  '/association': typeof AssociationIndexRoute
   '/business-connect': typeof BusinessConnectIndexRoute
   '/companies': typeof CompaniesIndexRoute
   '/connect-app': typeof ConnectAppIndexRoute
@@ -1549,6 +1766,11 @@ export interface FileRoutesByTo {
   '/opportunities': typeof OpportunitiesIndexRoute
   '/platform': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
+  '/association/perks/$id': typeof AssociationPerksIdRoute
+  '/association/renew/audit': typeof AssociationRenewAuditRoute
+  '/association/renew/history': typeof AssociationRenewHistoryRoute
+  '/association/renew/pay': typeof AssociationRenewPayRoute
+  '/association/renew/result': typeof AssociationRenewResultRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
   '/business-connect/introductions/$targetPersonNodeId': typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   '/business-connect/introductions/analytics': typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -1578,6 +1800,8 @@ export interface FileRoutesByTo {
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
   '/admin/business-cards': typeof AdminBusinessCardsIndexRoute
+  '/association/perks': typeof AssociationPerksIndexRoute
+  '/association/renew': typeof AssociationRenewIndexRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community': typeof ConnectAppCommunityIndexRoute
@@ -1616,7 +1840,8 @@ export interface FileRoutesById {
   '/account-settings': typeof AccountSettingsRouteWithChildren
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
-  '/auth': typeof AuthRoute
+  '/association': typeof AssociationRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
   '/benefits': typeof BenefitsRoute
   '/business-cards': typeof BusinessCardsRoute
   '/business-connect': typeof BusinessConnectRouteWithChildren
@@ -1664,6 +1889,22 @@ export interface FileRoutesById {
   '/admin/business-cards': typeof AdminBusinessCardsRouteWithChildren
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/association/business-cards': typeof AssociationBusinessCardsRoute
+  '/association/card': typeof AssociationCardRoute
+  '/association/checkin': typeof AssociationCheckinRoute
+  '/association/events': typeof AssociationEventsRoute
+  '/association/history': typeof AssociationHistoryRoute
+  '/association/library': typeof AssociationLibraryRoute
+  '/association/members': typeof AssociationMembersRoute
+  '/association/messages': typeof AssociationMessagesRoute
+  '/association/news': typeof AssociationNewsRoute
+  '/association/notifications': typeof AssociationNotificationsRoute
+  '/association/opportunities': typeof AssociationOpportunitiesRoute
+  '/association/perks': typeof AssociationPerksRouteWithChildren
+  '/association/products': typeof AssociationProductsRoute
+  '/association/profile': typeof AssociationProfileRoute
+  '/association/renew': typeof AssociationRenewRouteWithChildren
+  '/auth/mobile': typeof AuthMobileRoute
   '/b/$slug': typeof BSlugRoute
   '/business-connect/connections': typeof BusinessConnectConnectionsRouteWithChildren
   '/business-connect/meetings': typeof BusinessConnectMeetingsRouteWithChildren
@@ -1677,6 +1918,9 @@ export interface FileRoutesById {
   '/business-connect/v3': typeof BusinessConnectV3Route
   '/business-connect/v4': typeof BusinessConnectV4Route
   '/business-connect/v5': typeof BusinessConnectV5Route
+  '/business-connect/v6': typeof BusinessConnectV6Route
+  '/business-connect/v7': typeof BusinessConnectV7Route
+  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
@@ -1731,6 +1975,7 @@ export interface FileRoutesById {
   '/platform/renewal-audit': typeof PlatformRenewalAuditRoute
   '/account-settings/': typeof AccountSettingsIndexRoute
   '/admin/': typeof AdminIndexRoute
+  '/association/': typeof AssociationIndexRoute
   '/business-connect/': typeof BusinessConnectIndexRoute
   '/companies/': typeof CompaniesIndexRoute
   '/connect-app/': typeof ConnectAppIndexRoute
@@ -1744,6 +1989,11 @@ export interface FileRoutesById {
   '/opportunities/': typeof OpportunitiesIndexRoute
   '/platform/': typeof PlatformIndexRoute
   '/admin/business-cards/audit': typeof AdminBusinessCardsAuditRoute
+  '/association/perks/$id': typeof AssociationPerksIdRoute
+  '/association/renew/audit': typeof AssociationRenewAuditRoute
+  '/association/renew/history': typeof AssociationRenewHistoryRoute
+  '/association/renew/pay': typeof AssociationRenewPayRoute
+  '/association/renew/result': typeof AssociationRenewResultRoute
   '/business-connect/connections/$personNodeId': typeof BusinessConnectConnectionsPersonNodeIdRoute
   '/business-connect/introductions/$targetPersonNodeId': typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   '/business-connect/introductions/analytics': typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -1774,6 +2024,8 @@ export interface FileRoutesById {
   '/m/renew/result': typeof MRenewResultRoute
   '/opportunities/$id/edit': typeof OpportunitiesIdEditRoute
   '/admin/business-cards/': typeof AdminBusinessCardsIndexRoute
+  '/association/perks/': typeof AssociationPerksIndexRoute
+  '/association/renew/': typeof AssociationRenewIndexRoute
   '/business-connect/connections/': typeof BusinessConnectConnectionsIndexRoute
   '/business-connect/meetings/': typeof BusinessConnectMeetingsIndexRoute
   '/connect-app/community/': typeof ConnectAppCommunityIndexRoute
@@ -1817,6 +2069,7 @@ export interface FileRouteTypes {
     | '/account-settings'
     | '/activity'
     | '/ai'
+    | '/association'
     | '/auth'
     | '/benefits'
     | '/business-cards'
@@ -1865,6 +2118,22 @@ export interface FileRouteTypes {
     | '/admin/business-cards'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/association/business-cards'
+    | '/association/card'
+    | '/association/checkin'
+    | '/association/events'
+    | '/association/history'
+    | '/association/library'
+    | '/association/members'
+    | '/association/messages'
+    | '/association/news'
+    | '/association/notifications'
+    | '/association/opportunities'
+    | '/association/perks'
+    | '/association/products'
+    | '/association/profile'
+    | '/association/renew'
+    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
     | '/business-connect/meetings'
@@ -1878,6 +2147,9 @@ export interface FileRouteTypes {
     | '/business-connect/v3'
     | '/business-connect/v4'
     | '/business-connect/v5'
+    | '/business-connect/v6'
+    | '/business-connect/v7'
+    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -1932,6 +2204,7 @@ export interface FileRouteTypes {
     | '/platform/renewal-audit'
     | '/account-settings/'
     | '/admin/'
+    | '/association/'
     | '/business-connect/'
     | '/companies/'
     | '/connect-app/'
@@ -1945,6 +2218,11 @@ export interface FileRouteTypes {
     | '/opportunities/'
     | '/platform/'
     | '/admin/business-cards/audit'
+    | '/association/perks/$id'
+    | '/association/renew/audit'
+    | '/association/renew/history'
+    | '/association/renew/pay'
+    | '/association/renew/result'
     | '/business-connect/connections/$personNodeId'
     | '/business-connect/introductions/$targetPersonNodeId'
     | '/business-connect/introductions/analytics'
@@ -1975,6 +2253,8 @@ export interface FileRouteTypes {
     | '/m/renew/result'
     | '/opportunities/$id/edit'
     | '/admin/business-cards/'
+    | '/association/perks/'
+    | '/association/renew/'
     | '/business-connect/connections/'
     | '/business-connect/meetings/'
     | '/connect-app/community/'
@@ -2052,6 +2332,20 @@ export interface FileRouteTypes {
     | '/account-settings/notifications'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/association/business-cards'
+    | '/association/card'
+    | '/association/checkin'
+    | '/association/events'
+    | '/association/history'
+    | '/association/library'
+    | '/association/members'
+    | '/association/messages'
+    | '/association/news'
+    | '/association/notifications'
+    | '/association/opportunities'
+    | '/association/products'
+    | '/association/profile'
+    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/memory'
     | '/business-connect/my-card'
@@ -2063,6 +2357,9 @@ export interface FileRouteTypes {
     | '/business-connect/v3'
     | '/business-connect/v4'
     | '/business-connect/v5'
+    | '/business-connect/v6'
+    | '/business-connect/v7'
+    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -2108,6 +2405,7 @@ export interface FileRouteTypes {
     | '/platform/renewal-audit'
     | '/account-settings'
     | '/admin'
+    | '/association'
     | '/business-connect'
     | '/companies'
     | '/connect-app'
@@ -2121,6 +2419,11 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/platform'
     | '/admin/business-cards/audit'
+    | '/association/perks/$id'
+    | '/association/renew/audit'
+    | '/association/renew/history'
+    | '/association/renew/pay'
+    | '/association/renew/result'
     | '/business-connect/connections/$personNodeId'
     | '/business-connect/introductions/$targetPersonNodeId'
     | '/business-connect/introductions/analytics'
@@ -2150,6 +2453,8 @@ export interface FileRouteTypes {
     | '/m/renew/result'
     | '/opportunities/$id/edit'
     | '/admin/business-cards'
+    | '/association/perks'
+    | '/association/renew'
     | '/business-connect/connections'
     | '/business-connect/meetings'
     | '/connect-app/community'
@@ -2187,6 +2492,7 @@ export interface FileRouteTypes {
     | '/account-settings'
     | '/activity'
     | '/ai'
+    | '/association'
     | '/auth'
     | '/benefits'
     | '/business-cards'
@@ -2235,6 +2541,22 @@ export interface FileRouteTypes {
     | '/admin/business-cards'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/association/business-cards'
+    | '/association/card'
+    | '/association/checkin'
+    | '/association/events'
+    | '/association/history'
+    | '/association/library'
+    | '/association/members'
+    | '/association/messages'
+    | '/association/news'
+    | '/association/notifications'
+    | '/association/opportunities'
+    | '/association/perks'
+    | '/association/products'
+    | '/association/profile'
+    | '/association/renew'
+    | '/auth/mobile'
     | '/b/$slug'
     | '/business-connect/connections'
     | '/business-connect/meetings'
@@ -2248,6 +2570,9 @@ export interface FileRouteTypes {
     | '/business-connect/v3'
     | '/business-connect/v4'
     | '/business-connect/v5'
+    | '/business-connect/v6'
+    | '/business-connect/v7'
+    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
     | '/companies/$companyId'
@@ -2302,6 +2627,7 @@ export interface FileRouteTypes {
     | '/platform/renewal-audit'
     | '/account-settings/'
     | '/admin/'
+    | '/association/'
     | '/business-connect/'
     | '/companies/'
     | '/connect-app/'
@@ -2315,6 +2641,11 @@ export interface FileRouteTypes {
     | '/opportunities/'
     | '/platform/'
     | '/admin/business-cards/audit'
+    | '/association/perks/$id'
+    | '/association/renew/audit'
+    | '/association/renew/history'
+    | '/association/renew/pay'
+    | '/association/renew/result'
     | '/business-connect/connections/$personNodeId'
     | '/business-connect/introductions/$targetPersonNodeId'
     | '/business-connect/introductions/analytics'
@@ -2345,6 +2676,8 @@ export interface FileRouteTypes {
     | '/m/renew/result'
     | '/opportunities/$id/edit'
     | '/admin/business-cards/'
+    | '/association/perks/'
+    | '/association/renew/'
     | '/business-connect/connections/'
     | '/business-connect/meetings/'
     | '/connect-app/community/'
@@ -2387,7 +2720,8 @@ export interface RootRouteChildren {
   AccountSettingsRoute: typeof AccountSettingsRouteWithChildren
   ActivityRoute: typeof ActivityRoute
   AiRoute: typeof AiRoute
-  AuthRoute: typeof AuthRoute
+  AssociationRoute: typeof AssociationRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
   BenefitsRoute: typeof BenefitsRoute
   BusinessCardsRoute: typeof BusinessCardsRoute
   BusinessConnectRoute: typeof BusinessConnectRouteWithChildren
@@ -2768,6 +3102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/association': {
+      id: '/association'
+      path: '/association'
+      fullPath: '/association'
+      preLoaderRoute: typeof AssociationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai': {
       id: '/ai'
       path: '/ai'
@@ -2879,6 +3220,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/business-connect/'
       preLoaderRoute: typeof BusinessConnectIndexRouteImport
       parentRoute: typeof BusinessConnectRoute
+    }
+    '/association/': {
+      id: '/association/'
+      path: '/'
+      fullPath: '/association/'
+      preLoaderRoute: typeof AssociationIndexRouteImport
+      parentRoute: typeof AssociationRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -3258,6 +3606,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-connect/v8': {
+      id: '/business-connect/v8'
+      path: '/v8'
+      fullPath: '/business-connect/v8'
+      preLoaderRoute: typeof BusinessConnectV8RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v7': {
+      id: '/business-connect/v7'
+      path: '/v7'
+      fullPath: '/business-connect/v7'
+      preLoaderRoute: typeof BusinessConnectV7RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
+    '/business-connect/v6': {
+      id: '/business-connect/v6'
+      path: '/v6'
+      fullPath: '/business-connect/v6'
+      preLoaderRoute: typeof BusinessConnectV6RouteImport
+      parentRoute: typeof BusinessConnectRoute
+    }
     '/business-connect/v5': {
       id: '/business-connect/v5'
       path: '/v5'
@@ -3348,6 +3717,118 @@ declare module '@tanstack/react-router' {
       fullPath: '/b/$slug'
       preLoaderRoute: typeof BSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/mobile': {
+      id: '/auth/mobile'
+      path: '/mobile'
+      fullPath: '/auth/mobile'
+      preLoaderRoute: typeof AuthMobileRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/association/renew': {
+      id: '/association/renew'
+      path: '/renew'
+      fullPath: '/association/renew'
+      preLoaderRoute: typeof AssociationRenewRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/profile': {
+      id: '/association/profile'
+      path: '/profile'
+      fullPath: '/association/profile'
+      preLoaderRoute: typeof AssociationProfileRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/products': {
+      id: '/association/products'
+      path: '/products'
+      fullPath: '/association/products'
+      preLoaderRoute: typeof AssociationProductsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/perks': {
+      id: '/association/perks'
+      path: '/perks'
+      fullPath: '/association/perks'
+      preLoaderRoute: typeof AssociationPerksRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/opportunities': {
+      id: '/association/opportunities'
+      path: '/opportunities'
+      fullPath: '/association/opportunities'
+      preLoaderRoute: typeof AssociationOpportunitiesRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/notifications': {
+      id: '/association/notifications'
+      path: '/notifications'
+      fullPath: '/association/notifications'
+      preLoaderRoute: typeof AssociationNotificationsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/news': {
+      id: '/association/news'
+      path: '/news'
+      fullPath: '/association/news'
+      preLoaderRoute: typeof AssociationNewsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/messages': {
+      id: '/association/messages'
+      path: '/messages'
+      fullPath: '/association/messages'
+      preLoaderRoute: typeof AssociationMessagesRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/members': {
+      id: '/association/members'
+      path: '/members'
+      fullPath: '/association/members'
+      preLoaderRoute: typeof AssociationMembersRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/library': {
+      id: '/association/library'
+      path: '/library'
+      fullPath: '/association/library'
+      preLoaderRoute: typeof AssociationLibraryRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/history': {
+      id: '/association/history'
+      path: '/history'
+      fullPath: '/association/history'
+      preLoaderRoute: typeof AssociationHistoryRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/events': {
+      id: '/association/events'
+      path: '/events'
+      fullPath: '/association/events'
+      preLoaderRoute: typeof AssociationEventsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/checkin': {
+      id: '/association/checkin'
+      path: '/checkin'
+      fullPath: '/association/checkin'
+      preLoaderRoute: typeof AssociationCheckinRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/card': {
+      id: '/association/card'
+      path: '/card'
+      fullPath: '/association/card'
+      preLoaderRoute: typeof AssociationCardRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/business-cards': {
+      id: '/association/business-cards'
+      path: '/business-cards'
+      fullPath: '/association/business-cards'
+      preLoaderRoute: typeof AssociationBusinessCardsRouteImport
+      parentRoute: typeof AssociationRoute
     }
     '/admin/demo-leads': {
       id: '/admin/demo-leads'
@@ -3460,6 +3941,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/business-connect/connections/'
       preLoaderRoute: typeof BusinessConnectConnectionsIndexRouteImport
       parentRoute: typeof BusinessConnectConnectionsRoute
+    }
+    '/association/renew/': {
+      id: '/association/renew/'
+      path: '/'
+      fullPath: '/association/renew/'
+      preLoaderRoute: typeof AssociationRenewIndexRouteImport
+      parentRoute: typeof AssociationRenewRoute
+    }
+    '/association/perks/': {
+      id: '/association/perks/'
+      path: '/'
+      fullPath: '/association/perks/'
+      preLoaderRoute: typeof AssociationPerksIndexRouteImport
+      parentRoute: typeof AssociationPerksRoute
     }
     '/admin/business-cards/': {
       id: '/admin/business-cards/'
@@ -3671,6 +4166,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessConnectConnectionsPersonNodeIdRouteImport
       parentRoute: typeof BusinessConnectConnectionsRoute
     }
+    '/association/renew/result': {
+      id: '/association/renew/result'
+      path: '/result'
+      fullPath: '/association/renew/result'
+      preLoaderRoute: typeof AssociationRenewResultRouteImport
+      parentRoute: typeof AssociationRenewRoute
+    }
+    '/association/renew/pay': {
+      id: '/association/renew/pay'
+      path: '/pay'
+      fullPath: '/association/renew/pay'
+      preLoaderRoute: typeof AssociationRenewPayRouteImport
+      parentRoute: typeof AssociationRenewRoute
+    }
+    '/association/renew/history': {
+      id: '/association/renew/history'
+      path: '/history'
+      fullPath: '/association/renew/history'
+      preLoaderRoute: typeof AssociationRenewHistoryRouteImport
+      parentRoute: typeof AssociationRenewRoute
+    }
+    '/association/renew/audit': {
+      id: '/association/renew/audit'
+      path: '/audit'
+      fullPath: '/association/renew/audit'
+      preLoaderRoute: typeof AssociationRenewAuditRouteImport
+      parentRoute: typeof AssociationRenewRoute
+    }
+    '/association/perks/$id': {
+      id: '/association/perks/$id'
+      path: '/$id'
+      fullPath: '/association/perks/$id'
+      preLoaderRoute: typeof AssociationPerksIdRouteImport
+      parentRoute: typeof AssociationPerksRoute
+    }
     '/admin/business-cards/audit': {
       id: '/admin/business-cards/audit'
       path: '/audit'
@@ -3856,6 +4386,90 @@ const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
   AccountSettingsRouteChildren,
 )
 
+interface AssociationPerksRouteChildren {
+  AssociationPerksIdRoute: typeof AssociationPerksIdRoute
+  AssociationPerksIndexRoute: typeof AssociationPerksIndexRoute
+}
+
+const AssociationPerksRouteChildren: AssociationPerksRouteChildren = {
+  AssociationPerksIdRoute: AssociationPerksIdRoute,
+  AssociationPerksIndexRoute: AssociationPerksIndexRoute,
+}
+
+const AssociationPerksRouteWithChildren =
+  AssociationPerksRoute._addFileChildren(AssociationPerksRouteChildren)
+
+interface AssociationRenewRouteChildren {
+  AssociationRenewAuditRoute: typeof AssociationRenewAuditRoute
+  AssociationRenewHistoryRoute: typeof AssociationRenewHistoryRoute
+  AssociationRenewPayRoute: typeof AssociationRenewPayRoute
+  AssociationRenewResultRoute: typeof AssociationRenewResultRoute
+  AssociationRenewIndexRoute: typeof AssociationRenewIndexRoute
+}
+
+const AssociationRenewRouteChildren: AssociationRenewRouteChildren = {
+  AssociationRenewAuditRoute: AssociationRenewAuditRoute,
+  AssociationRenewHistoryRoute: AssociationRenewHistoryRoute,
+  AssociationRenewPayRoute: AssociationRenewPayRoute,
+  AssociationRenewResultRoute: AssociationRenewResultRoute,
+  AssociationRenewIndexRoute: AssociationRenewIndexRoute,
+}
+
+const AssociationRenewRouteWithChildren =
+  AssociationRenewRoute._addFileChildren(AssociationRenewRouteChildren)
+
+interface AssociationRouteChildren {
+  AssociationBusinessCardsRoute: typeof AssociationBusinessCardsRoute
+  AssociationCardRoute: typeof AssociationCardRoute
+  AssociationCheckinRoute: typeof AssociationCheckinRoute
+  AssociationEventsRoute: typeof AssociationEventsRoute
+  AssociationHistoryRoute: typeof AssociationHistoryRoute
+  AssociationLibraryRoute: typeof AssociationLibraryRoute
+  AssociationMembersRoute: typeof AssociationMembersRoute
+  AssociationMessagesRoute: typeof AssociationMessagesRoute
+  AssociationNewsRoute: typeof AssociationNewsRoute
+  AssociationNotificationsRoute: typeof AssociationNotificationsRoute
+  AssociationOpportunitiesRoute: typeof AssociationOpportunitiesRoute
+  AssociationPerksRoute: typeof AssociationPerksRouteWithChildren
+  AssociationProductsRoute: typeof AssociationProductsRoute
+  AssociationProfileRoute: typeof AssociationProfileRoute
+  AssociationRenewRoute: typeof AssociationRenewRouteWithChildren
+  AssociationIndexRoute: typeof AssociationIndexRoute
+}
+
+const AssociationRouteChildren: AssociationRouteChildren = {
+  AssociationBusinessCardsRoute: AssociationBusinessCardsRoute,
+  AssociationCardRoute: AssociationCardRoute,
+  AssociationCheckinRoute: AssociationCheckinRoute,
+  AssociationEventsRoute: AssociationEventsRoute,
+  AssociationHistoryRoute: AssociationHistoryRoute,
+  AssociationLibraryRoute: AssociationLibraryRoute,
+  AssociationMembersRoute: AssociationMembersRoute,
+  AssociationMessagesRoute: AssociationMessagesRoute,
+  AssociationNewsRoute: AssociationNewsRoute,
+  AssociationNotificationsRoute: AssociationNotificationsRoute,
+  AssociationOpportunitiesRoute: AssociationOpportunitiesRoute,
+  AssociationPerksRoute: AssociationPerksRouteWithChildren,
+  AssociationProductsRoute: AssociationProductsRoute,
+  AssociationProfileRoute: AssociationProfileRoute,
+  AssociationRenewRoute: AssociationRenewRouteWithChildren,
+  AssociationIndexRoute: AssociationIndexRoute,
+}
+
+const AssociationRouteWithChildren = AssociationRoute._addFileChildren(
+  AssociationRouteChildren,
+)
+
+interface AuthRouteChildren {
+  AuthMobileRoute: typeof AuthMobileRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthMobileRoute: AuthMobileRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 interface BusinessConnectConnectionsRouteChildren {
   BusinessConnectConnectionsPersonNodeIdRoute: typeof BusinessConnectConnectionsPersonNodeIdRoute
   BusinessConnectConnectionsIndexRoute: typeof BusinessConnectConnectionsIndexRoute
@@ -3903,6 +4517,9 @@ interface BusinessConnectRouteChildren {
   BusinessConnectV3Route: typeof BusinessConnectV3Route
   BusinessConnectV4Route: typeof BusinessConnectV4Route
   BusinessConnectV5Route: typeof BusinessConnectV5Route
+  BusinessConnectV6Route: typeof BusinessConnectV6Route
+  BusinessConnectV7Route: typeof BusinessConnectV7Route
+  BusinessConnectV8Route: typeof BusinessConnectV8Route
   BusinessConnectIndexRoute: typeof BusinessConnectIndexRoute
   BusinessConnectIntroductionsTargetPersonNodeIdRoute: typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   BusinessConnectIntroductionsAnalyticsRoute: typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -3926,6 +4543,9 @@ const BusinessConnectRouteChildren: BusinessConnectRouteChildren = {
   BusinessConnectV3Route: BusinessConnectV3Route,
   BusinessConnectV4Route: BusinessConnectV4Route,
   BusinessConnectV5Route: BusinessConnectV5Route,
+  BusinessConnectV6Route: BusinessConnectV6Route,
+  BusinessConnectV7Route: BusinessConnectV7Route,
+  BusinessConnectV8Route: BusinessConnectV8Route,
   BusinessConnectIndexRoute: BusinessConnectIndexRoute,
   BusinessConnectIntroductionsTargetPersonNodeIdRoute:
     BusinessConnectIntroductionsTargetPersonNodeIdRoute,
@@ -4419,7 +5039,8 @@ const rootRouteChildren: RootRouteChildren = {
   AccountSettingsRoute: AccountSettingsRouteWithChildren,
   ActivityRoute: ActivityRoute,
   AiRoute: AiRoute,
-  AuthRoute: AuthRoute,
+  AssociationRoute: AssociationRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
   BenefitsRoute: BenefitsRoute,
   BusinessCardsRoute: BusinessCardsRoute,
   BusinessConnectRoute: BusinessConnectRouteWithChildren,

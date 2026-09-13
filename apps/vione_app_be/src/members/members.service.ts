@@ -184,14 +184,25 @@ export class MembersService {
       mappedRegion = r.region;
     }
 
+    // Normalize type
+    let mappedType = 'company';
+    const rawType = String(r.type || '').toLowerCase();
+    if (rawType.includes('individual') || rawType.includes('ca_nhan') || rawType.includes('cá nhân')) {
+      mappedType = 'individual';
+    } else {
+      mappedType = 'company';
+    }
+
     return {
       id: r.id,
+      memberId: r.id,
+      member_id: r.id,
       code: r.code ?? '',
       name: r.name,
       contact: r.contact ?? '',
       email: r.email ?? '',
       phone: r.phone ?? '',
-      type: r.type ?? 'company',
+      type: mappedType,
       level: mappedLevel,
       industry: mappedIndustry,
       region: mappedRegion,
@@ -199,6 +210,18 @@ export class MembersService {
       joinedAt: joinedStr,
       feeYear: r.fee_year ?? new Date().getFullYear(),
       feePaid: Boolean(r.fee_paid),
+      termEnd: r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null,
+      term_end: r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null,
+      renewedAt: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
+      renewed_at: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
+      newTermEnd: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : null,
+      new_term_end: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : null,
+      reminderCount: Number(r.reminder_count ?? 0),
+      reminder_count: Number(r.reminder_count ?? 0),
+      lastReminder: r.last_reminder ? new Date(r.last_reminder).toISOString().slice(0, 10) : null,
+      last_reminder: r.last_reminder ? new Date(r.last_reminder).toISOString().slice(0, 10) : null,
+      paymentStatus: r.payment_status || (r.fee_paid ? 'paid' : 'unpaid'),
+      payment_status: r.payment_status || (r.fee_paid ? 'paid' : 'unpaid'),
       address: r.address ?? '',
       website: r.website ?? '',
       taxCode: r.tax_code ?? '',
@@ -256,7 +279,13 @@ export class MembersService {
       );
     }
     if (filters?.type && filters.type !== 'all') {
-      items = items.filter((m) => m.type === filters.type);
+      const targetType = filters.type.toLowerCase();
+      items = items.filter((m) => {
+        if (targetType === 'company' || targetType === 'enterprise' || targetType === 'corporate') {
+          return m.type === 'company' || m.type === 'enterprise' || m.type === 'corporate';
+        }
+        return m.type === targetType;
+      });
     }
     if (filters?.industry && filters.industry !== 'all') {
       items = items.filter((m) => m.industry === filters.industry);
@@ -304,17 +333,32 @@ export class MembersService {
 
   // Mobile API: get current user member info for profile
   async getMyMember(userId: string) {
-    const rows = await this.prisma.$queryRaw<any[]>`
+    let rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
 
     const user = await this.prisma.vione_users.findUnique({
       where: { id: userId },
-    });
+    }).catch(() => null);
+
+    if (rows.length === 0) {
+      const users = await this.prisma.$queryRaw<any[]>`
+        SELECT email FROM auth.users WHERE id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      const candidateEmail = users[0]?.email || user?.email;
+      if (candidateEmail) {
+        rows = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.members WHERE LOWER(email) = LOWER(${candidateEmail}) LIMIT 1
+        `.catch(() => []);
+      }
+    }
 
     if (rows.length > 0) {
       const m = rows[0];
       return {
+        id: m.id,
+        memberId: m.id,
+        member_id: m.id,
         code: m.code ?? '',
         name: m.name,
         status: m.status ?? 'active',
@@ -336,6 +380,9 @@ export class MembersService {
 
     // Fallback: If no member row exists for this user, return non-member identity
     return {
+      id: null,
+      memberId: null,
+      member_id: null,
       code: `GUEST-${userId.slice(0, 6).toUpperCase()}`,
       name: user?.name || user?.username || 'Thành viên mới',
       status: 'guest',
@@ -615,6 +662,15 @@ export class MembersService {
       WHERE id = ${id}
     `;
 
+    // Activity log
+    await this.logActivity(
+      'Cập nhật thông tin hội viên',
+      `${name} (${current.code || id})`,
+      'member',
+      'admin@connect.vn',
+      current.association_id,
+    );
+
     // If status was changed (e.g. pending -> active), dispatch in-app notification to the applicant/member
     if (data.status !== undefined && data.status !== current.status) {
       try {
@@ -658,15 +714,23 @@ export class MembersService {
             INSERT INTO public.business_notifications (
               id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
               title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
-              priority, status, created_at, updated_at, dedupe_key
+              priority, status, app_scope, target_app, created_at, updated_at, dedupe_key
             ) VALUES (
               ${notifId}::uuid, ${memberUserId}::uuid, 'association', ${id},
               'member_approval', ${isApproved ? 'member_approved' : 'member_status_changed'},
               ${notifTitle}, ${notifBody},
               ${safeData}::jsonb, 'navigate', 'Mở App Hội Viên', '{"route": "/m"}'::jsonb,
-              'high', 'delivered', now(), now(), ${`member_approval:${id}:${status}:${Date.now()}`}
+              'high', 'delivered', 'all', 'all', now(), now(), ${`member_approval:${id}:${status}:${Date.now()}`}
             )
           `.catch((err) => console.warn('Could not insert member approval notification:', err));
+
+          await this.prisma.$executeRaw`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              gen_random_uuid(), ${id}, ${notifTitle}, ${notifBody}, false, false, 'member_approval', ${id}, now()
+            )
+          `.catch(() => {});
         }
       } catch (err) {
         console.warn('Error sending member status notification:', err);
@@ -731,7 +795,7 @@ export class MembersService {
 
   async renewMember(userId: string, id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} LIMIT 1
+      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
@@ -750,17 +814,58 @@ export class MembersService {
       UPDATE public.members SET
         fee_paid   = true,
         renewed_at = ${today},
+        term_end   = ${newEndStr}::date,
         new_term_end = ${newEndStr},
+        payment_status = 'paid',
         updated_at = now()
-      WHERE id = ${id}
+      WHERE id = ${current.id}
     `;
 
-    return this.getMemberById(userId, id);
+    // Activity log
+    await this.logActivity('Gia hạn hội phí', `${current.name} (${current.code || id})`, 'fee', 'admin@connect.vn', current.association_id);
+
+    // Dispatch 2-way notification
+    if (current.user_id) {
+      try {
+        const notifTitle = '🎉 Gia hạn hội viên thành công';
+        const notifBody = `Hồ sơ hội viên ${current.name} đã được gia hạn thành công. Nhiệm kỳ mới có hiệu lực đến ngày ${newEndStr}.`;
+        const notifId = crypto.randomUUID();
+        const dedupeKey = `renew-${current.id}-${Date.now()}`;
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          termEnd: newEndStr,
+          targetRoute: '/m/card',
+        });
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'membership', $3, 'membership_renewed', 'renewal_success',
+            $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
+        `, notifId, current.user_id, current.id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'renewal', $4, NOW()
+          )
+        `, current.id, notifTitle, notifBody, current.id).catch(() => {});
+      } catch (e: any) {
+        console.warn('Failed to notify member of renewal:', e?.message);
+      }
+    }
+
+    return this.getMemberById(userId, current.id);
   }
 
   async sendRenewalReminder(userId: string, id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} LIMIT 1
+      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
@@ -777,8 +882,44 @@ export class MembersService {
         reminder_count = ${newCount},
         last_reminder  = ${today},
         updated_at     = now()
-      WHERE id = ${id}
+      WHERE id = ${current.id}
     `;
+
+    // Dispatch 2-way notification
+    if (current.user_id) {
+      try {
+        const notifTitle = 'Nhắc nhở gia hạn tư cách hội viên';
+        const notifBody = `Hội viên ${current.name} thân mến, thời hạn hội viên của bạn sắp kết thúc (${current.term_end ? new Date(current.term_end).toISOString().slice(0, 10) : 'hôm nay'}). Vui lòng hoàn thành gia hạn hội phí để duy trì mọi quyền lợi kết nối và ưu đãi.`;
+        const notifId = crypto.randomUUID();
+        const dedupeKey = `renew-remind-${current.id}-${Date.now()}`;
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          termEnd: current.term_end,
+          targetRoute: '/fees',
+        });
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'membership', $3, 'renewal_reminder', 'fee_reminder',
+            $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
+        `, notifId, current.user_id, current.id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'renewal_reminder', $4, NOW()
+          )
+        `, current.id, notifTitle, notifBody, current.id).catch(() => {});
+      } catch (e: any) {
+        console.warn('Failed to send renewal reminder notification:', e?.message);
+      }
+    }
 
     return this.getMemberById(userId, id);
   }
@@ -848,10 +989,101 @@ export class MembersService {
     }));
   }
 
+  async listAllBenefits(userId: string) {
+    const associationId = await this.getAssociationIdForUser(userId);
+    let rows: any[] = [];
+    if (associationId) {
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, title_vi, title_en, desc_vi, desc_en, sort_order, association_id, created_at, updated_at
+        FROM public.association_benefits
+        WHERE association_id = ${associationId}::uuid
+        ORDER BY sort_order ASC, created_at ASC
+      `.catch(() => []);
+    }
+    if (rows.length === 0) {
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, title_vi, title_en, desc_vi, desc_en, sort_order, association_id, created_at, updated_at
+        FROM public.association_benefits
+        ORDER BY sort_order ASC, created_at ASC
+      `.catch(() => []);
+    }
+
+    return rows.map((r) => ({
+      id: r.id,
+      titleVi: r.title_vi ?? '',
+      titleEn: r.title_en ?? '',
+      descVi: r.desc_vi ?? '',
+      descEn: r.desc_en ?? '',
+      sortOrder: Number(r.sort_order ?? 0),
+    }));
+  }
+
+  async createBenefit(userId: string, dto: any) {
+    const associationId = await this.getAssociationIdForUser(userId);
+    const id = crypto.randomUUID();
+    const titleVi = dto.titleVi || dto.title_vi || '';
+    const titleEn = dto.titleEn || dto.title_en || '';
+    const descVi = dto.descVi || dto.desc_vi || '';
+    const descEn = dto.descEn || dto.desc_en || '';
+    const sortOrder = Number(dto.sortOrder ?? dto.sort_order ?? 0);
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.association_benefits (
+        id, association_id, title_vi, title_en, desc_vi, desc_en, sort_order, created_at, updated_at
+      ) VALUES (
+        ${id}::uuid, ${associationId}::uuid, ${titleVi}, ${titleEn}, ${descVi}, ${descEn}, ${sortOrder}, NOW(), NOW()
+      )
+    `;
+
+    return {
+      id,
+      titleVi,
+      titleEn,
+      descVi,
+      descEn,
+      sortOrder,
+    };
+  }
+
+  async updateBenefit(userId: string, id: string, dto: any) {
+    const titleVi = dto.titleVi || dto.title_vi || '';
+    const titleEn = dto.titleEn || dto.title_en || '';
+    const descVi = dto.descVi || dto.desc_vi || '';
+    const descEn = dto.descEn || dto.desc_en || '';
+    const sortOrder = Number(dto.sortOrder ?? dto.sort_order ?? 0);
+
+    await this.prisma.$executeRaw`
+      UPDATE public.association_benefits
+      SET title_vi = ${titleVi},
+          title_en = ${titleEn},
+          desc_vi = ${descVi},
+          desc_en = ${descEn},
+          sort_order = ${sortOrder},
+          updated_at = NOW()
+      WHERE id = ${id}::uuid
+    `;
+
+    return {
+      id,
+      titleVi,
+      titleEn,
+      descVi,
+      descEn,
+      sortOrder,
+    };
+  }
+
+  async deleteBenefit(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.association_benefits WHERE id = ${id}::uuid
+    `;
+    return { success: true };
+  }
+
   async getMyMemberContext(userId: string) {
     const [memRows, profileRows, assocId] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
-        SELECT code, name, email, avatar, status, association_id
+        SELECT id, code, name, email, avatar, status, association_id
         FROM public.members
         WHERE user_id = ${userId}::uuid
         LIMIT 1
@@ -864,9 +1096,20 @@ export class MembersService {
       this.getAssociationIdForUser(userId),
     ]);
 
-    const m = memRows[0];
-    const p = profileRows[0];
+    let m = memRows[0];
+    if (!m) {
+      const users = await this.prisma.$queryRaw<any[]>`
+        SELECT email FROM auth.users WHERE id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      if (users.length > 0 && users[0].email) {
+        const byEmail = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, name, email, avatar, status, association_id FROM public.members WHERE LOWER(email) = LOWER(${users[0].email}) LIMIT 1
+        `.catch(() => []);
+        if (byEmail.length > 0) m = byEmail[0];
+      }
+    }
 
+    const p = profileRows[0];
     const memberCode = m?.code ?? null;
     const rawStatus = String(m?.status ?? '').toLowerCase();
     const membershipStatus = ['active', 'pending', 'suspended', 'expired'].includes(rawStatus)
@@ -875,6 +1118,9 @@ export class MembersService {
     const canAct = Boolean(memberCode) && membershipStatus === 'active';
 
     return {
+      id: m?.id ?? null,
+      memberId: m?.id ?? null,
+      member_id: m?.id ?? null,
       memberCode,
       associationId: assocId ?? m?.association_id ?? null,
       displayName: m?.name || p?.display_name || m?.email || '',
@@ -884,6 +1130,21 @@ export class MembersService {
       canAct,
       locale: p?.locale || 'vi',
     };
+  }
+
+  async logActivity(action: string, target: string, category: string, userEmail: string = 'admin@connect.vn', assocId?: string) {
+    try {
+      const now = new Date();
+      const at = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`;
+      const code = `L-${Date.now().toString(36).toUpperCase()}`;
+      const effectiveAssoc = assocId || 'c1983000-0000-4000-8000-000000001983';
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.activity_log (id, code, "user", action, target, category, at, ip, created_at, updated_at, association_id)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, '127.0.0.1', now(), now(), $7::uuid)
+      `, code, userEmail, action, target, category, at, effectiveAssoc);
+    } catch (e: any) {
+      console.warn('logActivity error:', e?.message);
+    }
   }
 
   async getMyMembership(userId: string) {
@@ -1161,6 +1422,127 @@ export class MembersService {
     });
     return { success: true };
   }
+
+  async updateMemberRoleDept(
+    memberId: string,
+    data: { executiveRole: string; department: string; associationId?: string },
+  ) {
+    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
+
+    const assocId = data.associationId || member.association_id || 'c1983000-0000-4000-8000-000000001983';
+
+    // 1. Update members table
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.members
+      SET executive_role = $1, department = $2, association_id = $3::uuid, updated_at = NOW()
+      WHERE id = $4
+    `, data.executiveRole, data.department, assocId, memberId);
+
+    // 2. If member has linked user_id, update memberships and user_roles
+    const userId = member.user_id;
+    if (userId) {
+      let membershipRole = 'member';
+      if (data.executiveRole === 'platform_admin' || data.executiveRole === 'admin') {
+        membershipRole = 'admin';
+      } else if (data.executiveRole.startsWith('truong_ban_') || data.executiveRole === 'tong_thu_ky') {
+        membershipRole = 'moderator';
+      }
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.memberships (
+          id, user_id, association_id, role, executive_role, department, status, joined_at, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, 'active', NOW(), NOW(), NOW()
+        )
+        ON CONFLICT (user_id, association_id) DO UPDATE
+        SET role = EXCLUDED.role,
+            executive_role = EXCLUDED.executive_role,
+            department = EXCLUDED.department,
+            updated_at = NOW()
+      `, userId, assocId, membershipRole, data.executiveRole, data.department);
+
+      // Manage user_roles table
+      if (data.executiveRole === 'platform_admin') {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.user_roles (id, user_id, role)
+          VALUES (gen_random_uuid(), $1::uuid, 'platform_admin')
+          ON CONFLICT DO NOTHING
+        `, userId).catch(() => {});
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.user_roles (id, user_id, role)
+          VALUES (gen_random_uuid(), $1::uuid, 'admin')
+          ON CONFLICT DO NOTHING
+        `, userId).catch(() => {});
+      } else if (data.executiveRole === 'admin') {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.user_roles (id, user_id, role)
+          VALUES (gen_random_uuid(), $1::uuid, 'admin')
+          ON CONFLICT DO NOTHING
+        `, userId).catch(() => {});
+        if (userId !== '00000000-0000-0000-0000-000000000000') {
+          await this.prisma.$executeRawUnsafe(`
+            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role = 'platform_admin'
+          `, userId).catch(() => {});
+        }
+      } else if (data.executiveRole.startsWith('truong_ban_') || data.executiveRole === 'tong_thu_ky') {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.user_roles (id, user_id, role)
+          VALUES (gen_random_uuid(), $1::uuid, 'moderator')
+          ON CONFLICT DO NOTHING
+        `, userId).catch(() => {});
+        if (userId !== '00000000-0000-0000-0000-000000000000') {
+          await this.prisma.$executeRawUnsafe(`
+            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin')
+          `, userId).catch(() => {});
+        }
+      } else if (data.executiveRole === 'member') {
+        if (userId !== '00000000-0000-0000-0000-000000000000') {
+          await this.prisma.$executeRawUnsafe(`
+            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin', 'moderator', 'tenant_admin')
+          `, userId).catch(() => {});
+        }
+      }
+
+      // Dispatch 2-way business notification
+      try {
+        const notifTitle = 'Cập nhật phân quyền & phòng ban';
+        const notifBody = `Tài khoản của bạn đã được cập nhật chức danh: "${data.executiveRole}" thuộc phòng ban: "${data.department}".`;
+        const notifId = crypto.randomUUID();
+        const dedupeKey = `role-dept-${memberId}-${Date.now()}`;
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          role: data.executiveRole,
+          department: data.department,
+          targetRoute: '/account-settings',
+        });
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'membership', $3, 'role_assigned', 'role_updated',
+            $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
+        `, notifId, userId, memberId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'membership', $4, NOW()
+          )
+        `, memberId, notifTitle, notifBody, memberId).catch(() => {});
+      } catch (e: any) {
+        console.warn('Failed to send role update notification:', e?.message);
+      }
+    }
+
+    return { ok: true, memberId };
+  }
 }
+
 
 

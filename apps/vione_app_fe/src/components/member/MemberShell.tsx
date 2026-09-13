@@ -112,11 +112,11 @@ export function MemberHeader({
 }
 
 const tabs = [
-  { to: "/m", label: "m.shell.tab_home", icon: Home, exact: true },
-  { to: "/m/notifications", label: "m.shell.tab_notifications", icon: Bell },
-  { to: "/m/card", label: "m.shell.tab_qr", icon: QrCode, center: true },
-  { to: "/m/messages", label: "m.shell.tab_messages", icon: MessageSquare },
-  { to: "/m/profile", label: "m.shell.tab_profile", icon: User },
+  { to: "/association", label: "m.shell.tab_home", icon: Home, exact: true },
+  { to: "/association/notifications", label: "m.shell.tab_notifications", icon: Bell },
+  { to: "/association/card", label: "m.shell.tab_qr", icon: QrCode, center: true },
+  { to: "/association/messages", label: "m.shell.tab_messages", icon: MessageSquare },
+  { to: "/association/profile", label: "m.shell.tab_profile", icon: User },
 ] satisfies { to: string; label: TKey; icon: typeof Home; exact?: boolean; center?: boolean }[];
 
 function MemberTabBar() {

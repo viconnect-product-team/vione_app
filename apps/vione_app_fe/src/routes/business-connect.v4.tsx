@@ -5,10 +5,10 @@ export const Route = createFileRoute("/business-connect/v4")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Business Connect v4 — Cyberpunk 2099 & Matrix HUD | VIONE" },
+      { title: "Business Connect v4 — Glassmorphism & Không Gian 3D (Web3) | VIONE" },
       {
         name: "description",
-        content: "Mẫu giao diện v4: Cyber Matrix HUD, Electric Cyan, Laser Magenta, Terminal Green và Quantum Core.",
+        content: "Mẫu giao diện v4: Phong cách Glassmorphism (Dark Mode), Deep 3D Scroll, dải Aurora gradient và khối đồ họa 3D xoay phản chiếu ánh sáng.",
       },
     ],
   }),

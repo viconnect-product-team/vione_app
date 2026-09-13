@@ -10,6 +10,7 @@ import { CustomerController } from './customer.controller';
 import { CardScanController } from './card-scan.controller';
 import { OpportunityController } from './opportunity.controller';
 import { ProductsController } from './products.controller';
+import { MarketplaceController } from './marketplace.controller';
 import { ContentController } from './content.controller';
 import { ConnectAppService } from './connect-app.service';
 import { ConnectAppGateway } from './connect-app.gateway';
@@ -29,6 +30,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     CustomerController,
     CardScanController,
     ProductsController,
+    MarketplaceController,
     ContentController,
   ],
   providers: [ConnectAppService, ConnectAppGateway],

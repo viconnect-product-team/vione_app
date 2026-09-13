@@ -9,6 +9,7 @@ export function SortHeader({
   sortDir,
   onSort,
   align = "left",
+  className = "",
 }: {
   label: string;
   columnKey: string;
@@ -16,11 +17,12 @@ export function SortHeader({
   sortDir: SortDir;
   onSort: (key: string) => void;
   align?: "left" | "right";
+  className?: string;
 }) {
   const active = sortKey === columnKey;
   const Icon = !active ? ChevronsUpDown : sortDir === "asc" ? ChevronUp : ChevronDown;
   return (
-    <th className={`px-4 py-3 ${align === "right" ? "text-right" : ""}`}>
+    <th className={`px-4 py-3 ${align === "right" ? "text-right" : ""} ${className}`}>
       <button
         type="button"
         onClick={() => onSort(columnKey)}

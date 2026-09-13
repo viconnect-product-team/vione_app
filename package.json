@@ -16,6 +16,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "docx": "^9.7.1",
+    "exceljs": "^4.4.0",
     "prettier": "^3.2.5",
     "turbo": "^2.1.2",
     "typescript": "^5.8.3"

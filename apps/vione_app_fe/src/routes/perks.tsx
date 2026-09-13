@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Gift, Pencil, Plus, Trash2, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Gift, Pencil, Plus, Trash2, ExternalLink, Search, LayoutGrid, List } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -8,6 +8,8 @@ import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { useServerData } from "@/hooks/use-server-data";
 import { useRole } from "@/hooks/use-role";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   createPerkFn,
   deletePerkFn,
@@ -43,6 +45,38 @@ function PerksAdminPage() {
   const [editing, setEditing] = useState<AdminPerk | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [view, setView] = useState<"table" | "cards">("table");
+  const [q, setQ] = useState("");
+
+  const filteredPerks = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    if (!ql) return perks;
+    return perks.filter(
+      (p) =>
+        p.title.toLowerCase().includes(ql) ||
+        (p.partner || "").toLowerCase().includes(ql) ||
+        (p.category || "").toLowerCase().includes(ql) ||
+        (p.summary || "").toLowerCase().includes(ql),
+    );
+  }, [perks, q]);
+
+  const accessors = useMemo(
+    () => ({
+      title: (p: AdminPerk) => p.title,
+      category: (p: AdminPerk) => p.category,
+      partner: (p: AdminPerk) => p.partner,
+      status: (p: AdminPerk) => p.status,
+      sortOrder: (p: AdminPerk) => p.sortOrder,
+    }),
+    [],
+  );
+
+  const tc = useTableControls(filteredPerks, accessors, {
+    initialPageSize: 10,
+    initialSortKey: "sortOrder",
+    initialSortDir: "asc",
+  });
 
   const active = perks.filter((p) => p.status === "active");
 
@@ -123,17 +157,41 @@ function PerksAdminPage() {
         title={t("perks.title")}
         subtitle={t("perks.subtitle")}
         actions={
-          <button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Plus className="h-4 w-4" />
-            {t("perks.create")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-xl border border-border bg-card p-0.5 shadow-[var(--shadow-card)]">
+              <button
+                onClick={() => setView("table")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  view === "table"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <List className="h-3.5 w-3.5" /> Bảng
+              </button>
+              <button
+                onClick={() => setView("cards")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  view === "cards"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" /> Thẻ
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Plus className="h-4 w-4" />
+              {t("perks.create")}
+            </button>
+          </div>
         }
       />
 
@@ -151,13 +209,116 @@ function PerksAdminPage() {
         />
       </div>
 
+      {/* Filters */}
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[260px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Tìm kiếm ưu đãi theo tiêu đề, đối tác, danh mục..."
+            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground shadow-[var(--shadow-card)] focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <p className="py-10 text-center text-sm text-muted-foreground">{t("common.empty")}</p>
-      ) : perks.length === 0 ? (
+      ) : tc.pageRows.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">{t("perks.empty")}</p>
+      ) : view === "table" ? (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+          <div className="overflow-x-auto relative">
+            <table className="w-full text-sm border-separate border-spacing-0">
+              <thead>
+                <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                    STT
+                  </th>
+                  <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                    Mã
+                  </th>
+                  <th className="px-4 py-3 border-b border-border">Ưu đãi & Đối tác</th>
+                  <th className="px-4 py-3 border-b border-border">Danh mục</th>
+                  <th className="px-4 py-3 border-b border-border">Mức giảm</th>
+                  <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+                  <th className="px-4 py-3 border-b border-border text-center">Thứ tự</th>
+                  <th className="sticky right-0 z-20 min-w-[120px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tc.pageRows.map((p, idx) => (
+                  <tr
+                    key={p.id}
+                    className="group border-b border-border transition-all duration-150 hover:bg-secondary/60"
+                  >
+                    <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                      {(tc.page - 1) * tc.pageSize + idx + 1}
+                    </td>
+                    <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                      UD-{String(p.sortOrder).padStart(3, "0")}
+                    </td>
+                    <td className="px-4 py-3 border-b border-border">
+                      <div className="font-semibold text-foreground text-xs">{p.title}</div>
+                      <div className="text-[11px] text-muted-foreground">{p.partner || p.summary}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-primary font-medium border-b border-border">
+                      {p.category || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold text-primary border-b border-border">
+                      {p.discount || "—"}
+                    </td>
+                    <td className="px-4 py-3 border-b border-border">
+                      <Pill color={p.status === "active" ? "success" : "neutral"}>
+                        {p.status === "active" ? t("perks.status.active") : t("perks.status.inactive")}
+                      </Pill>
+                    </td>
+                    <td className="px-4 py-3 text-center font-mono text-xs text-foreground border-b border-border">
+                      #{p.sortOrder}
+                    </td>
+                    <td className="sticky right-0 z-10 min-w-[120px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditing(p);
+                            setOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          {t("common.edit")}
+                        </button>
+                        <button
+                          onClick={() => onDelete(p)}
+                          disabled={deletingId === p.id}
+                          className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {t("common.delete")}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            page={tc.page}
+            pageCount={tc.pageCount}
+            pageSize={tc.pageSize}
+            total={tc.total}
+            from={tc.from}
+            to={tc.to}
+            onPage={tc.setPage}
+            onPageSize={tc.setPageSize}
+          />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {perks.map((p) => (
+          {tc.pageRows.map((p) => (
             <Card key={p.id} className="p-5 transition hover:shadow-[var(--shadow-glow)]">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-primary">

@@ -6,7 +6,7 @@
 const VIEW_KEY = "vba.events.view";
 const SAVED_FILTERS_KEY = "vba.events.savedFilters";
 
-export type EventView = "cards" | "calendar";
+export type EventView = "cards" | "calendar" | "table";
 
 export type EventSavedFilter = {
   id: string;
@@ -21,7 +21,8 @@ export function getEventView(): EventView {
   if (typeof window === "undefined") return "cards";
   try {
     const v = localStorage.getItem(VIEW_KEY);
-    return v === "calendar" ? "calendar" : "cards";
+    if (v === "calendar" || v === "table" || v === "cards") return v;
+    return "cards";
   } catch {
     return "cards";
   }

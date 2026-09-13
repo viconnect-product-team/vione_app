@@ -33,40 +33,80 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
 - **Data/Volume Safety**: Always use `docker compose down --remove-orphans` and `docker compose up -d --force-recreate` instead of manual container deletion to preserve volume mapping safely.
 - **No Hardcoded Env Vars**: Never hardcode environment variables in codebase or Dockerfiles. They must be injected via `.env.production` (transferred as `.env` on server) and consumed in `docker-compose.yml`.
 
-## Context Synchronization
-- **ALWAYS** check and keep `MEMORY.md` updated with any new architectural decisions, port mappings, infrastructure changes, or caveats.
+### Context Synchronization & Documentation Discipline (MANDATORY)
+- **CẬP NHẬT BẮT BUỘC**: Mỗi lần thực hiện bất kỳ thay đổi kiến trúc, tính năng, sửa lỗi hoặc điều chỉnh luồng:
+  1. **Cập nhật `MEMORY.md`**: Ghi nhận nguyên nhân, giải pháp, bài học phòng ngừa và cập nhật trạng thái hệ thống.
+  2. **Cập nhật `.cursorrules`**: Ghi nhận convention mới, vai trò (role) và quy chuẩn định tuyến/bảo mật.
+  3. **Bổ sung/Hiệu chỉnh Tài liệu Kỹ thuật (`document/`)**: Nếu phát hiện sai lệch giữa code, schema và tài liệu, BẮT BUỘC sửa ngay các file markdown và rebuild file `.docx` tương ứng trong `document/`.
+- **TUYỆT ĐỐI KHÔNG TỰ Ý CHẠY `git push` HAY `git commit`** (Tuân thủ nghiêm ngặt quy định tại `AGENTS.md`).
 
-## Multi-Tenant SaaS & Business Conventions
+## Multi-Tenant SaaS & Routing Conventions
 - **Multi-Tenant SaaS Scope**: The entire platform operates as a Multi-Tenant B2B/B2C SaaS. Data is scoped by `association_id` (Tenant ID) with PostgreSQL RLS and server middleware.
-- **Mobile vs Web CRM Relationship**:
-  - **Mobile (`/connect-app/*`)**: Focuses on individual Executive Networking, NFC business cards, live connection requests, instant messaging, and social moments stream.
-  - **Web CRM (`/dashboard`, `/notifications`, `/business-connect/*`)**: Focuses on Association Operations, membership tiering, broadcast notifications, CRM pipelines, and revenue management.
+- **Routing Ecosystem Standards**:
+  - **Mobile Login URL**: `/auth/mobile/` (supporting both `/auth/mobile` and `/auth/mobile/`) - Hỗ trợ đăng nhập mã hội viên, NFC/QR card scan, chuyển đổi đa hiệp hội.
+  - **Association App Base Route**: `/association/*` (Thay thế hoàn toàn route cũ `/m/*`). Tất cả đường dẫn con chuyển thành `/association/card`, `/association/events`, `/association/renew`, `/association/checkin`, v.v. Route `/m/*` được giữ redirect 301 tự động sang `/association/*`.
+  - **ViOne Connect App**: `/connect-app/*` (Mạng xã hội doanh nhân, Moments B2B, Danh bạ đối tác, Kết nối 1-on-1, Đặt lịch họp).
+  - **Web CRM Admin**: `/dashboard`, `/members`, `/fees`, `/events`, `/income`, `/expenses`, `/benefits`, `/perks`, `/marketplace`, `/platform/permissions`.
 - **Moments & Social Streams (Facebook-Grade Workflow)**:
   - Creating & Editing Moments must support 100% full rich features: text, multi-photo attachments (max 6 with keep/delete/upload), partner tagging (`@mention` + directory picker), business activity badges, check-in locations, occurred-at date-time, and privacy scope.
   - Moment comments support photo attachments with live preview and lightbox view.
+  - Ràng buộc DB XOR (`brm_target_xor`): Khi `target_kind = 'connection'`, bắt buộc `target_user_id IS NOT NULL`.
 - **Default Theme Standard**:
   - ViOne App (`/connect-app/*`), Association Apps, and Web CRM must default to Dark Mode (`dark`).
-- **Realtime Nurture Intelligence ("Cần giữ kết nối")**:
 - **Club Application & Admin Approval Flow (Two-Way Notification Architecture)**:
-  - Guest/applicant submits club application on landing (`/landing/ceo1983` or `/landing/business-connect`) -> Dispatches to both `public.notifications` and `public.business_notifications` for all admins (`memberships` admin roles, `user_roles` platform/tenant admins, and admin users) with WebSocket broadcast and `targetRoute: "/members?status=pending"`.
+  - Guest/applicant submits club application on landing (`/landing/ceo1983` or `/landing/business-connect`) -> Dispatches to both `public.notifications` and `public.business_notifications` for all admins with WebSocket broadcast and `targetRoute: "/members?status=pending"`.
   - Admin logs into Web CRM -> Topbar bell icon shows badge and real-time notification -> Clicking directs to `/members?status=pending` for immediate one-click approval.
-  - Admin approves/rejects member in Web CRM -> In-app notification sent to the applicant's account in `public.business_notifications` -> Displayed in Member App (`/m` or `/connect-app`).
+  - Admin approves/rejects member in Web CRM -> In-app notification sent to the applicant's account in `public.business_notifications` -> Displayed in Member App (`/association` or `/connect-app`).
+- **Multi-App Voting & Realtime Notification Synchronization Standard**:
+  - Khi tạo biểu quyết tại Web CRM (`/voting`), thông báo tương tác (`notification_kind: 'interactive_poll'`, `event_kind: 'poll_created'`) được tự động phát tới ViOne App và Hiệp hội App theo đúng phân khúc đối tượng (`all`, `members`, `non_members`).
+  - Nguồn bỏ phiếu bắt buộc được lưu vào cột `source_app` (`public.poll_votes`): `'vione_app'`, `'association_app'`, `'crm'`.
+  - CRM Admin hiển thị cơ cấu phiếu theo kênh thời gian thực (`vioneVotes`, `associationVotes`, `crmVotes`).
+  - Khi đóng cuộc biểu quyết (`POST /api/voting/polls/:id/close`), tự động phát thông báo kết quả (`event_kind: 'poll_closed'`, `notification_kind: 'poll_result'`) kèm phương án chiến thắng (Winner 🏆), tỷ lệ % và cơ cấu nguồn tham gia cho tất cả các app (`/connect-app/notifications`, `/association/notifications`, `/m/notifications`).
 - **Landing 3 Theme Modes & High-Contrast Standards**:
   - Theme mode labels must strictly follow language: `vi`: Tối, Sáng, Tương phản cao; `en`: Dark, Light, High Contrast; `zh`: 暗色, 亮色, 高对比度; `ja`: ダーク, ライト, 高コントラスト; `ko`: 다크, 라이트, 고대비.
   - Light mode (Sáng) must NEVER use white or light yellow gradients for text without dynamic `themeClass`. Headings must use high-contrast dark tones (`#0F172A`, `#B45309`).
-- **Distinct Background Assets**:
-  - CEO 1983 Landing and Business Connect SaaS Landing must never share background images. Each landing page has its own dedicated dark, light, and contrast background assets in `/landing/`.
-
+- **Business Connect Landing Pages Architecture Standards (V1 - V8)**:
+  - Tất cả phiên bản landing page phải toát lên sự SANG TRỌNG, NGHIÊM TÚC và ĐẲNG CẤP TẬP ĐOÀN dành cho CEO, Chủ tịch, Lãnh đạo Hiệp hội.
+  - Tuyệt đối KHÔNG sử dụng yếu tố game, hoạt hình, bão cát, hầm mộ hay cổ tích huyễn hoặc. Bố trí <section> với padding lớn (`py-24`), chia cột grid khoa học.
+  - Bắt buộc dùng 100% nội dung Part 1 chuẩn mực: Header (6 nav + Đăng nhập + Đặt demo), Hero (Tagline, Headline, Subtext, CTAs, 4 Stats: 10,000+ | 300+ | 50,000+ | 20+), Problem (5 thẻ thách thức), Solution (9 thẻ giải pháp), Ecosystem (Cùng nhau tạo ra giá trị lớn hơn...), Clients/Testimonials (6 logo: VCCI, AmCham, EuroCham, KoCham, SBF, AusCham + 3 CEO review cards), Footer.
+  - V1 (Executive Zen): Aman Resorts, sương khói chậm, viền thẻ phát sáng, chuyển theme có hiệu ứng cánh cửa đá trượt khép mở.
+  - V2 (Heritage & Trust): Private Banking parchment, Midnight Navy, hạt ánh sáng vàng kim lơ lửng, thẻ hồ sơ đóng khung mạ vàng, chuyển section Legacy Reveal mượt mà (không lật trang rotateY).
+  - V3 (Premium Editorial): Vercel/Stripe style, đường lưới kỹ thuật chính xác, viền cứng sắc sảo, chuyển cảnh Snap & Slide, thẻ đẩy khối Offset Shadow.
+  - V4 (Executive Glass Dashboard): Kính mờ bóng bẩy, nền bokeh đô thị trung tâm tài chính mờ sâu, cuộn thẻ xếp lớp Stacking Cards.
+  - V6 (Corporate Monument): Tượng đài đá cẩm thạch Marble White / cát ấm, đen Obsidian điểm vàng đồng Bronze, hình học 3D đa diện xoay chậm, hiệu ứng cánh cửa đá khép mở khi đổi theme.
+  - V7 (Fluid Analytics): Nền trắng sứ / xanh đại dương thẫm, aura mesh gradient chất lỏng, ranh giới sóng dẻo Wave Morphing, thẻ bo góc lớn rounded-3xl.
+  - V8 (Executive Titanium Suite): Flagship tích hợp tối thượng, thiết kế Titanium sang trọng, đồng bộ đa ứng dụng CRM - ViOne - Hiệp Hội.
+- **Tiêu chuẩn Tài liệu Kiểm thử & Kế hoạch WBS (ISO/IEC/IEEE 29119-3 & PMBOK)**:
+  - `document/VIONE_COMPREHENSIVE_TEST_CASES_SUITE_10000_CASES.xlsx`: Hơn 10,000 test cases thực tế, 100% không trùng lặp lặp lại, bao phủ toàn bộ các góc độ VIEW, CRUD, SEARCH, FILTER, SORT, PAGINATION, EXPORT, IMPORT, PERMISSION, SECURITY, CONCURRENCY, OFFLINE SYNC và MULTI-APP VOTING.
+  - `document/VIONE_WBS_FEATURE_MATRIX_AND_ESTIMATION_CHI_TIET.xlsx`: 1,000+ gói công việc chi tiết chuẩn PMBOK, phân rã 5 giai đoạn vòng đời dự án (Kiến trúc, Frontend, Backend, Tích hợp & Bảo mật, QA E2E & UAT), ước lượng Man-days chi tiết cho FE, BE, QA.
 
 ## Troubleshooting & Bug Fixes Log
 *(Quy tắc: Bất kỳ lỗi/cấu hình sai nào phát sinh khi phát triển hoặc deploy phải được ghi nhận vào đây và MEMORY.md để AI/Dev tránh lặp lại)*
 
 | Vấn đề / Lỗi gặp phải (Issue) | Nguyên nhân gốc rễ (Root Cause) | Giải pháp / Cách fix triệt để (Solution) | Cách phòng tránh (Prevention) |
 | :--- | :--- | :--- | :--- |
-| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file  apps/vione_app_fe/nitro.config.ts. | Đảm bảo khai báo rõ preset: 'node-server' cho các project SSR chạy Node container. |
+| **Frontend Container Crash Loop (Thoát ngay không log)** khi deploy Docker. | Nitro (của TanStack/Vite) mặc định build ra preset Cloudflare (chỉ export fetch handler). Khi Node chạy index.mjs trong Docker, nó thoát luôn (exit 0), dẫn đến loop Restarting. | Thêm cấu hình preset: 'node-server' vào file apps/vione_app_fe/nitro.config.ts. | Đảm bảo khai báo rõ preset: 'node-server' cho các project SSR chạy Node container. |
 | **Lỗi Prisma P1013 (unsupported startup parameter)** | Prisma kết nối Supabase qua PgBouncer (port 6432) thiếu flag. | Thêm ?pgbouncer=true vào URL. | Luôn thêm pgbouncer=true khi gọi pooler. |
 | **Lỗi Prisma báo sai port (invalid port) do BOM** | File .env.production lưu với UTF-8 with BOM trên Windows có chứa ký tự tàng hình. | Đổi encoding sang UTF-8 (không BOM). | Luôn dùng UTF-8 thuần trên Windows cho config. |
 | **Không truy cập được Frontend từ ngoài Host (Connection Refused)** | Nitro mặc định chỉ bind 127.0.0.1 bên trong container. | Thêm HOST=0.0.0.0 và NITRO_HOST=0.0.0.0 vào docker-compose.clean.yml. | Khai báo biến môi trường Host bind là 0.0.0.0. |
 | **Backend crash do WebSocket undefined trên Node 20** | Dockerfile dùng node:20-alpine thiếu globalThis.WebSocket. | Dùng node:22-alpine làm base image. | Đồng nhất version LTS 22+ giữa local và Docker. |
 | **Lỗi file cấu hình Windows khi chạy trên Linux (CRLF)** | Windows dùng \r\n khiến bash script trên Linux lỗi phân tích cú pháp. | Dùng sed -i 's/\r//g' trước khi chạy. | Lưu các tệp script và config ở định dạng LF. |
+| **TanStack Route Generator không ghi đè disk (`routeTree.gen.ts`)** | `generator.run()` kiểm tra hash bộ nhớ và có thể bỏ qua bước ghi tệp vật lý khi các route mới được thêm/xoá hàng loạt. | Cập nhật `scripts/gen-routes.mjs` lấy trực tiếp `res.routeTreeContent` và ghi tệp cưỡng bức qua `fs.writeFile`. | Luôn xác thực nội dung tệp sinh tự động trên đĩa sau khi thay đổi cây route. |
+| **Lỗi khoá tệp Word `.docx` khi ghi đè trên Windows (Error -4094 UNKNOWN)** | Bộ chỉ mục Windows hoặc chương trình xem tài liệu khóa tệp đích trong khi script ghi trực tiếp. | Ghi nội dung ra tệp tạm `.docx.tmp`, sau đó thực hiện rename/replace nguyên tử (`fs.renameSync`). | Tránh ghi đè trực tiếp các tệp nhị phân đang được mở trên Windows. |
+| **DB Constraint `brm_target_xor` vi phạm khi tạo bài viết** | Bài viết Moments B2B đặt `target_kind = 'connection'` nhưng để trống `target_user_id`. | Đảm bảo `target_user_id` luôn có giá trị UUID người dùng khi loại kết nối là connection. | Kiểm tra các ràng buộc CHECK/XOR của Postgres trước khi insert dữ liệu thử nghiệm. |
+| **ExcelJS bị mất toàn bộ tên cột (Header rỗng)** | Đặt `ws.columns` gán nhãn vào Row 1, sau đó merge Rows 1-2 làm banner tiêu đề đè mất dữ liệu. Tạo Row 4 rỗng khiến `eachCell` không lặp qua ô nào. | Gán trực tiếp giá trị và style cho từng ô `A4:Q4`, sau đó gán `ws.autoFilter = 'A4:Q4'`. | Không merge đè lên dòng chứa định nghĩa `columns` của ExcelJS. |
+| **Lỗi EBUSY khóa file Excel (`.xlsx`) trên Windows** | Người dùng đang mở file Excel trên máy tính khiến script NodeJS ghi đè bị từ chối quyền truy cập (EBUSY). | Bắt try-catch lỗi EBUSY và ghi ra file hậu tố `_CHI_TIET.xlsx` / `_110_FLOWS.xlsx`, thông báo rõ cho người dùng. | Luôn có cơ chế fallback tên file khi thao tác với tệp Office trên môi trường Windows. |
+| **DB Check Constraints (`products`, `moments`)** | Cột `products.status` chỉ nhận `['active', 'sold', 'draft']`; `moments.status` chỉ nhận `['pending', 'active']`; `renewal_audit_log` dùng `amount_paid` thay vì `amount`. | Cập nhật API controller và script kiểm thử gửi đúng enum hợp lệ của PostgreSQL. | Luôn kiểm tra định nghĩa check constraint trong database schema trước khi viết nghiệp vụ. |
+| **`business_notifications` DB Constraint & Column Name** | Cột `priority` chỉ chấp nhận `['critical', 'high', 'normal', 'informational']` (không dùng `'urgent'`). Cột `status` chỉ nhận `['pending', 'scheduled', 'delivered', 'read', 'archived', 'expired', 'cancelled']`. Bảng không có cột boolean `is_read`. | Đánh dấu đã đọc bằng cách cập nhật `status = 'read'` và `read_at = NOW()`. Gửi đúng priority hợp lệ. | Luôn kiểm tra ràng buộc check constraint và tên cột thực tế của bảng notification trong PostgreSQL. |
+| **Landing Pages V2-V5 Creative Animation Architecture** | Yêu cầu hiệu ứng sáng tạo đột phá nhưng không được làm vỡ layout responsive hoặc gây giật lag trình duyệt. | Sử dụng Lenis v1.3+ cho smooth scroll, Canvas tối ưu cho Repulse Particle, Framer Motion `useMotionValue` cho Parallax & Magnetic, và SVG TextPath/Clip-path. | Luôn bọc component hoạt họa trong `useEffect` có cleanup listener khi unmount (`lenis.destroy()`, `cancelAnimationFrame`). |
+| **Senior QA 138 Test Flows & Excel Data Validation** | Bộ kiểm thử phải bao quát sâu từ CRM Admin, Mobile App, Mạng xã hội B2B đến 7 phân hệ chuyên sâu (Seating Plan VIP, Thông báo đa kênh, Bầu cử số, Đa quỹ tài chính, Thẻ cứng NFC, Sàn RFQ, Granular RBAC). | Duy trì 2 bộ test script `scratch/test_110_deep_flows.js` và `scratch/test_deep_subfeatures_suite.js` (138/138 Passed 100%), xuất file Excel có Dropdown Data Validation và đồng bộ 6 file Word `.docx`. | Chạy định kỳ bộ kiểm thử tích hợp sâu để đảm bảo không xảy ra regression trên cơ sở dữ liệu. |
+| **Quy Tắc Visual Thay Text Cho Landing Pages** | Trang Landing dễ bị sa đà vào "rừng chữ" gây nhàm chán cho khách hàng doanh nhân. | Áp dụng nguyên tắc Visual-First: Ở section "Vấn đề" và "Giải pháp", thay thế các đoạn mô tả text dài bằng Animation/GIF/Trận pháp/Lọ phép/Cửa kính đọng sương. Text chi tiết chỉ lộ diện khi Hover/Click hoặc qua Popover/Tooltip. | Tuyệt đối không dùng lorem ipsum; luôn dùng đúng bộ nội dung chuẩn doanh nghiệp. |
+| **Landing V6: Kim Tự Tháp Huyền Bí (Sa Mạc, Khắc Đá & Ký Tự Cổ)** | Phong cách Ai Cập cổ đại kết hợp công nghệ ma thuật: 3 themes (Light: Sa mạc vàng cát/chữ nâu đá vôi/viền vàng kim; Dark: Đêm sao Ai Cập xanh tím/viền Neon Cyan; Contrast: Phiến đá điêu khắc trắng đen nứt nẻ gồ ghề). Layout Kim Tự Tháp chiếm 2/3 bên phải, trần hầm mộ vát chéo 1/2. | Hai phiến đá hầm mộ đóng sập lại ở giữa (shake + rơi bụi đá) khi chuyển section; Decrypting Hieroglyphs dịch thuật tiếng Việt khi hover; Scarab Cursor bọ hung kèm vệt cát rơi (particle gravity); 3D Obelisk Hover nhô cao trên cát. | Lưu trữ route tại `/business-connect/v6` và tích hợp bộ chuyển đổi phiên bản linh hoạt. |
+| **Quản lý Doanh nghiệp (`/companies`) hiển thị dữ liệu** | Dữ liệu `public.members` lưu `type: 'enterprise'` hoặc `'corporate'`, NestJS backend và Frontend filter lọc cứng `type === 'company'`. | Chuẩn hóa `r.type` tại `members.service.ts` và backend filter chấp nhận cả `company`, `enterprise`, `corporate`. Cập nhật `companies.index.tsx` chấp nhận cả 3 loại. Bổ sung đầy đủ mã số thuế, website, nhân sự, địa chỉ cho doanh nghiệp. | Luôn chuẩn hóa ánh xạ kiểu dữ liệu giữa database và API DTO. |
+| **Quyền lợi Hội viên (`/benefits`) Admin CRUD API** | Trang admin phụ thuộc vào Supabase `useServerFn` thiếu service role key trên frontend. | Thiết lập bộ API CRUD chuyên dụng `/api/members/benefits/admin` (GET, POST, PUT, DELETE) kết nối bảng `public.association_benefits` qua Prisma trong NestJS `members.controller.ts`. Frontend chuyển sang `fetchNestApi`. | Không dùng trực tiếp Supabase Admin client trên client browser; chuyển qua backend NestJS bảo mật bằng JWT. |
+| **Landing V7: Bong Bóng Bay (Trôi Nổi, Tối Giản, Dẻo)** | Phong cách bong bóng trôi nổi nghệ thuật: 3 themes (Light: Bầu trời Pastel trong trẻo; Dark: Đêm sâu bọt khí sinh học Cyan; Contrast: Bóng bay Vector Solid viền đen). | Transition Bubble Lift-off: Section mới bọc trong hình cầu `border-radius: 50%` trôi từ dưới lên (`y: 100vh -> 0`), khi tới giữa trang "nổ" scale ra `100vw` và `border-radius: 0` thành section bình thường; bọt xà phòng trôi nổi toàn trang; hover phình to bóng bay; click nổ bọt khí rớt confetti. | Bọc và cô lập canvas particle trong container riêng, dọn dẹp bộ nhớ khi chuyển trang. |
+
+
+
+
 

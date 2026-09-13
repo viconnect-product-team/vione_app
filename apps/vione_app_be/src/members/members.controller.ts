@@ -94,6 +94,26 @@ export class MembersController {
     return this.membersService.getMyBenefits(req.user.id);
   }
 
+  @Get('benefits/admin')
+  async listAllBenefits(@Request() req: any) {
+    return this.membersService.listAllBenefits(req.user.id);
+  }
+
+  @Post('benefits/admin')
+  async createBenefit(@Request() req: any, @Body() body: any) {
+    return this.membersService.createBenefit(req.user.id, body);
+  }
+
+  @Put('benefits/admin/:id')
+  async updateBenefit(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.membersService.updateBenefit(req.user.id, id, body);
+  }
+
+  @Delete('benefits/admin/:id')
+  async deleteBenefit(@Request() req: any, @Param('id') id: string) {
+    return this.membersService.deleteBenefit(req.user.id, id);
+  }
+
   @Get('active-association-id')
   async getActiveAssociationId(@Request() req: any) {
     return this.membersService.getActiveAssociationId(req.user.id);
@@ -157,8 +177,31 @@ export class MembersController {
     return this.membersService.updateMemberContact(req.user.id, id, body);
   }
 
+  @Patch(':id/role-dept')
+  async updateMemberRoleDept(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { executiveRole: string; department: string; associationId?: string },
+  ) {
+    return this.membersService.updateMemberRoleDept(id, body);
+  }
+
+  @Post(':id/role-dept')
+  async updateMemberRoleDeptPost(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { executiveRole: string; department: string; associationId?: string },
+  ) {
+    return this.membersService.updateMemberRoleDept(id, body);
+  }
+
   @Patch(':id/renew')
   async renewMember(@Request() req: any, @Param('id') id: string) {
+    return this.membersService.renewMember(req.user.id, id);
+  }
+
+  @Post(':id/renew')
+  async renewMemberPost(@Request() req: any, @Param('id') id: string) {
     return this.membersService.renewMember(req.user.id, id);
   }
 
@@ -167,8 +210,14 @@ export class MembersController {
     return this.membersService.sendRenewalReminder(req.user.id, id);
   }
 
+  @Post(':id/remind')
+  async sendReminderPost(@Request() req: any, @Param('id') id: string) {
+    return this.membersService.sendRenewalReminder(req.user.id, id);
+  }
+
   @Delete(':id')
   async deleteMember(@Request() req: any, @Param('id') id: string) {
     return this.membersService.deleteMember(req.user.id, id);
   }
 }
+

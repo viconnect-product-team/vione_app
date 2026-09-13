@@ -57,7 +57,11 @@ export function Scanner({ mode, onScan, onSimulate }: Props) {
       </div>
 
       {mode === "qr" ? (
-        <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-xl bg-foreground/60">
+        <div
+          onClick={onSimulate}
+          title="Bấm vào khung hình để mô phỏng quét QR thành công (Chế độ Dev)"
+          className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-xl bg-foreground/60 cursor-pointer group/cam"
+        >
           {/* Live camera feed */}
           <video
             ref={videoRef}
@@ -131,15 +135,13 @@ export function Scanner({ mode, onScan, onSimulate }: Props) {
                   : "Sẵn sàng quét NFC — Áp thẻ vào giữa mặt lưng điện thoại"}
       </p>
 
-      {(mode === "nfc" || qrFallback) && (
-        <button
-          onClick={onSimulate}
-          className="mx-auto mt-4 flex items-center gap-2 rounded-full border border-border/20 bg-card/10 px-4 py-2 text-xs font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-        >
-          <ScanLine className="h-3.5 w-3.5" />
-          {t("checkin.demoTrigger")}
-        </button>
-      )}
+      <button
+        onClick={onSimulate}
+        className="mx-auto mt-4 flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-4 py-2 text-xs font-semibold text-emerald-200 backdrop-blur transition hover:bg-emerald-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 cursor-pointer"
+      >
+        <ScanLine className="h-3.5 w-3.5 text-emerald-300" />
+        ⚡ Quét mã QR thành công ngay (Bypass Dev)
+      </button>
 
       <style>{`
         @keyframes scan {

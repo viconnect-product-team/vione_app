@@ -332,6 +332,49 @@ export class AdminService implements OnModuleInit {
         SET fee_paid = true, updated_at = NOW()
         WHERE id = ${existing.invoice.memberId}
       `.catch(() => null);
+
+      try {
+        const memRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, user_id, name FROM public.members WHERE id = ${existing.invoice.memberId} LIMIT 1
+        `.catch(() => []);
+        const targetUserId = memRows[0]?.user_id;
+        if (targetUserId) {
+          const notifTitle = 'Xác nhận thanh toán thành công';
+          const notifBody = `Hóa đơn #${existing.invoice.invoiceNo || id} trị giá ${(Number(existing.invoice.amount || 0)).toLocaleString('vi-VN')} đ đã được xác nhận thanh toán thành công qua phương thức ${method}.`;
+          const notifId = require('crypto').randomUUID();
+          const dedupeKey = `invoice-paid-${id}-${Date.now()}`;
+          const safeData = JSON.stringify({
+            title: notifTitle,
+            body: notifBody,
+            invoiceId: id,
+            invoiceNo: existing.invoice.invoiceNo || id,
+            amount: Number(existing.invoice.amount || 0),
+            method,
+            type: 'invoice_paid',
+            targetRoute: `/fees/${id}`,
+          });
+
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              $1::uuid, $2::uuid, 'finance', $3, 'invoice_paid', 'payment_success',
+              $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
+            )
+          `, notifId, targetUserId, id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
+            )
+          `, memRows[0]?.id || targetUserId, notifTitle, notifBody, id).catch(() => {});
+        }
+      } catch (e: any) {
+        console.warn('[payInvoice] Failed to dispatch payment notification:', e?.message);
+      }
     }
 
     const updated = await this.getInvoiceById(id);
@@ -794,6 +837,67 @@ export class AdminService implements OnModuleInit {
       WHERE id::text = '${id}'
     `).catch(() => null);
 
+    return { ok: true };
+  }
+
+  // ── Email Marketing Campaigns ─────────────────────────────────────
+  async listCampaigns() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.email_campaigns
+      ORDER BY created_at DESC
+      LIMIT 100
+    `.catch(() => []);
+    return rows.map((c) => ({
+      id: c.code || c.id,
+      name: c.name,
+      subject: c.subject || '',
+      audience: c.audience || '',
+      sent: Number(c.sent || 0),
+      opened: Number(c.opened || 0),
+      clicked: Number(c.clicked || 0),
+      sentAt: c.sent_at ? (c.sent_at instanceof Date ? c.sent_at.toISOString().slice(0, 10) : String(c.sent_at).slice(0, 10)) : '—',
+      status: c.status || 'draft',
+    }));
+  }
+
+  async createCampaign(data: any) {
+    const code = `CMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const sentAt = data.time || (data.status === 'sent' ? new Date().toISOString().slice(0, 10) : null);
+    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.email_campaigns (
+        id, code, name, subject, audience, status, sent_at, sent, opened, clicked, association_id, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, 0, 0, 0, $7::uuid, NOW(), NOW()
+      )
+    `,
+      code,
+      data.name,
+      data.subject || '',
+      data.audience || '',
+      data.status || 'draft',
+      sentAt,
+      assocId,
+    );
+
+    return {
+      id: code,
+      name: data.name,
+      subject: data.subject || '',
+      audience: data.audience || '',
+      sent: 0,
+      opened: 0,
+      clicked: 0,
+      sentAt: sentAt || '—',
+      status: data.status || 'draft',
+    };
+  }
+
+  async deleteCampaign(id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.email_campaigns WHERE code = ${id} OR id::text = ${id}
+    `;
     return { ok: true };
   }
 }

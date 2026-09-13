@@ -23,6 +23,8 @@ import {
   type RenewalStatus,
   type PaymentStatus,
 } from "@/lib/renewal-data";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   listRenewalsFn,
   renewMembershipFn,
@@ -202,9 +204,28 @@ function RenewalPage() {
           m.code.toLowerCase().includes(ql) ||
           m.email.toLowerCase().includes(ql)
         );
-      })
-      .sort((a, b) => a.daysLeft - b.daysLeft);
+      });
   }, [q, tab, records]);
+
+  const accessors = useMemo(
+    () => ({
+      code: (r: RenewalRecord) => r.member.code,
+      name: (r: RenewalRecord) => r.member.name,
+      level: (r: RenewalRecord) => r.member.level,
+      termEnd: (r: RenewalRecord) => r.currentTermEnd,
+      daysLeft: (r: RenewalRecord) => r.daysLeft,
+      reminders: (r: RenewalRecord) => r.reminderCount,
+      status: (r: RenewalRecord) => r.status,
+      payment: (r: RenewalRecord) => r.paymentStatus,
+    }),
+    [],
+  );
+
+  const tc = useTableControls(filtered, accessors, {
+    initialPageSize: 10,
+    initialSortKey: "daysLeft",
+    initialSortDir: "asc",
+  });
 
   const handleRenew = async (rec: RenewalRecord) => {
     if (!confirm(t("renewal.confirmRenew"))) return;
@@ -387,29 +408,37 @@ function RenewalPage() {
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto relative">
+          <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="border-b border-border bg-secondary/60 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">{t("renewal.col.member")}</th>
-                <th className="px-4 py-3">{t("renewal.col.tier")}</th>
-                <th className="px-4 py-3">{t("renewal.col.termEnd")}</th>
-                <th className="px-4 py-3">{t("renewal.col.daysLeft")}</th>
-                <th className="px-4 py-3">{t("renewal.col.reminders")}</th>
-                <th className="px-4 py-3">{t("renewal.col.status")}</th>
-                <th className="px-4 py-3">{t("renewal.col.payment")}</th>
-                <th className="px-4 py-3 text-right">{t("renewal.col.actions")}</th>
+              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                  STT
+                </th>
+                <th className="sticky left-[56px] z-20 min-w-[110px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  Mã
+                </th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.member")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.tier")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.termEnd")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.daysLeft")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.reminders")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.status")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("renewal.col.payment")}</th>
+                <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                  {t("renewal.col.actions")}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && (
+              {tc.pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     {t("renewal.empty")}
                   </td>
                 </tr>
               )}
-              {filtered.map((r: any) => (
+              {tc.pageRows.map((r: any, idx: number) => (
                 <tr
                   key={r.id}
                   onClick={(e) => {
@@ -431,9 +460,15 @@ function RenewalPage() {
                       });
                     }
                   }}
-                  className="cursor-pointer border-b border-border last:border-0 transition-all duration-150 hover:bg-secondary/60 hover:shadow-[inset_3px_0_0_0_var(--primary)] active:bg-secondary"
+                  className="group cursor-pointer border-b border-border transition-all duration-150 hover:bg-secondary/60 hover:shadow-[inset_3px_0_0_0_var(--primary)] active:bg-secondary"
                 >
-                  <td className="px-4 py-3">
+                  <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                    {(tc.page - 1) * tc.pageSize + idx + 1}
+                  </td>
+                  <td className="sticky left-[56px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                    {r.member.code}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border">
                     <div className="flex items-center gap-3">
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground"
@@ -450,20 +485,20 @@ function RenewalPage() {
                         <div className="truncate font-semibold text-foreground">
                           {r.member.name}
                         </div>
-                        <div className="truncate font-mono text-[11px] text-primary">
-                          {r.member.code}
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {r.member.email}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-foreground">{t(r.member.level)}</td>
-                  <td className="px-4 py-3 text-foreground">
+                  <td className="px-4 py-3 text-foreground border-b border-border">{t(r.member.level)}</td>
+                  <td className="px-4 py-3 text-foreground border-b border-border">
                     {new Date(r.currentTermEnd).toLocaleDateString("vi-VN")}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-border">
                     <DaysCell rec={r} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-border">
                     <div className="text-sm font-semibold text-foreground">{r.reminderCount}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {r.lastReminder
@@ -471,16 +506,16 @@ function RenewalPage() {
                         : t("renewal.never")}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-border">
                     <StatusPill status={r.status} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-b border-border">
                     <PaymentControl
                       status={r.paymentStatus}
                       onChange={(s) => handlePayment(r, s)}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                     <div className="flex items-center justify-end gap-1.5">
                       {r.status !== "renewed" && (
                         <>
@@ -524,6 +559,16 @@ function RenewalPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
       </div>
     </AppShell>
   );

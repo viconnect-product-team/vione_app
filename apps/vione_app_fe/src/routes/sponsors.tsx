@@ -300,111 +300,119 @@ function SponsorsPage() {
         </select>
       </div>
 
-      <TableShell
-        columns={[
-          { label: t("sponsors.col.code"), key: "code" },
-          { label: t("sponsors.col.name"), key: "name" },
-          { label: "Phân loại đối tác", key: "sponsorType" },
-          { label: "Hình thức gói", key: "packageType" },
-          { label: t("sponsors.col.tier"), key: "tier" },
-          { label: t("sponsors.col.contact"), key: "contact" },
-          { label: t("sponsors.col.value"), key: "value" },
-          { label: t("sponsors.col.events"), key: "events" },
-          { label: t("sponsors.col.since"), key: "since" },
-          { label: t("sponsors.col.status"), key: "status" },
-          t("common.actions"),
-        ]}
-        sort={{ sortKey: tc.sortKey, sortDir: tc.sortDir, onSort: tc.toggleSort }}
-        footer={
-          <Pagination
-            page={tc.page}
-            pageCount={tc.pageCount}
-            pageSize={tc.pageSize}
-            total={tc.total}
-            from={tc.from}
-            to={tc.to}
-            onPage={tc.setPage}
-            onPageSize={tc.setPageSize}
-          />
-        }
-      >
-        {tc.pageRows.map((s) => (
-          <tr key={s.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
-            <td className="px-4 py-3 font-mono text-[12px] font-semibold text-primary">{s.id}</td>
-            <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
-            <td className="px-4 py-3">
-              {s.sponsorType === "regular" ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm whitespace-nowrap">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  ★ Thường xuyên
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 shadow-sm whitespace-nowrap">
-                  ✦ NTT mới
-                </span>
-              )}
-            </td>
-            <td className="px-4 py-3">
-              {s.packageType === "in_kind" ? (
-                <div className="flex flex-col gap-0.5 max-w-[220px]">
-                  <span className="inline-flex items-center gap-1 w-fit rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
-                    🎁 Hiện vật
-                  </span>
-                  {s.inKindDescription && (
-                    <span className="text-[11px] text-muted-foreground truncate" title={s.inKindDescription}>
-                      {s.inKindDescription}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+        <div className="relative overflow-x-auto">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">{t("sponsors.col.code")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.name")}</th>
+                <th className="px-4 py-3 border-b border-border">Phân loại đối tác</th>
+                <th className="px-4 py-3 border-b border-border">Hình thức gói</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.tier")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.contact")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.value")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.events")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.since")}</th>
+                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.status")}</th>
+                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">{t("common.actions")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {tc.pageRows.map((s, idx) => (
+                <tr key={s.id} className="group border-b border-border/50 transition hover:bg-secondary/40">
+                  <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                    {(tc.page - 1) * tc.pageSize + idx + 1}
+                  </td>
+                  <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold text-primary group-hover:bg-muted/70 border-b border-border/50">{s.id}</td>
+                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">{s.name}</td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    {s.sponsorType === "regular" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm whitespace-nowrap">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        ★ Thường xuyên
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 shadow-sm whitespace-nowrap">
+                        ✦ NTT mới
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    {s.packageType === "in_kind" ? (
+                      <div className="flex flex-col gap-0.5 max-w-[220px]">
+                        <span className="inline-flex items-center gap-1 w-fit rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                          🎁 Hiện vật
+                        </span>
+                        {s.inKindDescription && (
+                          <span className="text-[11px] text-muted-foreground truncate" title={s.inKindDescription}>
+                            {s.inKindDescription}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                        💵 Bằng Tiền
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"
+                      style={{ background: TIER_COLOR[s.tier] }}
+                    >
+                      {t(TIER_KEY[s.tier])}
                     </span>
-                  )}
-                </div>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
-                  💵 Bằng Tiền
-                </span>
-              )}
-            </td>
-            <td className="px-4 py-3">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"
-                style={{ background: TIER_COLOR[s.tier] }}
-              >
-                {t(TIER_KEY[s.tier])}
-              </span>
-            </td>
-            <td className="px-4 py-3">
-              <div className="text-foreground">{s.contact}</div>
-              <div className="text-[11px] text-muted-foreground">{s.email}</div>
-            </td>
-            <td className="px-4 py-3 font-semibold text-foreground">{fmt.money(s.amount)}</td>
-            <td className="px-4 py-3 text-foreground">{s.events}</td>
-            <td className="px-4 py-3 text-muted-foreground">{fmt.date(s.since)}</td>
-            <td className="px-4 py-3">
-              <Pill color={s.status === "active" ? "success" : "neutral"}>
-                {s.status === "active" ? t("sponsors.status.active") : t("sponsors.status.expired")}
-              </Pill>
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setEditing(s);
-                    setOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => onDelete(s)}
-                  disabled={deletingId === s.id}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </TableShell>
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    <div className="text-foreground">{s.contact}</div>
+                    <div className="text-[11px] text-muted-foreground">{s.email}</div>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">{fmt.money(s.amount)}</td>
+                  <td className="px-4 py-3 text-foreground border-b border-border/50">{s.events}</td>
+                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{fmt.date(s.since)}</td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    <Pill color={s.status === "active" ? "success" : "neutral"}>
+                      {s.status === "active" ? t("sponsors.status.active") : t("sponsors.status.expired")}
+                    </Pill>
+                  </td>
+                  <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => {
+                          setEditing(s);
+                          setOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(s)}
+                        disabled={deletingId === s.id}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
+      </div>
 
       <CrudModal
         open={open}

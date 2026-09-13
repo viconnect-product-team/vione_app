@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchNestApiFromServer } from "@/lib/api-client";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
@@ -20,6 +21,26 @@ export type Campaign = {
 export const listCampaignsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Campaign[]> => {
+    const token = (context as any)?.token;
+    try {
+      const nestCampaigns = await fetchNestApiFromServer<any[]>("/admin/campaigns", token);
+      if (Array.isArray(nestCampaigns) && nestCampaigns.length > 0) {
+        return nestCampaigns.map((c: any) => ({
+          id: c.code || c.id,
+          name: c.name,
+          subject: c.subject ?? "",
+          audience: c.audience ?? "",
+          sent: Number(c.sent ?? 0),
+          opened: Number(c.opened ?? 0),
+          clicked: Number(c.clicked ?? 0),
+          sentAt: c.sentAt || c.sent_at || "—",
+          status: (c.status as Campaign["status"]) ?? "draft",
+        }));
+      }
+    } catch (e) {
+      console.warn("Fallback to db for listCampaigns:", e);
+    }
+
     const { getActiveAssociationId } = await import("./assoc-scope.server");
     const activeId = await getActiveAssociationId(getDb(context));
     let query = getDb(context)
@@ -56,6 +77,29 @@ export const createCampaignFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Campaign> => {
+    const token = (context as any)?.token;
+    try {
+      const created = await fetchNestApiFromServer<any>("/admin/campaigns", token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      if (created && (created.id || created.code)) {
+        return {
+          id: created.code || created.id,
+          name: created.name,
+          subject: created.subject ?? data.subject,
+          audience: created.audience ?? data.audience,
+          sent: Number(created.sent ?? 0),
+          opened: Number(created.opened ?? 0),
+          clicked: Number(created.clicked ?? 0),
+          sentAt: created.sentAt || created.sent_at || "—",
+          status: (created.status as Campaign["status"]) ?? data.status,
+        };
+      }
+    } catch (e) {
+      console.warn("Fallback to db for createCampaign:", e);
+    }
+
     const { getActiveAssociationId } = await import("./assoc-scope.server");
     const activeId = await getActiveAssociationId(getDb(context));
     const code = `CMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -91,6 +135,16 @@ export const deleteCampaignFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const token = (context as any)?.token;
+    try {
+      await fetchNestApiFromServer<any>(`/admin/campaigns/${data.id}`, token, {
+        method: "DELETE",
+      });
+      return { ok: true };
+    } catch (e) {
+      console.warn("Fallback to db for deleteCampaign:", e);
+    }
+
     const { error } = await getDb(context).from("email_campaigns").delete().eq("code", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

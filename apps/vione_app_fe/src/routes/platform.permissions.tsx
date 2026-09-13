@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Minus, ShieldCheck, Users, Briefcase, Save, RefreshCw } from "lucide-react";
+import { Check, Minus, ShieldCheck, Users, Briefcase, Save, RefreshCw, Search } from "lucide-react";
 import { PlatformShell } from "@/components/platform/PlatformShell";
 import { Card, PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
@@ -9,6 +9,8 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMembersFn, updateMemberRoleAndDeptFn } from "@/lib/members.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useTableControls } from "@/hooks/use-table-controls";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 
 export const Route = createFileRoute("/platform/permissions")({
   component: PlatformPermissionsPage,
@@ -130,6 +132,10 @@ const DEPARTMENT_OPTIONS = [
   "Hội viên VIONE",
 ];
 
+const ASSOCIATION_OPTIONS: { id: string; name: string; shortName: string }[] = [
+  { id: "c1983000-0000-4000-8000-000000001983", name: "CLB Doanh Nhân CEO 1983", shortName: "CEO 1983" },
+];
+
 const TONE: Record<Access, { bg: string; fg: string }> = {
   full: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)" },
   scoped: { bg: "oklch(0.94 0.05 220)", fg: "oklch(0.42 0.15 220)" },
@@ -161,25 +167,75 @@ function PlatformPermissionsPage() {
   const { data: members, loading: loadingMembers, reload } = useServerData<any[]>(() => fetchMembers(), []);
   const updateRoleDept = useServerFn(updateMemberRoleAndDeptFn);
 
-  const [edits, setEdits] = useState<Record<string, { role: string; department: string }>>({});
+  const [edits, setEdits] = useState<Record<string, { role: string; department: string; associationId: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [filterAssoc, setFilterAssoc] = useState("all");
+  const [filterRole, setFilterRole] = useState("all");
 
-  const handleRoleChange = (memberId: string, currentRole: string, currentDept: string, newRole: string) => {
+  const filteredMembers = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    return (members || []).filter((m: any) => {
+      const mAssoc = edits[m.id]?.associationId ?? m.associationId ?? m.association_id ?? "c1983000-0000-4000-8000-000000001983";
+      if (filterAssoc !== "all" && mAssoc !== filterAssoc) return false;
+      const mRole = edits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
+      if (filterRole !== "all" && mRole !== filterRole) return false;
+      if (!ql) return true;
+      return (
+        (m.name || "").toLowerCase().includes(ql) ||
+        (m.code || "").toLowerCase().includes(ql) ||
+        (m.email || "").toLowerCase().includes(ql) ||
+        (m.phone || "").toLowerCase().includes(ql)
+      );
+    });
+  }, [members, q, filterAssoc, filterRole, edits]);
+
+  const accessors = useMemo(
+    () => ({
+      code: (m: any) => m.code,
+      name: (m: any) => m.name,
+      email: (m: any) => m.email,
+      role: (m: any) => edits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member",
+      association: (m: any) => edits[m.id]?.associationId ?? m.associationId ?? m.association_id ?? "",
+    }),
+    [edits],
+  );
+
+  const tc = useTableControls(filteredMembers, accessors, {
+    initialPageSize: 10,
+    initialSortKey: "name",
+    initialSortDir: "asc",
+  });
+
+  const handleRoleChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newRole: string) => {
     setEdits(prev => ({
       ...prev,
       [memberId]: {
         role: newRole,
         department: prev[memberId]?.department || currentDept || "Hội viên VIONE",
+        associationId: prev[memberId]?.associationId || currentAssoc || "c1983000-0000-4000-8000-000000001983",
       }
     }));
   };
 
-  const handleDeptChange = (memberId: string, currentRole: string, currentDept: string, newDept: string) => {
+  const handleDeptChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newDept: string) => {
     setEdits(prev => ({
       ...prev,
       [memberId]: {
         role: prev[memberId]?.role || currentRole || "member",
         department: newDept,
+        associationId: prev[memberId]?.associationId || currentAssoc || "c1983000-0000-4000-8000-000000001983",
+      }
+    }));
+  };
+
+  const handleAssocChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newAssoc: string) => {
+    setEdits(prev => ({
+      ...prev,
+      [memberId]: {
+        role: prev[memberId]?.role || currentRole || "member",
+        department: prev[memberId]?.department || currentDept || "Hội viên VIONE",
+        associationId: newAssoc,
       }
     }));
   };
@@ -188,6 +244,7 @@ function PlatformPermissionsPage() {
     const edit = edits[member.id];
     const roleToSave = edit?.role || member.executiveRole || member.role || "member";
     const deptToSave = edit?.department || member.department || "Hội viên VIONE";
+    const assocToSave = edit?.associationId || member.associationId || member.association_id || "c1983000-0000-4000-8000-000000001983";
 
     try {
       setSavingId(member.id);
@@ -196,6 +253,7 @@ function PlatformPermissionsPage() {
           memberId: member.id,
           executiveRole: roleToSave,
           department: deptToSave,
+          associationId: assocToSave,
         }
       });
       toast.success(`Đã cập nhật phân quyền cho [${member.name}] thành công!`);
@@ -219,17 +277,17 @@ function PlatformPermissionsPage() {
   }
 
   const legend: { key: Access; label: string }[] = [
-    { key: "full", label: "Toàn quyền" },
-    { key: "scoped", label: "Theo ban ngành" },
-    { key: "own", label: "Cá nhân / Riêng" },
-    { key: "none", label: "Không có quyền" },
+    { key: "full", label: "Toàn quyền (Full)" },
+    { key: "scoped", label: "Phạm vi ban (Scoped)" },
+    { key: "own", label: "Chỉ cá nhân (Own)" },
+    { key: "none", label: "Không có quyền (None)" },
   ];
 
   return (
     <PlatformShell>
       <PageHeader
-        title="Ma Trận Phân Quyền & Quản Lý Ban Ngành"
-        subtitle="Thiết lập 8 cấp bậc phân quyền và gán tài khoản vào các ban chức năng của Hiệp hội"
+        title="Ma Trận & Phân Quyền Ban Điều Hành"
+        subtitle="Cấu hình quyền thao tác trực tiếp cho các tài khoản hội viên và hiệp hội trên toàn hệ thống"
       />
 
       {/* Section 1: Interactive Member Role & Department Assignment */}
@@ -251,87 +309,175 @@ function PlatformPermissionsPage() {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        {/* Filters */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[240px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm theo tên, mã hội viên, email, số điện thoại..."
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+          <div className="w-[180px]">
+            <select
+              value={filterAssoc}
+              onChange={(e) => setFilterAssoc(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs text-foreground focus:border-primary outline-none"
+            >
+              <option value="all">Tất cả hiệp hội</option>
+              {ASSOCIATION_OPTIONS.map((assoc) => (
+                <option key={assoc.id} value={assoc.id}>
+                  {assoc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-[180px]">
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background px-2.5 text-xs text-foreground focus:border-primary outline-none"
+            >
+              <option value="all">Tất cả vai trò</option>
+              {ROLE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto relative">
+          <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="border-b border-border bg-secondary/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3 text-left">Hội viên / Doanh nghiệp</th>
-                <th className="px-4 py-3 text-left">Email / Liên hệ</th>
-                <th className="px-4 py-3 text-left">Chức danh / Vai trò Type</th>
-                <th className="px-4 py-3 text-left">Phòng ban phụ trách</th>
-                <th className="px-4 py-3 text-center">Thao tác</th>
+              <tr className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                  STT
+                </th>
+                <th className="sticky left-[56px] z-20 min-w-[110px] bg-secondary px-4 py-3 text-left border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  Mã
+                </th>
+                <th className="px-4 py-3 text-left border-b border-border">Hội viên / Doanh nghiệp</th>
+                <th className="px-4 py-3 text-left border-b border-border">Email / Liên hệ</th>
+                <th className="px-4 py-3 text-left border-b border-border">Hiệp hội / Tổ chức</th>
+                <th className="px-4 py-3 text-left border-b border-border">Chức danh / Vai trò Type</th>
+                <th className="px-4 py-3 text-left border-b border-border">Phòng ban phụ trách</th>
+                <th className="sticky right-0 z-20 min-w-[120px] bg-secondary px-4 py-3 text-center border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                  Thao tác
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {loadingMembers ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground text-xs">
                     Đang tải danh sách tài khoản...
                   </td>
                 </tr>
-              ) : (members || []).map((m: any) => {
-                const currentRole = edits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
-                const currentDept = edits[m.id]?.department ?? m.department ?? "Hội viên VIONE";
-                const isChanged = edits[m.id] !== undefined;
-                const isSaving = savingId === m.id;
+              ) : tc.pageRows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground text-xs">
+                    Không tìm thấy tài khoản phù hợp
+                  </td>
+                </tr>
+              ) : (
+                tc.pageRows.map((m: any, idx: number) => {
+                  const currentRole = edits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
+                  const currentDept = edits[m.id]?.department ?? m.department ?? "Hội viên VIONE";
+                  const currentAssoc = edits[m.id]?.associationId ?? m.associationId ?? m.association_id ?? "c1983000-0000-4000-8000-000000001983";
+                  const isChanged = edits[m.id] !== undefined;
+                  const isSaving = savingId === m.id;
 
-                return (
-                  <tr key={m.id} className="hover:bg-secondary/20 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-foreground text-xs">{m.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{m.code || m.id}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      <div>{m.email || "—"}</div>
-                      <div className="text-[11px]">{m.phone || "—"}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={currentRole}
-                        onChange={(e) => handleRoleChange(m.id, m.executiveRole, m.department, e.target.value)}
-                        className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
-                      >
-                        {ROLE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={currentDept}
-                        onChange={(e) => handleDeptChange(m.id, m.executiveRole, m.department, e.target.value)}
-                        className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
-                      >
-                        {DEPARTMENT_OPTIONS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleSave(m)}
-                        disabled={isSaving || !isChanged}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                          isChanged
-                            ? "bg-primary text-primary-foreground shadow-sm hover:brightness-110 cursor-pointer"
-                            : "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed"
-                        }`}
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        {isSaving ? "Đang lưu..." : "Lưu quyền"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={m.id} className="group hover:bg-secondary/20 transition-colors">
+                      <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                        {(tc.page - 1) * tc.pageSize + idx + 1}
+                      </td>
+                      <td className="sticky left-[56px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                        {m.code || m.id?.slice(0, 8)}
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <div className="font-semibold text-foreground text-xs">{m.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{m.company || m.email}</div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border">
+                        <div>{m.email || "—"}</div>
+                        <div className="text-[11px]">{m.phone || "—"}</div>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <select
+                          value={currentAssoc}
+                          onChange={(e) => handleAssocChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
+                          className="w-full text-xs font-semibold rounded-lg border border-border bg-primary/5 text-primary px-2.5 py-1.5 focus:border-primary outline-none"
+                        >
+                          {ASSOCIATION_OPTIONS.map((assoc) => (
+                            <option key={assoc.id} value={assoc.id}>
+                              {assoc.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <select
+                          value={currentRole}
+                          onChange={(e) => handleRoleChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
+                          className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
+                        >
+                          {ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border">
+                        <select
+                          value={currentDept}
+                          onChange={(e) => handleDeptChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
+                          className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
+                        >
+                          {DEPARTMENT_OPTIONS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="sticky right-0 z-10 min-w-[120px] bg-card group-hover:bg-muted/70 px-4 py-3 text-center border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => handleSave(m)}
+                          disabled={isSaving || !isChanged}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            isChanged
+                              ? "bg-primary text-primary-foreground shadow-sm hover:brightness-110 cursor-pointer"
+                              : "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed"
+                          }`}
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          {isSaving ? "Đang lưu..." : "Lưu quyền"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
       </Card>
 
       {/* Section 2: Full 8-Role Permission Matrix */}
