@@ -8,6 +8,7 @@ import { KineticWords } from "./KineticTypography";
 import { useLang } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { DoorThemeTransition } from "./DoorThemeTransition";
 import {
   useLenisSmoothScroll,
   SpatialCustomCursor,
@@ -906,58 +907,6 @@ const TESTIMONIALS = [
   },
 ];
 
-// TOMB STONE DOOR TRANSITION (Theme Change Door Closing/Opening Animation like V6)
-function TombStoneDoorTransition({
-  isOpen,
-  onCycleComplete,
-}: {
-  isOpen: boolean;
-  onCycleComplete?: () => void;
-}) {
-  return (
-    <AnimatePresence onExitComplete={onCycleComplete}>
-      {!isOpen && (
-        <motion.div
-          className="fixed inset-0 z-[99999] flex pointer-events-none"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          {/* Left Tomb Stone Door */}
-          <motion.div
-            initial={{ x: "-100%" }}
-            animate={{ x: "0%" }}
-            exit={{ x: "-100%" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full w-1/2 border-r-4 border-[#D4AF37] bg-gradient-to-r from-[#1E1610] via-[#2A1D13] to-[#120B06] shadow-2xl flex items-center justify-end pr-8"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
-            <div className="text-right font-serif text-5xl tracking-widest text-[#D4AF37]/40 select-none">
-              𓋹 𓂀 𓀀 𓃀 𓄿 𓅓 𓆑
-            </div>
-            <div className="absolute bottom-0 right-0 h-32 w-32 bg-amber-600/20 blur-2xl animate-pulse" />
-          </motion.div>
-
-          {/* Right Tomb Stone Door */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: "0%" }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full w-1/2 border-l-4 border-[#D4AF37] bg-gradient-to-l from-[#1E1610] via-[#2A1D13] to-[#120B06] shadow-2xl flex items-center justify-start pl-8"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
-            <div className="text-left font-serif text-5xl tracking-widest text-[#D4AF37]/40 select-none">
-              𓇌 𓈖 𓉐 𓊪 𓋹 𓍯 𓎛
-            </div>
-            <div className="absolute bottom-0 left-0 h-32 w-32 bg-amber-600/20 blur-2xl animate-pulse" />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
 
 export function BusinessConnectLanding() {
   useLenisSmoothScroll();
@@ -1148,8 +1097,8 @@ export function BusinessConnectLanding() {
       style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
       <SpatialCustomCursor />
-      {/* Cửa đá đóng mở khi chuyển theme */}
-      <TombStoneDoorTransition isOpen={isDoorOpen} />
+      {/* Cánh cửa trắng / đen đóng mở khi chuyển theme */}
+      <DoorThemeTransition isTransitioning={!isDoorOpen} targetTheme={themeMode} />
 
       {/* CSS KEYFRAMES: PENDULUM HANGING LAMPS, 3D INCLINED PLANETS, CEO1983 ORBIT & GEARS */}
       <style>{`
@@ -1737,68 +1686,6 @@ export function BusinessConnectLanding() {
         onMouseEnter={resetTimer}
         className="fixed top-0 inset-x-0 z-50 flex flex-col"
       >
-        {/* Top Product Version Switcher Bar */}
-        <div
-          className={`border-b backdrop-blur-xl px-4 sm:px-6 py-2 flex items-center justify-between flex-wrap gap-2 text-xs transition-colors ${themeClass(
-            "bg-[#02040A]/95 border-[#D8B282]/30 text-[#F6E1C3]",
-            "bg-[#FAF8F5]/95 border-amber-200 text-slate-800",
-            "bg-black/95 border-amber-400 text-amber-300"
-          )}`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="font-bold uppercase tracking-wider font-mono">
-              V1 • THÀNH PHỐ HIỆN ĐẠI & MA TRẬN B2B
-            </span>
-          </div>
-
-          {/* 7 Version Switcher Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-            <span className="text-[11px] font-medium opacity-60 mr-1 hidden sm:inline">Chọn mẫu:</span>
-            <Link
-              to="/business-connect/v1"
-              className="px-3 py-1 rounded-full text-[11px] font-bold bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#8C653B] text-slate-950 shadow-sm border border-amber-400/50"
-            >
-              v1 Apple Spatial ★
-            </Link>
-            <Link
-              to="/business-connect/v2"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
-            >
-              v2 Cyber Tech
-            </Link>
-            <Link
-              to="/business-connect/v3"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-purple-500/40 text-purple-400 hover:bg-purple-500/10"
-            >
-              v3 Fluid Glass
-            </Link>
-            <Link
-              to="/business-connect/v4"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
-            >
-              v4 Brutalism
-            </Link>
-            <Link
-              to="/business-connect/v5"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-            >
-              v5 Luxury Corp
-            </Link>
-            <Link
-              to="/business-connect/v6"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
-            >
-              v6 Monument
-            </Link>
-            <Link
-              to="/business-connect/v7"
-              className="px-3 py-1 rounded-full text-[11px] font-bold transition-all border border-pink-500/40 text-pink-400 hover:bg-pink-500/10"
-            >
-              v7 Horizon Fluid
-            </Link>
-          </div>
-        </div>
 
       {/* =========================================================================
           1. HEADER (BUSINESS CONNECT - HIGH CONTRAST & ADAPTIVE)

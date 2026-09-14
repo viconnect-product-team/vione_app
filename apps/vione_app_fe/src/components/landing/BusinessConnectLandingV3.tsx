@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { HeritageLayoutWrapper } from "./wrappers/HeritageLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -332,7 +334,7 @@ const REVIEWS = [
 
 export function BusinessConnectLandingV3() {
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [isDropping, setIsDropping] = useState(false);
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
@@ -340,34 +342,17 @@ export function BusinessConnectLandingV3() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsDropping(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 280);
-    setTimeout(() => {
-      setIsDropping(false);
-    }, 700);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative font-sans transition-colors duration-300 ${
-        theme === "dark"
-          ? "bg-[#09090B] text-zinc-100"
-          : theme === "contrast"
-            ? "bg-white text-black"
-            : "bg-[#FAFAFA] text-zinc-900"
-      }`}
+    <HeritageLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
-      {/* 3-LAYER BACKGROUND WITH 50% SCROLL PARALLAX */}
-      <EditorialThreeLayerBackground theme={theme} />
-
       {/* DYNAMIC FLUID LIQUID AURORA MESH */}
       <LiquidAuroraBackground />
-
-      {/* SHUTTER BLINDS THEME TRANSITION */}
-      <ShutterBlindsThemeTransition isDropping={isDropping} theme={theme} />
 
       {/* =========================================================================
           1. HEADER
@@ -1059,6 +1044,6 @@ export function BusinessConnectLandingV3() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </HeritageLayoutWrapper>
   );
 }

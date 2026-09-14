@@ -1,5 +1,6 @@
 ﻿param (
     [switch]$SkipBuild,
+    [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
     [switch]$BackendOnly,
     [switch]$InstallDeps
@@ -32,18 +33,22 @@ $buildBE = -not $FrontendOnly
 
 if (-not $SkipBuild) {
     if ($buildFE) {
-        Write-Host "`n[0/5] Build Frontend (Web) cục bộ..." -ForegroundColor Cyan
-        $env:NODE_OPTIONS="--max-old-space-size=8192"
-        $env:NEST_API_URL="http://backend:4000"
-        
-        # Chỉ chạy npm install nếu yêu cầu hoặc chưa có node_modules
-        if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
-            Invoke-CheckedCommand -Description "NPM Install" -Action { npm install }
+        if ($SkipWebBuild) {
+            Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
         } else {
-            Write-Host "  -> Bỏ qua 'npm install' (đã có node_modules). Dùng -InstallDeps nếu muốn tải lại." -ForegroundColor DarkGray
-        }
+            Write-Host "`n[0/5] Build Frontend (Web) cục bộ..." -ForegroundColor Cyan
+            $env:NODE_OPTIONS="--max-old-space-size=8192"
+            $env:NEST_API_URL="http://backend:4000"
+            
+            # Chỉ chạy npm install nếu yêu cầu hoặc chưa có node_modules
+            if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
+                Invoke-CheckedCommand -Description "NPM Install" -Action { npm install }
+            } else {
+                Write-Host "  -> Bỏ qua 'npm install' (đã có node_modules). Dùng -InstallDeps nếu muốn tải lại." -ForegroundColor DarkGray
+            }
 
-        Invoke-CheckedCommand -Description "Build Web App" -Action { npx turbo run build --filter=@vibe/vione_app_fe }
+            Invoke-CheckedCommand -Description "Build Web App" -Action { npm run build --prefix apps/vione_app_fe }
+        }
     }
 
     Write-Host "`n[1/5] Khởi tạo quy trình Build Docker Images..." -ForegroundColor Cyan

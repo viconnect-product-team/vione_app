@@ -69,14 +69,14 @@ function Rate({ value, total }: { value: number; total: number }) {
 
 function EventsOverviewPage() {
   const t = useT();
-  const rows = Route.useLoaderData();
+  const rows = (Route.useLoaderData() || []) as EventOverviewRow[];
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return rows;
     return rows.filter(
-      (r) =>
+      (r: EventOverviewRow) =>
         r.name.toLowerCase().includes(term) ||
         r.location.toLowerCase().includes(term) ||
         r.status.toLowerCase().includes(term),
@@ -86,11 +86,11 @@ function EventsOverviewPage() {
   const totals = useMemo(
     () =>
       filtered.reduce(
-        (acc, r) => ({
+        (acc: { events: number; registrations: number; attended: number; capacity: number }, r: EventOverviewRow) => ({
           events: acc.events + 1,
-          registrations: acc.registrations + r.registrations,
-          attended: acc.attended + r.attended,
-          capacity: acc.capacity + r.capacity,
+          registrations: acc.registrations + (r.registrations || 0),
+          attended: acc.attended + (r.attended || 0),
+          capacity: acc.capacity + (r.capacity || 0),
         }),
         { events: 0, registrations: 0, attended: 0, capacity: 0 },
       ),

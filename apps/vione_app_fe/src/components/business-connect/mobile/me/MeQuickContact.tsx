@@ -103,19 +103,20 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
               <a
                 key={method.key}
                 href={activeChannel.href}
-                {...(activeChannel.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                {...(activeChannel.external
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
                 aria-label={method.label}
                 aria-pressed={isPressed}
                 onClick={() => setSelectedContact(method.key)}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface)] rounded-xl border border-solid border-[var(--bc-mobile-border)] items-center relative text-left shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface-2)] hover:border-[var(--bc-mobile-accent)]`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface)]/70 backdrop-blur-md rounded-xl border border-solid border-[rgba(216,178,130,0.20)] items-center relative text-left shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface-2)]/80 hover:border-[var(--bc-mobile-accent)]`}
               >
-                <span className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[var(--bc-mobile-surface-2)] rounded-lg border border-[var(--bc-mobile-border)] shadow-xs" aria-hidden="true">
+                <span
+                  className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[rgba(216,178,130,0.12)] rounded-lg border border-[rgba(216,178,130,0.30)] text-[#D8B282] shadow-xs"
+                  aria-hidden="true"
+                >
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                    <img
-                      className={method.iconClassName}
-                      alt=""
-                      src={method.icon}
-                    />
+                    <img className={method.iconClassName} alt="" src={method.icon} />
                   </span>
                 </span>
                 <span className="inline-flex flex-col items-start relative flex-[0_0_auto] min-w-0 flex-1">
@@ -132,9 +133,12 @@ export function MeQuickContact({ identity }: { identity: BusinessIdentity | null
                 type="button"
                 disabled
                 aria-label={`${method.label} (chưa thiết lập)`}
-                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface-2)]/40 rounded-xl border border-solid border-[var(--bc-mobile-border)]/30 items-center relative text-left opacity-40 cursor-not-allowed`}
+                className={`${method.gridClassName} w-full h-[58px] flex gap-3 p-3 bg-[var(--bc-mobile-surface-2)]/30 backdrop-blur-xs rounded-xl border border-solid border-[var(--bc-mobile-border)]/30 items-center relative text-left opacity-40 cursor-not-allowed`}
               >
-                <span className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[var(--bc-mobile-surface-2)] rounded-lg border border-[var(--bc-mobile-border)]" aria-hidden="true">
+                <span
+                  className="flex w-8 h-8 shrink-0 items-center justify-center relative bg-[var(--bc-mobile-surface-2)] rounded-lg border border-[var(--bc-mobile-border)]"
+                  aria-hidden="true"
+                >
                   <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
                     <img
                       className={method.iconClassName}

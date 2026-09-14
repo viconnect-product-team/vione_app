@@ -11,6 +11,10 @@ export type MyOpportunity = {
   time: string;
   color: string;
   interested: boolean;
+  posterId?: string;
+  posterCode?: string;
+  posterName?: string;
+  posterCompany?: string;
 };
 
 // ---------- Opportunities ----------

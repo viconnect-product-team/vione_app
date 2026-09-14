@@ -5,6 +5,14 @@ import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 export type DirectoryMember = {
   code: string;
   name: string;
+  contact?: string | null;
+  personName?: string | null;
+  personTitle?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  about?: string | null;
+  address?: string | null;
+  website?: string | null;
   industry: string;
   region: string;
   type: "company" | "individual";

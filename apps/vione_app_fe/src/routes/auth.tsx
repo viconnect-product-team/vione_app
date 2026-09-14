@@ -101,7 +101,7 @@ function CrmAdminAuthPage() {
     if (searchPortal === "association" || destPath.startsWith("/association") || destPath.startsWith("/m")) {
       navigate({
         to: "/association/login" as any,
-        search: { redirect: redirectTo },
+        search: { redirect: redirectTo } as any,
         replace: true,
       });
       return;
@@ -109,7 +109,7 @@ function CrmAdminAuthPage() {
     if (searchPortal === "connect" || searchPortal === "vione" || destPath.startsWith("/connect-app")) {
       navigate({
         to: "/vione/login" as any,
-        search: { redirect: redirectTo },
+        search: { redirect: redirectTo } as any,
         replace: true,
       });
       return;

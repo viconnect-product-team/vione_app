@@ -16,7 +16,6 @@ import {
   ClipboardList,
   ScanLine,
   QrCode as QrCodeIcon,
-
   Handshake,
   Package,
   FileBarChart,
@@ -48,13 +47,14 @@ import {
   Contrast,
   ChevronUp,
   ChevronDown,
+  LayoutTemplate,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useTheme } from "@/lib/theme";
 
-type Item = { key: TKey; icon: LucideIcon; to?: string };
+type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string };
 
 const overview: Item[] = [{ key: "nav.dashboard", icon: LayoutDashboard, to: "/" }];
 const members: Item[] = [
@@ -69,7 +69,6 @@ const events: Item[] = [
   { key: "nav.eventReg", icon: ClipboardList, to: "/event-registrations" },
   { key: "nav.checkin", icon: ScanLine, to: "/checkin" },
   { key: "checkinQr.title", icon: QrCodeIcon, to: "/checkin-qr" },
-
 ];
 const sponsors: Item[] = [
   { key: "nav.sponsors", icon: Handshake, to: "/sponsors" },
@@ -106,6 +105,12 @@ const businessConnect: Item[] = [
   { key: "nav.bc.saved", icon: Bookmark, to: "/business-connect/saved-cards" },
   { key: "nav.bc.connections", icon: Handshake, to: "/business-connect/connections" },
   { key: "nav.bc.meetings", icon: Users2, to: "/business-connect/meetings" },
+  {
+    key: "nav.landingTemplates" as TKey,
+    icon: LayoutTemplate,
+    to: "/admin/landing-templates",
+    label: "Template Landing",
+  },
 ];
 const system: Item[] = [
   { key: "nav.myperm", icon: ShieldCheck, to: "/my-permissions" },
@@ -113,7 +118,20 @@ const system: Item[] = [
   { key: "nav.activity", icon: History, to: "/activity" },
 ];
 const platform: Item[] = [{ key: "nav.platform", icon: ShieldCheck, to: "/platform" }];
-const admin: Item[] = [{ key: "nav.bcAdmin", icon: IdCard, to: "/admin/business-cards" }];
+const admin: Item[] = [
+  {
+    key: "nav.bcAdmin",
+    icon: IdCard,
+    to: "/admin/business-cards",
+    label: "Quản lý Thẻ Doanh Nhân",
+  },
+  {
+    key: "nav.landingTemplates" as TKey,
+    icon: LayoutTemplate,
+    to: "/admin/landing-templates",
+    label: "Template Landing",
+  },
+];
 
 const COLLAPSE_KEY = "vba.sidebar.collapsed";
 
@@ -139,7 +157,7 @@ function NavItem({
   const t = useT();
   const Icon = item.icon;
   const active = isActive(pathname, item.to);
-  const label = t(item.key);
+  const label = item.label || t(item.key);
   const showBadge = !!badge && badge > 0;
   const badgeText = badge && badge > 99 ? "99+" : String(badge ?? 0);
   const cls = `group relative flex w-full items-center gap-3 rounded-lg py-2 text-[13px] outline-none transition-[background-color,color] duration-[var(--motion-fast)] ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
@@ -287,7 +305,9 @@ export function Sidebar({
       if (saved && scrollRef.current) {
         scrollRef.current.scrollTop = Number(saved);
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
 
     const timer = setTimeout(() => {
       const activeEl = scrollRef.current?.querySelector('[data-active="true"]');
@@ -301,7 +321,9 @@ export function Sidebar({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     try {
       sessionStorage.setItem("crm_sidebar_scroll_top", String(e.currentTarget.scrollTop));
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   };
 
   function toggle() {

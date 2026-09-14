@@ -156,9 +156,7 @@ function SectionCard({
       <h2 className="text-[15px] font-semibold tracking-tight text-[var(--bc-mobile-text)]">
         {title}
       </h2>
-      {desc && (
-        <p className="mt-1 text-[12.5px] leading-snug text-[#D4C3A3]">{desc}</p>
-      )}
+      {desc && <p className="mt-1 text-[12.5px] leading-snug text-[#D4C3A3]">{desc}</p>}
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">{children}</div>
     </section>
   );
@@ -235,7 +233,8 @@ function ConnectAppMePage() {
           result.identity = {
             id: user.id,
             ownerUserId: user.id,
-            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            displayName:
+              user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
             headline: null,
             jobTitle: null,
             companyName: null,
@@ -260,7 +259,8 @@ function ConnectAppMePage() {
           identity: {
             id: user.id,
             ownerUserId: user.id,
-            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            displayName:
+              user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
             headline: null,
             jobTitle: null,
             companyName: null,
@@ -289,7 +289,8 @@ function ConnectAppMePage() {
           identity: {
             id: user.id,
             ownerUserId: user.id,
-            displayName: user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
+            displayName:
+              user.user_metadata?.full_name || user.email?.split("@")[0] || "Hội viên ViOne",
             headline: null,
             jobTitle: null,
             companyName: null,
@@ -329,7 +330,7 @@ function ConnectAppMePage() {
       await signOutSession(queryClient);
       await navigate({
         to: "/vione/login" as any,
-        search: { redirect: "/connect-app" },
+        search: { redirect: "/connect-app" } as any,
         replace: true,
       });
     } catch {
@@ -352,8 +353,9 @@ function ConnectAppMePage() {
   const clientItems = showcaseQuery.data?.clients ?? [];
   const clientLogoItems = clientItems.filter((item) => !!item.logoUrl);
   // Lưới 4 cột: hiện tối đa 4 logo, phần còn lại quy về "+N" tính trên số khách hàng thật.
-  const clientLogos = (clientLogoItems.length > 4 ? clientLogoItems.slice(0, 3) : clientLogoItems)
-    .map((item) => ({ id: item.id, name: item.title, logoUrl: item.logoUrl as string }));
+  const clientLogos = (
+    clientLogoItems.length > 4 ? clientLogoItems.slice(0, 3) : clientLogoItems
+  ).map((item) => ({ id: item.id, name: item.title, logoUrl: item.logoUrl as string }));
   const clientExtraCount = Math.max(0, clientItems.length - clientLogos.length);
 
   const aboutMetrics = (showcaseQuery.data?.metrics ?? []).map((item) => ({
@@ -375,7 +377,6 @@ function ConnectAppMePage() {
       subtitle: item.subtitle,
       onOpen: () => setSheet("client"),
     }));
-
 
   /** Ensure the share link exists (first open materializes it server-side). */
   const ensureShareLink = useCallback(async (): Promise<IdentityShareLinkInfo | null> => {
@@ -466,9 +467,12 @@ function ConnectAppMePage() {
     try {
       let link: IdentityShareLinkInfo | null = null;
       try {
-        link = await fetchNestApi<IdentityShareLinkInfo>("/connect-app/me/identity/share-link/rotate", {
-          method: "POST",
-        });
+        link = await fetchNestApi<IdentityShareLinkInfo>(
+          "/connect-app/me/identity/share-link/rotate",
+          {
+            method: "POST",
+          },
+        );
       } catch {
         link = await rotateLink().catch(() => null);
       }
@@ -745,7 +749,7 @@ function ConnectAppMePage() {
             </SectionCard>
 
             <SectionCard title={t("bc.mobile.me.accountSection.title")}>
-              <Link to="/connect-app/me/sessions" className={rowClass}>
+              <Link to="/connect-app/me/security" className={rowClass}>
                 <span className="flex items-center gap-3">{t("bc.mobile.me.accountSecurity")}</span>
                 <ChevronRight
                   aria-hidden="true"
@@ -1000,7 +1004,7 @@ function ShowcaseManageSheet({
           kind,
           title: title.trim(),
           subtitle: subtitle.trim() || null,
-          logoUrl: kind === "client" ? (logoUrl.trim() || null) : null,
+          logoUrl: kind === "client" ? logoUrl.trim() || null : null,
           sortOrder: items.length,
         },
       });
@@ -1030,12 +1034,17 @@ function ShowcaseManageSheet({
   }
 
   const sheetTitle = kind === "business_area" ? "Lĩnh vực kinh doanh" : "Khách hàng & Dấu ấn";
-  const emptyMessage = kind === "business_area" ? "Chưa có lĩnh vực kinh doanh nào" : "Chưa có khách hàng/dấu ấn nào";
+  const emptyMessage =
+    kind === "business_area" ? "Chưa có lĩnh vực kinh doanh nào" : "Chưa có khách hàng/dấu ấn nào";
 
   return (
     <MeSheet
       title={sheetTitle}
-      subtitle={kind === "business_area" ? "Quản lý danh sách lĩnh vực/sản phẩm kinh doanh của bạn." : "Quản lý danh sách đối tác, khách hàng và dấu ấn thương hiệu."}
+      subtitle={
+        kind === "business_area"
+          ? "Quản lý danh sách lĩnh vực/sản phẩm kinh doanh của bạn."
+          : "Quản lý danh sách đối tác, khách hàng và dấu ấn thương hiệu."
+      }
       onClose={onClose}
     >
       <div className="flex flex-col gap-4 pb-6">
@@ -1097,18 +1106,18 @@ function ShowcaseManageSheet({
 
         {/* Add new form */}
         <div className="border-t border-[var(--bc-mobile-border)]/40 pt-4 flex flex-col gap-3">
-          <h3 className="text-[13.5px] font-bold text-[var(--bc-mobile-text)]">
-            Thêm mục mới
-          </h3>
+          <h3 className="text-[13.5px] font-bold text-[var(--bc-mobile-text)]">Thêm mục mới</h3>
           {error && (
             <p role="alert" className="text-[12px] text-rose-500">
               {error}
             </p>
           )}
-          
+
           <div className="flex flex-col gap-1">
             <label className="text-[12px] font-medium text-[var(--bc-mobile-muted)]">
-              {kind === "business_area" ? "Tên lĩnh vực / Sản phẩm *" : "Tên khách hàng / Đối tác *"}
+              {kind === "business_area"
+                ? "Tên lĩnh vực / Sản phẩm *"
+                : "Tên khách hàng / Đối tác *"}
             </label>
             <input
               type="text"
@@ -1116,7 +1125,11 @@ function ShowcaseManageSheet({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={saving}
-              placeholder={kind === "business_area" ? "Ví dụ: Phát triển Phần mềm" : "Ví dụ: Tập đoàn Viconnect"}
+              placeholder={
+                kind === "business_area"
+                  ? "Ví dụ: Phát triển Phần mềm"
+                  : "Ví dụ: Tập đoàn Viconnect"
+              }
               className="min-h-11 w-full rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-3 text-[13.5px] text-[var(--bc-mobile-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)]"
             />
           </div>
@@ -1188,7 +1201,11 @@ function ShowcaseManageSheet({
                         src={logoUrl}
                         alt="Xem trước logo"
                         className="max-h-full max-w-full object-contain"
-                        onError={() => setError("Đường dẫn ảnh không tải được. Vui lòng thử tải từ tệp trên máy.")}
+                        onError={() =>
+                          setError(
+                            "Đường dẫn ảnh không tải được. Vui lòng thử tải từ tệp trên máy.",
+                          )
+                        }
                       />
                     </div>
                     <span className="text-[12px] text-[var(--bc-mobile-muted)] truncate flex-1">
@@ -1206,11 +1223,7 @@ function ShowcaseManageSheet({
             onClick={() => void handleAdd()}
             className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--bc-mobile-accent)] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Thêm mới"
-            )}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Thêm mới"}
           </button>
         </div>
       </div>

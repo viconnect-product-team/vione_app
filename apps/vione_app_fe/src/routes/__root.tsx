@@ -245,7 +245,17 @@ function AuthenticatedRealtimeNotifications() {
 }
 
 function RootComponent() {
-  const [lang, setLangState] = useState<Lang>("vi");
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(LANG_STORAGE_KEY);
+        if (isLang(saved)) return saved;
+      } catch {
+        /* ignore */
+      }
+    }
+    return "vi";
+  });
   const [queryClient] = useState(makeQueryClient);
 
   // Register service worker for offline support (guarded: prod only).
@@ -361,7 +371,17 @@ function RootComponent() {
     }
   }, [lang]);
 
-  const setLang = (l: Lang) => setLangState(l);
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, l);
+    } catch {
+      /* ignore */
+    }
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = l;
+    }
+  };
 
   return (
     <LangContext.Provider value={{ lang, setLang }}>
@@ -524,7 +544,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           to: "/association/login" as any,
           search: {
             redirect: search,
-          },
+          } as any,
           replace: true,
         });
       } else if (pathname.startsWith("/connect-app") && !pathname.startsWith("/vione/login")) {
@@ -532,7 +552,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           to: "/vione/login" as any,
           search: {
             redirect: search,
-          },
+          } as any,
           replace: true,
         });
       } else if (!pathname.startsWith("/association/login") && !pathname.startsWith("/vione/login")) {

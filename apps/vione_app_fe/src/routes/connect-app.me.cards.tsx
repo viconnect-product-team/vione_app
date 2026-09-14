@@ -89,7 +89,7 @@ function CardVaultPage() {
           onChange={(e) => setTerm(e.target.value)}
           placeholder={t("bc.mobile.me.cards.search")}
           aria-label={t("bc.mobile.me.cards.search")}
-          className="min-h-11 w-full rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)] px-4 text-[14px] text-[var(--bc-mobile-text)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)]"
+          className="min-h-11 w-full rounded-full border border-[rgba(216,178,130,0.25)] bg-[var(--bc-mobile-surface-2)]/60 backdrop-blur-md px-4 text-[14px] text-[var(--bc-mobile-text)] placeholder:text-[var(--bc-mobile-muted)] outline-none focus:border-[#D8B282] focus-visible:ring-2 focus-visible:ring-[#D8B282]/30"
         />
 
         <div role="tablist" aria-label={t("bc.mobile.me.cards.pageTitle")} className="flex gap-2">
@@ -100,10 +100,10 @@ function CardVaultPage() {
               role="tab"
               aria-selected={kind === f.value}
               onClick={() => setKind(f.value)}
-              className={`min-h-9 flex-1 rounded-full border px-3 text-[13px] font-medium transition-colors ${
+              className={`min-h-9 flex-1 rounded-full border px-3 text-[13px] font-bold transition-all cursor-pointer ${
                 kind === f.value
-                  ? "border-transparent bg-[var(--bc-mobile-text)] text-[var(--bc-mobile-surface)]"
-                  : "border-[var(--bc-mobile-border)] text-[var(--bc-mobile-muted)]"
+                  ? "border-transparent btn-luxury-gold shadow-md shadow-[#D8B282]/30"
+                  : "border-[rgba(216,178,130,0.20)] bg-[var(--bc-mobile-surface)]/50 backdrop-blur-xs text-[var(--bc-mobile-muted)] hover:border-[#D8B282]/50 hover:text-white"
               }`}
             >
               {f.label}
@@ -120,14 +120,14 @@ function CardVaultPage() {
         )}
 
         {isError ? (
-          <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6 text-center">
+          <section className="rounded-2xl bc-translucent-card p-6 text-center shadow-md">
             <p role="alert" className="text-[14px] text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.me.loadError")}
             </p>
             <button
               type="button"
               onClick={() => void refetch()}
-              className="mt-3 min-h-11 rounded-full bg-[var(--bc-mobile-text)] px-6 text-[14px] font-semibold text-[var(--bc-mobile-surface)]"
+              className="mt-3 min-h-11 rounded-full btn-luxury-gold px-6 text-[14px] font-bold shadow-md shadow-[#D8B282]/25"
             >
               {t("bc.mobile.me.retry")}
             </button>
@@ -136,16 +136,16 @@ function CardVaultPage() {
           <section
             aria-busy="true"
             aria-label={t("bc.mobile.me.cards.pageTitle")}
-            className="flex justify-center rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-10"
+            className="flex justify-center rounded-2xl bc-translucent-card p-10 shadow-md"
           >
             <Loader2
               aria-hidden="true"
-              className="h-6 w-6 animate-spin text-[var(--bc-mobile-muted)] motion-reduce:animate-none"
+              className="h-6 w-6 animate-spin text-[#D8B282] motion-reduce:animate-none"
               strokeWidth={1.8}
             />
           </section>
         ) : items.length === 0 ? (
-          <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-8 text-center text-[14px] text-[var(--bc-mobile-muted)]">
+          <section className="rounded-2xl bc-translucent-card p-8 text-center text-[14px] text-[var(--bc-mobile-muted)] shadow-md">
             {term.trim() ? t("bc.mobile.me.cards.emptySearch") : t("bc.mobile.me.cards.empty")}
           </section>
         ) : (
@@ -159,9 +159,9 @@ function CardVaultPage() {
                     setActive(item);
                   }}
                   aria-label={`${t("bc.mobile.me.cards.manage")} — ${item.displayName ?? t("bc.mobile.me.cards.unknownName")}`}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-3.5 text-left"
+                  className="flex w-full items-center gap-3 rounded-2xl bc-translucent-card p-3.5 text-left transition-all hover:border-[#D8B282]/50 shadow-sm"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[rgba(216,178,130,0.25)] bg-[rgba(216,178,130,0.12)] text-[#D8B282]">
                     {item.kind === "saved_card" ? (
                       <IdCard
                         aria-hidden="true"

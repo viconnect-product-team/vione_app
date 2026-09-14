@@ -12,6 +12,8 @@ export type MyProduct = {
   likes: number;
   views: number;
   time: string;
+  imageUrl?: string;
+  price?: string;
 };
 
 // ---------- Products ----------
@@ -29,6 +31,8 @@ export const listMyProducts = createServerFn({ method: "GET" })
         likes: p.likes ?? 0,
         views: p.views ?? 0,
         time: relTime(p.time || p.created_at || p.createdAt),
+        imageUrl: p.imageUrl || p.image || null,
+        price: p.price || "",
       }));
     } catch {
       return [];

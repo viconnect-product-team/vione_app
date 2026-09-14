@@ -36,6 +36,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { GlassLayoutWrapper } from "./wrappers/GlassLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -334,7 +336,7 @@ const REVIEWS = [
 
 export function BusinessConnectLandingV5() {
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [isTracing, setIsTracing] = useState(false);
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
@@ -342,31 +344,15 @@ export function BusinessConnectLandingV5() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsTracing(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 280);
-    setTimeout(() => {
-      setIsTracing(false);
-    }, 650);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative font-sans transition-colors duration-500 ${
-        theme === "dark"
-          ? "bg-[#030712] text-slate-100"
-          : theme === "contrast"
-            ? "bg-black text-[#00FF66]"
-            : "bg-[#F8FAFC] text-slate-900"
-      }`}
+    <GlassLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
-      {/* 3-LAYER BACKGROUND WITH 50% SCROLL PARALLAX */}
-      <DeepTechThreeLayerBackground theme={theme} />
-
-      {/* CIRCUIT TRACE THEME TRANSITION */}
-      <CircuitTraceThemeTransition isTracing={isTracing} theme={theme} />
 
       {/* =========================================================================
           1. HEADER
@@ -1085,6 +1071,6 @@ export function BusinessConnectLandingV5() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </GlassLayoutWrapper>
   );
 }

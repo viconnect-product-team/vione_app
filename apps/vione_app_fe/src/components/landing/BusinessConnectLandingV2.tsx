@@ -42,6 +42,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { ZenLayoutWrapper } from "./wrappers/ZenLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -439,8 +441,8 @@ const TESTIMONIALS = [
 ];
 
 export function BusinessConnectLandingV2() {
-  const [theme, setTheme] = useState<ThemeMode>("light");
-  const [isFlipping, setIsFlipping] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<number | null>(null);
@@ -448,37 +450,20 @@ export function BusinessConnectLandingV2() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsFlipping(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 320);
-    setTimeout(() => {
-      setIsFlipping(false);
-    }, 700);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative selection:bg-[#D4AF37]/30 selection:text-[#B8860B] transition-colors duration-500 font-sans ${
-        theme === "dark"
-          ? "bg-[#070D1E] text-slate-100"
-          : theme === "contrast"
-            ? "bg-white text-black"
-            : "bg-[#F7F4EB] text-[#1C1917]"
-      }`}
+    <ZenLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
-      {/* 3-LAYER BACKGROUND ARCHITECTURE */}
-      <HeritageThreeLayerBackground theme={theme} />
-
       {/* INTERACTIVE PARTICLE NETWORK CANVAS (CYBERNETIC REPULSE FORCE FIELD) */}
       <InteractiveParticleNetworkCanvas />
 
       {/* STARDUST CURSOR PARTICLES */}
       <StardustCursorTrail theme={theme} />
-
-      {/* 3D BOOK FLIP ON THEME SWITCH */}
-      <BookFlipThemeTransition isFlipping={isFlipping} theme={theme} />
 
       {/* =========================================================================
           1. HEADER (STRICT CORPORATE PADDING & B2B COPY)
@@ -1218,6 +1203,6 @@ export function BusinessConnectLandingV2() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </ZenLayoutWrapper>
   );
 }

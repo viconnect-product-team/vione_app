@@ -138,6 +138,7 @@ function EventsPage() {
 
   const fields: CrudField[] = [
     { name: "name", label: t("events.col.event"), type: "text", required: true },
+    { name: "image", label: "Ảnh banner sự kiện", type: "image" },
     { name: "date", label: t("events.col.date"), type: "date", required: true },
     { name: "location", label: t("events.col.location"), type: "text" },
     { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
@@ -810,11 +811,20 @@ function EventCard({
   const fmt = useFmt();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-      <div className="relative h-28 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
-        />
+      <div className="relative h-32 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
+        {(e as any).imageUrl || (e as any).image ? (
+          <img
+            src={(e as any).imageUrl || (e as any).image}
+            alt={e.name}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
         <div className="absolute left-3 top-3">
           <StatusPill status={getEffectiveStatus(e)} />
         </div>

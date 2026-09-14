@@ -4,11 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { MemberScreen } from "@/components/member/MemberShell";
 import { checkRenewalReminder } from "@/lib/member-app.functions";
 import { MEMBER_MANIFEST_HREF } from "@/lib/pwa-manifest";
-import {
-  hasRememberedVioneAppContext,
-  isVioneStandaloneContext,
-  rememberVioneAppContext,
-} from "@/lib/business-connect/mobile/vione-auth-context";
 
 export const Route = createFileRoute("/association")({
   ssr: false,
@@ -25,25 +20,12 @@ export const Route = createFileRoute("/association")({
       return;
     }
 
-    // Shortcut ViOne cũ có thể vẫn khởi động tại `/association`. Nhận diện bằng ngữ cảnh
-    // trình duyệt và chuyển sang màn đăng nhập Connect-app, không dựa vào manifest.
-    const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
-    const isVioneLaunch = isMobile && (hasRememberedVioneAppContext() || isVioneStandaloneContext());
-    if (isVioneLaunch) rememberVioneAppContext();
     const hasLocal = typeof window !== "undefined" && Boolean(
       localStorage.getItem("vibe_token") || 
       localStorage.getItem("token") || 
       localStorage.getItem("access_token")
     );
     if (!hasLocal) {
-      if (isVioneLaunch) {
-        throw redirect({
-          to: "/vione/login",
-          search: {
-            redirect: "/connect-app",
-          },
-        });
-      }
       const searchStr = typeof (location as any).searchStr === "string" ? (location as any).searchStr : "";
       const target = location.pathname.startsWith("/association/login")
         ? "/association"

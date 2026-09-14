@@ -33,6 +33,8 @@ import {
   FileText,
   Download,
   Zap,
+  Copy,
+  Check,
 } from "lucide-react";
 
 import {
@@ -52,6 +54,7 @@ import { ShareCardModal } from "@/components/member/ShareCardModal";
 import { CardPreviewModal } from "@/components/member/CardPreviewModal";
 import { FastScanModal } from "@/components/member/FastScanModal";
 import { ConfirmDialog } from "@/components/member/ConfirmDialog";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 import { performWithUndo } from "@/lib/undo-action";
 import { cardPermissionErrorKey } from "@/lib/card-permission-error";
@@ -88,6 +91,7 @@ import { AvatarUploadField } from "@/components/business-connect/mobile/me/Avata
 type BusinessCardsSearch = {
   tab?: "cards" | "leads" | "stats";
   leadId?: string;
+  action?: string;
 };
 
 const TABS = ["cards", "leads", "stats"] as const;
@@ -98,7 +102,8 @@ export const Route = createFileRoute("/association/business-cards")({
       ? (search.tab as (typeof TABS)[number])
       : undefined;
     const leadId = typeof search.leadId === "string" ? search.leadId : undefined;
-    return { tab, leadId };
+    const action = typeof search.action === "string" ? search.action : undefined;
+    return { tab, leadId, action };
   },
   component: BusinessCardsScreen,
 });
@@ -235,6 +240,15 @@ function BusinessCardsScreen() {
       toast.error(t(cardPermissionErrorKey(e)));
     }
   };
+
+  useEffect(() => {
+    if (search.action === "edit" && cards.length > 0 && !editing) {
+      const primary = cards.find((c) => c.cardKind === "primary") || cards[0];
+      if (primary) {
+        void openEdit(primary.id);
+      }
+    }
+  }, [search.action, cards, editing]);
 
   if (editing) {
     return (
@@ -1412,115 +1426,175 @@ function CardRow({
   };
 
   const published = card.status === "published";
+  const resolvedAvatar = card.avatarUrl ? resolveMediaUrl(card.avatarUrl) || card.avatarUrl : null;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    const fullUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/b/${card.slug}`
+        : `/b/${card.slug}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    toast.success("Đã sao chép liên kết danh thiếp!");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className="vba-card p-4">
-      <div className="flex items-start gap-3">
-        {card.avatarUrl ? (
+    <>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md p-4 transition-all hover:border-sky-300 dark:hover:border-sky-800 space-y-3.5">
+        {/* Visual Business Card Clean Header */}
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 shadow-2xs">
+          <IdCard className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+          {card.cardKind === "primary" ? "Danh thiếp chính" : "Danh thiếp phụ"}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${
+              published
+                ? "bg-emerald-500 text-white shadow-xs"
+                : "bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${published ? "bg-white animate-pulse" : "bg-slate-400"}`}
+            />
+            {published ? "Công khai" : "Đang ẩn"}
+          </span>
+        </div>
+      </div>
+
+      {/* Card Info */}
+      <div className="flex items-center gap-3.5 pt-1">
+        {resolvedAvatar ? (
           <img
-            src={card.avatarUrl}
+            src={resolvedAvatar}
             alt=""
-            className="h-12 w-12 shrink-0 rounded-xl object-cover"
-            width={48}
-            height={48}
+            className="h-16 w-16 shrink-0 rounded-2xl border-2 border-slate-200 dark:border-slate-700 object-cover shadow-md bg-slate-100 dark:bg-slate-800 ring-2 ring-sky-500/20"
+            width={64}
+            height={64}
           />
         ) : (
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
-            <IdCard className="h-5 w-5" />
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-sky-600 to-blue-800 text-white font-black text-2xl shadow-md ring-2 ring-sky-500/20">
+            {(card.displayName || card.slug).slice(0, 1).toUpperCase()}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-semibold text-[var(--vba-text)]">
-              {card.displayName || card.slug}
-            </span>
-            <span className="rounded-full bg-[var(--vba-gold-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--vba-gold)]">
-              {t(card.cardKind === "primary" ? "bc.f.kind.primary" : "bc.f.kind.secondary")}
-            </span>
-          </div>
+          <h3 className="truncate text-[17px] font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+            {card.displayName || card.slug}
+          </h3>
           {card.professionalTitle ? (
-            <p className="truncate text-[12px] text-[var(--vba-text-muted)]">
+            <p className="truncate text-[13px] font-semibold text-slate-600 dark:text-slate-400 mt-0.5">
               {card.professionalTitle}
               {card.companyName ? ` · ${card.companyName}` : ""}
             </p>
           ) : null}
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--vba-text-dim)]">
-            <span>/b/{card.slug}</span>
-            <span>·</span>
-            <span className={published ? "text-[var(--vba-gold)]" : ""}>
-              {t(STATUS_KEY[card.status])}
-            </span>
-          </div>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+
+      {/* Public Link Box (Path hidden, only Copy button) */}
+      <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 p-2.5">
+        <div className="min-w-0 flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+          <span className="text-[12px] font-bold text-slate-700 dark:text-slate-300">
+            Đường dẫn danh thiếp số
+          </span>
+        </div>
         <button
-          onClick={onEdit}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
+          type="button"
+          onClick={handleCopyLink}
+          className="shrink-0 flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs transition-colors cursor-pointer"
         >
-          <Pencil className="h-3.5 w-3.5" />
-          {t("bc.edit")}
+          {copied ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+          <span>{copied ? "Đã chép" : "Sao chép đường dẫn"}</span>
         </button>
-        <button
-          onClick={() => setPreviewOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
-        >
-          <QrCode className="h-3.5 w-3.5" />
-          {t("bc.preview")}
-        </button>
-        {card.cardKind !== "primary" ? (
-          <button
-            onClick={makePrimary}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)] disabled:opacity-50"
-          >
-            <Star className="h-3.5 w-3.5" />
-            {t("bc.setPrimary")}
-          </button>
-        ) : null}
-        <button
-          disabled={busy}
-          onClick={() => void togglePublish()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)] disabled:opacity-50"
-        >
-          {published ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          {published ? t("bc.unpublish") : t("bc.publish")}
-        </button>
-        {published ? (
-          <>
-            <button
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              {t("bc.share")}
-            </button>
-            <button
-              onClick={() => setFastScanOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-gold)]/40 bg-[var(--vba-gold-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
-            >
-              <Zap className="h-3.5 w-3.5 text-[var(--vba-gold)]" />
-              {t("bc.fastScan")}
-            </button>
+      </div>
+
+        {/* Primary Action Row - High Contrast Buttons */}
+        <div className="mt-3.5 flex flex-wrap items-center gap-2">
+          {published && (
             <a
               href={`/b/${card.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white active:scale-95 px-3.5 py-2 text-[12.5px] font-bold shadow-sm transition-all cursor-pointer"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              {t("bc.viewPublic")}
+              Xem công khai
             </a>
-          </>
-        ) : null}
-        <button
-          disabled={busy}
-          onClick={() => void remove()}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-danger)] disabled:opacity-50"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          {t("bc.delete")}
-        </button>
+          )}
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-sky-500 bg-sky-50 dark:bg-slate-800 hover:bg-sky-100 text-sky-800 dark:text-sky-200 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <QrCode className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+            {t("bc.preview")}
+          </button>
+          {published && (
+            <>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 text-[12.5px] font-bold text-slate-800 dark:text-slate-100 transition-all shadow-xs cursor-pointer"
+              >
+                <Share2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+                {t("bc.share")}
+              </button>
+              <button
+                onClick={() => setFastScanOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-800 dark:text-indigo-200 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <Zap className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                {t("bc.fastScan")}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Secondary Management Row */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 pt-3 text-[12px]">
+          <button
+            onClick={onEdit}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5 text-sky-600" />
+            {t("bc.edit")}
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => void togglePublish()}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            {published ? (
+              <EyeOff className="h-3.5 w-3.5 text-slate-500" />
+            ) : (
+              <Eye className="h-3.5 w-3.5 text-sky-600" />
+            )}
+            {published ? t("bc.unpublish") : t("bc.publish")}
+          </button>
+          {card.cardKind !== "primary" && (
+            <button
+              onClick={makePrimary}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <Star className="h-3.5 w-3.5 text-amber-500" />
+              {t("bc.setPrimary")}
+            </button>
+          )}
+          <button
+            disabled={busy}
+            onClick={() => void remove()}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t("bc.delete")}
+          </button>
+        </div>
       </div>
       {shareOpen ? (
         <ShareCardModal
@@ -1557,7 +1631,7 @@ function CardRow({
         destructive={confirmKind === "delete"}
         onConfirm={onConfirm}
       />
-    </div>
+    </>
   );
 }
 
@@ -1683,10 +1757,7 @@ function CardEditor({
             <Input value={d.companyName} onChange={(v) => set("companyName", v)} />
           </Field>
           <Field label={t("bc.f.avatar")}>
-            <AvatarUploadField
-              value={d.avatarUrl}
-              onChange={(url) => set("avatarUrl", url)}
-            />
+            <AvatarUploadField value={d.avatarUrl} onChange={(url) => set("avatarUrl", url)} />
             <Input
               value={d.avatarUrl}
               onChange={(v) => set("avatarUrl", v)}
@@ -1851,10 +1922,10 @@ function CardEditor({
           <button
             disabled={saving}
             onClick={() => void submit()}
-            className="vba-gold-grad flex flex-[2] items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-semibold text-[#1a1206] disabled:opacity-60"
+            className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 py-3 text-[13.5px] font-bold text-white shadow-md shadow-sky-600/20 active:scale-98 disabled:opacity-60 cursor-pointer"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {saving ? t("bc.saving") : t("bc.save")}
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
       </div>
@@ -1878,13 +1949,13 @@ function ItemListSection({
     <Section title={title}>
       <div className="space-y-3">
         {items.map((it, i) => (
-          <div key={i} className="rounded-xl border border-[var(--vba-border-soft)] p-3">
+          <div key={i} className="rounded-xl border border-sky-300/60 dark:border-sky-700/60 p-3 bg-slate-50/50 dark:bg-slate-900/30">
             <div className="flex items-center gap-2">
               <input
                 value={it.title}
                 onChange={(e) => update(i, { title: e.target.value })}
                 placeholder={t("bc.itemTitle")}
-                className="vba-input flex-1"
+                className="flex-1 rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
               />
               <button
                 onClick={() => onChange(items.filter((_, j) => j !== i))}
@@ -1899,14 +1970,14 @@ function ItemListSection({
               onChange={(e) => update(i, { description: e.target.value })}
               placeholder={t("bc.itemDesc")}
               rows={2}
-              className="vba-input mt-2 w-full resize-none"
+              className="mt-2 w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 resize-none"
             />
           </div>
         ))}
       </div>
       <button
         onClick={() => onChange([...items, { title: "", description: "" }])}
-        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-[var(--vba-border-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--vba-text)]"
+        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-sky-300 dark:border-sky-700 px-3 py-1.5 text-[12px] font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition"
       >
         <Plus className="h-4 w-4" />
         {t("bc.add")}
@@ -1918,7 +1989,7 @@ function ItemListSection({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="vba-card p-4">
-      <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-[var(--vba-gold)]">
+      <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400">
         {title}
       </h2>
       <div className="space-y-3">{children}</div>
@@ -1954,7 +2025,7 @@ function Input({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="vba-input w-full"
+      className="w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
     />
   );
 }
@@ -1965,7 +2036,7 @@ function Textarea({ value, onChange }: { value: string; onChange: (v: string) =>
       value={value}
       onChange={(e) => onChange(e.target.value)}
       rows={3}
-      className="vba-input w-full resize-none"
+      className="w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 resize-none"
     />
   );
 }

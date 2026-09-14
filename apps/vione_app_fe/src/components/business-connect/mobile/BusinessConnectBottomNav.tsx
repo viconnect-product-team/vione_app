@@ -2,12 +2,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useT, type TKey } from "@/lib/i18n";
 import { VButton } from "./VButton";
-import {
-  NavHomeIcon,
-  NavNetworkIcon,
-  NavCommunityIcon,
-  NavMeIcon,
-} from "./NavIcons";
+import { NavHomeIcon, NavNetworkIcon, NavCommunityIcon, NavMeIcon } from "./NavIcons";
 
 type NavTab = {
   to: string;
@@ -102,7 +97,7 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
       className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px]"
     >
       <div
-        className="relative grid grid-cols-5 items-center border-t border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 px-2 pt-1.5 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
+        className="relative grid grid-cols-5 items-center border-t border-[rgba(216,178,130,0.18)] bg-[var(--bc-mobile-surface)]/85 px-2 pt-1.5 backdrop-blur-lg shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
         style={{
           minHeight: "calc(var(--bc-mobile-nav-h) + var(--bc-mobile-safe-bottom))",
           paddingBottom: "max(var(--bc-mobile-safe-bottom), 6px)",
@@ -119,5 +114,3 @@ export function BusinessConnectBottomNav({ onVPress }: { onVPress: () => void })
     </nav>
   );
 }
-
-

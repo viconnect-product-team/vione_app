@@ -14,7 +14,7 @@ export type ExtraLang = "my" | "km" | "lo" | "ja" | "ko" | "zh";
 /** All selectable UI languages. */
 export type Lang = BaseLang | ExtraLang;
 
-export const SUPPORTED_LANGS: Lang[] = ["vi", "en", "ja", "ko", "zh", "my", "km", "lo"];
+export const SUPPORTED_LANGS: Lang[] = ["vi", "en"];
 
 export function isLang(v: unknown): v is Lang {
   return typeof v === "string" && (SUPPORTED_LANGS as string[]).includes(v);
@@ -115,13 +115,18 @@ export function useFmt() {
         k: "m.rel.justNow" | "m.rel.minAgo" | "m.rel.hourAgo" | "m.rel.dayAgo",
         n?: number,
       ) => translate(k, lang).replace("{n}", String(n ?? ""));
-      const diff = Date.now() - new Date(iso).getTime();
+      const parsedTime = new Date(iso).getTime();
+      if (isNaN(parsedTime)) return iso;
+      const diff = Date.now() - parsedTime;
+      if (isNaN(diff)) return iso;
       const min = Math.floor(diff / 60000);
       if (min < 1) return tr("m.rel.justNow");
       if (min < 60) return tr("m.rel.minAgo", min);
       const h = Math.floor(min / 60);
       if (h < 24) return tr("m.rel.hourAgo", h);
-      return tr("m.rel.dayAgo", Math.floor(h / 24));
+      const days = Math.floor(h / 24);
+      if (isNaN(days)) return iso;
+      return tr("m.rel.dayAgo", days);
     },
     money: (n: number) =>
       new Intl.NumberFormat(locale, {

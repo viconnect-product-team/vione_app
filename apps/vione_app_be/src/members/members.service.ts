@@ -307,31 +307,51 @@ export class MembersService {
     let rows: any[];
     if (assocId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT m.code, m.name, m.industry, m.region, m.type, m.status, m.user_id,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
+        SELECT m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
+               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
+               COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
         FROM public.members m
         LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
         LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
         LEFT JOIN public.vione_users vu ON vu.id = m.user_id
         WHERE m.association_id = ${assocId}::uuid AND m.status = 'active'
         ORDER BY m.name ASC
-      `.catch(() => []);
+      `.catch((err) => {
+        console.error('listDirectory assoc query error:', err);
+        return [];
+      });
     } else {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT m.code, m.name, m.industry, m.region, m.type, m.status, m.user_id,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
+        SELECT m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
+               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
+               COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
         FROM public.members m
         LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
         LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
         LEFT JOIN public.vione_users vu ON vu.id = m.user_id
         WHERE m.status = 'active'
         ORDER BY m.name ASC
-      `.catch(() => []);
+      `.catch((err) => {
+        console.error('listDirectory all query error:', err);
+        return [];
+      });
     }
 
     return rows.map((m) => ({
       code: m.code ?? '',
       name: m.name,
+      contact: m.contact ?? m.person_name ?? '',
+      personName: m.person_name ?? m.contact ?? m.name,
+      personTitle: m.person_title ?? '',
+      email: m.email ?? null,
+      phone: m.phone ?? null,
+      about: m.about ?? null,
+      address: m.address ?? null,
+      website: m.website ?? null,
       industry: m.industry ?? '',
       region: m.region ?? '',
       type: m.type === 'individual' ? 'individual' : 'company',

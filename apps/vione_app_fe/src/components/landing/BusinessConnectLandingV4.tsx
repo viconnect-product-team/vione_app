@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { EditorialLayoutWrapper } from "./wrappers/EditorialLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -373,7 +375,7 @@ const REVIEWS = [
 
 export function BusinessConnectLandingV4() {
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [isWiping, setIsWiping] = useState(false);
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -381,32 +383,16 @@ export function BusinessConnectLandingV4() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsWiping(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 320);
-    setTimeout(() => {
-      setIsWiping(false);
-    }, 750);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative font-sans transition-colors duration-500 ${
-        theme === "dark"
-          ? "bg-[#0B0F19] text-slate-100"
-          : theme === "contrast"
-            ? "bg-white text-black"
-            : "bg-[#F1F5F9] text-slate-900"
-      }`}
+    <EditorialLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
       <InvertCursor40px />
-      {/* 3-LAYER EXECUTIVE GLASS BACKGROUND WITH 50% SCROLL PARALLAX */}
-      <ExecutiveGlassThreeLayerBackground theme={theme} />
-
-      {/* WIPE FOG THEME TRANSITION */}
-      <WipeFogThemeTransition isWiping={isWiping} theme={theme} />
 
       {/* =========================================================================
           1. HEADER
@@ -1155,6 +1141,6 @@ export function BusinessConnectLandingV4() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </EditorialLayoutWrapper>
   );
 }

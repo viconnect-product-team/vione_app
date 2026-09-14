@@ -344,19 +344,19 @@
   }
 }
 
-/* Light mode tokens for .vba-app — Clean Executive White & Soft Sky Blue */
+/* Light mode tokens for .vba-app — Clean Executive White & Soft Sky Blue with Crisp Bright Borders */
 html:not(.dark) .vba-app {
   --vba-bg: #FFFFFF;
   --vba-bg-2: #F8FAFC;
   --vba-surface: #FFFFFF;
   --vba-surface-2: #F1F5F9;
-  --vba-border: rgba(14, 165, 233, 0.16);
-  --vba-border-soft: rgba(15, 23, 42, 0.06);
-  --vba-border-accent: rgba(14, 165, 233, 0.35);
+  --vba-border: rgba(14, 165, 233, 0.35);
+  --vba-border-soft: rgba(14, 165, 233, 0.22);
+  --vba-border-accent: rgba(14, 165, 233, 0.55);
   --vba-gold: #0EA5E9;
   --vba-gold-2: #38BDF8;
-  --vba-gold-soft: rgba(14, 165, 233, 0.08);
-  --vba-gold-glow: 0 4px 12px -4px rgba(14, 165, 233, 0.18);
+  --vba-gold-soft: rgba(14, 165, 233, 0.12);
+  --vba-gold-glow: 0 4px 12px -4px rgba(14, 165, 233, 0.22);
   --vba-text: #0F172A;
   --vba-text-muted: #475569;
   --vba-text-dim: #64748B;
@@ -373,8 +373,8 @@ html:not(.dark) .vba-app {
 html:not(.dark) .vba-card {
   background: #FFFFFF;
   color: #0F172A;
-  border: 1px solid rgba(14, 165, 233, 0.14);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  border: 1.5px solid rgba(14, 165, 233, 0.32);
+  box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.08);
 }
 
 html:not(.dark) .vba-gold-text {
@@ -444,9 +444,9 @@ html.hc .vba-gold-grad {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #FFFFFF;
-  border: 1px solid rgba(186, 230, 253, 0.15);
+  border: 1.5px solid rgba(186, 230, 253, 0.28);
   border-radius: 1rem;
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(125, 211, 252, 0.15);
 }
 
 .vba-gold-grad {
@@ -454,6 +454,33 @@ html.hc .vba-gold-grad {
   color: #071322 !important;
   font-weight: 700;
   box-shadow: 0 4px 14px -2px rgba(56, 189, 248, 0.30);
+}
+
+/* Ensure ALL buttons and pills with sky/blue background strictly have pure white text */
+.btn-sky,
+.vba-btn-primary,
+button.bg-sky-500,
+button.bg-sky-600,
+a.bg-sky-500,
+a.bg-sky-600,
+span.bg-sky-500,
+span.bg-sky-600,
+[class*="bg-sky-500"],
+[class*="bg-sky-600"] {
+  color: #FFFFFF !important;
+}
+
+.btn-sky *,
+.vba-btn-primary *,
+button.bg-sky-500 *,
+button.bg-sky-600 *,
+a.bg-sky-500 *,
+a.bg-sky-600 *,
+span.bg-sky-500 *,
+span.bg-sky-600 *,
+[class*="bg-sky-500"] *,
+[class*="bg-sky-600"] * {
+  color: #FFFFFF !important;
 }
 
 /* High-contrast: flatten gradients to solid, remove glows for clarity */
@@ -711,21 +738,21 @@ html.hc .bc-app {
   /* ── Business Connect — Translucent Obsidian Dark Glass & Champagne Gold ──────────────────
      Frosted Dark Glass (Đen mờ cao cấp) × Champagne Gold Gradient (Vàng đồng như nút ViOne). */
 
-  /* Backgrounds / surfaces — Executive Obsidian Navy & Frosted Glass (Loại bỏ màu đen than) */
+  /* Backgrounds / surfaces — Executive Obsidian Navy & Frosted Dark Glass (Đen mờ cao cấp, xuyên thấu nhẹ nền vàng kim) */
   --bc-bg-deep: #070B12;
   --bc-bg-primary: #0B0F17;
   --bc-bg-secondary: #0E1522;
-  --bc-surface: rgba(14, 21, 34, 0.90);
-  --bc-surface-elevated: rgba(19, 27, 41, 0.95);
+  --bc-surface: rgba(14, 21, 34, 0.55);
+  --bc-surface-elevated: rgba(19, 27, 41, 0.65);
 
   --bc-mobile-bg: #0B0F17;
   --bc-mobile-bg-deep: #070B12;
-  --bc-mobile-surface: rgba(14, 21, 34, 0.90);
-  --bc-mobile-surface-2: rgba(19, 27, 41, 0.95);
-  --bc-mobile-navy: #0E1522;
+  --bc-mobile-surface: rgba(14, 21, 34, 0.55);
+  --bc-mobile-surface-2: rgba(22, 32, 50, 0.65);
+  --bc-mobile-navy: rgba(14, 21, 34, 0.70);
   --bc-mobile-navy-deep: #070B12;
-  --bc-mobile-app-gradient: linear-gradient(180deg, #0B0F17 0%, #070B12 100%);
-  --bc-mobile-card-grad: linear-gradient(165deg, rgba(19, 27, 41, 0.92) 0%, rgba(14, 21, 34, 0.95) 100%);
+  --bc-mobile-app-gradient: linear-gradient(180deg, rgba(11, 15, 23, 0.85) 0%, rgba(7, 11, 18, 0.95) 100%);
+  --bc-mobile-card-grad: linear-gradient(165deg, rgba(19, 27, 41, 0.58) 0%, rgba(10, 16, 28, 0.68) 100%);
 
   /* Text - High luminance white & vibrant champagne gold ViOne, no dim gray */
   --bc-text-primary: #FFFFFF;
@@ -877,19 +904,216 @@ html:not(.dark) .vba-app {
   --muted-foreground: #64748B;
 }
 
-html:not(.dark) .vba-app .text-white,
-html:not(.dark) .vba-app .text-slate-50,
-html:not(.dark) .vba-app .text-slate-100,
-html:not(.dark) .vba-app .text-slate-200,
-html:not(.dark) .vba-app .text-slate-300 {
-  color: #000000 !important;
+/* Light mode text overrides: ONLY apply outside of dark cards, badges, and dark surfaces */
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-white,
+html:not(.dark) .vba-app > .text-white,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-50,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-100,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-200 {
+  color: #000000;
 }
 
-html:not(.dark) .vba-app .text-slate-400,
-html:not(.dark) .vba-app .text-slate-500,
-html:not(.dark) .vba-app .text-muted-foreground {
-  color: #64748B !important;
+/* STRICT OVERRIDE: Dark cards and membership cards ALWAYS keep crisp white and silver text */
+.vba-member-card,
+[data-dark-card],
+.vba-member-card *,
+[data-dark-card] * {
+  color-scheme: dark;
 }
+
+html:not(.dark) .vba-app .vba-member-card .text-white,
+html:not(.dark) .vba-app [data-dark-card] .text-white,
+html:not(.dark) .vba-app .vba-member-card [data-card-white],
+html:not(.dark) .vba-app [data-dark-card] [data-card-white] {
+  color: #FFFFFF !important;
+}
+
+html:not(.dark) .vba-app .vba-member-card .text-white\/90,
+html:not(.dark) .vba-app [data-dark-card] .text-white\/90 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+html:not(.dark) .vba-app .vba-member-card .text-white\/80,
+html:not(.dark) .vba-app [data-dark-card] .text-white\/80 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html:not(.dark) .vba-app .vba-member-card .text-white\/70,
+html:not(.dark) .vba-app [data-dark-card] .text-white\/70 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html:not(.dark) .vba-app .vba-member-card .text-white\/60,
+html:not(.dark) .vba-app [data-dark-card] .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *) > .text-slate-400,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *) > .text-slate-500,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *) > .text-muted-foreground {
+  color: #64748B;
+}
+
+/* Golden Pollen Fall Animation (Rụng phấn bling bling) */
+@keyframes vba-pollen-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.6) rotate(0deg);
+  }
+  20% {
+    opacity: 0.9;
+    transform: translateY(-2px) scale(1) rotate(45deg);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translateY(12px) scale(0.9) rotate(120deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.4) rotate(180deg);
+  }
+}
+
+@keyframes vba-bling-twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25) rotate(180deg);
+    filter: drop-shadow(0 0 4px #FCD34D);
+  }
+}
+
+/* Member Perks 2s Glow & Shake Gift Box Animation */
+@keyframes vba-gift-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.3), inset 0 0 10px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(251, 191, 36, 0.7), 0 0 60px rgba(245, 158, 11, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.6);
+  }
+}
+
+@keyframes vba-gift-shake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate(-3px, -2px) rotate(-3deg) scale(1.03);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate(3px, 1px) rotate(3deg) scale(1.03);
+  }
+}
+
+@keyframes vba-ray-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.3) rotate(90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7) rotate(180deg);
+  }
+}
+
+.animate-pollen-1 {
+  animation: vba-pollen-fall 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+.animate-pollen-2 {
+  animation: vba-pollen-fall 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite 0.7s;
+}
+.animate-pollen-3 {
+  animation: vba-pollen-fall 3.2s cubic-bezier(0.25, 1, 0.5, 1) infinite 1.4s;
+}
+.animate-bling {
+  animation: vba-bling-twinkle 1.8s ease-in-out infinite;
+}
+
+/* ── BLUE SNOWFALL SPARKLING ANIMATIONS (HIỆU ỨNG TUYẾT RƠI XANH LẤP LÁNH) ── */
+@keyframes blue-snow-fall-1 {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) translateX(0px) scale(0.6) rotate(0deg);
+  }
+  20% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18px) translateX(6px) scale(1.1) rotate(120deg);
+  }
+}
+
+@keyframes blue-snow-fall-2 {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) translateX(4px) scale(0.5) rotate(0deg);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(16px) translateX(-6px) scale(1) rotate(-140deg);
+  }
+}
+
+@keyframes blue-snow-fall-3 {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) translateX(-3px) scale(0.4) rotate(0deg);
+  }
+  30% {
+    opacity: 0.95;
+  }
+  75% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px) translateX(4px) scale(1.15) rotate(180deg);
+  }
+}
+
+@keyframes blue-sparkle-glow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+    filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+    filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.95));
+  }
+}
+
+.animate-blue-snow-1 {
+  animation: blue-snow-fall-1 2.4s ease-in-out infinite;
+}
+.animate-blue-snow-2 {
+  animation: blue-snow-fall-2 2.9s ease-in-out infinite 0.8s;
+}
+.animate-blue-snow-3 {
+  animation: blue-snow-fall-3 3.3s ease-in-out infinite 1.5s;
+}
+.animate-blue-sparkle {
+  animation: blue-sparkle-glow 1.6s ease-in-out infinite;
+}
+
 
 /* Light mode tokens for .bc-app (ViOne Connect) — Clean White & Pure Black */
 html:not(.dark) .bc-app {
@@ -1208,11 +1432,11 @@ textarea::placeholder {
 
 /* Translucent card with subtle gradient & unified hairline border */
 @utility bc-translucent-card {
-  background: linear-gradient(165deg, rgba(19, 27, 41, 0.90) 0%, rgba(14, 21, 34, 0.94) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(216, 178, 130, 0.18);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(165deg, rgba(19, 27, 41, 0.55) 0%, rgba(10, 16, 28, 0.68) 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(216, 178, 130, 0.22);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35);
 }
 
 html:not(.dark) .bc-translucent-card {
@@ -1245,9 +1469,9 @@ html.dark body > [data-radix-portal] [role="menu"],
 html.dark body > [data-radix-portal] [role="listbox"],
 html.dark body > div[role="dialog"],
 html.dark body > div[role="menu"] {
-  background: linear-gradient(165deg, rgba(19, 27, 41, 0.98) 0%, rgba(14, 21, 34, 0.99) 50%, rgba(11, 15, 23, 1.0) 100%) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  background: linear-gradient(165deg, rgba(19, 27, 41, 0.80) 0%, rgba(14, 21, 34, 0.88) 50%, rgba(11, 15, 23, 0.90) 100%) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
   border-color: rgba(216, 178, 130, 0.35) !important;
 }
 

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
 import { AssociationAppSignIn } from "@/components/member/AssociationAppSignIn";
 import { AuthCardScanSheet } from "@/components/business-connect/mobile/AuthCardScanSheet";
-import { rememberScannedCard, type ScannedCardSession } from "@/lib/business-connect/mobile/auth-scan";
+import { rememberScannedCard } from "@/lib/business-connect/mobile/auth-scan";
 import {
   applyRememberPreference,
   getRememberPreference,
@@ -109,13 +109,13 @@ function AssociationLoginPage() {
     }
   };
 
-  async function handleCardScanned(card: ScannedCardSession) {
+  async function handleCardScanned(result: any) {
     setScanOpen(false);
-    rememberScannedCard(card);
-    if (card.email) {
-      setIdentifier(card.email);
+    if (result.kind === "email") {
+      setIdentifier(result.email);
+      rememberScannedCard(result.card);
+      toast.success(`Đã nhận diện thẻ của ${result.card?.fullName || "hội viên"}`);
     }
-    toast.success(`Đã nhận diện thẻ của ${card.fullName || "hội viên"}`);
   }
 
   return (
@@ -137,8 +137,8 @@ function AssociationLoginPage() {
 
       <AuthCardScanSheet
         open={scanOpen}
-        onOpenChange={setScanOpen}
-        onApplyCard={handleCardScanned}
+        onClose={() => setScanOpen(false)}
+        onResult={handleCardScanned}
       />
     </>
   );

@@ -107,13 +107,15 @@ export class BusinessCardController {
   @UseGuards(AuthGuard)
   @Get(':id')
   getMyCard(@Request() req: any, @Param('id') id: string) {
-    return this.businessCardService.getMyCard(req.user.sub, id);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.getMyCard(userId, id);
   }
 
   @UseGuards(AuthGuard)
   @Post()
   saveCard(@Request() req: any, @Body() data: any) {
-    return this.businessCardService.saveCard(req.user.sub, data);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.saveCard(userId, data);
   }
 
   @UseGuards(AuthGuard)
@@ -123,8 +125,10 @@ export class BusinessCardController {
     @Param('id') id: string,
     @Body('status') status: string,
   ) {
-    return this.businessCardService.setStatus(req.user.sub, id, status);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.setStatus(userId, id, status);
   }
+
   @UseGuards(AuthGuard)
   @Get('preview/:slug')
   getPreviewBySlug(@Param('slug') slug: string) {
@@ -139,13 +143,15 @@ export class BusinessCardController {
   @UseGuards(AuthGuard)
   @Post(':id/primary')
   setPrimary(@Request() req: any, @Param('id') id: string) {
-    return this.businessCardService.setPrimary(req.user.sub, id);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.setPrimary(userId, id);
   }
 
   @UseGuards(AuthGuard)
   @Delete(':id')
   deleteCard(@Request() req: any, @Param('id') id: string) {
-    return this.businessCardService.deleteCard(req.user.sub, id);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.deleteCard(userId, id);
   }
 
   // --- Leads ---
@@ -153,7 +159,8 @@ export class BusinessCardController {
   @UseGuards(AuthGuard)
   @Get('leads/me')
   listMyLeads(@Request() req: any) {
-    return this.businessCardService.listMyLeads(req.user.sub);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.listMyLeads(userId);
   }
 
   @UseGuards(AuthGuard)
@@ -163,8 +170,9 @@ export class BusinessCardController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
+    const userId = req.user.id || req.user.sub;
     return this.businessCardService.updateLeadStatus(
-      req.user.sub,
+      userId,
       id,
       body.status,
       body.note,
@@ -178,7 +186,8 @@ export class BusinessCardController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
-    return this.businessCardService.sendLeadReply(req.user.sub, id, body);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.sendLeadReply(userId, id, body);
   }
 
   @UseGuards(AuthGuard)
@@ -188,8 +197,9 @@ export class BusinessCardController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
+    const userId = req.user.id || req.user.sub;
     return this.businessCardService.processLeadWorkflow(
-      req.user.sub,
+      userId,
       id,
       body.status,
       body.note,

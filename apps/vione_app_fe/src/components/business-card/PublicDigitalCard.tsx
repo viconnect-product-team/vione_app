@@ -38,6 +38,7 @@ import { SaveCardButton } from "@/components/business-card/SaveCardButton";
 import { ShareContactPanel } from "@/components/business-card/ShareContactPanel";
 import { BusinessProfileRelationshipActions } from "@/components/connect/BusinessProfileRelationshipActions";
 import { useT } from "@/lib/i18n";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 export function publicCardVcfHref(slug: string): string {
   return `/api/public/card/${encodeURIComponent(slug)}.vcf`;
@@ -46,6 +47,8 @@ export function publicCardVcfHref(slug: string): string {
 export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
   const t = useT();
   const name = card.displayName?.trim() || card.slug;
+  const resolvedCover = resolveMediaUrl(card.coverUrl) || card.coverUrl;
+  const resolvedAvatar = resolveMediaUrl(card.avatarUrl) || card.avatarUrl;
 
   const phoneHref = sanitizePhoneHref(card.workPhone);
   const emailHref = sanitizeEmailHref(card.workEmail);
@@ -71,8 +74,8 @@ export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
   return (
     <article className="vba-card overflow-hidden" aria-label={name}>
       <div className="relative h-24 bg-[var(--vba-gold-soft)]">
-        {card.coverUrl ? (
-          <img src={card.coverUrl} alt="" className="h-full w-full object-cover" />
+        {resolvedCover ? (
+          <img src={resolvedCover} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="vba-gold-grad h-full w-full opacity-30" />
         )}
@@ -80,9 +83,9 @@ export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
 
       <div className="px-5 pb-5">
         <div className="-mt-10 flex items-end gap-3">
-          {card.avatarUrl ? (
+          {resolvedAvatar ? (
             <img
-              src={card.avatarUrl}
+              src={resolvedAvatar}
               alt={name}
               className="h-20 w-20 rounded-2xl border-2 border-[var(--vba-bg-2)] object-cover"
               width={80}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   QR_FIELDS,
@@ -27,6 +27,7 @@ type Info = {
   capacity: string;
   type: EventType;
   status: EventStatus;
+  imageUrl?: string;
 };
 
 const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", description: "" });
@@ -130,6 +131,7 @@ export function EventWizard({
           capacity: Number(info.capacity) || 0,
           type: info.type,
           status: info.status,
+          imageUrl: info.imageUrl,
           qrFields,
           tickets: tickets.map((tk) => ({
             name: tk.name.trim(),
@@ -297,6 +299,49 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           value={info.name}
           onChange={(e) => setInfo({ ...info, name: e.target.value })}
         />
+      </div>
+      {/* Event Banner / Photo Upload */}
+      <div>
+        <label className={labelCls}>Ảnh Banner / Hình ảnh sự kiện</label>
+        {info.imageUrl ? (
+          <div className="relative overflow-hidden rounded-xl border border-border">
+            <img
+              src={info.imageUrl}
+              alt="Banner sự kiện"
+              className="h-36 w-full object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setInfo({ ...info, imageUrl: "" })}
+              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/70 text-white hover:bg-rose-600 transition"
+              aria-label="Xoá ảnh"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-4 hover:border-primary/60 hover:bg-muted/30 transition">
+            <ImagePlus className="h-7 w-7 text-muted-foreground mb-1.5" />
+            <span className="text-xs font-semibold text-foreground">Tải ảnh sự kiện lên</span>
+            <span className="text-[11px] text-muted-foreground">PNG, JPG hoặc WEBP (Tỷ lệ 16:9 khuyên dùng)</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  if (typeof reader.result === "string") {
+                    setInfo({ ...info, imageUrl: reader.result });
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

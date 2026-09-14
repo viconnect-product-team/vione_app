@@ -28,12 +28,15 @@ export function BusinessConnectTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)]/95 backdrop-blur-md -mx-5 w-[calc(100%+2.5rem)]",
-        className
+        "sticky top-0 z-50 border-b border-[rgba(216,178,130,0.15)] bg-[var(--bc-mobile-surface)]/80 backdrop-blur-lg -mx-5 w-[calc(100%+2.5rem)]",
+        className,
       )}
       style={{ paddingTop: "var(--bc-mobile-safe-top-compact)" }}
     >
-      <div style={{ height: "var(--bc-mobile-header-h)" }} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[var(--bc-mobile-header-gap)] px-3">
+      <div
+        style={{ height: "var(--bc-mobile-header-h)" }}
+        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[var(--bc-mobile-header-gap)] px-3"
+      >
         <div className="flex min-w-11 items-center justify-start pl-1">
           {back ? (
             <button
@@ -42,7 +45,12 @@ export function BusinessConnectTopBar({
               aria-label={t("bc.mobile.topbar.back")}
               className="grid h-[var(--bc-mobile-header-action)] w-[var(--bc-mobile-header-action)] place-items-center rounded-full text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)]"
             >
-              <ChevronLeft style={{ height: "var(--bc-mobile-header-icon)", width: "var(--bc-mobile-header-icon)" }} />
+              <ChevronLeft
+                style={{
+                  height: "var(--bc-mobile-header-icon)",
+                  width: "var(--bc-mobile-header-icon)",
+                }}
+              />
             </button>
           ) : (
             left
@@ -55,7 +63,12 @@ export function BusinessConnectTopBar({
         ) : (
           <span />
         )}
-        <div className="flex min-w-11 items-center justify-end pr-1" style={{ paddingRight: "calc(0.25rem + var(--bc-mobile-safe-right))" }}>{right}</div>
+        <div
+          className="flex min-w-11 items-center justify-end pr-1"
+          style={{ paddingRight: "calc(0.25rem + var(--bc-mobile-safe-right))" }}
+        >
+          {right}
+        </div>
       </div>
     </header>
   );

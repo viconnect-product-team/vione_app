@@ -14,7 +14,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { useT, useLang } from "@/lib/i18n";
 import { LuxuryLangSwitcher } from "@/components/LuxuryLangSwitcher";
 
 interface Props {
@@ -53,6 +53,7 @@ export function AssociationAppSignIn({
   onRememberChange,
 }: Props) {
   const t = useT();
+  const { lang } = useLang();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLocal, setRememberLocal] = useState(true);
   const remember = rememberProp ?? rememberLocal;
@@ -103,33 +104,18 @@ export function AssociationAppSignIn({
           paddingBottom: "max(16px, env(safe-area-inset-bottom))",
         }}
       >
-        {/* Top bar: CEO 1983 Badge & Language Switcher */}
-        <div className="flex items-center justify-between shrink-0 pt-0.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200/80 text-[11.5px] font-semibold text-sky-800 shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
-            <span>Cổng Hội Viên CEO 1983</span>
-          </div>
-          <LuxuryLangSwitcher />
+        {/* Top bar: Language Switcher aligned right */}
+        <div className="flex items-center justify-end shrink-0 pt-0.5">
+          <LuxuryLangSwitcher variant="subtle-blue" />
         </div>
 
-        {/* Brand Header */}
-        <div className="flex flex-col items-center justify-center text-center py-2 shrink-0">
-          <div className="relative inline-flex items-center justify-center p-3 rounded-2xl bg-white border border-sky-100 shadow-[0_8px_25px_rgba(2,132,199,0.12)] mb-2 transition-transform hover:scale-105 duration-300">
-            <img
-              src="/ceo1983-logo.png"
-              alt="CLB Doanh Nhân CEO 1983"
-              className="h-12 sm:h-14 w-auto object-contain"
-            />
-          </div>
-          <div className="text-[10.5px] font-extrabold tracking-[0.25em] text-sky-600 uppercase">
-            CLB DOANH NHÂN CEO 1983
-          </div>
-          <h1 className="mt-1 font-serif text-[23px] sm:text-[25px] font-bold tracking-tight text-slate-900">
-            Cổng Đăng Nhập Hội Viên
-          </h1>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-slate-500 max-w-[20rem]">
-            Không gian kết nối & giao thương độc quyền dành cho các nhà lãnh đạo và chủ doanh nghiệp
-          </p>
+        {/* Brand Header: Only Large Logo */}
+        <div className="flex flex-col items-center justify-center text-center py-4 shrink-0">
+          <img
+            src="/ceo1983-logo.png"
+            alt="CLB Doanh Nhân CEO 1983"
+            className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_25px_rgba(0,75,145,0.15)] transition-transform hover:scale-105 duration-300"
+          />
         </div>
 
         {/* Error Banner */}
@@ -193,7 +179,7 @@ export function AssociationAppSignIn({
         >
           <div className="space-y-1">
             <label htmlFor="assoc-auth-id" className="block text-[12px] font-semibold text-slate-700 uppercase tracking-wide">
-              Email hoặc Mã hội viên
+              {lang === "en" ? "Email or Member Code" : "Email hoặc Mã hội viên"}
             </label>
             <div className="relative">
               <User
@@ -206,7 +192,7 @@ export function AssociationAppSignIn({
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => onIdentifierChange(e.target.value)}
-                placeholder="Ví dụ: M1983-002 hoặc email..."
+                placeholder={lang === "en" ? "e.g. M1983-002 or email..." : "Ví dụ: M1983-002 hoặc email..."}
                 className={fieldClass}
                 required
               />
@@ -215,7 +201,7 @@ export function AssociationAppSignIn({
 
           <div className="space-y-1">
             <label htmlFor="assoc-auth-password" className="block text-[12px] font-semibold text-slate-700 uppercase tracking-wide">
-              Mật khẩu
+              {lang === "en" ? "Password" : "Mật khẩu"}
             </label>
             <div className="relative">
               <Lock
@@ -228,7 +214,7 @@ export function AssociationAppSignIn({
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                placeholder="Nhập mật khẩu..."
+                placeholder={lang === "en" ? "Enter password..." : "Nhập mật khẩu..."}
                 className={fieldClass}
                 required
               />
@@ -272,28 +258,28 @@ export function AssociationAppSignIn({
                   </svg>
                 )}
               </span>
-              <span className="font-medium">Ghi nhớ đăng nhập</span>
+              <span className="font-medium">{lang === "en" ? "Remember me" : "Ghi nhớ đăng nhập"}</span>
             </button>
             <Link
               to="/forgot-password"
               className="text-[12.5px] font-semibold text-sky-600 hover:text-sky-700 hover:underline"
             >
-              Quên mật khẩu?
+              {lang === "en" ? "Forgot password?" : "Quên mật khẩu?"}
             </Link>
           </div>
 
-          {/* Submit Button (Vibrant Royal Blue Gradient) */}
+          {/* Submit Button (Vibrant Sky Blue) */}
           <button
             type="submit"
             disabled={loading}
-            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[14.5px] font-bold text-white transition-all shadow-lg shadow-sky-500/25 hover:shadow-sky-500/35 hover:brightness-105 active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 mt-1.5"
+            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[15px] font-bold text-white transition-all shadow-lg shadow-sky-600/25 hover:shadow-sky-600/35 hover:brightness-105 active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-sky-600 hover:bg-sky-700 mt-1.5"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-white" /> Đang xác thực...
+                <Loader2 className="h-4 w-4 animate-spin text-white" /> {lang === "en" ? "Verifying..." : "Đang xác thực..."}
               </span>
             ) : (
-              "Đăng nhập Cổng Hội Viên"
+              lang === "en" ? "Sign in" : "Đăng nhập"
             )}
             {!loading && (
               <ArrowRight
@@ -311,7 +297,7 @@ export function AssociationAppSignIn({
             className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-100 text-[13.5px] font-semibold text-sky-800 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
           >
             <Shield className="h-4 w-4 text-sky-600" aria-hidden="true" />
-            <span>Kích hoạt tài khoản hội viên mới</span>
+            <span>{lang === "en" ? "Activate new member account" : "Kích hoạt tài khoản hội viên mới"}</span>
             <ChevronRight className="absolute right-4 h-4 w-4 text-sky-600" aria-hidden="true" />
           </Link>
         </div>
@@ -321,28 +307,22 @@ export function AssociationAppSignIn({
           <button
             type="button"
             onClick={onScanCard}
-            className="flex w-full items-center justify-center gap-2.5 py-2 px-3 rounded-xl border border-dashed border-sky-200/80 bg-white hover:bg-sky-50/50 transition-colors text-left shrink-0 cursor-pointer active:opacity-80 shadow-2xs"
+            className="flex w-full items-center justify-center gap-2.5 py-2.5 px-3.5 rounded-xl border border-dashed border-sky-400/60 bg-white hover:bg-sky-50/50 transition-colors text-left shrink-0 cursor-pointer active:opacity-80 shadow-2xs group"
           >
             <QrCode className="h-5 w-5 shrink-0 text-sky-600" aria-hidden="true" />
             <span>
-              <span className="block text-[13px] font-bold text-sky-900">Chạm thẻ NFC hoặc Quét mã QR</span>
+              <span className="block text-[13px] font-bold text-sky-700">
+                {lang === "en" ? "Tap NFC Card or Scan QR" : "Chạm thẻ NFC hoặc Quét mã QR"}
+              </span>
               <span className="block text-[11px] leading-tight text-slate-500">
-                Đăng nhập nhanh 1 chạm bằng Thẻ Hội Viên Thông Minh
+                {lang === "en" ? "Quick 1-tap sign in with Smart VIP Card" : "Đăng nhập nhanh 1 chạm bằng Thẻ Hội Viên Thông Minh"}
               </span>
             </span>
           </button>
         )}
 
-        {/* Security & Copyright Footer */}
-        <div className="text-center pt-2 pb-1 shrink-0 space-y-1">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-            <Shield className="h-3.5 w-3.5 text-sky-500" />
-            <span>Bảo mật cấp doanh nghiệp theo chuẩn Hiệp hội CEO 1983</span>
-          </div>
-          <div className="text-[10.5px] text-slate-400">
-            © 2026 Hiệp hội Doanh nhân CEO 1983. Mọi quyền được bảo lưu.
-          </div>
-        </div>
+        {/* Minimal Footer Spacer */}
+        <div className="shrink-0 py-1" />
       </div>
     </main>
   );

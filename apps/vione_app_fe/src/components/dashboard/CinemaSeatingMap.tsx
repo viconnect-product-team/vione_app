@@ -1,5 +1,17 @@
-import React, { useState } from "react";
-import { Check, Plus, Trash2, Edit3, RotateCcw, Lock, Crown, Minus } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Check,
+  Plus,
+  Trash2,
+  Edit3,
+  RotateCcw,
+  Lock,
+  Crown,
+  Minus,
+  Move,
+  GripHorizontal,
+  Info,
+} from "lucide-react";
 
 export type SeatInfo = {
   id: string;
@@ -35,13 +47,69 @@ type Props = {
 };
 
 const DEFAULT_BANQUET_TABLES: BanquetTable[] = [
-  { id: "T1", name: "Bàn VIP 01 - Ban Chủ Tọa", shape: "round", seatsCount: 8, isVip: true, x: 25, y: 22 },
-  { id: "T2", name: "Bàn VIP 02 - Khách Mời Danh Dự", shape: "round", seatsCount: 8, isVip: true, x: 75, y: 22 },
-  { id: "T3", name: "Bàn 03 - Ban Xúc Tiến B2B", shape: "round", seatsCount: 10, isVip: false, x: 20, y: 56 },
-  { id: "T4", name: "Bàn 04 - Hội Viên CEO 1983", shape: "round", seatsCount: 10, isVip: false, x: 50, y: 56 },
-  { id: "T5", name: "Bàn 05 - Đối Tác Chiến Lược", shape: "rect", seatsCount: 10, isVip: false, x: 80, y: 56 },
-  { id: "T6", name: "Bàn 06 - Doanh Nghiệp Trẻ", shape: "rect", seatsCount: 8, isVip: false, x: 35, y: 84 },
-  { id: "T7", name: "Bàn 07 - Báo Chí & Truyền Thông", shape: "rect", seatsCount: 8, isVip: false, x: 65, y: 84 },
+  {
+    id: "T1",
+    name: "Bàn VIP 01 - Ban Chủ Tọa",
+    shape: "round",
+    seatsCount: 8,
+    isVip: true,
+    x: 25,
+    y: 22,
+  },
+  {
+    id: "T2",
+    name: "Bàn VIP 02 - Khách Mời Danh Dự",
+    shape: "round",
+    seatsCount: 8,
+    isVip: true,
+    x: 75,
+    y: 22,
+  },
+  {
+    id: "T3",
+    name: "Bàn 03 - Ban Xúc Tiến B2B",
+    shape: "round",
+    seatsCount: 10,
+    isVip: false,
+    x: 20,
+    y: 56,
+  },
+  {
+    id: "T4",
+    name: "Bàn 04 - Hội Viên CEO 1983",
+    shape: "round",
+    seatsCount: 10,
+    isVip: false,
+    x: 50,
+    y: 56,
+  },
+  {
+    id: "T5",
+    name: "Bàn 05 - Đối Tác Chiến Lược",
+    shape: "rect",
+    seatsCount: 10,
+    isVip: false,
+    x: 80,
+    y: 56,
+  },
+  {
+    id: "T6",
+    name: "Bàn 06 - Doanh Nghiệp Trẻ",
+    shape: "rect",
+    seatsCount: 8,
+    isVip: false,
+    x: 35,
+    y: 84,
+  },
+  {
+    id: "T7",
+    name: "Bàn 07 - Báo Chí & Truyền Thông",
+    shape: "rect",
+    seatsCount: 8,
+    isVip: false,
+    x: 65,
+    y: 84,
+  },
 ];
 
 const DEFAULT_CINEMA_ROWS: CinemaRowConfig[] = [
@@ -60,7 +128,11 @@ export function CinemaSeatingMap({
 }: Props) {
   const [mode, setMode] = useState<"cinema" | "banquet">(initialMode);
   const [selectedSeatId, setSelectedSeatId] = useState<string>(currentSeat);
-  const [hoveredSeat, setHoveredSeat] = useState<{ id: string; label: string; occupant?: string } | null>(null);
+  const [hoveredSeat, setHoveredSeat] = useState<{
+    id: string;
+    label: string;
+    occupant?: string;
+  } | null>(null);
 
   // Cinema Dynamic Rows & Stage Seats
   const [cinemaRows, setCinemaRows] = useState<CinemaRowConfig[]>(DEFAULT_CINEMA_ROWS);
@@ -73,6 +145,16 @@ export function CinemaSeatingMap({
   const activeTable = (tables || []).find((t) => t.id === activeTableId);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [editingTable, setEditingTable] = useState<BanquetTable | null>(null);
+
+  // Mouse drag-and-drop table positioning
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
+  const dragStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    tableX: number;
+    tableY: number;
+  } | null>(null);
 
   // New table form state
   const [newTableName, setNewTableName] = useState("");
@@ -103,7 +185,8 @@ export function CinemaSeatingMap({
   const handleAddRow = () => {
     const existingLetters = cinemaRows.map((r) => r.rowLetter);
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const nextLetter = alphabet.find((l) => !existingLetters.includes(l)) || `R${cinemaRows.length + 1}`;
+    const nextLetter =
+      alphabet.find((l) => !existingLetters.includes(l)) || `R${cinemaRows.length + 1}`;
     const newRow: CinemaRowConfig = {
       id: `row-${nextLetter}-${Date.now()}`,
       rowLetter: nextLetter,
@@ -122,10 +205,15 @@ export function CinemaSeatingMap({
     setCinemaRows((prev) =>
       prev.map((r) => {
         if (r.id !== rowId) return r;
-        const nextCount = Math.max(4, Math.min(24, r.seatsCount + delta));
+        const nextCount = Math.max(2, Math.min(32, r.seatsCount + delta));
         return { ...r, seatsCount: nextCount };
-      })
+      }),
     );
+  };
+
+  const handleSetRowSeats = (rowId: string, count: number) => {
+    const valid = Math.max(2, Math.min(32, isNaN(count) ? 2 : count));
+    setCinemaRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, seatsCount: valid } : r)));
   };
 
   const handleResetCinema = () => {
@@ -150,9 +238,72 @@ export function CinemaSeatingMap({
           x: Math.max(5, Math.min(95, t.x + dx)),
           y: Math.max(5, Math.min(95, t.y + dy)),
         };
-      })
+      }),
     );
   };
+
+  // Direct table seat adjuster
+  const handleUpdateTableSeatsCount = (tableId: string, count: number) => {
+    const valid = Math.max(2, Math.min(32, isNaN(count) ? 2 : count));
+    setTables((prev) => prev.map((t) => (t.id === tableId ? { ...t, seatsCount: valid } : t)));
+  };
+
+  // Mouse Drag Handlers
+  const handlePointerDownTable = (e: React.PointerEvent, tableId: string) => {
+    if (e.button !== 0) return; // Only primary mouse button
+    const targetTable = tables.find((t) => t.id === tableId);
+    if (!targetTable) return;
+
+    setActiveTableId(tableId);
+    setDraggingTableId(tableId);
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      tableX: targetTable.x,
+      tableY: targetTable.y,
+    };
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!draggingTableId) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!dragStartRef.current || !canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const deltaX = e.clientX - dragStartRef.current.mouseX;
+      const deltaY = e.clientY - dragStartRef.current.mouseY;
+
+      const deltaPercentX = (deltaX / rect.width) * 100;
+      const deltaPercentY = (deltaY / rect.height) * 100;
+
+      const newX = Math.round(
+        Math.max(6, Math.min(94, dragStartRef.current.tableX + deltaPercentX)),
+      );
+      const newY = Math.round(
+        Math.max(8, Math.min(92, dragStartRef.current.tableY + deltaPercentY)),
+      );
+
+      setTables((prev) =>
+        prev.map((t) => (t.id === draggingTableId ? { ...t, x: newX, y: newY } : t)),
+      );
+    };
+
+    const handlePointerUp = () => {
+      setDraggingTableId(null);
+      dragStartRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggingTableId]);
 
   const handleAddTable = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,9 +328,7 @@ export function CinemaSeatingMap({
   const handleUpdateTable = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTable) return;
-    setTables((prev) =>
-      prev.map((t) => (t.id === editingTable.id ? editingTable : t))
-    );
+    setTables((prev) => prev.map((t) => (t.id === editingTable.id ? editingTable : t)));
     setEditingTable(null);
   };
 
@@ -209,17 +358,21 @@ export function CinemaSeatingMap({
   const renderCinemaSeatBtn = (seat: SeatInfo) => {
     const { isSelected, isOccupied, occupant } = getSeatStatus(seat.label, seat.id);
 
-    let bgClass = "bg-muted text-muted-foreground border-border hover:border-primary/60 hover:bg-primary/10";
+    let bgClass =
+      "bg-muted text-muted-foreground border-border hover:border-primary/60 hover:bg-primary/10";
     if (seat.category === "vip") {
-      bgClass = "bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500";
+      bgClass =
+        "bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500";
     }
 
     if (isOccupied) {
-      bgClass = "bg-rose-500/10 text-rose-500/70 dark:text-rose-400/60 border-rose-500/30 cursor-not-allowed opacity-60 line-through select-none";
+      bgClass =
+        "bg-rose-500/10 text-rose-500/70 dark:text-rose-400/60 border-rose-500/30 cursor-not-allowed opacity-60 line-through select-none";
     }
 
     if (isSelected) {
-      bgClass = "bg-emerald-600 text-white border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] scale-105 ring-2 ring-emerald-400";
+      bgClass =
+        "bg-emerald-600 text-white border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] scale-105 ring-2 ring-emerald-400";
     }
 
     return (
@@ -240,8 +393,8 @@ export function CinemaSeatingMap({
           isOccupied
             ? `${seat.label} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName || "Hội viên"}] - Không thể chọn`
             : isSelected
-            ? `${seat.label} (Đang chọn)`
-            : `${seat.label} (Còn trống - Click để chọn)`
+              ? `${seat.label} (Đang chọn)`
+              : `${seat.label} (Còn trống - Click để chọn)`
         }
         className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200 flex flex-col items-center justify-center ${
           isOccupied ? "cursor-not-allowed" : "cursor-pointer"
@@ -299,25 +452,36 @@ export function CinemaSeatingMap({
               <Plus className="w-3.5 h-3.5" />
               <span>+ Thêm Hàng Ghế</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setStageSeatsCount((c) => Math.min(12, c + 2))}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all cursor-pointer"
-              title="Thêm 2 ghế trên bục sân khấu chính"
-            >
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-bold">
               <Crown className="w-3.5 h-3.5 text-amber-500" />
-              <span>+ Ghế Sân Khấu</span>
-            </button>
-            {stageSeatsCount > 2 && (
+              <span>Ghế Sân Khấu:</span>
               <button
                 type="button"
-                onClick={() => setStageSeatsCount((c) => Math.max(2, c - 2))}
-                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                title="Bớt 2 ghế trên sân khấu"
+                onClick={() => setStageSeatsCount((c) => Math.max(2, c - 1))}
+                disabled={stageSeatsCount <= 2}
+                className="p-0.5 rounded hover:bg-amber-500/20 cursor-pointer disabled:opacity-40"
               >
-                <Minus className="w-3.5 h-3.5" />
+                <Minus className="w-3 h-3" />
               </button>
-            )}
+              <input
+                type="number"
+                min={2}
+                max={24}
+                value={stageSeatsCount}
+                onChange={(e) =>
+                  setStageSeatsCount(Math.max(2, Math.min(24, parseInt(e.target.value, 10) || 2)))
+                }
+                className="w-10 h-6 text-center text-xs font-mono font-bold rounded border border-amber-500/40 bg-background text-amber-700 dark:text-amber-300 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setStageSeatsCount((c) => Math.min(24, c + 1))}
+                disabled={stageSeatsCount >= 24}
+                className="p-0.5 rounded hover:bg-amber-500/20 cursor-pointer disabled:opacity-40"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
             <button
               type="button"
               onClick={handleResetCinema}
@@ -412,34 +576,50 @@ export function CinemaSeatingMap({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleAdjustSeatsCount(row.id, -1)}
-                        title="Bớt 1 ghế ở hàng này"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-[10px] font-mono font-bold text-muted-foreground px-1">
-                        {row.seatsCount}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground font-medium hidden sm:inline">
+                        Số ghế:
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleAdjustSeatsCount(row.id, 1)}
-                        title="Thêm 1 ghế vào hàng này"
-                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
+                      <div className="flex items-center gap-0.5 bg-background/80 px-1 py-0.5 rounded-lg border border-border">
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustSeatsCount(row.id, -1)}
+                          disabled={row.seatsCount <= 2}
+                          title="Bớt 1 ghế ở hàng này"
+                          className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer disabled:opacity-40"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min={2}
+                          max={32}
+                          value={row.seatsCount}
+                          onChange={(e) =>
+                            handleSetRowSeats(row.id, parseInt(e.target.value, 10) || 2)
+                          }
+                          className="w-10 h-6 text-center text-xs font-bold font-mono border-0 bg-transparent text-foreground outline-none"
+                          title="Nhập trực tiếp số lượng ghế cho hàng này"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustSeatsCount(row.id, 1)}
+                          disabled={row.seatsCount >= 32}
+                          title="Thêm 1 ghế vào hàng này"
+                          className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer disabled:opacity-40"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
                       {cinemaRows.length > 2 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveRow(row.id)}
                           title={`Xóa ${row.name}`}
-                          className="ml-2 p-1 rounded text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                          className="ml-1 p-1 rounded text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
@@ -450,11 +630,15 @@ export function CinemaSeatingMap({
                     <span className="w-5 text-xs font-black font-mono text-muted-foreground">
                       {row.rowLetter}
                     </span>
-                    <div className="flex gap-1 sm:gap-1.5">{leftGroup.map(renderCinemaSeatBtn)}</div>
+                    <div className="flex gap-1 sm:gap-1.5">
+                      {leftGroup.map(renderCinemaSeatBtn)}
+                    </div>
                     <div className="w-3 sm:w-6 flex items-center justify-center">
                       <span className="h-4 w-[1px] bg-border" />
                     </div>
-                    <div className="flex gap-1 sm:gap-1.5">{rightGroup.map(renderCinemaSeatBtn)}</div>
+                    <div className="flex gap-1 sm:gap-1.5">
+                      {rightGroup.map(renderCinemaSeatBtn)}
+                    </div>
                     <span className="w-5 text-xs font-black font-mono text-muted-foreground">
                       {row.rowLetter}
                     </span>
@@ -472,7 +656,9 @@ export function CinemaSeatingMap({
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-4 h-4 rounded border border-amber-500/40 bg-amber-500/20" />
-              <span className="text-amber-700 dark:text-amber-300 font-medium">Ghế VIP / Sân khấu</span>
+              <span className="text-amber-700 dark:text-amber-300 font-medium">
+                Ghế VIP / Sân khấu
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-4 h-4 rounded border border-emerald-500 bg-emerald-600 flex items-center justify-center text-white text-[10px]">
@@ -484,7 +670,9 @@ export function CinemaSeatingMap({
               <span className="w-4 h-4 rounded border border-rose-500/40 bg-rose-500/20 flex items-center justify-center text-rose-500 text-[10px]">
                 ✕
               </span>
-              <span className="text-rose-600 dark:text-rose-400 font-medium">Đã có chủ (Disable)</span>
+              <span className="text-rose-600 dark:text-rose-400 font-medium">
+                Đã có chủ (Disable)
+              </span>
             </div>
           </div>
         </div>
@@ -502,18 +690,72 @@ export function CinemaSeatingMap({
             </div>
           </div>
 
+          {/* Drag & Drop Hint Banner */}
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-left text-xs text-amber-800 dark:text-amber-200">
+            <div className="flex items-center gap-2 font-medium">
+              <Move className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
+              <span>
+                <strong>Di chuột kéo thả bàn tiệc:</strong> Nhấp & giữ chuột trực tiếp vào bàn để
+                kéo thả vị trí linh hoạt trên khán phòng • Nhập số lượng ghế tùy ý.
+              </span>
+            </div>
+            <span className="hidden sm:inline-block text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">
+              Kéo chuột tự do
+            </span>
+          </div>
+
           {/* Active Table Quick Control Bar */}
           {activeTable && (
             <div className="flex items-center justify-between flex-wrap gap-2 p-3 rounded-xl border border-border bg-muted/40 text-left">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-foreground">
-                  Đang chọn: <strong className="text-amber-600 dark:text-amber-400">{activeTable.name}</strong> ({activeTable.seatsCount} chỗ)
+                  Đang chọn:{" "}
+                  <strong className="text-amber-600 dark:text-amber-400">{activeTable.name}</strong>
                 </span>
+
+                {/* Direct Seats Number Input */}
+                <div className="flex items-center gap-1 bg-background/80 px-2 py-1 rounded-lg border border-border">
+                  <span className="text-[11px] font-semibold text-muted-foreground">Số ghế:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateTableSeatsCount(activeTable.id, activeTable.seatsCount - 1)
+                    }
+                    disabled={activeTable.seatsCount <= 2}
+                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-40"
+                    title="Giảm 1 ghế"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <input
+                    type="number"
+                    min={2}
+                    max={32}
+                    value={activeTable.seatsCount}
+                    onChange={(e) =>
+                      handleUpdateTableSeatsCount(activeTable.id, parseInt(e.target.value, 10) || 2)
+                    }
+                    className="w-11 h-6 text-center text-xs font-bold font-mono border border-border rounded bg-muted/30 text-foreground outline-none focus:border-primary"
+                    title="Nhập số lượng ghế của bàn"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleUpdateTableSeatsCount(activeTable.id, activeTable.seatsCount + 1)
+                    }
+                    disabled={activeTable.seatsCount >= 32}
+                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-40"
+                    title="Tăng 1 ghế"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setEditingTable(activeTable)}
                   className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"
-                  title="Chỉnh sửa thông tin bàn"
+                  title="Chỉnh sửa chi tiết bàn"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
@@ -527,43 +769,54 @@ export function CinemaSeatingMap({
                 </button>
               </div>
 
-              {/* D-Pad Position Adjuster */}
-              <div className="flex items-center gap-1 text-xs">
-                <span className="text-[11px] font-medium text-muted-foreground mr-1">Chỉnh vị trí:</span>
-                <button
-                  type="button"
-                  onClick={() => moveTable(activeTable.id, -5, 0)}
-                  className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
-                >
-                  ← Trái
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveTable(activeTable.id, 5, 0)}
-                  className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
-                >
-                  Phải →
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveTable(activeTable.id, 0, -5)}
-                  className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
-                >
-                  ↑ Lên
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveTable(activeTable.id, 0, 5)}
-                  className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
-                >
-                  Xuống ↓
-                </button>
+              {/* Coordinates Indicator & D-Pad Position Adjuster */}
+              <div className="flex items-center gap-2 text-xs flex-wrap">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground px-2 py-0.5 rounded bg-background border border-border">
+                  Tọa độ: X: {activeTable.x}% • Y: {activeTable.y}%
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveTable(activeTable.id, -4, 0)}
+                    className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
+                    title="Sang trái 4%"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveTable(activeTable.id, 4, 0)}
+                    className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
+                    title="Sang phải 4%"
+                  >
+                    →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveTable(activeTable.id, 0, -4)}
+                    className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
+                    title="Lên trên 4%"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveTable(activeTable.id, 0, 4)}
+                    className="px-2 py-1 rounded border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer"
+                    title="Xuống dưới 4%"
+                  >
+                    ↓
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Interactive 2D Banquet Hall Canvas */}
-          <div className="relative w-full h-[520px] rounded-2xl border border-border bg-slate-950/40 dark:bg-black/50 overflow-hidden p-4 shadow-inner">
+          {/* Interactive 2D Banquet Hall Canvas with Mouse Drag Support */}
+          <div
+            ref={canvasRef}
+            className="relative w-full h-[540px] rounded-2xl border border-border bg-slate-950/40 dark:bg-black/50 overflow-hidden p-4 shadow-inner select-none"
+          >
             {/* Floor Grid Lines */}
             <div
               className="absolute inset-0 opacity-15 pointer-events-none"
@@ -577,6 +830,7 @@ export function CinemaSeatingMap({
             {/* Banquet Tables Render */}
             {(tables || []).map((table) => {
               const isSelectedTable = activeTableId === table.id;
+              const isDraggingThis = draggingTableId === table.id;
 
               // Generate seats for this table
               const tableSeats = Array.from({ length: table.seatsCount }, (_, i) => {
@@ -589,16 +843,33 @@ export function CinemaSeatingMap({
               return (
                 <div
                   key={table.id}
+                  onPointerDown={(e) => handlePointerDownTable(e, table.id)}
                   onClick={() => setActiveTableId(table.id)}
                   style={{
                     left: `${table.x}%`,
                     top: `${table.y}%`,
                     transform: "translate(-50%, -50%)",
+                    touchAction: "none",
                   }}
-                  className={`absolute transition-all duration-150 cursor-pointer ${
-                    isSelectedTable ? "z-20 scale-105" : "z-10 hover:scale-102"
+                  className={`absolute select-none transition-transform duration-75 ${
+                    isDraggingThis
+                      ? "cursor-grabbing z-30 scale-105 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] ring-2 ring-amber-400 rounded-2xl"
+                      : isSelectedTable
+                        ? "cursor-grab z-20 scale-105"
+                        : "cursor-grab z-10 hover:scale-102 hover:z-20"
                   }`}
+                  title="Nhấp giữ & kéo chuột để di chuyển bàn này"
                 >
+                  {/* Floating drag coordinates tooltip */}
+                  {isDraggingThis && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900/95 text-amber-300 text-[10px] font-mono font-bold border border-amber-400/60 shadow-xl pointer-events-none whitespace-nowrap z-50 flex items-center gap-1 animate-pulse">
+                      <Move className="w-2.5 h-2.5" />
+                      <span>
+                        X: {table.x}% • Y: {table.y}%
+                      </span>
+                    </div>
+                  )}
+
                   {table.shape === "round" ? (
                     // --- Round Table ---
                     <div className="relative flex items-center justify-center">
@@ -608,16 +879,17 @@ export function CinemaSeatingMap({
                           table.isVip
                             ? "bg-amber-500/15 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                             : isSelectedTable
-                            ? "bg-primary/20 border-primary text-foreground shadow-[0_0_15px_rgba(0,75,145,0.3)]"
-                            : "bg-muted/70 border-border text-muted-foreground hover:border-primary/50"
+                              ? "bg-primary/20 border-primary text-foreground shadow-[0_0_15px_rgba(0,75,145,0.3)]"
+                              : "bg-muted/70 border-border text-muted-foreground hover:border-primary/50"
                         }`}
                       >
                         <span className="text-[11px] font-black leading-tight line-clamp-2">
                           {table.name}
                         </span>
-                        <span className="text-[9px] font-mono mt-0.5 opacity-70">
-                          {table.seatsCount} chỗ
-                        </span>
+                        <div className="flex items-center gap-1 text-[9px] font-mono mt-0.5 opacity-80">
+                          <Move className="w-2.5 h-2.5 opacity-60" />
+                          <span>{table.seatsCount} chỗ</span>
+                        </div>
                       </div>
 
                       {/* Surrounding Round Table Seats */}
@@ -627,17 +899,24 @@ export function CinemaSeatingMap({
                         const seatX = Math.cos(angle) * radius;
                         const seatY = Math.sin(angle) * radius;
 
-                        const { isSelected, isOccupied, occupant } = getSeatStatus(s.seatLabel, s.seatId);
+                        const { isSelected, isOccupied, occupant } = getSeatStatus(
+                          s.seatLabel,
+                          s.seatId,
+                        );
 
-                        let seatClass = "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                        let seatClass =
+                          "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
                         if (table.isVip) {
-                          seatClass = "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                          seatClass =
+                            "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
                         }
                         if (isOccupied) {
-                          seatClass = "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
+                          seatClass =
+                            "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
                         }
                         if (isSelected) {
-                          seatClass = "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.8)] scale-110";
+                          seatClass =
+                            "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.8)] scale-110";
                         }
 
                         return (
@@ -645,6 +924,7 @@ export function CinemaSeatingMap({
                             key={s.seatId}
                             type="button"
                             disabled={isOccupied}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSeatClick(s.seatLabel, s.seatId);
@@ -664,8 +944,8 @@ export function CinemaSeatingMap({
                               isOccupied
                                 ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
                                 : isSelected
-                                ? `${s.seatLabel} (Đang chọn)`
-                                : `${s.seatLabel} (Click để chọn)`
+                                  ? `${s.seatLabel} (Đang chọn)`
+                                  : `${s.seatLabel} (Click để chọn)`
                             }
                             className={`absolute w-7 h-7 rounded-full border text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${seatClass}`}
                           >
@@ -680,17 +960,28 @@ export function CinemaSeatingMap({
                       {/* Top Row Seats */}
                       <div className="flex gap-2 mb-1.5">
                         {tableSeats.slice(0, Math.ceil(table.seatsCount / 2)).map((s) => {
-                          const { isSelected, isOccupied, occupant } = getSeatStatus(s.seatLabel, s.seatId);
-                          let seatClass = "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
-                          if (table.isVip) seatClass = "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
-                          if (isOccupied) seatClass = "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
-                          if (isSelected) seatClass = "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
+                          const { isSelected, isOccupied, occupant } = getSeatStatus(
+                            s.seatLabel,
+                            s.seatId,
+                          );
+                          let seatClass =
+                            "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                          if (table.isVip)
+                            seatClass =
+                              "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                          if (isOccupied)
+                            seatClass =
+                              "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
+                          if (isSelected)
+                            seatClass =
+                              "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
 
                           return (
                             <button
                               key={s.seatId}
                               type="button"
                               disabled={isOccupied}
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSeatClick(s.seatLabel, s.seatId);
@@ -707,12 +998,16 @@ export function CinemaSeatingMap({
                                 isOccupied
                                   ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
                                   : isSelected
-                                  ? `${s.seatLabel} (Đang chọn)`
-                                  : `${s.seatLabel} (Click để chọn)`
+                                    ? `${s.seatLabel} (Đang chọn)`
+                                    : `${s.seatLabel} (Click để chọn)`
                               }
                               className={`w-7 h-7 rounded-lg border text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${seatClass}`}
                             >
-                              {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.seatNum}
+                              {isSelected ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              ) : (
+                                s.seatNum
+                              )}
                             </button>
                           );
                         })}
@@ -724,32 +1019,44 @@ export function CinemaSeatingMap({
                           table.isVip
                             ? "bg-amber-500/15 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                             : isSelectedTable
-                            ? "bg-primary/20 border-primary text-foreground shadow-[0_0_15px_rgba(0,75,145,0.3)]"
-                            : "bg-muted/70 border-border text-muted-foreground hover:border-primary/50"
+                              ? "bg-primary/20 border-primary text-foreground shadow-[0_0_15px_rgba(0,75,145,0.3)]"
+                              : "bg-muted/70 border-border text-muted-foreground hover:border-primary/50"
                         }`}
                       >
                         <span className="text-[11px] font-black leading-tight line-clamp-1">
                           {table.name}
                         </span>
-                        <span className="text-[9px] font-mono mt-0.5 opacity-70">
-                          {table.seatsCount} chỗ ngồi
-                        </span>
+                        <div className="flex items-center gap-1 text-[9px] font-mono mt-0.5 opacity-80">
+                          <Move className="w-2.5 h-2.5 opacity-60" />
+                          <span>{table.seatsCount} chỗ ngồi</span>
+                        </div>
                       </div>
 
                       {/* Bottom Row Seats */}
                       <div className="flex gap-2 mt-1.5">
                         {tableSeats.slice(Math.ceil(table.seatsCount / 2)).map((s) => {
-                          const { isSelected, isOccupied, occupant } = getSeatStatus(s.seatLabel, s.seatId);
-                          let seatClass = "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
-                          if (table.isVip) seatClass = "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
-                          if (isOccupied) seatClass = "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
-                          if (isSelected) seatClass = "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
+                          const { isSelected, isOccupied, occupant } = getSeatStatus(
+                            s.seatLabel,
+                            s.seatId,
+                          );
+                          let seatClass =
+                            "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                          if (table.isVip)
+                            seatClass =
+                              "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                          if (isOccupied)
+                            seatClass =
+                              "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
+                          if (isSelected)
+                            seatClass =
+                              "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
 
                           return (
                             <button
                               key={s.seatId}
                               type="button"
                               disabled={isOccupied}
+                              onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSeatClick(s.seatLabel, s.seatId);
@@ -766,12 +1073,16 @@ export function CinemaSeatingMap({
                                 isOccupied
                                   ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
                                   : isSelected
-                                  ? `${s.seatLabel} (Đang chọn)`
-                                  : `${s.seatLabel} (Click để chọn)`
+                                    ? `${s.seatLabel} (Đang chọn)`
+                                    : `${s.seatLabel} (Click để chọn)`
                               }
                               className={`w-7 h-7 rounded-lg border text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${seatClass}`}
                             >
-                              {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.seatNum}
+                              {isSelected ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              ) : (
+                                s.seatNum
+                              )}
                             </button>
                           );
                         })}
@@ -802,7 +1113,9 @@ export function CinemaSeatingMap({
             <span>Vị trí đã chọn: {selectedSeatId}</span>
           </span>
         ) : (
-          <span className="text-muted-foreground">Click vào ghế bất kỳ trên sơ đồ để chọn chỗ ngồi</span>
+          <span className="text-muted-foreground">
+            Click vào ghế bất kỳ trên sơ đồ để chọn chỗ ngồi
+          </span>
         )}
       </div>
 
@@ -833,7 +1146,9 @@ export function CinemaSeatingMap({
             <h4 className="text-sm font-bold text-foreground mb-3">Thêm Bàn Tiệc Mới Vào Sơ Đồ</h4>
             <form onSubmit={handleAddTable} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Tên Bàn Tiệc</label>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Tên Bàn Tiệc
+                </label>
                 <input
                   type="text"
                   required
@@ -845,7 +1160,9 @@ export function CinemaSeatingMap({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Kiểu Bàn</label>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Kiểu Bàn
+                  </label>
                   <select
                     value={newTableShape}
                     onChange={(e) => setNewTableShape(e.target.value as "round" | "rect")}
@@ -856,19 +1173,46 @@ export function CinemaSeatingMap({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Số Lượng Ghế</label>
-                  <select
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Số Lượng Ghế (Có ô nhập)
+                  </label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={32}
+                    required
                     value={newTableSeats}
-                    onChange={(e) => setNewTableSeats(Number(e.target.value))}
-                    className="w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground outline-none"
-                  >
-                    <option value={6}>6 Ghế</option>
-                    <option value={8}>8 Ghế</option>
-                    <option value={10}>10 Ghế</option>
-                    <option value={12}>12 Ghế</option>
-                  </select>
+                    onChange={(e) =>
+                      setNewTableSeats(Math.max(2, Math.min(32, parseInt(e.target.value, 10) || 2)))
+                    }
+                    className="w-full rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-bold font-mono text-foreground outline-none focus:border-primary"
+                  />
                 </div>
               </div>
+
+              {/* Quick Preset Seats Chips */}
+              <div>
+                <span className="block text-[11px] text-muted-foreground mb-1">
+                  Chọn nhanh số ghế:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[6, 8, 10, 12, 16, 20].map((cnt) => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => setNewTableSeats(cnt)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                        newTableSeats === cnt
+                          ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                          : "bg-muted text-muted-foreground border-border hover:text-foreground"
+                      }`}
+                    >
+                      {cnt} ghế
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -877,7 +1221,10 @@ export function CinemaSeatingMap({
                   onChange={(e) => setNewTableIsVip(e.target.checked)}
                   className="rounded border-border"
                 />
-                <label htmlFor="newTableVip" className="text-xs text-foreground font-medium cursor-pointer">
+                <label
+                  htmlFor="newTableVip"
+                  className="text-xs text-foreground font-medium cursor-pointer"
+                >
                   Đặt làm Bàn VIP (Viền Vàng Hoàng Gia)
                 </label>
               </div>
@@ -908,7 +1255,9 @@ export function CinemaSeatingMap({
             <h4 className="text-sm font-bold text-foreground mb-3">Chỉnh Sửa Thông Tin Bàn Tiệc</h4>
             <form onSubmit={handleUpdateTable} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Tên Bàn Tiệc</label>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Tên Bàn Tiệc
+                </label>
                 <input
                   type="text"
                   required
@@ -919,10 +1268,17 @@ export function CinemaSeatingMap({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Kiểu Bàn</label>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Kiểu Bàn
+                  </label>
                   <select
                     value={editingTable.shape}
-                    onChange={(e) => setEditingTable({ ...editingTable, shape: e.target.value as "round" | "rect" })}
+                    onChange={(e) =>
+                      setEditingTable({
+                        ...editingTable,
+                        shape: e.target.value as "round" | "rect",
+                      })
+                    }
                     className="w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground outline-none"
                   >
                     <option value="round">Bàn Tròn</option>
@@ -930,19 +1286,54 @@ export function CinemaSeatingMap({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Số Lượng Ghế</label>
-                  <select
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Số Lượng Ghế (Có ô nhập)
+                  </label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={32}
+                    required
                     value={editingTable.seatsCount}
-                    onChange={(e) => setEditingTable({ ...editingTable, seatsCount: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground outline-none"
-                  >
-                    <option value={6}>6 Ghế</option>
-                    <option value={8}>8 Ghế</option>
-                    <option value={10}>10 Ghế</option>
-                    <option value={12}>12 Ghế</option>
-                  </select>
+                    onChange={(e) =>
+                      setEditingTable({
+                        ...editingTable,
+                        seatsCount: Math.max(2, Math.min(32, parseInt(e.target.value, 10) || 2)),
+                      })
+                    }
+                    className="w-full rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-bold font-mono text-foreground outline-none focus:border-primary"
+                  />
                 </div>
               </div>
+
+              {/* Quick Preset Seats Chips */}
+              <div>
+                <span className="block text-[11px] text-muted-foreground mb-1">
+                  Chọn nhanh số ghế:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[6, 8, 10, 12, 16, 20].map((cnt) => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() =>
+                        setEditingTable({
+                          ...editingTable,
+                          seatsCount: cnt,
+                        })
+                      }
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                        editingTable.seatsCount === cnt
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-muted text-muted-foreground border-border hover:text-foreground"
+                      }`}
+                    >
+                      {cnt} ghế
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -951,8 +1342,11 @@ export function CinemaSeatingMap({
                   onChange={(e) => setEditingTable({ ...editingTable, isVip: e.target.checked })}
                   className="rounded border-border"
                 />
-                <label htmlFor="editTableVip" className="text-xs text-foreground font-medium cursor-pointer">
-                  Bàn VIP (Viền Vàng)
+                <label
+                  htmlFor="editTableVip"
+                  className="text-xs text-foreground font-medium cursor-pointer"
+                >
+                  Bàn VIP (Viền Vàng Hoàng Gia)
                 </label>
               </div>
               <div className="flex justify-end gap-2 pt-3">

@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { MonumentLayoutWrapper } from "./wrappers/MonumentLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -300,7 +302,7 @@ const REVIEWS = [
 
 export function BusinessConnectLandingV7() {
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [isRippling, setIsRippling] = useState(false);
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -308,31 +310,15 @@ export function BusinessConnectLandingV7() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsRippling(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 280);
-    setTimeout(() => {
-      setIsRippling(false);
-    }, 650);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative font-sans transition-colors duration-500 ${
-        theme === "dark"
-          ? "bg-[#030E1E] text-slate-100"
-          : theme === "contrast"
-            ? "bg-white text-black"
-            : "bg-[#FAFCFF] text-slate-900"
-      }`}
+    <MonumentLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
-      {/* 3-LAYER FLUID BACKGROUND WITH 50% SCROLL PARALLAX */}
-      <FluidThreeLayerBackground theme={theme} />
-
-      {/* LIQUID RIPPLE THEME TRANSITION */}
-      <LiquidRippleThemeTransition isRippling={isRippling} theme={theme} />
 
       {/* =========================================================================
           1. HEADER
@@ -1080,6 +1066,6 @@ export function BusinessConnectLandingV7() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </MonumentLayoutWrapper>
   );
 }

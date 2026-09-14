@@ -51,16 +51,21 @@ npm run mobile:vione:apk:local
 npm run mobile:ceo1983:apk:local
 ```
 
-#### 2. Hoặc thực thi trực tiếp trong thư mục android:
+#### 2. Hoặc thực thi trực tiếp trong thư mục mobile:
 ```powershell
 # Cho ViOne Connect:
-cd apps/mobile_vione/android
+cd apps/mobile_vione
+npx cap copy android
+cd android
 .\gradlew.bat assembleDebug
 
 # Cho CEO 1983:
-cd apps/mobile_ceo1983/android
+cd apps/mobile_ceo1983
+npx cap copy android
+cd android
 .\gradlew.bat assembleDebug
 ```
+> **Lưu ý sống còn:** Khi sửa file `capacitor.config.ts` (ví dụ đổi URL hay đổi thông tin App), BẮT BUỘC phải chạy `npx cap copy android` trước khi chạy `gradlew.bat` để Capacitor nạp cấu hình mới nhất vào `android/app/src/main/assets/capacitor.config.json`. Nếu dùng script `npm run mobile:ceo1983:apk:local`, hệ thống đã tự động chạy bước đồng bộ này.
 
 #### 3. Vị trí nhận file APK sau khi hoàn tất:
 - **ViOne Connect:**  

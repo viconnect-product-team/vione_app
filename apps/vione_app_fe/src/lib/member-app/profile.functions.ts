@@ -28,6 +28,7 @@ export type MyAssociationBrand = {
   name: string;
   logoUrl: string | null;
   brandPrimary: string | null;
+  tagline?: string | null;
 };
 
 export type MemberBenefit = {

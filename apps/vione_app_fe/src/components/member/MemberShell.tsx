@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Bell, MessageSquare, User, QrCode, ChevronLeft, WifiOff } from "lucide-react";
-import { useT, type TKey } from "@/lib/i18n";
+import { useT, useLang, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
@@ -14,13 +14,10 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   const isLight = theme === "light";
 
   return (
-    <div className="vba-app relative min-h-[100dvh] w-full bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
+    <div className="vba-app relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
       {/* Dynamic Background Mesh Overlay — only in dark luxury mode */}
       {!isContrast && !isLight && (
-        <div
-          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-          aria-hidden="true"
-        >
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
           <img
             src={authBg}
             alt=""
@@ -28,15 +25,17 @@ export function MemberScreen({ children }: { children: ReactNode }) {
             height={640}
             className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-35"
           />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]"
-          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]" />
         </div>
       )}
 
-      <div className={`relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col border-x border-[var(--vba-border-soft)]/30 ${isContrast ? 'bg-black' : isLight ? 'bg-white' : 'bg-[var(--vba-bg)]/80'} shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm`}>
+      <div
+        className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${
+          isContrast ? "bg-black" : isLight ? "bg-white" : "bg-[var(--vba-bg)]/90"
+        } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm`}
+      >
         <OfflineBanner />
-        <div className="flex-1 pb-28">{children}</div>
+        <main className="flex-1 overflow-y-auto overscroll-contain pb-24">{children}</main>
         <MemberTabBar />
       </div>
     </div>
@@ -85,8 +84,10 @@ export function MemberHeader({
     <header
       className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-md"
       style={{
-        paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
-        minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + var(--bc-mobile-header-h, 56px))",
+        paddingTop:
+          "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
+        minHeight:
+          "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + var(--bc-mobile-header-h, 56px))",
       }}
     >
       <div className="flex w-9 items-center">
@@ -106,7 +107,7 @@ export function MemberHeader({
           <p className="truncate text-[11px] text-[var(--vba-text-muted)]">{subtitle}</p>
         ) : null}
       </div>
-      <div className="flex w-9 items-center justify-end">{right}</div>
+      <div className="flex min-w-[36px] items-center justify-end">{right}</div>
     </header>
   );
 }
@@ -119,43 +120,160 @@ const tabs = [
   { to: "/association/profile", label: "m.shell.tab_profile", icon: User },
 ] satisfies { to: string; label: TKey; icon: typeof Home; exact?: boolean; center?: boolean }[];
 
+function useVirtualKeyboard() {
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleResize = () => {
+      const diff = window.innerHeight - vv.height - (vv.offsetTop || 0);
+      setKeyboardOpen(diff > 140);
+    };
+    vv.addEventListener("resize", handleResize);
+    vv.addEventListener("scroll", handleResize);
+    return () => {
+      vv.removeEventListener("resize", handleResize);
+      vv.removeEventListener("scroll", handleResize);
+    };
+  }, []);
+
+  return keyboardOpen;
+}
+
 function MemberTabBar() {
   const t = useT();
+  const { lang } = useLang();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const keyboardOpen = useVirtualKeyboard();
+  const [isMidAutumn, setIsMidAutumn] = useState(true);
+
+  const tabLabels: Record<string, { vi: string; en: string }> = {
+    "/association": { vi: "Trang chủ", en: "Home" },
+    "/association/notifications": { vi: "Thông báo", en: "Alerts" },
+    "/association/card": { vi: "Thẻ VIP", en: "VIP Card" },
+    "/association/messages": { vi: "Kết nối", en: "Connect" },
+    "/association/profile": { vi: "Cá nhân", en: "Profile" },
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const check = () => {
+        const disabled = localStorage.getItem("vba_event_theme_disabled") === "true";
+        const type = localStorage.getItem("vba_event_theme_type") || "mid-autumn";
+        setIsMidAutumn(!disabled && type === "mid-autumn");
+      };
+      check();
+      window.addEventListener("vba-event-theme-changed", check);
+      return () => window.removeEventListener("vba-event-theme-changed", check);
+    }
+  }, []);
+
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
+  // Automatically hide bottom tab bar when mobile keyboard is open
+  if (keyboardOpen) return null;
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px]">
-      <div className="relative flex items-end justify-around border-t border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom),10px)] pt-2 backdrop-blur-md">
+    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none">
+      <div
+        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),10px)] pt-2 backdrop-blur-md transition-all ${
+          isMidAutumn
+            ? "border-amber-400/40 shadow-[0_-6px_24px_rgba(245,158,11,0.22)]"
+            : "border-slate-200 dark:border-[var(--vba-border-soft)] shadow-lg"
+        }`}
+      >
+        {/* Festive Mid-Autumn Corner Dangling Lantern */}
+        {isMidAutumn && (
+          <div
+            className="pointer-events-none absolute left-2 -top-3.5 flex flex-col items-center select-none"
+            aria-hidden="true"
+          >
+            <span className="text-[14px] animate-bounce filter drop-shadow-[0_2px_6px_rgba(239,68,68,0.7)]" style={{ animationDuration: "3s" }}>
+              🏮
+            </span>
+          </div>
+        )}
+
+        {/* Festive Mid-Autumn Corner Moon Rabbit */}
+        {isMidAutumn && (
+          <div
+            className="pointer-events-none absolute right-2.5 -top-3.5 flex flex-col items-center select-none"
+            aria-hidden="true"
+          >
+            <span className="text-[13px] animate-pulse filter drop-shadow-[0_2px_6px_rgba(251,191,36,0.8)]">
+              🥮
+            </span>
+          </div>
+        )}
+
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.to, tab.exact);
+
           if (tab.center) {
             return (
               <Link
                 key={tab.to}
                 to={tab.to}
                 aria-label={t(tab.label)}
-                className="-mt-7 flex flex-col items-center"
+                className="-mt-7 relative flex flex-col items-center group"
               >
-                <span className="vba-gold-grad grid h-14 w-14 place-items-center rounded-2xl text-[#071322] shadow-[0_8px_24px_-6px_rgba(56,189,248,0.40)]">
+                {/* Mid-Autumn Full Moon Aura Halo */}
+                {isMidAutumn && (
+                  <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/30 blur-md animate-pulse pointer-events-none" />
+                )}
+                <span className="relative vba-gold-grad grid h-14 w-14 place-items-center rounded-2xl text-[#071322] shadow-[0_8px_24px_-6px_rgba(212,175,55,0.6)] group-hover:scale-105 group-active:scale-95 transition-transform">
                   <Icon className="h-6 w-6" />
+                  {isMidAutumn && (
+                    <span className="absolute -top-1.5 -right-1.5 text-[10px] select-none" aria-hidden="true">
+                      🌕
+                    </span>
+                  )}
                 </span>
               </Link>
             );
           }
+
+          // Custom seasonal tab badges
+          let seasonalBadge: ReactNode = null;
+          if (isMidAutumn) {
+            if (tab.to.includes("notifications")) {
+              seasonalBadge = (
+                <span className="absolute -top-1 -right-1 text-[9px] animate-bounce select-none" style={{ animationDuration: "2.4s" }} aria-hidden="true">
+                  🏮
+                </span>
+              );
+            } else if (tab.to.includes("messages")) {
+              seasonalBadge = (
+                <span className="absolute -top-1.5 -right-1.5 text-[9px] animate-pulse select-none" aria-hidden="true">
+                  🐰
+                </span>
+              );
+            } else if (tab.to.includes("profile")) {
+              seasonalBadge = (
+                <span className="absolute -top-1.5 -right-1.5 text-[9px] animate-wiggle select-none" aria-hidden="true">
+                  ✨
+                </span>
+              );
+            }
+          }
+
           return (
-            <Link key={tab.to} to={tab.to} className="flex flex-1 flex-col items-center gap-1 py-1">
-              <Icon
-                className="h-5 w-5"
-                style={{ color: active ? "var(--vba-gold)" : "var(--vba-text-dim)" }}
-              />
+            <Link key={tab.to} to={tab.to} className="relative flex flex-1 flex-col items-center gap-1 py-1 transition-colors">
+              <div className="relative">
+                <Icon
+                  className="h-5 w-5 transition-colors"
+                  style={{ color: active ? "var(--vba-gold)" : "var(--vba-text-dim)" }}
+                />
+                {seasonalBadge}
+              </div>
               <span
-                className="text-[10px] font-medium"
+                className="text-[10px] font-medium transition-colors"
                 style={{ color: active ? "var(--vba-gold)" : "var(--vba-text-dim)" }}
               >
-                {t(tab.label)}
+                {lang === "en" ? tabLabels[tab.to]?.en || t(tab.label) : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>
             </Link>
           );

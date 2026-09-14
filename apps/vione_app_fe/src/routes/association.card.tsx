@@ -18,6 +18,13 @@ import {
   Palette,
   Check,
   CloudOff,
+  Handshake,
+  BookOpen,
+  TrendingUp,
+  Gift,
+  Award,
+  Sparkles,
+  Tag,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -45,6 +52,7 @@ import {
 import { buildMembershipPass } from "@/lib/membership-pass";
 import { walletCapabilities, walletAddUrl } from "@/lib/wallet-provider";
 import { getMyIdentityPassFn, type MyIdentityPass } from "@/lib/member-identity.functions";
+import { resolveMediaUrl } from "@/lib/api-client";
 const appIcon = "/app-icon.png";
 const THEME_KEY = "vba-card-theme";
 
@@ -123,6 +131,39 @@ function initials(name: string) {
       .map((p) => p[0]?.toUpperCase() ?? "")
       .join("") || "?"
   );
+}
+
+function resolveBenefitIcon(b: MemberBenefit, index: number) {
+  const text = `${b.titleVi || ""} ${b.titleEn || ""} ${b.descVi || ""}`.toLowerCase();
+  if (text.includes("kết nối") || text.includes("network") || text.includes("giao thương"))
+    return Handshake;
+  if (
+    text.includes("đào tạo") ||
+    text.includes("học") ||
+    text.includes("training") ||
+    text.includes("hội thảo")
+  )
+    return BookOpen;
+  if (
+    text.includes("xúc tiến") ||
+    text.includes("đầu tư") ||
+    text.includes("tăng trưởng") ||
+    text.includes("kinh doanh")
+  )
+    return TrendingUp;
+  if (
+    text.includes("ưu đãi") ||
+    text.includes("giảm") ||
+    text.includes("quà") ||
+    text.includes("voucher")
+  )
+    return Gift;
+  if (text.includes("thương hiệu") || text.includes("truyền thông") || text.includes("vinh danh"))
+    return Award;
+  if (text.includes("pháp lý") || text.includes("bảo vệ") || text.includes("tư vấn"))
+    return ShieldCheck;
+  const fallbackIcons = [Handshake, Gift, TrendingUp, Award, BookOpen, ShieldCheck, Sparkles];
+  return fallbackIcons[index % fallbackIcons.length] || Sparkles;
 }
 
 function CardScreen() {
@@ -305,7 +346,9 @@ function CardScreen() {
     const isLocal =
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
-      Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor);
+      Boolean(
+        (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor,
+      );
     if (!window.isSecureContext && !isLocal) {
       toast.error("Ghi NFC yêu cầu kết nối HTTPS bảo mật hoặc ứng dụng di động ViOne.");
       return;
@@ -367,7 +410,8 @@ function CardScreen() {
 
         {/* Membership card */}
         <div
-          className="relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)]"
+          data-dark-card="true"
+          className="vba-member-card relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] text-white"
           style={{ background: theme.surface, borderColor: theme.border }}
         >
           <div
@@ -403,27 +447,51 @@ function CardScreen() {
 
           <div className="relative flex items-start justify-between">
             <div className="flex items-center gap-2.5">
-              <img
-                src={appIcon}
-                alt="ViOne"
-                className="h-10 w-10 rounded-lg shadow-sm"
-                width={40}
-                height={40}
-              />
-              <div className="leading-tight">
-                <div className="text-[11px] font-bold text-white tracking-wide">{t("m.index.brandLine1")}</div>
-                <div className="text-[9px] font-medium text-white/70">
-                  {t("m.index.brandLine2")}
+              <div className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 p-1 backdrop-blur-xs">
+                <img
+                  src="/ceo1983-emblem-8.png"
+                  alt="Biểu tượng số 8 CEO 1983"
+                  className="h-full w-auto object-contain drop-shadow-[0_2px_6px_rgba(255,255,255,0.3)]"
+                  width={36}
+                  height={44}
+                />
+              </div>
+              <div className="leading-tight min-w-0 flex-1">
+                <div
+                  data-card-white
+                  className="break-words text-[12px] font-black tracking-wide drop-shadow-sm text-white leading-tight"
+                  style={{ color: "#FFFFFF" }}
+                >
+                  {brand?.name || "CLB DOANH NHÂN CEO 1983"}
+                </div>
+                <div
+                  data-card-white
+                  className="break-words text-[9px] font-semibold drop-shadow-xs text-white/80 leading-tight mt-0.5"
+                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
+                >
+                  {brand?.tagline || "NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI"}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="relative mt-5">
-            <div className="text-[16px] font-black tracking-wider text-white drop-shadow-sm">
+            <div
+              className="text-[17px] font-black tracking-wider"
+              style={{
+                background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
+              }}
+            >
               {t("m.card.cardLabel")}
             </div>
-            <div className="text-[10px] font-semibold tracking-[0.2em] text-white/60">
+            <div
+              data-card-white
+              className="text-[10px] font-semibold tracking-[0.2em] text-white/70"
+              style={{ color: "rgba(255, 255, 255, 0.75)" }}
+            >
               MEMBER CARD
             </div>
           </div>
@@ -434,29 +502,45 @@ function CardScreen() {
                 <img
                   src={d.photo}
                   alt={d.name}
-                  className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm"
+                  className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
                 />
               ) : (
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm">
+                <span
+                  data-card-white
+                  className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm shrink-0"
+                  style={{ color: "#FFFFFF" }}
+                >
                   {initials(d.name)}
                 </span>
               ))}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               {d.showName && (
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-[17px] font-bold text-white drop-shadow-xs">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    className="break-words text-[17px] font-black tracking-wide leading-snug"
+                    style={{
+                      background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
+                    }}
+                  >
                     {d.name || "..."}
                   </span>
-                  {member?.verified && (
-                    <BadgeCheck className="h-4 w-4 shrink-0 text-sky-300" />
-                  )}
+                  {member?.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-sky-300" />}
                 </div>
               )}
               {d.showCompany && d.company && (
-                <div className="truncate text-[12px] font-medium text-white/80">{d.company}</div>
+                <div
+                  data-card-white
+                  className="break-words text-[12px] font-medium text-white/85 leading-snug mt-0.5"
+                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
+                >
+                  {d.company}
+                </div>
               )}
               <span
-                className="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-xs"
+                className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-xs"
                 style={{ background: stateStyle.bg, color: stateStyle.color }}
               >
                 {lang === "en" ? stateStyle.labelEn : stateStyle.labelVi}
@@ -466,12 +550,34 @@ function CardScreen() {
 
           <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
             <div>
-              <div className="text-[10px] font-medium text-white/60">{t("m.card.memberId")}</div>
-              <div className="text-[13px] font-bold tracking-wider text-white">{member?.code}</div>
+              <div
+                data-card-white
+                className="text-[10px] font-medium text-white/60"
+                style={{ color: "rgba(255, 255, 255, 0.7)" }}
+              >
+                {t("m.card.memberId")}
+              </div>
+              <div
+                data-card-white
+                className="text-[13px] font-bold tracking-wider text-white"
+                style={{ color: "#FFFFFF" }}
+              >
+                {member?.code}
+              </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-medium text-white/60">{t("m.card.validUntil")}</div>
-              <div className="text-[13px] font-bold tracking-wider text-white">
+              <div
+                data-card-white
+                className="text-[10px] font-medium text-white/60"
+                style={{ color: "rgba(255, 255, 255, 0.7)" }}
+              >
+                {t("m.card.validUntil")}
+              </div>
+              <div
+                data-card-white
+                className="text-[13px] font-bold tracking-wider text-white"
+                style={{ color: "#FFFFFF" }}
+              >
                 {member?.validUntil ?? "—"}
               </div>
             </div>
@@ -625,7 +731,10 @@ function CardScreen() {
             <h3 className="text-[14px] font-bold text-[var(--vba-text)]">
               {t("m.card.benefitsTitle")}
             </h3>
-            <Link to="/association/perks" className="text-[12px] font-medium text-[var(--vba-gold)]">
+            <Link
+              to="/association/perks"
+              className="text-[12px] font-medium text-[var(--vba-gold)]"
+            >
               {t("m.card.viewAll")}
             </Link>
           </div>
@@ -633,15 +742,18 @@ function CardScreen() {
             {displayBenefits.map((b, i) => {
               const title = lang === "en" ? b.titleEn || b.titleVi : b.titleVi;
               const desc = lang === "en" ? b.descEn || b.descVi : b.descVi;
+              const Icon = resolveBenefitIcon(b, i);
               return (
-                <div key={i}>
-                  <div className="mx-auto mb-1.5 grid h-10 w-10 place-items-center rounded-full bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
-                    <Heart className="h-5 w-5" />
+                <div key={i} className="group flex flex-col items-center">
+                  <div className="mx-auto mb-1.5 grid h-10 w-10 place-items-center rounded-2xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)] border border-[var(--vba-border-accent)] shadow-xs transition-transform group-hover:scale-105">
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <div className="text-[11px] font-semibold leading-tight text-[var(--vba-text)]">
+                  <div className="text-[11px] font-bold leading-tight text-[var(--vba-text)] line-clamp-1">
                     {title}
                   </div>
-                  <div className="text-[10px] text-[var(--vba-text-muted)]">{desc}</div>
+                  <div className="text-[10px] text-[var(--vba-text-muted)] line-clamp-2 mt-0.5">
+                    {desc}
+                  </div>
                 </div>
               );
             })}
@@ -785,7 +897,7 @@ function EditCardModal({
   }
 
   const inputCls =
-    "h-10 w-full rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 text-[14px] text-[var(--vba-text)] outline-none focus:border-[var(--vba-gold)]";
+    "h-10 w-full rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 px-3.5 text-[14px] text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition";
 
   return (
     <div
@@ -883,9 +995,9 @@ function EditCardModal({
           <button
             onClick={submit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-[var(--vba-gold)] py-2.5 text-[14px] font-bold text-[#1a1304] disabled:opacity-60"
+            className="flex-1 rounded-xl bg-sky-600 hover:bg-sky-700 py-2.5 text-[14px] font-bold text-white shadow-md shadow-sky-600/20 disabled:opacity-60 transition cursor-pointer"
           >
-            {busy ? t("m.card.saving") : t("m.card.save")}
+            {busy ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
       </div>

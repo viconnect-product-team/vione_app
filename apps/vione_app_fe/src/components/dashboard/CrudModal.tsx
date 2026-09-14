@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { type ReactNode, useEffect, useState, useRef } from "react";
+import { X, ImagePlus, Trash2, Upload } from "lucide-react";
 
 export type CrudField =
   | {
@@ -17,7 +17,8 @@ export type CrudField =
       options: { value: string; label: string }[];
       required?: boolean;
       placeholder?: string;
-    };
+    }
+  | { name: string; label: string; type: "image"; required?: boolean; placeholder?: string };
 
 export type CrudValues = Record<string, string | number>;
 
@@ -86,7 +87,53 @@ export function CrudModal({
         <div className="max-h-[70vh] space-y-4 overflow-y-auto p-5">
           {fields.map((f) => (
             <Labeled key={f.name} label={f.label} required={f.required}>
-              {f.type === "textarea" ? (
+              {f.type === "image" ? (
+                <div className="space-y-2">
+                  {values[f.name] ? (
+                    <div className="relative overflow-hidden rounded-xl border border-border">
+                      <img
+                        src={String(values[f.name])}
+                        alt="Preview"
+                        className="h-40 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => set(f.name, "")}
+                        className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/70 text-white hover:bg-rose-600 transition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-6 hover:border-primary/50 hover:bg-muted/40 transition">
+                      <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                      <span className="text-xs font-semibold text-foreground">Chọn ảnh tải lên</span>
+                      <span className="text-[11px] text-muted-foreground mt-0.5">PNG, JPG hoặc WEBP</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === "string") set(f.name, reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  )}
+                  <input
+                    type="text"
+                    value={String(values[f.name] ?? "")}
+                    placeholder={f.placeholder || "Hoặc dán URL ảnh trực tiếp..."}
+                    onChange={(e) => set(f.name, e.target.value)}
+                    className={`${inputCls} text-xs`}
+                  />
+                </div>
+              ) : f.type === "textarea" ? (
                 <textarea
                   value={String(values[f.name] ?? "")}
                   placeholder={f.placeholder}

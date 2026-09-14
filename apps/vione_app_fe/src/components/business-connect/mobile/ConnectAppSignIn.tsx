@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Globe2,
   Loader2,
   Lock,
   Mail,
@@ -374,6 +375,18 @@ export function ConnectAppSignIn({
             <Shield className="h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
             <span>{t("bc.mobile.auth.signup.createAccount")}</span>
             <ChevronRight className="absolute right-4 h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
+          </Link>
+        </div>
+
+        {/* Khám phá Web Landing Business Connect */}
+        <div className="shrink-0 my-1">
+          <Link
+            to="/landing/business-connect"
+            className="relative flex h-9.5 w-full items-center justify-center gap-2 rounded-xl border border-[#D8B282]/30 bg-[#0A0A0B]/80 px-3 text-[12.5px] font-medium transition-all hover:border-[#D8B282]/60 hover:bg-[#D8B282]/10 active:scale-[0.99] cursor-pointer text-[#F6E1C3]"
+          >
+            <Globe2 className="h-4 w-4 text-[#D8B282]" aria-hidden="true" />
+            <span>Khám phá Business Connect (Web)</span>
+            <ArrowRight className="absolute right-4 h-3.5 w-3.5 text-[#D8B282]" aria-hidden="true" />
           </Link>
         </div>
 

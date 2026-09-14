@@ -61,7 +61,7 @@ function VioneMobileLoginPage() {
       navigate({ to: target as any, replace: true });
       return;
     }
-    const dest = resolveVionePostLoginPath(redirectTo, true);
+    const dest = resolveVionePostLoginPath(redirectTo ?? null, true);
     navigate({ to: (dest || "/connect-app") as any, replace: true });
   }
 

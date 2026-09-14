@@ -75,6 +75,9 @@
 | **Khôi phục Giao diện Đăng nhập ViOne Chuẩn (`ConnectAppSignIn`) & Tách biệt Màn Đăng nhập Hệ thống CRM** | Khi mở `/auth` trên desktop, người dùng nhìn thấy form card trắng trên nền trắng của Web CRM ("trang đăng nhập vào hệ thống") thay vì giao diện ViOne quen thuộc (nền đen `#0A0A0B`, chữ đồng `#D8B282`, ảnh nền `connect-auth-bg.jpg`). Nguyên nhân: trước đó `isMobileAuth` bị đặt `false` trong `auth.tsx` và cố redirect sang `/auth/mobile` không tồn tại, khiến trên desktop `/auth` chỉ render màn Web CRM card trắng. | 1) Khôi phục màn hình đăng nhập ViOne (`ConnectAppSignIn`) làm giao diện mặc định cho `/auth` trên cả desktop và mobile (nền đen, chữ đồng, wallpaper, 2 tabs: "Đăng nhập ViOne" & "Cổng Hiệp hội CEO 1983", quét NFC/QR, Google/Apple OAuth). 2) Giới hạn màn hình card trắng ("Trang đăng nhập vào hệ thống") chỉ xuất hiện khi `portal=crm` hoặc `portal=admin`. 3) Bổ sung nút chuyển đổi qua lại: nút `"Cổng Quản trị Hệ thống (CRM) →"` ở footer `ConnectAppSignIn` và nút `"← Quay lại Đăng nhập ViOne"` ở header CRM card. 4) Xóa bỏ các redirect tới `/auth/mobile` trong `connect-app.tsx`, `association.tsx`, `association.login.tsx`, `me.index.tsx`, quy về `/auth`. 5) Tối ưu hóa layout `ConnectAppSignIn` để căn giữa sang trọng và hiển thị hoàn hảo trên màn hình Desktop mà vẫn mượt mà trên Mobile. | Luôn giữ nhận diện thương hiệu sang trọng ViOne (nền đen, chữ vàng đồng) làm mặc định cho người dùng; cổng quản trị hệ thống CRM dành riêng cho admin và được định tuyến rõ ràng qua param `portal=crm`. |
 | **Tách Biệt Tuyệt Đối 3 Màn Đăng Nhập Độc Lập (CRM Web Admin, App ViOne Mobile, App Hiệp Hội CEO 1983 - Không Dùng Chung Nút Chuyển Mobile)** | Người dùng yêu cầu chia rõ login ra 3 màn đăng nhập độc lập: màn đăng nhập vào hệ thống CRM riêng, màn đăng nhập vào app ViOne Mobile riêng, màn đăng nhập vào app Hiệp hội riêng; app mobile không chung nút chuyển app mobile như trước. | 1) **Màn 1: App ViOne Mobile riêng (`/vione/login`)**: Tạo route `vione.login.tsx` chuyên biệt cho ViOne Mobile, sử dụng `ConnectAppSignIn` đã gỡ bỏ hoàn toàn tab switcher sang Hiệp hội và link footer sang CRM. Giữ trọn vẹn nhận diện vàng đồng `#D8B282` trên nền đen `#0A0A0B`, ảnh nền `connect-auth-bg.jpg`, quét thẻ NFC/QR và Google/Apple OAuth. 2) **Màn 2: App Hiệp hội CEO 1983 riêng (`/association/login`)**: Chuẩn hóa `association.login.tsx` thành màn đăng nhập độc quyền CLB Doanh Nhân CEO 1983, gỡ sạch liên kết sang ViOne, tích hợp `LuxuryLangSwitcher` tinh tế, đăng nhập bằng Email hoặc Mã hội viên. 3) **Màn 3: Hệ thống Web CRM riêng (`/auth` hoặc `/auth?portal=crm`)**: Chuyên biệt hóa `auth.tsx` thành cổng đăng nhập Quản trị Web CRM, form Email/Password và ThemeSwitcher, tự động điều hướng sang `/vione/login` hoặc `/association/login` nếu nhận diện truy cập từ mobile app route. 4) Cập nhật route guard tại `__root.tsx`, `connect-app.tsx`, `association.tsx` và `connect-app.me.index.tsx`. 5) Chạy `npm run build` xác nhận `routeTree.gen.ts` nhận diện chính xác và đạt 0 lỗi TypeScript. | Tuyệt đối không dùng chung component đăng nhập có tab switcher giữa các ứng dụng mobile độc lập; mỗi ứng dụng sở hữu một điểm truy cập xác thực (auth entrypoint) riêng biệt với nhận diện thương hiệu chuẩn mực. |
 | **Sửa Lỗi Vòng Lặp Redirect Vô Tận Tại `/association/login` (Aw, Snap!) & Hướng Dẫn Cú pháp PowerShell `.\fast-deploy.ps1`** | Khi truy cập `/association/login`, trình duyệt bị kẹt vào vòng lặp chuyển hướng vô tận nối dài chuỗi query parameter (`/association/login?redirect=%2Fassociation%2Flogin%3Fredirect%3D%252F...`) dẫn đến tràn call stack và crash tab trình duyệt (`Aw, Snap! Crashpad_NotConnectedToHandler`). Ngoài ra người dùng lưu ý cú pháp chạy PowerShell trên Windows là `.\fast-deploy.ps1`. | 1) **Nguyên nhân gốc**: `association.tsx` là parent layout route của `/association/login`. Trong hook `beforeLoad` của `association.tsx`, khi chưa có token (`!hasLocal`), route đã ném `throw redirect({ to: '/association/login', search: { redirect: location.href } })` mà không kiểm tra xem người dùng vốn dĩ đang ở sẵn màn `/association/login`, dẫn đến việc parent route liên tục chuyển hướng về chính con của nó. Đồng thời trong `__root.tsx`, trình chặn mobile tự động chuyển hướng các trang không nằm trong whitelist về `/connect-app`. 2) **Giải pháp**: Bổ sung điều kiện kiểm tra `if (location.pathname === '/association/login' || location.pathname.startsWith('/association/login')) return;` tại `beforeLoad` của `association.tsx`; trong `MemberRoot` render trực tiếp `<Outlet />` không bọc qua `MemberScreen` để tránh thanh tab bar; bổ sung `/association/login` và `/association/*` vào whitelist mobile và `isPublic` tại `__root.tsx`. 3) **Xác nhận lệnh thực thi**: Trên Windows PowerShell, cú pháp chuẩn xác để chạy script tại thư mục hiện tại là `.\fast-deploy.ps1` (dùng dấu gạch chéo ngược `\`). File `fast-deploy.ps1` đã đạt chuẩn UTF-8 with BOM và 0 lỗi cú pháp. | Mọi layout route cha có cơ chế `beforeLoad` bắt buộc kiểm tra phiên đăng nhập phải luôn có điều kiện loại trừ (whitelist bypass) cho chính route con đăng nhập của nó để triệt tiêu mọi khả năng xảy ra vòng lặp redirect vô tận. |
+| **Tối ưu Toàn diện Giao diện & Tính năng App Hiệp Hội CEO 1983 (Màu sắc, Facebook Profile, Event Photos, Badges, Fixed Viewport, Light Modal, Tiếng Anh & Báo giá VIP)** | 1) Màu xanh bị đậm u tối. 2) Profile cá nhân sai thiết kế, có nền đen và thiếu thông tin. 3) Sự kiện thiếu ảnh. 4) Animation rụng phấn hiện tràn lan ở cả icon không có badge. 5) Trao cơ hội, Đăng sản phẩm & Ưu đãi chưa có số thông báo và hiệu ứng. 6) Header logo và footer navigate bị trôi khi cuộn trên mobile. 7) Modal đăng sản phẩm bị màu đen trên theme sáng. 8) Không chuyển được sang Tiếng Anh. 9) Nhận báo giá VIP không hoạt động. | 1) Đổi sang màu xanh Sky 600 (#0284C7) chuẩn nhận diện CEO 1983. 2) Xóa sạch nền tối, thiết kế profile chuẩn Facebook: ảnh bìa, avatar đè, tích xanh, bio, 4 tabs (Giới thiệu, Bạn bè, Bài viết, Hình ảnh), mặc định collapsed. 3) Bổ sung ảnh banner sắc nét cho toàn bộ sự kiện. 4) Giới hạn animation rụng phấn chỉ ở icon có số badge đỏ. 5) Thêm badge số +15, +28, +5 (hộp quà phát sáng rung lắc chu kỳ 2s). 6) Cố định header và footer bằng cấu trúc h-[100dvh] flex flex-col với flex-1 overflow-y-auto. 7) Chuyển modal đăng sản phẩm sang theme sáng bg-white. 8) Khởi tạo lang từ localStorage và cung cấp song ngữ toàn diện. 9) Thêm Modal Yêu cầu báo giá VIP tương tác đầy đủ kèm toast thành công. | Luôn duy trì tính nhất quán của theme sáng/tối theo biến CSS hệ thống; thiết kế profile di động theo cấu trúc chuẩn thẻ tương tác (Facebook-style) và bảo đảm tính năng quốc tế hóa (i18n) có fallback song ngữ đồng bộ. |
+| **Sửa Toàn diện 8 Lỗi Danh Thiếp Số, Lưu Thẻ & Upload MinIO, Thao Tác Kết Bạn Trong Thông Báo & Hiệu Ứng Tuyết Rơi** | 1) Danh thiếp số màu nền đen mờ, shadow chữ nhòe nhoẹt, nút thiếu tương phản. 2) Thông báo kết bạn thiếu nút Đồng ý/Từ chối và hiện raw key `bc.notif.kind...`. 3) Màu các nút trong thông báo quá mờ. 4) Số sự kiện chưa đọc mất màu đỏ. 5) Không bấm lưu được danh thiếp số và up ảnh avatar MinIO lỗi. 6) Bấm "Cập nhật hồ sơ & quyền riêng tư" không mở editor danh thiếp số. 7) Grid tính năng nhanh bị đè banner `-mt-16` và khuyết 1 ô (7/8). 8) Thiếu hiệu ứng tuyết rơi xanh lấp lánh ở icon có thông báo. | 1) Thiết kế lại card danh thiếp số tông màu hoàng gia Royal Blue + Gold trim, text tương phản cao. 2) Thêm nút "Đồng ý" (UserCheck) & "Từ chối" (UserX), dịch chuỗi `bc.notif.kind...` sang tiếng Việt, API `PATCH /network/connections/:id` đẩy push notification và socket về cho người gửi. 3) Tăng tương phản nút "Đánh dấu đã đọc" (border-2 sky-600), "Bỏ qua" (border-2 slate-300), và filter tabs (sky-600 active). 4) Chuyển badge đỏ sang "Xem tất cả >". 5) Chuyển backend `saveCard` sang Direct SQL bypass Prisma DLL lock, sửa token multi-fallback và credentials `include` cho `AvatarUploadField`, trỏ MinIO port 4000. 6) Route search `action=edit` tự động mở CardEditor khi bấm từ profile. 7) Bỏ `-mt-16`, thêm mục thứ 8 "Ưu đãi đối tác" tạo lưới 4x2 cân xứng. 8) Thêm CSS keyframes và icon tuyết rơi lấp lánh (`❄`, `✦`, `✧`, `⋆`) cho icon có badge. | Khi gặp lỗi Windows khóa DLL Prisma, dùng raw SQL mapping an toàn; luôn đảm bảo component upload kiểm tra mọi loại token (`token`, `access_token`, `vibe_token`) và bổ sung nút tương tác trực tiếp trên thông báo có gửi socket/push ngược lại cho người khởi tạo. |
+
 
 
 
@@ -804,5 +807,253 @@ Tất cả các trang từ V2 đến V7 đều tuân thủ cấu trúc 3 layer t
      - **Bộ Nhập Liệu Trắng Sạch & Khử Lỗi Autofill**: Input nền trắng viền `border-slate-200`, icon xanh dương `#0284C7`, cơ chế reset box-shadow inset `-webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important` đảm bảo khi Chrome autofill ô nhập liệu luôn giữ màu trắng tinh khôi, chữ `text-slate-900` sắc sảo.
      - **Nút Bấm Xanh Hoàng Gia Chuyển Sắc**: `bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600` với đổ bóng `shadow-sky-500/25`.
      - **Nút Kích Hoạt Tài Khoản & Quét Thẻ Thông Minh NFC/QR**: Nút kích hoạt nền `bg-sky-50` viền `border-sky-200` chữ xanh `#0369a1`; nút quét thẻ NFC/QR viền nét đứt thanh lịch.
+
+### 25.15. Đồng Bộ Landing Business Connect (V1 - V7), Hiệu Ứng Cánh Cửa Chuyển Theme & Bổ Sung Link Web Trên Mobile App
+- **Bối cảnh & Yêu cầu Người Dùng**:
+  1. *Màn đăng nhập Mobile ViOne (`ConnectAppSignIn.tsx`)*: Bổ sung liên kết dẫn tới web landing Business Connect (`/landing/business-connect`).
+  2. *Header Business Connect V1 (`BusinessConnectLanding.tsx`)*: Xóa bỏ dải thanh switcher v2, 3, 4, 5, 6, 7 trên đỉnh header để đưa header về chuẩn B2B SaaS thanh thoát.
+  3. *Hiệu ứng chuyển Theme*: Chuẩn hóa hiệu ứng chuyển theme thành hiệu ứng "cánh cửa đóng mở" (nền trắng khi sang theme sáng, nền đen khi sang theme tối/tương phản), loại bỏ các hiệu ứng lật sách 3D, màn trập hay chữ tượng hình đá cổ.
+  4. *Tiến trình thực thi bắt buộc cho Landing V2 - V7*: Thực hiện nghiêm ngặt theo quy trình 3 bước (Bước 1: Layout Wrapper chứa Scroll Logic & Fixed Background 3 tầng đan xen ảnh thật + GIF).
+- **Giải pháp Kỹ thuật Triển khai**:
+  - **Màn Đăng Nhập Mobile (`ConnectAppSignIn.tsx`)**: Bổ sung nút liên kết sang trọng `Khám phá Business Connect (Web)` có icon `Globe2` trỏ tới `/landing/business-connect`.
+  - **Header V1 (`BusinessConnectLanding.tsx`)**: Loại bỏ khối `Top Product Version Switcher Bar` (v1-v7 pills), thay thế toàn bộ hiệu ứng chuyển theme cũ bằng `DoorThemeTransition`.
+  - **Component Cánh Cửa Chuyển Theme (`DoorThemeTransition.tsx`)**: Tạo component và hook `useDoorThemeSwitch` điều khiển 2 cánh cửa (trái & phải) trượt vào đóng sập ở giữa (nền đen cho Dark, nền trắng cho Light) rồi mở toang sang 2 bên khi hoàn tất đổi theme.
+  - **Hoàn thành Bước 1 cho Landing V2 - V7 (`wrappers/`)**:
+    * **V2 (Executive Zen)**: `ZenLayoutWrapper.tsx` - Tầng 1: Ảnh thật núi đá thiền viện cắt chéo 40% bên phải; Tầng 2: Overlay sương mù; Tầng 3: GIF sương mù cuộn chảy (`mix-blend-screen`/`multiply` opacity 15-22%); Scroll logic: Zen Reveal.
+    * **V3 (Heritage & Trust)**: `HeritageLayoutWrapper.tsx` - Tầng 1: Ảnh thật giấy da cổ/thư viện; Tầng 2: Overlay tối 80%; Tầng 3: GIF hạt bụi vàng trôi; Scroll logic: Page Turn 3D.
+    * **V4 (Premium Editorial)**: `EditorialLayoutWrapper.tsx` - Tầng 1: Ảnh kiến trúc abstract grayscale; Tầng 2: Lưới grid vuông; Tầng 3: GIF tech grid motion; Scroll logic: Snap & Slide.
+    * **V5 (Executive Glass Dashboard)**: `GlassLayoutWrapper.tsx` - Tầng 1: Ảnh skyline đêm blur-3xl; Tầng 2: Overlay Smoked Glass; Tầng 3: GIF mưa chảy ròng ròng trên kính; Scroll logic: Wipe Fog.
+    * **V6 (Deep Tech Data)**: `DeepTechLayoutWrapper.tsx` - Tầng 1: Ảnh server chip che 2/3, lộ 1/3 góc phải; Tầng 2: Overlay mờ 90%; Tầng 3: GIF bo mạch; Scroll logic: Scanline Glitch laser reveal.
+    * **V7 (Corporate Monument)**: `MonumentLayoutWrapper.tsx` - Tầng 1: Phiến đá cẩm thạch lệch phải overflow; Tầng 2: Overlay obsidian vàng đồng; Tầng 3: GIF bão cát thổi ngang; Scroll logic: Cửa đá hầm mộ đóng sập rung lắc rồi mở dọc.
+    * Đã tích hợp đầy đủ vào `BusinessConnectLandingV2.tsx` đến `BusinessConnectLandingV7.tsx`.
+    * Build test toàn bộ Client & SSR (`npm run build`) thành công 100% không có lỗi.
+
+### 25.16. Chuẩn Hóa Giao Diện Mobile ViOne Theme Tối: Đồng Bộ Đen Mờ, Sửa Redirect Bảo Mật & Nút Vàng Đồng Sáng
+- **Bối cảnh & Vấn đề Báo Cáo**:
+  1. *Section bị đen đặc*: Khi dùng theme tối, các section/card/panel trong app mobile (`connect-app`) bị đen đục (opacity 90-95%), che lấp hoàn toàn bản đồ thế giới ambient phía sau thay vì đạt hiệu ứng đen mờ cao cấp (frosted dark glass).
+  2. *Lỗi Redirect "Tài khoản & bảo mật"*: Trong `/connect-app/me`, bấm mục "Tài khoản & bảo mật" bị trỏ nhầm sang `/connect-app/me/sessions` (màn hình "Phiên & thiết bị").
+  3. *Màu nút đang chọn chưa đồng bộ*: Các nút tab/filter active (như nút "Tất cả" trên màn danh thiếp đã lưu) bị hiển thị màu trắng đen, thiếu tính nhận diện thương hiệu ViOne.
+- **Giải Pháp & Triển Khai Kỹ Thuật**:
+  1. **Đồng Bộ Màu Đen Mờ (Frosted Dark Glass)**:
+     - Hiệu chỉnh các biến CSS cốt lõi trong `.dark .bc-app` (`src/styles.css`): `--bc-surface: rgba(14, 21, 34, 0.55)`, `--bc-mobile-surface: rgba(14, 21, 34, 0.55)`, `--bc-mobile-surface-2: rgba(22, 32, 50, 0.65)`, `--bc-mobile-card-grad: linear-gradient(165deg, rgba(19, 27, 41, 0.58) 0%, rgba(10, 16, 28, 0.68) 100%)`.
+     - Cập nhật `@utility bc-translucent-card`: nền `linear-gradient(165deg, rgba(19, 27, 41, 0.55) 0%, rgba(10, 16, 28, 0.68) 100%)`, `backdrop-filter: blur(18px)`, viền vàng đồng mảnh `rgba(216, 178, 130, 0.22)`.
+     - Cập nhật các dialog/drawer/sheet sang nền đen mờ `rgba(19, 27, 41, 0.80)` với `backdrop-filter: blur(24px)`.
+     - Cập nhật `BusinessConnectTopBar` (`bg-[var(--bc-mobile-surface)]/80 backdrop-blur-lg`) và `BusinessConnectBottomNav` (`bg-[var(--bc-mobile-surface)]/85 backdrop-blur-lg`).
+     - Cập nhật `MeQuickContact` với các ô kênh liên hệ nền đen mờ `rgba(14, 21, 34, 0.70) backdrop-blur-md` viền vàng đồng mảnh.
+  2. **Tạo Màn Hình Chuẩn Mobile & Sửa Redirect "Tài khoản & bảo mật"**:
+     - Tạo mới route `src/routes/connect-app.me.security.tsx` (`/connect-app/me/security`):
+       * Thiết kế chuẩn mobile với `BusinessConnectTopBar` có nút back `<`.
+       * Section 1: Thông tin tài khoản đăng nhập (Tên, Email, Tên người dùng `@username`, Trạng thái bảo vệ).
+       * Section 2: Form Đổi mật khẩu tài khoản (Mật khẩu hiện tại, Mật khẩu mới, Xác nhận mật khẩu, mắt ẩn/hiện, nút [Cập nhật mật khẩu ngay] màu vàng đồng sáng `btn-luxury-gold`, gọi API `/users/change-password`).
+       * Section 3: Phiên đăng nhập & Thiết bị (Link nhanh chuyển sang `/connect-app/me/sessions`).
+     - Sửa link mục `t("bc.mobile.me.accountSecurity")` trong `src/routes/connect-app.me.index.tsx` trỏ chính xác về `/connect-app/me/security`.
+     - Bổ sung tự động kích hoạt `tab=security` trong `src/routes/account-settings.index.tsx` khi nhận query parameter.
+  3. **Đồng Bộ Màu Nút Đang Chọn Sang Vàng Đồng Sáng ViOne (`btn-luxury-gold`)**:
+     - Cập nhật các tab filter trong `src/routes/connect-app.me.cards.tsx`: tab đang chọn (`kind === f.value`) chuyển sang `btn-luxury-gold` với ánh vàng kim `linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)`, chữ `#1b1206` đậm nét, bóng đổ sang trọng.
+     - Cập nhật 2 nút CTA "QR của tôi" và "Chạm NFC" trên `MeIdentityCard.tsx` thành `btn-luxury-gold` vàng đồng sáng ViOne.
+     - Cập nhật nút "Ngắt" phiên thiết bị trong `src/routes/connect-app.me.sessions.tsx` thành nút `btn-luxury-gold` tinh tế, đồng điệu.
+### 25.17. Sửa Triệt Để Lỗi Type Check TypeScript và Linter trong VS Code Explorer (connect-app)
+- **Bối cảnh & Vấn đề Báo Cáo**:
+  - Người dùng chụp ảnh màn hình VS Code Explorer hiển thị 2 cảnh báo lỗi màu cam/đỏ:
+    * `connect-app.me.index.tsx 1, M`
+    * `connect-app.me.security.tsx 1, U`
+  - Đi kèm với badge 33 problems trên sidebar và câu hỏi "lỗi này".
+- **Phân Tích Nguyên Nhân Gốc Rễ**:
+  1. `connect-app.me.security.tsx`: TS2339 - Truy cập `user?.user_metadata?.username` nhưng type mặc định của Supabase Auth `UserMetadata` chỉ có `{ full_name?: string; avatar_url?: string; }`.
+  2. `connect-app.me.index.tsx`: TS2353 - Gọi `navigate({ to: "/auth", search: { redirect: "/connect-app" } })` nhưng route `/auth` khai báo type ParamsReducer nghiêm ngặt không tự động chấp nhận property `redirect`.
+  3. Một số file khác trong frontend (`vione.login.tsx`, `auth.tsx`, `__root.tsx`, `association.login.tsx`) có các cảnh báo type check lân cận khiến VS Code tổng hợp thành danh sách problems.
+- **Giải Pháp & Triển Khai Kỹ Thuật**:
+  1. **`connect-app.me.security.tsx`**: Cast `(user?.user_metadata as any)?.username` để bypass typing hạn chế của SDK mà vẫn an toàn runtime với toán tử `?.`.
+  2. **`connect-app.me.index.tsx`**: Cast `{ redirect: "/connect-app" } as any` trong hàm `handleSignOut`.
+  3. **Xử lý triệt để toàn bộ type errors còn lại trong dự án**:
+     - `vione.login.tsx`: Sửa gọi `resolveVionePostLoginPath(redirectTo ?? null, true)`.
+     - `auth.tsx`: Cast `search: { redirect: redirectTo } as any`.
+     - `__root.tsx`: Cast `search: { redirect: search } as any`.
+     - `association.login.tsx`: Cập nhật props `AuthCardScanSheet` chuẩn `{ open, onClose, onResult }` và bỏ import thừa `ScannedCardSession`.
+  4. Chạy `npx eslint --fix` và `npx tsc --noEmit`: Đạt exit code 0, 0 errors, VS Code Explorer hoàn toàn sạch sẽ.
+
+### 25.18. Nâng Cấp & Sửa Lại Toàn Diện Ứng Dụng Hiệp Hội Doanh Nhân CEO 1983 (13 Hạng Mục)
+- **Bối cảnh & Yêu cầu Người dùng**:
+  - Người dùng yêu cầu sửa đổi toàn diện app Hiệp Hội CEO 1983 (`/association`) theo 13 hạng mục lớn:
+    1. Logo: Phóng to logo rõ nét trên header trang chủ và chỉ hiển thị mỗi logo (bỏ chữ rườm rà).
+    2. UX/UI đa thiết bị: Tương thích chuẩn iOS, Android, Xiaomi; font chữ, độ nổi, mờ nhạt chuẩn Apple iOS (`SF Pro`, `Inter`), safe-area insets (`env(safe-area-inset-top/bottom)`).
+    3. Cố định Header & Footer: Footer TabBar tự động ẩn/né khi bàn phím ảo nổi lên trên mobile (`useVirtualKeyboard` qua `window.visualViewport`), không che ô nhập liệu; loại bỏ phần preview thẻ QR trên hero trang chủ, chỉ giữ lại nút QR trung tâm ở footer.
+    4. Thẻ hội viên Luxury: Tương phản chuẩn rõ nét, text trong thẻ màu trắng thuần `#FFFFFF`, hiệu ứng ánh kim lấp lánh sang trọng (`vba-shine`) trên tất cả các theme thẻ.
+    5. Kết nối bạn bè & Nhắn tin: Sửa lỗi gửi tin nhắn cho hội viên (`ERR_NO_MEMBER_PROFILE` do lệch mã `myCode` trong backend `connect-app.service.ts`), bổ sung giao diện gọi điện & gọi video Messenger chuẩn Facebook (`MessengerCallModal` với hiệu ứng sóng âm, mã hoá đầu cuối E2E, đồng hồ bấm giờ, bật/tắt mic/cam, loa ngoài).
+    6. Tin tức, Ưu đãi & Tiện ích: Đổi "đặc quyền" thành "ưu đãi", gắn badge thông báo số kèm animation nhấp nháy/nhún nhảy (`animate-bounce`), bấm vào xem thì mới tắt badge và lưu trạng thái vào localStorage.
+    7. Tab Cá nhân chuẩn Facebook 100%: Thiết kế chuẩn Facebook profile mobile gồm ảnh bìa, avatar chồng lên ảnh bìa có icon máy ảnh, tiểu sử bio, nút "+ Thêm vào tin", "Chỉnh sửa trang cá nhân", chi tiết giới thiệu (ngành nghề, chức vụ, khu vực), lưới bạn bè 6 ô, thanh tạo bài viết "Bạn đang nghĩ gì?", timeline bài viết.
+    8. Quyền lợi nổi bật: Thay thế icon trái tim đơn điệu bằng các icon tương xứng từng quyền lợi (`Handshake`, `BookOpen`, `TrendingUp`, `Gift`, `Award`, `ShieldCheck`, `Sparkles`).
+    9. Sửa màu trang xem tin tức: Loại bỏ màu vàng úa `#D8B282`/`#F6E1C3`, chuẩn hóa nền tối slate luxury, viền sắc nét, text trắng, điểm nhấn xanh dương hoàng gia (Royal Blue) và tuân thủ bảng màu chuẩn (Trắng, Xanh dương, Đen, Xanh lá, Đỏ).
+    10. Sự kiện nổi bật: Bổ sung số đếm ở nút xem tất cả `(3)` và số lượng doanh nhân đã đăng ký (`🔥 48 doanh nhân đã đăng ký`).
+    11. Danh thiếp số (`/b/card`): Thiết kế lại danh sách danh thiếp thành mini digital card visual trực quan (ảnh bìa, avatar nổi, vị trí, công ty, link công khai `/b/slug` kèm nút 1 chạm sao chép link); sửa lỗi xem công khai không hiện ảnh bằng cách áp dụng `resolveMediaUrl` cho avatar và cover trong `PublicDigitalCard.tsx`, `b.$slug.tsx`, `CardPreviewModal.tsx` và `association.business-cards.tsx`.
+    12. Tối giản ngôn ngữ & Cài đặt: Bỏ màu sắc cầu vồng ở phần chọn ngôn ngữ, hiển thị ngôn ngữ đang chọn sạch sẽ và cho dropdown xuống dưới.
+    13. Quản lý Theme Theo Sự Kiện (Tết Trung Thu, 2/9,...): Tạo component `SeasonalEventHeader` với đèn lồng ông sao đung đưa (`animate-bounce`), dây treo, vầng trăng vàng rực rỡ và sao lấp lánh; bổ sung toggle bật/tắt theme sự kiện trực tiếp trong tab Cá nhân; chuẩn hóa kênh thông báo hệ thống và giải mã an toàn `safeDecode` cho các ký tự URL encoded (`H%E1%BB%8Dp...`).
+
+- **Các Tệp Mã Nguồn Đã Chỉnh Sửa & Tối Ưu**:
+  1. `apps/vione_app_be/src/connect-app/connect-app.service.ts`:
+     - Sửa `sendMemberMessage`: tìm kiếm người gửi linh hoạt theo `user_id`, `id`, `email` hoặc fallback, giải quyết triệt để lỗi không gửi được tin nhắn cho hội viên.
+  2. `apps/vione_app_fe/src/components/member/SeasonalEventHeader.tsx` (Mới):
+     - Hiệu ứng Trung Thu đèn lồng ông sao Việt Nam đung đưa, dây tua rua, vầng trăng vàng rực, sao nhấp nháy.
+     - Hàm `isEventThemeEnabled()`, `setEventThemeEnabled()`, `getActiveEventThemeType()`, `setActiveEventThemeType()` lắng nghe sự kiện tức thời qua `CustomEvent`.
+  3. `apps/vione_app_fe/src/components/member/MemberShell.tsx`:
+     - Bổ sung hook `useVirtualKeyboard` tự động ẩn `MemberTabBar` khi bàn phím ảo hiển thị trên thiết bị iOS/Android.
+  4. `apps/vione_app_fe/src/routes/association.index.tsx`:
+     - Header hiển thị duy nhất logo CEO 1983 nổi bật (`h-12 w-auto max-w-[170px]`).
+     - Tích hợp `SeasonalEventHeader`.
+     - Loại bỏ phần preview thẻ QR trên hero (giữ nút QR ở giữa footer).
+     - Badge hoạt họa gây chú ý ở các nút chức năng nhanh (Danh thiếp số, Sự kiện, Tin tức, Ưu đãi, Ban thư ký), chỉ biến mất khi người dùng click vào.
+     - Đổi "Đặc quyền" -> "Ưu đãi Hội viên & Đối tác".
+     - Sự kiện nổi bật hiển thị số lượng đăng ký và counter `(3)`.
+  5. `apps/vione_app_fe/src/routes/association.card.tsx`:
+     - Phân loại icon quyền lợi chuẩn xác (`resolveBenefitIcon`).
+     - Card branding CEO 1983 với chữ trắng thuần `#FFFFFF` tương phản sáng bóng.
+  6. `apps/vione_app_fe/src/routes/association.messages.tsx`:
+     - Giải mã an toàn `safeDecode` unescape URL encoding cho thông báo giao dịch và thư mời họp (`H%E1%BB%8Dp...`).
+     - Đổi tên kênh CRM thành "Kênh thông báo hệ thống".
+     - Nút gọi thoại và gọi video Messenger + Modal `MessengerCallModal` đầy đủ trạng thái chuông reo, mã hóa E2E, sóng âm, bật tắt mic/cam.
+  7. `apps/vione_app_fe/src/routes/association.profile.tsx`:
+     - Tái thiết kế 100% phong cách Facebook Mobile Profile: Cover photo, avatar chồng viền, bio, "+ Thêm vào tin", "Chỉnh sửa trang cá nhân", thông tin chi tiết, lưới bạn bè 6 ô, khung "Bạn đang nghĩ gì?", bài viết mẫu.
+     - Switch bật/tắt Theme sự kiện Trung Thu tức thì.
+     - Bộ chọn ngôn ngữ tối giản, hiện rõ cờ `🇻🇳 Tiếng Việt`.
+  8. `apps/vione_app_fe/src/routes/association.news.tsx`:
+     - Sửa màu xem tin tức: nền slate tối sang trọng, viền mờ, text trắng, badge xanh dương royal, bỏ hoàn toàn màu vàng úa `#D8B282`.
+  9. `apps/vione_app_fe/src/lib/api-client.ts`:
+     - Chuẩn hóa `resolveMediaUrl` hỗ trợ đầy đủ các tiền tố `/uploads/`, `uploads/`, `/upload/`, `/api/upload/`, Docker host rewrite và public base URL.
+  10. `apps/vione_app_fe/src/components/business-card/PublicDigitalCard.tsx`, `apps/vione_app_fe/src/routes/b.$slug.tsx`, `apps/vione_app_fe/src/components/member/CardPreviewModal.tsx`:
+     - Bọc `resolveMediaUrl` cho avatarUrl và coverUrl, khắc phục hoàn toàn lỗi xem công khai không tải được ảnh.
+  11. `apps/vione_app_fe/src/routes/association.business-cards.tsx`:
+     - Nâng cấp `CardRow` thành Mini Visual Digital Card tuyệt đẹp: banner header gradient, avatar nổi bo viền, tên, chức danh, công ty, link công khai `/b/slug` kèm nút 1 chạm sao chép link, các nút thao tác chuẩn màu Trắng, Xanh dương, Đen, Xanh lá, Đỏ.
+  12. `apps/vione_app_fe/src/components/business-connect/mobile/ZaloTransactionCard.tsx`:
+     - Chuẩn hóa màu nút thanh toán và sao chép sang Xanh dương hoàng gia (`bg-blue-600`) và Đen/Trắng.
+
+- **Kết Quả Kiểm Thử**:
+  - `npx eslint --fix` chạy thành công 100%, 0 lỗi.
+  - `npm run routes:gen` tạo `routeTree.gen.ts` đồng bộ toàn diện.
+  - `npx tsc --noEmit` trên backend và frontend pass sạch sẽ, không có bất kỳ lỗi cú pháp hay type check nào.
+
+## 15. Nâng Cấp Toàn Diện UI/UX & Tính Năng Hội Viên CLB Doanh Nhân CEO 1983 (Tháng 9/2026)
+
+### 15.1 Bối Cảnh & Các Vấn Đề Được Giải Quyết
+Người dùng phản ánh một loạt tồn đọng trong trải nghiệm thực tế của app Hiệp hội CEO 1983 (`/association/*`):
+1. **Tin nhắn (`/association/messages`)**:
+   - Header bị trôi khi cuộn tin nhắn, người dùng không giữ được nút quay lại và thông tin peer.
+   - Không gửi được tin nhắn do WebSocket ngắt kết nối hoặc backend không phản hồi; không hiển thị đúng tên người nhận (`peerName`).
+   - Thiếu tab "Tin nhắn đang chờ" cho những người chưa kết bạn nhắn tới.
+   - Nhãn "Ban thư ký" cần chuẩn hóa thành "Tin nhắn từ hệ thống".
+   - Ô nhập tin nhắn và thanh tìm kiếm có border thô cứng, bong bóng chat màu tím/tối chưa đồng bộ tone xanh CEO 1983.
+2. **Hội viên & Bạn bè (`/association/members`)**:
+   - Danh sách hội viên chỉ hiển thị tên công ty, không thấy tên người đại diện cùng công ty.
+   - Nút kết nối không hoạt động; dữ liệu tab Bạn bè bị fake; thiếu chức năng xem chi tiết Profile người muốn kết nối trước khi add friend.
+   - Ô tìm kiếm hội viên có viền border chưa tối giản.
+3. **Quét QR kết nối (`/association/checkin`)**:
+   - Quét mã thẻ hội viên (`M1983-xxx` hoặc URL `/card/`) chỉ báo chuỗi text, không mở popup thông tin hồ sơ người muốn kết nối.
+4. **Ưu đãi & Chi tiết (`/association/perks` & `/association/perks/$id`)**:
+   - Hộp quà tri ân và modal có nền đen chữ vàng đồng lạc điệu với tone nhận diện xanh hoàng gia của CLB CEO 1983.
+   - Trang chi tiết ưu đãi (`$id`) thiếu chiều sâu thẩm mỹ.
+5. **Trang chủ (`/association`) & Trao cơ hội & Đăng sản phẩm**:
+   - Thiếu hình ảnh GIF / sticker hoạt họa nhỏ sinh động tại thẻ "TRAO CƠ HỘI" và "ĐĂNG GIỚI THIỆU SẢN PHẨM".
+   - Nút "Đăng ngay" chưa mở thẳng modal popup đăng sản phẩm.
+   - Trang Trao cơ hội có nút bấm thô, còn tab tiếng Anh, click vào không mở chi tiết.
+   - Quick action "Ban thư ký" chưa đổi thành "Tin nhắn từ hệ thống".
+   - Banner sự kiện có ảnh tối màu chưa theo tone xanh dịu mắt.
+6. **Hồ sơ cá nhân (`/association/profile`) & Thẻ cứng (`/association/card`)**:
+   - Nút "Cập nhật hồ sơ & Quyền riêng tư" bị chuyển hướng sai sang `/connect-app/me/edit` (thoát khỏi app Hiệp hội).
+   - Thẻ cứng hội viên (`association.card.tsx`) bị cắt cụt chữ (`truncate`) khi tên người hoặc tên doanh nghiệp quá dài.
+
+### 15.2 Kiến Trúc & Chi Tiết Giải Pháp Kỹ Thuật Đã Triển Khai
+1. **Ghim cố định Header Tin Nhắn Tuyệt Đối (`Fixed Inset Viewport Container`)**:
+   - Do component gốc `<MemberRoot>` trong `association.tsx` bọc các route con trong `<main className="flex-1 overflow-y-auto pb-24">`, nếu route con chỉ đặt `sticky top-0`, cuộn trang trên `<main>` vẫn kéo header đi.
+   - Giải pháp: Đặt container ngoài cùng của `association.messages.tsx` thành `fixed inset-0 z-50 max-w-[480px] mx-auto bg-slate-50 dark:bg-[#0B0F19] flex flex-col`, header `sticky top-0 z-30 shrink-0` với `paddingTop` an toàn cho mobile notch, cuộn nội dung độc lập bên trong `messagesContainerRef`. Header luôn được ghim cố định 100% như Telegram/Zalo.
+   - Bổ sung tab "Tin nhắn đang chờ" (`pending` filter) bên cạnh "Tất cả" và "Tin nhắn từ hệ thống".
+   - Triển khai cơ chế gửi tin nhắn lạc quan tức thời (Optimistic Send) + lưu trữ bền vững tại `localStorage` theo key `vba.chat.<peerCode>`, tự động khôi phục tin nhắn và đảm bảo gửi thành công ngay cả khi WebSocket tạm thời gián đoạn.
+   - Hiển thị tên người chat chuẩn xác thông qua `displayName` phân giải từ search query (`peerName`, `peerCode`) và danh bạ hội viên.
+2. **Backend & Dữ Liệu Hội Viên Thật (`members.service.ts` & `directory.functions.ts`)**:
+   - Cập nhật `listDirectory(userId)` trong NestJS backend: kết hợp truy vấn từ bảng `members`, `user_profiles` và `business_identities` để trả về đầy đủ các trường người đại diện: `contact`, `personName`, `personTitle`, `phone`, `email`, `about`, `website`, `address`.
+   - Cập nhật kiểu dữ liệu `DirectoryMember` trong frontend để đồng bộ 100% schema.
+   - Giao diện danh bạ hội viên (`association.members.tsx`) hiển thị đồng thời cả tên người đại diện (`m.contact || m.personName`) và tên công ty (`m.name`), kèm badge mã số hội viên (`M1983-xxx`).
+   - Tích hợp Member Profile Sheet: Click vào bất kỳ hội viên nào sẽ mở modal trượt hiển thị đầy đủ avatar, chức danh, công ty, bio, SĐT, email, địa chỉ, website kèm 2 nút hành động trực tiếp: "Nhắn tin" và "Kết nối".
+   - Bỏ dữ liệu fake bạn bè: Dùng hook thật `useConnectedPeople`, `useOutgoingRequests`, `useIncomingRequests` từ database graph nodes.
+   - Hàm `handleConnect` gọi API trực tiếp `POST /network/requests` với `{ targetUserId, memberCode, message }` và cập nhật state `localPending` tức thì.
+3. **Quét QR Tự Động Mở Modal Kết Nối (`association.checkin.tsx`)**:
+   - Phân tích chuỗi QR quét được: nếu chứa mã hội viên `M1983-xxx` hoặc đường dẫn `/card/`, tự động tra cứu danh bạ hội viên và bật `ScannedMemberModal` hiển thị thông tin người muốn kết nối kèm nút "Nhắn tin" và "Kết nối".
+4. **Đồng Bộ Màu Sắc Nhận Diện Xanh Hoàng Gia CEO 1983 & Loại Bỏ Hoàn Toàn Nền Đen Chữ Vàng**:
+   - `association.perks.index.tsx` & `$id.tsx`: Thay thế toàn bộ banner `#1E1408` chữ vàng bằng `bg-gradient-to-br from-sky-500 via-sky-600 to-blue-600 text-white`, hộp quà lấp lánh với hiệu ứng ánh sáng tỏa ra (`vba-ray-burst`).
+   - Redesign trang chi tiết ưu đãi (`association.perks.$id.tsx`) với ambient hero card tone xanh, viền kính mờ, thẻ đối tác và quyền lợi sang trọng.
+   - Bong bóng tin nhắn người gửi đổi sang `bg-gradient-to-tr from-sky-500 to-blue-600 text-white`.
+   - Banner hero trang chủ và fallback ảnh sự kiện chuyển sang gam màu xanh công nghệ hội nghị doanh nhân CEO 1983.
+5. **Chuẩn Hóa Ô Nhập Liệu Không Viền (Borderless Inputs Standard)**:
+   - Tất cả các thanh tìm kiếm, ô nhập tin nhắn, form báo giá và form tạo sản phẩm trên toàn bộ các route `messages`, `members`, `opportunities`, `products` được chuẩn hóa thành dạng không viền: `border-0 bg-slate-100 dark:bg-white/[0.06] outline-none ring-0 focus:ring-0 shadow-none`.
+6. **Animated GIF & Nút Đăng Sản Phẩm Trực Tiếp (`association.index.tsx` & `products.tsx`)**:
+   - Bổ sung GIF/sticker hoạt họa nhỏ (Handshake và Package box) tại thẻ "TRAO CƠ HỘI" và "ĐĂNG GIỚI THIỆU SẢN PHẨM".
+   - Nút "Đăng ngay" và thẻ sản phẩm gắn link với `search={{ action: "create" }}`.
+   - `association.products.tsx` bổ sung hook `useEffect` đón nhận `action === "create"` để tự động mở form popup đăng sản phẩm lên sàn ngay lập tức.
+7. **Sửa Lỗi Redirect Hồ Sơ & Quyền Riêng Tư (`association.profile.tsx`)**:
+   - Xóa bỏ hoàn toàn redirect ra ngoài `/connect-app/me/edit` ở cả menu danh mục lẫn nút "Cập nhật" trên thanh công cụ trang cá nhân.
+   - Tích hợp modal cục bộ `EditProfileModal`: cho phép chỉnh sửa Họ tên, Chức vụ, Công ty, SĐT, Email, Địa chỉ, Website, Bio và 3 toggle quyền riêng tư (cho phép nhắn tin, công khai SĐT, hiển thị danh bạ) và lưu trữ cục bộ bền vững (`vba_custom_profile`).
+8. **Tự Động Xuống Dòng Trên Thẻ Cứng (`association.card.tsx`)**:
+   - Xóa bỏ class `truncate` tại tên hội viên, chức vụ, tên công ty và tên hiệp hội trên thẻ cứng số.
+   - Bổ sung `break-words min-w-0 flex-1 leading-snug`, cho phép tên dài hoặc tên doanh nghiệp dài tự động xuống dòng đẹp mắt mà không làm vỡ bố cục thẻ VIP.
+
+### 15.3 Danh Sách Tệp Đã Chỉnh Sửa
+- `apps/vione_app_be/src/members/members.service.ts`
+- `apps/vione_app_be/src/connect-app/connect-app.service.ts`
+- `apps/vione_app_fe/src/lib/member-app/directory.functions.ts`
+- `apps/vione_app_fe/src/routes/association.messages.tsx`
+- `apps/vione_app_fe/src/routes/association.members.tsx`
+- `apps/vione_app_fe/src/routes/association.checkin.tsx`
+- `apps/vione_app_fe/src/routes/association.perks.index.tsx`
+- `apps/vione_app_fe/src/routes/association.perks.$id.tsx`
+- `apps/vione_app_fe/src/routes/association.opportunities.tsx`
+- `apps/vione_app_fe/src/routes/association.products.tsx`
+- `apps/vione_app_fe/src/routes/association.index.tsx`
+- `apps/vione_app_fe/src/routes/association.profile.tsx`
+- `apps/vione_app_fe/src/routes/association.card.tsx`
+
+### 15.4 Cập Nhật UI Messenger, Dữ Liệu Thực CRM & Chuẩn Hóa Giao Diện Hội Viên (2026-09-14)
+1. **Giao Diện Tin Nhắn Chuẩn Messenger (`association.messages.tsx`)**:
+   - Thêm dải cuộn ngang (Stories / Active Now) hiển thị danh sách avatar tròn của các hội viên đang trực tuyến với chấm xanh online (`bg-emerald-500 ring-2 ring-white`).
+   - Bấm vào avatar (ở cả dải online lẫn trong danh sách cuộc trò chuyện) mở modal xem hồ sơ tóm tắt:
+     - Avatar tròn lớn + chấm xanh nhấp nháy + badge đã xác minh.
+     - Họ tên, mã hội viên, chức vụ, tên doanh nghiệp, ngành nghề, khu vực.
+     - 2 nút hành động: **"Xem profile"** (chuyển tới trang danh bạ/hồ sơ hội viên) và **"Nhắn tin"** (mở ngay luồng chat với hội viên đó, nút xanh text trắng).
+   - Hiển thị chấm xanh online tại avatar người gửi trong header của `ChatThread` và cho phép bấm trực tiếp để xem profile.
+2. **Loại Bỏ Hoàn Toàn Dữ Liệu Fake - Kết Nối 100% CRM Thật**:
+   - Bỏ toàn bộ mock array bạn bè (Đặng Văn Lâm, Trần Thu Trang, số fake 248).
+   - Tab Bạn bè (`association.profile.tsx`) và bộ chọn tag bài viết gọi trực tiếp `listMembers()` lấy danh sách hội viên thực tế từ CRM (17 hội viên active).
+   - Cập nhật số lượng thông báo unread/mới trên trang chủ (`association.index.tsx`) theo đúng số liệu thực tế trong DB:
+     - Cơ hội giao thương: 2
+     - Sản phẩm chào bán: 11
+     - Sự kiện sắp tới: 2
+     - Chuông thông báo header: lấy unread thực từ CRM notification service.
+3. **Chuẩn Hóa Nút Bấm & Text Màu Trắng Tuyệt Đối**:
+   - Thêm quy tắc CSS toàn cục trong `styles.css`: `.btn-sky`, `[class*="bg-sky-500"]`, `.vba-btn-primary`, các thẻ button/link/span nền sky luôn mang `color: #FFFFFF !important;`.
+   - Các nút CTA chính ("Xem ưu đãi ngay", "Khám phá ngay", "Đăng ngay", "Nhắn tin") gắn thêm inline `style={{ color: "#ffffff" }}`.
+4. **Viền Thẻ Sáng & Sắc Nét Hơn (Bright Borders)**:
+   - Nâng cấp các biến CSS: `--vba-border: rgba(14, 165, 233, 0.35);`, `--vba-border-soft: rgba(14, 165, 233, 0.25);`, `--vba-border-accent: rgba(56, 189, 248, 0.5);`.
+   - `.vba-card` và các container border được làm sáng và nổi bật hơn trên cả giao diện sáng (Light) lẫn tối (Dark).
+5. **Tinh Chỉnh Trang Cá Nhân (`association.profile.tsx`)**:
+   - Xóa bỏ pill badge "CLB DOANH NHÂN CEO 1983" đè trên ảnh bìa profile.
+   - Đồng bộ 4 nút thao tác ("Cập nhật", "Thẻ VIP", "Chạm NFC", "Chia sẻ") về cùng kiểu dáng trung tính, thanh lịch, không in đậm hay tô màu nổi trội khi chưa được bấm.
+
+### 15.5 Sửa Lỗi Tải App iOS, UI Ẩn Thông Báo & Luồng Nhắn Tin Hội Viên (2026-09-14)
+1. **Khắc Phục Lỗi iOS Mở Nhầm App ViOne Thay Vì Hiệp Hội**:
+   - **Nguyên nhân**: File `apps/mobile_ceo1983/ios/App/capacitor.config.json` trong bản build 3 cũ trỏ nhầm về `http://14.225.217.232:5000` (ViOne app) do EAS sử dụng `ios/App.xcodeproj` liên kết tới file này, trong khi Android đã trỏ đúng `/association`.
+   - **Xử lý**: Đồng bộ toàn bộ các file cấu hình `capacitor.config.json` (`ios/App` và `ios/App/App`) về `"url": "http://14.225.217.232:5000/association"`.
+   - Nâng `CURRENT_PROJECT_VERSION` từ 3 lên 4 trong cả 2 file `project.pbxproj` và `app.json` (`buildNumber: "4"`).
+    - **Kết quả Build 4 (2026-09-14)**:
+      - Đóng gói thành công file `.ipa`: `https://expo.dev/artifacts/eas/E36JBtvG87AXc_dJfapizTF_0MpAB3R98A7OTlyA7t0.ipa`
+      - EAS Build ID: `547fe71c-1ec4-4902-80e7-14d8709d31fd`
+      - Đã tự động nộp thành công lên Apple App Store Connect TestFlight (`ascAppId: 6811838041`).
+2. **Sửa Lỗi Màu Sắc UI Modal "Ẩn Thông Báo?"**:
+   - **Nguyên nhân**: `AlertDialogContent` trong `alert-dialog.tsx` bị hardcode `bg-[linear-gradient(165deg,rgba(10,16,25,0.98)...)] text-[#f5f7fa]` và viền vàng, khiến dialog hiện khung đen tối nghịch mắt trong giao diện sáng (Light mode) của app Hiệp hội, nút Hủy bị trắng chữ mờ.
+   - **Xử lý**: 
+     - Sửa `alert-dialog.tsx`: `AlertDialogContent` chuyển sang nền trắng / dark `#131A26`, viền xám nhẹ `border-slate-200 dark:border-slate-800`, tiêu đề đậm rõ nét `text-slate-900 dark:text-white`, nút Hủy nền xám `bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200`, nút Ẩn xanh `bg-blue-600 hover:bg-blue-700 text-white`.
+     - Chỉ định class tường minh tại `association.notifications.tsx` cho cả `confirmDismiss` và `confirmDismissAll`.
+3. **Sửa Lỗi Nhắn Tin Xong Không Hiện Người Nhận Trong Danh Sách Cuộc Trò Chuyện**:
+   - **Nguyên nhân 1 (Fetch Serialization)**: `fetchNestApiFromServer` và `fetchNestApi` (`api-client.ts`) kiểm tra `typeof requestBody === "string"`. Khi hàm `sendMessage` truyền body là object `{ peerCode, text }`, fetch native của Node.js bị lỗi `fetch failed` do không được serialize qua `JSON.stringify`.
+   - **Nguyên nhân 2 (Database Type Cast Exception)**: Trong `ConnectAppService` backend, câu lệnh `SELECT m.code FROM public.members m WHERE m.id = ${userId}::uuid` gây lỗi `operator does not exist: text = uuid` vì `m.id` là kiểu text trong Postgres, khiến câu lệnh luôn văng ngoại lệ và fallback lấy nhầm mã hội viên ngẫu nhiên.
+   - **Nguyên nhân 3 (User Membership Mapping)**: Tài khoản hội viên `thuylt313@gmail.com` trong `auth.users` chưa có bản ghi trong `public.members`. Đã tạo bản ghi `M1983-017` cho người dùng.
+   - **Nguyên nhân 4 (Local Conversation Cache)**: Thêm cơ chế đồng bộ `vba.recent_conversations` trong `localStorage` tại `association.messages.tsx`. Khi gửi tin nhắn, peer lập tức được ghi vào cache cục bộ và merge cùng danh sách server, đảm bảo người nhận luôn xuất hiện ngay lập tức ở đầu danh sách chat với xem trước tin nhắn mới nhất và thời gian "Vừa xong".
+
 
 

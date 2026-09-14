@@ -39,20 +39,26 @@ export function AvatarUploadField({ value, onChange, disabled }: AvatarUploadFie
         return;
       }
       
-      const token = localStorage.getItem("vibe_token");
-      if (!token) {
-        setFailed(true);
-        return;
-      }
+      const token =
+        (typeof window !== "undefined" &&
+          (localStorage.getItem("vibe_token") ||
+            localStorage.getItem("token") ||
+            localStorage.getItem("access_token") ||
+            localStorage.getItem("vba_token"))) ||
+        "";
 
       const formData = new FormData();
       formData.append("file", processed.image.blob, "avatar.jpg");
 
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(getNestApiUrl("/upload/avatar"), {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
+        headers,
         body: formData,
       });
 

@@ -875,6 +875,7 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
   - **Màn Đăng nhập Hệ thống Web CRM riêng**: `/auth` (hoặc `/auth?portal=crm`) - Giao diện quản trị viên hệ thống CRM, Email/Username + Mật khẩu, Google & Apple OAuth, ThemeSwitcher.
   - **Màn Đăng nhập App ViOne Mobile riêng**: `/vione/login` - Giao diện ViOne Mobile thuần túy độc quyền (nền đen `#0A0A0B`, chữ đồng `#D8B282`, hình nền `connect-auth-bg.jpg`, Logo ViOne Business Connect, quét danh thiếp NFC/QR code, Google/Apple OAuth). Hoàn toàn không có tab hay nút chuyển sang Hiệp hội.
   - **Màn Đăng nhập App Hiệp hội CEO 1983 riêng**: `/association/login` - Giao diện hội viên CLB Doanh Nhân CEO 1983 độc quyền (nhận diện xanh Navy `#0B0F19`, Logo CEO 1983, form Email/Mã hội viên + Mật khẩu, kích hoạt tài khoản hội viên). Hoàn toàn không có nút chuyển sang ViOne.
+  - **Bảo Vệ Độc Lập Tuyệt Đối Route Hiệp Hội (`/association`)**: Loại bỏ hoàn toàn bẫy redirect sang ViOne (`isVioneLaunch` / `isVioneStandaloneContext`) trong `association.tsx`. Mọi truy cập chưa đăng nhập tại `/association/*` trên cả Web, PWA và Native APK đều được điều hướng chuẩn xác về `/association/login`. File cấu hình APK CEO 1983 (`capacitor.config.json`) trỏ trực tiếp về `http://14.225.217.232:5000/association`, đảm bảo khi tải và mở app native luôn hiển thị 100% giao diện Hiệp hội CEO 1983.
 - **Cài Đặt & Ảnh Đại Diện (`/association/settings`)**:
   - Route độc lập, loại bỏ việc bấm nút Cài đặt bị chuyển hướng về ViOne.
   - Upload avatar trực tiếp lên MinIO bucket `vione-media` / `avatars`, đồng bộ tự động qua 3 bảng `user_profiles`, `business_identities`, `vione_users`.
@@ -896,3 +897,40 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
 ### 9.4. Chuẩn Hóa Thương Hiệu & Nút Bấm
 - **Nút Lưu ViOne**: Nền đen mờ cao cấp (`bg-[#121214]`), viền vàng đồng mảnh (`border-[#D4AF37]/50`), chữ vàng đồng sáng (`text-[#F5E0A3]`), không dùng nền xanh đen.
 - **Logo ViOne**: Loại bỏ path chữ 'v' lồng bên trong chữ 'O' tại component `ViOneLogo.tsx`.
+
+### 9.5. Kiến Trúc Nâng Cấp Toàn Diện App Hiệp Hội Doanh Nhân CEO 1983 (13 Hạng Mục)
+- **1. Header & Nhận diện Logo**:
+  - Logo CEO 1983 được phóng to tối ưu hiển thị (`h-12 w-auto max-w-[170px]`), loại bỏ toàn bộ các chuỗi text rườm rà xung quanh để định vị thương hiệu sắc nét và sang trọng ngay khi mở ứng dụng.
+- **2. Tiêu chuẩn UX/UI Đa Thiết Bị (iOS, Android, Xiaomi)**:
+  - Áp dụng hệ thống biến CSS safe-area insets: `env(safe-area-inset-top)` và `env(safe-area-inset-bottom)`.
+  - Phân tầng Typography theo chuẩn Apple Human Interface Guidelines: font `-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter`, độ nổi (contrast) cao, nền frosted glass mờ ảo tự nhiên (`backdrop-blur-md`).
+- **3. Điều Hướng Cố Định & Né Bàn Phím Ảo (Keyboard-Avoiding Navigation)**:
+  - Tích hợp hook `useVirtualKeyboard` theo dõi sự kiện resize của `window.visualViewport`. Khi người dùng gõ phím trên thiết bị di động, Footer TabBar tự động ẩn/né mượt mà, loại bỏ triệt để hiện tượng footer bị đẩy đè lên ô nhập liệu hoặc thanh gửi tin nhắn.
+  - Loại bỏ hoàn toàn khối preview thẻ QR pass to choán chỗ trên hero trang chủ, chỉ duy trì duy nhất nút quét QR tại trung tâm Footer TabBar.
+- **4. Thẻ Hội Viên Luxury & Tương Phản Chuẩn**:
+  - Toàn bộ thông tin hội viên trên thẻ (Họ tên, Mã số, Chức vụ, Hạn thẻ) được ép kiểu chữ trắng thuần `#FFFFFF` (`text-white`, `text-white/90`, `text-white/70`).
+  - Áp dụng hiệu ứng ánh kim lướt qua (`vba-shine`) và lớp nền sang trọng trên tất cả các chủ đề thẻ (Classic, Gold Luxury, Sapphire, Emerald, Obsidian).
+- **5. Kết Nối Bạn Bè & Nhắn Tin Messenger Chuẩn Facebook**:
+  - Khắc phục lỗi backend `sendMemberMessage`: định danh linh hoạt `myCode` dựa trên `user_id`, `id` hoặc `email` trong bảng `members`, cho phép gửi tin nhắn tức thì cho bất kỳ hội viên nào.
+  - Giao diện cuộc gọi điện thoại và video call chuẩn Messenger: Modal `MessengerCallModal` với chuông reo sinh động, biểu tượng mã hóa đầu cuối E2E, vòng sóng âm lan tỏa (wave pulse), bộ đếm thời gian trò chuyện, nút bật/tắt micro, chuyển đổi camera, bật loa ngoài và ngắt kết nối.
+- **6. Thông Báo Badge Hoạt Họa Click-to-Dismiss**:
+  - Đổi tên "đặc quyền" thành "ưu đãi".
+  - Các nút chức năng nhanh (Danh thiếp số, Sự kiện, Tin tức, Ưu đãi, Ban thư ký) sở hữu badge số thông báo kèm hiệu ứng hoạt họa nhấp nháy/nhún nhảy (`animate-bounce`).
+  - Người dùng click vào xem thì hiệu ứng và badge số mới biến mất, trạng thái được lưu bền vững vào `localStorage`.
+- **7 & 12. Trang Cá Nhân Chuẩn Facebook 100% & Tối Giản Ngôn Ngữ**:
+  - Tái hiện cấu trúc trang cá nhân Facebook Mobile Profile: Ảnh bìa (Cover photo) toàn chiều ngang, avatar nổi bo tròn chồng lên ảnh bìa kèm biểu tượng máy ảnh, tiểu sử bio, nút nổi bật "+ Thêm vào tin", "Chỉnh sửa trang cá nhân", mục Chi tiết giới thiệu, lưới bạn bè 6 ô với số lượng bạn chung, thanh công cụ "Bạn đang nghĩ gì?" và dòng thời gian bài viết.
+  - Bộ chọn ngôn ngữ tối giản: Không dùng màu sắc cầu vồng, hiển thị cờ và tên ngôn ngữ đang chọn (`🇻🇳 Tiếng Việt`), chọn thì mở dropdown xuống dưới.
+- **8. Đa Dạng Hóa Icon Quyền Lợi**:
+  - Thay thế icon trái tim đơn điệu bằng bộ icon tương xứng theo ngữ cảnh: `Handshake` (Hợp tác kết nối), `BookOpen` (Đào tạo & Hội thảo), `TrendingUp` (Xúc tiến thương mại), `Gift` (Quà tặng & Ưu đãi), `Award` (Vinh danh & Bổ nhiệm), `ShieldCheck` (Bảo trợ & Quyền lợi pháp lý), `Sparkles` (Đặc quyền VIP).
+- **9. Chuẩn Hóa Màu Sắc Trang Xem Tin Tức**:
+  - Thay thế tông vàng nâu cũ `#D8B282`/`#F6E1C3` bằng giao diện Slate tối thanh lịch (`#0B1220`), viền thẻ sắc nét, tiêu đề trắng đậm, badge phân loại Xanh dương hoàng gia (Royal Blue `bg-blue-600`), nút thao tác đóng bài viết tuân thủ bảng màu chuẩn 5 màu (Trắng, Xanh dương, Đen, Xanh lá, Đỏ).
+- **10. Sự Kiện Nổi Bật Kèm Bộ Đếm & Số Lượng Đăng Ký**:
+  - Nút "Xem tất cả" tích hợp số đếm trực quan `(3)`.
+  - Mỗi thẻ sự kiện hiển thị sinh động số lượng doanh nhân đã xác nhận tham dự (`🔥 48 doanh nhân đã đăng ký`) kích thích tinh thần kết nối giao thương.
+- **11. Danh Thiếp Số Trực Quan (Mini Digital Card) & Sửa Lỗi Tải Ảnh**:
+  - Thay vì danh sách đơn điệu, mỗi danh thiếp được trình bày dưới dạng Mini Digital Card trực quan với dải màu gradient header, avatar nổi bo tròn, thông tin liên hệ, hộp hiển thị đường dẫn công khai `/b/{slug}` kèm nút 1 chạm sao chép link (`Copy`).
+  - Khắc phục triệt để lỗi không hiển thị ảnh khi xem công khai bằng cách áp dụng hàm `resolveMediaUrl` cho avatarUrl và coverUrl trong `PublicDigitalCard.tsx`, `b.$slug.tsx`, `CardPreviewModal.tsx`, `association.business-cards.tsx` và `api-client.ts`.
+- **13. Theme Sự Kiện Lễ Hội (Tết Trung Thu) & Toggle Quản Lý**:
+  - Tạo component `SeasonalEventHeader` trang trí các yếu tố lễ hội Trung Thu truyền thống Việt Nam: Đèn lồng ông sao đung đưa (`animate-bounce`), dây tua rua đỏ vàng, vầng trăng rực sáng (`animate-pulse`) và các vì sao lấp lánh.
+  - Cho phép hội viên chủ động bật hoặc tắt theme sự kiện thông qua công tắc Switch tại trang Cá nhân, cập nhật trạng thái thời gian thực thông qua `CustomEvent`.
+  - Kênh CRM đổi tên thành "Kênh thông báo hệ thống", giải mã an toàn `safeDecode` các chuỗi URL encoded tiếng Việt (`H%E1%BB%8Dp...`) trên thư mời họp và thông báo giao dịch.

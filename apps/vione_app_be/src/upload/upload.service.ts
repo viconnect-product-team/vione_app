@@ -16,12 +16,16 @@ export class UploadService {
     const safeFilename = `avatars/${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
     const url = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
     
-    // Save upload metadata
-    const uploadId = randomUUID();
-    await this.prisma.$executeRaw`
-      INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
-      VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
-    `;
+    // Save upload metadata (non-fatal if uuid check fails)
+    try {
+      const uploadId = randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
+        VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
+      `;
+    } catch (err: any) {
+      console.warn('user_uploads metadata insert notice:', err?.message);
+    }
 
     // Save url to database user_profiles
     await this.prisma.$executeRaw`
@@ -33,6 +37,20 @@ export class UploadService {
     // Save url to database business_identities
     await this.prisma.$executeRaw`
       UPDATE public.business_identities
+      SET avatar_url = ${url}
+      WHERE owner_user_id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save url to database members
+    await this.prisma.$executeRaw`
+      UPDATE public.members
+      SET avatar = ${url}
+      WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save url to database member_business_cards
+    await this.prisma.$executeRaw`
+      UPDATE public.member_business_cards
       SET avatar_url = ${url}
       WHERE owner_user_id = ${userId}::uuid
     `.catch(() => null);

@@ -4,6 +4,7 @@ import { QrCanvas } from "@/components/member/QrCanvas";
 import { nfcSupport, type NfcSupport } from "@/lib/business-card-nfc";
 import { resolveTheme } from "@/lib/business-card/business-card.share";
 import { useT } from "@/lib/i18n";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 /**
  * Preview a business card before publishing: renders the card summary, a QR of
@@ -74,7 +75,7 @@ export function CardPreviewModal({
           <div className="flex items-center gap-3 rounded-2xl border border-[var(--vba-border-soft)] p-3">
             {avatarUrl ? (
               <img
-                src={avatarUrl}
+                src={resolveMediaUrl(avatarUrl) || avatarUrl}
                 alt=""
                 className="h-14 w-14 shrink-0 rounded-xl object-cover"
                 width={56}

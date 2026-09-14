@@ -3707,20 +3707,50 @@ enum tenant_type {
 }
 
 model member_business_cards {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug               String   @unique
-  card_kind          String
-  status             String
-  public_mode        String
-  display_name       String?
-  professional_title String?
-  company_name       String?
-  avatar_url         String?
-  owner_user_id      String?  @db.Uuid
-  member_id          String?  @db.Uuid
-  association_id     String?  @db.Uuid
-  created_at         DateTime @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                   String    @unique
+  card_kind              String
+  status                 String
+  public_mode            String
+  display_name           String?
+  professional_title     String?
+  company_name           String?
+  company_logo_url       String?
+  avatar_url             String?
+  cover_url              String?
+  headline               String?
+  bio                    String?
+  website                String?
+  work_email             String?
+  work_phone             String?
+  zalo_url               String?
+  linkedin_url           String?
+  facebook_url           String?
+  youtube_url            String?
+  tiktok_url             String?
+  address                String?
+  map_url                String?
+  theme_id               String?
+  custom_brand_color     String?
+  branding_settings      Json?
+  visibility_settings    Json?
+  cta_settings           Json?
+  seo_settings           Json?
+  published_at           DateTime? @db.Timestamptz(6)
+  last_viewed_at         DateTime? @db.Timestamptz(6)
+  display_name_en        String?
+  professional_title_en  String?
+  company_name_en        String?
+  headline_en            String?
+  bio_en                 String?
+  qr_options             Json?
+  allow_contact_exchange Boolean?
+  owner_user_id          String?   @db.Uuid
+  member_id              String?
+  company_id             String?   @db.Uuid
+  association_id         String?   @db.Uuid
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
 
   skills       business_card_skills[]
   services     business_card_services[]

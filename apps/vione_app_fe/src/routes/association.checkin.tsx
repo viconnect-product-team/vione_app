@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -13,6 +13,12 @@ import {
   History,
   CloudOff,
   Cloud,
+  User,
+  UserPlus,
+  MessageSquare,
+  Building2,
+  BadgeCheck,
+  X,
 } from "lucide-react";
 import { MemberHeader } from "@/components/member/MemberShell";
 import {
@@ -24,6 +30,9 @@ import {
 import { useT } from "@/lib/i18n";
 import { extractScanCode } from "@/lib/scan";
 import { extractNdefPayload, type NdefReadingEventLike } from "@/hooks/use-nfc-scanner";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { toast } from "sonner";
+import heroImg from "@/assets/vba-hero.jpg";
 
 export const Route = createFileRoute("/association/checkin")({
   component: CheckinScreen,
@@ -41,12 +50,25 @@ function fmtTime(iso: string) {
 
 function CheckinScreen() {
   const t = useT();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<"qr" | "nfc">("qr");
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<MyCheckinRecord | null>(null);
   const [history, setHistory] = useState<MyCheckinRecord[]>([]);
   const [online, setOnline] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [scannedMember, setScannedMember] = useState<{
+    code: string;
+    name: string;
+    personName: string;
+    personTitle: string;
+    avatar?: string | null;
+    coverUrl?: string | null;
+    userId?: string | null;
+    phone?: string | null;
+    email?: string | null;
+  } | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const fetchState = useServerFn(getMyCheckinState);
   const submitCheckin = useServerFn(checkInMyself);
 
@@ -103,6 +125,24 @@ function CheckinScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --- Real QR (camera) + NFC scanning ---
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const qrControls = useRef<{ stop: () => void } | null>(null);
+  const nfcAbort = useRef<AbortController | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const stopScan = useCallback(() => {
+    qrControls.current?.stop();
+    qrControls.current = null;
+    try {
+      nfcAbort.current?.abort();
+    } catch {
+      /* ignore */
+    }
+    nfcAbort.current = null;
+    setScanning(false);
+  }, []);
+
   // Debounced handler: ignore duplicates within a short window and require
   // the server to be reachable — Option A (online-required check-in).
   const lastScan = useRef<{ payload: string; t: number } | null>(null);
@@ -119,6 +159,33 @@ function CheckinScreen() {
         return;
       }
       lastScan.current = { payload: resolved, t: now };
+
+      // 1. Check if payload is a member card code or URL
+      const cardMatch =
+        resolved.match(/(M1983-[0-9A-Za-z-]+)/i) ||
+        (raw.includes("/card/") ? raw.split("/card/")[1]?.split(/[\/?#]/)[0] : null);
+      const memberCode = cardMatch ? (typeof cardMatch === "string" ? cardMatch : cardMatch[1]) : null;
+
+      if (memberCode) {
+        try {
+          const cardData = await fetchNestApi<any>(`/business-cards/public-card/${memberCode}`);
+          if (cardData && (cardData.fullName || cardData.name || cardData.memberCode)) {
+            stopScan();
+            setScannedMember({
+              code: cardData.memberCode || memberCode,
+              name: cardData.companyName || cardData.company || "Công ty thành viên CEO 1983",
+              personName: cardData.fullName || cardData.displayName || cardData.name || "Hội viên Doanh Nhân",
+              personTitle: cardData.executiveRole || cardData.jobTitle || cardData.headline || "Ban Thường Trực • Hội viên CEO 1983",
+              avatar: cardData.avatarUrl || cardData.avatar || null,
+              coverUrl: cardData.coverUrl || cardData.cover || null,
+              userId: cardData.userId || null,
+              phone: cardData.phone || null,
+              email: cardData.email || null,
+            });
+            return;
+          }
+        } catch {}
+      }
 
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         setResult({
@@ -151,26 +218,8 @@ function CheckinScreen() {
         setSubmitting(false);
       }
     },
-    [mode, submitCheckin, refresh, submitting, t],
+    [mode, submitCheckin, refresh, submitting, t, stopScan],
   );
-
-  // --- Real QR (camera) + NFC scanning ---
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const qrControls = useRef<{ stop: () => void } | null>(null);
-  const nfcAbort = useRef<AbortController | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const stopScan = useCallback(() => {
-    qrControls.current?.stop();
-    qrControls.current = null;
-    try {
-      nfcAbort.current?.abort();
-    } catch {
-      /* ignore */
-    }
-    nfcAbort.current = null;
-    setScanning(false);
-  }, []);
 
   const startScan = useCallback(async () => {
     setError(null);
@@ -479,6 +528,142 @@ function CheckinScreen() {
           </div>
         )}
       </div>
+
+      {/* Scanned Member Profile Modal — Rich Opponent Identity Display */}
+      {scannedMember && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-fade-in"
+          onClick={() => setScannedMember(null)}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white animate-scale-in border border-slate-200 dark:border-slate-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cover photo banner */}
+            <div className="relative h-28 w-full overflow-hidden bg-slate-900">
+              <img
+                src={
+                  scannedMember.coverUrl
+                    ? resolveMediaUrl(scannedMember.coverUrl) || scannedMember.coverUrl
+                    : heroImg
+                }
+                alt="Cover"
+                className="h-full w-full object-cover opacity-90"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <button
+                onClick={() => setScannedMember(null)}
+                className="absolute top-3 right-3 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/75 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="absolute bottom-2 left-4 text-[10.5px] font-bold text-white/90 drop-shadow-sm flex items-center gap-1">
+                <span>CLB DOANH NHÂN CEO 1983</span>
+              </div>
+            </div>
+
+            {/* Body content */}
+            <div className="p-5 pt-0 text-center space-y-3">
+              {/* Overlapping Avatar with Verified Badge */}
+              <div className="relative -mt-10 mx-auto w-20 h-20">
+                {scannedMember.avatar ? (
+                  <img
+                    src={resolveMediaUrl(scannedMember.avatar) || scannedMember.avatar}
+                    alt={scannedMember.personName}
+                    className="w-full h-full rounded-2xl object-cover ring-3 ring-white dark:ring-[#0f172a] shadow-lg"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-2xl bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600 font-bold text-xl ring-3 ring-white dark:ring-[#0f172a] shadow-lg">
+                    <User className="h-10 w-10" />
+                  </div>
+                )}
+                <BadgeCheck className="absolute -bottom-1 -right-1 h-5 w-5 text-sky-500 fill-white dark:fill-slate-900" />
+              </div>
+
+              {/* Name & Association Role */}
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  {scannedMember.personName || "Hội viên CLB CEO 1983"}
+                </h3>
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-600 dark:text-amber-400">
+                    {scannedMember.personTitle || "Ban Thường Trực • Hội viên CEO 1983"}
+                  </span>
+                  <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
+                    {scannedMember.code}
+                  </span>
+                </div>
+              </div>
+
+              {/* Enterprise / Company name */}
+              {scannedMember.name && (
+                <div className="rounded-xl bg-slate-50 dark:bg-white/[0.04] p-2.5 border border-slate-100 dark:border-white/5 text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5">
+                  <Building2 className="h-4 w-4 text-sky-500 shrink-0" />
+                  <span className="truncate">{scannedMember.name}</span>
+                </div>
+              )}
+
+              {/* Action Buttons: Message & Connect */}
+              <div className="flex gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const pName = scannedMember.personName || scannedMember.name;
+                    const cCode = scannedMember.code;
+                    setScannedMember(null);
+                    navigate({
+                      to: "/association/messages" as any,
+                      search: { peerCode: cCode, peerName: pName } as any,
+                    });
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 py-2.5 text-[12px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition active:scale-95 cursor-pointer"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Nhắn tin
+                </button>
+
+                <button
+                  type="button"
+                  disabled={connecting}
+                  onClick={async () => {
+                    setConnecting(true);
+                    try {
+                      await fetchNestApi("/network/requests", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          targetUserId: scannedMember.userId || scannedMember.code,
+                          memberCode: scannedMember.code,
+                          message: `Xin chào! Tôi đã quét mã QR của bạn và rất mong được kết nối!`,
+                        }),
+                      });
+                      toast.success("Đã gửi lời mời kết nối thành công!");
+                      setScannedMember(null);
+                    } catch {
+                      toast.error("Không thể gửi lời mời kết nối");
+                    } finally {
+                      setConnecting(false);
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-sky-500/20 disabled:opacity-60"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>{connecting ? "Đang gửi..." : "Kết nối ngay"}</span>
+                </button>
+              </div>
+
+              <div className="pt-1">
+                <Link
+                  to="/card/$code"
+                  params={{ code: scannedMember.code }}
+                  className="text-[11.5px] font-semibold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-white underline"
+                >
+                  Xem chi tiết thẻ VIP doanh nhân
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

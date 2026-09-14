@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAutoHideHeader } from "./useAutoHideHeader";
+import { DeepTechLayoutWrapper } from "./wrappers/DeepTechLayoutWrapper";
+import { useDoorThemeSwitch } from "./DoorThemeTransition";
 
 export type ThemeMode = "light" | "dark" | "contrast";
 
@@ -332,7 +334,7 @@ const REVIEWS = [
 
 export function BusinessConnectLandingV6() {
   const [theme, setTheme] = useState<ThemeMode>("dark");
-  const [isSliding, setIsSliding] = useState(false);
+  const { isTransitioning, targetTheme, switchTheme } = useDoorThemeSwitch(theme, setTheme);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
@@ -340,31 +342,15 @@ export function BusinessConnectLandingV6() {
   const { isVisible: isHeaderVisible, isAtTop } = useAutoHideHeader();
 
   const handleSwitchTheme = (nextTheme: ThemeMode) => {
-    if (nextTheme === theme) return;
-    setIsSliding(true);
-    setTimeout(() => {
-      setTheme(nextTheme);
-    }, 320);
-    setTimeout(() => {
-      setIsSliding(false);
-    }, 750);
+    switchTheme(nextTheme);
   };
 
   return (
-    <div
-      className={`min-h-screen relative font-sans transition-colors duration-500 ${
-        theme === "dark"
-          ? "bg-[#0C0D0E] text-[#E5E0D8]"
-          : theme === "contrast"
-            ? "bg-white text-black"
-            : "bg-[#F7F5F0] text-[#332A1F]"
-      }`}
+    <DeepTechLayoutWrapper
+      theme={theme}
+      isThemeTransitioning={isTransitioning}
+      targetTheme={targetTheme}
     >
-      {/* 3-LAYER MONUMENT BACKGROUND WITH 50% SCROLL PARALLAX */}
-      <MonumentThreeLayerBackground theme={theme} />
-
-      {/* STONE SLABS THEME TRANSITION */}
-      <StoneSlabsThemeTransition isSliding={isSliding} theme={theme} />
 
       {/* =========================================================================
           1. HEADER
@@ -1095,6 +1081,6 @@ export function BusinessConnectLandingV6() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </DeepTechLayoutWrapper>
   );
 }

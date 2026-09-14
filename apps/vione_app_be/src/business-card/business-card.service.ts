@@ -10,150 +10,315 @@ export class BusinessCardService {
   constructor(private prisma: PrismaService) {}
 
   async listMyCards(userId: string) {
-    return this.prisma.member_business_cards.findMany({
-      where: { owner_user_id: userId },
-      orderBy: { updated_at: 'desc' },
-    });
+    const cards = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY updated_at DESC`,
+      userId,
+    );
+    return cards;
   }
 
   async getMyCard(userId: string, id: string) {
-    const card = await this.prisma.member_business_cards.findUnique({
-      where: { id },
-      include: {
-        skills: { orderBy: { sort_order: 'asc' } },
-        services: { orderBy: { sort_order: 'asc' } },
-        needs: { orderBy: { sort_order: 'asc' } },
-      },
-    });
+    const cards = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+      id,
+    );
 
-    if (!card) throw new NotFoundException('Card not found');
+    if (!cards.length) throw new NotFoundException('Card not found');
+    const card = cards[0];
     if (card.owner_user_id !== userId)
       throw new UnauthorizedException('Not your card');
 
-    return card;
+    const skills = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    const services = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    const needs = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    return { ...card, skills, services, needs };
   }
 
   async getPublicBySlug(slug: string) {
-    return this.prisma.member_business_cards.findUnique({
-      where: { slug },
-      include: {
-        skills: { orderBy: { sort_order: 'asc' } },
-        services: { orderBy: { sort_order: 'asc' } },
-        needs: { orderBy: { sort_order: 'asc' } },
-      },
-    });
+    const cards = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE slug = $1`,
+      slug,
+    );
+    if (!cards.length) return null;
+    const card = cards[0];
+    const id = card.id;
+
+    const skills = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    const services = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    const needs = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
+      id,
+    ).catch(() => []);
+
+    return { ...card, skills, services, needs };
   }
 
   async saveCard(userId: string, data: any) {
-    const { id, skills, services, needs, ...cardData } = data;
+    const id = data.id;
+    const slug = (data.slug || `card-${Date.now()}`).trim();
+    const cardKind = data.card_kind || data.cardKind || 'primary';
+    const publicMode = data.public_mode || data.publicMode || 'members_only';
+    const status = data.status || 'published';
+    const displayName = data.display_name ?? data.displayName ?? null;
+    const professionalTitle = data.professional_title ?? data.professionalTitle ?? null;
+    const companyName = data.company_name ?? data.companyName ?? null;
+    const companyLogoUrl = data.company_logo_url ?? data.companyLogoUrl ?? null;
+    const avatarUrl = data.avatar_url ?? data.avatarUrl ?? null;
+    const coverUrl = data.cover_url ?? data.coverUrl ?? null;
+    const headline = data.headline ?? null;
+    const bio = data.bio ?? null;
+    const website = data.website ?? null;
+    const workEmail = data.work_email ?? data.workEmail ?? null;
+    const workPhone = data.work_phone ?? data.workPhone ?? null;
+    const zaloUrl = data.zalo_url ?? data.zaloUrl ?? null;
+    const linkedinUrl = data.linkedin_url ?? data.linkedinUrl ?? null;
+    const facebookUrl = data.facebook_url ?? data.facebookUrl ?? null;
+    const youtubeUrl = data.youtube_url ?? data.youtubeUrl ?? null;
+    const tiktokUrl = data.tiktok_url ?? data.tiktokUrl ?? null;
+    const address = data.address ?? null;
+    const mapUrl = data.map_url ?? data.mapUrl ?? null;
+    const themeId = data.theme_id ?? data.themeId ?? null;
+    const customBrandColor = data.custom_brand_color ?? data.customBrandColor ?? null;
+    const visibilitySettings = JSON.stringify(data.visibility_settings || data.visibilitySettings || {});
+    const qrOptions = data.qr_options || data.qrOptions ? JSON.stringify(data.qr_options || data.qrOptions) : null;
+    const displayNameEn = data.display_name_en ?? data.displayNameEn ?? null;
+    const professionalTitleEn = data.professional_title_en ?? data.professionalTitleEn ?? null;
+    const companyNameEn = data.company_name_en ?? data.companyNameEn ?? null;
+    const headlineEn = data.headline_en ?? data.headlineEn ?? null;
+    const bioEn = data.bio_en ?? data.bioEn ?? null;
+
+    let targetId = id;
 
     if (id) {
-      const existing = await this.prisma.member_business_cards.findUnique({
-        where: { id },
-      });
-      if (!existing || existing.owner_user_id !== userId) {
+      const existing = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+        id,
+      );
+      if (!existing.length || existing[0].owner_user_id !== userId) {
         throw new UnauthorizedException('Not authorized');
       }
 
-      await this.prisma.business_card_skills.deleteMany({
-        where: { card_id: id },
-      });
-      await this.prisma.business_card_services.deleteMany({
-        where: { card_id: id },
-      });
-      await this.prisma.business_card_needs.deleteMany({
-        where: { card_id: id },
-      });
-
-      return this.prisma.member_business_cards.update({
-        where: { id },
-        data: {
-          ...cardData,
-          skills: { create: skills || [] },
-          services: { create: services || [] },
-          needs: { create: needs || [] },
-        },
-      });
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.member_business_cards SET
+          slug = COALESCE($1, slug),
+          card_kind = $2,
+          public_mode = $3,
+          display_name = $4,
+          professional_title = $5,
+          company_name = $6,
+          company_logo_url = $7,
+          avatar_url = $8,
+          cover_url = $9,
+          headline = $10,
+          bio = $11,
+          website = $12,
+          work_email = $13,
+          work_phone = $14,
+          zalo_url = $15,
+          linkedin_url = $16,
+          facebook_url = $17,
+          youtube_url = $18,
+          tiktok_url = $19,
+          address = $20,
+          map_url = $21,
+          theme_id = $22,
+          custom_brand_color = $23,
+          visibility_settings = $24::jsonb,
+          qr_options = $25::jsonb,
+          display_name_en = $26,
+          professional_title_en = $27,
+          company_name_en = $28,
+          headline_en = $29,
+          bio_en = $30,
+          updated_at = NOW()
+        WHERE id = $31::uuid`,
+        slug, cardKind, publicMode, displayName, professionalTitle,
+        companyName, companyLogoUrl, avatarUrl, coverUrl, headline,
+        bio, website, workEmail, workPhone, zaloUrl,
+        linkedinUrl, facebookUrl, youtubeUrl, tiktokUrl, address,
+        mapUrl, themeId, customBrandColor, visibilitySettings, qrOptions,
+        displayNameEn, professionalTitleEn, companyNameEn, headlineEn, bioEn,
+        id,
+      );
     } else {
-      return this.prisma.member_business_cards.create({
-        data: {
-          ...cardData,
-          owner_user_id: userId,
-          skills: { create: skills || [] },
-          services: { create: services || [] },
-          needs: { create: needs || [] },
-        },
-      });
+      const inserted = await this.prisma.$queryRawUnsafe<any[]>(
+        `INSERT INTO public.member_business_cards (
+          slug, card_kind, status, public_mode, display_name, professional_title,
+          company_name, company_logo_url, avatar_url, cover_url, headline, bio,
+          website, work_email, work_phone, zalo_url, linkedin_url, facebook_url,
+          youtube_url, tiktok_url, address, map_url, theme_id, custom_brand_color,
+          visibility_settings, qr_options, display_name_en, professional_title_en,
+          company_name_en, headline_en, bio_en, owner_user_id, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9, $10, $11, $12,
+          $13, $14, $15, $16, $17, $18,
+          $19, $20, $21, $22, $23, $24,
+          $25::jsonb, $26::jsonb, $27, $28,
+          $29, $30, $31, $32::uuid, NOW()
+        ) RETURNING id`,
+        slug, cardKind, status, publicMode, displayName, professionalTitle,
+        companyName, companyLogoUrl, avatarUrl, coverUrl, headline, bio,
+        website, workEmail, workPhone, zaloUrl, linkedinUrl, facebookUrl,
+        youtubeUrl, tiktokUrl, address, mapUrl, themeId, customBrandColor,
+        visibilitySettings, qrOptions, displayNameEn, professionalTitleEn,
+        companyNameEn, headlineEn, bioEn, userId,
+      );
+      targetId = inserted[0]?.id;
     }
+
+    // Sync avatar to members and user_profiles
+    if (avatarUrl) {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.members SET avatar = $1 WHERE user_id = $2::uuid OR id = $2::uuid`,
+        avatarUrl, userId,
+      ).catch(() => null);
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.user_profiles SET avatar_url = $1 WHERE user_id = $2::uuid OR id = $2::uuid`,
+        avatarUrl, userId,
+      ).catch(() => null);
+    }
+
+    // Sync skills, services, needs
+    if (targetId) {
+      await this.prisma.$executeRawUnsafe(
+        `DELETE FROM public.business_card_skills WHERE card_id = $1::uuid`,
+        targetId,
+      ).catch(() => null);
+      await this.prisma.$executeRawUnsafe(
+        `DELETE FROM public.business_card_services WHERE card_id = $1::uuid`,
+        targetId,
+      ).catch(() => null);
+      await this.prisma.$executeRawUnsafe(
+        `DELETE FROM public.business_card_needs WHERE card_id = $1::uuid`,
+        targetId,
+      ).catch(() => null);
+
+      const skills = data.skills || [];
+      for (let i = 0; i < skills.length; i++) {
+        const s = skills[i];
+        const label = typeof s === 'string' ? s : s?.label;
+        if (label) {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.business_card_skills (card_id, label, sort_order) VALUES ($1::uuid, $2, $3)`,
+            targetId, label, i,
+          ).catch(() => null);
+        }
+      }
+
+      const services = data.services || [];
+      for (let i = 0; i < services.length; i++) {
+        const s = services[i];
+        if (s?.title) {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.business_card_services (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
+            targetId, s.title, s.description || null, s.category || null, i,
+          ).catch(() => null);
+        }
+      }
+
+      const needs = data.needs || [];
+      for (let i = 0; i < needs.length; i++) {
+        const n = needs[i];
+        if (n?.title) {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.business_card_needs (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
+            targetId, n.title, n.description || null, n.category || null, i,
+          ).catch(() => null);
+        }
+      }
+    }
+
+    return { id: targetId, ok: true };
   }
 
   async setStatus(userId: string, id: string, status: string) {
-    const existing = await this.prisma.member_business_cards.findUnique({
-      where: { id },
-    });
-    if (!existing || existing.owner_user_id !== userId) {
+    const existing = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+      id,
+    );
+    if (!existing.length || existing[0].owner_user_id !== userId) {
       throw new UnauthorizedException('Not authorized');
     }
 
-    return this.prisma.member_business_cards.update({
-      where: { id },
-      data: { status },
-    });
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.member_business_cards SET status = $1, updated_at = NOW() WHERE id = $2::uuid`,
+      status, id,
+    );
+    return { ok: true };
   }
+
   async getPreviewBySlug(slug: string) {
-    return this.prisma.member_business_cards.findUnique({
-      where: { slug },
-      include: {
-        skills: { orderBy: { sort_order: 'asc' } },
-        services: { orderBy: { sort_order: 'asc' } },
-        needs: { orderBy: { sort_order: 'asc' } },
-      },
-    });
+    return this.getPublicBySlug(slug);
   }
 
   async listPublicProfileSlugs() {
-    const cards = await this.prisma.member_business_cards.findMany({
-      where: { public_mode: 'public', status: 'published' },
-      select: { slug: true, updated_at: true },
-    });
+    const cards = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT slug, updated_at FROM public.member_business_cards WHERE public_mode = 'public' AND status = 'published'`,
+    );
     return cards.map((c) => ({
       slug: c.slug,
-      updatedAt: c.updated_at.toISOString(),
+      updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : new Date().toISOString(),
     }));
   }
 
   async setPrimary(userId: string, id: string) {
-    const existing = await this.prisma.member_business_cards.findUnique({
-      where: { id },
-    });
-    if (!existing || existing.owner_user_id !== userId) {
+    const existing = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+      id,
+    );
+    if (!existing.length || existing[0].owner_user_id !== userId) {
       throw new UnauthorizedException('Not authorized');
     }
 
     // Demote all others
-    await this.prisma.member_business_cards.updateMany({
-      where: { owner_user_id: userId, id: { not: id } },
-      data: { card_kind: 'secondary' },
-    });
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.member_business_cards SET card_kind = 'secondary' WHERE owner_user_id = $1::uuid AND id != $2::uuid`,
+      userId, id,
+    );
 
     // Promote this one
-    await this.prisma.member_business_cards.update({
-      where: { id },
-      data: { card_kind: 'primary' },
-    });
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.member_business_cards SET card_kind = 'primary' WHERE id = $1::uuid`,
+      id,
+    );
 
     return { ok: true };
   }
 
   async deleteCard(userId: string, id: string) {
-    const existing = await this.prisma.member_business_cards.findUnique({
-      where: { id },
-    });
-    if (!existing || existing.owner_user_id !== userId) {
+    const existing = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+      id,
+    );
+    if (!existing.length || existing[0].owner_user_id !== userId) {
       throw new UnauthorizedException('Not authorized');
     }
 
-    await this.prisma.member_business_cards.delete({ where: { id } });
+    await this.prisma.$executeRawUnsafe(
+      `DELETE FROM public.member_business_cards WHERE id = $1::uuid`,
+      id,
+    );
     return { ok: true };
   }
 

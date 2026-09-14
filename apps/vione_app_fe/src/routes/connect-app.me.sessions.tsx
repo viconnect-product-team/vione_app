@@ -73,7 +73,7 @@ function SessionsPage() {
       try {
         const key = getDeviceKey();
         const data = await fetchNestApi<DeviceSessionInfo[]>(
-          `/connect-app/me/device-sessions${key ? `?deviceKey=${key}` : ""}`
+          `/connect-app/me/device-sessions${key ? `?deviceKey=${key}` : ""}`,
         );
         setSessions(data);
       } catch {
@@ -100,7 +100,7 @@ function SessionsPage() {
         const key = getDeviceKey();
         updated = await fetchNestApi<DeviceSessionInfo>(
           `/connect-app/me/device-sessions/${pending.id}${key ? `?deviceKey=${key}` : ""}`,
-          { method: "DELETE" }
+          { method: "DELETE" },
         );
       }
       setSessions((prev) => prev?.map((s) => (s.id === updated.id ? updated : s)) ?? prev);
@@ -124,14 +124,14 @@ function SessionsPage() {
         </p>
 
         {loadFailed ? (
-          <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6 text-center shadow-[var(--bc-mobile-shadow-v)]">
+          <section className="rounded-2xl bc-translucent-card p-6 text-center shadow-md">
             <p role="alert" className="text-[14px] text-[var(--bc-mobile-muted)]">
               {t("bc.mobile.me.loadError")}
             </p>
             <button
               type="button"
               onClick={() => void load()}
-              className="mt-3 min-h-11 rounded-full bg-[var(--bc-mobile-text)] px-6 text-[14px] font-semibold text-[var(--bc-mobile-surface)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+              className="mt-3 min-h-11 rounded-full btn-luxury-gold px-6 text-[14px] font-bold shadow-md shadow-[#D8B282]/25"
             >
               {t("bc.mobile.me.retry")}
             </button>
@@ -140,22 +140,18 @@ function SessionsPage() {
           <section
             aria-busy="true"
             aria-label={t("bc.mobile.me.sessions.pageTitle")}
-            className="flex justify-center rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-10 shadow-[var(--bc-mobile-shadow-v)]"
+            className="flex justify-center rounded-2xl bc-translucent-card p-10 shadow-md"
           >
             <Loader2
               aria-hidden="true"
-              className="h-6 w-6 animate-spin text-[var(--bc-mobile-muted)] motion-reduce:animate-none"
+              className="h-6 w-6 animate-spin text-[#D8B282] motion-reduce:animate-none"
               strokeWidth={1.8}
             />
           </section>
         ) : sessions.length === 0 ? (
-          <section className="rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-6 text-center shadow-[var(--bc-mobile-shadow-v)]">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
-              <MonitorSmartphone
-                aria-hidden="true"
-                className="h-5 w-5 text-[var(--bc-mobile-muted)]"
-                strokeWidth={1.8}
-              />
+          <section className="rounded-2xl bc-translucent-card p-6 text-center shadow-md">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-[rgba(216,178,130,0.25)] bg-[rgba(216,178,130,0.12)] text-[#D8B282]">
+              <MonitorSmartphone aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
             </div>
             <p className="mt-3 text-[14.5px] font-semibold text-[var(--bc-mobile-text)]">
               {t("bc.mobile.me.sessions.empty")}
@@ -167,14 +163,10 @@ function SessionsPage() {
               {[...active, ...revoked].map((s) => (
                 <li
                   key={s.id}
-                  className="flex items-start gap-3 rounded-3xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] p-4 shadow-[var(--bc-mobile-shadow-v)]"
+                  className="flex items-start gap-3 rounded-2xl bc-translucent-card p-4 shadow-md"
                 >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface-2)]">
-                    <Smartphone
-                      aria-hidden="true"
-                      className="h-5 w-5 text-[var(--bc-mobile-muted)]"
-                      strokeWidth={1.8}
-                    />
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[rgba(216,178,130,0.25)] bg-[rgba(216,178,130,0.12)] text-[#D8B282]">
+                    <Smartphone aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14.5px] font-semibold text-[var(--bc-mobile-text)]">
@@ -186,17 +178,17 @@ function SessionsPage() {
                     </p>
                     <p className="mt-1 flex flex-wrap gap-2 text-[11.5px] font-medium">
                       {s.isCurrent && (
-                        <span className="rounded-full bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[var(--bc-mobile-text)]">
+                        <span className="rounded-full border border-[rgba(216,178,130,0.35)] bg-[rgba(216,178,130,0.15)] px-2.5 py-0.5 text-[11px] font-bold text-[#F6E1C3]">
                           {t("bc.mobile.me.sessions.current")}
                         </span>
                       )}
                       {s.isStandalone && (
-                        <span className="rounded-full bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[var(--bc-mobile-muted)]">
+                        <span className="rounded-full bg-[var(--bc-mobile-surface-2)]/60 px-2 py-0.5 text-[var(--bc-mobile-muted)]">
                           {t("bc.mobile.me.sessions.pwa")}
                         </span>
                       )}
                       {s.revokedAt && (
-                        <span className="rounded-full bg-[var(--bc-mobile-surface-2)] px-2 py-0.5 text-[var(--bc-mobile-muted)]">
+                        <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-red-400">
                           {t("bc.mobile.me.sessions.revoked")}
                         </span>
                       )}
@@ -209,7 +201,7 @@ function SessionsPage() {
                         setRevokeFailed(false);
                         setPending(s);
                       }}
-                      className="min-h-11 shrink-0 rounded-full border border-[var(--bc-mobile-border)] px-4 text-[13px] font-semibold text-[var(--bc-mobile-text)] transition-colors hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-navy)] motion-reduce:transition-none"
+                      className="min-h-9 shrink-0 rounded-full btn-luxury-gold px-4 text-[12.5px] font-bold shadow-sm shadow-[#D8B282]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none cursor-pointer"
                     >
                       {t("bc.mobile.me.sessions.revokeAction")}
                     </button>

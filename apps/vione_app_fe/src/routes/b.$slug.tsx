@@ -33,6 +33,7 @@ import { buildProfileHead } from "@/lib/business-card/seo-engine";
 import { PublicDigitalCard } from "@/components/business-card/PublicDigitalCard";
 import { SaveCardButton } from "@/components/business-card/SaveCardButton";
 import { BusinessProfileRelationshipActions } from "@/components/connect/BusinessProfileRelationshipActions";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 const SITE = "https://qlhh.lovable.app";
 
@@ -296,11 +297,13 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 
 function CardView({ card }: { card: BusinessCard }) {
   const name = card.displayName || card.slug;
+  const resolvedCover = resolveMediaUrl(card.coverUrl) || card.coverUrl;
+  const resolvedAvatar = resolveMediaUrl(card.avatarUrl) || card.avatarUrl;
   return (
     <article className="vba-card overflow-hidden">
       <div className="relative h-24 bg-[var(--vba-gold-soft)]">
-        {card.coverUrl ? (
-          <img src={card.coverUrl} alt="" className="h-full w-full object-cover" />
+        {resolvedCover ? (
+          <img src={resolvedCover} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="vba-gold-grad h-full w-full opacity-30" />
         )}
@@ -308,9 +311,9 @@ function CardView({ card }: { card: BusinessCard }) {
 
       <div className="px-5 pb-5">
         <div className="-mt-10 flex items-end gap-3">
-          {card.avatarUrl ? (
+          {resolvedAvatar ? (
             <img
-              src={card.avatarUrl}
+              src={resolvedAvatar}
               alt={name}
               className="h-20 w-20 rounded-2xl border-2 border-[var(--vba-bg-2)] object-cover"
               width={80}

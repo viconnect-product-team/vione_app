@@ -159,6 +159,7 @@ import { Route as AssociationEventsRouteImport } from './routes/association.even
 import { Route as AssociationCheckinRouteImport } from './routes/association.checkin'
 import { Route as AssociationCardRouteImport } from './routes/association.card'
 import { Route as AssociationBusinessCardsRouteImport } from './routes/association.business-cards'
+import { Route as AdminLandingTemplatesRouteImport } from './routes/admin.landing-templates'
 import { Route as AdminDemoLeadsRouteImport } from './routes/admin.demo-leads'
 import { Route as AdminCtaAnalyticsRouteImport } from './routes/admin.cta-analytics'
 import { Route as AdminBusinessCardsRouteImport } from './routes/admin.business-cards'
@@ -191,6 +192,7 @@ import { Route as ConnectAppNetworkRequestsRouteImport } from './routes/connect-
 import { Route as ConnectAppNetworkPersonIdRouteImport } from './routes/connect-app.network.$personId'
 import { Route as ConnectAppMomentPersonIdRouteImport } from './routes/connect-app.moment.$personId'
 import { Route as ConnectAppMeSessionsRouteImport } from './routes/connect-app.me.sessions'
+import { Route as ConnectAppMeSecurityRouteImport } from './routes/connect-app.me.security'
 import { Route as ConnectAppMeIntelSettingsRouteImport } from './routes/connect-app.me.intel-settings'
 import { Route as ConnectAppMeEditRouteImport } from './routes/connect-app.me.edit'
 import { Route as ConnectAppMeCardsRouteImport } from './routes/connect-app.me.cards'
@@ -995,6 +997,11 @@ const AssociationBusinessCardsRoute =
     path: '/business-cards',
     getParentRoute: () => AssociationRoute,
   } as any)
+const AdminLandingTemplatesRoute = AdminLandingTemplatesRouteImport.update({
+  id: '/admin/landing-templates',
+  path: '/admin/landing-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDemoLeadsRoute = AdminDemoLeadsRouteImport.update({
   id: '/admin/demo-leads',
   path: '/admin/demo-leads',
@@ -1162,6 +1169,11 @@ const ConnectAppMomentPersonIdRoute =
 const ConnectAppMeSessionsRoute = ConnectAppMeSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
+  getParentRoute: () => ConnectAppMeRoute,
+} as any)
+const ConnectAppMeSecurityRoute = ConnectAppMeSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => ConnectAppMeRoute,
 } as any)
 const ConnectAppMeIntelSettingsRoute =
@@ -1477,6 +1489,7 @@ export interface FileRoutesByFullPath {
   '/admin/business-cards': typeof AdminBusinessCardsRouteWithChildren
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/admin/landing-templates': typeof AdminLandingTemplatesRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -1600,6 +1613,7 @@ export interface FileRoutesByFullPath {
   '/connect-app/me/cards': typeof ConnectAppMeCardsRoute
   '/connect-app/me/edit': typeof ConnectAppMeEditRoute
   '/connect-app/me/intel-settings': typeof ConnectAppMeIntelSettingsRoute
+  '/connect-app/me/security': typeof ConnectAppMeSecurityRoute
   '/connect-app/me/sessions': typeof ConnectAppMeSessionsRoute
   '/connect-app/moment/$personId': typeof ConnectAppMomentPersonIdRoute
   '/connect-app/network/$personId': typeof ConnectAppNetworkPersonIdRoute
@@ -1693,6 +1707,7 @@ export interface FileRoutesByTo {
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/admin/landing-templates': typeof AdminLandingTemplatesRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -1802,6 +1817,7 @@ export interface FileRoutesByTo {
   '/connect-app/me/cards': typeof ConnectAppMeCardsRoute
   '/connect-app/me/edit': typeof ConnectAppMeEditRoute
   '/connect-app/me/intel-settings': typeof ConnectAppMeIntelSettingsRoute
+  '/connect-app/me/security': typeof ConnectAppMeSecurityRoute
   '/connect-app/me/sessions': typeof ConnectAppMeSessionsRoute
   '/connect-app/moment/$personId': typeof ConnectAppMomentPersonIdRoute
   '/connect-app/network/$personId': typeof ConnectAppNetworkPersonIdRoute
@@ -1905,6 +1921,7 @@ export interface FileRoutesById {
   '/admin/business-cards': typeof AdminBusinessCardsRouteWithChildren
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
+  '/admin/landing-templates': typeof AdminLandingTemplatesRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -2028,6 +2045,7 @@ export interface FileRoutesById {
   '/connect-app/me/cards': typeof ConnectAppMeCardsRoute
   '/connect-app/me/edit': typeof ConnectAppMeEditRoute
   '/connect-app/me/intel-settings': typeof ConnectAppMeIntelSettingsRoute
+  '/connect-app/me/security': typeof ConnectAppMeSecurityRoute
   '/connect-app/me/sessions': typeof ConnectAppMeSessionsRoute
   '/connect-app/moment/$personId': typeof ConnectAppMomentPersonIdRoute
   '/connect-app/network/$personId': typeof ConnectAppNetworkPersonIdRoute
@@ -2136,6 +2154,7 @@ export interface FileRouteTypes {
     | '/admin/business-cards'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/admin/landing-templates'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -2259,6 +2278,7 @@ export interface FileRouteTypes {
     | '/connect-app/me/cards'
     | '/connect-app/me/edit'
     | '/connect-app/me/intel-settings'
+    | '/connect-app/me/security'
     | '/connect-app/me/sessions'
     | '/connect-app/moment/$personId'
     | '/connect-app/network/$personId'
@@ -2352,6 +2372,7 @@ export interface FileRouteTypes {
     | '/account-settings/notifications'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/admin/landing-templates'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -2461,6 +2482,7 @@ export interface FileRouteTypes {
     | '/connect-app/me/cards'
     | '/connect-app/me/edit'
     | '/connect-app/me/intel-settings'
+    | '/connect-app/me/security'
     | '/connect-app/me/sessions'
     | '/connect-app/moment/$personId'
     | '/connect-app/network/$personId'
@@ -2563,6 +2585,7 @@ export interface FileRouteTypes {
     | '/admin/business-cards'
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
+    | '/admin/landing-templates'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -2686,6 +2709,7 @@ export interface FileRouteTypes {
     | '/connect-app/me/cards'
     | '/connect-app/me/edit'
     | '/connect-app/me/intel-settings'
+    | '/connect-app/me/security'
     | '/connect-app/me/sessions'
     | '/connect-app/moment/$personId'
     | '/connect-app/network/$personId'
@@ -2792,6 +2816,7 @@ export interface RootRouteChildren {
   AdminBusinessCardsRoute: typeof AdminBusinessCardsRouteWithChildren
   AdminCtaAnalyticsRoute: typeof AdminCtaAnalyticsRoute
   AdminDemoLeadsRoute: typeof AdminDemoLeadsRoute
+  AdminLandingTemplatesRoute: typeof AdminLandingTemplatesRoute
   BSlugRoute: typeof BSlugRoute
   CTokenRoute: typeof CTokenRoute
   CardCodeRoute: typeof CardCodeRoute
@@ -3869,6 +3894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssociationBusinessCardsRouteImport
       parentRoute: typeof AssociationRoute
     }
+    '/admin/landing-templates': {
+      id: '/admin/landing-templates'
+      path: '/admin/landing-templates'
+      fullPath: '/admin/landing-templates'
+      preLoaderRoute: typeof AdminLandingTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/demo-leads': {
       id: '/admin/demo-leads'
       path: '/admin/demo-leads'
@@ -4091,6 +4123,13 @@ declare module '@tanstack/react-router' {
       path: '/sessions'
       fullPath: '/connect-app/me/sessions'
       preLoaderRoute: typeof ConnectAppMeSessionsRouteImport
+      parentRoute: typeof ConnectAppMeRoute
+    }
+    '/connect-app/me/security': {
+      id: '/connect-app/me/security'
+      path: '/security'
+      fullPath: '/connect-app/me/security'
+      preLoaderRoute: typeof ConnectAppMeSecurityRouteImport
       parentRoute: typeof ConnectAppMeRoute
     }
     '/connect-app/me/intel-settings': {
@@ -4803,6 +4842,7 @@ interface ConnectAppMeRouteChildren {
   ConnectAppMeCardsRoute: typeof ConnectAppMeCardsRoute
   ConnectAppMeEditRoute: typeof ConnectAppMeEditRoute
   ConnectAppMeIntelSettingsRoute: typeof ConnectAppMeIntelSettingsRoute
+  ConnectAppMeSecurityRoute: typeof ConnectAppMeSecurityRoute
   ConnectAppMeSessionsRoute: typeof ConnectAppMeSessionsRoute
   ConnectAppMeIndexRoute: typeof ConnectAppMeIndexRoute
 }
@@ -4812,6 +4852,7 @@ const ConnectAppMeRouteChildren: ConnectAppMeRouteChildren = {
   ConnectAppMeCardsRoute: ConnectAppMeCardsRoute,
   ConnectAppMeEditRoute: ConnectAppMeEditRoute,
   ConnectAppMeIntelSettingsRoute: ConnectAppMeIntelSettingsRoute,
+  ConnectAppMeSecurityRoute: ConnectAppMeSecurityRoute,
   ConnectAppMeSessionsRoute: ConnectAppMeSessionsRoute,
   ConnectAppMeIndexRoute: ConnectAppMeIndexRoute,
 }
@@ -5120,6 +5161,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBusinessCardsRoute: AdminBusinessCardsRouteWithChildren,
   AdminCtaAnalyticsRoute: AdminCtaAnalyticsRoute,
   AdminDemoLeadsRoute: AdminDemoLeadsRoute,
+  AdminLandingTemplatesRoute: AdminLandingTemplatesRoute,
   BSlugRoute: BSlugRoute,
   CTokenRoute: CTokenRoute,
   CardCodeRoute: CardCodeRoute,

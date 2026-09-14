@@ -96,8 +96,8 @@ export function MeIdentityCard({
               identity.avatarUrl.startsWith("/upload/")
                 ? `${NEST_API_URL}/api${identity.avatarUrl}`
                 : identity.avatarUrl.startsWith("/uploads/")
-                ? `${NEST_API_URL}${identity.avatarUrl}`
-                : identity.avatarUrl
+                  ? `${NEST_API_URL}${identity.avatarUrl}`
+                  : identity.avatarUrl
             }
             alt=""
             onError={() => setAvatarFailed(true)}
@@ -112,7 +112,6 @@ export function MeIdentityCard({
             {initialsOf(identity?.displayName ?? null, email)}
           </div>
         )}
-
       </div>
 
       <div className="relative mt-5 flex flex-wrap items-center gap-2">
@@ -120,18 +119,18 @@ export function MeIdentityCard({
           type="button"
           onClick={onQr}
           disabled={!identity || busy}
-          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 text-[13.5px] font-bold text-[var(--bc-mobile-accent)] shadow-xs transition-all hover:bg-[var(--bc-mobile-surface-2)] hover:border-[var(--bc-mobile-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
+          className="btn-luxury-gold flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[13.5px] font-bold shadow-md shadow-[#D8B282]/25 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none cursor-pointer"
         >
-          <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          <QrCode aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
           {t("bc.mobile.me.myQr")}
         </button>
         <button
           type="button"
           onClick={onNfc}
           disabled={!identity || busy}
-          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] px-4 text-[13.5px] font-bold text-[var(--bc-mobile-accent)] shadow-xs transition-all hover:bg-[var(--bc-mobile-surface-2)] hover:border-[var(--bc-mobile-accent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
+          className="btn-luxury-gold flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[13.5px] font-bold shadow-md shadow-[#D8B282]/25 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8B282] motion-reduce:transition-none cursor-pointer"
         >
-          <Nfc aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+          <Nfc aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
           {t("bc.mobile.me.nfcTapCta")}
         </button>
       </div>
@@ -139,10 +138,10 @@ export function MeIdentityCard({
       <button
         type="button"
         onClick={onViewProfile}
-        className="relative mt-2 ml-auto flex min-h-11 items-center gap-1 rounded-full px-3 text-[13.5px] font-semibold text-[var(--bc-mobile-muted)] transition-colors hover:text-[var(--bc-mobile-accent)] hover:bg-[var(--bc-mobile-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
+        className="relative mt-2 ml-auto flex min-h-11 items-center gap-1 rounded-full px-3 text-[13.5px] font-bold text-[#D8B282] hover:text-[#F6E1C3] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bc-mobile-accent)] motion-reduce:transition-none cursor-pointer"
       >
         {t("bc.mobile.me.viewProfile")}
-        <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+        <ChevronRight aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
       </button>
     </section>
   );

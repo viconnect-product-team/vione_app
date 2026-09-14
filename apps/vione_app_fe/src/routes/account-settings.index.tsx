@@ -178,6 +178,13 @@ export function AccountManagementPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "security" || tabParam === "profile" || tabParam === "users" || tabParam === "preferences") {
+        setActiveTab(tabParam as any);
+      }
+    }
     loadAccount();
     loadPref({}).then((res) => {
       if (res?.pref) setPrefChoice(res.pref);

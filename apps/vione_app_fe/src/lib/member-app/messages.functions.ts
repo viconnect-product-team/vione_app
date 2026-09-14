@@ -21,6 +21,8 @@ export type ChatMessage = {
   time: string;
   createdAt: string;
   seen: boolean;
+  retracted?: boolean;
+  reactions?: { emoji: string; count?: number }[];
 };
 
 // ---------- Messaging ----------
@@ -85,6 +87,6 @@ export const sendMessage = createServerFn({ method: "POST" })
     const token = context?.token;
     return fetchNestApiFromServer<{ ok: boolean }>("/dm/member/messages", token, {
       method: "POST",
-      body: data,
+      body: JSON.stringify(data),
     });
   });
