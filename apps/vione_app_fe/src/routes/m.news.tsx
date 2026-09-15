@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, X, Calendar, User, ArrowLeft } from "lucide-react";
+import { Eye, Calendar, User, ArrowLeft } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listNews, type NewsItem } from "@/lib/member-app.functions";
 import { useT, useFmt } from "@/lib/i18n";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/m/news")({
   component: NewsScreen,
@@ -64,27 +69,21 @@ function NewsScreen() {
 
       {/* Article Detail Modal */}
       {selectedNews && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-[#0d1624] border border-[#D8B282]/30 p-6 text-[#F6E1C3] shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setSelectedNews(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/80 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
+          <DialogContent className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 rounded-2xl bg-[#0d1624] border border-[#D8B282]/30 text-[#F6E1C3] shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="pr-6">
+              {selectedNews.category && (
+                <span className="inline-block rounded-full bg-[#D8B282]/20 border border-[#D8B282]/40 px-3 py-1 text-[11px] font-semibold text-[#F6E1C3] uppercase tracking-wider mb-2.5">
+                  {selectedNews.category}
+                </span>
+              )}
 
-            {selectedNews.category && (
-              <span className="inline-block rounded-full bg-[#D8B282]/20 border border-[#D8B282]/40 px-3 py-1 text-[11px] font-semibold text-[#F6E1C3] uppercase tracking-wider mb-3">
-                {selectedNews.category}
-              </span>
-            )}
+              <DialogTitle className="text-lg sm:text-xl font-bold leading-tight text-white text-left mb-2.5">
+                {selectedNews.title}
+              </DialogTitle>
+            </div>
 
-            <h1 className="text-xl font-bold leading-tight text-white mb-3">
-              {selectedNews.title}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs text-white/60 pb-4 mb-4 border-b border-white/10">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 pb-3 mb-3 border-b border-white/10">
               {selectedNews.author && (
                 <div className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-[#D8B282]" />
@@ -103,7 +102,7 @@ function NewsScreen() {
               </div>
             </div>
 
-            <div className="space-y-4 text-sm leading-relaxed text-white/90">
+            <div className="space-y-3.5 text-[13.5px] leading-relaxed text-white/90">
               <p className="font-medium text-white/95 bg-white/5 p-3.5 rounded-xl border border-white/5">
                 {selectedNews.excerpt}
               </p>
@@ -112,17 +111,17 @@ function NewsScreen() {
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
+            <div className="mt-5 pt-3 border-t border-white/10 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedNews(null)}
-                className="px-5 py-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-semibold text-xs hover:brightness-110 transition-all shadow-md"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] font-semibold text-xs hover:brightness-110 transition-all shadow-md cursor-pointer"
               >
                 Đóng bài viết
               </button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

@@ -571,7 +571,7 @@ function MemberDetailPage() {
               {member.department && (
                 <>
                   <span className="opacity-50">•</span>
-                  <span className="inline-flex items-center gap-1.5 font-medium text-sky-200">
+                  <span className="inline-flex items-center gap-1.5 font-medium text-amber-200">
                     <Briefcase className="h-3.5 w-3.5" />
                     {member.department}
                   </span>

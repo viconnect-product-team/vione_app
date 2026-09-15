@@ -113,7 +113,8 @@ function OpportunitiesScreen() {
         right={
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-3 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
+            style={{ color: "#ffffff" }}
+            className="flex items-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3 py-1.5 text-[11.5px] font-bold text-white shadow-xs active:scale-95 transition cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             Đăng cơ hội
@@ -147,7 +148,7 @@ function OpportunitiesScreen() {
             onClick={() => setTab(tabItem)}
             className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
               tab === tabItem
-                ? "bg-sky-500 text-white shadow-xs"
+                ? "bg-[#003B95] text-white shadow-xs"
                 : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
             }`}
           >
@@ -169,14 +170,14 @@ function OpportunitiesScreen() {
             <div
               key={o.id}
               onClick={() => setSelectedOpp(o)}
-              className="group flex gap-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 bg-white dark:bg-[#131a26] shadow-xs hover:border-sky-500/40 transition cursor-pointer"
+              className="group flex gap-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 bg-white dark:bg-[#131a26] shadow-xs hover:border-amber-500/40 transition cursor-pointer"
             >
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 ring-1 ring-sky-500/20">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 ring-1 ring-amber-500/20">
                 <Handshake className="h-6 w-6" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-extrabold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
+                  <span className="rounded-full bg-[#003B95] px-2.5 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wide shadow-xs">
                     {tagVi}
                   </span>
                   <span className="flex items-center gap-1 text-[10.5px] text-slate-400 ml-auto">
@@ -184,17 +185,17 @@ function OpportunitiesScreen() {
                   </span>
                 </div>
 
-                <h3 className="mt-1 line-clamp-2 text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">
+                <h3 className="mt-1 line-clamp-2 text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
                   {o.title}
                 </h3>
 
                 <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
-                  <Building2 className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                  <Building2 className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400 shrink-0" />
                   <span className="truncate">{o.company}</span>
                 </div>
 
                 <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-sky-600 hover:underline">
+                  <span className="text-[11px] font-medium text-[#003B95] dark:text-amber-400 hover:underline">
                     Xem chi tiết →
                   </span>
                   {o.interested ? (
@@ -208,7 +209,8 @@ function OpportunitiesScreen() {
                         interest(o.id);
                       }}
                       disabled={busy === o.id}
-                      className="rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:brightness-105 px-3.5 py-1 text-[11.5px] font-bold text-white shadow-xs active:scale-95 transition cursor-pointer disabled:opacity-50"
+                      style={{ color: "#ffffff" }}
+                      className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1 text-[11.5px] font-bold text-white shadow-xs active:scale-95 transition cursor-pointer disabled:opacity-50"
                     >
                       {busy === o.id ? "Đang gửi..." : "Quan tâm"}
                     </button>
@@ -243,7 +245,7 @@ function OpportunitiesScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
-              <span className="inline-block rounded-md bg-sky-500/10 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+              <span className="inline-block rounded-full bg-[#003B95] px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-white shadow-xs">
                 {normalizeTag(selectedOpp.tag)}
               </span>
               <button
@@ -259,7 +261,7 @@ function OpportunitiesScreen() {
                 {selectedOpp.title}
               </h2>
               <div className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
-                <Building2 className="h-4 w-4 text-sky-500 shrink-0" />
+                <Building2 className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
                 <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedOpp.company}</span>
                 <span>·</span>
                 <span>{fmt.rel(selectedOpp.time)}</span>
@@ -287,10 +289,11 @@ function OpportunitiesScreen() {
                     search: { peerCode: targetCode, peerName: targetName } as any,
                   });
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-sky-500/20"
+                style={{ color: "#ffffff" }}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#003B95]/20"
               >
                 <MessageSquare className="h-4 w-4" />
-                Nhắn tin trao đổi
+                Gắn kết & nhắn tin
               </button>
 
               <button
@@ -299,7 +302,7 @@ function OpportunitiesScreen() {
                   interest(selectedOpp.id);
                   setSelectedOpp(null);
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 py-2.5 text-[12.5px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-100 transition cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
               >
                 <Handshake className="h-4 w-4" />
                 Bày tỏ quan tâm
@@ -320,7 +323,7 @@ function OpportunitiesScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
-              <span className="text-[13px] font-extrabold text-sky-500 uppercase tracking-wider">
+              <span className="text-[13px] font-extrabold text-[#003B95] dark:text-amber-400 uppercase tracking-wider">
                 Đăng cơ hội hợp tác mới
               </span>
               <button
@@ -398,7 +401,8 @@ function OpportunitiesScreen() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-2.5 text-[12.5px] font-bold text-white hover:brightness-105 transition shadow-md shadow-sky-500/25"
+                  style={{ color: "#ffffff" }}
+                  className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#003B95]/25"
                 >
                   {creating ? "Đang đăng..." : "Đăng cơ hội"}
                 </button>

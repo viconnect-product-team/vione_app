@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
   Clock,
   CreditCard,
   Download,
@@ -55,6 +56,7 @@ import {
   ZaloTransactionCard,
   type ZaloTransactionData,
 } from "@/components/business-connect/mobile/ZaloTransactionCard";
+import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 
 const messagesSearchSchema = z.object({
   peerCode: z.string().optional(),
@@ -96,10 +98,20 @@ function initialsOf(name: string) {
     .join("");
 }
 
+function cleanPersonName(fullName?: string | null): string {
+  if (!fullName) return "";
+  const clean = fullName.split(/\s*[-–—|]\s*/)[0].trim();
+  return clean || fullName.trim();
+}
+
 function getShortName(fullName?: string | null): string {
   if (!fullName) return "";
-  const parts = fullName.trim().split(/\s+/);
-  return parts[parts.length - 1] || fullName;
+  const person = cleanPersonName(fullName);
+  const parts = person.split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[parts.length - 2]} ${parts[parts.length - 1]}`;
+  }
+  return parts[0] || person;
 }
 
 function formatFileSize(bytes?: number): string {
@@ -249,6 +261,9 @@ function formatMessagePreview(raw?: string | null): string {
 
 function MessagesScreen() {
   const search = Route.useSearch();
+  const fetchMembers = useServerFn(listMembers);
+  const { data: members = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
+
   const [active, setActive] = useState<MyConversation | null>(() => {
     if (search.peerCode) {
       return {
@@ -275,9 +290,9 @@ function MessagesScreen() {
   }, [search.peerCode, search.peerName]);
 
   if (active) {
-    return <ChatThread peer={active} onBack={() => setActive(null)} />;
+    return <ChatThread peer={active} onBack={() => setActive(null)} members={members} />;
   }
-  return <ConversationList onOpen={setActive} />;
+  return <ConversationList onOpen={setActive} members={members} />;
 }
 
 type ConvFilter = "all" | "unread" | "members" | "pending" | "system";
@@ -287,13 +302,17 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
   try {
     const raw = localStorage.getItem("vba.recent_conversations");
     const list: MyConversation[] = raw ? JSON.parse(raw) : [];
+    const existing = list.find((c) => c.peerCode.toLowerCase() === peer.peerCode.toLowerCase());
     const item: MyConversation = {
       peerCode: peer.peerCode,
-      name: peer.name,
+      name:
+        peer.name && peer.name.trim().toLowerCase() !== peer.peerCode.toLowerCase()
+          ? peer.name
+          : existing?.name || peer.name,
       last: lastText,
       time: new Date().toISOString(),
       unread: 0,
-      avatarUrl: peer.avatarUrl,
+      avatarUrl: peer.avatarUrl || existing?.avatarUrl || null,
       isSystem: peer.isSystem,
     };
     const next = [item, ...list.filter((c) => c.peerCode.toLowerCase() !== peer.peerCode.toLowerCase())];
@@ -301,7 +320,7 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
   } catch {}
 }
 
-function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
+function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConversation) => void; members?: DirectoryMember[] }) {
   const t = useT();
   const fmt = useFmt();
   const {
@@ -337,7 +356,8 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
   }, []);
 
   const fetchMembers = useServerFn(listMembers);
-  const { data: members = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
+  const { data: fetchedMembers = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
+  const members = propMembers && propMembers.length > 0 ? propMembers : fetchedMembers;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -367,6 +387,25 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
     }
   };
 
+  const [onlineUserMap, setOnlineUserMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) return;
+    setOnlineUserMap((prev) => {
+      const next = { ...prev };
+      for (const c of conversations) {
+        if (c.userId) {
+          if (next[c.userId] === undefined) next[c.userId] = Boolean(c.isOnline);
+        }
+        if (c.peerCode) {
+          const codeKey = c.peerCode.toLowerCase();
+          if (next[codeKey] === undefined) next[codeKey] = Boolean(c.isOnline);
+        }
+      }
+      return next;
+    });
+  }, [conversations]);
+
   useEffect(() => {
     const socket = getConnectAppSocket();
     if (!socket.connected) {
@@ -379,44 +418,124 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
         if (raw) setLocalRecents(JSON.parse(raw));
       } catch {}
     };
+    const handleOnline = (data: { userId?: string }) => {
+      if (data?.userId) {
+        setOnlineUserMap((prev) => ({
+          ...prev,
+          [data.userId!]: true,
+          [data.userId!.toLowerCase()]: true,
+        }));
+      }
+    };
+    const handleOffline = (data: { userId?: string }) => {
+      if (data?.userId) {
+        setOnlineUserMap((prev) => ({
+          ...prev,
+          [data.userId!]: false,
+          [data.userId!.toLowerCase()]: false,
+        }));
+      }
+    };
     socket.on("dm:message_received", handleUpdate);
     socket.on("dm:thread_updated", handleUpdate);
     socket.on("member:message_received", handleUpdate);
-    const timer = setInterval(() => reload(), 3000);
+    socket.on("presence:user_online", handleOnline);
+    socket.on("presence:user_offline", handleOffline);
+
+    const handleFocus = () => handleUpdate();
+    window.addEventListener("focus", handleFocus);
+
     return () => {
-      clearInterval(timer);
+      window.removeEventListener("focus", handleFocus);
       socket.off("dm:message_received", handleUpdate);
       socket.off("dm:thread_updated", handleUpdate);
       socket.off("member:message_received", handleUpdate);
+      socket.off("presence:user_online", handleOnline);
+      socket.off("presence:user_offline", handleOffline);
     };
   }, [reload]);
 
-  const allConversations = useMemo(() => {
-    const map = new Map<string, MyConversation>();
-    // First, map server conversations
-    for (const c of conversations) {
-      map.set(c.peerCode.toLowerCase(), c);
+  const checkOnline = (c: MyConversation) => {
+    if (c.isSystem || c.peerCode === "admin" || c.peerCode === "system") return false;
+    if (c.userId && onlineUserMap[c.userId] !== undefined) {
+      return onlineUserMap[c.userId];
     }
-    // Next, merge any local recent conversations
+    const codeKey = c.peerCode?.toLowerCase();
+    if (codeKey && onlineUserMap[codeKey] !== undefined) {
+      return onlineUserMap[codeKey];
+    }
+    return Boolean(c.isOnline);
+  };
+
+  const allConversations = useMemo(() => {
+    const memberMap = new Map<string, DirectoryMember>();
+    for (const m of members) {
+      if (m.code) memberMap.set(m.code.toLowerCase(), m);
+    }
+
+    const map = new Map<string, MyConversation>();
+    // First, map server conversations enriched with directory member details
+    for (const c of conversations) {
+      if (!c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system" && (!c.last || !c.last.trim())) {
+        continue;
+      }
+      const key = c.peerCode.toLowerCase();
+      const mem = memberMap.get(key);
+      const enriched: MyConversation = {
+        ...c,
+        name:
+          c.name && c.name.trim().toLowerCase() !== key
+            ? c.name
+            : mem?.personName || mem?.contact || mem?.name || c.name || key.toUpperCase(),
+        avatarUrl: c.avatarUrl || mem?.avatar || null,
+        isOnline: c.isOnline,
+        userId: c.userId || null,
+      };
+      map.set(key, enriched);
+    }
+    // Next, merge any local recent conversations, preserving avatars and names
     for (const rec of localRecents) {
+      if (!rec.isSystem && rec.peerCode !== "admin" && rec.peerCode !== "system" && (!rec.last || !rec.last.trim())) {
+        continue;
+      }
       const key = rec.peerCode.toLowerCase();
+      const mem = memberMap.get(key);
       if (!map.has(key)) {
-        map.set(key, rec);
+        map.set(key, {
+          ...rec,
+          name:
+            rec.name && rec.name.trim().toLowerCase() !== key
+              ? rec.name
+              : mem?.personName || mem?.contact || mem?.name || rec.name || key.toUpperCase(),
+          avatarUrl: rec.avatarUrl || mem?.avatar || null,
+        });
       } else {
         const serv = map.get(key)!;
-        if (!serv.last && rec.last) {
-          map.set(key, { ...serv, last: rec.last, time: rec.time });
-        }
+        map.set(key, {
+          ...serv,
+          name:
+            serv.name && serv.name.trim().toLowerCase() !== key
+              ? serv.name
+              : rec.name && rec.name.trim().toLowerCase() !== key
+                ? rec.name
+                : mem?.personName || mem?.contact || mem?.name || serv.name,
+          avatarUrl: serv.avatarUrl || rec.avatarUrl || mem?.avatar || null,
+          last: serv.last || rec.last,
+          time: serv.time || rec.time,
+        });
       }
     }
-    const list = Array.from(map.values());
+    const list = Array.from(map.values()).filter((c) => {
+      if (c.isSystem || c.peerCode === "admin" || c.peerCode === "system") return true;
+      return Boolean(c.last && c.last.trim().length > 0);
+    });
     list.sort((a, b) => {
-      if (a.isSystem && !b.isSystem) return -1;
-      if (!a.isSystem && b.isSystem) return 1;
-      return new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime();
+      const timeA = new Date(a.time || 0).getTime();
+      const timeB = new Date(b.time || 0).getTime();
+      return timeB - timeA;
     });
     return list;
-  }, [conversations, localRecents]);
+  }, [conversations, localRecents, members]);
 
   const filteredMembers = members.filter((m) => {
     const q = pickerQ.trim().toLowerCase();
@@ -454,19 +573,20 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
   }, [baseConvs, searchTerm]);
 
   return (
-    <div className="vba-app vba-animate min-h-[100dvh] bg-slate-50 dark:bg-[#0c121e] text-slate-900 dark:text-white pb-20">
-      <MemberHeader title={t("m.messages.title")} back />
+    <div className="vba-app vba-animate min-h-[100dvh] bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white pb-20">
+      <MemberHeader title="Gắn kết & Tin nhắn" back />
 
       {/* Borderless Search Bar */}
       <div className="px-4 pt-3 pb-1">
-        <div className="flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] shadow-none">
+        <div className="flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] shadow-none focus-within:ring-0 focus-within:border-0 focus-within:outline-none">
           <Search className="h-4 w-4 text-slate-400 dark:text-slate-400 shrink-0" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm người liên hệ hoặc nội dung tin nhắn..."
-            className="flex-1 bg-transparent text-[13px] border-0 outline-none ring-0 focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-none"
+            className="flex-1 bg-transparent text-[13px] border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:border-none focus-visible:ring-offset-0 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-none borderless-search-input"
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
           {searchTerm && (
             <button
@@ -481,73 +601,76 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
       </div>
 
       {/* Messenger-style Online / Active Members Row */}
-      {members.length > 0 && (
-        <div className="pt-2 pb-1.5 border-b border-slate-200/60 dark:border-white/5">
-          <div className="flex items-center gap-3.5 px-4 overflow-x-auto no-scrollbar py-1">
-            {/* Compose New Message */}
-            <button
-              type="button"
-              onClick={() => setPickerOpen(true)}
-              className="w-14 shrink-0 flex flex-col items-center gap-1 cursor-pointer group"
-            >
-              <div className="relative">
-                <div className="h-14 w-14 rounded-full border-2 border-dashed border-sky-400/70 dark:border-sky-500/50 bg-sky-50 dark:bg-sky-950/30 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/40 transition shadow-xs">
-                  <Plus className="h-6 w-6" />
-                </div>
+      <div className="pt-2 pb-1.5 border-b border-slate-200/60 dark:border-white/5">
+        <div className="flex items-center gap-3.5 px-4 overflow-x-auto no-scrollbar py-1">
+          {/* Compose New Message */}
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="w-14 shrink-0 flex flex-col items-center gap-1 cursor-pointer group"
+          >
+            <div className="relative">
+              <div className="h-14 w-14 rounded-full border-2 border-dashed border-amber-500/60 dark:border-amber-400/50 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center text-[#003B95] dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition shadow-xs">
+                <Plus className="h-6 w-6" />
               </div>
-              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 truncate max-w-[56px] text-center">
-                Nhắn mới
-              </span>
-            </button>
+            </div>
+            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 truncate max-w-[56px] text-center">
+              Nhắn mới
+            </span>
+          </button>
 
-            {/* Online Member Avatars with Green Online Dot */}
-            {members.map((m) => {
-              const shortName = getShortName(m.personName || m.name);
-              const avatarUrl = m.avatar ? resolveMediaUrl(m.avatar) || m.avatar : null;
+          {/* Active / Messaged Members Row with Green Dot ONLY when online */}
+          {allConversations
+            .filter((c) => !c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system" && Boolean(c.last && c.last.trim()))
+            .map((c) => {
+              const shortName = getShortName(c.name);
+              const avatarUrl = c.avatarUrl ? resolveMediaUrl(c.avatarUrl) || c.avatarUrl : null;
+              const isOnline = checkOnline(c);
               return (
                 <button
-                  key={m.code}
+                  key={c.peerCode}
                   type="button"
-                  onClick={() => setSelectedMemberModal(m)}
+                  onClick={() => onOpen(c)}
                   className="w-14 shrink-0 flex flex-col items-center gap-1 cursor-pointer group"
-                  title={`${m.personName || m.name} (${m.code}) - Bấm để xem profile hoặc nhắn tin`}
+                  title={`${c.name} (${c.peerCode}) - ${isOnline ? "Đang hoạt động" : "Không trực tuyến"}`}
                 >
                   <div className="relative">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
-                        alt={m.name}
-                        className="h-14 w-14 rounded-full object-cover ring-2 ring-sky-500/80 p-0.5 group-hover:scale-105 transition-transform duration-150 shadow-xs"
+                        alt={c.name}
+                        className="h-14 w-14 rounded-full object-cover ring-2 ring-amber-500/80 p-0.5 group-hover:scale-105 transition-transform duration-150 shadow-xs"
                       />
                     ) : (
-                      <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white font-bold text-xs ring-2 ring-sky-500/80 group-hover:scale-105 transition-transform duration-150 shadow-xs">
-                        {initialsOf(m.personName || m.name)}
+                      <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-amber-300 font-bold text-xs ring-2 ring-amber-500/80 group-hover:scale-105 transition-transform duration-150 shadow-xs">
+                        {initialsOf(c.name)}
                       </span>
                     )}
-                    {/* Green online dot indicator */}
-                    <span
-                      className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0c121e]"
-                      title="Đang hoạt động"
-                    />
+                    {/* Green online dot indicator ONLY when actually online */}
+                    {isOnline && (
+                      <span
+                        className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#070D1A]"
+                        title="Đang hoạt động"
+                      />
+                    )}
                   </div>
-                  <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[58px] text-center group-hover:text-sky-500 transition-colors">
+                  <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[58px] text-center group-hover:text-amber-500 transition-colors">
                     {shortName}
                   </span>
                 </button>
               );
             })}
-          </div>
         </div>
-      )}
+      </div>
 
-      {/* Filter Tabs with Sky Theme & Pending Tab */}
+      {/* Filter Tabs with Classic Navy & Gold Theme */}
       <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => setActiveTab("all")}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             activeTab === "all"
-              ? "bg-sky-600 text-white font-bold shadow-xs"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
               : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
           }`}
         >
@@ -560,13 +683,13 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           onClick={() => setActiveTab("unread")}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             activeTab === "unread"
-              ? "bg-sky-600 text-white font-bold shadow-xs"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
               : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
           }`}
         >
           <span>Chưa đọc</span>
           {unreadCount > 0 && (
-            <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+            <span className="rounded-full bg-[#EA580C] px-1.5 py-0.2 text-[10px] font-bold text-white">
               {unreadCount}
             </span>
           )}
@@ -577,7 +700,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           onClick={() => setActiveTab("members")}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             activeTab === "members"
-              ? "bg-sky-600 text-white font-bold shadow-xs"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
               : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
           }`}
         >
@@ -589,11 +712,11 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           onClick={() => setActiveTab("pending")}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             activeTab === "pending"
-              ? "bg-sky-600 text-white font-bold shadow-xs"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
               : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
           }`}
         >
-          <Clock className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+          <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
           <span>Tin nhắn đang chờ</span>
         </button>
 
@@ -602,11 +725,11 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           onClick={() => setActiveTab("system")}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
             activeTab === "system"
-              ? "bg-sky-600 text-white font-bold shadow-xs"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
               : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
           }`}
         >
-          <ShieldCheck className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+          <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
           <span>Tin nhắn từ hệ thống</span>
           <span className="text-[11px] opacity-80">({systemCount})</span>
         </button>
@@ -624,7 +747,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
           <div className="w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 p-4 max-h-[85vh] flex flex-col shadow-2xl animate-fade-in text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-sky-500" />
+                <MessageSquare className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
                 <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                   Tin nhắn mới
                 </h3>
@@ -644,7 +767,8 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
                   value={pickerQ}
                   onChange={(e) => setPickerQ(e.target.value)}
                   placeholder="Tìm thành viên trong hiệp hội..."
-                  className="flex-1 bg-transparent text-[13px] outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
+                  className="flex-1 bg-transparent text-[13px] border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none focus-visible:outline-none focus-visible:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400 borderless-search-input"
+                  style={{ outline: "none", border: "none", boxShadow: "none" }}
                   autoFocus
                 />
               </div>
@@ -671,7 +795,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
                     }}
                     className="flex w-full items-center gap-3 py-2.5 px-2 text-left hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-colors cursor-pointer"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-[12px] ring-1 ring-sky-500/30">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500/10 text-[#003B95] dark:text-amber-300 font-bold text-[12px] ring-1 ring-amber-500/30">
                       {initialsOf(m.name)}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -679,7 +803,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
                         <span className="truncate text-[13px] font-bold text-slate-900 dark:text-white">
                           {m.name}
                         </span>
-                        <span className="rounded bg-sky-500/15 px-1.5 py-0.2 text-[9px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
+                        <span className="rounded bg-[#003B95]/15 px-1.5 py-0.2 text-[9px] font-bold text-[#003B95] dark:text-amber-400 shrink-0">
                           {m.code}
                         </span>
                       </div>
@@ -705,7 +829,7 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
       >
         {loading && (
           <div className="py-12 text-center text-[13px] text-slate-400 flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-sky-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-[#003B95] dark:text-amber-400" />
             <span>Đang tải danh sách tin nhắn...</span>
           </div>
         )}
@@ -734,16 +858,17 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
                 <button
                   type="button"
                   onClick={() => setSearchTerm("")}
-                  className="text-xs text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
+                  className="text-xs text-[#003B95] dark:text-amber-400 font-bold hover:underline cursor-pointer"
                 >
                   Xóa tìm kiếm
                 </button>
               ) : (
                 <button
                   onClick={() => setPickerOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-400 via-sky-300 to-sky-400 px-4 py-2 text-[12px] font-bold text-slate-950 shadow-md shadow-sky-500/20 active:scale-95 transition-all cursor-pointer hover:opacity-95"
+                  style={{ color: "#ffffff" }}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-4 py-2 text-[12px] font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-95 transition-all cursor-pointer"
                 >
-                  <Plus className="h-4 w-4 text-slate-950" />
+                  <Plus className="h-4 w-4 text-white" />
                   Bắt đầu trò chuyện
                 </button>
               )}
@@ -752,14 +877,21 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
         )}
         {filteredConversations.map((c: any) => {
           const isSystem = c.isSystem || c.peerCode === "admin" || c.peerCode === "system";
+          const matchedMember = members.find((m) => m.code.toLowerCase() === c.peerCode.toLowerCase());
+          const resolvedAvatar = c.avatarUrl || matchedMember?.avatar || null;
+          const resolvedName =
+            c.name && c.name.trim().toLowerCase() !== c.peerCode.toLowerCase()
+              ? c.name
+              : matchedMember?.personName || matchedMember?.contact || matchedMember?.name || c.name || c.peerCode;
+
           return (
             <div key={c.peerCode} role="listitem">
               <button
                 onClick={() => onOpen(c)}
                 className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all cursor-pointer mb-2.5 ${
                   isSystem
-                    ? "border-sky-400/40 bg-gradient-to-r from-sky-500/10 via-sky-500/5 to-transparent dark:from-sky-400/10 dark:border-sky-400/30 shadow-sm"
-                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#131a27] hover:border-sky-400/30 shadow-xs"
+                    ? "border-amber-400/40 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-400/10 dark:border-amber-400/30 shadow-sm"
+                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#131a27] hover:border-amber-400/30 shadow-xs"
                 }`}
               >
                 <div
@@ -774,39 +906,39 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
                     <img
                       src="/ceo1983-logo.png"
                       alt="CEO 1983"
-                      className="h-12 w-12 rounded-full object-contain p-1 bg-white ring-2 ring-sky-500/40 shadow-xs"
+                      className="h-12 w-12 rounded-full object-contain p-1 bg-white ring-2 ring-amber-500/40 shadow-xs"
                     />
-                  ) : c.avatarUrl ? (
+                  ) : resolvedAvatar ? (
                     <img
-                      src={resolveMediaUrl(c.avatarUrl) || c.avatarUrl}
-                      alt={c.name}
-                      className="h-12 w-12 rounded-full object-cover ring-2 ring-sky-500/70 shadow-xs group-hover/avatar:scale-105 transition-transform"
+                      src={resolveMediaUrl(resolvedAvatar) || resolvedAvatar}
+                      alt={resolvedName}
+                      className="h-12 w-12 rounded-full object-cover ring-2 ring-amber-500/70 shadow-xs group-hover/avatar:scale-105 transition-transform"
                     />
                   ) : (
-                    <span className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-[14px] font-bold text-white ring-2 ring-sky-500/70 shadow-xs group-hover/avatar:scale-105 transition-transform">
-                      {initialsOf(c.name)}
+                    <span className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-[14px] font-bold text-amber-300 ring-2 ring-amber-500/70 shadow-xs group-hover/avatar:scale-105 transition-transform">
+                      {initialsOf(resolvedName)}
                     </span>
                   )}
                   {isSystem ? (
                     <span
-                      className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-white shadow-xs"
+                      className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[#071322] shadow-xs font-bold"
                       title="Kênh chính thức"
                     >
                       <ShieldCheck className="h-3 w-3" />
                     </span>
-                  ) : (
+                  ) : checkOnline(c) ? (
                     <span
                       className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#131a27]"
                       title="Đang hoạt động"
                     />
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="truncate text-[14px] font-bold text-slate-900 dark:text-white">
-                        {c.name}
+                        {resolvedName}
                       </span>
                       {isSystem && (
                         <span className="shrink-0 rounded-md bg-[var(--vba-gold-soft)] border border-[var(--vba-border-accent)] px-1.5 py-0.2 text-[9px] font-extrabold text-[var(--vba-gold)] uppercase tracking-wide">
@@ -836,125 +968,35 @@ function ConversationList({ onOpen }: { onOpen: (c: MyConversation) => void }) {
         })}
       </div>
 
-      {/* Profile & Messenger Action Modal */}
-      {selectedMemberModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-fade-in"
-          onClick={() => setSelectedMemberModal(null)}
-        >
-          <div
-            className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#131a27] border border-sky-500/40 shadow-2xl p-5 overflow-hidden text-slate-900 dark:text-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setSelectedMemberModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white bg-slate-100 dark:bg-white/10 transition cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            {/* Header with Avatar & Online Dot */}
-            <div className="flex flex-col items-center text-center pt-2 pb-4 border-b border-slate-100 dark:border-white/10">
-              <div className="relative mb-3">
-                {selectedMemberModal.avatar ? (
-                  <img
-                    src={resolveMediaUrl(selectedMemberModal.avatar) || selectedMemberModal.avatar}
-                    alt={selectedMemberModal.personName || selectedMemberModal.name}
-                    className="h-20 w-20 rounded-full object-cover ring-3 ring-sky-500/70 shadow-md"
-                  />
-                ) : (
-                  <span className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white font-bold text-xl ring-3 ring-sky-500/70 shadow-md">
-                    {initialsOf(selectedMemberModal.personName || selectedMemberModal.name)}
-                  </span>
-                )}
-                {/* Green online dot badge */}
-                <span
-                  className="absolute bottom-0.5 right-0.5 h-5 w-5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#131a27] flex items-center justify-center"
-                  title="Đang hoạt động"
-                >
-                  <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 justify-center">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  {selectedMemberModal.personName || selectedMemberModal.name}
-                </h3>
-                {selectedMemberModal.verified && (
-                  <ShieldCheck className="h-4 w-4 text-sky-500 shrink-0" />
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Đang trực tuyến
-                </span>
-                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
-                  {selectedMemberModal.code}
-                </span>
-              </div>
-
-              <p className="mt-2 text-[12.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
-                {selectedMemberModal.personTitle || selectedMemberModal.industry || "Hội viên CEO 1983"}
-              </p>
-              <p className="text-[11.5px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                {selectedMemberModal.name !== selectedMemberModal.personName ? selectedMemberModal.name : "CLB Doanh Nhân CEO 1983"}
-              </p>
-              {selectedMemberModal.region && (
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-1">
-                  <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
-                  {selectedMemberModal.region}
-                </p>
-              )}
-            </div>
-
-            {/* 2 Primary Actions: "Xem profile" & "Nhắn tin" */}
-            <div className="flex items-center gap-2.5 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  const memberCode = selectedMemberModal.code;
-                  setSelectedMemberModal(null);
-                  window.location.href = `/association/members?q=${encodeURIComponent(memberCode)}`;
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-sky-500/40 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-semibold text-[13px] transition cursor-pointer"
-              >
-                <User className="h-4 w-4" />
-                <span>Xem profile</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const m = selectedMemberModal;
-                  setSelectedMemberModal(null);
-                  onOpen({
-                    peerCode: m.code,
-                    name: m.personName || m.name,
-                    last: "",
-                    time: "Vừa xong",
-                    unread: 0,
-                    avatarUrl: m.avatar,
-                  });
-                }}
-                style={{ color: "#ffffff" }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-sky-500 hover:bg-sky-600 font-bold text-[13px] shadow-md shadow-sky-500/25 transition cursor-pointer !text-white"
-              >
-                <MessageSquare className="h-4 w-4 text-white" />
-                <span className="!text-white" style={{ color: "#ffffff" }}>Nhắn tin</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Profile Modal */}
+      <MemberProfileModal
+        member={selectedMemberModal}
+        onClose={() => setSelectedMemberModal(null)}
+        onMessage={(m) => {
+          setSelectedMemberModal(null);
+          onOpen({
+            peerCode: m.code,
+            name: m.personName || m.name,
+            last: "",
+            time: "Vừa xong",
+            unread: 0,
+            avatarUrl: m.avatar,
+          });
+        }}
+      />
     </div>
   );
 }
 
-function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void }) {
+function ChatThread({
+  peer,
+  onBack,
+  members = [],
+}: {
+  peer: MyConversation;
+  onBack: () => void;
+  members?: DirectoryMember[];
+}) {
   const t = useT();
   const fmt = useFmt();
   const { data, loading, error, reload } = useServerData(
@@ -969,6 +1011,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [paymentModalData, setPaymentModalData] = useState<ActionPaymentData | null>(null);
+  const [profileMember, setProfileMember] = useState<DirectoryMember | null>(null);
 
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>(() => {
     if (typeof window === "undefined") return [];
@@ -980,10 +1023,71 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
     }
   });
 
+  const [isPeerOnline, setIsPeerOnline] = useState<boolean>(() => Boolean(peer.isOnline));
+
+  useEffect(() => {
+    setIsPeerOnline(Boolean(peer.isOnline));
+  }, [peer.isOnline]);
+
+  useEffect(() => {
+    if (peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system") return;
+    const socket = getConnectAppSocket();
+    if (!socket.connected) {
+      socket.connect();
+    }
+    const handleOnline = (data: { userId?: string }) => {
+      if (
+        data?.userId &&
+        (data.userId === peer.userId ||
+          data.userId.toLowerCase() === peer.peerCode.toLowerCase())
+      ) {
+        setIsPeerOnline(true);
+      }
+    };
+    const handleOffline = (data: { userId?: string }) => {
+      if (
+        data?.userId &&
+        (data.userId === peer.userId ||
+          data.userId.toLowerCase() === peer.peerCode.toLowerCase())
+      ) {
+        setIsPeerOnline(false);
+      }
+    };
+    socket.on("presence:user_online", handleOnline);
+    socket.on("presence:user_offline", handleOffline);
+    return () => {
+      socket.off("presence:user_online", handleOnline);
+      socket.off("presence:user_offline", handleOffline);
+    };
+  }, [peer.userId, peer.peerCode, peer.isSystem]);
+
+  const matchedMember = members.find((m) => m.code.toLowerCase() === peer.peerCode.toLowerCase());
+  const resolvedAvatar = peer.avatarUrl || matchedMember?.avatar || null;
   const displayName =
     peer.name && peer.name.trim().toLowerCase() !== peer.peerCode.toLowerCase()
       ? peer.name
-      : data.peerName || peer.name || peer.peerCode;
+      : matchedMember?.personName || matchedMember?.contact || matchedMember?.name || data.peerName || peer.name || peer.peerCode;
+
+  const handleOpenPeerProfile = () => {
+    if (peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system") return;
+    const found = members.find((m) => m.code.toLowerCase() === peer.peerCode.toLowerCase());
+    if (found) {
+      setProfileMember(found);
+    } else {
+      setProfileMember({
+        code: peer.peerCode,
+        name: displayName,
+        personName: displayName,
+        contact: displayName,
+        personTitle: "Hội viên CEO 1983",
+        industry: "Kinh doanh & Quản lý",
+        region: "Hà Nội",
+        type: "individual",
+        verified: true,
+        avatar: resolvedAvatar,
+      });
+    }
+  };
 
   const mergedMessages = useMemo(() => {
     const map = new Map<string, ChatMessage>();
@@ -1105,9 +1209,11 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
     socket.on("dm:reaction_updated", handleUpdate);
     socket.on("member:message_received", handleUpdate);
 
-    const timer = setInterval(() => reload(), 2500);
+    const handleFocus = () => reload();
+    window.addEventListener("focus", handleFocus);
+
     return () => {
-      clearInterval(timer);
+      window.removeEventListener("focus", handleFocus);
       socket.off("dm:message_received", handleUpdate);
       socket.off("dm:thread_updated", handleUpdate);
       socket.off("dm:message_retracted", handleUpdate);
@@ -1339,22 +1445,25 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
         </div>
       )}
 
-      {/* Header with Call & Video Call Actions */}
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0c121e]/95 px-4 py-3 shrink-0 backdrop-blur-md shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      {/* Header with Call & Video Call Actions - Safe Area Insets & High z-index */}
+      <div
+        className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0c121e]/95 px-4 pb-2.5 shrink-0 backdrop-blur-md shadow-xs"
+        style={{
+          paddingTop: "max(env(safe-area-inset-top, 0px), 16px)",
+        }}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
+            type="button"
             onClick={onBack}
-            className="text-sky-600 dark:text-sky-400 hover:underline text-[14px] font-semibold cursor-pointer flex items-center gap-1 shrink-0 mr-1"
+            aria-label="Quay lại"
+            className="grid h-9 w-9 place-items-center rounded-full text-[#003B95] dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-white/10 active:scale-95 transition-all shrink-0 -ml-1 mr-0.5 cursor-pointer"
           >
-            ‹ {t("m.messages.back")}
+            <ChevronLeft className="h-6 w-6 stroke-[2.5]" />
           </button>
           <div
             className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer hover:opacity-90 transition"
-            onClick={() => {
-              if (!(peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system")) {
-                window.location.href = `/association/members?q=${encodeURIComponent(peer.peerCode)}`;
-              }
-            }}
+            onClick={handleOpenPeerProfile}
             title="Bấm để xem profile hội viên"
           >
             <div className="relative shrink-0">
@@ -1362,20 +1471,20 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                 <img
                   src="/ceo1983-logo.png"
                   alt="CEO 1983"
-                  className="h-9 w-9 rounded-full object-contain p-0.5 bg-white ring-1 ring-sky-500/30 shadow-xs"
+                  className="h-9 w-9 rounded-full object-contain p-0.5 bg-white ring-1 ring-amber-500/40 shadow-xs"
                 />
-              ) : peer.avatarUrl ? (
+              ) : resolvedAvatar ? (
                 <img
-                  src={resolveMediaUrl(peer.avatarUrl) || peer.avatarUrl}
+                  src={resolveMediaUrl(resolvedAvatar) || resolvedAvatar}
                   alt={displayName}
-                  className="h-9 w-9 rounded-full object-cover ring-2 ring-sky-500/60 shadow-xs"
+                  className="h-9 w-9 rounded-full object-cover ring-2 ring-amber-500/70 shadow-xs"
                 />
               ) : (
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white text-xs font-bold ring-2 ring-sky-500/60 shadow-xs">
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-amber-300 text-xs font-bold ring-2 ring-amber-500/70 shadow-xs">
                   {initialsOf(displayName)}
                 </div>
               )}
-              {!(peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system") && (
+              {isPeerOnline && (
                 <span
                   className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0c121e]"
                   title="Đang hoạt động"
@@ -1388,16 +1497,22 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                   {displayName}
                 </span>
                 {(peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system") && (
-                  <ShieldCheck className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                 )}
               </div>
               <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 {peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system" ? (
                   "Kênh thông báo hệ thống"
-                ) : (
+                ) : isPeerOnline ? (
                   <>
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đang hoạt động</span>
+                    <span>· Xem profile ›</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
+                    <span className="text-slate-500 dark:text-slate-400 font-normal">Không trực tuyến</span>
                     <span>· Xem profile ›</span>
                   </>
                 )}
@@ -1553,8 +1668,8 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                         content.type === "action_payment"
                           ? "rounded-2xl bg-transparent border-0 shadow-none p-0"
                           : m.mine
-                            ? "border border-sky-300 dark:border-sky-700 bg-white dark:bg-[#131A26] text-slate-900 dark:text-slate-100 shadow-xs"
-                            : "border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131A26] text-slate-900 dark:text-slate-100 shadow-xs"
+                            ? "border border-[#003B95] bg-transparent text-black shadow-2xs"
+                            : "border border-slate-200 dark:border-white/10 bg-transparent text-black shadow-2xs"
                       }`}
                     >
                       {/* Action Card: Overdue Payment VietQR / Zalo OA style */}
@@ -1562,13 +1677,13 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                         <ZaloTransactionCard data={content.data} isFromMe={m.mine} />
                       ) : content.type === "action_meeting" ? (
                         /* Action Card: Meeting Invitation */
-                        <div className="p-3.5 space-y-3 bg-[var(--vba-surface)] text-[var(--vba-text)] border-l-4 border-sky-500">
+                        <div className="p-3.5 space-y-3 bg-[var(--vba-surface)] text-[var(--vba-text)] border-l-4 border-amber-500">
                           <div className="flex items-center gap-2">
-                            <span className="rounded-md bg-sky-50 dark:bg-sky-950/50 p-1 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
+                            <span className="rounded-md bg-amber-50 dark:bg-amber-950/50 p-1 text-[#003B95] dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                               <Calendar className="h-4 w-4" />
                             </span>
                             <div>
-                              <p className="text-[12px] font-bold text-sky-700 dark:text-sky-400 tracking-wide uppercase">
+                              <p className="text-[12px] font-bold text-[#003B95] dark:text-amber-400 tracking-wide uppercase">
                                 Thư mời tham dự cuộc họp
                               </p>
                               <p className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -1583,7 +1698,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
 
                           <div className="space-y-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 text-[11px] border border-slate-200 dark:border-slate-700">
                             <div className="flex items-center gap-2">
-                              <Clock className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                              <Clock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400 shrink-0" />
                               <span className="font-semibold text-slate-800 dark:text-slate-200">
                                 {content.data.time}
                               </span>
@@ -1616,7 +1731,8 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                             )}
                             <button
                               onClick={() => toast.success("Đã ghi nhận xác nhận tham dự của bạn!")}
-                              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 py-2 text-[11.5px] font-bold text-white active:scale-95 transition-all cursor-pointer shadow-xs"
+                              style={{ color: "#ffffff" }}
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2 text-[11.5px] font-bold text-white active:scale-95 transition-all cursor-pointer shadow-xs"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               Xác nhận tham dự
@@ -1675,7 +1791,7 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                                         {formatFileSize(content.size)}
                                       </span>
                                     ) : null}
-                                    <span className="flex items-center gap-0.5 text-[11px] font-medium underline text-sky-600 dark:text-sky-400">
+                                    <span className="flex items-center gap-0.5 text-[11px] font-medium underline text-[#003B95] dark:text-amber-400">
                                       <Download className="h-3 w-3" />
                                       Tải về
                                     </span>
@@ -1691,28 +1807,28 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
                           ) : null}
                         </div>
                       ) : (
-                        <div className="px-3.5 py-2 text-[13px]">
-                          <p className="whitespace-pre-wrap break-words text-slate-900 dark:text-white leading-relaxed">
+                        <div className="px-3 py-1.5 text-[13px]">
+                          <p
+                            className="whitespace-pre-wrap break-words text-black font-normal leading-snug"
+                            style={{ color: "#000000" }}
+                          >
                             {content.text}
                           </p>
+                          <div className="flex items-center justify-end gap-1.5 pt-0.5 text-[9.5px] font-medium leading-none select-none">
+                            <span style={{ color: "#64748b" }}>
+                              {formatMessageTime(m.createdAt || m.time)}
+                            </span>
+                            {m.mine && (
+                              <span
+                                className={m.seen ? "font-bold ml-0.5" : "ml-0.5"}
+                                style={{ color: m.seen ? "#003B95" : "#64748b" }}
+                              >
+                                {m.seen ? "✓✓ Đã xem" : "✓"}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
-
-                      {/* Time and Seen Status inside bubble */}
-                      <div className="flex items-center justify-end gap-1 px-3.5 pb-1.5 pt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                        <span>{formatMessageTime(m.createdAt || m.time)}</span>
-                        {m.mine && (
-                          <span
-                            className={
-                              m.seen
-                                ? "text-sky-600 dark:text-sky-400 font-bold ml-1"
-                                : "text-slate-400 ml-1"
-                            }
-                          >
-                            {m.seen ? "✓✓ Đã xem" : "✓"}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   )}
 
@@ -1743,17 +1859,20 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
       </div>
 
       {isUploading ? (
-        <div className="flex items-center gap-2 border-t border-sky-500/20 bg-sky-50 dark:bg-sky-950/30 px-4 py-2 text-[12px] text-sky-600 dark:text-sky-400 animate-pulse">
+        <div className="flex items-center gap-2 border-t border-amber-500/20 bg-amber-50 dark:bg-amber-950/30 px-4 py-2 text-[12px] text-[#003B95] dark:text-amber-400 animate-pulse">
           <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
           <span className="truncate">{uploadProgress || "Đang tải tệp lên..."}</span>
         </div>
       ) : null}
 
-      {/* Input Bar */}
+      {/* Input Bar - Safe Area Insets to avoid mobile navigation bar overlap */}
       <form
         onSubmit={handleSend}
-        className="flex items-center gap-2 border-t border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0f172a]/95 px-3 py-2.5 shrink-0 backdrop-blur-md"
-        style={{ marginBottom: `${keyboardOffset}px` }}
+        className="flex items-center gap-2 border-t border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0f172a]/95 px-3 pt-2.5 shrink-0 backdrop-blur-md"
+        style={{
+          marginBottom: `${keyboardOffset}px`,
+          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)",
+        }}
       >
         <div className="relative">
           <button
@@ -1804,18 +1923,25 @@ function ChatThread({ peer, onBack }: { peer: MyConversation; onBack: () => void
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Nhập tin nhắn..."
-          className="flex-1 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none focus:outline-none focus:border-slate-300 placeholder:text-slate-400 shadow-none"
+          className="flex-1 rounded-2xl border-0 border-none bg-slate-100 dark:bg-white/[0.06] px-4 py-2 text-[13px] text-slate-900 dark:text-white outline-none focus:outline-none focus:ring-0 ring-0 placeholder:text-slate-400 shadow-none"
         />
 
         <button
           type="submit"
           disabled={!text.trim() || sending || isUploading}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer shadow-xs"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer shadow-md"
           title="Gửi tin nhắn"
         >
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </form>
+
+      {/* Member Profile Modal in Chat */}
+      <MemberProfileModal
+        member={profileMember}
+        onClose={() => setProfileMember(null)}
+        onMessage={() => setProfileMember(null)}
+      />
     </div>
   );
 }

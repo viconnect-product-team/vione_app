@@ -297,9 +297,9 @@ function ProfileScreen() {
         <button
           type="button"
           onClick={logout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-semibold text-[var(--vba-danger)] bg-red-500/10 hover:bg-red-500/15 transition-colors cursor-pointer"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-bold text-white bg-sky-600 hover:bg-sky-700 active:scale-[0.99] transition-all cursor-pointer shadow-sm"
         >
-          <LogOut className="h-4 w-4" /> Đăng xuất tài khoản
+          <LogOut className="h-4 w-4 text-white" /> Đăng xuất tài khoản
         </button>
       </div>
     </div>

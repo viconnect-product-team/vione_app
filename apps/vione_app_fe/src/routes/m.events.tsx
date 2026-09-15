@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Bookmark, Check, Clock, MapPin, QrCode } from "lucide-react";
+import { Bookmark, Check, Clock, MapPin, QrCode, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
-import { listMyEvents, registerForEvent, type MyEvent } from "@/lib/member-app.functions";
+import { listMyEvents, registerForEvent, cancelEventRegistration, type MyEvent } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/m/events")({
@@ -16,6 +16,7 @@ function EventsScreen() {
   const t = useT();
   const fetchEvents = useServerFn(listMyEvents);
   const doRegister = useServerFn(registerForEvent);
+  const doCancel = useServerFn(cancelEventRegistration);
   const { data: events, loading, reload } = useServerData<MyEvent[]>(() => fetchEvents(), []);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -27,6 +28,19 @@ function EventsScreen() {
       reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("m.events.register_error"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function unregister(id: string) {
+    setBusy(id);
+    try {
+      await doCancel({ data: { eventId: id } });
+      toast.success("Đã hủy tham gia sự kiện thành công");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không thể hủy tham gia sự kiện");
     } finally {
       setBusy(null);
     }
@@ -103,16 +117,34 @@ function EventsScreen() {
               <div className="flex items-center gap-1 text-[11px] text-[var(--vba-text-muted)]">
                 <MapPin className="h-3.5 w-3.5" /> {e.place}
               </div>
-              <div className="mt-2">
+              <div className="mt-2 flex items-center gap-2">
                 {e.registered ? (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--vba-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--vba-gold)]">
-                    <Check className="h-3.5 w-3.5" /> {t("m.events.registered")}
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--vba-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--vba-gold)]">
+                      <Check className="h-3.5 w-3.5" /> {t("m.events.registered")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => unregister(e.id)}
+                      disabled={busy === e.id}
+                      className="inline-flex items-center gap-1 rounded-lg border border-rose-300/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer disabled:opacity-50"
+                    >
+                      {busy === e.id ? (
+                        <span>Đang hủy...</span>
+                      ) : (
+                        <>
+                          <X className="h-3 w-3" />
+                          <span>Hủy tham gia</span>
+                        </>
+                      )}
+                    </button>
+                  </>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => register(e.id)}
                     disabled={busy === e.id}
-                    className="rounded-lg vba-gold-grad px-3 py-1.5 text-[11px] font-semibold text-[#1a1206] disabled:opacity-60"
+                    className="rounded-lg vba-gold-grad px-3 py-1.5 text-[11px] font-semibold text-[#1a1206] disabled:opacity-60 cursor-pointer"
                   >
                     {busy === e.id ? t("m.events.registering") : t("m.events.register_btn")}
                   </button>

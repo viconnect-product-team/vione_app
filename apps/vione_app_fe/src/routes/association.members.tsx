@@ -36,6 +36,7 @@ import {
 } from "@/hooks/use-connection";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
+import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 
 export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
@@ -208,7 +209,8 @@ function MembersScreen() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm theo tên hội viên, doanh nghiệp, ngành nghề..."
-            className="flex-1 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
+            className="borderless-search-input flex-1 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:outline-none placeholder:text-slate-400"
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
           {q && (
             <button
@@ -227,7 +229,7 @@ function MembersScreen() {
           onClick={() => setTab("all")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
             tab === "all"
-              ? "bg-sky-500 text-white shadow-xs"
+              ? "bg-[#003B95] text-white shadow-xs"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
@@ -237,7 +239,7 @@ function MembersScreen() {
           onClick={() => setTab("connected")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "connected"
-              ? "bg-sky-500 text-white shadow-xs"
+              ? "bg-[#003B95] text-white shadow-xs"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
@@ -248,7 +250,7 @@ function MembersScreen() {
           onClick={() => setTab("pending")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "pending"
-              ? "bg-sky-500 text-white shadow-xs"
+              ? "bg-[#003B95] text-white shadow-xs"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
@@ -308,7 +310,7 @@ function MembersScreen() {
             <div
               key={m.code}
               role="listitem"
-              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-sky-500/50 bg-white dark:bg-[#131a26] shadow-xs"
+              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-amber-500/50 bg-white dark:bg-[#131a26] shadow-xs"
             >
               <div className="flex items-center gap-3">
                 {/* Avatar with click to open profile */}
@@ -322,13 +324,13 @@ function MembersScreen() {
                     <img
                       src={avatarResolved}
                       alt={personDisplayName}
-                      className="h-13 w-13 rounded-full object-cover ring-2 ring-sky-500/40 group-hover:ring-sky-500 transition-all"
+                      className="h-13 w-13 rounded-full object-cover ring-2 ring-amber-500/40 group-hover:ring-amber-500 transition-all"
                       onError={(e) => {
                         e.currentTarget.src = "/ceo1983-logo.png";
                       }}
                     />
                   ) : (
-                    <span className="grid h-13 w-13 place-items-center rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/20 font-bold text-sm">
+                    <span className="grid h-13 w-13 place-items-center rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 ring-2 ring-amber-500/30 font-bold text-sm">
                       {m.type === "individual" ? (
                         <User className="h-6 w-6" />
                       ) : (
@@ -337,7 +339,7 @@ function MembersScreen() {
                     </span>
                   )}
                   {m.verified && (
-                    <BadgeCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-sky-500 fill-white dark:fill-slate-900" />
+                    <BadgeCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-amber-500 fill-white dark:fill-slate-900" />
                   )}
                 </button>
 
@@ -347,18 +349,18 @@ function MembersScreen() {
                     <button
                       type="button"
                       onClick={() => setSelectedMember(m)}
-                      className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-sky-600 dark:hover:text-sky-400 transition-colors text-left cursor-pointer"
+                      className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
                     >
                       {personDisplayName}
                     </button>
-                    <span className="rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
+                    <span className="rounded-md bg-[#003B95]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#003B95] dark:text-amber-400 shrink-0">
                       {m.code}
                     </span>
                   </div>
 
                   {companyDisplayName && companyDisplayName !== personDisplayName ? (
                     <p className="truncate text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 mt-0.5">
-                      <Building2 className="h-3 w-3 text-sky-500 shrink-0" />
+                      <Building2 className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
                       <span>{companyDisplayName}</span>
                     </p>
                   ) : null}
@@ -374,9 +376,9 @@ function MembersScreen() {
                 {/* Chat Action */}
                 <button
                   onClick={() => handleOpenChat(m.code, personDisplayName)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] py-1.5 px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500/50 active:scale-[0.98] transition-all cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] py-1.5 px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  <MessageSquare className="h-3.5 w-3.5 text-sky-500" />
+                  <MessageSquare className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                   Nhắn tin
                 </button>
 
@@ -405,7 +407,8 @@ function MembersScreen() {
                   <div className="flex-1 flex items-center gap-1.5">
                     <button
                       onClick={() => incomingReqId && handleAcceptInvite(incomingReqId, personDisplayName)}
-                      className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-sky-500 hover:bg-sky-600 py-1.5 px-2 text-[11px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                      style={{ color: "#ffffff" }}
+                      className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-1.5 px-2 text-[11px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
                     >
                       <Check className="h-3.5 w-3.5" />
                       Đồng ý
@@ -414,10 +417,11 @@ function MembersScreen() {
                 ) : (
                   <button
                     onClick={() => handleConnect(m)}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 py-1.5 px-3 text-[12px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                    style={{ color: "#ffffff" }}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-1.5 px-3 text-[12px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    Kết nối
+                    Gắn kết
                   </button>
                 )}
               </div>
@@ -426,181 +430,17 @@ function MembersScreen() {
         })}
       </div>
 
-      {/* Member Profile Modal Sheet */}
-      {selectedMember && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-xs p-0 sm:p-4 animate-fade-in"
-          onClick={() => setSelectedMember(null)}
-        >
-          <div
-            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#0f172a] p-6 shadow-2xl text-slate-900 dark:text-white space-y-4 animate-slide-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header / Close */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-              <span className="text-[12px] font-extrabold uppercase tracking-wider text-sky-500">
-                Hồ sơ hội viên CLB CEO 1983
-              </span>
-              <button
-                onClick={() => setSelectedMember(null)}
-                className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Profile Avatar & Names */}
-            <div className="flex items-center gap-4">
-              <div className="relative shrink-0">
-                {selectedMember.avatar ? (
-                  <img
-                    src={resolveMediaUrl(selectedMember.avatar) || selectedMember.avatar}
-                    alt={selectedMember.contact || selectedMember.name}
-                    className="h-18 w-18 rounded-2xl object-cover ring-2 ring-sky-500/40 shadow-md"
-                    onError={(e) => {
-                      e.currentTarget.src = "/ceo1983-logo.png";
-                    }}
-                  />
-                ) : (
-                  <div className="grid h-18 w-18 place-items-center rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/30">
-                    <User className="h-9 w-9" />
-                  </div>
-                )}
-                {selectedMember.verified && (
-                  <BadgeCheck className="absolute -bottom-1 -right-1 h-5 w-5 text-sky-500 fill-white dark:fill-slate-900" />
-                )}
-              </div>
-
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate text-[16px] font-extrabold text-slate-900 dark:text-white">
-                    {selectedMember.contact || selectedMember.personName || selectedMember.name}
-                  </h3>
-                  <span className="rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[9.5px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
-                    {selectedMember.code}
-                  </span>
-                </div>
-                {selectedMember.name && (
-                  <p className="truncate text-[13px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                    <span>{selectedMember.name}</span>
-                  </p>
-                )}
-                <p className="truncate text-[12px] text-slate-500 dark:text-slate-400">
-                  {[selectedMember.personTitle || selectedMember.industry, selectedMember.region].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-            </div>
-
-            {/* About / Bio if available */}
-            {selectedMember.about && (
-              <div className="rounded-2xl bg-slate-50 dark:bg-white/[0.03] p-3.5 text-[12.5px] text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-200/60 dark:border-white/5">
-                <p className="font-semibold text-[11px] text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  Giới thiệu
-                </p>
-                <p className="whitespace-pre-wrap">{selectedMember.about}</p>
-              </div>
-            )}
-
-            {/* Detailed Contact List */}
-            <div className="space-y-2 rounded-2xl bg-slate-50 dark:bg-white/[0.03] p-3.5 text-[12px] border border-slate-200/60 dark:border-white/5">
-              {selectedMember.phone && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <Phone className="h-3.5 w-3.5 text-sky-500" />
-                    <span>Điện thoại</span>
-                  </div>
-                  <a
-                    href={`tel:${selectedMember.phone}`}
-                    className="font-semibold text-sky-600 dark:text-sky-400 hover:underline"
-                  >
-                    {selectedMember.phone}
-                  </a>
-                </div>
-              )}
-              {selectedMember.email && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <Mail className="h-3.5 w-3.5 text-sky-500" />
-                    <span>Email</span>
-                  </div>
-                  <a
-                    href={`mailto:${selectedMember.email}`}
-                    className="font-semibold text-sky-600 dark:text-sky-400 hover:underline truncate max-w-[200px]"
-                  >
-                    {selectedMember.email}
-                  </a>
-                </div>
-              )}
-              {selectedMember.address && (
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 shrink-0">
-                    <MapPin className="h-3.5 w-3.5 text-sky-500" />
-                    <span>Địa chỉ</span>
-                  </div>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 text-right">
-                    {selectedMember.address}
-                  </span>
-                </div>
-              )}
-              {selectedMember.website && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <Globe className="h-3.5 w-3.5 text-sky-500" />
-                    <span>Website</span>
-                  </div>
-                  <a
-                    href={selectedMember.website.startsWith("http") ? selectedMember.website : `https://${selectedMember.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
-                  >
-                    <span>Truy cập</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Actions in Profile */}
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const pName = selectedMember.contact || selectedMember.personName || selectedMember.name;
-                  setSelectedMember(null);
-                  handleOpenChat(selectedMember.code, pName);
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 py-2.5 text-[12.5px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition active:scale-95 cursor-pointer"
-              >
-                <MessageSquare className="h-4 w-4" />
-                Nhắn tin
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  handleConnect(selectedMember);
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-2.5 text-[12.5px] font-bold text-white hover:brightness-105 transition active:scale-95 cursor-pointer shadow-md shadow-sky-500/20"
-              >
-                <UserPlus className="h-4 w-4" />
-                Kết nối ngay
-              </button>
-            </div>
-
-            <div className="text-center pt-1">
-              <Link
-                to="/card/$code"
-                params={{ code: selectedMember.code }}
-                className="text-[12px] font-semibold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-white transition underline"
-              >
-                Xem danh thiếp / thẻ hội viên số
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Member Profile Modal */}
+      <MemberProfileModal
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        onMessage={(m) => {
+          const pName = m.contact || m.personName || m.name;
+          setSelectedMember(null);
+          handleOpenChat(m.code, pName);
+        }}
+        onConnect={(m) => handleConnect(m)}
+      />
     </div>
   );
 }

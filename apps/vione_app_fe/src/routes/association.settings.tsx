@@ -153,24 +153,24 @@ function AssociationSettingsScreen() {
 
       <div className="mx-4 mt-4 space-y-4">
         {/* CEO 1983 Association Badge Header */}
-        <div className="p-4 rounded-2xl vba-card border border-sky-500/30 bg-gradient-to-br from-[#131A29] via-[#0E1522] to-[#0A0E18] text-white shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="p-4 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-br from-[#00224F] via-[#003B95] to-[#0A1A3A] text-white shadow-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
           <div className="flex items-center gap-3.5 relative z-10">
-            <div className="h-14 w-14 rounded-2xl bg-white p-1.5 shadow-md flex items-center justify-center shrink-0 border border-sky-300">
+            <div className="h-14 w-14 rounded-2xl bg-white p-1.5 shadow-md flex items-center justify-center shrink-0 border border-amber-400/60">
               <img src="/ceo1983-logo.png" alt="CEO 1983" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase font-bold tracking-widest text-sky-400">
+              <div className="text-[10px] uppercase font-extrabold tracking-widest text-amber-300">
                 CLB DOANH NHÂN 1983
               </div>
               <h2 className="text-[16px] font-black text-white leading-snug truncate">
                 {member?.name || "Hội viên Doanh nhân"}
               </h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="inline-flex items-center gap-1 rounded bg-sky-500/20 px-1.5 py-0.5 text-[9.5px] font-bold text-sky-300 border border-sky-500/30">
-                  <ShieldCheck className="h-3 w-3" /> {member?.code || "M1983-MEMBER"}
+                <span className="inline-flex items-center gap-1 rounded bg-amber-400/20 px-1.5 py-0.5 text-[9.5px] font-bold text-amber-300 border border-amber-400/40">
+                  <ShieldCheck className="h-3 w-3 text-amber-300" /> {member?.code || "M1983-MEMBER"}
                 </span>
-                <span className="text-[11px] text-slate-400 truncate">
+                <span className="text-[11px] text-blue-100 truncate">
                   {member?.title || "Hội viên chính thức"}
                 </span>
               </div>
@@ -181,7 +181,7 @@ function AssociationSettingsScreen() {
         {/* 1. Update Profile Avatar Section (MinIO) */}
         <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
-            <User className="h-3.5 w-3.5 text-sky-500" /> Ảnh đại diện hội viên
+            <User className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Ảnh đại diện hội viên
           </h3>
 
           <div className="flex items-center gap-4">
@@ -189,7 +189,7 @@ function AssociationSettingsScreen() {
               <img
                 src={currentAvatar}
                 alt="Avatar"
-                className="h-20 w-20 rounded-full object-cover ring-2 ring-sky-500 shadow-md bg-slate-900"
+                className="h-20 w-20 rounded-full object-cover ring-2 ring-amber-500 shadow-md bg-slate-900"
                 onError={(e) => {
                   e.currentTarget.src = "/ceo1983-logo.png";
                 }}
@@ -217,17 +217,18 @@ function AssociationSettingsScreen() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="inline-flex items-center gap-2 rounded-xl border border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/40 px-3.5 py-2 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-600 hover:text-white transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer active:scale-95"
+                style={{ color: "#ffffff" }}
               >
                 {uploadingAvatar ? (
                   <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Đang lưu MinIO...</span>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                    <span className="text-white font-bold">Đang lưu MinIO...</span>
                   </>
                 ) : (
                   <>
-                    <Camera className="h-3.5 w-3.5" />
-                    <span>Tải ảnh đại diện mới</span>
+                    <Camera className="h-3.5 w-3.5 text-white" />
+                    <span className="text-white font-bold">Tải ảnh đại diện mới</span>
                   </>
                 )}
               </button>
@@ -241,7 +242,7 @@ function AssociationSettingsScreen() {
         {/* 2. Theme Preferences */}
         <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
-            <Sparkles className="h-3.5 w-3.5 text-sky-500" /> Giao diện hiển thị
+            <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Giao diện hiển thị
           </h3>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -255,7 +256,7 @@ function AssociationSettingsScreen() {
                 onClick={() => setTheme(mode)}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
                   theme === mode
-                    ? "border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 shadow-xs font-bold"
+                    ? "border-[#003B95] dark:border-amber-500 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-xs font-bold"
                     : "border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] text-[var(--vba-text-muted)] hover:text-[var(--vba-text)]"
                 }`}
               >
@@ -270,7 +271,7 @@ function AssociationSettingsScreen() {
         <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Sparkles className="h-4 w-4 text-sky-500" />
+              <Sparkles className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
               <div>
                 <div className="text-[13px] font-bold text-[var(--vba-text)]">
                   Tính năng sự kiện
@@ -292,7 +293,7 @@ function AssociationSettingsScreen() {
                 }}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#003B95]"></div>
             </label>
           </div>
         </section>
@@ -300,7 +301,7 @@ function AssociationSettingsScreen() {
         {/* 4. Change Password */}
         <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
-            <Lock className="h-3.5 w-3.5 text-sky-500" /> Đổi mật khẩu
+            <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Đổi mật khẩu
           </h3>
           <form onSubmit={handleChangePassword} className="space-y-3">
             <div>
@@ -312,7 +313,7 @@ function AssociationSettingsScreen() {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
               />
             </div>
             <div>
@@ -324,7 +325,7 @@ function AssociationSettingsScreen() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
               />
             </div>
             <div>
@@ -336,20 +337,21 @@ function AssociationSettingsScreen() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
               />
             </div>
             <button
               type="submit"
               disabled={passwordLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 py-3 text-xs font-bold text-white shadow-md shadow-sky-600/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md shadow-blue-900/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              style={{ color: "#ffffff" }}
             >
               {passwordLoading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
               ) : (
                 <KeyRound className="h-3.5 w-3.5 text-white" />
               )}
-              <span>Cập nhật mật khẩu</span>
+              <span className="text-white font-bold">Cập nhật mật khẩu</span>
             </button>
           </form>
         </section>
@@ -358,7 +360,7 @@ function AssociationSettingsScreen() {
         <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Bell className="h-4 w-4 text-sky-500" />
+              <Bell className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
               <div>
                 <div className="text-[13px] font-bold text-[var(--vba-text)]">
                   Thông báo nợ phí & Cuộc họp
@@ -375,7 +377,7 @@ function AssociationSettingsScreen() {
                 setNotifEnabled(e.target.checked);
                 toast.success(e.target.checked ? "Đã bật thông báo" : "Đã tắt thông báo");
               }}
-              className="h-5 w-5 accent-sky-600 rounded cursor-pointer"
+              className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
             />
           </div>
         </section>
@@ -384,10 +386,11 @@ function AssociationSettingsScreen() {
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 py-3 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white transition-all active:scale-[0.99] shadow-sm cursor-pointer"
+          style={{ color: "#ffffff" }}
         >
-          <LogOut className="h-4 w-4" />
-          <span>Đăng xuất khỏi App Hiệp Hội</span>
+          <LogOut className="h-4 w-4 text-white" />
+          <span className="text-white font-bold">Đăng xuất khỏi App Hiệp Hội</span>
         </button>
       </div>
     </div>

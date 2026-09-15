@@ -24,8 +24,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // BẬT CHẾ ĐỘ LIVE DEV SERVER (Tự động cập nhật UI mới nhất khi đẩy code lên server)
 const USE_REMOTE_SERVER = true;
 
-// Cấu hình URL server dev của bạn:
-const REMOTE_URL = 'http://14.225.217.232:5000';
+// Cấu hình URL server dev cho ViOne Connect:
+const REMOTE_URL = 'http://14.225.217.232:5000/connect-app';
 
 // Cho phép kết nối qua giao thức HTTP (cleartext) với IP server dev
 const CLEARTEXT = true;

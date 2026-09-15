@@ -5,18 +5,25 @@ export type EventThemeType = "mid-autumn" | "national-day" | "tet" | "none";
 
 const EVENT_THEME_STORAGE_KEY = "vba_event_theme_disabled";
 const EVENT_THEME_TYPE_KEY = "vba_event_theme_type";
+const EVENT_THEME_ENABLED_KEY = "vba_event_theme_enabled";
 
 export function isEventThemeEnabled(): boolean {
-  if (typeof window === "undefined") return true;
-  return localStorage.getItem(EVENT_THEME_STORAGE_KEY) !== "true";
+  if (typeof window === "undefined") return false;
+  // Mặc định tạm thời tắt theme Trung thu theo chuẩn CEO 1983 Classic Navy & Gold
+  // Chỉ bật khi người dùng chủ động kích hoạt từ Trang Cá Nhân
+  const explicitEnabled = localStorage.getItem(EVENT_THEME_ENABLED_KEY) === "true";
+  const explicitDisabled = localStorage.getItem(EVENT_THEME_STORAGE_KEY) === "true";
+  return explicitEnabled && !explicitDisabled;
 }
 
 export function setEventThemeEnabled(enabled: boolean) {
   if (typeof window === "undefined") return;
   if (enabled) {
+    localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
     localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
   } else {
     localStorage.setItem(EVENT_THEME_STORAGE_KEY, "true");
+    localStorage.removeItem(EVENT_THEME_ENABLED_KEY);
   }
   window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { enabled } }));
 }

@@ -12,6 +12,8 @@ export type MyConversation = {
   unread: number;
   avatarUrl?: string | null;
   isSystem?: boolean;
+  isOnline?: boolean;
+  userId?: string | null;
 };
 
 export type ChatMessage = {
@@ -40,6 +42,8 @@ export const listConversations = createServerFn({ method: "GET" })
         unread: c.unread ?? 0,
         avatarUrl: c.avatarUrl ?? null,
         isSystem: Boolean(c.isSystem),
+        isOnline: Boolean(c.isOnline),
+        userId: c.userId ?? null,
       }));
     } catch {
       return [];

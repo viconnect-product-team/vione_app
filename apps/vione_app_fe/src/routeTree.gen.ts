@@ -159,6 +159,7 @@ import { Route as AssociationEventsRouteImport } from './routes/association.even
 import { Route as AssociationCheckinRouteImport } from './routes/association.checkin'
 import { Route as AssociationCardRouteImport } from './routes/association.card'
 import { Route as AssociationBusinessCardsRouteImport } from './routes/association.business-cards'
+import { Route as AssociationBenefitsRouteImport } from './routes/association.benefits'
 import { Route as AdminLandingTemplatesRouteImport } from './routes/admin.landing-templates'
 import { Route as AdminDemoLeadsRouteImport } from './routes/admin.demo-leads'
 import { Route as AdminCtaAnalyticsRouteImport } from './routes/admin.cta-analytics'
@@ -997,6 +998,11 @@ const AssociationBusinessCardsRoute =
     path: '/business-cards',
     getParentRoute: () => AssociationRoute,
   } as any)
+const AssociationBenefitsRoute = AssociationBenefitsRouteImport.update({
+  id: '/benefits',
+  path: '/benefits',
+  getParentRoute: () => AssociationRoute,
+} as any)
 const AdminLandingTemplatesRoute = AdminLandingTemplatesRouteImport.update({
   id: '/admin/landing-templates',
   path: '/admin/landing-templates',
@@ -1490,6 +1496,7 @@ export interface FileRoutesByFullPath {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -1708,6 +1715,7 @@ export interface FileRoutesByTo {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -1922,6 +1930,7 @@ export interface FileRoutesById {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
   '/association/card': typeof AssociationCardRoute
   '/association/checkin': typeof AssociationCheckinRoute
@@ -2155,6 +2164,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/association/benefits'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -2373,6 +2383,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/association/benefits'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -2586,6 +2597,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/association/benefits'
     | '/association/business-cards'
     | '/association/card'
     | '/association/checkin'
@@ -3894,6 +3906,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssociationBusinessCardsRouteImport
       parentRoute: typeof AssociationRoute
     }
+    '/association/benefits': {
+      id: '/association/benefits'
+      path: '/benefits'
+      fullPath: '/association/benefits'
+      preLoaderRoute: typeof AssociationBenefitsRouteImport
+      parentRoute: typeof AssociationRoute
+    }
     '/admin/landing-templates': {
       id: '/admin/landing-templates'
       path: '/admin/landing-templates'
@@ -4497,6 +4516,7 @@ const AssociationRenewRouteWithChildren =
   AssociationRenewRoute._addFileChildren(AssociationRenewRouteChildren)
 
 interface AssociationRouteChildren {
+  AssociationBenefitsRoute: typeof AssociationBenefitsRoute
   AssociationBusinessCardsRoute: typeof AssociationBusinessCardsRoute
   AssociationCardRoute: typeof AssociationCardRoute
   AssociationCheckinRoute: typeof AssociationCheckinRoute
@@ -4518,6 +4538,7 @@ interface AssociationRouteChildren {
 }
 
 const AssociationRouteChildren: AssociationRouteChildren = {
+  AssociationBenefitsRoute: AssociationBenefitsRoute,
   AssociationBusinessCardsRoute: AssociationBusinessCardsRoute,
   AssociationCardRoute: AssociationCardRoute,
   AssociationCheckinRoute: AssociationCheckinRoute,

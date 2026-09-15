@@ -24,6 +24,7 @@ vi.mock("@/lib/member-app.functions", () => ({
   listConversations: (...a: unknown[]) => listConversations(...(a as [])),
   listMessages: vi.fn(async () => []),
   sendMessage: vi.fn(async () => ({})),
+  listMembers: vi.fn(async () => []),
 }));
 
 vi.mock("@/integrations/supabase/client", () => {

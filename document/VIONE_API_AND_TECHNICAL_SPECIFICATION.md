@@ -222,6 +222,29 @@ Mã phản hồi chuẩn RESTful:
 }
 ```
 
+### 3. `POST /api/events/:id/register`
+- **Mô tả**: Hội viên đăng ký tham gia sự kiện Hiệp hội trên di động.
+- **Headers**: `Authorization: Bearer <jwt_token>`
+- **Response 200 OK**:
+```json
+{
+  "ok": true,
+  "registrationId": "REG-M1983-EVT-01"
+}
+```
+
+### 4. `POST /api/events/:id/cancel`
+- **Mô tả**: Hội viên chủ động hủy đăng ký tham gia sự kiện.
+- **Headers**: `Authorization: Bearer <jwt_token>`
+- **Xử lý**: Cập nhật trạng thái vé `status = 'cancelled'` trong bảng `public.event_registrations`, trừ số lượng `registered = GREATEST(0, registered - 1)` trên bảng `public.events`, và phát thông báo xác nhận hủy thành công.
+- **Response 200 OK**:
+```json
+{
+  "ok": true,
+  "cancelled": true
+}
+```
+
 ---
 
 ## 2.4. Phân hệ Tài chính, Niên liễm & Cổng VietQR (Fees, Invoices & Webhooks)
@@ -934,3 +957,72 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
   - Tạo component `SeasonalEventHeader` trang trí các yếu tố lễ hội Trung Thu truyền thống Việt Nam: Đèn lồng ông sao đung đưa (`animate-bounce`), dây tua rua đỏ vàng, vầng trăng rực sáng (`animate-pulse`) và các vì sao lấp lánh.
   - Cho phép hội viên chủ động bật hoặc tắt theme sự kiện thông qua công tắc Switch tại trang Cá nhân, cập nhật trạng thái thời gian thực thông qua `CustomEvent`.
   - Kênh CRM đổi tên thành "Kênh thông báo hệ thống", giải mã an toàn `safeDecode` các chuỗi URL encoded tiếng Việt (`H%E1%BB%8Dp...`) trên thư mời họp và thông báo giao dịch.
+
+### 9.6. Chuẩn Hóa Thông Báo Đa Kênh CRM - Hiệp Hội, Luồng Chat Tối Ưu & Trải Nghiệm Tương Tác
+- **1. Phân Phối Thông Báo Đa Kênh CRM -> Hiệp Hội**:
+  - `admin.service.ts`: Khi gửi thông báo (`status = 'sent'`), hàm `dispatchBroadcastToMembersAndUsers` tự động ghi nhận vào cả `public.member_notifications` (cho từng hội viên trong `public.members`) và `public.business_notifications` (cho từng người dùng trong `public.profiles` / `auth.users`) kèm `dedupe_key`.
+  - `connect-app.service.ts`: `listMyMemberNotifications` truy vấn song song `public.notifications` (phạm vi `association_app`, `all`, `crm`), deduplicate với thông báo cá nhân, và tính toán trạng thái chưa đọc `unread: !isDismissed` dựa trên danh sách `broadcast_notification_dismissals`.
+  - `association.tsx`: Đăng ký socket listener thông qua hook `useAssociationRealtimeNotifications`, tự động hiển thị toast và phát CustomEvent `notifications-updated` để các trang con tự nạp lại dữ liệu âm thầm.
+- **2. Khắc Phục Lỗi Đường Dẫn Ưu Đãi Hội Viên**:
+  - Cập nhật nút tính năng nhanh trỏ chính xác về `/association/perks`.
+  - Tạo route alias `/association/benefits` tự động redirect 301 sang `/association/perks` tại `beforeLoad` bảo đảm không phát sinh lỗi 404.
+- **3. Tối Ưu Hóa Tần Suất Làm Mới Màn Hình Nhắn Tin**:
+  - Loại bỏ hoàn toàn các hàm `setInterval` gọi lại API định kỳ (2.5 - 3s) trong `association.messages.tsx`, chấm dứt hiện tượng giật lag và nhấp nháy màn hình.
+  - Sử dụng sự kiện `focus` của trình duyệt để nạp lại dữ liệu âm thầm kết hợp với WebSocket realtime (`dm:message_received`, `dm:thread_updated`, `dm:message_read`) để hiển thị tin nhắn mới tức thời.
+- **4. Căn Giữa & Đồng Bộ Màu Sắc Modal "Liên Hệ Nhanh"**:
+  - `AssociationContactSheet.tsx` được căn giữa tuyệt đối (`items-center justify-center p-4`), loại bỏ căn dính đáy (`items-end`).
+  - Toàn bộ các mã màu vàng/cam hổ phách được chuyển hóa sang màu xanh Sky Blue hoàng gia (`from-sky-500 via-sky-600 to-blue-600`), nhãn nút hiển thị chuẩn hóa là `"Liên hệ nhanh"`.
+- **5. Nâng Cao Tương Phản Huy Hiệu Tin Tức & Icon Sự Kiện**:
+  - Huy hiệu danh mục trong `association.news.tsx` chuyển sang phong cách pill nổi bật: nền xanh sáng, viền đậm, chữ xanh đậm in hoa siêu đậm (`font-extrabold`).
+  - Biểu tượng "Sự kiện nổi bật" trên trang chủ được nâng cấp thành khối bo góc vuông gradient sắc nét với biểu tượng lịch viền dày.
+- **6. Thao Tác Xóa Thông Báo Trực Quan**:
+  - Bổ sung biểu tượng thùng rác `Trash2` màu đỏ hồng (`text-rose-500`) trên từng thẻ thông báo để xóa nhanh tức thì.
+  - Thanh tác vụ dưới đáy và nút thao tác trên header được đổi sang chức năng "Xóa" với biểu tượng `Trash2`, tích hợp modal xác nhận xóa an toàn.
+
+
+## 15.8 Tinh Chỉnh UI/UX Chuẩn Hóa Bộ Nhận Diện CEO 1983 (2026-09-14)
+- **Borderless Search Input**: Bỏ hoàn toàn viền focus và ring shadow trên ô tìm kiếm tin nhắn (`/association/messages`) qua `.borderless-search-input` và CSS exclusion `.vba-app input:not(.borderless-search-input):focus-visible`.
+- **Icon Sự Kiện Nổi Bật**: Chuyển từ container gradient xanh đặc sang icon Calendar phẳng (`text-sky-600 dark:text-sky-400`), đồng bộ 100% format không viền và sắc độ êm dịu với icon Crown mục "Ưu đãi Hội viên & Đối tác".
+- **Nút "Xem" Thư Viện Tài Liệu**: Chuyển từ `bg-sky-500/10 text-sky-600` mờ nhạt sang nút pill đậm `bg-sky-600 hover:bg-sky-700 text-white font-extrabold` độ tương phản cao trên nền thẻ trắng.
+
+## 15.9 Khắc Phục Triệt Để Luồng Đăng Nhập CRM & Ngăn Chặn Điều Hướng Lệch Sang ViOne (2026-09-14)
+- **Bảo Vệ Độc Lập Tuyệt Đối Cổng Đăng Nhập CRM (`/auth`)**:
+  - Không tự động chuyển hướng sang `/vione/login` khi tham số `redirect` chứa `/connect-app`.
+  - Sau khi đăng nhập thành công, `goPostLogin()` đưa Quản trị viên vào thẳng CRM Dashboard (`/`).
+- **Xóa Bỏ Các Cơ Chế Cưỡng Bức Chuyển Hướng Mobile Sang ViOne**:
+  - Gỡ bỏ `location.replace("/connect-app")` trong inline script khởi tạo của `__root.tsx`.
+  - Gỡ bỏ `navigate({ to: "/connect-app" })` trên `routes/index.tsx` và `AuthGate`.
+  - Đảm bảo Quản trị viên và người dùng có thể sử dụng CRM Dashboard trên cả máy tính, tablet và điện thoại di động mà không bị gián đoạn.
+
+
+## 18. QUY TRÌNH SỰ KIỆN, TIN NHẮN THANH TOÁN VIETQR & THÔNG BÁO THU PHÍ (CẬP NHẬT 2026)
+
+### 18.1. Điều phối Khởi chạy Ứng dụng Mobile
+- **Capacitor Mobile Native**: `apps/mobile/capacitor.config.ts` trỏ trực tiếp `REMOTE_URL = 'http://14.225.217.232:5000/connect-app'`.
+- **Trình duyệt Di động**: Khi người dùng di động mở `/` mà không có cờ `portal=crm`, hệ thống tự động điều hướng sang `/connect-app`, loại bỏ hoàn toàn tình trạng mở nhầm trang landing hệ thống `/landing`.
+- **Cổng Quản trị CRM**: Truy cập qua `/auth?portal=crm`, sau khi đăng nhập duy trì tại `/?portal=crm` với `sessionStorage.crm_portal = '1'`.
+
+### 18.2. Nghiệp vụ Sự kiện Hiệp hội (`/association/events`)
+- **API Đăng ký Sự kiện**: `POST /api/events/:id/register`
+  - Body: `{ fullName, phone, email, company, position, ticketCount, ticketType, note }`
+  - Cơ chế thanh toán tự động: Backend tính tổng phí (Đơn giá 500.000 đ × Số vé), sinh mã hóa đơn `EV-[MÃ]` và mã VietQR `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=[TIỀN]&addInfo=[MÃ]`.
+  - Tự động đẩy 2 tin nhắn vào bảng `public.messages` từ `ADMIN` tới mã hội viên:
+    1. Tin nhắn văn bản thông báo tiếp nhận đăng ký kèm thông tin cá nhân và số lượng vé.
+    2. Thẻ thanh toán VietQR dạng `[action:payment|amount:...|invoice:...|qr:...|due:...|desc:...]` hiển thị trực tiếp trong khung chat hội viên.
+  - Tự động tạo bản ghi thông báo trong `public.member_notifications` và `public.business_notifications`.
+
+### 18.3. Nghiệp vụ Thông báo & Điều hướng Thanh toán (`/association/notifications`)
+- Modal xem chi tiết thông báo (`NotificationDetailModal`) cho phép xem toàn văn thông báo kèm người gửi và thời gian gửi.
+- Tự động nhận diện thông báo có phí: kiểm tra `category === 'fee'`, `notificationKind === 'overdue_payment_reminder'`, hoặc chuỗi chứa các từ khóa thu phí/hội phí/niên liễm/sự kiện/hóa đơn.
+- Cung cấp nút nổi bật **"Thanh toán ngay"** trên cả thẻ danh sách và trong modal chi tiết, tự động điều hướng vào trang thanh toán hội phí `/association/renew` hoặc khung chat thanh toán `/association/messages?peerCode=admin`.
+
+### 11.23 Chuẩn hóa UI/UX Tối giản Mobile & Điều hướng Ứng dụng Hội viên (15/09/2026)
+1. **Thông báo Hội viên (`/association/notifications`)**:
+   - Loại bỏ các icon thao tác trùng lặp ở góc trên cùng bên phải.
+   - Hàng nút hành động dưới thẻ gồm các nút compact đồng nhất: "Xem chi tiết", "Ẩn", "Xóa" và "Thanh toán ngay" (khi có phí).
+2. **Khung chat Hội viên (`/association/messages`)**:
+   - Nút quay lại trên header chat sử dụng duy nhất icon `ChevronLeft` kích thước lớn (`h-6 w-6`), lược bỏ chữ để tối ưu không gian hiển thị danh tính đối tác và trạng thái trực tuyến.
+3. **Danh thiếp số (`/association/business-cards`)**:
+   - `MemberHeader` được trang bị nút quay lại (`back`), đảm bảo trải nghiệm liền mạch khi mở từ menu hoặc trang chủ.
+4. **Sự kiện Hội viên (`/association/events`)**:
+   - Tinh gọn thanh tiêu đề bằng cách bỏ icon quét QR trùng lặp ngang hàng với chữ "Sự kiện".

@@ -211,6 +211,7 @@ export class BusinessCardController {
   getLeadStats(@Request() req: any) {
     // Assuming days is passed as a query param
     const days = req.query.days ? parseInt(req.query.days, 10) : 30;
-    return this.businessCardService.getLeadStats(req.user.sub, days);
+    const userId = req.user.id || req.user.sub;
+    return this.businessCardService.getLeadStats(userId, days);
   }
 }

@@ -999,19 +999,28 @@ function NotificationsScreen() {
         onOpenChange={(open) => !open && setConfirmDismiss(null)}
       >
         <AlertDialogContent
+          className="max-w-[330px] p-6 rounded-3xl bg-white/95 dark:bg-[#131A26]/95 border border-slate-200/80 dark:border-white/10 shadow-2xl text-slate-900 dark:text-white backdrop-blur-xl text-center space-y-2"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             restoreDialogFocus();
           }}
         >
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("m.notifications.dismissConfirm.title")}</AlertDialogTitle>
-            <AlertDialogDescription>
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 mb-1 ring-8 ring-sky-500/5">
+            <EyeOff className="h-6 w-6" />
+          </div>
+          <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
+            <AlertDialogTitle className="text-[17px] font-bold text-slate-900 dark:text-white text-center">
+              {t("m.notifications.dismissConfirm.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400 text-center max-w-[260px] mx-auto">
               {t("m.notifications.dismissConfirm.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmDismiss(null)}>
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-3 sm:flex-none">
+            <AlertDialogCancel
+              onClick={() => setConfirmDismiss(null)}
+              className="w-full h-11 !m-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[13.5px] font-semibold transition cursor-pointer flex items-center justify-center"
+            >
               {t("m.notifications.dismissConfirm.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1019,6 +1028,7 @@ function NotificationsScreen() {
                 if (confirmDismiss) onDismiss(confirmDismiss);
                 setConfirmDismiss(null);
               }}
+              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-[13.5px] font-bold shadow-md shadow-sky-500/25 transition cursor-pointer flex items-center justify-center"
             >
               {t("m.notifications.dismissConfirm.confirm")}
             </AlertDialogAction>
@@ -1031,22 +1041,34 @@ function NotificationsScreen() {
         onOpenChange={(open) => !open && setConfirmDismissAll(false)}
       >
         <AlertDialogContent
+          className="max-w-[330px] p-6 rounded-3xl bg-white/95 dark:bg-[#131A26]/95 border border-slate-200/80 dark:border-white/10 shadow-2xl text-slate-900 dark:text-white backdrop-blur-xl text-center space-y-2"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             restoreDialogFocus();
           }}
         >
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("m.notifications.dismissAllConfirm.title")}</AlertDialogTitle>
-            <AlertDialogDescription>
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 mb-1 ring-8 ring-sky-500/5">
+            <EyeOff className="h-6 w-6" />
+          </div>
+          <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
+            <AlertDialogTitle className="text-[17px] font-bold text-slate-900 dark:text-white text-center">
+              {t("m.notifications.dismissAllConfirm.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400 text-center max-w-[260px] mx-auto">
               {t("m.notifications.dismissAllConfirm.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmDismissAll(false)}>
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-3 sm:flex-none">
+            <AlertDialogCancel
+              onClick={() => setConfirmDismissAll(false)}
+              className="w-full h-11 !m-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[13.5px] font-semibold transition cursor-pointer flex items-center justify-center"
+            >
               {t("m.notifications.dismissAllConfirm.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={executeDismissAll}>
+            <AlertDialogAction
+              onClick={executeDismissAll}
+              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-[13.5px] font-bold shadow-md shadow-sky-500/25 transition cursor-pointer flex items-center justify-center"
+            >
               {t("m.notifications.dismissAllConfirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>

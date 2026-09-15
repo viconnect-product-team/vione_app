@@ -1010,6 +1010,514 @@ async function generateProgressWorkbook() {
     row.height = 32;
   });
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHEET 4: WEB LANDING (HIỆN TRẠNG & TIẾN ĐỘ PHÁT TRIỂN CÁC TRANG LANDING)
+  // ════════════════════════════════════════════════════════════════════════════
+  const wsLanding = wb.addWorksheet('Web Landing', {
+    views: [{ state: 'frozen', ySplit: 2, showGridLines: true }],
+  });
+
+  const landingColumns = [
+    { header: 'STT', key: 'stt', width: 6 },
+    { header: 'Mã WBS', key: 'wbs', width: 14 },
+    { header: 'Giao Diện Landing', key: 'template', width: 28 },
+    { header: 'Tên Section / Khối Giao Diện', key: 'section', width: 34 },
+    { header: 'Nội Dung / Bản Demo Text & UI Hiện Có', key: 'demoContent', width: 50 },
+    { header: 'Đặc Tính Kỹ Thuật & Hiệu Ứng', key: 'effects', width: 32 },
+    { header: 'Tích Hợp API / Biểu Mẫu', key: 'api', width: 26 },
+    { header: 'Người Thực Hiện', key: 'pic', width: 18 },
+    { header: 'Ưu Tiên', key: 'priority', width: 13 },
+    { header: 'Ngày Bắt Đầu', key: 'startDate', width: 18 },
+    { header: 'Ngày Dự Kiến Hoàn Thành', key: 'endDate', width: 18 },
+    { header: 'Tiến Độ (%)', key: 'progress', width: 13 },
+    { header: 'Tình Trạng Thực Tế', key: 'status', width: 22 },
+    { header: 'File Nguồn Code', key: 'sourceFile', width: 36 },
+  ];
+
+  wsLanding.columns = landingColumns;
+
+  // Title Row
+  wsLanding.mergeCells('A1:N1');
+  const lTitle = wsLanding.getCell('A1');
+  lTitle.value = 'BẢNG THEO DÕI TIẾN ĐỘ & HIỆN TRẠNG CÁC TRANG WEB LANDING HỆ SINH THÁI VIONE';
+  lTitle.font = { name: 'Times New Roman', size: 12, bold: true, color: { argb: 'FFFFFF' } };
+  lTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  lTitle.alignment = { vertical: 'middle', horizontal: 'center' };
+  wsLanding.getRow(1).height = 34;
+
+  // Header Row
+  const lHeaderRow = wsLanding.getRow(2);
+  landingColumns.forEach((col, idx) => {
+    const c = lHeaderRow.getCell(idx + 1);
+    c.value = col.header;
+    c.font = { name: 'Times New Roman', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE_HEADER } };
+    c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    c.border = BORDER;
+  });
+  lHeaderRow.height = 30;
+
+  const landingTasks = [
+    {
+      wbs: 'WBS-LAND-001', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Hero Banner Hoàng Kim CEO 1983',
+      demo: 'Khẩu hiệu "Hội tụ Tinh hoa - Kết nối Bền vững", số lượng hội viên thời gian thực, nút Đăng ký & Tải App',
+      effects: 'Golden Glow gradient, hạt ánh sáng vàng chuyển động, 3D emblem xoay nhẹ',
+      api: 'Có (Đếm hội viên active)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-002', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Tôn Chỉ & Giá Trị Cốt Lõi CLB',
+      demo: '5 giá trị cốt lõi: Đoàn kết, Tương trợ, Tiên phong, Bền vững, Nghĩa tình doanh nhân sinh năm Quý Hợi 1983',
+      effects: 'Card kính tối màu mờ viền dát vàng 24K, hover phóng to nhẹ nhàng',
+      api: 'Không (Nội dung tĩnh)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-003', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Ban Chấp Hành & Hội Đồng Cố Vấn',
+      demo: 'Chân dung Chủ tịch, các Phó Chủ tịch chuyên trách, Trưởng ban kèm thông tin doanh nghiệp đại diện',
+      effects: 'Avatar frame kim loại vàng óng, hiệu ứng spotlight khi di chuột',
+      api: 'Có (Đọc danh sách BCH từ CRM)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-004', template: 'CEO 1983 Landing (Hoàng Kim)', section: '8 Đặc Quyền Hội Viên Kim Cương',
+      demo: 'Giao thương B2B nội khối, cấp Thẻ số NFC độc bản, tham gia Gala thường niên, bảo hộ thương hiệu',
+      effects: 'Grid 4 cột responsive, icon mạ vàng chuyển động lấp lánh',
+      api: 'Không (Nội dung bản sắc)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-005', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Hệ Sinh Thái Số & Ứng Dụng Di Động',
+      demo: 'Demo mockup màn hình App Hiệp hội trên iPhone 16 Pro Max, liên kết tải trên App Store & Google Play',
+      effects: '3D phone tilt parallax, quét tia sáng quét qua màn hình app',
+      api: 'Không (Mockup trực quan)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-006', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Sự Kiện Sắp Diễn Ra & Gala Thường Niên',
+      demo: 'Đại Hội Doanh Nhân CEO 1983 - Kỷ Nguyên Vươn Mình, Diễn đàn Giao thương & Gala Dinner',
+      effects: 'Đồng hồ đếm ngược Countdown thời gian thực, nút giữ chỗ tức thì',
+      api: 'Có (Lấy sự kiện từ Event DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-007', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Bản Tin & Báo Chí Nói Về CEO 1983',
+      demo: 'Tin tức báo Tuổi Trẻ, VnExpress, Báo Doanh Nhân đưa tin về các hoạt động thiện nguyện và xúc tiến thương mại',
+      effects: 'Carousel tin tức tự động trượt mượt mà, bộ lọc tin mới nhất',
+      api: 'Có (Lấy bài viết từ News module)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-008', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Biểu Mẫu Đăng Ký Gia Nhập Online',
+      demo: 'Form tiếp nhận thông tin: Họ tên, Năm sinh 1983, Tên doanh nghiệp, MST, Số điện thoại, Email, Chức vụ',
+      effects: 'Floating labels, validate realtime từng ô, hiệu ứng submit thành công',
+      api: 'Có (Gửi hồ sơ vào CRM chờ duyệt)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-009', template: 'CEO 1983 Landing (Hoàng Kim)', section: 'Chân Trang & Thông Tin Thường Trực',
+      demo: 'Trụ sở Ban Thư Ký, Hotline liên hệ 24/7, Email tiếp nhận tài trợ, Bản đồ Google Maps, Bản quyền 2026',
+      effects: 'Dark luxury footer, icon mạng xã hội hover gradient vàng',
+      api: 'Không', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983Landing.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-010', template: 'CEO 1983 Landing (Blue-White)', section: 'Giao Diện Nhận Diện Xanh Thương Hiệu',
+      demo: 'Toàn bộ nội dung CEO 1983 chuẩn hóa trên nền xanh #2E3192 và trắng trang nhã, phục vụ quảng bá đại chúng',
+      effects: 'Tối ưu độ tương phản AAA, màu xanh CEO 1983 chuẩn brandbook',
+      api: 'Có (Chia sẻ backend với bản Hoàng Kim)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'Ceo1983BlueWhiteLanding.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-011', template: 'Association Public Landing', section: 'Cổng Thông Tin Công Cộng Hiệp Hội',
+      demo: 'Cổng thông tin mở cho đối tác bên ngoài tra cứu danh bạ hội viên chính thức, xác thực mã thẻ hội viên',
+      effects: 'Thanh tìm kiếm nhanh, bộ lọc doanh nghiệp theo tỉnh thành',
+      api: 'Có (Public Directory API)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'AssociationLandingView.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-012', template: 'ViOne Business Connect V1', section: 'Landing V1 - Flagship ViOne Connect',
+      demo: 'Giới thiệu nền tảng số kết nối giao thương B2B, danh thiếp số thông minh NFC 1 chạm, quản lý khách hàng',
+      effects: 'Video mockup nền, thanh điều hướng kính mờ tự động ẩn hiện',
+      api: 'Có (Đăng ký dùng thử)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLanding.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-013', template: 'ViOne Business Connect V2', section: 'Landing V2 - Dynamic Matrix Hub',
+      demo: 'Ma trận đối tác động 2.5D, mô phỏng mạng lưới doanh nghiệp đa ngành kết nối trao đổi chéo dịch vụ',
+      effects: 'Canvas mạng lưới tương tác kéo thả các node đối tác',
+      api: 'Có (Đăng ký demo)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV2.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-014', template: 'ViOne Business Connect V3', section: 'Landing V3 - Minimalist Premium',
+      demo: 'Thiết kế tối giản theo tiêu chuẩn Thụy Sĩ (Swiss Design), tập trung câu chữ sắc bén và kiểu chữ nghệ thuật',
+      effects: 'Kinetic Typography, hiệu ứng cuộn mượt mà Smooth Scroll',
+      api: 'Có (Form liên hệ tư vấn)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV3.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-015', template: 'ViOne Business Connect V4', section: 'Landing V4 - 3D Glassmorphism',
+      demo: 'Hiệu ứng kính mờ đa tầng hiện đại, thẻ doanh nhân 3D xoay góc tương tác theo tọa độ chuột của người dùng',
+      effects: 'Backdrop-filter blur, ánh sáng phản xạ động trên bề mặt kính',
+      api: 'Có (Đăng ký dùng thử)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV4.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-016', template: 'ViOne Business Connect V5', section: 'Landing V5 - Neo-Brutalism & Playful',
+      demo: 'Phong cách Neo-Brutalism với đường viền đen đậm, màu pastel tương phản cao, badge stickers hoạt hình sinh động',
+      effects: 'Hiệu ứng bouncy chuyển động khi click nút, stickers lắc lư',
+      api: 'Có (Đăng ký trải nghiệm)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV5.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-017', template: 'ViOne Business Connect V6', section: 'Landing V6 - Cyberpunk Futuristic',
+      demo: 'Giao diện công nghệ tương lai với trạm chỉ huy điều khiển, màn hình radar quét doanh nghiệp, dòng lệnh terminal',
+      effects: 'Neon glow viền cyan & tím, hiệu ứng gõ chữ terminal tự động',
+      api: 'Có (Đăng ký đối tác công nghệ)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV6.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-018', template: 'ViOne Business Connect V7', section: 'Landing V7 - Executive Dark Gold Luxury',
+      demo: 'Phong cách doanh nhân thượng lưu, nền đen Obsidian huyền bí, chữ dát vàng và card kim loại Titanium',
+      effects: 'Hiệu ứng quét ánh kim loại lấp lánh (Shimmer effect)',
+      api: 'Có (Đặt lịch tư vấn gói VIP)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV7.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-019', template: 'ViOne Business Connect V8', section: 'Landing V8 - High Conversion SaaS B2B',
+      demo: 'Giao diện tối ưu phễu chuyển đổi cho khách hàng doanh nghiệp, bảng so sánh chi tiết các gói tính năng và bảng giá',
+      effects: 'Sticky CTA bar khi cuộn qua hero, bảng giá chuyển đổi tháng/năm',
+      api: 'Có (Chọn gói & thanh toán)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'BusinessConnectLandingV8.tsx'
+    },
+    {
+      wbs: 'WBS-LAND-020', template: 'Interactive 3D Hubs', section: 'Showcase 3D Robot, Radar & Shield Hub',
+      demo: 'Bộ 5 linh kiện tương tác cao cấp: Robot Orbital Hub, Cyber Radar Command, Security Shield, Pyramid Governance, Titanium Card',
+      effects: 'Render 3D thời gian thực với tương tác chuột, con quay hồi chuyển',
+      api: 'Không (Module đồ họa tương tác)', priority: 'Cao', prog: '100%', status: 'Hoàn thành UI & Text Demo', file: 'RobotEcosystemOrbitalHub.tsx'
+    },
+  ];
+
+  landingTasks.forEach((t, idx) => {
+    const row = wsLanding.getRow(idx + 3);
+    const vals = [
+      idx + 1,
+      t.wbs,
+      t.template,
+      t.section,
+      t.demo,
+      t.effects,
+      t.api,
+      PIC,
+      t.priority,
+      START,
+      END,
+      t.prog,
+      t.status,
+      t.file
+    ];
+
+    vals.forEach((val, cIdx) => {
+      const c = row.getCell(cIdx + 1);
+      c.value = val;
+      c.font = { name: 'Times New Roman', size: 9.5 };
+      c.border = BORDER;
+
+      if (cIdx === 0 || cIdx === 1 || cIdx === 7 || cIdx === 8 || cIdx === 9 || cIdx === 10 || cIdx === 11 || cIdx === 12) {
+        c.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else {
+        c.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      }
+
+      if (cIdx === 11) {
+        c.font = { name: 'Times New Roman', size: 9.5, bold: true, color: { argb: '047857' } };
+      }
+
+      if (cIdx === 12) {
+        c.font = { name: 'Times New Roman', size: 9.5, bold: true, color: { argb: '0369A1' } };
+      }
+
+      if (idx % 2 === 1) {
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+      }
+    });
+    row.height = 28;
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHEET 5: PHÁT TRIỂN APP VIONE GIAO DIỆN 2 (BUSINESS CONNECT APP)
+  // ════════════════════════════════════════════════════════════════════════════
+  const wsVione2 = wb.addWorksheet('App ViOne Giao Diện 2', {
+    views: [{ state: 'frozen', ySplit: 2, showGridLines: true }],
+  });
+
+  const vione2Columns = [
+    { header: 'STT', key: 'stt', width: 6 },
+    { header: 'Mã WBS', key: 'wbs', width: 14 },
+    { header: 'Phân Hệ Giao Diện 2', key: 'module', width: 24 },
+    { header: 'Tên Chức Năng Chi Tiết (Giao Diện 2)', key: 'feature', width: 36 },
+    { header: 'Mô Tả Nghiệp Vụ & Thực Tế Kỹ Thuật', key: 'description', width: 50 },
+    { header: 'Tích Hợp API Ngoài (3rd Party)', key: 'externalApi', width: 30 },
+    { header: 'Người Thực Hiện', key: 'pic', width: 18 },
+    { header: 'Ưu Tiên', key: 'priority', width: 13 },
+    { header: 'Ngày Bắt Đầu', key: 'startDate', width: 18 },
+    { header: 'Ngày Dự Kiến Hoàn Thành', key: 'endDate', width: 18 },
+    { header: 'Tiến Độ (%)', key: 'progress', width: 13 },
+    { header: 'Tình Trạng Thực Tế', key: 'status', width: 22 },
+    { header: 'Kết Quả Kiểm Thử', key: 'testStatus', width: 20 },
+    { header: 'Đường Dẫn Màn Hình / Route', key: 'route', width: 36 },
+  ];
+
+  wsVione2.columns = vione2Columns;
+
+  // Title Row
+  wsVione2.mergeCells('A1:N1');
+  const vTitle = wsVione2.getCell('A1');
+  vTitle.value = 'BẢNG THEO DÕI TIẾN ĐỘ PHÁT TRIỂN APP VIONE GIAO DIỆN 2 (BUSINESS CONNECT)';
+  vTitle.font = { name: 'Times New Roman', size: 12, bold: true, color: { argb: 'FFFFFF' } };
+  vTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  vTitle.alignment = { vertical: 'middle', horizontal: 'center' };
+  wsVione2.getRow(1).height = 34;
+
+  // Header Row
+  const vHeaderRow = wsVione2.getRow(2);
+  vione2Columns.forEach((col, idx) => {
+    const c = vHeaderRow.getCell(idx + 1);
+    c.value = col.header;
+    c.font = { name: 'Times New Roman', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE_HEADER } };
+    c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    c.border = BORDER;
+  });
+  vHeaderRow.height = 30;
+
+  const vione2Tasks = [
+    {
+      wbs: 'WBS-V2-001', module: 'B2B Moments & Feeds', feature: 'Bảng tin khoảnh khắc giao thương B2B',
+      desc: 'Dòng thời gian hiển thị bài viết giao thương, cơ hội hợp tác, nhu cầu tìm kiếm đối tác và deal chớp nhoáng',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app'
+    },
+    {
+      wbs: 'WBS-V2-002', module: 'B2B Moments & Feeds', feature: 'Đăng tải khoảnh khắc & deal kinh doanh B2B',
+      desc: 'Form tạo bài viết nhanh: đính kèm nhiều ảnh, chọn phân ngành B2B, thiết lập tỷ lệ chiết khấu cho đối tác',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/moment'
+    },
+    {
+      wbs: 'WBS-V2-003', module: 'B2B Moments & Feeds', feature: 'Dòng thời gian đối tác cá nhân (Personal Feed)',
+      desc: 'Trang cá nhân của từng đối tác hiển thị toàn bộ lịch sử khoảnh khắc, các deal đã chốt và uy tín kinh doanh',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/moment/:personId'
+    },
+    {
+      wbs: 'WBS-V2-004', module: 'B2B Moments & Feeds', feature: 'Bộ lọc khoảnh khắc theo ngành nghề & vị trí',
+      desc: 'Lọc nhanh bài viết theo Bất động sản, Công nghệ, Sản xuất, Bán lẻ, và khoảng cách định vị GPS gần nhất',
+      api: 'Không (GPS Geolocation API)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app (Filter bar)'
+    },
+    {
+      wbs: 'WBS-V2-005', module: 'B2B Moments & Feeds', feature: 'Tương tác chuyên nghiệp (Like, Comment, Share)',
+      desc: 'Thả tim doanh nhân, bình luận trao đổi nhu cầu kinh doanh, chia sẻ deal trực tiếp vào hộp thư đối tác',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app (Post interactions)'
+    },
+    {
+      wbs: 'WBS-V2-006', module: 'Mạng Lưới Kết Nối B2B', feature: 'Khám phá mạng lưới doanh nhân (Discovery Hub)',
+      desc: 'Khám phá danh bạ doanh nhân theo ngành nghề, vị trí địa lý, quy mô vốn và nhu cầu kết nối cung - cầu',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/network'
+    },
+    {
+      wbs: 'WBS-V2-007', module: 'Mạng Lưới Kết Nối B2B', feature: 'Thuật toán gợi ý đối tác AI Smart Matching',
+      desc: 'Đối chiếu hồ sơ năng lực và nhu cầu tìm đối tác để tự động đề xuất top 10 doanh nhân phù hợp nhất',
+      api: 'Không (Local Matching Algorithm)', priority: 'Cao', prog: '95%', status: 'Đang hoàn thiện', test: 'Passed (Demo)', route: '/connect-app/network (AI Match)'
+    },
+    {
+      wbs: 'WBS-V2-008', module: 'Mạng Lưới Kết Nối B2B', feature: 'Quản lý lời mời kết nối (Invitations & Requests)',
+      desc: 'Tiếp nhận các yêu cầu kết nối đối tác, xem lời nhắn đính kèm, thực hiện Chấp nhận / Từ chối / Bỏ qua',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/network/requests'
+    },
+    {
+      wbs: 'WBS-V2-009', module: 'Mạng Lưới Kết Nối B2B', feature: 'Trang hồ sơ đối tác & Kết nối chung (Mutuals)',
+      desc: 'Xem chi tiết profile đối tác, lịch sử học vấn, chức vụ doanh nghiệp và số lượng mối quan hệ chung',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/network/:personId'
+    },
+    {
+      wbs: 'WBS-V2-010', module: 'Mạng Lưới Kết Nối B2B', feature: 'Gắn thẻ phân loại đối tác (Tagging CRM)',
+      desc: 'Phân nhóm đối tác theo mức độ quan hệ: Khách hàng tiềm năng, Nhà cung cấp chiến lược, Đối tác VIP',
+      api: 'Không (Nội bộ DB)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/network (Tags)'
+    },
+    {
+      wbs: 'WBS-V2-011', module: 'Hộp Thư Đàm Phán E2E', feature: 'Danh sách cuộc hội thoại mã hóa đầu cuối',
+      desc: 'Hộp thư tin nhắn tức thời, phân loại tin nhắn Chưa đọc / Tin đối tác VIP / Kênh thông báo hệ thống',
+      api: 'Không (WebSocket / SSE nội bộ)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/inbox'
+    },
+    {
+      wbs: 'WBS-V2-012', module: 'Hộp Thư Đàm Phán E2E', feature: 'Cửa sổ trò chuyện thời gian thực (E2E Chat Window)',
+      desc: 'Nhắn tin văn bản tốc độ cao, hiển thị trạng thái đang nhập (typing), trạng thái đã nhận và đã đọc',
+      api: 'Không (WebSocket nội bộ)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/inbox/:threadId'
+    },
+    {
+      wbs: 'WBS-V2-013', module: 'Hộp Thư Đàm Phán E2E', feature: 'Gửi tệp đính kèm văn bản & hợp đồng kinh doanh',
+      desc: 'Hỗ trợ đính kèm các định dạng .pdf, .docx, .xlsx, .zip, .rar với tính năng quét an toàn tệp tin',
+      api: 'Không (Local Storage / MinIO)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/inbox/:threadId'
+    },
+    {
+      wbs: 'WBS-V2-014', module: 'Hộp Thư Đàm Phán E2E', feature: 'Gửi hình ảnh chất lượng cao & Đính kèm danh thiếp số',
+      demo: 'Chia sẻ ảnh hợp đồng, hình ảnh sản phẩm và đính kèm danh thiếp điện tử 1 chạm trực tiếp vào chat',
+      api: 'Không (Local Storage)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/inbox/:threadId'
+    },
+    {
+      wbs: 'WBS-V2-015', module: 'Hộp Thư Đàm Phán E2E', feature: 'Ghi âm & Gửi tin nhắn thoại (Voice Memo)',
+      desc: 'Thu âm trực tiếp trên ứng dụng, phát sóng âm trực quan (waveform) và gửi tin nhắn thoại tức thì',
+      api: 'Không (MediaRecorder Web API)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/inbox/:threadId'
+    },
+    {
+      wbs: 'WBS-V2-016', module: 'Hộp Thư Đàm Phán E2E', feature: 'Cuộc gọi thoại (Audio Call) 1-1 qua WebRTC',
+      desc: 'Kết nối đàm thoại âm thanh chất lượng cao trực tiếp giữa 2 doanh nhân qua chuẩn WebRTC P2P',
+      api: 'Không (WebRTC STUN/TURN nội bộ)', priority: 'Khẩn cấp', prog: '90%', status: 'Đang kiểm thử UAT', test: 'Testing P2P', route: '/connect-app/inbox (Call modal)'
+    },
+    {
+      wbs: 'WBS-V2-017', module: 'Hộp Thư Đàm Phán E2E', feature: 'Cuộc gọi video (Video Call) chất lượng cao',
+      desc: 'Đàm phán truyền hình trực tiếp 1-1 với hình ảnh HD, chuyển đổi camera trước/sau, chia sẻ màn hình',
+      api: 'Không (WebRTC STUN/TURN nội bộ)', priority: 'Khẩn cấp', prog: '90%', status: 'Đang kiểm thử UAT', test: 'Testing P2P', route: '/connect-app/inbox (Video modal)'
+    },
+    {
+      wbs: 'WBS-V2-018', module: 'Lịch Giao Thương & Hội Họp', feature: 'Đặt lịch hẹn kết nối 1-1 (Business Meeting)',
+      desc: 'Chọn khung giờ trống của đối tác, gửi lời mời họp kèm chủ đề giao thương và địa điểm gặp mặt',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/calendar'
+    },
+    {
+      wbs: 'WBS-V2-019', module: 'Lịch Giao Thương & Hội Họp', feature: 'Tự động tạo link phòng họp trực tuyến',
+      desc: 'Hệ thống tự động sinh đường dẫn phòng họp ảo mã hóa bảo mật khi 2 bên đồng ý lịch họp trực tuyến',
+      api: 'Không (Jitsi / WebRTC tích hợp)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/calendar'
+    },
+    {
+      wbs: 'WBS-V2-020', module: 'Lịch Giao Thương & Hội Họp', feature: 'Đồng bộ lịch hẹn với Google Calendar & Outlook',
+      desc: 'Xuất file .ics tiêu chuẩn hoặc đồng bộ OAuth với Google Calendar để nhắc nhở trên mọi thiết bị',
+      api: 'Google Calendar API (Chưa OAuth prod)', priority: 'Trung bình', prog: '80%', status: 'Chưa kết nối OAuth ngoài', test: 'Testing .ics', route: '/connect-app/calendar'
+    },
+    {
+      wbs: 'WBS-V2-021', module: 'Cộng Đồng & Phân Ban', feature: 'Trung tâm khám phá cộng đồng & CLB doanh nghiệp',
+      desc: 'Danh sách các CLB ngành nghề (Bất động sản, Công nghệ, Y tế, Nữ doanh nhân, Thể thao Golf...)',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/community'
+    },
+    {
+      wbs: 'WBS-V2-022', module: 'Cộng Đồng & Phân Ban', feature: 'Danh bạ thành viên phân ban chuyên môn',
+      desc: 'Tra cứu thông tin liên lạc, chức danh và hồ sơ năng lực của các thành viên trong cùng phân ban',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/community/:id/members'
+    },
+    {
+      wbs: 'WBS-V2-023', module: 'Cộng Đồng & Phân Ban', feature: 'Lịch sự kiện & Hội thảo nội bộ phân ban',
+      desc: 'Xem lịch hội thảo chia sẻ kinh nghiệm, các buổi Business Matching nội bộ và đăng ký giữ chỗ',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/community/:id/events'
+    },
+    {
+      wbs: 'WBS-V2-024', module: 'Cộng Đồng & Phân Ban', feature: 'Sàn cơ hội kinh doanh & Chào thầu nội khối',
+      desc: 'Đăng tin tìm kiếm nhà thầu phụ, cơ hội đầu tư chung, chuyển nhượng dự án độc quyền cho hội viên',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/community/:id/opportunities'
+    },
+    {
+      wbs: 'WBS-V2-025', module: 'Cộng Đồng & Phân Ban', feature: 'Quy trình xét duyệt gia nhập CLB / Phân ban',
+      desc: 'Nộp hồ sơ gia nhập kèm thư giới thiệu, Ban Chủ nhiệm phân ban thẩm duyệt và kích hoạt quyền',
+      api: 'Không (Nội bộ DB)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/community/requests'
+    },
+    {
+      wbs: 'WBS-V2-026', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Quét danh thiếp giấy bằng AI OCR',
+      desc: 'Chụp ảnh danh thiếp vật lý, thuật toán OCR nhận diện tự động Họ tên, Chức vụ, Công ty, SĐT, Email, MST',
+      api: 'Tesseract OCR / AI Vision nội bộ', priority: 'Cao', prog: '90%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/card-scan'
+    },
+    {
+      wbs: 'WBS-V2-027', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Ghi & Kích hoạt danh thiếp số vào thẻ chip NFC',
+      desc: 'Liên kết đường dẫn hồ sơ định danh số vào thẻ cứng NFC chuẩn NTAG213/215/216 chạm 1 giây',
+      api: 'Web NFC API (Android Chrome)', priority: 'Khẩn cấp', prog: '95%', status: 'Hoàn thành nội bộ', test: 'Passed (NFC Android)', route: '/connect-app/nfc-tags'
+    },
+    {
+      wbs: 'WBS-V2-028', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Bảng điều khiển hồ sơ doanh nhân & cá nhân',
+      desc: 'Quản lý toàn bộ thông tin cá nhân, pháp nhân công ty, huy hiệu uy tín, thống kê lượt chạm thẻ NFC',
+      api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me'
+    },
+    {
+      wbs: 'WBS-V2-029', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Xem & Chia sẻ danh thiếp số thông minh (Smart Card)',
+      desc: 'Danh thiếp số tương tác: mã QR động, nút "Lưu danh bạ vào điện thoại" tải file .vcf tự động',
+      api: 'Không (VCF generator nội bộ)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/card'
+    },
+    {
+      wbs: 'WBS-V2-030', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Quản lý đa danh thiếp Multi-Cards',
+      desc: 'Tạo nhiều danh thiếp riêng biệt cho từng vai trò kinh doanh (CEO công ty A, Cố vấn quỹ B, Chủ nhiệm CLB C)',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/cards'
+    },
+    {
+      wbs: 'WBS-V2-031', module: 'Định Danh Số & Thẻ Thông Minh', feature: 'Chỉnh sửa hồ sơ cá nhân & Doanh nghiệp',
+      desc: 'Cập nhật logo doanh nghiệp, thư viện ảnh sản phẩm, liên kết Zalo, Facebook, LinkedIn, TikTok',
+      api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/edit'
+    },
+    {
+      wbs: 'WBS-V2-032', module: 'Bảo Mật & Cài Đặt Tài Khoản', feature: 'Cài đặt bảo mật 2 lớp 2FA (Authenticator TOTP)',
+      desc: 'Kích hoạt mã xác thực 6 số qua Google Authenticator hoặc Microsoft Authenticator bảo vệ tài khoản',
+      api: 'Không (Chuẩn TOTP RFC 6238)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/security'
+    },
+    {
+      wbs: 'WBS-V2-033', module: 'Bảo Mật & Cài Đặt Tài Khoản', feature: 'Quản lý phiên đăng nhập thiết bị & Thu hồi từ xa',
+      desc: 'Hiển thị danh sách thiết bị đang đăng nhập, địa chỉ IP, vị trí địa lý, nút "Đăng xuất khỏi thiết bị này"',
+      api: 'Không (Session DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/sessions'
+    },
+    {
+      wbs: 'WBS-V2-034', module: 'Bảo Mật & Cài Đặt Tài Khoản', feature: 'Cài đặt cá nhân hóa thông minh Intel Personalization',
+      desc: 'Tùy biến thuật toán đề xuất, quyền riêng tư số điện thoại, chế độ ẩn danh khi lướt danh bạ đối tác',
+      api: 'Không (Nội bộ DB)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', route: '/connect-app/me/intel-settings'
+    },
+    {
+      wbs: 'WBS-V2-035', module: 'Bảo Mật & Cài Đặt Tài Khoản', feature: 'Trung tâm thông báo đẩy & Lịch hẹn (Notifications)',
+      desc: 'Tổng hợp thông báo kết nối, tin nhắn mới, lịch hẹn giao thương, phân loại thông báo theo mức độ khẩn',
+      api: 'FCM (Bản thử nghiệm)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (In-app)', route: '/connect-app/notifications'
+    },
+    {
+      wbs: 'WBS-V2-036', module: 'Trải Nghiệm Mobile Toàn Diện', feature: 'Tối ưu vùng thao tác 1 tay (One-handed Thumb Zone)',
+      desc: 'Bố trí toàn bộ các nút thao tác chính, thanh điều hướng, action buttons ở nửa dưới màn hình để dễ với tới',
+      api: 'Không (Quy chuẩn UI Mobile)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI Rule', test: 'Passed (Mobile)', route: 'Toàn bộ app giao diện 2'
+    },
+    {
+      wbs: 'WBS-V2-037', module: 'Trải Nghiệm Mobile Toàn Diện', feature: 'Tự động tương thích Safe Area & 3 phím điều hướng Android',
+      desc: 'Đẩy header lùi xuống dưới status bar và đẩy footer/khung chat lên trên 3 nút cảm ứng Android không bị che khuất',
+      api: 'Không (CSS env safe-area insets)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI Rule', test: 'Passed (Mobile)', route: 'Toàn bộ app giao diện 2'
+    },
+    {
+      wbs: 'WBS-V2-038', module: 'Trải Nghiệm Mobile Toàn Diện', feature: 'Tự động ẩn Footer / Tab bar khi bàn phím ảo hiển thị',
+      desc: 'Khi người dùng focus vào bất kỳ ô input / textarea nào, footer tự động ẩn ngay lập tức, không che bàn phím',
+      api: 'Không (Focus event + CSS :has)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI Rule', test: 'Passed (Mobile)', route: 'Toàn bộ app giao diện 2'
+    },
+    {
+      wbs: 'WBS-V2-039', module: 'Trải Nghiệm Mobile Toàn Diện', feature: 'Input tìm kiếm không có viền hover (Borderless Search)',
+      desc: 'Loại bỏ hoàn toàn viền đổi màu khi hover vào ô tìm kiếm, đảm bảo giao diện di động mượt mà không chớp viền',
+      api: 'Không (CSS Borderless Rule)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành UI Rule', test: 'Passed (Mobile)', route: 'Toàn bộ app giao diện 2'
+    },
+  ];
+
+  vione2Tasks.forEach((t, idx) => {
+    const row = wsVione2.getRow(idx + 3);
+    const vals = [
+      idx + 1,
+      t.wbs,
+      t.module,
+      t.feature,
+      t.desc,
+      t.api,
+      PIC,
+      t.priority,
+      START,
+      END,
+      t.prog,
+      t.status,
+      t.test,
+      t.route
+    ];
+
+    vals.forEach((val, cIdx) => {
+      const c = row.getCell(cIdx + 1);
+      c.value = val;
+      c.font = { name: 'Times New Roman', size: 9.5 };
+      c.border = BORDER;
+
+      if (cIdx === 0 || cIdx === 1 || cIdx === 6 || cIdx === 7 || cIdx === 8 || cIdx === 9 || cIdx === 10 || cIdx === 11 || cIdx === 12) {
+        c.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else {
+        c.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      }
+
+      if (cIdx === 10) {
+        c.font = { name: 'Times New Roman', size: 9.5, bold: true, color: { argb: '047857' } };
+      }
+
+      if (cIdx === 11) {
+        c.font = { name: 'Times New Roman', size: 9.5, bold: true, color: { argb: '0369A1' } };
+      }
+
+      if (idx % 2 === 1) {
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+      }
+    });
+    row.height = 28;
+  });
+
+
   const outPath = path.join(__dirname, '..', 'document', 'TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE.xlsx');
   const tempPath = path.join(__dirname, '..', 'document', 'TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE_MOI.xlsx');
 

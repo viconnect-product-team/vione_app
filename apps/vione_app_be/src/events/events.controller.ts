@@ -75,9 +75,16 @@ export class EventsController {
     return this.eventsService.createEvent(req.user.id, body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/register')
-  async registerForEvent(@Request() req: any, @Param('id') id: string) {
-    return this.eventsService.registerForEvent(req.user.id, id);
+  async registerForEvent(@Request() req: any, @Param('id') id: string, @Body() body?: any) {
+    return this.eventsService.registerForEvent(req.user.id, id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/cancel')
+  async cancelEventRegistration(@Request() req: any, @Param('id') id: string) {
+    return this.eventsService.cancelEventRegistration(req.user.id, id);
   }
 
   @Put(':id')

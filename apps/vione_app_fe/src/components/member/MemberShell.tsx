@@ -1,11 +1,12 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Bell, MessageSquare, User, QrCode, ChevronLeft, WifiOff } from "lucide-react";
+import { Home, Calendar, MessageSquare, User, QrCode, ChevronLeft, WifiOff } from "lucide-react";
 import { useT, useLang, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
 const NAVY = "#0A0A0B";
+const emblem83 = "/ceo1983-emblem-8.png";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -35,7 +36,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm`}
       >
         <OfflineBanner />
-        <main className="flex-1 overflow-y-auto overscroll-contain pb-24">{children}</main>
+        <main className="flex-1 overflow-y-auto overscroll-contain pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+72px)]">{children}</main>
         <MemberTabBar />
       </div>
     </div>
@@ -85,9 +86,9 @@ export function MemberHeader({
       className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-md"
       style={{
         paddingTop:
-          "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
+          "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px))",
         minHeight:
-          "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + var(--bc-mobile-header-h, 56px))",
+          "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px)) + var(--bc-mobile-header-h, 56px))",
       }}
     >
       <div className="flex w-9 items-center">
@@ -95,7 +96,7 @@ export function MemberHeader({
           <button
             onClick={() => window.history.back()}
             aria-label={t("m.shell.back")}
-            className="grid h-9 w-9 place-items-center rounded-full text-[var(--vba-gold)] transition hover:bg-card/5"
+            className="grid h-9 w-9 place-items-center rounded-full text-[var(--vba-gold)] transition hover:bg-card/5 cursor-pointer"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -114,7 +115,7 @@ export function MemberHeader({
 
 const tabs = [
   { to: "/association", label: "m.shell.tab_home", icon: Home, exact: true },
-  { to: "/association/notifications", label: "m.shell.tab_notifications", icon: Bell },
+  { to: "/association/events", label: "m.events.title", icon: Calendar },
   { to: "/association/card", label: "m.shell.tab_qr", icon: QrCode, center: true },
   { to: "/association/messages", label: "m.shell.tab_messages", icon: MessageSquare },
   { to: "/association/profile", label: "m.shell.tab_profile", icon: User },
@@ -124,15 +125,57 @@ function useVirtualKeyboard() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const tag = target.tagName?.toLowerCase();
+      const isInput = tag === "input" || tag === "textarea" || target.isContentEditable;
+      if (isInput) {
+        setKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const tag = active?.tagName?.toLowerCase();
+        const isInput = tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
+        if (!isInput) {
+          setKeyboardOpen(false);
+        }
+      }, 100);
+    };
+
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
+
     const vv = window.visualViewport;
-    if (!vv) return;
+    if (!vv) {
+      return () => {
+        window.removeEventListener("focusin", handleFocusIn);
+        window.removeEventListener("focusout", handleFocusOut);
+      };
+    }
+
     const handleResize = () => {
       const diff = window.innerHeight - vv.height - (vv.offsetTop || 0);
-      setKeyboardOpen(diff > 140);
+      if (diff > 140) {
+        setKeyboardOpen(true);
+      } else {
+        const active = document.activeElement;
+        const tag = active?.tagName?.toLowerCase();
+        const isInput = tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
+        if (!isInput) {
+          setKeyboardOpen(false);
+        }
+      }
     };
+
     vv.addEventListener("resize", handleResize);
     vv.addEventListener("scroll", handleResize);
     return () => {
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
       vv.removeEventListener("resize", handleResize);
       vv.removeEventListener("scroll", handleResize);
     };
@@ -146,22 +189,23 @@ function MemberTabBar() {
   const { lang } = useLang();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const keyboardOpen = useVirtualKeyboard();
-  const [isMidAutumn, setIsMidAutumn] = useState(true);
+  const [isMidAutumn, setIsMidAutumn] = useState(false);
 
   const tabLabels: Record<string, { vi: string; en: string }> = {
     "/association": { vi: "Trang chủ", en: "Home" },
-    "/association/notifications": { vi: "Thông báo", en: "Alerts" },
-    "/association/card": { vi: "Thẻ VIP", en: "VIP Card" },
-    "/association/messages": { vi: "Kết nối", en: "Connect" },
+    "/association/events": { vi: "Sự kiện", en: "Events" },
+    "/association/card": { vi: "Thẻ 83", en: "Card 83" },
+    "/association/messages": { vi: "Gắn kết", en: "Connect" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const check = () => {
+        const enabled = localStorage.getItem("vba_event_theme_enabled") === "true";
         const disabled = localStorage.getItem("vba_event_theme_disabled") === "true";
         const type = localStorage.getItem("vba_event_theme_type") || "mid-autumn";
-        setIsMidAutumn(!disabled && type === "mid-autumn");
+        setIsMidAutumn(enabled && !disabled && type === "mid-autumn");
       };
       check();
       window.addEventListener("vba-event-theme-changed", check);
@@ -172,13 +216,13 @@ function MemberTabBar() {
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
-  // Automatically hide bottom tab bar when mobile keyboard is open
+  // Automatically hide bottom tab bar when mobile keyboard is open or user is typing
   if (keyboardOpen) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none">
+    <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200">
       <div
-        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),10px)] pt-2 backdrop-blur-md transition-all ${
+        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),20px)] pt-2 backdrop-blur-md transition-all ${
           isMidAutumn
             ? "border-amber-400/40 shadow-[0_-6px_24px_rgba(245,158,11,0.22)]"
             : "border-slate-200 dark:border-[var(--vba-border-soft)] shadow-lg"
@@ -214,25 +258,41 @@ function MemberTabBar() {
 
           if (tab.center) {
             return (
-              <Link
-                key={tab.to}
-                to={tab.to}
-                aria-label={t(tab.label)}
-                className="-mt-7 relative flex flex-col items-center group"
-              >
-                {/* Mid-Autumn Full Moon Aura Halo */}
-                {isMidAutumn && (
-                  <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/30 blur-md animate-pulse pointer-events-none" />
-                )}
-                <span className="relative vba-gold-grad grid h-14 w-14 place-items-center rounded-2xl text-[#071322] shadow-[0_8px_24px_-6px_rgba(212,175,55,0.6)] group-hover:scale-105 group-active:scale-95 transition-transform">
-                  <Icon className="h-6 w-6" />
+              <div key={tab.to} className="relative flex flex-1 flex-col items-center justify-end">
+                <Link
+                  to={tab.to}
+                  aria-label={t(tab.label)}
+                  className="-mt-7 relative flex flex-col items-center group"
+                >
+                  {/* Mid-Autumn Full Moon Aura Halo */}
                   {isMidAutumn && (
-                    <span className="absolute -top-1.5 -right-1.5 text-[10px] select-none" aria-hidden="true">
-                      🌕
-                    </span>
+                    <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/30 blur-md animate-pulse pointer-events-none" />
                   )}
-                </span>
-              </Link>
+                  <span
+                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_24px_-6px_rgba(0,59,149,0.7)] group-hover:scale-105 group-active:scale-95 transition-transform overflow-hidden p-2.5"
+                    style={{
+                      background: "linear-gradient(135deg, #19194D 0%, #2E3192 100%)",
+                      border: "2.5px solid #FFFFFF",
+                      boxShadow: "0 4px 14px rgba(0, 59, 149, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                    }}
+                  >
+                    <QrCode
+                      className="h-7 w-7"
+                      style={{
+                        color: "#FFFFFF",
+                        stroke: "#FFFFFF",
+                        strokeWidth: 2.2,
+                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
+                      }}
+                    />
+                    {isMidAutumn && (
+                      <span className="absolute -top-1.5 -right-1.5 text-[10px] select-none" aria-hidden="true">
+                        🌕
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </div>
             );
           }
 
@@ -261,17 +321,16 @@ function MemberTabBar() {
           }
 
           return (
-            <Link key={tab.to} to={tab.to} className="relative flex flex-1 flex-col items-center gap-1 py-1 transition-colors">
+            <Link key={tab.to} to={tab.to} className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-colors">
               <div className="relative">
                 <Icon
                   className="h-5 w-5 transition-colors"
-                  style={{ color: active ? "var(--vba-gold)" : "var(--vba-text-dim)" }}
+                  style={{ color: active ? "#2E3192" : "var(--vba-text-dim)" }}
                 />
                 {seasonalBadge}
               </div>
               <span
-                className="text-[10px] font-medium transition-colors"
-                style={{ color: active ? "var(--vba-gold)" : "var(--vba-text-dim)" }}
+                className={`text-[10px] transition-colors ${active ? "font-bold text-[#2E3192] dark:text-blue-400" : "font-medium text-[var(--vba-text-dim)]"}`}
               >
                 {lang === "en" ? tabLabels[tab.to]?.en || t(tab.label) : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>

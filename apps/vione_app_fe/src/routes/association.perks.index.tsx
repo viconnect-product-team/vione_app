@@ -60,21 +60,21 @@ function PerksScreen() {
     <div className="vba-animate pb-24">
       <MemberHeader title={t("m.perks.title")} back />
 
-      {/* Luxury Animated Gift Box Banner - Sky Blue Theme */}
+      {/* Luxury Animated Gift Box Banner - CEO 1983 Navy & Amber Gold */}
       <div className="px-4 pt-3">
         <div
           onClick={() => setGiftModalOpen(true)}
-          className="relative overflow-hidden rounded-2xl border border-sky-300/40 dark:border-sky-500/30 bg-gradient-to-br from-sky-500 via-sky-600 to-blue-600 p-5 shadow-xl cursor-pointer group transition-transform active:scale-98"
+          className="relative overflow-hidden rounded-2xl border border-amber-500/40 bg-gradient-to-br from-[#003B95] via-[#071322] to-[#0A1A3A] p-5 shadow-xl cursor-pointer group transition-transform active:scale-98"
         >
           {/* Ambient Background Light Rays & Glow */}
-          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/20 blur-3xl" />
-          <div className="pointer-events-none absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-sky-300/30 blur-2xl" />
+          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-amber-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-[#003B95]/40 blur-2xl" />
 
           {/* Light Rays Escaping Outward */}
           <div
             className="pointer-events-none absolute left-10 top-1/2 -translate-y-1/2 -translate-x-1/2 h-36 w-36 rounded-full opacity-60"
             style={{
-              background: "radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(186, 230, 253, 0.2) 50%, transparent 80%)",
+              background: "radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(217, 119, 6, 0.2) 50%, transparent 80%)",
               animation: "vba-ray-burst 2.8s ease-out infinite",
             }}
           />
@@ -117,18 +117,18 @@ function PerksScreen() {
               </div>
             </div>
 
-            {/* Banner Text - Crisp White on Sky Blue */}
+            {/* Banner Text - Crisp White on Navy & Gold */}
             <div className="min-w-0 flex-1 text-white">
               <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/30 backdrop-blur-xs">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-300 border border-amber-500/40 backdrop-blur-xs">
                   <Sparkles className="h-2.5 w-2.5 text-amber-300" /> ĐẶC QUYỀN VIP
                 </span>
-                <span className="text-[10px] text-sky-100 font-medium">Chạm để mở quà</span>
+                <span className="text-[10px] text-amber-200 font-medium">Chạm để mở quà</span>
               </div>
               <h2 className="mt-1 text-[15.5px] font-black text-white leading-snug drop-shadow-sm">
                 Hộp Quà Tri Ân & Ưu Đãi Hội Viên
               </h2>
-              <p className="mt-0.5 line-clamp-1 text-[11.5px] text-sky-100">
+              <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-200">
                 Gói voucher độc quyền, chiết khấu dịch vụ & quyền lợi kết nối 2026.
               </p>
             </div>
@@ -155,27 +155,27 @@ function PerksScreen() {
 
             {/* Glowing Big Gift Box */}
             <div className="relative mx-auto my-3 grid h-24 w-24 place-items-center">
-              <span className="absolute inset-0 rounded-full bg-sky-400/20 animate-ping duration-1000" />
-              <div className="relative z-10 grid h-18 w-18 place-items-center rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/30">
-                <Gift className="h-10 w-10 text-white" />
+              <span className="absolute inset-0 rounded-full bg-amber-400/20 animate-ping duration-1000" />
+              <div className="relative z-10 grid h-18 w-18 place-items-center rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-white shadow-lg shadow-amber-500/20 border border-amber-500/30">
+                <Gift className="h-10 w-10 text-amber-300" />
               </div>
             </div>
 
-            <h3 className="text-xl font-black text-sky-600 dark:text-sky-400">Chúc Mừng Bạn!</h3>
+            <h3 className="text-xl font-black text-[#003B95] dark:text-amber-400">Chúc Mừng Bạn!</h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Đã mở thành công Gói Quà Tặng Đặc Quyền Hội Viên CEO 1983
             </p>
 
             <div className="mt-4 space-y-2 text-left text-xs">
-              <div className="rounded-xl border border-sky-500/20 bg-sky-50/80 dark:bg-sky-950/40 p-3 flex items-center gap-3">
-                <Award className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+              <div className="rounded-xl border border-amber-500/20 bg-amber-50/80 dark:bg-amber-950/40 p-3 flex items-center gap-3">
+                <Award className="h-5 w-5 shrink-0 text-[#003B95] dark:text-amber-400" />
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white">Voucher Giảm 20% Dịch Vụ Golf & Khách Sạn</div>
                   <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Áp dụng toàn bộ hệ thống đối tác liên kết</div>
                 </div>
               </div>
-              <div className="rounded-xl border border-sky-500/20 bg-sky-50/80 dark:bg-sky-950/40 p-3 flex items-center gap-3">
-                <Crown className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+              <div className="rounded-xl border border-amber-500/20 bg-amber-50/80 dark:bg-amber-950/40 p-3 flex items-center gap-3">
+                <Crown className="h-5 w-5 shrink-0 text-[#003B95] dark:text-amber-400" />
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white">Vé VIP Tham Gia Diễn Đàn Doanh Nhân 2026</div>
                   <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Quyền lợi ưu tiên đặt bàn Gala & Giao lưu B2B</div>
@@ -186,7 +186,8 @@ function PerksScreen() {
             <button
               type="button"
               onClick={() => setGiftModalOpen(false)}
-              className="mt-5 w-full rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 text-xs font-bold text-white shadow-lg shadow-sky-500/30 hover:brightness-105 active:scale-98 transition cursor-pointer"
+              style={{ backgroundColor: "#2E3192", color: "#ffffff" }}
+              className="mt-5 w-full rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-3 text-xs font-bold text-white shadow-lg shadow-[#2E3192]/25 active:scale-98 transition cursor-pointer"
             >
               Lưu Vào Ví Ưu Đãi Của Tôi
             </button>
@@ -213,20 +214,20 @@ function PerksScreen() {
               key={p.id}
               to="/association/perks/$id"
               params={{ id: p.id }}
-              className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs hover:border-sky-500/40 transition active:scale-[0.99]"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs hover:border-amber-500/40 transition active:scale-[0.99]"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400">
-                <Icon className="h-5 w-5" />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-700 text-[#003B95] dark:text-amber-400">
+                <Icon className="h-5 w-5 stroke-[2.2]" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   {p.category && (
-                    <span className="inline-block rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                    <span className="inline-block rounded-md bg-amber-100 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-600/80 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-900 dark:text-amber-300 shadow-2xs">
                       {p.category}
                     </span>
                   )}
                   {p.discount && (
-                    <span className="text-[11px] font-extrabold text-sky-600 dark:text-sky-400">
+                    <span className="text-[12px] font-black text-amber-600 dark:text-amber-400">
                       {p.discount}
                     </span>
                   )}

@@ -357,38 +357,40 @@ function CheckinScreen() {
 
       {/* Mode toggle */}
       <div className="px-4 pt-4">
-        <div className="relative grid grid-cols-2 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-bg-2)] p-1">
+        <div className="relative grid grid-cols-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/60 p-1">
           <span
-            className="vba-gold-grad absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-xl transition-transform duration-300"
+            className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-xl transition-transform duration-300 bg-[#2E3192] shadow-sm"
             style={{
               transform: mode === "qr" ? "translateX(0)" : "translateX(calc(100% + 0.5rem))",
             }}
           />
           <button
             onClick={() => setMode("qr")}
-            className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold transition"
-            style={{ color: mode === "qr" ? "#1a1206" : "var(--vba-text-dim)" }}
+            className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-bold transition cursor-pointer"
+            style={{ color: mode === "qr" ? "#FFFFFF" : "#64748B" }}
           >
-            <QrCode className="h-4 w-4" /> {t("m.checkin.modeQr")}
+            <QrCode className="h-4 w-4" style={{ color: mode === "qr" ? "#FFFFFF" : "#64748B" }} />
+            <span>{t("m.checkin.modeQr")}</span>
           </button>
           <button
             onClick={() => setMode("nfc")}
-            className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold transition"
-            style={{ color: mode === "nfc" ? "#1a1206" : "var(--vba-text-dim)" }}
+            className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-bold transition cursor-pointer"
+            style={{ color: mode === "nfc" ? "#FFFFFF" : "#64748B" }}
           >
-            <Wifi className="h-4 w-4" /> {t("m.checkin.modeNfc")}
+            <Wifi className="h-4 w-4" style={{ color: mode === "nfc" ? "#FFFFFF" : "#64748B" }} />
+            <span>{t("m.checkin.modeNfc")}</span>
           </button>
         </div>
       </div>
 
       {/* Scanner viewport */}
       <div className="px-4 pt-4">
-        <div className="vba-card relative grid aspect-square place-items-center overflow-hidden p-0">
+        <div className="vba-card relative grid aspect-square place-items-center overflow-hidden p-0 border border-slate-200 dark:border-white/10 shadow-xs">
           <div
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-20"
             style={{
               backgroundImage:
-                "linear-gradient(var(--vba-gold-soft) 1px,transparent 1px),linear-gradient(90deg,var(--vba-gold-soft) 1px,transparent 1px)",
+                "linear-gradient(#2E3192 1px,transparent 1px),linear-gradient(90deg,#2E3192 1px,transparent 1px)",
               backgroundSize: "26px 26px",
             }}
           />
@@ -403,15 +405,15 @@ function CheckinScreen() {
                 playsInline
               />
               <div className="relative h-[62%] w-[62%]">
-                <span className="absolute -left-1 -top-1 h-9 w-9 rounded-tl-2xl border-l-[3px] border-t-[3px] border-[var(--vba-gold)]" />
-                <span className="absolute -right-1 -top-1 h-9 w-9 rounded-tr-2xl border-r-[3px] border-t-[3px] border-[var(--vba-gold)]" />
-                <span className="absolute -bottom-1 -left-1 h-9 w-9 rounded-bl-2xl border-b-[3px] border-l-[3px] border-[var(--vba-gold)]" />
-                <span className="absolute -bottom-1 -right-1 h-9 w-9 rounded-br-2xl border-b-[3px] border-r-[3px] border-[var(--vba-gold)]" />
+                <span className="absolute -left-1 -top-1 h-9 w-9 rounded-tl-2xl border-l-[3.5px] border-t-[3.5px] border-[#2E3192] dark:border-blue-400" />
+                <span className="absolute -right-1 -top-1 h-9 w-9 rounded-tr-2xl border-r-[3.5px] border-t-[3.5px] border-[#2E3192] dark:border-blue-400" />
+                <span className="absolute -bottom-1 -left-1 h-9 w-9 rounded-bl-2xl border-b-[3.5px] border-l-[3.5px] border-[#2E3192] dark:border-blue-400" />
+                <span className="absolute -bottom-1 -right-1 h-9 w-9 rounded-br-2xl border-b-[3.5px] border-r-[3.5px] border-[#2E3192] dark:border-blue-400" />
                 {scanning && (
-                  <span className="absolute inset-x-2 top-2 h-0.5 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-[var(--vba-gold)] shadow-[0_0_14px_var(--vba-gold)]" />
+                  <span className="absolute inset-x-2 top-2 h-0.5 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-[#2E3192] shadow-[0_0_14px_rgba(46,49,146,0.8)]" />
                 )}
                 {!scanning && (
-                  <ScanLine className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-[var(--vba-text-dim)]" />
+                  <ScanLine className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-[#2E3192] dark:text-blue-400" />
                 )}
               </div>
             </>
@@ -421,15 +423,15 @@ function CheckinScreen() {
                 [0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="absolute h-28 w-28 animate-ping rounded-full border-2 border-[var(--vba-gold)] opacity-40"
+                    className="absolute h-28 w-28 animate-ping rounded-full border-2 border-[#2E3192] opacity-40"
                     style={{ animationDelay: `${i * 0.4}s`, animationDuration: "1.8s" }}
                   />
                 ))}
-              <span className="vba-gold-grad grid h-24 w-24 place-items-center rounded-full text-[#1a1206]">
-                <Wifi className="h-10 w-10 -rotate-90" />
+              <span className="grid h-24 w-24 place-items-center rounded-full bg-[#2E3192] text-white shadow-lg shadow-[#2E3192]/25">
+                <Wifi className="h-10 w-10 -rotate-90 text-white" />
               </span>
               {scanning && (
-                <p className="mt-3 text-center text-[12px] font-medium text-[var(--vba-gold)]">
+                <p className="mt-3 text-center text-[12px] font-bold text-[#2E3192] dark:text-blue-400">
                   Áp thẻ vào vị trí giữa lưng điện thoại
                 </p>
               )}
@@ -438,22 +440,26 @@ function CheckinScreen() {
         </div>
 
         {error && (
-          <p className="mt-3 rounded-xl border border-[rgba(255,107,107,0.3)] bg-[rgba(255,107,107,0.1)] px-3 py-2 text-[12px] text-[#ff6b6b]">
+          <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-400 font-semibold">
             {error}
           </p>
         )}
 
         <button
+          type="button"
           onClick={toggleScan}
           disabled={submitting}
-          className="vba-gold-grad mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-[#1a1206] disabled:opacity-60"
+          style={{ backgroundColor: "#2E3192", color: "#FFFFFF" }}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-white bg-[#2E3192] hover:bg-[#19194D] active:scale-[0.99] transition-all shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-60"
         >
-          <ScanLine className="h-4 w-4" />
-          {scanning
-            ? t("m.checkin.stopScan")
-            : mode === "qr"
-              ? t("m.checkin.startQr")
-              : t("m.checkin.startNfc")}
+          <ScanLine className="h-4 w-4 text-white" />
+          <span className="text-white">
+            {scanning
+              ? t("m.checkin.stopScan")
+              : mode === "qr"
+                ? t("m.checkin.startQr")
+                : t("m.checkin.startNfc")}
+          </span>
         </button>
       </div>
 
@@ -573,11 +579,11 @@ function CheckinScreen() {
                     className="w-full h-full rounded-2xl object-cover ring-3 ring-white dark:ring-[#0f172a] shadow-lg"
                   />
                 ) : (
-                  <div className="w-full h-full rounded-2xl bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600 font-bold text-xl ring-3 ring-white dark:ring-[#0f172a] shadow-lg">
+                  <div className="w-full h-full rounded-2xl bg-amber-100 dark:bg-amber-950/80 flex items-center justify-center text-[#003B95] dark:text-amber-400 font-bold text-xl ring-3 ring-white dark:ring-[#0f172a] shadow-lg">
                     <User className="h-10 w-10" />
                   </div>
                 )}
-                <BadgeCheck className="absolute -bottom-1 -right-1 h-5 w-5 text-sky-500 fill-white dark:fill-slate-900" />
+                <BadgeCheck className="absolute -bottom-1 -right-1 h-5 w-5 text-amber-500 fill-white dark:fill-slate-900" />
               </div>
 
               {/* Name & Association Role */}
@@ -598,7 +604,7 @@ function CheckinScreen() {
               {/* Enterprise / Company name */}
               {scannedMember.name && (
                 <div className="rounded-xl bg-slate-50 dark:bg-white/[0.04] p-2.5 border border-slate-100 dark:border-white/5 text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-sky-500 shrink-0" />
+                  <Building2 className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
                   <span className="truncate">{scannedMember.name}</span>
                 </div>
               )}
@@ -616,7 +622,7 @@ function CheckinScreen() {
                       search: { peerCode: cCode, peerName: pName } as any,
                     });
                   }}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 py-2.5 text-[12px] font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition active:scale-95 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12px] font-bold text-[#003B95] dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition active:scale-95 cursor-pointer"
                 >
                   <MessageSquare className="h-4 w-4" />
                   Nhắn tin
@@ -644,10 +650,11 @@ function CheckinScreen() {
                       setConnecting(false);
                     }
                   }}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-sky-500/20 disabled:opacity-60"
+                  style={{ backgroundColor: "#2E3192", color: "#ffffff" }}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-[#2E3192]/20 disabled:opacity-60"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>{connecting ? "Đang gửi..." : "Kết nối ngay"}</span>
+                  <span>{connecting ? "Đang gửi..." : "Gắn kết ngay"}</span>
                 </button>
               </div>
 
@@ -655,7 +662,7 @@ function CheckinScreen() {
                 <Link
                   to="/card/$code"
                   params={{ code: scannedMember.code }}
-                  className="text-[11.5px] font-semibold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-white underline"
+                  className="text-[11.5px] font-semibold text-slate-500 hover:text-[#003B95] dark:text-slate-400 dark:hover:text-amber-400 underline"
                 >
                   Xem chi tiết thẻ VIP doanh nhân
                 </Link>

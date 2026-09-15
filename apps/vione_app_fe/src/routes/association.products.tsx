@@ -147,7 +147,8 @@ function ProductsScreen() {
         right={
           <button
             onClick={() => setPostModalOpen(true)}
-            className="flex items-center gap-1 rounded-full bg-sky-500 hover:bg-sky-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs cursor-pointer transition active:scale-95 whitespace-nowrap"
+            style={{ color: "#ffffff" }}
+            className="flex items-center gap-1 rounded-full bg-[#EA580C] hover:bg-[#D97706] px-2.5 py-1 text-[11px] font-bold text-white shadow-xs cursor-pointer transition active:scale-95 whitespace-nowrap"
           >
             <Plus className="h-3.5 w-3.5" />
             {isEn ? "Post" : "Đăng sản phẩm"}
@@ -162,7 +163,7 @@ function ProductsScreen() {
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isEn ? "Total Products" : "Tổng sản phẩm"}
             </div>
-            <div className="mt-1 text-lg font-black text-sky-600 dark:text-sky-400">
+            <div className="mt-1 text-lg font-black text-[#003B95] dark:text-amber-400">
               {totalProducts}
             </div>
             <div className="text-[9.5px] text-slate-500 dark:text-slate-400">
@@ -227,7 +228,7 @@ function ProductsScreen() {
         {list.map((p) => (
           <div
             key={p.id}
-            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs transition hover:border-sky-500/50 flex gap-3.5"
+            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs transition hover:border-amber-500/50 flex gap-3.5"
           >
             {/* Image Thumbnail */}
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
@@ -247,12 +248,12 @@ function ProductsScreen() {
               </h3>
 
               <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                <Building2 className="h-3 w-3 shrink-0 text-sky-600 dark:text-sky-400" />
+                <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
                 <span className="truncate">{p.company}</span>
               </div>
 
               {p.price && (
-                <div className="mt-1 text-[12.5px] font-black text-sky-600 dark:text-sky-400">
+                <div className="mt-1 text-[12.5px] font-black text-[#003B95] dark:text-amber-400">
                   {p.price}
                 </div>
               )}
@@ -273,7 +274,8 @@ function ProductsScreen() {
                 <button
                   type="button"
                   onClick={() => handleOpenQuoteModal(p)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer transition active:scale-95"
+                  style={{ color: "#ffffff" }}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer transition active:scale-95"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   {isEn ? "Request VIP Quote" : "Nhận báo giá VIP"}
@@ -296,7 +298,7 @@ function ProductsScreen() {
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <PackageCheck className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                <PackageCheck className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
                 {isEn ? "Post New Product / Service" : "Đăng Sản Phẩm / Dịch Vụ Mới"}
               </h3>
               <button
@@ -330,8 +332,8 @@ function ProductsScreen() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 hover:border-sky-500 hover:bg-sky-50/50 dark:hover:bg-slate-800/70 transition">
-                    <ImagePlus className="h-8 w-8 text-sky-600 dark:text-sky-400 mb-1.5" />
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
+                    <ImagePlus className="h-8 w-8 text-[#003B95] dark:text-amber-400 mb-1.5" />
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                       {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên"}
                     </span>
@@ -429,7 +431,8 @@ function ProductsScreen() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-sky-500 hover:bg-sky-600 py-3 text-xs font-bold text-white shadow-md shadow-sky-500/20 active:scale-98 transition cursor-pointer"
+                  style={{ color: "#ffffff" }}
+                  className="w-full rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer"
                 >
                   {isEn ? "Publish Product to Marketplace" : "Đăng Sản Phẩm Lên Gian Hàng"}
                 </button>
@@ -451,7 +454,7 @@ function ProductsScreen() {
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                <FileText className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
                 {isEn ? "Request VIP Quotation" : "Yêu Cầu Báo Giá VIP"}
               </h3>
               <button
@@ -464,7 +467,7 @@ function ProductsScreen() {
             </div>
 
             {/* Product Summary Preview */}
-            <div className="mt-3 flex items-center gap-3 p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/30">
+            <div className="mt-3 flex items-center gap-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/30">
               <img
                 src={quoteProduct.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
                 alt=""
@@ -472,7 +475,7 @@ function ProductsScreen() {
               />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{quoteProduct.name}</p>
-                <p className="text-[11px] text-sky-700 dark:text-sky-300 truncate">{quoteProduct.company}</p>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 truncate">{quoteProduct.company}</p>
                 <p className="text-[11px] font-bold text-rose-500">{quoteProduct.price || (isEn ? "Contact for price" : "Giá ưu đãi hội viên")}</p>
               </div>
             </div>
@@ -526,7 +529,8 @@ function ProductsScreen() {
                 <button
                   type="submit"
                   disabled={quoteSubmitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-500/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+                  style={{ color: "#ffffff" }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
                 >
                   <Send className="h-3.5 w-3.5" />
                   <span>{quoteSubmitting ? (isEn ? "Sending request..." : "Đang gửi...") : (isEn ? "Send Quote Request Now" : "Gửi Yêu Cầu Báo Giá")}</span>

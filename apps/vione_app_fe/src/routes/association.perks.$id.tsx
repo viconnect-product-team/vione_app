@@ -39,24 +39,24 @@ function PerkDetailScreen() {
         )}
         {perk && (
           <div className="space-y-4">
-            {/* Hero Card with Sky Blue Gradient Background */}
-            <div className="relative overflow-hidden rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-sky-400/5 to-transparent p-6 shadow-sm">
-              <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-sky-400/15 blur-2xl" />
-              <div className="pointer-events-none absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-blue-500/10 blur-xl" />
+            {/* Hero Card with Navy & Amber Gold Theme */}
+            <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-[#003B95]/15 via-amber-500/5 to-transparent p-6 shadow-sm">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-amber-400/15 blur-2xl" />
+              <div className="pointer-events-none absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-[#003B95]/15 blur-xl" />
 
               <div className="relative z-10 space-y-3">
-                <span className="flex h-15 w-15 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/25">
-                  <Icon className="h-7 w-7 text-white" />
+                <span className="flex h-15 w-15 items-center justify-center rounded-2xl bg-gradient-to-br from-[#003B95] to-[#1E40AF] text-amber-300 shadow-lg shadow-[#003B95]/25 border border-amber-500/30">
+                  <Icon className="h-7 w-7 text-amber-300" />
                 </span>
 
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   {perk.category && (
-                    <span className="inline-block rounded-md bg-sky-500/15 px-2.5 py-0.5 text-[10.5px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
+                    <span className="inline-block rounded-md bg-amber-100 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-600/80 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-900 dark:text-amber-200 uppercase tracking-wide">
                       {perk.category}
                     </span>
                   )}
                   {perk.discount && (
-                    <span className="rounded-md bg-gradient-to-r from-sky-500 to-blue-600 px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow-xs">
+                    <span className="rounded-md bg-[#003B95] px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow-xs">
                       {perk.discount}
                     </span>
                   )}
@@ -82,7 +82,7 @@ function PerkDetailScreen() {
               <div className="space-y-2.5 pb-3 border-b border-slate-100 dark:border-white/5">
                 {perk.partner && (
                   <div className="flex items-center gap-2.5 text-[13px] text-slate-800 dark:text-slate-200">
-                    <div className="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-500 shrink-0">
+                    <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shrink-0">
                       <Building2 className="h-4 w-4" />
                     </div>
                     <div>
@@ -121,9 +121,10 @@ function PerkDetailScreen() {
                     href={perk.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 text-[13.5px] font-bold text-white shadow-lg shadow-sky-500/25 hover:brightness-105 active:scale-98 transition cursor-pointer"
+                    style={{ color: "#ffffff" }}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#003B95] hover:bg-[#002B70] py-3 text-[13.5px] font-bold text-white shadow-lg shadow-[#003B95]/25 active:scale-98 transition cursor-pointer"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 text-amber-300" />
                     {t("m.perks.detail.use_perk")}
                     <ExternalLink className="h-4 w-4" />
                   </a>

@@ -308,28 +308,32 @@
    Unified enterprise theme (navy / warm gold) for the member app.
    Legacy .vba-* class names are kept as aliases so every screen
 /* ============================================================
-   Unified enterprise theme (Solid Obsidian Black / Warm Champagne Gold) for the member app.
+   CEO 1983 Official Enterprise Theme (Classic Navy & Warm Amber Gold)
    Standardized 3-dominant-color system for Dark, Light, & Contrast.
+   Brand Colors: Cobalt Navy (#003B95 / #0A1128) & Warm Amber/Gold (#F59E0B / #D97706 / #EA580C)
    ============================================================ */
 .vba-app {
-  --vba-bg: #0B0F19;
-  --vba-bg-2: #080C14;
-  --vba-surface: #111622;
-  --vba-surface-2: #151C2C;
-  --vba-border: rgba(186, 230, 253, 0.15);
-  --vba-border-soft: rgba(255, 255, 255, 0.08);
-  --vba-border-accent: rgba(125, 211, 252, 0.35);
-  --vba-gold: #7DD3FC;
-  --vba-gold-2: #BAE6FD;
-  --vba-gold-soft: rgba(125, 211, 252, 0.12);
-  --vba-gold-glow: 0 6px 20px -6px rgba(125, 211, 252, 0.25);
+  --vba-bg: #070D1A;
+  --vba-bg-2: #050912;
+  --vba-surface: #0E172A;
+  --vba-surface-2: #14223E;
+  --vba-border: rgba(0, 59, 149, 0.35);
+  --vba-border-soft: rgba(245, 158, 11, 0.16);
+  --vba-border-accent: rgba(245, 158, 11, 0.45);
+  --vba-gold: #F59E0B;
+  --vba-gold-2: #FBBF24;
+  --vba-gold-soft: rgba(245, 158, 11, 0.15);
+  --vba-gold-glow: 0 6px 20px -6px rgba(245, 158, 11, 0.45);
+  --vba-navy: #2E3192;
+  --vba-navy-light: #25AAE1;
+  --vba-brand-orange: #F7941D;
   --vba-text: #FFFFFF;
   --vba-text-muted: #CBD5E1;
   --vba-text-dim: #94A3B8;
   --vba-success: #10B981;
   --vba-danger: #EF4444;
 
-  background: #0B0F19;
+  background: #070D1A;
   color: var(--vba-text);
   min-height: 100dvh;
   font-family: var(--font-sans);
@@ -340,25 +344,28 @@
   .vba-app {
     --vba-gold-glow: none;
     --vba-text-muted: #FFFFFF;
-    --vba-border: #BAE6FD;
+    --vba-border: #FBBF24;
   }
 }
 
-/* Light mode tokens for .vba-app — Clean Executive White & Soft Sky Blue with Crisp Bright Borders */
+/* Light mode tokens for .vba-app — Clean Executive White & Deep Navy with Royal Amber Accents */
 html:not(.dark) .vba-app {
   --vba-bg: #FFFFFF;
   --vba-bg-2: #F8FAFC;
   --vba-surface: #FFFFFF;
   --vba-surface-2: #F1F5F9;
-  --vba-border: rgba(14, 165, 233, 0.35);
-  --vba-border-soft: rgba(14, 165, 233, 0.22);
-  --vba-border-accent: rgba(14, 165, 233, 0.55);
-  --vba-gold: #0EA5E9;
-  --vba-gold-2: #38BDF8;
-  --vba-gold-soft: rgba(14, 165, 233, 0.12);
-  --vba-gold-glow: 0 4px 12px -4px rgba(14, 165, 233, 0.22);
+  --vba-border: rgba(0, 59, 149, 0.22);
+  --vba-border-soft: rgba(0, 59, 149, 0.12);
+  --vba-border-accent: rgba(217, 119, 6, 0.45);
+  --vba-gold: #D97706;
+  --vba-gold-2: #F59E0B;
+  --vba-gold-soft: rgba(217, 119, 6, 0.12);
+  --vba-gold-glow: 0 4px 14px -3px rgba(217, 119, 6, 0.3);
+  --vba-navy: #2E3192;
+  --vba-navy-light: #25AAE1;
+  --vba-brand-orange: #F7941D;
   --vba-text: #0F172A;
-  --vba-text-muted: #475569;
+  --vba-text-muted: #334155;
   --vba-text-dim: #64748B;
   --vba-success: #10B981;
   --vba-danger: #EF4444;
@@ -373,22 +380,22 @@ html:not(.dark) .vba-app {
 html:not(.dark) .vba-card {
   background: #FFFFFF;
   color: #0F172A;
-  border: 1.5px solid rgba(14, 165, 233, 0.32);
-  box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.08);
+  border: 1.5px solid rgba(0, 59, 149, 0.18);
+  box-shadow: 0 4px 20px -2px rgba(0, 59, 149, 0.08), 0 1px 3px 0 rgba(217, 119, 6, 0.05);
 }
 
 html:not(.dark) .vba-gold-text {
-  background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
+  background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #EA580C 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 html:not(.dark) .vba-gold-grad {
-  background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   color: #FFFFFF !important;
   font-weight: 700;
-  box-shadow: 0 2px 10px -2px rgba(14, 165, 233, 0.25);
+  box-shadow: 0 2px 12px -2px rgba(217, 119, 6, 0.35);
 }
 
 /* High-contrast mode tokens for .vba-app — Pure Solid Black, Pure White, & Electric Gold */
@@ -433,30 +440,37 @@ html.hc .vba-gold-grad {
 }
 
 .vba-gold-text {
-  background: linear-gradient(135deg, #FFFFFF 0%, #BAE6FD 45%, #7DD3FC 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #FDE68A 45%, #F59E0B 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .vba-card {
-  background: linear-gradient(165deg, rgba(14, 20, 32, 0.95) 0%, rgba(11, 15, 25, 0.98) 100%);
+  background: linear-gradient(165deg, rgba(14, 23, 42, 0.95) 0%, rgba(10, 17, 34, 0.98) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #FFFFFF;
-  border: 1.5px solid rgba(186, 230, 253, 0.28);
+  border: 1.5px solid rgba(245, 158, 11, 0.22);
   border-radius: 1rem;
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(125, 211, 252, 0.15);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 59, 149, 0.25);
 }
 
 .vba-gold-grad {
-  background: linear-gradient(135deg, #38BDF8 0%, #7DD3FC 100%);
+  background: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
   color: #071322 !important;
   font-weight: 700;
-  box-shadow: 0 4px 14px -2px rgba(56, 189, 248, 0.30);
+  box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.40);
 }
 
-/* Ensure ALL buttons and pills with sky/blue background strictly have pure white text */
+/* Ensure ALL buttons and pills with brand navy / amber / sky background strictly have pure white text */
+.btn-navy,
+.bg-navy-brand,
+[class*="bg-[#003B95]"],
+[class*="bg-[#002B70]"],
+.btn-amber,
+.bg-amber-brand,
+[class*="bg-[#EA580C]"],
 .btn-sky,
 .vba-btn-primary,
 button.bg-sky-500,
@@ -470,6 +484,13 @@ span.bg-sky-600,
   color: #FFFFFF !important;
 }
 
+.btn-navy *,
+.bg-navy-brand *,
+[class*="bg-[#003B95]"] *,
+[class*="bg-[#002B70]"] *,
+.btn-amber *,
+.bg-amber-brand *,
+[class*="bg-[#EA580C]"] *,
 .btn-sky *,
 .vba-btn-primary *,
 button.bg-sky-500 *,
@@ -501,13 +522,21 @@ span.bg-sky-600 *,
 .vba-app a:focus-visible,
 .vba-app button:focus-visible,
 .vba-app [role="button"]:focus-visible,
-.vba-app input:focus-visible,
+.vba-app input:not(.borderless-search-input):focus-visible,
 .vba-app select:focus-visible,
 .vba-app textarea:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: var(--radius-md);
   box-shadow: 0 0 0 4px var(--vba-gold-soft);
+}
+
+.borderless-search-input,
+.borderless-search-input:focus,
+.borderless-search-input:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Pressed state for primary CTAs */
@@ -527,7 +556,7 @@ span.bg-sky-600 *,
   .vba-app a:focus-visible,
   .vba-app button:focus-visible,
   .vba-app [role="button"]:focus-visible,
-  .vba-app input:focus-visible,
+  .vba-app input:not(.borderless-search-input):focus-visible,
   .vba-app select:focus-visible,
   .vba-app textarea:focus-visible {
     outline-width: 3px;
@@ -904,14 +933,13 @@ html:not(.dark) .vba-app {
   --muted-foreground: #64748B;
 }
 
-/* Light mode text overrides: ONLY apply outside of dark cards, badges, and dark surfaces */
-html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-white,
-html:not(.dark) .vba-app > .text-white,
-html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-50,
-html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-100,
-html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *) > .text-slate-200 {
-  color: #000000;
+/* Light mode text overrides: ONLY apply for faint slate text on plain white backgrounds, NEVER touch .text-white */
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *):not([class*="bg-"]):not(button):not(button *):not([class*="red"]):not([class*="blue"]) > .text-slate-50,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *):not([class*="bg-"]):not(button):not(button *):not([class*="red"]):not([class*="blue"]) > .text-slate-100,
+html:not(.dark) .vba-app :not([data-dark-card]):not([data-dark-card] *):not(.vba-member-card):not(.vba-member-card *):not(.dark-surface):not(.dark-surface *):not([class*="bg-"]):not(button):not(button *):not([class*="red"]):not([class*="blue"]) > .text-slate-200 {
+  color: #0F172A;
 }
+
 
 /* STRICT OVERRIDE: Dark cards and membership cards ALWAYS keep crisp white and silver text */
 .vba-member-card,
@@ -1707,16 +1735,21 @@ html:not(.dark) body > div[role="menu"] {
   --tw-ring-offset-width: 0px !important;
 }
 
-/* Form controls: visible hover affordance + high-contrast focus in dark mode. */
-.bc-app :is(input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline)):not(:disabled):hover {
-  border-color: color-mix(in oklab, var(--bc-mobile-accent) 40%, var(--bc-mobile-border));
-}
+/* Form controls: remove border hover jitter + high-contrast focus and crisp placeholders */
 .bc-app :is(input:not(.chat-input):not(.no-focus-outline), select, textarea:not(.chat-input):not(.no-focus-outline)):focus-visible {
   border-color: var(--bc-mobile-accent);
 }
-.bc-app :is(input, textarea)::placeholder {
-  color: var(--bc-mobile-muted);
-  opacity: 1;
+.bc-app :is(input, textarea)::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+.dark .bc-app :is(input, textarea)::placeholder,
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
 }
 
 /* Selected / active navigation and tabs keep a >=4.5:1 label color. */
@@ -2154,5 +2187,54 @@ html:not(.dark) body > div[role="menu"] {
 .ceo1983-landing[data-theme="light"] .bg-\[\#D8B282\]\/20 {
   background-color: rgba(254, 243, 199, 0.7) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BẮT BUỘC: QUY CHUẨN UI MOBILE & RULE APP HIỆP HỘI CEO 1983
+   1. Input tìm kiếm KHÔNG ĐƯỢC CÓ BORDERHOVER
+   2. Khi nhập liệu (bàn phím ảo mở), Footer / Bottom Bar KHÔNG được hiện lên trên bàn phím
+   3. Tương thích Safe Area Insets (đẩy header/footer tránh đè status bar & navigation bar)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Input tìm kiếm: Loại bỏ hoàn toàn border hover và border focus làm chớp/đổi viền */
+input[type="search"],
+input[placeholder*="Tìm kiếm"],
+input[placeholder*="Search"],
+.vba-search-input,
+.search-input {
+  transition: none !important;
+}
+
+input[type="search"]:hover,
+input[type="search"]:focus,
+input[type="search"]:active,
+input[placeholder*="Tìm kiếm"]:hover,
+input[placeholder*="Tìm kiếm"]:focus,
+input[placeholder*="Tìm kiếm"]:active,
+input[placeholder*="Search"]:hover,
+input[placeholder*="Search"]:focus,
+input[placeholder*="Search"]:active,
+.vba-search-input:hover,
+.vba-search-input:focus,
+.search-input:hover,
+.search-input:focus {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 2. Ẩn Footer / Bottom Tab Bar khi bàn phím ảo hiển thị (khi người dùng focus vào ô input / textarea) */
+body:has(input:focus):not(:has(input[type="checkbox"]:focus)):not(:has(input[type="radio"]:focus)) .vba-bottom-bar,
+body:has(textarea:focus) .vba-bottom-bar,
+html:has(input:focus):not(:has(input[type="checkbox"]:focus)):not(:has(input[type="radio"]:focus)) .vba-bottom-bar,
+html:has(textarea:focus) .vba-bottom-bar,
+body:has([contenteditable="true"]:focus) .vba-bottom-bar,
+html:has([contenteditable="true"]:focus) .vba-bottom-bar {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(100%) !important;
+}
+
 
 

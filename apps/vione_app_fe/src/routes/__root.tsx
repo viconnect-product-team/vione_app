@@ -193,17 +193,8 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   const redirectScript = `(${String(function () {
-    // Immediately redirect root to /connect-app when no auth callback is present and on mobile.
-    // Also synchronously apply theme (defaulting to dark).
+    // Synchronously apply theme (defaulting to dark).
     try {
-      var p = location.pathname;
-      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-      var search = new URLSearchParams(location.search);
-      var hash = new URLSearchParams(location.hash.replace(/^#/, ""));
-      var hasCallback = search.get("code") || search.get("token_hash") || hash.get("access_token") || hash.get("code");
-      if (!hasCallback && p === "/" && isMobile) {
-        location.replace("/connect-app");
-      }
       var savedTheme = localStorage.getItem("vba.theme");
       var theme = (savedTheme === "light" || savedTheme === "dark" || savedTheme === "contrast") ? savedTheme : "dark";
       var doc = document.documentElement;
@@ -383,6 +374,38 @@ function RootComponent() {
     }
   };
 
+  // Dynamic Favicon Switcher: CEO 1983 for association routes, ViOne for ViOne routes
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const isAssociation =
+      currentPath.startsWith("/association") ||
+      currentPath === "/verify" ||
+      currentPath.startsWith("/landing/ceo1983");
+
+    const targetFavicon = isAssociation ? "/ceo1983-favicon.png" : "/favicon.png";
+    const targetApple = isAssociation ? "/ceo1983-favicon.png" : "/apple-touch-icon.png";
+
+    const iconLinks = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
+    if (iconLinks.length > 0) {
+      iconLinks.forEach((l) => {
+        l.href = targetFavicon;
+      });
+    } else {
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = targetFavicon;
+      document.head.appendChild(link);
+    }
+
+    const appleLink = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
+    if (appleLink) {
+      appleLink.href = targetApple;
+    }
+  }, [currentPath]);
+
   return (
     <LangContext.Provider value={{ lang, setLang }}>
       <QueryClientProvider client={queryClient}>
@@ -417,46 +440,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
-  // Limit mobile visitors to ONLY the 4 connect-app mobile routes (and public pages),
-  // while letting desktop visitors access all legacy/PWA pages (like /m or /events).
-  useEffect(() => {
-    try {
-      if (status === "in") return; // Authenticated users can freely access the dashboard and web app!
 
-      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (!isMobile) return;
-
-      const p = window.location.pathname;
-      // Allow assets, api, and connect-app
-      if (p.startsWith("/api") || p.startsWith("/_static") || p.startsWith("/assets") || p.startsWith("/public")) return;
-      if (p.startsWith("/connect-app")) return;
-
-      // Allow public pages, dedicated login routes, and mobile association app
-      if (
-        p === "/auth" ||
-        p === "/register" ||
-        p === "/forgot-password" ||
-        p === "/reset-password" ||
-        p === "/install" ||
-        p.startsWith("/landing") ||
-        p === "/demo" ||
-        p.startsWith("/h/") ||
-        p.startsWith("/card/") ||
-        p === "/verify" ||
-        p === "/association/login" ||
-        p.startsWith("/association/login") ||
-        p === "/vione/login" ||
-        p.startsWith("/vione/login") ||
-        p.startsWith("/association")
-      ) {
-        return;
-      }
-
-      navigate({ to: "/connect-app", replace: true });
-    } catch {
-      /* ignore */
-    }
-  }, [pathname, navigate, status]);
 
   useEffect(() => {
     const stopResume = startSessionResume(() => {

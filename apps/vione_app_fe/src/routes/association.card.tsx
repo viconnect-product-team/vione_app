@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Heart,
   ReceiptText,
@@ -53,7 +54,7 @@ import { buildMembershipPass } from "@/lib/membership-pass";
 import { walletCapabilities, walletAddUrl } from "@/lib/wallet-provider";
 import { getMyIdentityPassFn, type MyIdentityPass } from "@/lib/member-identity.functions";
 import { resolveMediaUrl } from "@/lib/api-client";
-const appIcon = "/app-icon.png";
+const appIcon = "/ceo1983-logo.png";
 const THEME_KEY = "vba-card-theme";
 
 export const Route = createFileRoute("/association/card")({
@@ -261,6 +262,11 @@ function CardScreen() {
   const [themeId, setThemeId] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [lastSync, setLastSync] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Persisted per-user theme preference (client-only).
   useEffect(() => {
@@ -391,17 +397,18 @@ function CardScreen() {
 
       <div className="px-4 pt-4">
         {/* Switcher: Thẻ của tôi vs Quét mã QR */}
-        <div className="mx-auto mb-4 flex max-w-md items-center rounded-xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] p-1">
+        <div className="mx-auto mb-4 flex max-w-md items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-[#14223E] p-1">
           <button
             type="button"
-            className="flex-1 rounded-lg py-2 text-center text-xs font-bold transition bg-[var(--vba-gold)] text-white shadow-xs inline-flex items-center justify-center gap-1.5"
+            className="flex-1 rounded-lg py-2 text-center text-xs font-bold transition bg-[#2E3192] text-white shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            style={{ color: "#ffffff" }}
           >
-            <IdCard className="h-3.5 w-3.5" />
-            Thẻ của tôi
+            <IdCard className="h-3.5 w-3.5 text-white" />
+            <span className="text-white font-bold">Thẻ của tôi</span>
           </button>
           <Link
             to="/association/checkin"
-            className="flex-1 rounded-lg py-2 text-center text-xs font-semibold text-[var(--vba-text-muted)] hover:text-white transition inline-flex items-center justify-center gap-1.5"
+            className="flex-1 rounded-lg py-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#2E3192] transition inline-flex items-center justify-center gap-1.5"
           >
             <QrCode className="h-3.5 w-3.5" />
             Quét mã QR
@@ -527,7 +534,7 @@ function CardScreen() {
                   >
                     {d.name || "..."}
                   </span>
-                  {member?.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-sky-300" />}
+                  {member?.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-amber-400" />}
                 </div>
               )}
               {d.showCompany && d.company && (
@@ -629,7 +636,7 @@ function CardScreen() {
         <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-[var(--vba-text-dim)]">
           {online ? (
             <>
-              <span className="h-2 w-2 rounded-full bg-[var(--vba-gold)]" />
+              <span className="h-2 w-2 rounded-full bg-[#2E3192] dark:bg-blue-400" />
               {lang === "en" ? "Synced" : "Đã đồng bộ"}
               {lastSync ? ` · ${new Date(lastSync).toLocaleTimeString()}` : ""}
             </>
@@ -648,22 +655,21 @@ function CardScreen() {
           <button
             onClick={() => member && setQrOpen(true)}
             disabled={!member}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] py-3 text-[13px] font-semibold text-[var(--vba-text)] disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[13px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
           >
-            <QrCode className="h-5 w-5 text-[var(--vba-gold)]" /> {t("m.card.showQr")}
+            <QrCode className="h-5 w-5 text-[#2E3192] dark:text-blue-400" /> {t("m.card.showQr")}
           </button>
           <button
             onClick={shareNfc}
             disabled={!member || nfcBusy}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] py-3 text-[13px] font-semibold text-[var(--vba-text)] disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[13px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
           >
-            <Nfc className="h-5 w-5 text-[var(--vba-gold)]" />{" "}
+            <Nfc className="h-5 w-5 text-[#2E3192] dark:text-blue-400" />{" "}
             {nfcBusy ? t("m.card.nfcWriting") : t("m.card.shareNfc")}
           </button>
         </div>
 
-        {/* Add to Wallet + public verification. Availability is decided by the
-            server (real cert/config presence) — never a fake pass. */}
+        {/* Add to Wallet + public verification */}
         <div className="mt-3 grid grid-cols-2 gap-3">
           {wallets.map((w) => {
             const serverAvailable =
@@ -683,11 +689,11 @@ function CardScreen() {
                         : `${w.label} chưa được cấu hình trên máy chủ`,
                     );
                 }}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] py-3 text-[12px] font-semibold text-[var(--vba-text)] disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[12px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
               >
-                <Wallet className="h-4 w-4 text-[var(--vba-gold)]" /> {w.label}
+                <Wallet className="h-4 w-4 text-[#2E3192] dark:text-blue-400" /> {w.label}
                 {!serverAvailable && (
-                  <span className="text-[10px] font-normal text-[var(--vba-text-muted)]">
+                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
                     {lang === "en" ? "(off)" : "(tắt)"}
                   </span>
                 )}
@@ -701,23 +707,23 @@ function CardScreen() {
             href={pass.verifyUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] py-3 text-[13px] font-semibold text-[var(--vba-gold)]"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/30 bg-blue-50/50 dark:bg-slate-800/80 py-3 text-[13px] font-bold text-[#2E3192] dark:text-blue-400 shadow-xs hover:bg-blue-50 transition cursor-pointer"
           >
-            <ShieldCheck className="h-5 w-5" />{" "}
+            <ShieldCheck className="h-5 w-5 text-[#2E3192] dark:text-blue-400" />{" "}
             {lang === "en" ? "Public verification page" : "Trang xác thực công khai"}
           </a>
         )}
 
-        {/* Quick actions */}
+        {/* Quick actions - Tất cả icon thể hiện tính năng nhanh có màu xanh CEO #2E3192 */}
         <div className="mt-5 grid grid-cols-4 gap-3">
           {actions.map((a: any) => {
             const Icon = a.icon;
             return (
-              <Link key={a.label} to={a.to} className="flex flex-col items-center gap-2">
-                <span className="grid h-14 w-14 place-items-center rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] text-[var(--vba-gold)]">
-                  <Icon className="h-6 w-6" />
+              <Link key={a.label} to={a.to} className="flex flex-col items-center gap-2 group">
+                <span className="grid h-14 w-14 place-items-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs transition-transform group-hover:scale-105 group-hover:border-[#2E3192]/50">
+                  <Icon className="h-6 w-6 stroke-[2]" />
                 </span>
-                <span className="text-center text-[10px] font-medium leading-tight text-[var(--vba-text-muted)]">
+                <span className="text-center text-[10px] font-semibold leading-tight text-slate-700 dark:text-slate-300 group-hover:text-[#2E3192]">
                   {a.label}
                 </span>
               </Link>
@@ -725,7 +731,7 @@ function CardScreen() {
           })}
         </div>
 
-        {/* Benefits */}
+        {/* Benefits - Quyền lợi nổi bật */}
         <div className="mt-5 vba-card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[14px] font-bold text-[var(--vba-text)]">
@@ -733,7 +739,7 @@ function CardScreen() {
             </h3>
             <Link
               to="/association/perks"
-              className="text-[12px] font-medium text-[var(--vba-gold)]"
+              className="text-[12px] font-bold text-[#2E3192] dark:text-blue-400 hover:text-[#19194D]"
             >
               {t("m.card.viewAll")}
             </Link>
@@ -745,8 +751,8 @@ function CardScreen() {
               const Icon = resolveBenefitIcon(b, i);
               return (
                 <div key={i} className="group flex flex-col items-center">
-                  <div className="mx-auto mb-1.5 grid h-10 w-10 place-items-center rounded-2xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)] border border-[var(--vba-border-accent)] shadow-xs transition-transform group-hover:scale-105">
-                    <Icon className="h-5 w-5" />
+                  <div className="mx-auto mb-1.5 grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 border border-[#2E3192]/20 shadow-xs transition-transform group-hover:scale-105">
+                    <Icon className="h-5 w-5 stroke-[2]" />
                   </div>
                   <div className="text-[11px] font-bold leading-tight text-[var(--vba-text)] line-clamp-1">
                     {title}
@@ -761,42 +767,43 @@ function CardScreen() {
         </div>
       </div>
 
-      {/* Full-screen QR modal */}
-      {qrOpen && member && (
+      {/* Full-screen QR modal - rendered via Portal directly into document.body to ensure 100% viewport centering */}
+      {qrOpen && member && mounted && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-in fade-in duration-150"
+          style={{ minHeight: "100dvh" }}
           onClick={() => setQrOpen(false)}
         >
           <div
-            className="relative w-full max-w-xs rounded-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-6 text-center"
+            className="relative mx-auto w-full max-w-[320px] rounded-3xl border border-slate-700/60 bg-slate-900/95 p-6 text-center shadow-2xl animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setQrOpen(false)}
-              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-[var(--vba-surface-2)] text-[var(--vba-text-muted)]"
+              className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full bg-slate-800 text-slate-300 hover:text-white transition"
               aria-label={t("m.card.closeAriaLabel")}
             >
               <X className="h-4 w-4" />
             </button>
-            <div className="mb-3 text-[13px] font-bold vba-gold-text">
+            <div className="mb-3 text-[13px] font-bold text-blue-400">
               {t("m.card.qrScanPrompt")}
             </div>
-            <div className="mx-auto w-fit">
-              <QrCanvas value={qrValue} size={232} />
+            <div className="mx-auto w-fit rounded-2xl bg-white p-3.5 shadow-lg">
+              <QrCanvas value={qrValue} size={220} />
             </div>
             {d.showName && (
-              <div className="mt-4 text-[15px] font-bold text-[var(--vba-text)]">{d.name}</div>
+              <div className="mt-4 text-[15px] font-bold text-white">{d.name}</div>
             )}
-            <div className="text-[13px] font-semibold text-[var(--vba-gold)]">{member.code}</div>
+            <div className="text-[13px] font-semibold text-blue-400">{member.code}</div>
             {identity?.hasPass && (
-              <div className="mt-3 space-y-1 border-t border-[var(--vba-border-soft)] pt-3 text-[11px] text-[var(--vba-text-muted)]">
+              <div className="mt-3 space-y-1 border-t border-slate-700/60 pt-3 text-[11px] text-slate-300">
                 <div>
                   Serial:{" "}
-                  <span className="font-semibold text-[var(--vba-text)]">{identity.serial}</span>
+                  <span className="font-semibold text-white">{identity.serial}</span>
                 </div>
                 <div>
                   {lang === "en" ? "Status" : "Trạng thái"}:{" "}
-                  <span className="font-semibold text-[var(--vba-text)]">
+                  <span className="font-semibold text-emerald-400">
                     {identity.effectiveStatus}
                   </span>
                   {" · v"}
@@ -805,13 +812,13 @@ function CardScreen() {
                 {identity.expiresAt && (
                   <div>
                     {lang === "en" ? "Valid until" : "Hiệu lực đến"}:{" "}
-                    <span className="font-semibold text-[var(--vba-text)]">
+                    <span className="font-semibold text-white">
                       {new Date(identity.expiresAt).toLocaleDateString("vi-VN")}
                     </span>
                   </div>
                 )}
                 {identity.qrToken && (
-                  <div className="text-[10px] text-[var(--vba-text-dim)]">
+                  <div className="text-[10px] text-slate-400">
                     {lang === "en"
                       ? "Signed QR · refreshes each open"
                       : "QR ký số · làm mới mỗi lần mở"}
@@ -820,7 +827,8 @@ function CardScreen() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit display modal */}
@@ -897,15 +905,17 @@ function EditCardModal({
   }
 
   const inputCls =
-    "h-10 w-full rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 px-3.5 text-[14px] text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition";
+    "h-10 w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 text-[14px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition";
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/70 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-t-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-5 sm:rounded-3xl"
+        className="relative w-full max-w-md rounded-t-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-5 sm:rounded-3xl max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -924,16 +934,16 @@ function EditCardModal({
           {photo ? (
             <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover" />
           ) : (
-            <span className="grid h-16 w-16 place-items-center rounded-full bg-[var(--vba-gold-soft)] text-[16px] font-bold text-[var(--vba-gold)]">
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-blue-50 dark:bg-[#2E3192]/15 text-[16px] font-bold text-[#2E3192] dark:text-blue-400 border border-[#2E3192]/20">
               {initials(name || member.name)}
             </span>
           )}
           <div className="flex gap-2">
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-text)]"
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-text)] hover:border-[#2E3192]/50"
             >
-              <ImagePlus className="h-4 w-4 text-[var(--vba-gold)]" /> {t("m.card.pickPhoto")}
+              <ImagePlus className="h-4 w-4 text-[#2E3192] dark:text-blue-400" /> {t("m.card.pickPhoto")}
             </button>
             {photo && (
               <button
@@ -995,13 +1005,15 @@ function EditCardModal({
           <button
             onClick={submit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-sky-600 hover:bg-sky-700 py-2.5 text-[14px] font-bold text-white shadow-md shadow-sky-600/20 disabled:opacity-60 transition cursor-pointer"
+            style={{ color: "#ffffff" }}
+            className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-[14px] font-bold text-white shadow-md shadow-[#2E3192]/25 disabled:opacity-60 transition cursor-pointer"
           >
             {busy ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1022,7 +1034,7 @@ function Toggle({
       <span className="text-[13px] text-[var(--vba-text)]">{label}</span>
       <span
         className={`relative h-6 w-11 rounded-full transition-colors ${
-          checked ? "bg-[var(--vba-gold)]" : "bg-[var(--vba-surface-2)]"
+          checked ? "bg-[#2E3192]" : "bg-[var(--vba-surface-2)]"
         }`}
       >
         <span

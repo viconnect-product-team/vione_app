@@ -20,8 +20,9 @@ import {
   Trophy,
   UserCheck,
   UserX,
+  Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchNestApi } from "@/lib/api-client";
@@ -35,6 +36,7 @@ import {
   unmarkAllNotificationsReadFn,
   markNotificationReadFn,
   dismissNotificationFn,
+  deleteNotificationFn,
   dismissAllNotificationsFn,
   dismissBroadcastNotificationsFn,
   restoreNotificationFn,
@@ -56,6 +58,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const NOTIFICATIONS_PREFS_KEY = "vba-notifications-preferences";
 
@@ -228,6 +237,7 @@ function NotificationsScreen() {
   const unmarkAllRead = useServerFn(unmarkAllNotificationsReadFn);
   const markRead = useServerFn(markNotificationReadFn);
   const dismiss = useServerFn(dismissNotificationFn);
+  const deleteNotif = useServerFn(deleteNotificationFn);
   const dismissAll = useServerFn(dismissAllNotificationsFn);
   const dismissBroadcast = useServerFn(dismissBroadcastNotificationsFn);
   const restoreOne = useServerFn(restoreNotificationFn);
@@ -235,20 +245,55 @@ function NotificationsScreen() {
   const restoreAllPersonal = useServerFn(restoreAllPersonalNotificationsFn);
   const navigate = useNavigate({ from: "/association/notifications" });
   const {
-    data: notifications,
+    data: rawNotifications,
     loading,
     reload,
   } = useServerData<MyNotification[]>(() => fetchNotis(), []);
+
+  const notifications = useMemo(() => {
+    const seen = new Set<string>();
+    const res: MyNotification[] = [];
+    for (const n of rawNotifications || []) {
+      const keys: string[] = [];
+      if (n.id) keys.push(`id:${n.id}`);
+      if (n.refType && n.refId) keys.push(`ref:${n.refType}:${n.refId}`);
+      if ((n as any).sourceRecordId) keys.push(`src:${(n as any).sourceRecordId}`);
+      if (n.title && n.body) {
+        const normTitle = n.title.trim().toLowerCase();
+        const normBody = n.body.trim().toLowerCase().slice(0, 80);
+        keys.push(`text:${normTitle}|${normBody}`);
+      }
+      const isDup = keys.some((k) => seen.has(k));
+      if (!isDup) {
+        for (const k of keys) seen.add(k);
+        res.push(n);
+      }
+    }
+    return res;
+  }, [rawNotifications]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      reload();
+    };
+    window.addEventListener("notifications-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("notifications-updated", handleUpdate);
+    };
+  }, [reload]);
   const [marking, setMarking] = useState(false);
   const [dismissingAll, setDismissingAll] = useState(false);
   const [openingLeadId, setOpeningLeadId] = useState<string | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [confirmDismiss, setConfirmDismiss] = useState<MyNotification | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<MyNotification | null>(null);
   const [confirmDismissAll, setConfirmDismissAll] = useState(false);
   const dismissTriggerRef = useRef<HTMLElement | null>(null);
+  const deleteTriggerRef = useRef<HTMLElement | null>(null);
   const restoreDialogFocus = () => {
-    const el = dismissTriggerRef.current;
+    const el = dismissTriggerRef.current || deleteTriggerRef.current;
     dismissTriggerRef.current = null;
+    deleteTriggerRef.current = null;
     if (el && document.contains(el)) {
       requestAnimationFrame(() => el.focus());
     }
@@ -383,6 +428,20 @@ function NotificationsScreen() {
     }
   };
 
+  const onDelete = async (n: MyNotification) => {
+    if (rowBusy) return;
+    setRowBusy(n.id);
+    try {
+      await deleteNotif({ data: { id: n.id } });
+      reload();
+      toast.success("Đã xóa vĩnh viễn thông báo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không thể xóa thông báo");
+    } finally {
+      setRowBusy(null);
+    }
+  };
+
   const hasUnread = notifications.some((n) => n.unread);
 
   const onUndoBulkAction = async () => {
@@ -438,6 +497,31 @@ function NotificationsScreen() {
   const [sort, setSort] = useState<"priority" | "newest">(search.sort);
   const [query, setQuery] = useState(search.q ?? "");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [selectedNotif, setSelectedNotif] = useState<MyNotification | null>(null);
+
+  const isFeeNotification = (n: any): boolean => {
+    if (!n) return false;
+    if (n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || n.notificationKind === "invoice" || n.notificationKind === "payment") return true;
+    if (Boolean(n.safeDisplayData?.invoiceId) || Boolean(n.safeDisplayData?.amount)) return true;
+    const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
+    return /hội phí|niên liễm|phí thường niên|phí sự kiện|tiền vé|thanh toán|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
+  };
+
+  const handlePayNotification = (n: any) => {
+    if (n.unread && n.personal) {
+      void onMarkOneRead(n);
+    }
+    const text = `${n.title || ""} ${n.body || ""}`.toLowerCase();
+    if (n.safeDisplayData?.targetRoute) {
+      void navigate({ to: n.safeDisplayData.targetRoute });
+      return;
+    }
+    if (text.includes("sự kiện") || n.refType === "event") {
+      void navigate({ to: "/association/messages", search: { peerCode: "admin" } });
+      return;
+    }
+    void navigate({ to: "/association/renew" });
+  };
 
   useEffect(() => {
     if (!prefsLoaded) {
@@ -583,7 +667,7 @@ function NotificationsScreen() {
               disabled={marking || !hasUnread || filter === "dismissed"}
               aria-label={t("m.notifications.markAllRead")}
               title={t("m.notifications.markAllRead")}
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-slate-700 transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border-2 border-[#2E3192] bg-[#2E3192] text-white hover:bg-[#19194D] transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
             >
               {marking ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -599,12 +683,12 @@ function NotificationsScreen() {
               disabled={dismissingAll || !hasVisible || filter === "dismissed"}
               aria-label={t("m.notifications.dismissAll")}
               title={t("m.notifications.dismissAll")}
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-rose-600 hover:border-rose-400 transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
             >
               {dismissingAll ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <EyeOff className="h-4.5 w-4.5 stroke-[2.5]" />
+                <EyeOff className="h-4 w-4 stroke-[2.2]" />
               )}
             </button>
           </div>
@@ -643,7 +727,7 @@ function NotificationsScreen() {
                 aria-pressed={active}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   active
-                    ? "bg-sky-600 dark:bg-sky-500 text-white font-black shadow-md scale-[1.02]"
+                    ? "bg-[#2E3192] text-white font-black shadow-md scale-[1.02]"
                     : "text-slate-700 dark:text-slate-200 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -652,8 +736,8 @@ function NotificationsScreen() {
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold tabular-nums ${
                       active
-                        ? "bg-white/25 text-white"
-                        : "bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700"
+                        ? "bg-white/30 text-white"
+                        : "bg-red-600 text-white shadow-xs font-black"
                     }`}
                   >
                     {count}
@@ -765,43 +849,43 @@ function NotificationsScreen() {
               ? "declined"
               : "pending");
 
-          // Color coded per type - High contrast & crisp
+          // Color coded per type - High contrast, sharp & vibrant brand CEO 1983
           const typeTheme: Record<string, { iconBg: string; badge: string; label: string }> = {
             opportunity: {
-              iconBg: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800",
-              badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700",
+              iconBg: "bg-emerald-600 text-white border-emerald-700 shadow-xs",
+              badge: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-bold",
               label: "Cơ hội B2B",
             },
             lead: {
-              iconBg: "bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 border-violet-300 dark:border-violet-800",
-              badge: "bg-violet-100 text-violet-800 dark:bg-violet-950/80 dark:text-violet-300 border-violet-300 dark:border-violet-700",
+              iconBg: "bg-purple-600 text-white border-purple-700 shadow-xs",
+              badge: "bg-purple-50 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border-purple-300 dark:border-purple-700 font-bold",
               label: "Khách hàng B2B",
             },
             event: {
-              iconBg: "bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border-sky-300 dark:border-sky-800",
-              badge: "bg-sky-100 text-sky-900 dark:bg-sky-950/80 dark:text-sky-300 border-sky-300 dark:border-sky-700",
+              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+              badge: "bg-blue-50 text-[#2E3192] dark:bg-blue-950/80 dark:text-amber-300 border-blue-200 dark:border-blue-800 font-bold",
               label: "Sự kiện",
             },
             fee: {
-              iconBg: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800",
-              badge: "bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700",
+              iconBg: "bg-amber-600 text-white border-amber-700 shadow-xs",
+              badge: "bg-amber-50 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-bold",
               label: "Hội phí",
             },
             network: {
-              iconBg: "bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800",
-              badge: "bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-300 border-blue-300 dark:border-blue-700",
-              label: "Kết nối",
+              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+              badge: "bg-blue-50 text-[#2E3192] dark:bg-slate-800 dark:text-amber-300 border-[#2E3192]/30 dark:border-amber-500/30 font-bold",
+              label: "Gắn kết",
             },
             info: {
-              iconBg: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
-              badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700",
+              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+              badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
               label: "Hệ thống",
             },
           };
 
           const theme = typeTheme[n.type] || {
-            iconBg: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
-            badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700",
+            iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+            badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
             label: "Thông báo",
           };
 
@@ -809,19 +893,23 @@ function NotificationsScreen() {
             <div
               key={n.id}
               role="listitem"
-              className={`relative flex gap-3.5 p-4 rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden ${
+              onClick={() => {
+                setSelectedNotif(n);
+                if (n.unread && n.personal) onMarkOneRead(n);
+              }}
+              className={`relative flex gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden cursor-pointer ${
                 n.unread
-                  ? "bg-sky-50/40 dark:bg-[#111726] border-sky-300/60 dark:border-sky-500/30 shadow-sm"
-                  : "bg-[var(--vba-surface,#fff)] border-slate-200 dark:border-[#243042] hover:border-slate-300 dark:hover:border-[#334155]"
+                  ? "bg-white dark:bg-[#0F172A] border-2 border-[#2E3192]/40 dark:border-[#2E3192]/60 shadow-sm"
+                  : "bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
-              {/* Vertical Indicator on Unread */}
+              {/* Vertical Indicator on Unread - Blue Navy */}
               {n.unread && (
-                <span className="absolute left-0 top-3 bottom-3 w-1.5 rounded-r-full bg-sky-500" />
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#2E3192]" />
               )}
 
-              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border shadow-xs ${theme.iconBg}`}>
-                <Icon className="h-5 w-5" />
+              <span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-xl border shadow-xs ${theme.iconBg}`}>
+                <Icon className="h-4 w-4 stroke-[2.2]" />
               </span>
 
               <div className="min-w-0 flex-1">
@@ -841,10 +929,10 @@ function NotificationsScreen() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {n.unread && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white border border-red-700 shadow-2xs">
                         <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-sky-400"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
                         </span>
                         Mới
                       </span>
@@ -856,7 +944,7 @@ function NotificationsScreen() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-[13.5px] font-bold text-[var(--vba-text)]">
+                  <span className="truncate text-[13px] font-bold text-[var(--vba-text)]">
                     {formatNotifTitle(n)}
                   </span>
                   {isLead && (
@@ -891,7 +979,7 @@ function NotificationsScreen() {
                         }
                       }}
                       aria-label={t("m.notifications.lead.openDetail")}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-sky-600 dark:text-sky-400 transition hover:bg-sky-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#2E3192] dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
                     >
                       {openingLeadId === n.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -902,7 +990,7 @@ function NotificationsScreen() {
                   )}
                 </div>
 
-                <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--vba-text-muted)]">
+                <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--vba-text-muted)] line-clamp-2">
                   {formatNotifBody(n)}
                 </p>
 
@@ -952,12 +1040,12 @@ function NotificationsScreen() {
                 {((n.type === "voting" || n.notificationKind === "interactive_poll" || n.refType === "voting" || Boolean(n.safeDisplayData?.pollId)) &&
                   n.safeDisplayData?.options &&
                   !(n.notificationKind === "poll_result" || (n as any).eventKind === "poll_closed" || (n.safeDisplayData as any)?.isClosed)) && (
-                  <div className="mt-3 p-3 rounded-xl bg-sky-500/5 dark:bg-sky-500/10 border border-sky-500/20 space-y-2">
+                  <div className="mt-3 p-3 rounded-xl bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/25 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-[11.5px] font-bold text-sky-800 dark:text-sky-300">
+                      <div className="text-[11.5px] font-bold text-[#2E3192] dark:text-amber-300">
                         Bình chọn ý kiến của bạn:
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/20">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30">
                         🏛️ Bỏ phiếu qua Hiệp hội App
                       </span>
                     </div>
@@ -973,7 +1061,7 @@ function NotificationsScreen() {
                             className={`w-full p-2.5 rounded-lg text-left text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-[var(--vba-gold)] text-[#071322] border-[var(--vba-gold)] shadow-sm"
-                                : "bg-white dark:bg-[#151f2e] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-sky-400"
+                                : "bg-white dark:bg-[#151f2e] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-amber-400"
                             }`}
                           >
                             <span>{opt.title}</span>
@@ -1049,7 +1137,7 @@ function NotificationsScreen() {
                     {n.safeDisplayData.sourceStats && (
                       <div className="pt-2 border-t border-emerald-500/20 flex flex-wrap items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300">
                         <span className="font-semibold">Nguồn tham gia:</span>
-                        <span className="px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 font-medium">
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-[#2E3192] dark:text-amber-300 font-medium">
                           📱 ViOne: {n.safeDisplayData.sourceStats.vioneApp || 0}
                         </span>
                         <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-medium">
@@ -1071,20 +1159,17 @@ function NotificationsScreen() {
                         {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(n.safeDisplayData.amount))}
                       </span>
                     </div>
-                    {n.safeDisplayData.dueDate && (
+                    {n.safeDisplayData.dueDate && !isNaN(new Date(n.safeDisplayData.dueDate).getTime()) && (
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         Hạn chót: {new Date(n.safeDisplayData.dueDate).toLocaleDateString("vi-VN")}
                       </div>
                     )}
                     <button
                       type="button"
-                      onClick={() => {
-                        void markRead({ data: { id: n.id } }).catch(() => {});
-                        void navigate({ to: "/association/renew" });
-                      }}
-                      className="w-full py-2 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      onClick={() => handlePayNotification(n)}
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.99]"
                     >
-                      <Wallet className="size-3.5" />
+                      <Wallet className="size-3.5 text-white" />
                       <span>Thanh toán ngay</span>
                     </button>
                   </div>
@@ -1121,32 +1206,45 @@ function NotificationsScreen() {
                     </button>
                   ) : (
                     <>
-                      {n.unread && n.personal && (
-                        <button
-                          type="button"
-                          disabled={rowBusy === n.id}
-                          onClick={() => onMarkOneRead(n)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-sky-600 dark:border-sky-500 bg-sky-50 dark:bg-sky-950/60 px-3 py-1.5 text-[11.5px] font-black text-sky-700 dark:text-sky-300 transition hover:bg-sky-100 dark:hover:bg-sky-900/60 disabled:opacity-50 shadow-xs cursor-pointer active:scale-95"
-                        >
-                          {rowBusy === n.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                          )}
-                          {t("m.notifications.markOne")}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedNotif(n);
+                          if (n.unread && n.personal) onMarkOneRead(n);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                        style={{ color: "#ffffff" }}
+                      >
+                        <Eye className="h-3.5 w-3.5 text-white" />
+                        <span className="text-white font-bold">Xem chi tiết</span>
+                      </button>
+
                       <button
                         type="button"
                         disabled={rowBusy === n.id}
                         onClick={(e) => {
+                          e.stopPropagation();
                           dismissTriggerRef.current = e.currentTarget;
                           setConfirmDismiss(n);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-[11.5px] font-bold text-slate-700 dark:text-slate-200 transition hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 shadow-xs cursor-pointer active:scale-95"
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                       >
-                        <EyeOff className="h-3.5 w-3.5" />
-                        {t("m.notifications.dismiss")}
+                        <EyeOff className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+                        <span>Ẩn</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={rowBusy === n.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTriggerRef.current = e.currentTarget;
+                          setConfirmDelete(n);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 px-3 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                        <span>Xóa</span>
                       </button>
                     </>
                   )}
@@ -1164,80 +1262,225 @@ function NotificationsScreen() {
         })}
       </div>
 
+      {/* Dialog 1: Ẩn thông báo */}
       <AlertDialog
         open={!!confirmDismiss}
         onOpenChange={(open) => !open && setConfirmDismiss(null)}
       >
         <AlertDialogContent
-          className="max-w-[360px] p-6 rounded-2xl bg-white dark:bg-[#131A26] border border-slate-200 dark:border-slate-800 shadow-2xl text-slate-900 dark:text-white"
+          className="max-w-[330px] p-6 rounded-3xl bg-white/95 dark:bg-[#131A26]/95 border border-slate-200/80 dark:border-white/10 shadow-2xl text-slate-900 dark:text-white backdrop-blur-xl text-center space-y-2"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             restoreDialogFocus();
           }}
         >
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-bold text-slate-900 dark:text-white">
-              {t("m.notifications.dismissConfirm.title")}
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-[#2E3192]/10 dark:bg-amber-500/20 text-[#2E3192] dark:text-amber-400 mb-1 ring-8 ring-[#2E3192]/5">
+            <EyeOff className="h-6 w-6" />
+          </div>
+          <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
+            <AlertDialogTitle className="text-[17px] font-bold text-slate-900 dark:text-white text-center">
+              Ẩn thông báo
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              {t("m.notifications.dismissConfirm.description")}
+            <AlertDialogDescription className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400 text-center max-w-[260px] mx-auto">
+              Thông báo này sẽ được chuyển vào mục Đã ẩn và bạn có thể khôi phục lại bất kỳ lúc nào.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row justify-end gap-2.5 pt-2">
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-3 sm:flex-none">
             <AlertDialogCancel
               onClick={() => setConfirmDismiss(null)}
-              className="mt-0 rounded-xl px-4 py-2 text-sm font-semibold border-0 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer"
+              className="w-full h-11 !m-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[13.5px] font-semibold transition cursor-pointer flex items-center justify-center"
             >
-              {t("m.notifications.dismissConfirm.cancel")}
+              Hủy
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (confirmDismiss) onDismiss(confirmDismiss);
                 setConfirmDismiss(null);
               }}
-              className="rounded-xl px-5 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer"
+              style={{ color: "#ffffff" }}
+              className="w-full h-11 !m-0 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white text-[13.5px] font-bold shadow-md shadow-[#2E3192]/25 transition cursor-pointer flex items-center justify-center"
             >
-              {t("m.notifications.dismissConfirm.confirm")}
+              Ẩn ngay
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Dialog 2: Xóa vĩnh viễn thông báo */}
       <AlertDialog
-        open={confirmDismissAll}
-        onOpenChange={(open) => !open && setConfirmDismissAll(false)}
+        open={!!confirmDelete}
+        onOpenChange={(open) => !open && setConfirmDelete(null)}
       >
         <AlertDialogContent
-          className="max-w-[360px] p-6 rounded-2xl bg-white dark:bg-[#131A26] border border-slate-200 dark:border-slate-800 shadow-2xl text-slate-900 dark:text-white"
+          className="max-w-[330px] p-6 rounded-3xl bg-white/95 dark:bg-[#131A26]/95 border border-slate-200/80 dark:border-white/10 shadow-2xl text-slate-900 dark:text-white backdrop-blur-xl text-center space-y-2"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             restoreDialogFocus();
           }}
         >
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-bold text-slate-900 dark:text-white">
-              {t("m.notifications.dismissAllConfirm.title")}
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 mb-1 ring-8 ring-rose-500/5">
+            <Trash2 className="h-6 w-6" />
+          </div>
+          <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
+            <AlertDialogTitle className="text-[17px] font-bold text-slate-900 dark:text-white text-center">
+              Xóa thông báo
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              {t("m.notifications.dismissAllConfirm.description")}
+            <AlertDialogDescription className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400 text-center max-w-[260px] mx-auto">
+              Bạn có chắc chắn muốn xóa vĩnh viễn thông báo này? Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row justify-end gap-2.5 pt-2">
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-3 sm:flex-none">
             <AlertDialogCancel
-              onClick={() => setConfirmDismissAll(false)}
-              className="mt-0 rounded-xl px-4 py-2 text-sm font-semibold border-0 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 cursor-pointer"
+              onClick={() => setConfirmDelete(null)}
+              className="w-full h-11 !m-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[13.5px] font-semibold transition cursor-pointer flex items-center justify-center"
             >
-              {t("m.notifications.dismissAllConfirm.cancel")}
+              Hủy
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={executeDismissAll}
-              className="rounded-xl px-5 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer"
+              onClick={() => {
+                if (confirmDelete) onDelete(confirmDelete);
+                setConfirmDelete(null);
+              }}
+              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white text-[13.5px] font-bold shadow-md shadow-rose-500/25 transition cursor-pointer flex items-center justify-center"
             >
-              {t("m.notifications.dismissAllConfirm.confirm")}
+              Xóa ngay
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog 3: Ẩn tất cả thông báo */}
+      <AlertDialog
+        open={confirmDismissAll}
+        onOpenChange={(open) => !open && setConfirmDismissAll(false)}
+      >
+        <AlertDialogContent
+          className="max-w-[330px] p-6 rounded-3xl bg-white/95 dark:bg-[#131A26]/95 border border-slate-200/80 dark:border-white/10 shadow-2xl text-slate-900 dark:text-white backdrop-blur-xl text-center space-y-2"
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            restoreDialogFocus();
+          }}
+        >
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-[#2E3192]/10 dark:bg-amber-500/20 text-[#2E3192] dark:text-amber-400 mb-1 ring-8 ring-[#2E3192]/5">
+            <EyeOff className="h-6 w-6" />
+          </div>
+          <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
+            <AlertDialogTitle className="text-[17px] font-bold text-slate-900 dark:text-white text-center">
+              Ẩn tất cả thông báo
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-400 text-center max-w-[260px] mx-auto">
+              Bạn có chắc chắn muốn ẩn tất cả thông báo trong danh sách này? Bạn có thể khôi phục lại trong mục Đã ẩn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-3 sm:flex-none">
+            <AlertDialogCancel
+              onClick={() => setConfirmDismissAll(false)}
+              className="w-full h-11 !m-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 text-[13.5px] font-semibold transition cursor-pointer flex items-center justify-center"
+            >
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeDismissAll}
+              style={{ color: "#ffffff" }}
+              className="w-full h-11 !m-0 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white text-[13.5px] font-bold shadow-md shadow-[#2E3192]/25 transition cursor-pointer flex items-center justify-center"
+            >
+              Ẩn tất cả
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* MODAL 4: XEM CHI TIẾT THÔNG BÁO */}
+      {selectedNotif && (
+        <Dialog open={!!selectedNotif} onOpenChange={(open) => !open && setSelectedNotif(null)}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] space-y-4">
+            <DialogHeader className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                  {selectedNotif.type === "fee" ? "Hội phí" : selectedNotif.type === "event" ? "Sự kiện" : selectedNotif.type === "opportunity" ? "Cơ hội B2B" : "Thông báo"}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {fmt.rel(selectedNotif.time)}
+                </span>
+              </div>
+              <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 text-left leading-snug">
+                {formatNotifTitle(selectedNotif)}
+              </DialogTitle>
+              <div className="text-xs text-slate-500 dark:text-slate-400 text-left flex items-center gap-1">
+                <span>Người gửi:</span>
+                <span className="font-semibold text-[#2E3192] dark:text-amber-400">Ban Thư Ký CLB Doanh Nhân CEO 1983</span>
+              </div>
+            </DialogHeader>
+
+            <div className="rounded-2xl bg-slate-50 dark:bg-slate-900/60 p-4 border border-slate-100 dark:border-slate-800 text-[13px] text-slate-700 dark:text-slate-300 leading-relaxed text-left whitespace-pre-wrap">
+              {formatNotifBody(selectedNotif)}
+            </div>
+
+            {/* KHỐI THANH TOÁN DÀNH CHO THÔNG BÁO CÓ PHÍ */}
+            {isFeeNotification(selectedNotif) && (
+              <div className="rounded-2xl bg-red-500/10 dark:bg-red-500/15 border-2 border-red-500/30 p-4 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1">
+                    <Wallet className="h-4 w-4" />
+                    Khoản phí cần thanh toán:
+                  </span>
+                  <span className="text-base font-black text-red-600 dark:text-red-400">
+                    {selectedNotif.safeDisplayData?.amount
+                      ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(selectedNotif.safeDisplayData.amount))
+                      : "20.000.000 đ"}
+                  </span>
+                </div>
+                {selectedNotif.safeDisplayData?.dueDate && (
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    Hạn chót thanh toán: <b>{selectedNotif.safeDisplayData.dueDate}</b>
+                  </div>
+                )}
+                <div className="text-[11.5px] text-slate-600 dark:text-slate-400">
+                  Hội viên có thể quét mã VietQR chuyển khoản tự động hoặc thanh toán trực tiếp qua cổng ngân hàng của hiệp hội.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const n = selectedNotif;
+                    setSelectedNotif(null);
+                    handlePayNotification(n);
+                  }}
+                  style={{ color: "#ffffff" }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 animate-pulse"
+                >
+                  <Wallet className="h-4 w-4 text-white" style={{ color: "#ffffff" }} />
+                  <span style={{ color: "#ffffff" }}>Thanh toán ngay</span>
+                </button>
+              </div>
+            )}
+
+            <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedNotif(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Đóng
+              </button>
+              {isFeeNotification(selectedNotif) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const n = selectedNotif;
+                    setSelectedNotif(null);
+                    handlePayNotification(n);
+                  }}
+                  style={{ color: "#ffffff" }}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Wallet className="h-3.5 w-3.5 text-white" style={{ color: "#ffffff" }} />
+                  <span style={{ color: "#ffffff" }}>Đi đến phần thanh toán</span>
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

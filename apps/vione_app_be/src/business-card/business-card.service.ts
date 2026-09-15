@@ -408,12 +408,12 @@ export class BusinessCardService {
         created_at: { gte: sinceDate },
       },
       select: { status: true, created_at: true },
-    });
+    }).catch(() => []);
 
     const myCards = await this.prisma.member_business_cards.findMany({
       where: { owner_user_id: userId },
       select: { id: true },
-    });
+    }).catch(() => []);
     const cardIds = myCards.map((c) => c.id);
 
     let interactions: { interaction_type: string; created_at: Date }[] = [];
@@ -424,15 +424,63 @@ export class BusinessCardService {
           created_at: { gte: sinceDate },
         },
         select: { interaction_type: true, created_at: true },
-      });
+      }).catch(() => []);
     }
 
+    // Build status breakdown
+    const allStatuses = ['new', 'read', 'contacting', 'responded', 'won', 'lost', 'archived'];
+    const statusCounts: Record<string, number> = {};
+    for (const s of allStatuses) statusCounts[s] = 0;
+    for (const l of leads) {
+      if (statusCounts[l.status] !== undefined) statusCounts[l.status]++;
+      else statusCounts[l.status] = 1;
+    }
+    const statusBreakdown = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+
+    // Build daily trend
+    const dailyMap = new Map<string, { leads: number; interactions: number }>();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      dailyMap.set(key, { leads: 0, interactions: 0 });
+    }
+    for (const l of leads) {
+      const key = l.created_at ? new Date(l.created_at).toISOString().slice(0, 10) : '';
+      if (dailyMap.has(key)) {
+        dailyMap.get(key)!.leads++;
+      }
+    }
+    for (const it of interactions) {
+      const key = it.created_at ? new Date(it.created_at).toISOString().slice(0, 10) : '';
+      if (dailyMap.has(key)) {
+        dailyMap.get(key)!.interactions++;
+      }
+    }
+    const daily = Array.from(dailyMap.entries()).map(([date, counts]) => ({
+      date,
+      leads: counts.leads,
+      interactions: counts.interactions,
+    }));
+
+    const totalLeads = leads.length;
+    const totalInteractions = interactions.length;
+    const uniqueViews = (interactions as any[]).filter((it: any) => it.interaction_type === 'view').length;
+    const respondedCount = (leads as any[]).filter((l: any) => l.status === 'responded' || l.status === 'won').length;
+    const responseRate = totalLeads > 0 ? respondedCount / totalLeads : 0;
+
     return {
+      totalLeads,
+      totalInteractions,
+      uniqueViews,
+      responseRate,
+      daily,
+      statusBreakdown,
       leads,
       interactions,
       summary: {
-        totalLeads: leads.length,
-        totalInteractions: interactions.length,
+        totalLeads,
+        totalInteractions,
       },
     };
   }

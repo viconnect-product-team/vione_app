@@ -732,47 +732,10 @@ export class AdminService implements OnModuleInit {
 
     if (status === 'sent') {
       try {
-        const users = await this.prisma.$queryRaw<any[]>`
-          SELECT id FROM auth.users LIMIT 1000
-        `.catch(async () => {
-          return this.prisma.$queryRaw<any[]>`SELECT user_id as id FROM public.members WHERE user_id IS NOT NULL LIMIT 1000`.catch(() => []);
-        });
-        for (const u of users) {
-          const dedupeKey = `crm-notif-${code}-${u.id}`;
-          await this.prisma.$executeRawUnsafe(`
-            INSERT INTO public.business_notifications (
-              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
-            ) VALUES (
-              gen_random_uuid(), $1, 'crm', $2, 'crm_broadcast', 'system_broadcast',
-              $3, $4, $5::jsonb, 'normal', 'delivered', $6, $7, $8, NOW(), NOW()
-            )
-          `, u.id, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code }), dedupeKey, appScope, appScope).catch((err) => {
-            console.error('Error inserting business_notification:', err?.message);
-          });
-
-          await this.prisma.$executeRawUnsafe(`
-            INSERT INTO public.member_notifications (
-              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-            ) VALUES (
-              gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
-            )
-          `, u.id, title, body, code).catch(() => {});
-        }
+        await this.dispatchBroadcastToMembersAndUsers(code, title, body, audience, appScope, assocId);
       } catch (err) {
         console.warn('Failed to broadcast CRM notification:', err);
       }
-
-      this.gateway.emitToAll('notification:new', {
-        id: code,
-        title,
-        body,
-        audience,
-        appScope,
-        targetApp: appScope,
-        sentAt: now.toISOString(),
-      });
-      this.gateway.emitToAll('notification:count', {});
     }
 
     return {
@@ -787,6 +750,109 @@ export class AdminService implements OnModuleInit {
       reach: 0,
       status,
     };
+  }
+
+  private async dispatchBroadcastToMembersAndUsers(
+    code: string,
+    title: string,
+    body: string,
+    audience: string,
+    appScope: string,
+    associationId?: string | null,
+  ) {
+    const userIdsSet = new Set<string>();
+    const memberRecipientIds = new Set<string>();
+
+    // 1. Collect from public.members (both id and user_id)
+    try {
+      const members = await this.prisma.$queryRaw<any[]>`
+        SELECT id, user_id FROM public.members
+        WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
+      `.catch(() => []);
+      for (const m of members) {
+        if (m.id) memberRecipientIds.add(String(m.id));
+        if (m.user_id) {
+          userIdsSet.add(String(m.user_id));
+          memberRecipientIds.add(String(m.user_id));
+        }
+      }
+    } catch (e) {
+      console.warn('dispatchBroadcast: failed querying members:', e);
+    }
+
+    // 2. Collect from public.profiles
+    try {
+      const profiles = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.profiles LIMIT 2000
+      `.catch(() => []);
+      for (const p of profiles) {
+        if (p.id) {
+          userIdsSet.add(String(p.id));
+          memberRecipientIds.add(String(p.id));
+        }
+      }
+    } catch (e) {
+      console.warn('dispatchBroadcast: failed querying profiles:', e);
+    }
+
+    // 3. Collect from auth.users (if accessible)
+    try {
+      const authUsers = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM auth.users LIMIT 2000
+      `.catch(() => []);
+      for (const u of authUsers) {
+        if (u.id) {
+          userIdsSet.add(String(u.id));
+          memberRecipientIds.add(String(u.id));
+        }
+      }
+    } catch (e) {
+      /* ignore auth schema restriction */
+    }
+
+    // Insert into member_notifications for all unique recipients
+    for (const recipientId of memberRecipientIds) {
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
+        )
+      `, recipientId, title, body, code).catch(() => {});
+    }
+
+    // Insert into business_notifications for all unique user IDs
+    for (const uId of userIdsSet) {
+      const dedupeKey = `crm-notif-${code}-${uId}`;
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, 'crm', $2, 'crm_broadcast', 'system_broadcast',
+          $3, $4, $5::jsonb, 'normal', 'delivered', $6, $7, $8, NOW(), NOW()
+        ) ON CONFLICT (dedupe_key) DO NOTHING
+      `, uId, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code }), dedupeKey, appScope, appScope).catch(() => {});
+    }
+
+    const nowIso = new Date().toISOString();
+    this.gateway.emitToAll('notification:new', {
+      id: code,
+      title,
+      body,
+      audience,
+      appScope,
+      targetApp: appScope,
+      sentAt: nowIso,
+    });
+    this.gateway.emitToAll('notification:count', {});
+    this.gateway.emitToAll('member:notification_new', {
+      id: code,
+      title,
+      body,
+      appScope,
+      sentAt: nowIso,
+    });
   }
 
   async updateNotification(id: string, data: any) {
@@ -823,7 +889,7 @@ export class AdminService implements OnModuleInit {
     `, id);
 
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT id, code, title, body, audience, channel, status, sent_at, reach, app_scope, target_app
+      SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app
       FROM public.notifications
       WHERE code = $1 OR id::text = $1
       LIMIT 1
@@ -831,22 +897,30 @@ export class AdminService implements OnModuleInit {
 
     const notif = rows[0] || { id, status: 'sent', sentAt: now.toISOString() };
     const appScope = notif.app_scope || notif.target_app || 'crm';
+    const notifCode = notif.code || notif.id || id;
+    const notifTitle = notif.title || 'Thông báo mới';
+    const notifBody = notif.body || '';
+    const audience = notif.audience || 'all';
 
-    this.gateway.emitToAll('notification:new', {
-      id: notif.code || notif.id,
-      title: notif.title,
-      body: notif.body,
-      appScope,
-      targetApp: appScope,
-      sentAt: now.toISOString(),
-    });
-    this.gateway.emitToAll('notification:count', {});
+    // Broadcast to members and users
+    try {
+      await this.dispatchBroadcastToMembersAndUsers(
+        notifCode,
+        notifTitle,
+        notifBody,
+        audience,
+        appScope,
+        notif.association_id,
+      );
+    } catch (e) {
+      console.warn('sendNotification dispatch error:', e);
+    }
 
     return {
-      id: notif.code || notif.id,
-      title: notif.title,
-      body: notif.body || '',
-      audience: notif.audience || 'all',
+      id: notifCode,
+      title: notifTitle,
+      body: notifBody,
+      audience,
       channel: notif.channel || 'inapp',
       appScope,
       targetApp: appScope,

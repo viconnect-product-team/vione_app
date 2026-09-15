@@ -1,30 +1,39 @@
 const fs = require('fs');
-const content = fs.readFileSync('MEMORY.md', 'utf8');
+const path = require('path');
 
-const section = `
-### 25.12. Chuẩn Hóa Tiến Độ Dự Án Trung Thực & Tái Cấu Trúc Tài Liệu Hướng Dẫn Sử Dụng (Word DOCX & Markdown)
-- **Bối cảnh & Chỉ đạo của Ban Lãnh Đạo**:
-  - Không chấp nhận đánh giá 'Pass' hay '100% Hoàn thành' giả tạo cho các tính năng phụ thuộc vào API bên thứ 3 (External 3rd-Party APIs) khi thực tế chưa liên kết.
-  - Phân định rành mạch 3 hệ thống/phân hệ: **1. Hệ Thống CRM Quản Trị**, **2. App Hiệp Hội Doanh Nghiệp (CLB Doanh Nhân CEO 1983)**, **3. App Mạng Xã Hội Giao Thương ViOne Connect**.
-  - Chi tiết hóa toàn bộ các chức năng con (sub-features), không ghi gộp sơ sài (128 chức năng con).
-  - Thông tin nhân sự & mốc thời gian: Người thực hiện: \`Phạm Văn Vũ\`, Ngày bắt đầu nâng cấp: \`11/09/2026\`, Ngày dự kiến hoàn thành: để trống (blank), bỏ cột 'Sẵn sàng Go-live'.
-  - Biên dịch file Word Hướng dẫn sử dụng (\`document/tai-lieu-huong-dan-su-dung.docx\`) chuyên nghiệp: Trang bìa trang trọng, phân trang mục lục, Header/Footer (Trang X / Y), font Times New Roman, cỡ chữ chuẩn 13pt, căn lề Justified (căn đều 2 bên).
+const memPath = path.join(__dirname, '..', 'MEMORY.md');
+let mem = fs.readFileSync(memPath, 'utf8');
+const target = '### 15.12 Chuẩn Hóa Tài Liệu Đề Xuất Giao Diện App CLB Doanh Nhân CEO 1983';
+const idx = mem.indexOf(target);
 
-- **Chi tiết hiện trạng kỹ thuật các API bên ngoài được cập nhật trung thực 100%**:
-  1. *Thanh toán VietQR & Ngân hàng*: Giao diện app đã sinh mã VietQR chuẩn chứa STK, số tiền và mã hóa đơn. Tuy nhiên **CHƯA liên kết Open API ngân hàng** và **CHƯA có Webhook tự động gạch nợ**. Luồng thanh toán tự động **chưa thông** -> Ban Kế toán bắt buộc phải đối soát sao kê thực tế và bấm nút duyệt gạch nợ thủ công trong CRM (\`/fees\`).
-  2. *Đăng nhập Google & Apple (Google OAuth / Apple Sign-In)*: Giao diện nút bấm đã có, nhưng **CHƯA cấu hình Google Cloud Console OAuth Client ID** và **Apple Developer Sign in with Apple Services ID**. Đăng nhập thực tế qua SĐT/Email/Mật khẩu hoặc OTP dev.
-  3. *Cuộc họp & Đặt phòng họp*: Mới có form đặt lịch phòng họp nội bộ lưu vào CSDL. **CHƯA tích hợp API cuộc họp trực tuyến bên ngoài** (Zoom API / Google Meet API).
-  4. *Bản đồ chỉ đường*: Mới nhúng iframe bản đồ mẫu, **CHƯA tích hợp Google Maps Platform API SDK Key** chính thức.
-  5. *SMS OTP & Push Notification*: Đang dùng mã OTP kiểm thử nội bộ (bypass), **CHƯA kết nối tổng đài viễn thông SMS Brandname** (eSMS/SpeedSMS/Twilio). Bản iOS chưa upload chứng chỉ APNs Auth Key (.p8) lên Apple Developer.
-
-- **Kết quả biên dịch & Tài liệu xuất xưởng**:
-  - \`document/TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE_MOI.xlsx\` (và file đích \`TIEN_DO_CONG_VIEC_TOAN_DIEN_VIONE.xlsx\`):
-    * Sheet 1: Dashboard Tổng Quan Dự Án & Cảnh báo đỏ về các API bên thứ 3.
-    * Sheet 2: Bảng theo dõi 128 chức năng con chi tiết, Người thực hiện \`Phạm Văn Vũ\`, Ngày bắt đầu \`11/09/2026\`, Ngày dự kiến để trống, cột Tích hợp API ngoài.
-    * Sheet 3: Danh mục kiểm toán 9 dịch vụ API bên thứ 3 chi tiết.
-  - \`document/tai-lieu-huong-dan-su-dung.docx\`: File Word định dạng chuẩn công văn, font Times New Roman 13pt, căn lề Justified, trang bìa, mục lục, phân trang Footer tự động.
-  - \`document/tai-lieu-huong-dan-su-dung.md\`: Đồng bộ 100% nội dung với file Word.
+if (idx !== -1) {
+  const newSection = `### 15.12 Chuẩn Hóa Hồ Sơ Thiết Kế App CLB Doanh Nhân CEO 1983: 3 Màn Hình Cốt Lõi (Trang Chủ, Gắn Kết, Cá Nhân) (15/09/2026)
+- **Tập tin xuất bản chính thức**:
+  - Đường dẫn tài liệu: \`scratch/DE_XUAT_GIAO_DIEN_APP_CEO1983.pdf\` (3.63 MB, 8 trang A4 chuẩn).
+  - Bản sao lưu trữ Artifacts: \`C:\\Users\\vumik\\.gemini\\antigravity-ide\\brain\\74644533-8bb8-4b29-a589-3d8714601888\\DE_XUAT_GIAO_DIEN_APP_CEO1983.pdf\`.
+  - Mã nguồn dựng tài liệu siêu nét: \`scratch/build_ultimate_sharp_pdf.js\`.
+- **Cấu trúc 8 trang A4 chuẩn mực**:
+  - **Trang 1**: Trang bìa chính thức chuẩn nhận diện thương hiệu CEO 1983.
+  - **Trang 2**: Bản sắc thương hiệu CEO 1983 & Bảng ánh xạ hệ thống tính năng ứng dụng (Header, Trang chủ, Giao thương B2B, Gắn kết, Cá nhân, Menu đáy).
+  - **Trang 3**: Phương án 1 (Classic Navy & Gold) - Màn 1: Trang chủ hội viên (khung mockup lớn 100x234mm, thuyết minh 5 điểm đặc trưng).
+  - **Trang 4**: Phương án 1 (Classic Navy & Gold) - Màn 2: Gắn kết (Tin nhắn & Hội thoại) & Màn 3: Cá nhân (Hồ sơ Doanh nhân B2B).
+  - **Trang 5**: Phương án 2 (Digital Sapphire Tech) - Màn 1: Trang chủ hội viên (tinh thể 3D đa diện, viền cyan công nghệ).
+  - **Trang 6**: Phương án 2 (Digital Sapphire Tech) - Màn 2: Gắn kết Sapphire & Màn 3: Cá nhân Kỹ thuật số.
+  - **Trang 7**: Phương án 3 (B2B Commerce Focus) - Màn 1: Trang chủ hội viên (thiết kế phẳng tối giản, nút cam nhiệt huyết).
+  - **Trang 8**: Phương án 3 (B2B Commerce Focus) - Màn 2: Gắn kết B2B & Màn 3: Cá nhân Thực chiến + Khối ký duyệt nghiệm thu trang trọng ở chân trang.
+- **Bảo toàn 100% bố cục và tính năng thực tế của app hiệp hội**:
+  1. **Màn 1: Trang chủ**: Logo CEO 1983 & chuông thông báo (badge đếm), Thẻ VIP Đỗ Thị Mai (ảnh skyline, mã M1983-012 kèm copy), Lưới 8 tính năng nhanh (badge Mới, 3, 5, 1), Sự kiện nổi bật (16 SEP Đại Hội Doanh Nhân CEO 1983), Khối Ưu đãi quà tặng 3D, Cặp khối giao thương thực chiến then chốt (Trao Cơ Hội +2 Mới & Đăng Sản Phẩm +11 Mới), Nút cài đặt ứng dụng lên màn hình chính, Bottom Bar 5 tab.
+  2. **Màn 2: Gắn kết (Tin nhắn & Hội thoại)**: Tiêu đề "Gắn Kết & Tin Nhắn", ô tìm kiếm phẳng không viền, hàng avatar đối tác online thời gian thực (Messenger style kèm nút [+] Nhắn mới và chấm xanh online), 4 tab phân loại (Tất cả (8), Chưa đọc (3), Tin chờ, Hệ thống), danh sách hội thoại Ban Thư Ký CLB CEO 1983 (ghim đầu, tích xanh), các đối tác doanh nhân (kèm badge tin chưa đọc), Bottom Bar có tab Gắn kết active.
+  3. **Màn 3: Cá nhân (Hồ sơ Doanh nhân Facebook Executive Profile)**: Ảnh bìa cover toàn cảnh kèm nút [Đổi ảnh bìa], avatar Đỗ Thị Mai nổi bật đè lên ảnh bìa viền vàng VIP kèm chấm xanh online, tích xanh xác thực, chức danh Tổng Giám Đốc • CÔNG TY DU LỊCH QUỐC TẾ Á CHÂU, badge VIP MEMBER CEO 1983, bio sứ mệnh kết nối, hàng 3 nút hành động [+ Thêm vào tin], [Chỉnh sửa], [Chia sẻ], khối thông tin ngành nghề & địa bàn trụ sở, khối BẠN BÈ & ĐỐI TÁC (128) hiển thị lưới 6 avatar kèm số lượng đối tác mở rộng (+122), ô đăng bài chia sẻ cơ hội giao thương, Bottom Bar có tab Cá nhân active.
+  4. **Thanh Menu Đáy (Bottom Navigation) đồng bộ 5 Tab**: \`Trang chủ\` • \`Sự kiện\` • \`[83 - Thẻ]\` • \`Gắn kết\` • \`Cá nhân\` trên cả 3 màn hình.
+- **Độ sắc nét và tiêu chuẩn thị giác**:
+  - Vector SVG siêu nét, typography chuẩn Google Fonts Plus Jakarta Sans từ 8.5px đến 14px, tương phản cao, tối ưu tuyệt đối cho in ấn và trình chiếu màn hình lớn.
+  - Phân hóa rõ rệt 3 trường phái thẩm mỹ: Classic Navy & Gold (sang trọng lịch lãm), Digital Sapphire (công nghệ chuyển đổi số 3D), B2B Commerce Focus (thực chiến phẳng tối giản).
+  - Hoàn toàn khách quan, không chứa bất kỳ nhận xét chủ quan nào của Giám đốc thiết kế, sẵn sàng để gửi cho đối tác và Ban Lãnh đạo.
 `;
-
-fs.writeFileSync('MEMORY.md', content.trim() + '\n' + section);
-console.log('MEMORY.md updated successfully.');
+  mem = mem.slice(0, idx) + newSection;
+  fs.writeFileSync(memPath, mem, 'utf8');
+  console.log('Updated MEMORY.md successfully!');
+} else {
+  console.log('Target not found in MEMORY.md');
+}

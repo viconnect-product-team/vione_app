@@ -98,7 +98,11 @@ function CrmAdminAuthPage() {
 
   // Tách biệt hoàn toàn: nếu truy cập sang cổng khác, tự động chuyển về đúng route chuyên biệt
   useEffect(() => {
-    if (searchPortal === "association" || destPath.startsWith("/association") || destPath.startsWith("/m")) {
+    if (searchPortal === "crm" || searchPortal === "admin") {
+      // Đang ở cổng CRM quản trị — không tự động redirect sang cổng khác
+      return;
+    }
+    if (searchPortal === "association" || (destPath.startsWith("/association") || destPath.startsWith("/m"))) {
       navigate({
         to: "/association/login" as any,
         search: { redirect: redirectTo } as any,
@@ -106,7 +110,7 @@ function CrmAdminAuthPage() {
       });
       return;
     }
-    if (searchPortal === "connect" || searchPortal === "vione" || destPath.startsWith("/connect-app")) {
+    if (searchPortal === "connect" || searchPortal === "vione") {
       navigate({
         to: "/vione/login" as any,
         search: { redirect: redirectTo } as any,
@@ -118,7 +122,8 @@ function CrmAdminAuthPage() {
 
   async function goPostLogin() {
     const target = safeRedirect(redirectTo);
-    if (target) {
+    // Nếu target hợp lệ và là trang nội bộ CRM, chuyển về target; nếu trỏ sang vione/connect-app hoặc login, luôn về trang chủ CRM (/)
+    if (target && !target.startsWith("/connect-app") && !target.startsWith("/vione") && !target.startsWith("/auth") && !target.startsWith("/association/login")) {
       navigate({ to: target as any, replace: true });
       return;
     }

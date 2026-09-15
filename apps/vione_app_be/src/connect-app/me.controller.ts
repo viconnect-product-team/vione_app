@@ -74,6 +74,11 @@ export class MeController {
     return this.connectAppService.dismissMemberNotification(req.user.id, id);
   }
 
+  @Post('notifications/member/delete')
+  async deleteMemberNotification(@Request() req, @Body('id') id: string) {
+    return this.connectAppService.deleteMemberNotification(req.user.id, id);
+  }
+
   @Post('notifications/member/dismiss-broadcast')
   async dismissBroadcastNotification(@Request() req, @Body('ids') ids: string[]) {
     return this.connectAppService.dismissBroadcastNotification(req.user.id, ids || []);

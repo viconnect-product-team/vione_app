@@ -503,18 +503,21 @@ function StatsPanel() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#1a1206",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
+                    background: "#ffffff",
+                    border: "1px solid #bae6fd",
+                    borderRadius: 10,
                     fontSize: 12,
+                    boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)",
                   }}
+                  labelStyle={{ color: "#0369a1", fontWeight: 700, marginBottom: 2 }}
+                  itemStyle={{ color: "#0284c7", fontWeight: 600 }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line
                   type="monotone"
                   dataKey="interactions"
                   name={t("bc.stats.legend.interactions")}
-                  stroke="#6ea8fe"
+                  stroke="#0284c7"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -522,7 +525,7 @@ function StatsPanel() {
                   type="monotone"
                   dataKey="leads"
                   name={t("bc.stats.legend.leads")}
-                  stroke="var(--vba-gold)"
+                  stroke="#38bdf8"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -542,7 +545,7 @@ function StatsPanel() {
                 }))}
                 margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(2, 132, 199, 0.08)" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--vba-text-dim)" }} />
                 <YAxis
                   allowDecimals={false}
@@ -550,15 +553,18 @@ function StatsPanel() {
                   width={28}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                  cursor={{ fill: "rgba(2, 132, 199, 0.06)" }}
                   contentStyle={{
-                    background: "#1a1206",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
+                    background: "#ffffff",
+                    border: "1px solid #bae6fd",
+                    borderRadius: 10,
                     fontSize: 12,
+                    boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)",
                   }}
+                  labelStyle={{ color: "#0369a1", fontWeight: 700, marginBottom: 2 }}
+                  itemStyle={{ color: "#0284c7", fontWeight: 600 }}
                 />
-                <Bar dataKey="count" fill="var(--vba-gold)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#0284c7" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -116,7 +116,7 @@ Hội đồng Kiến trúc (ARB) và Lead Master BA sẽ **TỪ CHỐI NGAY LẬ
 2. ❌ **Bỏ qua Ràng buộc Cơ sở dữ liệu (Database Bypass)**: Tự ý bỏ các câu lệnh `CHECK CONSTRAINT` (như `invoices_status_check`, `brm_target_xor`) để code chạy tạm thời.
 3. ❌ **Xóa cứng Dữ liệu Nghiệp vụ (Hard Delete)**: Xóa thẳng tay hội viên hoặc hóa đơn bằng lệnh `DELETE FROM members` trong production thay vì chuyển `status = 'resigned'` hoặc `status = 'archived'`.
 4. ❌ **Viết hoa thường lộn xộn trong URL**: Tạo các URL như `/Auth/Mobile` hoặc `/Association/News` thay vì chuẩn kebab-case chữ thường `/auth/mobile` và `/association/news`.
-5. ❌ **Đổi Màu Nhận Diện Tùy Tiện**: Đưa màu vàng/amber vào cổng Hội viên Hiệp hội (`/association`) vốn đã được quy chuẩn nghiêm ngặt sang màu Xanh - Trắng (Royal Blue & Pure White).
+5. ❌ **Đổi Màu Nhận Diện Tùy Tiện**: Vi phạm bảng màu quy chuẩn Phiên bản 1 (Classic Navy & Gold) của CLB Doanh Nhân CEO 1983: Deep Cobalt Navy (`#003B95` / `#002B70`) kết hợp Warm Amber Gold (`#F59E0B` / `#D97706` / `#EA580C`) và logo dập nổi CEO 1983; hoặc dùng lại các tone màu sky xanh lơ cũ.
 
 ---
 
@@ -126,7 +126,7 @@ Một User Story chỉ được coi là hoàn tất và sẵn sàng nghiệm thu
 
 - [x] **1. Tài liệu Hóa Đầy Đủ**: Có kịch bản nghiệm thu rõ ràng (Gherkin format Given-When-Then) trong tài liệu SRS.
 - [x] **2. Ràng Buộc Dữ Liệu Chặt Chẽ**: Schema DB có đầy đủ khóa ngoại, index tìm kiếm và check constraint ngăn chặn dữ liệu bẩn.
-- [x] **3. UI/UX Chuẩn Nhận Diện**: Tuân thủ đúng bảng màu (Xanh Trắng cho Hiệp hội, Đen Vàng cho ViOne Connect), có hiệu ứng loading skeleton và thông báo toast Sonner.
+- [x] **3. UI/UX Chuẩn Nhận Diện**: Tuân thủ đúng bảng màu (Phiên bản 1: Navy & Gold `#003B95` kết hợp `#F59E0B` cho Hiệp hội CEO 1983; Đen Vàng `#0A0A0B` / `#D8B282` cho ViOne Connect), có hiệu ứng loading skeleton và thông báo toast Sonner.
 - [x] **4. Xử Lý Lỗi Toàn Diện**: Có xử lý màn hình trống (Empty State), lỗi mất mạng, lỗi 403 không có quyền và lỗi 404 không tìm thấy dữ liệu.
 - [x] **5. Kiểm Toán An Ninh (Audit Log)**: Mọi thao tác thay đổi dữ liệu nhạy cảm đều được ghi log bất biến.
 - [x] **6. Kiểm Thử Tự Động (E2E Test)**: Có kịch bản kiểm thử tự động trong bộ test suite và chạy Pass 100%.

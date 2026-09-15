@@ -168,9 +168,10 @@ export function ZaloTransactionCard({
             type="button"
             onClick={() => setShowQrModal(true)}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-2.5 text-[12.5px] font-bold text-white shadow-md active:scale-[0.98] transition-all cursor-pointer"
+            style={{ color: "#ffffff" }}
           >
-            <QrCode className="h-4 w-4 text-white" />
-            <span>Thanh toán ngay bằng VietQR</span>
+            <QrCode className="h-4 w-4 text-white" style={{ color: "#ffffff" }} />
+            <span style={{ color: "#ffffff" }}>Thanh toán ngay bằng VietQR</span>
           </button>
 
           <button
@@ -258,10 +259,11 @@ export function ZaloTransactionCard({
               <button
                 type="button"
                 onClick={handleDownloadQr}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 dark:from-[#F6E1C3] dark:via-[#D8B282] dark:to-[#C29B69] py-2.5 text-[12px] font-bold text-slate-950 shadow-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 py-2.5 text-[12px] font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                style={{ color: "#ffffff" }}
               >
-                <Download className="h-4 w-4" />
-                Tải ảnh QR
+                <Download className="h-4 w-4 text-white" style={{ color: "#ffffff" }} />
+                <span style={{ color: "#ffffff" }}>Tải ảnh QR</span>
               </button>
               <button
                 type="button"

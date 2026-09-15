@@ -159,14 +159,22 @@ function Index() {
   const hasCallback = hasAuthCallbackParams();
   const navigate = useNavigate();
 
-  // Force root to the connect-app landing for mobile visitors unless an auth
-  // callback is present. This ensures visiting http://localhost:5173/ opens
-  // the business-connect landing instead of the legacy dashboard on mobile.
-  // NOTE: this is a client-side replace so it won't affect API/static paths.
+
+
+  // Force root to connect-app for mobile or Capacitor users unless explicit CRM portal
   useEffect(() => {
     try {
-      const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
-      if (!hasCallback && typeof window !== "undefined" && window.location.pathname === "/" && isMobile) {
+      if (hasCallback) return;
+      const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const isCrmPortal =
+        search?.get("portal") === "crm" ||
+        (typeof window !== "undefined" && sessionStorage.getItem("crm_portal") === "1");
+      const isMobileAppOrDevice =
+        typeof window !== "undefined" &&
+        (Boolean((window as any).Capacitor) ||
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+          window.innerWidth <= 768);
+      if (isMobileAppOrDevice && !isCrmPortal && window.location.pathname === "/") {
         navigate({ to: "/connect-app", replace: true });
       }
     } catch {
@@ -253,17 +261,29 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
         setStatus("checking");
         return;
       }
+
+      const isCrmPortal =
+        typeof window !== "undefined" &&
+        (new URLSearchParams(window.location.search).get("portal") === "crm" ||
+          sessionStorage.getItem("crm_portal") === "1");
+
+      const isMobileAppOrDevice =
+        typeof window !== "undefined" &&
+        (Boolean((window as any).Capacitor) ||
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+          window.innerWidth <= 768);
+
+      // Mobile/Capacitor opening root "/" without explicit CRM flag always goes to ViOne app (/connect-app)
+      if (isMobileAppOrDevice && !isCrmPortal) {
+        setStatus("redirecting");
+        navigate({ to: "/connect-app", replace: true });
+        return;
+      }
+
       if (authStatus === 'out') {
         if (redirectAnonToLanding) {
           setStatus("redirecting");
-          // Redirect anonymous visitors to the connect-app landing on mobile,
-          // but to /landing page on desktop.
-          const isMobile = typeof window !== "undefined" && (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768));
-          if (isMobile) {
-            navigate({ to: "/connect-app" });
-          } else {
-            navigate({ to: "/landing" });
-          }
+          navigate({ to: "/landing" });
           return;
         }
         setStatus("idle");

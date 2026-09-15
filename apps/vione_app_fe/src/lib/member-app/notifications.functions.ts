@@ -98,6 +98,22 @@ export const dismissNotificationFn = createServerFn({ method: "POST" })
     }
   });
 
+export const deleteNotificationFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((data) => markReadSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    try {
+      await fetchNestApiFromServer("/connect-app/me/notifications/member/delete", context.token, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      return { deleted: 1 };
+    } catch {
+      return { deleted: 0 };
+    }
+  });
+
+
 export const dismissAllNotificationsFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .handler(async ({ context }) => {

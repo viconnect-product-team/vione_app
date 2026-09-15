@@ -3877,7 +3877,7 @@ export class ConnectAppService implements OnModuleInit {
       }
 
       // 2. Kiểm tra trạng thái hội phí quá hạn chưa thanh toán (tài khoản Lê Hoàng Long hoặc hội viên khác)
-      const overdueMember = members.find(m => m.dues_status === 'overdue');
+      const overdueMember = (members as any[]).find((m: any) => m.dues_status === 'overdue');
       if (overdueMember) {
         const invRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, invoice_no, title, amount, due_date, status
@@ -4187,9 +4187,11 @@ export class ConnectAppService implements OnModuleInit {
 
     const [broadcast, personal, business, events, opportunities] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
-        SELECT id, title, body, audience, sent_at, created_at, app_scope, target_app
+        SELECT id, code, title, body, audience, sent_at, created_at, app_scope, target_app
         FROM public.notifications
-        WHERE status = 'sent' OR status = 'active' OR status IS NULL
+        WHERE (status = 'sent' OR status = 'active' OR status IS NULL)
+          AND (app_scope = 'all' OR app_scope = 'association_app' OR app_scope = 'crm' OR app_scope IS NULL
+               OR target_app = 'all' OR target_app = 'association_app' OR target_app = 'crm' OR target_app IS NULL)
         ORDER BY COALESCE(sent_at, created_at) DESC
         LIMIT 50
       `.catch(() => []),
@@ -4262,18 +4264,34 @@ export class ConnectAppService implements OnModuleInit {
       return 'system';
     };
 
-    const broadcastItems = broadcast.map((n) => ({
-      id: n.id,
-      title: n.title,
-      body: n.body,
-      time: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
-      createdAt: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
-      type: typeMap(n.audience),
-      unread: false,
-      dismissed: dismissedIds.has(n.id),
-      priority: 'low',
-      personal: false,
-    }));
+    const existingPersonalKeys = new Set<string>();
+    for (const p of personal) {
+      if (p.id) existingPersonalKeys.add(String(p.id));
+      if (p.ref_id) existingPersonalKeys.add(String(p.ref_id));
+    }
+
+    const broadcastItems = broadcast
+      .filter((n) => {
+        if (n.id && existingPersonalKeys.has(String(n.id))) return false;
+        if (n.code && existingPersonalKeys.has(String(n.code))) return false;
+        return true;
+      })
+      .map((n) => {
+        const isDismissed = dismissedIds.has(n.id) || (n.code && dismissedIds.has(n.code));
+        return {
+          id: n.id,
+          title: n.title,
+          body: n.body,
+          time: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
+          createdAt: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
+          type: typeMap(n.audience),
+          unread: !isDismissed,
+          dismissed: Boolean(isDismissed),
+          priority: !isDismissed ? 'high' : 'low',
+          personal: false,
+          notificationKind: 'system_broadcast',
+        };
+      });
 
     const eventItems = (events || []).map((e) => {
       const d = new Date(e.date);
@@ -4381,9 +4399,33 @@ export class ConnectAppService implements OnModuleInit {
       };
     });
 
-    return [...personalItems, ...businessItems, ...eventItems, ...oppItems, ...broadcastItems].sort(
+    const rawAll = [...businessItems, ...personalItems, ...eventItems, ...oppItems, ...broadcastItems].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
+
+    const seenKeys = new Set<string>();
+    const deduplicated: any[] = [];
+    for (const rawItem of rawAll) {
+      const item = rawItem as any;
+      const keys: string[] = [];
+      if (item.id) keys.push(`id:${item.id}`);
+      if (item.refType && item.refId) keys.push(`ref:${item.refType}:${item.refId}`);
+      if (item.sourceRecordId) keys.push(`src:${item.sourceRecordId}`);
+      if (item.title && item.body) {
+        const normTitle = String(item.title).trim().toLowerCase();
+        const normBody = String(item.body).trim().toLowerCase().slice(0, 80);
+        const d = new Date(item.createdAt);
+        const dayKey = isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        keys.push(`text:${normTitle}|${normBody}|${dayKey}`);
+      }
+
+      const isDuplicate = keys.some((k) => seenKeys.has(k));
+      if (!isDuplicate) {
+        for (const k of keys) seenKeys.add(k);
+        deduplicated.push(item);
+      }
+    }
+    return deduplicated;
   }
 
   async markMemberNotificationRead(userId: string, id: string) {
@@ -4417,7 +4459,30 @@ export class ConnectAppService implements OnModuleInit {
     await this.prisma.$executeRaw`
       UPDATE public.member_notifications SET dismissed = true, read = true WHERE id = ${id}::uuid
     `.catch(() => null);
+    await this.prisma.$executeRaw`
+      UPDATE public.business_notifications SET status = 'dismissed' WHERE id = ${id}::uuid AND recipient_user_id = ${userId}::uuid
+    `.catch(() => null);
+    await this.prisma.$executeRaw`
+      INSERT INTO public.broadcast_notification_dismissals (user_id, notification_id)
+      VALUES (${userId}::uuid, ${id}::uuid)
+      ON CONFLICT DO NOTHING
+    `.catch(() => null);
     return { dismissed: 1 };
+  }
+
+  async deleteMemberNotification(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.member_notifications WHERE id = ${id}::uuid
+    `.catch(() => null);
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_notifications WHERE id = ${id}::uuid AND recipient_user_id = ${userId}::uuid
+    `.catch(() => null);
+    await this.prisma.$executeRaw`
+      INSERT INTO public.broadcast_notification_dismissals (user_id, notification_id)
+      VALUES (${userId}::uuid, ${id}::uuid)
+      ON CONFLICT DO NOTHING
+    `.catch(() => null);
+    return { deleted: 1 };
   }
 
   async dismissBroadcastNotification(userId: string, ids: string[]) {
@@ -9092,33 +9157,68 @@ export class ConnectAppService implements OnModuleInit {
 
     const peers = [...byPeer.keys()];
     const members = await this.prisma.$queryRaw<any[]>`
-      SELECT code, name, avatar FROM public.members
+      SELECT m.code, m.name, m.contact,
+             COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as display_name,
+             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
+      FROM public.members m
+      LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
+      LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
+      LEFT JOIN public.vione_users vu ON vu.id = m.user_id
     `.catch(() => []);
+    const userByCode = new Map<string, string>();
     const nameByCode = new Map<string, string>();
     const avatarByCode = new Map<string, string>();
     for (const mem of members) {
       if (mem.code) {
-        nameByCode.set(String(mem.code).toLowerCase(), mem.name);
+        if (mem.user_id) userByCode.set(String(mem.code).toLowerCase(), String(mem.user_id));
+        const resolvedName = mem.display_name || mem.name || mem.contact;
+        if (resolvedName) nameByCode.set(String(mem.code).toLowerCase(), resolvedName);
         if (mem.avatar) avatarByCode.set(String(mem.code).toLowerCase(), mem.avatar);
       }
     }
 
+    const acceptedConns = await this.prisma.$queryRaw<any[]>`
+      SELECT requester_user_id, recipient_user_id
+      FROM public.user_connections
+      WHERE status = 'accepted'::public.global_connection_status
+        AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
+    `.catch(() => []);
+    const connectedUserIds = new Set<string>();
+    for (const c of acceptedConns) {
+      connectedUserIds.add(String(c.requester_user_id) === userId ? String(c.recipient_user_id) : String(c.requester_user_id));
+    }
+
     // Luôn đảm bảo kênh Ban Thư Ký / Thông báo hệ thống xuất hiện ở đầu danh sách
-    const resList = peers.map((peer) => {
+    const resList: any[] = [];
+    for (const peer of peers) {
       const list = byPeer.get(peer)!;
       const latest = list[0];
       const unread = list.filter((m) => String(m.to_id).toLowerCase() === mine && m.read_at == null).length;
       const isSystem = peer === 'admin' || peer === 'system';
-      return {
+      const peerUserId = userByCode.get(peer);
+
+      // Quy tắc: Chỉ hiện những người đã kết nối và đã nhắn tin (ngoại trừ kênh hệ thống)
+      const hasMessages = Boolean(latest && latest.text && String(latest.text).trim().length > 0);
+      const isConnected = isSystem || (peerUserId ? connectedUserIds.has(peerUserId) : false);
+
+      if (!isSystem && (!isConnected || !hasMessages)) {
+        continue;
+      }
+
+      const isOnline = isSystem ? true : (peerUserId ? (this.gateway?.isUserOnline(peerUserId) ?? false) : false);
+
+      resList.push({
         peerCode: peer,
+        userId: peerUserId ?? null,
+        isOnline,
         name: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (nameByCode.get(peer) ?? peer.toUpperCase()),
         avatarUrl: isSystem ? '/ceo1983-logo.png' : (avatarByCode.get(peer) ?? null),
         last: latest.text,
         time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
         unread,
         isSystem,
-      };
-    });
+      });
+    }
 
     if (!byPeer.has('admin')) {
       resList.unshift({
@@ -9129,6 +9229,7 @@ export class ConnectAppService implements OnModuleInit {
         time: new Date().toISOString(),
         unread: 1,
         isSystem: true,
+        isOnline: true,
       });
     }
 
@@ -9157,7 +9258,14 @@ export class ConnectAppService implements OnModuleInit {
         ORDER BY created_at ASC
       `.catch((): any[] => []),
       this.prisma.$queryRaw<any[]>`
-        SELECT name, avatar FROM public.members WHERE LOWER(code) = ${peer} LIMIT 1
+        SELECT m.code, m.name, m.contact,
+               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as name,
+               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
+        FROM public.members m
+        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
+        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
+        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
+        WHERE LOWER(m.code) = ${peer} LIMIT 1
       `.catch((): any[] => []),
     ]);
 
@@ -9279,9 +9387,9 @@ export class ConnectAppService implements OnModuleInit {
 
       for (const id of idsArray) {
         const idLower = id.toLowerCase();
-        const ident = identities.find(i => String(i.owner_user_id).toLowerCase() === idLower);
-        const prof = profiles.find(p => String(p.user_id).toLowerCase() === idLower);
-        const mem = members.find(m => String(m.user_id).toLowerCase() === idLower);
+        const ident = (identities as any[]).find((i: any) => String(i.owner_user_id).toLowerCase() === idLower);
+        const prof = (profiles as any[]).find((p: any) => String(p.user_id).toLowerCase() === idLower);
+        const mem = (members as any[]).find((m: any) => String(m.user_id).toLowerCase() === idLower);
 
         userProfilesMap.set(idLower, {
           displayName: ident?.display_name || prof?.display_name || mem?.name || 'Doanh nhân ViOne',

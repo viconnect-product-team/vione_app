@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { verifyMemberPassFn, type VerifyResult } from "@/lib/member-identity.functions";
 
-const appIcon = "/app-icon.png";
+const ceoLogo = "/ceo1983-official-logo.png";
 
 type Search = { code?: string; t?: string };
 
@@ -27,10 +27,10 @@ export const Route = createFileRoute("/verify")({
     deps.code || deps.t ? verifyMemberPassFn({ data: { code: deps.code, token: deps.t } }) : null,
   head: () => ({
     meta: [
-      { title: "Xác thực hội viên — Verify Member" },
+      { title: "Xác thực thẻ hội viên — CLB Doanh Nhân CEO 1983" },
       {
         name: "description",
-        content: "Quét mã QR để xác thực tư cách hội viên, trạng thái và hiệu lực.",
+        content: "Cổng xác thực điện tử thẻ hội viên chính thức CLB Doanh Nhân CEO 1983.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -38,21 +38,30 @@ export const Route = createFileRoute("/verify")({
   component: VerifyScreen,
   errorComponent: ({ error }) => (
     <Shell>
-      <div className="text-center text-[var(--vba-text-muted)]">{error.message}</div>
+      <div className="text-center text-slate-400">{error.message}</div>
     </Shell>
   ),
 });
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="vba-app min-h-[100dvh] px-4 py-6">
-      <div className="mx-auto w-full max-w-md">
-        <div className="mb-5 flex items-center gap-2.5">
-          <img src={appIcon} alt="" className="h-9 w-9 rounded-lg" width={36} height={36} />
-          <div className="leading-tight">
-            <div className="text-[13px] font-bold vba-gold-text">Xác thực hội viên</div>
-            <div className="text-[10px] font-semibold text-[var(--vba-text-muted)]">
-              MEMBER VERIFICATION
+    <div className="vba-app min-h-[100dvh] bg-[#0A0A0B] text-white px-4 py-8 flex flex-col justify-center items-center">
+      <div className="w-full max-w-md">
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-white/[0.04] p-4 border border-white/10 backdrop-blur-md shadow-xl">
+          <div className="flex items-center gap-3">
+            <img
+              src={ceoLogo}
+              alt="CLB Doanh Nhân CEO 1983"
+              className="h-10 w-auto object-contain"
+              height={40}
+            />
+          </div>
+          <div className="text-right">
+            <div className="text-[12px] font-bold text-[#E6C687] uppercase tracking-wider">
+              Xác thực hội viên
+            </div>
+            <div className="text-[9px] font-semibold text-slate-400">
+              OFFICIAL VERIFICATION
             </div>
           </div>
         </div>
@@ -69,12 +78,18 @@ function VerifyScreen() {
   if (!code && !t) {
     return (
       <Shell>
-        <div className="vba-card flex flex-col items-center gap-3 p-8 text-center">
-          <ShieldQuestion className="h-10 w-10 text-[var(--vba-gold)]" />
-          <div className="text-[15px] font-bold text-[var(--vba-text)]">Chưa có mã để xác thực</div>
-          <p className="text-[13px] text-[var(--vba-text-muted)]">
-            Quét mã QR trên thẻ hội viên để bắt đầu xác thực.
+        <div className="flex flex-col items-center gap-3.5 p-8 text-center rounded-3xl bg-white/[0.04] border border-white/10 shadow-xl">
+          <ShieldQuestion className="h-12 w-12 text-[#E6C687]" />
+          <div className="text-[16px] font-bold text-white">Chưa có mã để xác thực</div>
+          <p className="text-[13px] text-slate-400 max-w-xs">
+            Vui lòng quét mã QR trên thẻ hội viên CEO 1983 để thực hiện xác thực thông tin.
           </p>
+          <Link
+            to="/association"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/60 bg-[#2E3192] hover:bg-[#252876] px-5 py-3 text-[13px] font-bold text-white shadow-md transition"
+          >
+            <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
+          </Link>
         </div>
       </Shell>
     );
@@ -83,55 +98,77 @@ function VerifyScreen() {
   if (!result) {
     return (
       <Shell>
-        <div className="vba-card flex flex-col items-center gap-3 p-8 text-center">
-          <ShieldAlert className="h-10 w-10 text-[var(--vba-danger)]" />
-          <div className="text-[15px] font-bold text-[var(--vba-text)]">Không xác thực được</div>
+        <div className="flex flex-col items-center gap-3.5 p-8 text-center rounded-3xl bg-white/[0.04] border border-white/10 shadow-xl">
+          <ShieldAlert className="h-12 w-12 text-rose-500" />
+          <div className="text-[16px] font-bold text-white">Không xác thực được</div>
+          <p className="text-[13px] text-slate-400 max-w-xs">
+            Mã thẻ không tồn tại hoặc đã hết hiệu lực trên hệ thống CLB Doanh Nhân CEO 1983.
+          </p>
+          <Link
+            to="/association"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 hover:bg-white/20 px-5 py-3 text-[13px] font-bold text-white transition"
+          >
+            <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
+          </Link>
         </div>
       </Shell>
     );
   }
 
   const ok = result.verified;
-  const bannerColor = ok ? "var(--vba-success, #16a34a)" : "var(--vba-danger)";
 
   return (
     <Shell>
-      <div className="vba-card overflow-hidden">
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-md shadow-2xl">
         {/* Verdict banner */}
-        <div className="flex items-center gap-3 px-5 py-4">
+        <div
+          className={`flex items-center gap-3.5 px-6 py-4.5 border-b ${
+            ok
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+          }`}
+        >
           {ok ? (
-            <ShieldCheck className="h-8 w-8 shrink-0" style={{ color: bannerColor }} />
+            <ShieldCheck className="h-9 w-9 shrink-0 text-emerald-400" />
           ) : (
-            <ShieldAlert className="h-8 w-8 shrink-0" style={{ color: bannerColor }} />
+            <ShieldAlert className="h-9 w-9 shrink-0 text-rose-400" />
           )}
           <div>
-            <div className="text-[15px] font-bold" style={{ color: bannerColor }}>
+            <div className="text-[16px] font-black uppercase tracking-wide">
               {ok ? "Hội viên hợp lệ" : "Không hợp lệ"}
             </div>
-            <div className="text-[12px] text-[var(--vba-text-muted)]">
-              {ok ? "Thẻ đang hoạt động" : (result.reason ?? "Thẻ không hợp lệ")}
+            <div className="text-[12px] font-medium text-slate-300 mt-0.5">
+              {ok ? "Thẻ chính thức đang hoạt động" : (result.reason ?? "Thẻ không hợp lệ hoặc đã thu hồi")}
             </div>
           </div>
         </div>
 
-        <div className="space-y-3 border-t border-[var(--vba-border-soft)] p-5">
+        <div className="space-y-3.5 p-6 divide-y divide-white/5">
           <Row icon={BadgeCheck} label="Hội viên" value={result.memberName || "—"} />
-          <Row icon={Building2} label="Tổ chức" value={result.associationName || "—"} />
-          <Row icon={Hash} label="Mã hội viên" value={result.memberCode || "—"} accent />
-          <Row icon={BadgeCheck} label="Hạng hội viên" value={result.membershipLevel || "—"} />
-          <Row
-            icon={CalendarClock}
-            label="Hiệu lực đến"
-            value={result.expiresAt ? new Date(result.expiresAt).toLocaleDateString("vi-VN") : "—"}
-          />
+          <div className="pt-3.5">
+            <Row icon={Building2} label="Tổ chức" value={result.associationName || "CLB Doanh Nhân CEO 1983"} />
+          </div>
+          <div className="pt-3.5">
+            <Row icon={Hash} label="Mã hội viên" value={result.memberCode || "—"} accent />
+          </div>
+          <div className="pt-3.5">
+            <Row icon={BadgeCheck} label="Hạng hội viên" value={result.membershipLevel || "Hội viên chính thức"} />
+          </div>
+          <div className="pt-3.5">
+            <Row
+              icon={CalendarClock}
+              label="Hiệu lực đến"
+              value={result.expiresAt ? new Date(result.expiresAt).toLocaleDateString("vi-VN") : "Vô thời hạn"}
+            />
+          </div>
         </div>
       </div>
 
       <Link
-        to="/"
-        className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[var(--vba-border-soft)] py-3 text-[13px] font-semibold text-[var(--vba-text)]"
+        to="/association"
+        className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/60 bg-[#2E3192] hover:bg-[#252876] py-3.5 text-[14px] font-bold text-white shadow-xl shadow-[#2E3192]/25 transition active:scale-[0.99]"
       >
-        <ArrowLeft className="h-4 w-4" /> Về trang chủ
+        <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
       </Link>
     </Shell>
   );
@@ -149,14 +186,16 @@ function Row({
   accent?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
-        <Icon className="h-4 w-4" />
+    <div className="flex items-center gap-3.5">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#2E3192]/20 border border-[#2E3192]/30 text-blue-400">
+        <Icon className="h-4.5 w-4.5" />
       </span>
       <div className="min-w-0">
-        <div className="text-[11px] text-[var(--vba-text-dim)]">{label}</div>
+        <div className="text-[11px] font-medium text-slate-400">{label}</div>
         <div
-          className={`truncate text-[14px] font-semibold ${accent ? "text-[var(--vba-gold)]" : "text-[var(--vba-text)]"}`}
+          className={`truncate text-[14px] font-bold ${
+            accent ? "text-[#E6C687]" : "text-white"
+          }`}
         >
           {value}
         </div>

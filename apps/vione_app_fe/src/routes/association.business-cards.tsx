@@ -241,8 +241,12 @@ function BusinessCardsScreen() {
     }
   };
 
+  const navigate = useNavigate();
+  const actionHandledRef = useRef(false);
+
   useEffect(() => {
-    if (search.action === "edit" && cards.length > 0 && !editing) {
+    if (search.action === "edit" && cards.length > 0 && !editing && !actionHandledRef.current) {
+      actionHandledRef.current = true;
       const primary = cards.find((c) => c.cardKind === "primary") || cards[0];
       if (primary) {
         void openEdit(primary.id);
@@ -250,13 +254,27 @@ function BusinessCardsScreen() {
     }
   }, [search.action, cards, editing]);
 
+  const handleCloseEditor = useCallback(() => {
+    actionHandledRef.current = true;
+    setEditing(null);
+    void navigate({
+      to: "/association/business-cards",
+      search: (prev: any) => {
+        const next = { ...prev };
+        delete next.action;
+        return next;
+      },
+      replace: true,
+    });
+  }, [navigate]);
+
   if (editing) {
     return (
       <CardEditor
         draft={editing}
-        onClose={() => setEditing(null)}
+        onClose={handleCloseEditor}
         onSaved={() => {
-          setEditing(null);
+          handleCloseEditor();
           void refresh();
         }}
       />
@@ -268,6 +286,7 @@ function BusinessCardsScreen() {
       <MemberHeader
         title={t("bc.title")}
         subtitle={t("bc.subtitle")}
+        back
         right={
           tab === "cards" ? (
             <button
@@ -356,14 +375,15 @@ function BusinessCardsScreen() {
               return (
                 <div className="space-y-3">
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--vba-text-dim)]" />
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                       type="search"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={t("bc.search.placeholder")}
                       aria-label={t("bc.search.placeholder")}
-                      className="w-full rounded-xl border border-[var(--vba-border-soft)] bg-transparent py-2 pl-9 pr-3 text-[13px] text-[var(--vba-text)] placeholder:text-[var(--vba-text-dim)] focus:outline-none"
+                      className="borderless-search-input w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-9 pr-3 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:outline-none hover:border-0"
+                      style={{ outline: "none", border: "none", boxShadow: "none" }}
                     />
                   </div>
                   <div className="flex gap-1.5" role="group" aria-label={t("bc.filter.all")}>
@@ -477,22 +497,22 @@ function StatsPanel() {
             <StatKpi
               icon={<Inbox className="h-3.5 w-3.5" />}
               label={t("bc.stats.kpi.leads")}
-              value={String(stats.totalLeads)}
+              value={String(stats.totalLeads ?? (stats as any).summary?.totalLeads ?? 0)}
             />
             <StatKpi
               icon={<BarChart3 className="h-3.5 w-3.5" />}
               label={t("bc.stats.kpi.interactions")}
-              value={String(stats.totalInteractions)}
+              value={String(stats.totalInteractions ?? (stats as any).summary?.totalInteractions ?? 0)}
             />
             <StatKpi
               icon={<Eye className="h-3.5 w-3.5" />}
               label={t("bc.stats.kpi.uniqueViews")}
-              value={String(stats.uniqueViews)}
+              value={String(stats.uniqueViews ?? 0)}
             />
             <StatKpi
               icon={<TrendingUp className="h-3.5 w-3.5" />}
               label={t("bc.stats.kpi.responseRate")}
-              value={`${Math.round(stats.responseRate * 100)}%`}
+              value={`${Math.round((stats.responseRate ?? 0) * 100)}%`}
             />
           </div>
 
@@ -501,11 +521,11 @@ function StatsPanel() {
               {t("bc.stats.trend.title")}
             </p>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={stats.daily} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <LineChart data={stats.daily || []} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(v: string) => v.slice(5)}
+                  tickFormatter={(v: string) => (v ? v.slice(5) : "")}
                   tick={{ fontSize: 10, fill: "var(--vba-text-dim)" }}
                   interval="preserveStartEnd"
                   minTickGap={24}
@@ -517,18 +537,21 @@ function StatsPanel() {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#1a1206",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
+                    background: "#ffffff",
+                    border: "1px solid #bae6fd",
+                    borderRadius: 10,
                     fontSize: 12,
+                    boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)",
                   }}
+                  labelStyle={{ color: "#0369a1", fontWeight: 700, marginBottom: 2 }}
+                  itemStyle={{ color: "#0284c7", fontWeight: 600 }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line
                   type="monotone"
                   dataKey="interactions"
                   name={t("bc.stats.legend.interactions")}
-                  stroke="#6ea8fe"
+                  stroke="#0284c7"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -536,7 +559,7 @@ function StatsPanel() {
                   type="monotone"
                   dataKey="leads"
                   name={t("bc.stats.legend.leads")}
-                  stroke="var(--vba-gold)"
+                  stroke="#38bdf8"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -550,13 +573,13 @@ function StatsPanel() {
             </p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart
-                data={stats.statusBreakdown.map((s) => ({
-                  name: t(LEAD_STATUS_KEY[s.status]),
-                  count: s.count,
+                data={(stats.statusBreakdown || []).map((s) => ({
+                  name: LEAD_STATUS_KEY[s.status] ? t(LEAD_STATUS_KEY[s.status]) : s.status,
+                  count: s.count || 0,
                 }))}
                 margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(2, 132, 199, 0.08)" />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--vba-text-dim)" }} />
                 <YAxis
                   allowDecimals={false}
@@ -564,15 +587,18 @@ function StatsPanel() {
                   width={28}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                  cursor={{ fill: "rgba(2, 132, 199, 0.06)" }}
                   contentStyle={{
-                    background: "#1a1206",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
+                    background: "#ffffff",
+                    border: "1px solid #bae6fd",
+                    borderRadius: 10,
                     fontSize: 12,
+                    boxShadow: "0 4px 14px rgba(2, 132, 199, 0.12)",
                   }}
+                  labelStyle={{ color: "#0369a1", fontWeight: 700, marginBottom: 2 }}
+                  itemStyle={{ color: "#0284c7", fontWeight: 600 }}
                 />
-                <Bar dataKey="count" fill="var(--vba-gold)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#0284c7" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -741,12 +767,13 @@ function LeadsPanel({ selectedLeadId }: { selectedLeadId?: string }) {
     <div className="space-y-3 px-4 py-4">
       <div className="vba-card flex flex-col gap-3 p-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--vba-text-dim)]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("bc.leads.search.ph")}
-            className="w-full rounded-lg border border-[var(--vba-border)] bg-[var(--vba-bg)] py-2 pl-9 pr-3 text-[13px] text-[var(--vba-text)] outline-none focus:border-[var(--vba-gold)]"
+            className="borderless-search-input w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-9 pr-3 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:outline-none hover:border-0"
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1442,11 +1469,11 @@ function CardRow({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md p-4 transition-all hover:border-sky-300 dark:hover:border-sky-800 space-y-3.5">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md p-4 transition-all hover:border-amber-300 dark:hover:border-amber-800 space-y-3.5">
         {/* Visual Business Card Clean Header */}
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 shadow-2xs">
-          <IdCard className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+          <IdCard className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
           {card.cardKind === "primary" ? "Danh thiếp chính" : "Danh thiếp phụ"}
         </span>
         <div className="flex items-center gap-1.5">
@@ -1471,12 +1498,12 @@ function CardRow({
           <img
             src={resolvedAvatar}
             alt=""
-            className="h-16 w-16 shrink-0 rounded-2xl border-2 border-slate-200 dark:border-slate-700 object-cover shadow-md bg-slate-100 dark:bg-slate-800 ring-2 ring-sky-500/20"
+            className="h-16 w-16 shrink-0 rounded-2xl border-2 border-slate-200 dark:border-slate-700 object-cover shadow-md bg-slate-100 dark:bg-slate-800 ring-2 ring-amber-500/20"
             width={64}
             height={64}
           />
         ) : (
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-sky-600 to-blue-800 text-white font-black text-2xl shadow-md ring-2 ring-sky-500/20">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-[#003B95] to-[#0A1A3A] text-white font-black text-2xl shadow-md ring-2 ring-amber-500/20">
             {(card.displayName || card.slug).slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -1496,7 +1523,7 @@ function CardRow({
       {/* Public Link Box (Path hidden, only Copy button) */}
       <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 p-2.5">
         <div className="min-w-0 flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+          <Link2 className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
           <span className="text-[12px] font-bold text-slate-700 dark:text-slate-300">
             Đường dẫn danh thiếp số
           </span>
@@ -1504,7 +1531,7 @@ function CardRow({
         <button
           type="button"
           onClick={handleCopyLink}
-          className="shrink-0 flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs transition-colors cursor-pointer"
+          className="shrink-0 flex items-center gap-1.5 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs transition-colors cursor-pointer"
         >
           {copied ? (
             <Check className="h-3.5 w-3.5" />
@@ -1522,7 +1549,7 @@ function CardRow({
               href={`/b/${card.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white active:scale-95 px-3.5 py-2 text-[12.5px] font-bold shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white active:scale-95 px-3.5 py-2 text-[12.5px] font-bold shadow-sm transition-all cursor-pointer"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Xem công khai
@@ -1530,9 +1557,9 @@ function CardRow({
           )}
           <button
             onClick={() => setPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-sky-500 bg-sky-50 dark:bg-slate-800 hover:bg-sky-100 text-sky-800 dark:text-sky-200 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border-2 border-amber-500 bg-amber-50/50 dark:bg-slate-800 hover:bg-amber-100/60 text-amber-900 dark:text-amber-200 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
           >
-            <QrCode className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+            <QrCode className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
             {t("bc.preview")}
           </button>
           {published && (
@@ -1559,9 +1586,9 @@ function CardRow({
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 pt-3 text-[12px]">
           <button
             onClick={onEdit}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-bold text-[#003B95] dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            <Pencil className="h-3.5 w-3.5 text-sky-600" />
+            <Pencil className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
             {t("bc.edit")}
           </button>
           <button
@@ -1572,7 +1599,7 @@ function CardRow({
             {published ? (
               <EyeOff className="h-3.5 w-3.5 text-slate-500" />
             ) : (
-              <Eye className="h-3.5 w-3.5 text-sky-600" />
+              <Eye className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
             )}
             {published ? t("bc.unpublish") : t("bc.publish")}
           </button>
@@ -1703,6 +1730,17 @@ function CardEditor({
             .map((s) => ({ title: s.title, description: s.description || null, category: null })),
         },
       });
+      try {
+        const existing = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        if (d.displayName) existing.name = d.displayName;
+        if (d.professionalTitle) existing.title = d.professionalTitle;
+        if (d.companyName) existing.company = d.companyName;
+        if (d.avatarUrl) existing.avatar = d.avatarUrl;
+        localStorage.setItem("vba_custom_profile", JSON.stringify(existing));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profile-updated"));
+        }
+      } catch {}
       toast.success(t("bc.saved"));
       onSaved();
     } catch (e) {
@@ -1748,62 +1786,62 @@ function CardEditor({
             <p className="mt-1 text-[11px] text-[var(--vba-text-dim)]">{t("bc.f.kind.hint")}</p>
           </Field>
           <Field label={t("bc.f.displayName")}>
-            <Input value={d.displayName} onChange={(v) => set("displayName", v)} />
+            <Input value={d.displayName} onChange={(v) => set("displayName", v)} placeholder="VD: Nguyễn Văn A" />
           </Field>
           <Field label={t("bc.f.title")}>
-            <Input value={d.professionalTitle} onChange={(v) => set("professionalTitle", v)} />
+            <Input value={d.professionalTitle} onChange={(v) => set("professionalTitle", v)} placeholder="VD: Chủ tịch HĐQT, CEO..." />
           </Field>
           <Field label={t("bc.f.company")}>
-            <Input value={d.companyName} onChange={(v) => set("companyName", v)} />
+            <Input value={d.companyName} onChange={(v) => set("companyName", v)} placeholder="VD: Công ty Cổ phần Tập đoàn CEO 1983" />
           </Field>
           <Field label={t("bc.f.avatar")}>
             <AvatarUploadField value={d.avatarUrl} onChange={(url) => set("avatarUrl", url)} />
             <Input
               value={d.avatarUrl}
               onChange={(v) => set("avatarUrl", v)}
-              placeholder="https://..."
+              placeholder="Dán liên kết ảnh đại diện (https://...)"
             />
           </Field>
           <Field label={t("bc.f.headline")}>
-            <Input value={d.headline} onChange={(v) => set("headline", v)} />
+            <Input value={d.headline} onChange={(v) => set("headline", v)} placeholder="VD: Kết nối giao thương & Hợp tác đầu tư bền vững" />
           </Field>
           <Field label={t("bc.f.bio")}>
-            <Textarea value={d.bio} onChange={(v) => set("bio", v)} />
+            <Textarea value={d.bio} onChange={(v) => set("bio", v)} placeholder="Giới thiệu tóm tắt về năng lực, ngành nghề kinh doanh và mục tiêu kết nối..." />
           </Field>
         </Section>
 
         {/* Contact */}
         <Section title={t("bc.sec.contact")}>
           <Field label={t("bc.f.website")}>
-            <Input value={d.website} onChange={(v) => set("website", v)} />
+            <Input value={d.website} onChange={(v) => set("website", v)} placeholder="https://company.vn" />
           </Field>
           <Field label={t("bc.f.email")}>
-            <Input value={d.workEmail} onChange={(v) => set("workEmail", v)} type="email" />
+            <Input value={d.workEmail} onChange={(v) => set("workEmail", v)} type="email" placeholder="ceo@company.vn" />
           </Field>
           <Field label={t("bc.f.phone")}>
-            <Input value={d.workPhone} onChange={(v) => set("workPhone", v)} />
+            <Input value={d.workPhone} onChange={(v) => set("workPhone", v)} placeholder="0912 345 678" />
           </Field>
           <Field label={t("bc.f.address")}>
-            <Input value={d.address} onChange={(v) => set("address", v)} />
+            <Input value={d.address} onChange={(v) => set("address", v)} placeholder="Số 123 Phố Trần Duy Hưng, Cầu Giấy, Hà Nội" />
           </Field>
         </Section>
 
         {/* Social */}
         <Section title={t("bc.sec.social")}>
           <Field label={t("bc.f.zalo")}>
-            <Input value={d.zaloUrl} onChange={(v) => set("zaloUrl", v)} />
+            <Input value={d.zaloUrl} onChange={(v) => set("zaloUrl", v)} placeholder="https://zalo.me/0912345678" />
           </Field>
           <Field label={t("bc.f.linkedin")}>
-            <Input value={d.linkedinUrl} onChange={(v) => set("linkedinUrl", v)} />
+            <Input value={d.linkedinUrl} onChange={(v) => set("linkedinUrl", v)} placeholder="https://linkedin.com/in/username" />
           </Field>
           <Field label={t("bc.f.facebook")}>
-            <Input value={d.facebookUrl} onChange={(v) => set("facebookUrl", v)} />
+            <Input value={d.facebookUrl} onChange={(v) => set("facebookUrl", v)} placeholder="https://facebook.com/profile" />
           </Field>
           <Field label={t("bc.f.youtube")}>
-            <Input value={d.youtubeUrl} onChange={(v) => set("youtubeUrl", v)} />
+            <Input value={d.youtubeUrl} onChange={(v) => set("youtubeUrl", v)} placeholder="https://youtube.com/@channel" />
           </Field>
           <Field label={t("bc.f.tiktok")}>
-            <Input value={d.tiktokUrl} onChange={(v) => set("tiktokUrl", v)} />
+            <Input value={d.tiktokUrl} onChange={(v) => set("tiktokUrl", v)} placeholder="https://tiktok.com/@username" />
           </Field>
         </Section>
 
@@ -1922,7 +1960,7 @@ function CardEditor({
           <button
             disabled={saving}
             onClick={() => void submit()}
-            className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 py-3 text-[13.5px] font-bold text-white shadow-md shadow-sky-600/20 active:scale-98 disabled:opacity-60 cursor-pointer"
+            className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-[13.5px] font-bold text-white shadow-md shadow-blue-900/20 active:scale-98 disabled:opacity-60 cursor-pointer"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? "Đang lưu..." : "Lưu thay đổi"}
@@ -1949,13 +1987,13 @@ function ItemListSection({
     <Section title={title}>
       <div className="space-y-3">
         {items.map((it, i) => (
-          <div key={i} className="rounded-xl border border-sky-300/60 dark:border-sky-700/60 p-3 bg-slate-50/50 dark:bg-slate-900/30">
+          <div key={i} className="rounded-xl border border-amber-300/60 dark:border-amber-700/60 p-3 bg-slate-50/50 dark:bg-slate-900/30">
             <div className="flex items-center gap-2">
               <input
                 value={it.title}
                 onChange={(e) => update(i, { title: e.target.value })}
                 placeholder={t("bc.itemTitle")}
-                className="flex-1 rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
               />
               <button
                 onClick={() => onChange(items.filter((_, j) => j !== i))}
@@ -1970,14 +2008,14 @@ function ItemListSection({
               onChange={(e) => update(i, { description: e.target.value })}
               placeholder={t("bc.itemDesc")}
               rows={2}
-              className="mt-2 w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 resize-none"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 resize-none"
             />
           </div>
         ))}
       </div>
       <button
         onClick={() => onChange([...items, { title: "", description: "" }])}
-        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-sky-300 dark:border-sky-700 px-3 py-1.5 text-[12px] font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition"
+        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-300 dark:border-amber-700 px-3 py-1.5 text-[12px] font-semibold text-[#003B95] dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition"
       >
         <Plus className="h-4 w-4" />
         {t("bc.add")}
@@ -1989,7 +2027,7 @@ function ItemListSection({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="vba-card p-4">
-      <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400">
+      <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-[#003B95] dark:text-amber-400">
         {title}
       </h2>
       <div className="space-y-3">{children}</div>
@@ -2025,18 +2063,31 @@ function Input({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 outline-none transition-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 shadow-none"
+      style={{ outline: "none" }}
     />
   );
 }
 
-function Textarea({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function Textarea({
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
   return (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      rows={3}
-      className="w-full rounded-xl border border-sky-300 dark:border-sky-700/80 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 resize-none"
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 px-3.5 py-2.5 text-[13px] text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 outline-none transition-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 resize-none shadow-none"
+      style={{ outline: "none" }}
     />
   );
 }
