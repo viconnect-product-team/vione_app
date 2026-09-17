@@ -290,10 +290,10 @@ export function AssociationAppSignIn({
           </button>
         </form>
 
-        {/* Member Activation Button */}
+        {/* Member Activation Button -> Chuyển đến Landing Page CEO 1983 mới (/landing/ceo/v1) */}
         <div className="shrink-0 my-0.5">
           <Link
-            to="/connect-app/activate"
+            to="/landing/ceo/v1"
             className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-50/70 hover:bg-amber-100 text-[13.5px] font-semibold text-amber-900 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
           >
             <Shield className="h-4 w-4 text-[#003B95]" aria-hidden="true" />

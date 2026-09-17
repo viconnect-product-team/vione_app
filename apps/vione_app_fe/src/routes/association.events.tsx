@@ -26,12 +26,14 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
-import { listMyEvents, registerForEvent, cancelEventRegistration, type MyEvent } from "@/lib/member-app.functions";
+import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, type MyEvent, type MyMember } from "@/lib/member-app.functions";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import eventImg from "@/assets/vba-event.jpg";
@@ -42,6 +44,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 
 export const Route = createFileRoute("/association/events")({
   component: EventsScreen,
@@ -54,9 +57,25 @@ const defaultEventImages = [
   "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&auto=format&fit=crop&q=80",
 ];
 
-const EVENT_AGENDA: Record<string, { desc: string; schedule: { time: string; activity: string }[]; speakers: string[] }> = {
+export interface EventAgendaInfo {
+  category: string;
+  subtitle: string;
+  headline: string;
+  desc: string;
+  schedule: { time: string; activity: string }[];
+  speakers: string[];
+  audience: string;
+  zaloLink: string;
+  offer: string;
+  regLink: string;
+}
+
+const EVENT_AGENDA: Record<string, EventAgendaInfo> = {
   "ev-1": {
-    desc: "Đại hội toàn thể các thành viên CLB Doanh Nhân 1983 nhằm đánh giá chặng đường phát triển, vinh danh doanh nghiệp tiêu biểu và công bố chiến lược chuyển đổi số trong kỷ nguyên mới.",
+    category: "ĐẠI HỘI TOÀN THỂ",
+    subtitle: "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
+    headline: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp Tiêu biểu 2026",
+    desc: "Đại hội toàn thể các thành viên CLB Doanh Nhân 1983 nhằm đánh giá chặng đường phát triển, vinh danh doanh nghiệp tiêu biểu và công bố chiến lược chuyển đổi số trong kỷ nguyên mới.\n\nSự kiện quy tụ đại diện các cơ quan quản lý, hiệp hội doanh nghiệp và hàng trăm doanh nhân tiêu biểu trong cả nước cùng tham dự.",
     schedule: [
       { time: "07:00 - 08:00", activity: "Đón tiếp đại biểu, Check-in QR & Trưng bày giao thương B2B" },
       { time: "08:00 - 09:30", activity: "Khai mạc Đại Hội & Báo cáo kết quả hoạt động nhiệm kỳ" },
@@ -64,10 +83,17 @@ const EVENT_AGENDA: Record<string, { desc: string; schedule: { time: string; act
       { time: "10:45 - 11:30", activity: "Ký kết giao thương & Trao chứng nhận hội viên danh dự" },
       { time: "11:30 - 13:00", activity: "Tiệc trưa kết nối Networking & Giao lưu mở rộng" },
     ],
-    speakers: ["Chủ tịch CLB Doanh Nhân CEO 1983", "Chuyên gia Kinh tế trưởng Viện Nghiên cứu Quản lý", "Đại diện Lãnh đạo Hiệp hội Doanh nghiệp TP. Hà Nội"],
+    speakers: ["Chủ tịch CLB Doanh Nhân CEO 1983", "Chuyên gia Kinh tế trưởng Viện Quản lý", "Lãnh đạo Hiệp hội Doanh nghiệp TP. Hà Nội"],
+    audience: "Chủ tịch, CEO & Hội viên CLB Doanh Nhân CEO 1983",
+    zaloLink: "https://zalo.me/g/avricx427",
+    offer: "Miễn phí vé tham dự cho 100 hội viên chính thức đăng ký đầu tiên",
+    regLink: "https://ceo1983.vn/dai-hoi-2026",
   },
   "ev-2": {
-    desc: "Đêm tiệc kết nối thượng đỉnh quy tụ hơn 300 CEO, nhà sáng lập và nhà đầu tư trong hệ sinh thái CEO 1983. Cơ hội xúc tiến đầu tư, hợp tác liên minh chiến lược năm 2026.",
+    category: "GALA DINNER",
+    subtitle: "GẮN KẾT THỊNH VƯỢNG · ĐỈNH CAO KẾT NỐI DOANH NHÂN 1983",
+    headline: "Đêm tiệc kết nối thượng đỉnh: Xúc tiến đầu tư & Hợp tác chiến lược 2026",
+    desc: "Đêm tiệc kết nối thượng đỉnh quy tụ hơn 300 CEO, nhà sáng lập và nhà đầu tư trong hệ sinh thái CEO 1983. Cơ hội xúc tiến đầu tư, hợp tác liên minh chiến lược năm 2026.\n\nChương trình dạ tiệc thượng lưu kết hợp vinh danh những cá nhân, tập thể có đóng góp nổi bật.",
     schedule: [
       { time: "18:00 - 18:45", activity: "Thảm đỏ, Tiệc cocktail & Kết nối tự do" },
       { time: "18:45 - 19:30", activity: "Khai mạc Gala Dinner & Vinh danh nhà tài trợ kim cương" },
@@ -75,48 +101,59 @@ const EVENT_AGENDA: Record<string, { desc: string; schedule: { time: string; act
       { time: "21:00 - 21:30", activity: "Bốc thăm may mắn & Trao giải thưởng kết nối vàng" },
     ],
     speakers: ["Ban Thường Trực CLB CEO 1983", "Khách mời Diễn giả Quốc tế", "Các Shark & Quỹ đầu tư mạo hiểm"],
+    audience: "Nhà sáng lập, CEO & Quỹ đầu tư đồng hành",
+    zaloLink: "https://zalo.me/g/avricx427",
+    offer: "Tặng kèm gói truyền thông thương hiệu doanh nghiệp tại sự kiện",
+    regLink: "https://ceo1983.vn/gala-dinner",
   },
   "ev-3": {
-    desc: "Bàn tròn thảo luận những thách thức và thời cơ về dòng tiền, quản trị tinh gọn và ứng dụng AI vào tự động hóa vận hành doanh nghiệp trong giai đoạn kinh tế mới.",
+    category: "WORKSHOP CHUYÊN ĐỀ",
+    subtitle: "KẾ THỪA GIÁ TRỊ · QUẢN TRỊ ĐA THẾ HỆ · VẬN HÀNH TINH GỌN",
+    headline: "Chuyển giao thế hệ: Thách thức lớn nhất của doanh nghiệp gia đình",
+    desc: "Doanh nghiệp gia đình có thể mất hàng chục năm để xây dựng, nhưng chỉ mất vài năm để gặp khủng hoảng trong quá trình chuyển giao thế hệ.\n\nLàm sao để thế hệ kế thừa tiếp quản hiệu quả? Làm sao để dung hòa khác biệt tư duy giữa founder và thế hệ tiếp theo?\n\nWorkshop 'Tiếp Nối Cơ Nghiệp Gia Đình Đa Thế Hệ' dành cho founder, thế hệ kế thừa và đội ngũ điều hành doanh nghiệp gia đình, tập trung vào các vấn đề thực tiễn về chuyển giao thế hệ, quản trị đa thế hệ và phát triển bền vững.",
     schedule: [
-      { time: "14:00 - 14:30", activity: "Đón khách & Tea break giao lưu" },
-      { time: "14:30 - 15:45", activity: "Diễn đàn: Ứng dụng AI & Tự động hóa cho SME 2026" },
-      { time: "15:45 - 17:00", activity: "Hỏi đáp mở & Tư vấn trực tiếp từ các chuyên gia" },
+      { time: "08:00 - 08:30", activity: "Đón tiếp đại biểu & Tea break giao lưu" },
+      { time: "08:30 - 10:00", activity: "Tọa đàm: Tháo gỡ nút thắt trong chuyển giao thế hệ" },
+      { time: "10:00 - 11:30", activity: "Hỏi đáp mở & Tư vấn trực tiếp từ ban cố vấn CEO 1983" },
     ],
-    speakers: ["Chuyên gia tư vấn chuyển đổi số doanh nghiệp", "CTO ViOne Ecosystem"],
+    speakers: ["Ban Cố vấn CLB Doanh Nhân CEO 1983", "Chuyên gia Tư vấn Quản trị Doanh nghiệp Gia đình"],
+    audience: "Doanh nhân, thế hệ kế thừa và người quan tâm doanh nghiệp gia đình",
+    zaloLink: "https://zalo.me/g/avricx427",
+    offer: "Ưu đãi 199K cho 60 khách đăng ký đầu tiên có tham gia group zalo",
+    regLink: "https://www.cto.vn/familybusiness",
   },
 };
 
-function getEventAgenda(e: MyEvent, index: number) {
+function getEventAgenda(e: MyEvent, index: number): EventAgendaInfo {
   if (EVENT_AGENDA[e.id]) {
     return EVENT_AGENDA[e.id];
   }
-  const defaultSchedules = [
-    [
+  const categories = ["WORKSHOP", "HỘI THẢO", "TỌA ĐÀM B2B", "DIỄN ĐÀN"];
+  const subtitles = [
+    "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
+    "GẮN KẾT THỊNH VƯỢNG · ĐỈNH CAO DOANH NHÂN HỘI TỤ",
+    "ĐỔI MỚI SÁNG TẠO · NÂNG TẦM THƯƠNG HIỆU DOANH NGHIỆP",
+  ];
+  return {
+    category: categories[index % categories.length],
+    subtitle: subtitles[index % subtitles.length],
+    headline: e.title,
+    desc: `Sự kiện "${e.title}" do ${e.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức tại ${e.place}. Diễn ra vào lúc ${e.time} ngày ${e.day} tháng ${e.month}, 2026 với sự tham gia của đông đảo hội viên và khách mời danh dự.\n\nCơ hội giao lưu kết nối hợp tác trực tiếp giữa các nhà lãnh đạo và doanh nhân tiêu biểu.`,
+    schedule: [
       { time: "07:30 - 08:30", activity: "Đón tiếp đại biểu & Check-in QR điện tử" },
       { time: "08:30 - 10:30", activity: `Khai mạc: ${e.title}` },
       { time: "10:30 - 11:30", activity: "Tọa đàm giao thương B2B & Ký kết hợp tác" },
       { time: "11:30 - 13:00", activity: "Tiệc trưa kết nối Networking mở rộng" },
     ],
-    [
-      { time: "18:00 - 18:45", activity: "Thảm đỏ, Tiệc cocktail & Kết nối tự do" },
-      { time: "18:45 - 20:30", activity: `Chương trình Gala: ${e.title}` },
-      { time: "20:30 - 21:30", activity: "Giao lưu doanh nhân & Trao kỷ niệm chương" },
-    ],
-    [
-      { time: "14:00 - 14:30", activity: "Tea break & Tiếp đón khách mời" },
-      { time: "14:30 - 16:30", activity: `Diễn đàn chuyên đề: ${e.title}` },
-      { time: "16:30 - 17:30", activity: "Hỏi đáp mở & Tư vấn trực tiếp từ chuyên gia" },
-    ],
-  ];
-  return {
-    desc: `Sự kiện "${e.title}" do ${e.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức tại ${e.place}. Diễn ra vào lúc ${e.time} ngày ${e.day} tháng ${e.month}, 2026 với sự tham gia của đông đảo hội viên và khách mời danh dự.`,
-    schedule: defaultSchedules[index % defaultSchedules.length],
     speakers: [
       "Ban Thường Trực CLB Doanh Nhân CEO 1983",
       "Các chuyên gia đầu ngành trong lĩnh vực kinh tế & công nghệ",
       "Đại diện lãnh đạo doanh nghiệp tiêu biểu",
     ],
+    audience: "Doanh nhân, thế hệ kế thừa và hội viên CLB CEO 1983",
+    zaloLink: "https://zalo.me/g/avricx427",
+    offer: "Ưu đãi 199K cho 60 khách đăng ký đầu tiên có tham gia group zalo",
+    regLink: "https://www.cto.vn/familybusiness",
   };
 }
 
@@ -128,9 +165,11 @@ function EventsScreen() {
   const { user } = useAuth();
 
   const fetchEvents = useServerFn(listMyEvents);
+  const fetchMember = useServerFn(getMyMember);
   const doRegister = useServerFn(registerForEvent);
   const doCancel = useServerFn(cancelEventRegistration);
   const { data: serverEvents, loading, reload } = useServerData<MyEvent[]>(() => fetchEvents(), []);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>({});
@@ -187,40 +226,7 @@ function EventsScreen() {
     return !!e.registered;
   };
 
-  const fallbackEvents: MyEvent[] = [
-    {
-      id: "ev-1",
-      title: "Đại Hội Doanh Nhân CEO 1983 - Kỷ Nguyên Vươn Mình",
-      time: "07:00 - 13:00",
-      day: "16",
-      month: "SEP",
-      place: "Trung Tâm Hội Nghị Quốc Gia, Hà Nội",
-      registered: false,
-      communityName: "CLB Doanh Nhân 1983 (CEO 1983)",
-    },
-    {
-      id: "ev-2",
-      title: "Gala Dinner Kết Nối Giao Thương & Xúc Tiến Đầu Tư 2026",
-      time: "18:00 - 21:30",
-      day: "28",
-      month: "SEP",
-      place: "Khách sạn JW Marriott, Hà Nội",
-      registered: true,
-      communityName: "CLB Doanh Nhân 1983 (CEO 1983)",
-    },
-    {
-      id: "ev-3",
-      title: "Diễn đàn Kinh tế & Bàn tròn Doanh nhân Trẻ Khởi nghiệp",
-      time: "14:00 - 17:00",
-      day: "05",
-      month: "OCT",
-      place: "Khách sạn Lotte Hotel, Ba Đình, Hà Nội",
-      registered: false,
-      communityName: "CLB Doanh Nhân 1983 (CEO 1983)",
-    },
-  ];
-
-  const events = (serverEvents && serverEvents.length > 0) ? serverEvents : fallbackEvents;
+  const events = serverEvents || [];
 
   const registeredEvents = events.filter((e) => isRegistered(e));
   const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
@@ -236,11 +242,11 @@ function EventsScreen() {
   function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
     if (evt) evt.stopPropagation();
     setRegisteringEvent(e);
-    setFormName(user?.name || user?.user_metadata?.full_name || "");
-    setFormEmail(user?.email || "");
-    setFormPhone(user?.username && /^\d+$/.test(user.username) ? user.username : "");
-    setFormCompany("Công ty Thành viên CEO 1983");
-    setFormPosition("Giám đốc điều hành / CEO");
+    setFormName(member?.name || user?.name || user?.user_metadata?.full_name || "");
+    setFormEmail(member?.email || user?.email || "");
+    setFormPhone(member?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : ""));
+    setFormCompany((member as any)?.company || (member as any)?.companyName || (user?.user_metadata as any)?.company || "CLB Doanh Nhân CEO 1983");
+    setFormPosition(member?.title || (member as any)?.position || "Hội viên CLB Doanh Nhân CEO 1983");
     setFormTicketCount(1);
     setFormTicketType("Standard");
     setFormNote("");
@@ -399,9 +405,28 @@ function EventsScreen() {
       {/* Events List */}
       <div className="mt-4 space-y-3 px-4" role="list">
         {loading && (
-          <p className="py-10 text-center text-[13px] text-[var(--vba-text-dim)]">
-            {isEn ? "Loading events..." : t("m.events.loading")}
-          </p>
+          <div className="space-y-3">
+            {[1, 2].map((sk) => (
+              <div
+                key={sk}
+                className="animate-pulse rounded-3xl border border-white/10 bg-slate-900/70 p-5 h-60 flex flex-col justify-between"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="h-6 w-28 rounded-full bg-white/10" />
+                  <div className="h-8 w-8 rounded-full bg-white/10" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-6 w-3/4 rounded-md bg-white/10" />
+                  <div className="h-4 w-1/2 rounded-md bg-white/5" />
+                </div>
+                <div className="grid grid-cols-4 gap-2 max-w-[260px]">
+                  {[1, 2, 3, 4].map((b) => (
+                    <div key={b} className="h-12 rounded-xl bg-white/10" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {!loading && filteredEvents.length === 0 && (
           <div className="py-10 text-center">
@@ -414,213 +439,279 @@ function EventsScreen() {
             </p>
           </div>
         )}
-        {filteredEvents.map((e: any, index: number) => {
-          const evImg = e.image || defaultEventImages[index % defaultEventImages.length];
+        {!loading && filteredEvents.map((e: any, index: number) => {
+          const rawImg = e.image;
+          const evImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : null;
           const registered = isRegistered(e);
           const isBookmarked = !!bookmarkedIds[e.id];
+          const agenda = getEventAgenda(e, index);
 
           return (
             <div
               key={e.id}
               role="listitem"
               onClick={() => setSelectedEvent(e)}
-              className="vba-card flex flex-col p-2.5 sm:p-3 shadow-xs hover:border-amber-500/50 hover:shadow-md transition cursor-pointer"
+              className="group flex flex-col transition-all duration-300 cursor-pointer"
             >
-              <div className="flex gap-2.5">
-                {/* Event Photo with Date Overlay */}
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-                  <img
-                    src={evImg}
-                    alt={e.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute left-1 top-1 flex flex-col items-center justify-center rounded-md bg-[#2E3192]/95 backdrop-blur-xs px-1 py-0.5 shadow-sm">
-                    <span className="text-[11px] font-black leading-none text-amber-400">
-                      {e.day}
-                    </span>
-                    <span className="text-[7px] font-bold uppercase text-white/90">
-                      {e.month}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="line-clamp-2 text-[12.5px] font-bold text-[var(--vba-text)] leading-snug">
-                    {e.title}
-                  </div>
-                  <div className="mt-1 flex items-center gap-1 text-[10.5px] text-[var(--vba-text-muted)]">
-                    <Clock className="h-3 w-3 text-[#2E3192] dark:text-amber-400" /> {e.time}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1 text-[10.5px] text-[var(--vba-text-muted)]">
-                    <MapPin className="h-3 w-3 text-[#2E3192] dark:text-amber-400" />{" "}
-                    <span className="line-clamp-1">{e.place}</span>
-                  </div>
-                  {e.communityName && (
-                    <div className="mt-0.5 flex items-center gap-1 text-[9.5px] font-semibold text-[#2E3192] dark:text-amber-400">
-                      <Users className="h-2.5 w-2.5" /> {e.communityName}
+              {/* Event Banner */}
+              <div className="relative flex flex-col min-h-[175px] sm:min-h-[195px] overflow-hidden rounded-3xl border border-amber-400/40 shadow-xl hover:border-amber-400/80 hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] text-white">
+                {/* Event Background: Ảnh thật từ CRM hoặc Gradient thương hiệu sang trọng */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                  {evImg ? (
+                    <img
+                      src={evImg}
+                      alt={e.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-25 mix-blend-luminosity"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#020714] via-[#081B4B] to-[#0D2566] opacity-95">
+                      <div className="absolute right-3 bottom-3 opacity-10 pointer-events-none">
+                        <img src="/brand-header-logo.png" alt="" className="h-28 w-auto object-contain" />
+                      </div>
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020714] via-[#081B4B]/80 to-[#040C20]/95" />
                 </div>
 
-                {/* Bookmark Toggle: Solid blue background when marked */}
-                <button
-                  type="button"
-                  onClick={(evt) => {
-                    evt.stopPropagation();
-                    toggleBookmark(e.id);
-                  }}
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all active:scale-95 cursor-pointer ${
-                    isBookmarked
-                      ? "bg-[#2E3192] text-white shadow-sm hover:bg-[#19194D]"
-                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400"
-                  }`}
-                  title={isBookmarked ? (isEn ? "Remove bookmark" : "Bỏ đánh dấu") : (isEn ? "Bookmark event" : "Đánh dấu sự kiện")}
-                >
-                  <Bookmark
-                    className={`h-3.5 w-3.5 ${
-                      isBookmarked ? "fill-white text-white" : ""
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Action and Registration Status */}
-              <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#2E3192] dark:text-amber-400">
-                  <Users className="h-3 w-3 text-[#2E3192] dark:text-amber-400 stroke-[2.2]" />
-                  <span>{index === 0 ? "48" : index === 1 ? "32" : "19"} {isEn ? "registered" : "đã đăng ký"}</span>
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={(evt) => {
-                      evt.stopPropagation();
-                      setSelectedEvent(e);
-                    }}
-                    className="h-6.5 w-6.5 inline-flex items-center justify-center rounded-lg border border-[#2E3192] bg-[#2E3192] hover:bg-[#19194D] text-white transition cursor-pointer shadow-xs active:scale-95 shrink-0"
-                    style={{ color: "#ffffff" }}
-                    title={isEn ? "View details" : "Xem chi tiết"}
-                    aria-label="Xem chi tiết"
+                {/* Dynamic Golden Swoosh Wave Background */}
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                  <svg
+                    className="absolute inset-0 h-full w-full"
+                    viewBox="0 0 500 300"
+                    preserveAspectRatio="none"
+                    fill="none"
                   >
-                    <Eye className="h-3.5 w-3.5 stroke-[2.2]" />
-                  </button>
+                    <defs>
+                      <linearGradient id={`goldGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.1" />
+                        <stop offset="30%" stopColor="#F59E0B" stopOpacity="0.75" />
+                        <stop offset="65%" stopColor="#FDE68A" stopOpacity="0.95" />
+                        <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.2" />
+                      </linearGradient>
+                      <linearGradient id={`goldGlowGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#D97706" stopOpacity="0" />
+                        <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#FEF08A" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M -50,280 C 120,270 200,160 300,140 C 390,120 430,145 540,60"
+                      stroke={`url(#goldGlowGrad-${e.id})`}
+                      strokeWidth="24"
+                      strokeLinecap="round"
+                      className="blur-xl opacity-60"
+                    />
+                    <path
+                      d="M -30,270 C 130,260 210,155 310,135 C 400,115 440,135 530,50"
+                      stroke={`url(#goldGrad-${e.id})`}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-blue-500/20 blur-3xl" />
+                  <div className="absolute top-1/2 -left-10 h-36 w-36 rounded-full bg-amber-500/15 blur-2xl" />
+                </div>
 
-                  {registered ? (
-                    <div className="flex items-center gap-1">
-                      <span
-                        className="inline-flex h-6.5 items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 px-2 text-[10px] font-bold text-emerald-700 dark:text-emerald-400"
-                        title="Đã đăng ký tham gia sự kiện"
-                      >
-                        <Check className="h-3 w-3 stroke-[2.5]" />
-                        <span>{isEn ? "Registered" : "Đã đăng ký"}</span>
+                {/* 1. TOP BAR: BOOKMARK & REGISTERED BADGE (Bỏ CEO 1983 ở góc trái) */}
+                <div className="relative z-10 flex items-center justify-end p-3.5">
+                  <div className="flex items-center gap-1.5">
+                    {registered && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs border border-emerald-300/40">
+                        <Check className="h-2.5 w-2.5 stroke-[2.5]" />
+                        Đã đăng ký
                       </span>
-                      <button
-                        type="button"
-                        onClick={(evt) => unregister(e.id, evt)}
-                        disabled={busy === e.id}
-                        className="h-7 w-7 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 inline-flex items-center justify-center transition cursor-pointer disabled:opacity-50 active:scale-95 shrink-0"
-                        title="Hủy đăng ký"
-                        aria-label="Hủy đăng ký"
-                      >
-                        {busy === e.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <X className="h-3.5 w-3.5 stroke-[2.5]" />
-                        )}
-                      </button>
-                    </div>
-                  ) : (
+                    )}
                     <button
                       type="button"
-                      onClick={(evt) => handleOpenRegister(e, evt)}
-                      disabled={busy === e.id}
-                      style={{ color: "#ffffff" }}
-                      className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-[#2E3192] hover:bg-[#19194D] text-white shadow-xs disabled:opacity-60 cursor-pointer transition active:scale-95 shrink-0"
-                      title={isEn ? "Register" : "Đăng ký tham gia"}
-                      aria-label="Đăng ký tham gia"
+                      onClick={(evt) => {
+                        evt.stopPropagation();
+                        toggleBookmark(e.id);
+                      }}
+                      className={`grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs ${
+                        isBookmarked
+                          ? "bg-amber-400 text-slate-950 font-bold border border-amber-300"
+                          : "bg-black/50 hover:bg-black/70 text-white/90 border border-white/20"
+                      }`}
+                      title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
                     >
-                      <Ticket className="h-3.5 w-3.5 stroke-[2.2]" />
+                      <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : ""}`} />
                     </button>
-                  )}
+                  </div>
+                </div>
+
+                {/* 2. BANNER FOOTER: CHỈ CÒN CATEGORY, COUNTDOWN & METADATA (TÊN SỰ KIỆN ĐƯA RA NGOÀI) */}
+                <div className="relative z-10 mt-auto p-4 pt-6 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col justify-end">
+                  {/* Category & Borderless Countdown Timer */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-wider text-amber-300/90">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span>{agenda.category}</span>
+                    </span>
+
+                    {/* Countdown Timer: Nhỏ lại, không có border, chỉ để số thuần */}
+                    <EventCountdownBanner event={e} index={index} />
+                  </div>
+
+                  {/* Metadata Strip sát đáy ảnh */}
+                  <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[10.5px]">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="flex items-center gap-1 font-bold text-amber-300">
+                        <Calendar className="h-3 w-3 text-amber-400" />
+                        <span>{e.time} · {e.day} {e.month}, 2026</span>
+                      </span>
+                      <span className="flex items-center gap-1 text-slate-300 truncate max-w-[150px] sm:max-w-[220px]">
+                        <MapPin className="h-3 w-3 text-amber-400 shrink-0" />
+                        <span className="truncate">{e.place}</span>
+                      </span>
+                    </div>
+
+                    <span className="text-[10.5px] font-bold text-amber-300 group-hover:text-amber-200 transition-colors flex items-center gap-1 shrink-0">
+                      Chi tiết <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* 3. TÊN SỰ KIỆN Ở NGOÀI BANNER (CHỈ ĐƯA TÊN SỰ KIỆN RA NGOÀI) */}
+              <h3 className="mt-2.5 px-1 text-[15px] sm:text-[16.5px] font-bold text-slate-900 dark:text-white leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+                {e.title}
+              </h3>
             </div>
           );
         })}
       </div>
 
-      {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN */}
+      {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN (IMAGE 4 POSTER & HIGHLIGHTS) */}
       {selectedEvent && (() => {
         const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
-        const selectedImg = (selectedEvent as any).image || defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
+        const rawSelImg = (selectedEvent as any).image;
+        const selectedImg = (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) || defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
         const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
 
         return (
           <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)]">
-              <div className="relative h-44 w-full overflow-hidden bg-slate-900">
+            <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto p-0 rounded-3xl border-amber-400/40 bg-[var(--vba-surface,#fff)]">
+              {/* Poster Banner Header with Golden Swoosh Effect */}
+              <div className="relative min-h-52 w-full overflow-hidden bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] p-4 text-white flex flex-col justify-between">
                 <img
                   src={selectedImg}
                   alt={selectedEvent.title}
-                  className="h-full w-full object-cover opacity-90"
+                  className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-luminosity pointer-events-none"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                <button
-                  type="button"
-                  onClick={() => setSelectedEvent(null)}
-                  className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                <div className="absolute bottom-3 left-4 right-4">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10.5px] font-bold text-amber-300 mb-1.5 shadow-sm">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#020714] via-[#081B4B]/80 to-transparent pointer-events-none" />
+
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 px-2.5 py-0.5 text-[10.5px] font-black text-amber-300 shadow-sm border border-amber-400/50 uppercase">
                     <Sparkles className="h-3 w-3" />
-                    Sự kiện chính thức
+                    {selectedAgenda.category}
                   </span>
-                  <h3 className="text-[15px] font-extrabold text-white line-clamp-2 leading-tight">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEvent(null)}
+                    className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="relative z-10 mt-3">
+                  <h3 className="text-[18px] sm:text-[20px] font-black text-white line-clamp-2 leading-tight drop-shadow-md">
                     {selectedEvent.title}
                   </h3>
+                  <p className="text-[11px] text-amber-300/90 font-bold tracking-wide uppercase mt-0.5">
+                    {selectedAgenda.subtitle}
+                  </p>
+                </div>
+
+                {/* Countdown Timer on Modal Banner */}
+                <div className="relative z-10 mt-3 pt-2.5 border-t border-white/15">
+                  <EventCountdownBanner event={selectedEvent} index={selectedIndex >= 0 ? selectedIndex : 0} />
                 </div>
               </div>
 
-              <div className="p-4 space-y-4 text-[13px]">
-                {/* Thông tin chính */}
-                <div className="space-y-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                    <Calendar className="h-4 w-4 text-[#2E3192] dark:text-blue-400 shrink-0" />
-                    <span>Ngày {selectedEvent.day} tháng {selectedEvent.month}, 2026 ({selectedEvent.time})</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
-                    <MapPin className="h-4 w-4 text-[#2E3192] dark:text-blue-400 shrink-0 mt-0.5" />
-                    <span>{selectedEvent.place}</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                    <Users className="h-4 w-4 text-[#2E3192] dark:text-blue-400 shrink-0" />
-                    <span>{selectedEvent.communityName || "CLB Doanh Nhân CEO 1983"}</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                    <CreditCard className="h-4 w-4 shrink-0" />
-                    <span>Phí tham dự: 500.000 đ / vé (Thanh toán qua VietQR CRM)</span>
+              {/* 3-Column Metadata Strip under Banner */}
+              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5">
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Thời gian</span>
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{selectedEvent.time}</span>
+                </div>
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Địa điểm</span>
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">{selectedEvent.place}</span>
+                </div>
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Đối tượng</span>
+                  <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">{selectedAgenda.audience}</span>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-5 space-y-4 text-[13px]">
+                {/* Headline & Body Context Paragraphs (Image 4 style) */}
+                <div className="space-y-2">
+                  <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
+                    {selectedAgenda.headline}
+                  </h4>
+                  <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line space-y-2">
+                    {selectedAgenda.desc}
                   </div>
                 </div>
 
-                {/* Mô tả chương trình */}
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5">Giới thiệu sự kiện</h4>
-                  <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                    {selectedAgenda.desc}
-                  </p>
+                {/* Dashed Separator */}
+                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
+
+                {/* Highlighted Event Keypoints (Image 4 Style) */}
+                <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 font-semibold">
+                    <Calendar className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>{selectedEvent.time} | Ngày {selectedEvent.day} {selectedEvent.month}, 2026</span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <MapPin className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span className="font-semibold">{selectedEvent.place}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <Ticket className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="leading-snug">
+                      <span>{selectedAgenda.offer}: </span>
+                      <a
+                        href={selectedAgenda.zaloLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                      >
+                        {selectedAgenda.zaloLink}
+                        <ExternalLink className="h-3 w-3 inline" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashed Separator */}
+                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
+
+                {/* Registration Link Text */}
+                <div className="text-[12px] text-slate-600 dark:text-slate-300">
+                  <span>Đăng ký tại: </span>
+                  <a
+                    href={selectedAgenda.regLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#003B95] dark:text-amber-400 font-bold underline hover:text-blue-700"
+                  >
+                    {selectedAgenda.regLink}
+                  </a>
                 </div>
 
                 {/* Lịch trình chi tiết */}
                 <div>
                   <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
-                  <div className="space-y-2 border-l-2 border-[#2E3192]/40 pl-3">
+                  <div className="space-y-2 border-l-2 border-[#003B95]/40 pl-3">
                     {selectedAgenda.schedule.map((item, i) => (
                       <div key={i} className="text-xs">
-                        <span className="font-bold text-[#2E3192] dark:text-blue-400">{item.time}</span>
+                        <span className="font-bold text-[#003B95] dark:text-amber-400">{item.time}</span>
                         <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
                       </div>
                     ))}
@@ -637,22 +728,24 @@ function EventsScreen() {
                   </ul>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEvent(null)}
-                    className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition cursor-pointer"
+                {/* Action Buttons Footer */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-2">
+                  <a
+                    href={selectedAgenda.zaloLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
                   >
-                    Đóng
-                  </button>
+                    <MessageSquare className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                    <span>Tham gia nhóm Zalo sự kiện</span>
+                  </a>
 
                   {isRegistered(selectedEvent) ? (
                     <button
                       type="button"
                       onClick={(evt) => unregister(selectedEvent.id, evt)}
                       disabled={busy === selectedEvent.id}
-                      className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
+                      className="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
                     >
                       {busy === selectedEvent.id ? "Đang hủy..." : "Hủy đăng ký"}
                     </button>
@@ -661,10 +754,10 @@ function EventsScreen() {
                       type="button"
                       onClick={(evt) => handleOpenRegister(selectedEvent, evt)}
                       style={{ color: "#ffffff" }}
-                      className="px-5 py-2 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Ticket className="h-4 w-4" />
-                      <span>Đăng ký tham gia</span>
+                      <span>Đăng ký tham gia ngay</span>
                     </button>
                   )}
                 </div>
@@ -769,21 +862,57 @@ function EventsScreen() {
               {/* Số lượng vé & Hạng vé */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Ticket className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Số lượng vé
-                  </label>
-                  <select
-                    value={formTicketCount}
-                    onChange={(e) => setFormTicketCount(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  >
-                    {[1, 2, 3, 4, 5, 10].map((num) => (
-                      <option key={num} value={num}>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <Ticket className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                      Số lượng vé
+                    </label>
+                    <span className="text-[10px] text-slate-400">Nhập số cụ thể</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormTicketCount((prev) => Math.max(1, prev - 1))}
+                      className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={formTicketCount}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setFormTicketCount(isNaN(val) ? 1 : Math.max(1, Math.min(100, val)));
+                      }}
+                      className="w-full text-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormTicketCount((prev) => Math.min(100, prev + 1))}
+                      className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {/* Preset Pills */}
+                  <div className="mt-1.5 flex items-center gap-1">
+                    {[1, 2, 5, 10].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setFormTicketCount(num)}
+                        className={`flex-1 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                          formTicketCount === num
+                            ? "bg-[#003B95] text-white"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                        }`}
+                      >
                         {num} vé
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div>
                   <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">

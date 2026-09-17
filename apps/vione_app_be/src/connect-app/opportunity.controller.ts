@@ -32,6 +32,11 @@ export class OpportunityController {
     return this.connectAppService.deleteOpportunity(req.user.id, id);
   }
 
+  @Patch(':id')
+  async update(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.connectAppService.updateOpportunity(req.user.id, id, body);
+  }
+
   @Patch(':id/toggle-status')
   async toggleStatus(@Request() req: any, @Param('id') id: string) {
     return this.connectAppService.toggleOpportunityStatus(req.user.id, id);

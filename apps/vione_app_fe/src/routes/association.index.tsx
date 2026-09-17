@@ -26,9 +26,17 @@ import {
   Smartphone,
   Building2,
   ExternalLink,
+  Camera,
+  X,
+  Star,
+  ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { SeasonalEventHeader } from "@/components/member/SeasonalEventHeader";
+import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { QrCanvas } from "@/components/member/QrCanvas";
+import { EventCountdownMiniBadge } from "@/components/events/EventCountdownTimer";
 import heroImg from "@/assets/vba-hero.jpg";
 import giftImg from "@/assets/vba-gift.png";
 import eventImg from "@/assets/vba-event.jpg";
@@ -55,7 +63,7 @@ import { useT, useLang } from "@/lib/i18n";
 import { AssociationContactSheet } from "@/components/member/AssociationContactSheet";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
-const appIcon = "/ceo1983-official-logo.png";
+const appIcon = "/brand-header-logo.png";
 
 export const Route = createFileRoute("/association/")({
   component: Home,
@@ -70,6 +78,26 @@ function initials(name?: string) {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
+}
+
+const DEFAULT_NEWS_THUMBNAILS = [
+  "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&auto=format&fit=crop&q=80",
+];
+
+function formatNewsDate(timeStr?: string) {
+  if (!timeStr) return "Gần đây";
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return timeStr;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return timeStr;
+  }
 }
 
 const quickActionDefs = [
@@ -130,9 +158,9 @@ const quickActionDefs = [
 
 // Fallback high-res business event photos with CEO 1983 blue lighting tone
 const defaultEventImages = [
-  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80",
 ];
 
 function Home() {
@@ -141,6 +169,7 @@ function Home() {
   const isEn = lang === "en";
   const navigate = Route.useNavigate();
   const [contactOpen, setContactOpen] = useState(false);
+  const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [clearedBadges, setClearedBadges] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
@@ -184,7 +213,7 @@ function Home() {
 
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
-  const [customProfile, setCustomProfile] = useState<{ name?: string; title?: string; avatar?: string } | null>(() => {
+  const [customProfile, setCustomProfile] = useState<{ name?: string; title?: string; company?: string; avatar?: string } | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       return JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
@@ -224,9 +253,11 @@ function Home() {
     };
   }, [reloadNotifs]);
 
-  const displayName = customProfile?.name || member?.name || "Hội viên CEO 1983";
-  const displayTitle = customProfile?.title || member?.title || member?.industry || (isEn ? "Official Member" : "Hội viên chính thức");
-  const displayCompany = (member as any)?.companyName || (member as any)?.company || (member as any)?.contact || member?.name || "CLB Doanh Nhân CEO 1983";
+  const displayName = customProfile?.name || member?.name || (user as any)?.name || (user as any)?.username || "Hội viên CLB CEO 1983";
+  const displayTitle = customProfile?.title || member?.title || member?.industry || (isEn ? "Official Member" : "Ban Quản Trị");
+  const rawCompany = customProfile?.company || (member as any)?.companyName || (member as any)?.company;
+  const isOldSeedCompany = rawCompany && (rawCompany.includes("ViOne Platform") || rawCompany.includes("Phạm Văn Vũ"));
+  const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
   const displayAvatar = customProfile?.avatar || (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null);
 
   const handleCopyCode = (e: React.MouseEvent) => {
@@ -244,7 +275,7 @@ function Home() {
 
   return (
     <div className="vba-animate">
-      {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS ── */}
+      {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS (BỎ ICON CHỤP ẢNH, GIỮ LOGO CHUẨN CEO1983) ── */}
       <header
         className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-[var(--vba-border)] bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-xs"
         style={{
@@ -252,20 +283,20 @@ function Home() {
           minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + 52px)",
         }}
       >
-        {/* Prominent Logo CEO 1983 Official */}
-        <div className="flex items-center">
+        {/* Logo CEO 1983 Official - Chuẩn biểu tượng số 8 kèm chữ CEO 1983 */}
+        <div className="flex items-center gap-2">
           <img
-            src={resolveMediaUrl(brand?.logoUrl) || appIcon}
-            alt={brand?.name || "CLB Doanh Nhân CEO 1983"}
+            src="/brand-header-logo.png"
+            alt="CLB Doanh Nhân CEO 1983"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = appIcon;
+              (e.currentTarget as HTMLImageElement).src = "/ceo1983-official-logo.png";
             }}
-            className="h-10 sm:h-11 w-auto max-w-[170px] object-contain drop-shadow-[0_2px_8px_rgba(0,59,149,0.25)]"
+            className="h-8 sm:h-9 w-auto object-contain drop-shadow-xs"
           />
         </div>
 
-        {/* Quick Controls: Notifications with Navy & Gold Accent */}
-        <div className="flex items-center gap-2.5">
+        {/* Notifications (Đã bỏ icon máy ảnh cạnh chuông thông báo) */}
+        <div className="flex items-center gap-2">
           <Link
             to="/association/notifications"
             aria-label={t("m.index.notifAria")}
@@ -300,20 +331,20 @@ function Home() {
         <div className="relative z-10 px-4 pb-14 pt-3" />
       </div>
 
-      {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE VỚI ẢNH BÌA & AVATAR ĐÈ LÊN ẢNH BÌA (CHUẨN PHƯƠNG ÁN 1) ── */}
+      {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ BỎ MÃ QR TRÊN ẢNH BÌA) ── */}
       <div className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-amber-500/50">
         {/* Ảnh bìa to rộng (Cover Banner) */}
-        <div className="relative h-20 sm:h-24 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0f4c9c]">
+        <div className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0f4c9c]">
           <img
             src={coverPhoto || heroImg}
             alt="Cover Banner"
             className="h-full w-full object-cover opacity-85"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/65" />
 
-          {/* Badge VIP GOLD góc trên phải */}
-          <div className="absolute top-2.5 right-3 flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-xs">
+          {/* Huy hiệu VIP GOLD góc trên bên phải ảnh bìa (Đã bỏ mã QR) */}
+          <div className="absolute top-2.5 right-3 z-10">
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/50 bg-amber-500/25 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-xs">
               <Crown className="h-3 w-3 text-amber-400" />
               VIP GOLD
             </span>
@@ -367,7 +398,7 @@ function Home() {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {member?.code && (
                 <button
                   type="button"
@@ -379,6 +410,15 @@ function Home() {
                   {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setMemberQrModalOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md bg-[#2E3192] hover:bg-[#19194D] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                title="Xem mã QR của tôi & Quét QR"
+              >
+                <QrCode className="h-3 w-3 text-white" />
+                <span>Mã QR</span>
+              </button>
             </div>
           </div>
         </div>
@@ -471,6 +511,7 @@ function Home() {
           })}
         </div>
       </div>
+
       {/* Contact Drawer Modal */}
       <AssociationContactSheet
         open={contactOpen}
@@ -484,86 +525,72 @@ function Home() {
         }}
       />
 
-      {/* ── 1. SỰ KIỆN NỔI BẬT ── */}
-      <div className="mx-4 mt-6">
+      {/* ── 1. SỰ KIỆN SẮP TỚI: BANNER POSTER THEO CHUẨN CEO 1983 ── */}
+      <div className="mx-4 mt-5">
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4.5 w-4.5 shrink-0 text-[#2E3192] dark:text-amber-400" />
-            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-              {isEn ? "Featured Association Events" : "Sự kiện nổi bật"}
-            </h2>
-          </div>
-          <Link
-            to="/association/events"
-            className="relative flex items-center text-[11px] font-bold text-[#2E3192] dark:text-amber-400 transition hover:underline pr-1"
-          >
-            <span className="relative">
-              {isEn ? "View all" : "Xem tất cả"}
-              {displayEvents.length > 0 && (
-                <span className="absolute -top-2 -right-4 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EA580C] px-1 text-[9px] font-extrabold text-white shadow-xs animate-pulse">
-                  +{displayEvents.length}
-                </span>
-              )}
+          <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-amber-300 text-xs shadow-xs">
+              <Calendar className="h-3.5 w-3.5" />
             </span>
-            <ChevronRight className="h-3.5 w-3.5 ml-3.5" />
+            <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[#003B95] dark:group-hover:text-amber-400 flex items-center gap-1">
+              <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            </h2>
+          </Link>
+          <Link to="/association/events" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+            <span className="text-base font-black tracking-widest leading-none">•••</span>
           </Link>
         </div>
 
+        {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, không mock card thứ 3 */}
         {displayEvents.length === 0 ? (
-          <div className="rounded-2xl vba-card p-6 text-center border border-dashed border-slate-200 dark:border-slate-800">
-            <Calendar className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-slate-800">
+            <Calendar className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-              {isEn ? "No upcoming events scheduled at this moment" : "Hiện chưa có sự kiện mới sắp diễn ra"}
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              {isEn ? "Check back later for newly announced club activities" : "Ban sự kiện sẽ cập nhật lịch trình sớm nhất"}
+              {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {displayEvents.slice(0, 2).map((ev, index) => {
-              const eventImg = defaultEventImages[index % defaultEventImages.length];
+          <div className={`grid ${displayEvents.length === 1 ? 'grid-cols-1' : displayEvents.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-2.5 sm:gap-3`}>
+            {displayEvents.slice(0, 3).map((ev, pIdx) => {
+              const realTitle = ev.title;
+              const rawImg = (ev as any).image;
+              const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : null;
+              const dateStr = ev.day && ev.month ? `${ev.day}/${ev.month} · ${ev.place?.split(",")[0] || ""}` : (ev.time || "Sắp diễn ra");
+
               return (
                 <Link
-                  key={ev.id}
+                  key={ev.id || pIdx}
                   to="/association/events"
-                  className="group relative block overflow-hidden rounded-2xl vba-card p-3.5 shadow-xs transition hover:border-amber-500/60"
+                  className="group flex flex-col transition active:scale-95"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="relative h-18 w-20 shrink-0 overflow-hidden rounded-xl bg-[#2E3192]">
+                  {/* Poster Box rộng hơn và thấp hơn chuẩn phong cách cinematic */}
+                  <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-amber-400/50">
+                    {realImg ? (
                       <img
-                        src={eventImg}
-                        alt={ev.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={realImg}
+                        alt={realTitle}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                      <div className="absolute bottom-1 left-1 right-1 text-center">
-                        <span className="block text-[11px] font-black text-amber-300 leading-none">
-                          {ev.day} {ev.month}
-                        </span>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] flex flex-col items-center justify-center p-3 text-center">
+                        <img src="/brand-header-logo.png" alt="" className="h-10 w-auto object-contain opacity-25 mb-2" />
                       </div>
-                    </div>
+                    )}
+                    {/* Dark gradient overlay on photo */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10 pointer-events-none" />
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 text-[10.5px] text-[#2E3192] dark:text-amber-400 font-semibold">
-                        <Clock className="h-3 w-3" />
-                        <span>{ev.time}</span>
-                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                        <span className="truncate max-w-[120px] text-slate-500 dark:text-slate-400">{ev.communityName}</span>
+                    {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
+                    <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3 z-10 flex flex-col gap-1">
+                      <div className="flex items-center">
+                        <EventCountdownMiniBadge event={ev} index={pIdx} />
                       </div>
-
-                      <h3 className="mt-1 line-clamp-2 text-[13px] font-bold leading-snug text-[var(--vba-text)] transition-colors group-hover:text-amber-500">
-                        {ev.title}
+                      <h3 className="line-clamp-2 text-[11.5px] sm:text-[12.5px] font-black text-white leading-snug drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
+                        {realTitle}
                       </h3>
-
-                      {ev.place && (
-                        <div className="mt-1.5 flex items-center gap-1 text-[10.5px] text-[var(--vba-text-dim)] truncate">
-                          <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
-                          <span className="truncate">{ev.place}</span>
-                        </div>
-                      )}
                     </div>
-                    <Bookmark className="h-4.5 w-4.5 shrink-0 text-[var(--vba-text-dim)]" />
                   </div>
                 </Link>
               );
@@ -578,7 +605,7 @@ function Home() {
           <div className="mb-1 flex items-start gap-1.5">
             <Crown className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500" />
             <div className="min-w-0 flex flex-wrap items-center gap-1.5">
-              <span className="text-[13px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
+              <span className="text-[13px] sm:text-[14px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
                 {isEn ? "Member & Partner Perks" : "Ưu đãi Hội viên & Đối tác"}
               </span>
               <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs whitespace-nowrap leading-none">
@@ -615,8 +642,8 @@ function Home() {
         </div>
       </div>
 
-      {/* ── 3. TRAO CƠ HỘI & ĐĂNG GIỚI THIỆU SẢN PHẨM ── */}
-      <div className="mx-4 mt-6 grid grid-cols-2 gap-3">
+      {/* ── 3. TRAO CƠ HỘI & ĐĂNG SẢN PHẨM ── */}
+      <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
         {/* Trao cơ hội - Nút bấm Cobalt Navy */}
         <Link
           to="/association/opportunities"
@@ -634,8 +661,7 @@ function Home() {
                 />
               </div>
               {opportunities.length > 0 && (
-                <span className="relative inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                <span className="relative inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 px-2 py-0.5 text-[9.5px] font-bold text-rose-600 dark:text-rose-400 shadow-xs">
                   <span>+{opportunities.length}</span>
                   <span className="text-[8.5px]">{isEn ? "New" : "Mới"}</span>
                 </span>
@@ -649,8 +675,7 @@ function Home() {
             </p>
           </div>
           <span
-            className="mt-3.5 inline-flex self-start rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white px-3.5 py-1 text-[10px] font-bold shadow-xs transition active:scale-95"
-            style={{ color: "#ffffff" }}
+            className="mt-3.5 inline-flex self-start rounded-xl bg-[#F0F4FA] dark:bg-slate-800 text-[#003B95] dark:text-blue-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95"
           >
             {isEn ? "Explore now" : "Khám phá ngay"}
           </span>
@@ -674,15 +699,14 @@ function Home() {
                 />
               </div>
               {products.length > 0 && (
-                <span className="relative inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                <span className="relative inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 px-2 py-0.5 text-[9.5px] font-bold text-rose-600 dark:text-rose-400 shadow-xs">
                   <span>+{products.length}</span>
                   <span className="text-[8.5px]">{isEn ? "Hot" : "Mới"}</span>
                 </span>
               )}
             </div>
             <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "SHOWCASE PRODUCTS" : "ĐĂNG GIỚI THIỆU SẢN PHẨM"}
+              {isEn ? "SHOWCASE PRODUCTS" : "ĐĂNG SẢN PHẨM"}
             </div>
             <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
               {isEn ? "Promote enterprise products to customers" : "Quảng bá sản phẩm Kết nối khách hàng"}
@@ -699,13 +723,16 @@ function Home() {
                 search: { action: "create" } as any,
               });
             }}
-            className="mt-3.5 inline-flex self-start rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white px-3.5 py-1 text-[10px] font-bold shadow-xs transition active:scale-95 cursor-pointer z-10"
+            className="mt-3.5 inline-flex self-start rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer z-10"
             style={{ color: "#ffffff" }}
           >
             {isEn ? "Post now" : "Đăng ngay"}
           </button>
         </Link>
       </div>
+
+
+
 
       {/* ── 4. DOANH NGHIỆP MỚI GIA NHẬP (CHUẨN PHƯƠNG ÁN 1) ── */}
       <div className="mx-4 mt-6">
@@ -846,25 +873,46 @@ function Home() {
           </div>
         ) : (
           <div className="space-y-2.5">
-            {newsItems.slice(0, 2).map((item) => (
-              <Link
-                key={item.id}
-                to="/association/news"
-                className="vba-card flex items-center gap-3 rounded-xl p-3 shadow-xs transition hover:border-amber-500/50"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="line-clamp-2 text-[12.5px] font-bold text-[var(--vba-text)] leading-snug">
-                    {item.title}
+            {newsItems.slice(0, 3).map((item, idx) => {
+              const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
+              const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
+              return (
+                <Link
+                  key={item.id}
+                  to="/association/news"
+                  className="vba-card group flex items-center gap-3 rounded-2xl p-2.5 sm:p-3 shadow-xs transition hover:border-amber-500/50 hover:shadow-md"
+                >
+                  {/* Photo thumbnail */}
+                  <div className="relative h-20 w-24 sm:h-22 sm:w-28 shrink-0 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-900">
+                    <img
+                      src={newsImg}
+                      alt={item.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    {item.category && (
+                      <span className="absolute bottom-1 left-1 rounded bg-black/70 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-bold text-amber-300">
+                        {item.category}
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-[10.5px] text-slate-400 dark:text-slate-500">
-                    <span>{item.time || "Gần đây"}</span>
-                    <span>•</span>
-                    <span className="truncate">{item.author || "Ban Truyền Thông"}</span>
+
+                  <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
+                    <div className="line-clamp-2 text-[13px] font-bold text-[var(--vba-text)] leading-snug group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
+                      {item.title}
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2 text-[10.5px] text-slate-400 dark:text-slate-500">
+                      <span>{formatNewsDate(item.time)}</span>
+                      <span>•</span>
+                      <span className="truncate max-w-[120px] font-medium text-slate-600 dark:text-slate-400">
+                        {item.author || "Ban Truyền Thông"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-              </Link>
-            ))}
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-amber-500 transition-colors" />
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
@@ -878,6 +926,17 @@ function Home() {
           📲 {isEn ? "Install App to Phone Home Screen" : "Cài đặt ứng dụng lên màn hình chính điện thoại"}
         </Link>
       </div>
+
+      {/* ── MODAL MÃ QR HỘI VIÊN & QUÉT QR (DUAL TAB) ── */}
+      <AssociationMemberQrModal
+        open={memberQrModalOpen}
+        onClose={() => setMemberQrModalOpen(false)}
+        memberCode={member?.code || "M1983-002"}
+        memberName={displayName}
+        memberTitle={displayTitle}
+        memberCompany={displayCompany}
+        memberAvatar={displayAvatar}
+      />
     </div>
   );
 }

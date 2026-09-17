@@ -162,14 +162,132 @@ export function CinemaSeatingMap({
   const [newTableSeats, setNewTableSeats] = useState<number>(10);
   const [newTableIsVip, setNewTableIsVip] = useState<boolean>(false);
 
-  // Stage Seats (Ghế trên sân khấu / Chủ tọa & Diễn giả)
-  const stageSeats: SeatInfo[] = Array.from({ length: stageSeatsCount }, (_, i) => ({
-    id: `SK-${String(i + 1).padStart(2, "0")}`,
-    label: `Sân Khấu - Ghế SK-${String(i + 1).padStart(2, "0")}`,
-    category: "vip",
-    row: "SK",
-    number: i + 1,
-  }));
+  // Stage Seats with Drag-and-Drop Coordinates
+  const stageCanvasRef = useRef<HTMLDivElement | null>(null);
+  const [draggingStageSeatId, setDraggingStageSeatId] = useState<string | null>(null);
+  const dragStageSeatStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    seatX: number;
+    seatY: number;
+  } | null>(null);
+
+  const [stageSeats, setStageSeats] = useState<{
+    id: string;
+    label: string;
+    category: "vip";
+    row: string;
+    number: number;
+    x: number;
+    y: number;
+    title?: string;
+  }[]>(() => {
+    const defaultCount = 6;
+    const step = 84 / (defaultCount + 1);
+    return Array.from({ length: defaultCount }, (_, i) => ({
+      id: `SK-${String(i + 1).padStart(2, "0")}`,
+      label: `Sân Khấu - Ghế SK-${String(i + 1).padStart(2, "0")}`,
+      category: "vip" as const,
+      row: "SK",
+      number: i + 1,
+      x: Math.round(8 + (i + 1) * step),
+      y: 62,
+      title: i === 2 || i === 3 ? "Chủ tọa" : `Ghế ${i + 1}`,
+    }));
+  });
+
+  const handlePointerDownStageSeat = (e: React.PointerEvent, seatId: string) => {
+    if (e.button !== 0) return;
+    const target = stageSeats.find((s) => s.id === seatId);
+    if (!target) return;
+
+    setDraggingStageSeatId(seatId);
+    dragStageSeatStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      seatX: target.x,
+      seatY: target.y,
+    };
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    if (!draggingStageSeatId) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!dragStageSeatStartRef.current || !stageCanvasRef.current) return;
+      const rect = stageCanvasRef.current.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const deltaX = e.clientX - dragStageSeatStartRef.current.mouseX;
+      const deltaY = e.clientY - dragStageSeatStartRef.current.mouseY;
+
+      const deltaPercentX = (deltaX / rect.width) * 100;
+      const deltaPercentY = (deltaY / rect.height) * 100;
+
+      const newX = Math.round(
+        Math.max(6, Math.min(94, dragStageSeatStartRef.current.seatX + deltaPercentX))
+      );
+      const newY = Math.round(
+        Math.max(28, Math.min(84, dragStageSeatStartRef.current.seatY + deltaPercentY))
+      );
+
+      setStageSeats((prev) =>
+        prev.map((s) => (s.id === draggingStageSeatId ? { ...s, x: newX, y: newY } : s))
+      );
+    };
+
+    const handlePointerUp = () => {
+      setDraggingStageSeatId(null);
+      dragStageSeatStartRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggingStageSeatId]);
+
+  const handleAddStageSeat = () => {
+    const nextNum = stageSeats.length + 1;
+    const newSeat = {
+      id: `SK-${String(nextNum).padStart(2, "0")}`,
+      label: `Sân Khấu - Ghế SK-${String(nextNum).padStart(2, "0")}`,
+      category: "vip" as const,
+      row: "SK",
+      number: nextNum,
+      x: 50,
+      y: 62,
+      title: `Ghế VIP ${nextNum}`,
+    };
+    setStageSeats((prev) => [...prev, newSeat]);
+    setStageSeatsCount((prev) => prev + 1);
+  };
+
+  const handleRemoveStageSeat = () => {
+    if (stageSeats.length <= 1) return;
+    setStageSeats((prev) => prev.slice(0, -1));
+    setStageSeatsCount((prev) => prev - 1);
+  };
+
+  const handleResetStageSeats = () => {
+    const count = stageSeats.length || 6;
+    const step = 84 / (count + 1);
+    setStageSeats(
+      Array.from({ length: count }, (_, i) => ({
+        id: `SK-${String(i + 1).padStart(2, "0")}`,
+        label: `Sân Khấu - Ghế SK-${String(i + 1).padStart(2, "0")}`,
+        category: "vip" as const,
+        row: "SK",
+        number: i + 1,
+        x: Math.round(8 + (i + 1) * step),
+        y: 62,
+        title: i === Math.floor(count / 2) || i === Math.floor(count / 2) - 1 ? "Chủ tọa" : `Ghế ${i + 1}`,
+      }))
+    );
+  };
 
   // Cinema Dynamic Row Generator
   const getRowSeats = (row: CinemaRowConfig): SeatInfo[] => {
@@ -519,23 +637,91 @@ export function CinemaSeatingMap({
       {/* 2. CINEMA / STAGE THEATER MODE */}
       {mode === "cinema" && (
         <div>
-          {/* Cinema Stage Arc with Actual Stage Seating */}
-          <div className="mx-auto max-w-xl mb-6">
+          {/* Cinema Stage Arc with Drag-and-Drop Stage Seating */}
+          <div className="mx-auto max-w-2xl mb-6">
             <div className="relative flex flex-col items-center">
-              <div className="w-full py-2.5 px-4 rounded-t-2xl rounded-b-[60px] border-2 border-amber-500/70 bg-gradient-to-b from-amber-500/10 via-amber-500/20 to-amber-500/30 shadow-[0_10px_25px_rgba(245,158,11,0.2)] flex flex-col items-center justify-center">
-                <div className="flex items-center gap-2">
-                  <Crown className="w-4 h-4 text-amber-500" />
-                  <span className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-800 dark:text-amber-300 font-mono">
-                    SÂN KHẤU CHÍNH / BỤC CHỦ TỌA & DIỄN GIẢ ({stageSeatsCount} GHẾ)
-                  </span>
+              <div
+                ref={stageCanvasRef}
+                className="relative w-full h-44 sm:h-48 pt-3 pb-4 px-4 rounded-t-2xl rounded-b-[70px] border-2 border-amber-500/70 bg-gradient-to-b from-amber-500/10 via-amber-500/20 to-amber-500/30 shadow-[0_10px_25px_rgba(245,158,11,0.2)] overflow-hidden"
+              >
+                {/* Stage Header Info & Quick Re-align button */}
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                    <Crown className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] font-mono">
+                      SÂN KHẤU CHÍNH ({stageSeats.length} GHẾ)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleResetStageSeats}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-[10px] font-bold text-amber-800 dark:text-amber-200 border border-amber-500/40 cursor-pointer"
+                      title="Căn đều lại ghế trên sân khấu theo hình vòng cung"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>Căn đều</span>
+                    </button>
+                    <span className="text-[9.5px] text-amber-800/80 dark:text-amber-300/80 hidden sm:inline font-medium">
+                      (Kéo thả từng ghế tự do)
+                    </span>
+                  </div>
                 </div>
 
-                {/* Seats directly arranged ON the stage */}
-                {showStageSeats && (
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                    {stageSeats.map(renderCinemaSeatBtn)}
-                  </div>
-                )}
+                {/* Seats directly arranged and draggable ON the stage */}
+                {showStageSeats &&
+                  stageSeats.map((seat) => {
+                    const isOccupied = occupiedSeats[seat.label] || occupiedSeats[seat.id];
+                    const isSelected = selectedSeatId === seat.label || selectedSeatId === seat.id;
+                    const isDragging = draggingStageSeatId === seat.id;
+
+                    return (
+                      <div
+                        key={seat.id}
+                        onPointerDown={(e) => handlePointerDownStageSeat(e, seat.id)}
+                        onClick={() => {
+                          if (!isOccupied) {
+                            setSelectedSeatId(seat.label);
+                            onSelectSeat(seat.label);
+                          }
+                        }}
+                        onMouseEnter={() =>
+                          setHoveredSeat({
+                            id: seat.id,
+                            label: seat.label,
+                            occupant: isOccupied?.attendeeName,
+                          })
+                        }
+                        onMouseLeave={() => setHoveredSeat(null)}
+                        style={{
+                          left: `${seat.x}%`,
+                          top: `${seat.y}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                        className={`absolute flex flex-col items-center justify-center min-w-[56px] px-2 py-1 rounded-xl transition-all cursor-grab active:cursor-grabbing select-none ${
+                          isDragging
+                            ? "scale-110 z-30 ring-2 ring-amber-400 shadow-2xl"
+                            : "z-10 hover:scale-105 shadow-md"
+                        } ${
+                          isSelected
+                            ? "bg-emerald-500 text-white font-bold ring-2 ring-white"
+                            : isOccupied
+                              ? "bg-rose-500/80 text-white border border-rose-400"
+                              : "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-950 font-black border border-amber-300"
+                        }`}
+                        title={`${seat.label} - Kéo chuột để di chuyển vị trí`}
+                      >
+                        <div className="flex items-center gap-0.5 text-[9.5px] uppercase font-mono tracking-tight font-black">
+                          <Crown className="w-2.5 h-2.5 shrink-0" />
+                          <span>{seat.id}</span>
+                        </div>
+                        <span className="text-[8.5px] font-bold truncate max-w-[58px] text-center leading-tight">
+                          {isOccupied ? isOccupied.attendeeName : seat.title || `Ghế ${seat.number}`}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
               <div className="w-64 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent blur-[1px] -mt-0.5" />
             </div>

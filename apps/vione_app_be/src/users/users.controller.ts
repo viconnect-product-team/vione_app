@@ -44,6 +44,11 @@ export class UsersController {
     );
   }
 
+  @Post('deactivate')
+  async deactivateAccount(@Request() req: any, @Body() body: { password?: string }) {
+    return this.usersService.deactivateAccount(req.user.id, body?.password);
+  }
+
   // ── ADMIN USER MANAGEMENT ──────────────────────────────────────────────────
 
   @Get()

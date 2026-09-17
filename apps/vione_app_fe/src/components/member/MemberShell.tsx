@@ -8,11 +8,88 @@ import authBg from "@/assets/connect-auth-bg.jpg";
 const NAVY = "#0A0A0B";
 const emblem83 = "/ceo1983-emblem-8.png";
 
+import { PullToRefresh } from "@/components/member/PullToRefresh";
+import { useNavigate } from "@tanstack/react-router";
+import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
+import { toast } from "sonner";
+
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
   const isContrast = theme === "contrast";
   const isLight = theme === "light";
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const currentTabIndex = tabs.findIndex((t) =>
+    t.exact ? pathname === t.to : pathname === t.to || pathname.startsWith(t.to + "/")
+  );
+
+  const handleSwipeLeft = () => {
+    if (currentTabIndex !== -1 && currentTabIndex < tabs.length - 1) {
+      navigate({ to: tabs[currentTabIndex + 1].to as any });
+    }
+  };
+
+  const handleSwipeRight = () => {
+    if (currentTabIndex > 0) {
+      navigate({ to: tabs[currentTabIndex - 1].to as any });
+    }
+  };
+
+  useEffect(() => {
+    const socket = getConnectAppSocket();
+
+    const handleConnectionAccepted = (data: any) => {
+      const partnerName =
+        data?.accepterProfile?.display_name ||
+        data?.accepterProfile?.name ||
+        "Hội viên CEO 1983";
+      const partnerAvatar =
+        data?.accepterProfile?.avatar_url || data?.accepterProfile?.avatar;
+      const partnerCode =
+        data?.accepterProfile?.memberCode || data?.accepterProfile?.code;
+      const partnerUserId = data?.accepterProfile?.userId;
+
+      // 1. Lưu vào vba_notifications (đẩy về chuông thông báo hiệp hội)
+      try {
+        const newNotif = {
+          id: `conn_acc_${Date.now()}`,
+          title: "Lời mời kết nối đã được chấp nhận!",
+          body: `${partnerName} đã đồng ý lời mời kết nối của bạn. Giờ đây hai bạn có thể trò chuyện và giao thương.`,
+          createdAt: new Date().toISOString(),
+          unread: true,
+          type: "connection",
+          avatar: partnerAvatar,
+        };
+        const rawNotifs = localStorage.getItem("vba_notifications");
+        const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+        notifs.unshift(newNotif);
+        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+
+        // 2. Lưu vào danh bạ kết nối vba_connected_members
+        const rawConnected = localStorage.getItem("vba_connected_members");
+        const connectedList = rawConnected ? JSON.parse(rawConnected) : [];
+        if (partnerCode && !connectedList.includes(partnerCode)) connectedList.push(partnerCode);
+        if (partnerUserId && !connectedList.includes(partnerUserId)) connectedList.push(partnerUserId);
+        localStorage.setItem("vba_connected_members", JSON.stringify(connectedList));
+
+        window.dispatchEvent(new CustomEvent("notifications-updated"));
+        window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
+        window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
+      } catch {}
+
+      // 3. Thông báo đẩy 2 chiều trên app
+      toast.success(`${partnerName} đã đồng ý kết nối giao thương với bạn!`);
+    };
+
+    socket.on("connection:accepted", handleConnectionAccepted);
+
+    return () => {
+      socket.off("connection:accepted", handleConnectionAccepted);
+    };
+  }, []);
 
   return (
     <div className="vba-app relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
@@ -36,8 +113,15 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm`}
       >
         <OfflineBanner />
-        <main className="flex-1 overflow-y-auto overscroll-contain pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+72px)]">{children}</main>
+        <PullToRefresh
+          onSwipeLeft={handleSwipeLeft}
+          onSwipeRight={handleSwipeRight}
+          className="flex-1 pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+72px)]"
+        >
+          {children}
+        </PullToRefresh>
         <MemberTabBar />
+        <IncomingConnectionModal />
       </div>
     </div>
   );
@@ -195,7 +279,7 @@ function MemberTabBar() {
     "/association": { vi: "Trang chủ", en: "Home" },
     "/association/events": { vi: "Sự kiện", en: "Events" },
     "/association/card": { vi: "Thẻ 83", en: "Card 83" },
-    "/association/messages": { vi: "Gắn kết", en: "Connect" },
+    "/association/messages": { vi: "Tin nhắn", en: "Messages" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
 

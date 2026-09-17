@@ -122,7 +122,7 @@ export const Route = createFileRoute("/income")({
   ),
 });
 
-export function IncomePage() {
+function IncomePage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();

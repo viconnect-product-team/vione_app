@@ -12,6 +12,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:fe": "npm run dev --prefix apps/vione_app_fe",
+    "dev:be": "npm run dev --prefix apps/vione_app_be",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "mobile:vione:apk": "npm run build:apk --prefix apps/mobile_vione",
@@ -23,11 +25,20 @@
     "mobile:ceo1983:apk:local": "npm run build:apk:fast --prefix apps/mobile_ceo1983",
     "mobile:ceo1983:ipa": "npm run build:ipa --prefix apps/mobile_ceo1983",
     "mobile:ceo1983:submit": "npm run submit:ios --prefix apps/mobile_ceo1983",
-    "mobile:ceo1983:testflight": "npm run build:ios:submit --prefix apps/mobile_ceo1983"
+    "mobile:ceo1983:testflight": "npm run build:ios:submit --prefix apps/mobile_ceo1983",
+    "deploy:association": "powershell -ExecutionPolicy Bypass -File ./fast-deploy-association.ps1",
+    "deploy:association:fe": "powershell -ExecutionPolicy Bypass -File ./fast-deploy-association.ps1 -FrontendOnly -SkipWebBuild",
+    "deploy:ceo1983": "powershell -ExecutionPolicy Bypass -File ./deploy/ceo1983/fast-deploy.ps1",
+    "deploy:ceo1983:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/ceo1983/fast-deploy.ps1 -FrontendOnly -SkipWebBuild",
+    "deploy:vione": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1",
+    "deploy:vione:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1 -FrontendOnly -SkipWebBuild",
+    "deploy:crm": "powershell -ExecutionPolicy Bypass -File ./deploy/crm/fast-deploy.ps1",
+    "deploy:crm:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/crm/fast-deploy.ps1 -FrontendOnly -SkipWebBuild"
   },
   "devDependencies": {
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
+    "pdf-lib": "^1.17.1",
     "prettier": "^3.2.5",
     "turbo": "^2.1.2",
     "typescript": "^5.8.3"

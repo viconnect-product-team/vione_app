@@ -25,6 +25,11 @@ export class DmController {
     return this.connectAppService.sendMemberMessage(req.user.id, data.peerCode, data.text);
   }
 
+  @Delete('member/messages/:messageId')
+  async retractMemberMessage(@Request() req, @Param('messageId') messageId: string) {
+    return this.connectAppService.retractMemberMessage(req.user.id, messageId);
+  }
+
   @Get('threads')
   async listMyDmThreads(@Request() req) {
     return this.connectAppService.listMyDmThreads(req.user.id);

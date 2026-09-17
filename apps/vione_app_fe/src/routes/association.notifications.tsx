@@ -120,7 +120,7 @@ function formatNotifBody(n: any): string {
   const name =
     n.safeDisplayData?.counterpartDisplayName ||
     n.safeDisplayData?.senderName ||
-    "Hội viên ViOne";
+    "Hội viên CLB CEO 1983";
   if (b.includes("connection_request_received") || n.notificationKind === "connection_request_received") {
     return `${name} muốn kết nối danh thiếp số với bạn.`;
   }
@@ -1138,7 +1138,7 @@ function NotificationsScreen() {
                       <div className="pt-2 border-t border-emerald-500/20 flex flex-wrap items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300">
                         <span className="font-semibold">Nguồn tham gia:</span>
                         <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-[#2E3192] dark:text-amber-300 font-medium">
-                          📱 ViOne: {n.safeDisplayData.sourceStats.vioneApp || 0}
+                          📱 App Doanh nhân: {n.safeDisplayData.sourceStats.vioneApp || 0}
                         </span>
                         <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-medium">
                           🏛️ Hiệp hội: {n.safeDisplayData.sourceStats.associationApp || 0}

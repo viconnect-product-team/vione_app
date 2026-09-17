@@ -21,14 +21,14 @@ async function main() {
     console.error('Error fetching vione_users:', err.message);
   }
 
-  console.log('\n--- ADMIN MEMBERSHIPS IN DB ---');
+  console.log('\n--- PUBLIC MEMBERS IN DB ---');
   try {
-    const memberships = await prisma.$queryRaw`
-      SELECT id, user_id, organization_id, role FROM public.memberships WHERE role IN ('admin', 'association_admin', 'owner')
+    const members = await prisma.$queryRaw`
+      SELECT id, code, name, contact, department, executive_role, user_id FROM public.members WHERE user_id = '00000000-0000-4000-8000-000000000002'::uuid
     `;
-    console.log(JSON.stringify(memberships, null, 2));
+    console.log(JSON.stringify(members, null, 2));
   } catch (err: any) {
-    console.error('Error fetching memberships:', err.message);
+    console.error('Error fetching members:', err.message);
   }
 }
 

@@ -14,6 +14,9 @@ export type MyProduct = {
   time: string;
   imageUrl?: string;
   price?: string;
+  originalPrice?: string;
+  memberPrice?: string;
+  sellerId?: string;
 };
 
 // ---------- Products ----------
@@ -22,18 +25,31 @@ export const listMyProducts = createServerFn({ method: "GET" })
   .handler(async ({ context }: any): Promise<MyProduct[]> => {
     try {
       const token = context?.token;
-      const items = await fetchNestApiFromServer<any[]>("/products", token);
-      return (items ?? []).map((p: any) => ({
-        id: p.id,
-        name: p.name || p.title,
-        company: p.company || p.category || "",
-        category: p.category || "",
-        likes: p.likes ?? 0,
-        views: p.views ?? 0,
-        time: relTime(p.time || p.created_at || p.createdAt),
-        imageUrl: p.imageUrl || p.image || null,
-        price: p.price || "",
-      }));
+      let items = await fetchNestApiFromServer<any[]>("/marketplace/products", token).catch(() => null);
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        items = await fetchNestApiFromServer<any[]>("/products", token).catch(() => []);
+      }
+      return (items ?? []).map((p: any) => {
+        const img = (Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls[0] : null) ||
+                    (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls[0] : null) ||
+                    p.imageUrl || p.image_url || p.image || null;
+        const numPrice = Number(p.price || 0);
+        const formattedPrice = p.priceText || (numPrice > 0 ? `${numPrice.toLocaleString("vi-VN")} đ` : (p.price ? String(p.price) : "Thỏa thuận"));
+        return {
+          id: String(p.id),
+          name: p.name || p.title || "Sản phẩm doanh nghiệp",
+          company: p.company || p.association_name || p.category || "CLB Doanh Nhân CEO 1983",
+          category: p.category || "Sản phẩm & Dịch vụ",
+          likes: p.likes ?? 0,
+          views: p.views ?? 0,
+          time: p.createdAt || p.created_at || p.time || new Date().toISOString(),
+          imageUrl: img,
+          price: formattedPrice,
+          originalPrice: p.originalPrice || p.original_price ? `${Number(p.originalPrice || p.original_price).toLocaleString("vi-VN")} đ` : undefined,
+          memberPrice: p.memberPrice || p.member_price ? `${Number(p.memberPrice || p.member_price).toLocaleString("vi-VN")} đ` : undefined,
+          sellerId: p.sellerId || p.seller_id,
+        };
+      });
     } catch {
       return [];
     }
@@ -52,8 +68,15 @@ export const requestQuote = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
     const token = context?.token;
-    return fetchNestApiFromServer<{ ok: boolean }>("/products/quote", token, {
-      method: "POST",
-      body: data,
-    });
+    try {
+      return await fetchNestApiFromServer<{ ok: boolean }>("/marketplace/quotes", token, {
+        method: "POST",
+        body: data,
+      });
+    } catch {
+      return fetchNestApiFromServer<{ ok: boolean }>("/products/quote", token, {
+        method: "POST",
+        body: data,
+      });
+    }
   });

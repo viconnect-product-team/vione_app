@@ -113,7 +113,7 @@ export const Route = createFileRoute("/expenses")({
   ),
 });
 
-export function ExpensesPage() {
+function ExpensesPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();

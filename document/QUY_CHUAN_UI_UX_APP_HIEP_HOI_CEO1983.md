@@ -80,15 +80,28 @@
   8. `Ưu đãi hội viên` (`/association/perks`)
 - **Hiệu ứng Micro-interaction:** Khi có thông báo mới, icon được bao bọc bởi ánh sáng lấp lánh nhẹ (Golden Snowflakes/Sparkle).
 
-### 3.4. Khối Sự Kiện Nổi Bật (Featured Events)
-- **Khối lịch ngày tháng:** Đặt bên trái hình ảnh sự kiện, nền Cobalt Navy `#003B95`, số ngày chữ to đậm màu vàng Amber (`#F59E0B`), tên tháng chữ trắng (`TH9`, `TH10`).
-- **Nội dung:** Tên sự kiện, thời gian giờ phút, tên cộng đồng, địa điểm tổ chức.
-- **Nút Xem tất cả:** Link sang `/association/events` kèm pill đếm số sự kiện `+N`.
+### 3.4. Khối 1: Sự Kiện Sắp Tới (Upcoming Events)
+- **Tiêu đề khối:** "Sự kiện sắp tới" (`Upcoming Events`) kèm icon Lịch và Ngôi sao vàng kim `Sparkles`.
+- **Poster dọc tỉ lệ 2:3:**
+  - **Không hiển thị icon số / nhãn tuổi:** Gỡ bỏ hoàn toàn các nhãn 16+, 18+, 13+ ở góc trên trái.
+  - **Tên sự kiện nằm trong ảnh:** Đặt tiêu đề sự kiện nằm trọn vẹn ở đáy ảnh poster với dải gradient đen mờ cao cấp (`from-black/95 via-black/40 to-black/10`), chữ trắng đậm viền nổi tương phản cao.
+  - **Mini Countdown Badge:** Hiển thị thời gian đếm ngược trực tiếp trên góc trái ảnh (`⏳ Còn X ngày XX:YY:ZZ`).
 
-### 3.5. Cặp Khối Giao Thương B2B Thực Chiến (Trade & Products)
-- **Bố cục:** 2 cột cân xứng (50% - 50%).
-- **Khối Trao Cơ Hội:** Icon bắt tay 🤝 3D, nút bấm Navy "Khám phá ngay", badge `+N Mới` (dữ liệu thật).
-- **Khối Đăng Giới Thiệu Sản Phẩm:** Icon kiện hàng 📦 3D, nút bấm Flame Orange "Đăng ngay", badge `+N Mới` (dữ liệu thật).
+### 3.5. Khối 2: Cơ Hội Giao Thương (Trade Opportunities)
+- **Tiêu đề khối:** "Cơ hội giao thương" (`Trade Opportunities`) — loại bỏ hoàn toàn chữ B2B.
+- **Bố cục:** 2 thẻ giao thương đối xứng ngang (Hợp tác đầu tư & Cung ứng vật tư).
+
+### 3.6. Khối 3: Sản Phẩm Đáng Chú Ý (Notable Products)
+- **Tiêu đề khối:** "Sản phẩm đáng chú ý" (`Notable Products`) kèm icon Vương miện hoàng gia `Crown`.
+- **Gỡ bỏ nhãn `Ad`, `HOT`:** Thay thế bằng các nhãn chuẩn C-Level: `Đặc quyền CEO` và `Hội viên 1983`.
+- **Thông tin sản phẩm:** Tên doanh nghiệp kèm tích xanh xác thực `BadgeCheck`, định dạng giá ưu đãi hội viên trang nhã.
+
+### 3.7. Màn Hình Sự Kiện (`/association/events`) & Banner Royal Navy - Golden Swoosh
+- **Gỡ bỏ khối cũ:** Loại bỏ hoàn toàn khối 3D Grand Gala Summit Stage Backdrop cũ.
+- **Banner Sự Kiện phong cách Royal Navy & Golden Light Swooshes:**
+  - Nền Deep Royal Navy Blue (`#040C20` -> `#091D54` -> `#020714`) kết hợp dải sóng lụa ánh kim Golden Swoosh vector SVG phát quang.
+  - **Đồng hồ đếm ngược thời gian thực (Live Countdown Timer):** Hiển thị 4 ô số độc lập `[Ngày] : [Giờ] : [Phút] : [Giây]` viền vàng kim hổ phách bóng mờ, tự động cập nhật mỗi 1000ms.
+  - Đồng bộ hiển thị đồng hồ đếm ngược trong cả Modal xem chi tiết sự kiện.
 
 ### 3.6. Khối Doanh Nghiệp Mới Gia Nhập
 - Hiển thị 2 doanh nghiệp thành viên mới nhất từ API `listMembers`.
@@ -321,4 +334,330 @@ Mọi lập trình viên và AI Agent khi thao tác trên app Hiệp hội phả
   + Danh sách cuộc trò chuyện sắp xếp giảm dần theo thời gian tin nhắn mới nhất `timeB - timeA`.
   + Tin nhắn mới nhất (ví dụ: 2 phút trước) luôn lập tức nổi lên vị trí đầu tiên, không bị các thông báo hệ thống cũ hơn (19 giờ trước) chèn lên trên.
 
+### 11.5. Hệ Thống 5 Danh Mục Tab Phân Loại Tin Nhắn (5 Category Tabs)
+- **Tất cả (All):** Bao gồm toàn bộ các cuộc trò chuyện đã có tương tác, tin nhắn trao đổi hoặc phản hồi (`Boolean(c.last && c.last.trim())` hoặc tin nhắn hệ thống). Tuyệt đối không hiển thị liên hệ rỗng chưa từng phát sinh hội thoại.
+- **Bạn bè (Connected Friends):** Danh sách hội viên chính thức đã kết nối thành công (`isConnected = true`).
+- **Chưa đọc (Unread):** Danh sách các cuộc trò chuyện đang có tin nhắn mới chưa xem (`unread > 0`).
+- **Hệ thống (System):** Tin nhắn thông báo từ Ban Thư Ký CLB, Quản trị viên, hoặc thông báo hóa đơn nộp phí (`isSystem = true`).
+- **Tin nhắn chờ (Pending Requests):** Tin nhắn gửi đến từ những người chưa kết nối (`!isConnected`). Khi danh sách trống, BẮT BUỘC hiển thị duy nhất câu thông báo: *"Bạn không có tin nhắn chờ"*.
 
+### 11.6. Bộ Lọc Đa Chiều & Dải Ký Tự Chữ Cái A-Z (Multi-Dimensional Filter System)
+- **Dải chữ cái A-Z trượt ngang (`ALPHABET_LETTERS`):** Cho phép chạm nhanh vào bất kỳ ký tự nào từ A đến Z để lọc hội thoại theo chữ cái đầu của tên hội viên (đã chuẩn hóa qua hàm `getNormalizedFirstChar` xử lý tiếng Việt có dấu).
+- **5 Chế độ Sắp xếp (Multi-Mode Sorting):**
+  1. *Mới nhất (Newest)*: Ưu tiên cuộc trò chuyện có tương tác gần nhất lên đầu.
+  2. *Cũ nhất (Oldest)*: Sắp xếp theo mốc thời gian tăng dần.
+  3. *Tên A → Z (Alphabetical Ascending)*: Sắp xếp danh bạ theo thứ tự bảng chữ cái tăng dần.
+  4. *Tên Z → A (Alphabetical Descending)*: Sắp xếp theo thứ tự bảng chữ cái giảm dần.
+  5. *Ưu tiên chưa đọc (Unread First)*: Đưa các cuộc trò chuyện có tin nhắn chưa đọc lên vị trí ưu tiên số 1.
+- **Bộ lọc Online:** Lọc nhanh danh sách các hội viên đang có kết nối trực tuyến realtime.
+- **Tìm kiếm đa năng:** Hỗ trợ tìm kiếm realtime theo tên hội viên, nội dung tin nhắn, mã hội viên hoặc tên doanh nghiệp.
+
+---
+
+## 12. THAO TÁC 1 TAY DYNAMIC KHÔNG NÚT NỔI (BUTTON-FREE DYNAMIC ERGONOMICS)
+
+### 12.1. Loại Bỏ Hoàn Toàn Nút Nổi Trợ Năng
+- Tuyệt đối không đặt nút nổi trợ năng (Floating Thumb Hub) cố định trên màn hình gây vướng tầm nhìn và che khuất nội dung của hội viên.
+- Toàn bộ thao tác một tay được kích hoạt dynamic qua cử chỉ ngón tay cái tự nhiên.
+
+### 12.2. Kích Hoạt Chế Độ Reachability (Kéo Nửa Màn Hình Xuống) Bằng Cử Chỉ
+- **Cử chỉ mép đáy:** Vuốt xuống từ mép đáy màn hình (khu vực thanh điều hướng chân trang 110px: `startY >= window.innerHeight - 110 && diffY > 30`) để kích hoạt Reachability mà không cần bất kỳ nút bấm nào.
+- **Cử chỉ đỉnh:** Vuốt trượt mạnh từ đỉnh màn hình xuống cũng kích hoạt chế độ này.
+- **Hành vi hiển thị:** Toàn bộ nửa trên màn hình (thanh tìm kiếm, tiêu đề, bộ lọc) trượt xuống `35vh` nằm gọn trong vùng với tới tự nhiên của ngón tay cái.
+- **Thu gọn nhanh:** Chạm nhẹ hoặc vuốt lên trên vùng mờ 35vh ở đỉnh để lập tức thu gọn màn hình về trạng thái ban đầu.
+
+### 12.3. Cử Chỉ Vuốt Mép Cạnh Trái (Edge Swipe Back)
+- Khi ngón tay vuốt từ mép trái màn hình sang phải (`startX <= 35 && diffX > 45`), hệ thống tự động gọi `window.history.back()`, mang lại trải nghiệm mượt mà như app native iOS/Android.
+
+### 12.4. Cử Chỉ Vuốt Ngang Chuyển Tab (Horizontal Swipe Navigation)
+- Vuốt sang trái hoặc phải trên màn hình để chuyển tab nhịp nhàng giữa: Trang chủ ↔ Sự kiện ↔ Thẻ số ↔ Tin nhắn ↔ Cá nhân.
+
+---
+
+## 13. HƯỚNG DẪN SỬ DỤNG 14 CHUYÊN ĐỀ & ĐỒNG BỘ TRANG CÁ NHÂN
+
+### 13.1. Modal Hướng Dẫn Sử Dụng 14 Chuyên Đề Thực Chiến
+- Hệ thống hỗ trợ 14 chuyên đề nghiệp vụ đầy đủ:
+  1. *Đăng nhập & Kích hoạt Thẻ VIP Executive* (`login-card.svg`).
+  2. *Thao tác 1 tay & Cử chỉ Dynamic* (`one-handed-reachability.svg`).
+  3. *Danh thiếp số & Chạm kết nối NFC* (`smart-card-nfc.svg`).
+  4. *Tin nhắn Messenger & Phân loại 5 Danh mục* (`chat-messenger.svg`).
+  5. *Danh bạ hội viên & Kết nối 2 chiều* (`directory-network.svg`).
+  6. *Sự kiện CLB & Check-in QR 1 giây* (`events-checkin.svg`).
+  7. *Cơ hội kinh doanh & Đăng sản phẩm B2B* (`b2b-marketplace.svg`).
+  8. *Hội phí thường niên & VietQR tự động* (`annual-fee-vietqr.svg`).
+  9. *Biểu quyết & Bầu cử trực tuyến* (`voting-election.svg`).
+  10. *Đổi ảnh bìa & Cá nhân hóa hồ sơ VIP* (`profile-cover.svg`).
+  11. *Trung tâm thông báo & Quản lý hóa đơn* (`notifications-bills.svg`).
+  12. *Chế độ hiển thị & Theme lễ hội* (`theme-display.svg`).
+  13. *Tra cứu điều lệ & Thư viện tài liệu* (`documents-library.svg`).
+  14. *Bảo mật tài khoản & Quản lý phiên* (`security-sessions.svg`).
+- Mỗi chuyên đề đi kèm hình ảnh mockup vector SVG chuẩn thương hiệu CEO 1983, hướng dẫn chi tiết từng bước, và mẹo thực chiến.
+
+### 13.2. Chuẩn Hóa Giao Diện Đơn Nhất Tại Trang Cá Nhân
+- Loại bỏ hoàn toàn 2 thẻ nhanh thừa ("Hướng dẫn sử dụng" và "Liên hệ Ban Thư Ký") ở chân trang gần nút Đăng xuất.
+- Duy trì duy nhất danh mục Cài đặt chuẩn ở phần trên của trang cá nhân, bảo đảm giao diện gọn gàng, không trùng lặp chức năng.
+
+---
+
+## 14. QUY CHUẨN THIẾT KẾ POSTER & MODAL CHI TIẾT SỰ KIỆN / CƠ HỘI B2B (POSTER LAYOUT STANDARDS)
+
+### 14.1. Thẻ Danh Sách Chuẩn Poster (Poster Card - Ảnh 3)
+- **Áp dụng đồng bộ:** Phân hệ Sự kiện (`/association/events`) và Trao cơ hội kinh doanh (`/association/opportunities`).
+- **Cấu trúc Thẻ Poster:**
+  1. **Ảnh Banner Poster 16:9:** Đặt trên đỉnh thẻ (`aspect-[16/9] w-full object-cover`), góc trên có pill badge phân loại/thể loại, nút lưu/bookmark, và số lượng đã đăng ký (`[Users] N`).
+  2. **Tiêu đề Doanh Nhân:** Phông chữ đậm nét, tối đa 2 dòng `line-clamp-2`, phân cấp thị giác nổi bật với tên người đại diện/công ty.
+  3. **Thanh 3 Cột Metadata Cân Xứng (3-Column Metric Bar):**
+     - Đặt phía dưới tiêu đề, chia đều 3 cột với **2 đường vạch ngăn cách đứng** (`divide-x divide-slate-100 dark:divide-slate-800`):
+     - *Cột 1:* `THỜI GIAN` hoặc `HẠN CHÓT` (Icon lịch `Calendar` / `Clock` + thời gian định dạng DD/MM/YYYY).
+     - *Cột 2:* `ĐỊA ĐIỂM` hoặc `ĐỊA BÀN` (Icon vị trí `MapPin` + thành phố/địa bàn).
+     - *Cột 3:* `ĐỐI TƯỢNG` (Icon đối tượng `Users` + nhóm hội viên/doanh nghiệp hướng tới).
+
+### 14.2. Modal Chi Tiết Chuẩn Poster (Detail Modal - Ảnh 4)
+- **Cấu trúc Modal Chi Tiết:**
+  1. **Header Poster Toàn Cảnh:** Ảnh banner sự kiện/dự án lớn bo tròn hoặc tràn viền trên, nút đóng `X` cố định góc trên phải.
+  2. **Thanh Metadata 3 Cột Ngang:** Tái khẳng định Thời gian, Địa điểm, Đối tượng trước khi vào nội dung chi tiết.
+  3. **Đoạn Văn Bối Cảnh (Context Narrative):** Nội dung mô tả tổng quan sự kiện, ý nghĩa hoặc thông điệp kết nối B2B.
+  4. **Dải Phân Cách Nét Đứt:** Dòng kẻ nét đứt trang trọng `----------------` phân tách rõ ràng giữa phần dẫn nhập và các thông tin chi tiết.
+  5. **Các Khối Keypoint Nổi Bật (Highlighted Keypoint Bullets):**
+     - Bo góc mềm mại `rounded-2xl`, nền nhẹ tương phản (`bg-blue-50/60` hoặc `bg-slate-50 dark:bg-slate-800/60`).
+     - *Keypoint 1:* Thời gian & Lịch trình cụ thể.
+     - *Keypoint 2:* Địa điểm & Hướng dẫn di chuyển.
+     - *Keypoint 3:* Kinh phí / Ưu đãi hội viên CEO 1983 kèm **Liên kết nhóm Zalo sự kiện** (`Tham gia nhóm Zalo kết nối`).
+     - *Keypoint 4:* Đầu mối liên hệ ban tổ chức (Họ tên, hotline trực tiếp).
+  6. **Đường Link Đăng Ký Trực Tuyến:** Khối liên kết riêng biệt dẫn tới trang đăng ký chính thức hoặc cổng đối tác.
+  7. **Cụm Nút CTA Hành Động Đáy:**
+     - Nút 1: Nút kết nối Zalo / Nhắn tin trao đổi (`bg-emerald-600` hoặc viền xanh Navy).
+     - Nút 2: Nút hành động chính "Đăng ký tham gia ngay" / "Bày tỏ quan tâm" (Nền xanh Navy `#003B95` chữ trắng sắc nét).
+
+---
+
+## 15. QUY CHUẨN QUẢN LÝ KẾT NỐI VĨNH VIỄN & KHÓA CUỘN NỀN MODAL MOBILE
+
+### 15.1. Vòng Đời Kết Nối & Hủy Kết Bạn Vĩnh Viễn (Persistent Connection Lifecycle)
+- **Cơ chế Tombstone Storage:** Khi người dùng bấm "Hủy kết bạn" hoặc "Hủy kết nối" tại modal hồ sơ (`MemberProfileModal.tsx`) hay danh bạ (`association.members.tsx`), hệ thống BẮT BUỘC:
+  1. Ghi nhận mã hội viên / user ID vào danh sách `vba.disconnected_members` trong `localStorage`.
+  2. Xóa khỏi danh sách `vba.connected_members`.
+  3. Phát CustomEvent `vba.connection.changed` và `storage` event để cập nhật đồng thời mọi tab và component đang mở.
+- **Quyền Ưu Tiên Tuyệt Đối Khi Kiểm Tra Trạng Thái:**
+  - Mọi hàm kiểm tra bạn bè (`checkIsFriend`) và modal hồ sơ (`MemberProfileModal`) phải kiểm tra `vba.disconnected_members` ĐẦU TIÊN. Nếu ID/Mã nằm trong danh sách này thì LUÔN trả về `false` (chưa kết nối).
+  - TUYỆT ĐỐI CẤM gán cứng `initialConnected={true}` trong bất kỳ component nào mở từ tin nhắn, danh bạ hay trang chủ.
+
+### 15.2. Khóa Cuộn Nền & Căn Giữa Modal Mobile (Body Scroll Lock & Full Centering)
+- **Khóa Cuộn Nền (Body Scroll Lock):**
+  - Mọi modal pop-up toàn màn hình trên mobile khi mở BẮT BUỘC set `document.body.style.overflow = "hidden"` để ngăn trang nền bị giật cuộn khi người dùng cuộn nội dung trong modal.
+  - Khi modal đóng (unmount), bắt buộc hoàn trả `document.body.style.overflow = ""`.
+- **Căn Giữa 100% Tuyệt Đối:**
+  - Bọc modal bằng `fixed inset-0 z-[9999] grid place-items-center w-full h-[100dvh] overflow-y-auto` hoặc bọc qua React Portal (`createPortal(..., document.body)`).
+  - Hộp nội dung modal đặt `w-full max-w-lg mx-auto` với padding hợp lý, footer nút bấm cố định hoặc nằm trong luồng cuộn tự nhiên.
+
+---
+
+## 16. QUY CHUẨN PHÂN LUỒNG & BẢO MẬT THÔNG BÁO (NOTIFICATION ISOLATION)
+- **Thuộc tính phân vùng (`app_scope`):** Mọi thông báo xuất phát từ hoạt động của Hiệp hội/CLB CEO 1983 (Sự kiện, Cơ hội giao thương, Tin tức, Điểm danh QR) BẮT BUỘC mang giá trị `app_scope = 'association_app'`.
+- **Tại ViOne Connect App:**
+  - ViOne Notification Hub hoàn toàn bỏ qua mọi thông báo có `app_scope = 'association_app'`.
+  - Không để rò rỉ dữ liệu hoặc badge đỏ của CLB sang ứng dụng doanh nghiệp nền tảng.
+- **Tại CEO 1983 App:**
+  - Notification Hub lọc chặt chẽ chỉ tiếp nhận thông báo liên quan đến hội viên CLB CEO 1983 (theo user_id, email, số điện thoại hoặc broadcast cộng đồng).
+  - Tiêu đề và nhãn người gửi hiển thị chuẩn: "CLB Doanh Nhân CEO 1983" hoặc "Ban Thư Ký CEO 1983", tuyệt đối không hiển thị tên hệ thống "ViOne".
+
+---
+
+## 17. QUY CHUẨN GIAO DIỆN SỰ KIỆN FULL-IMAGE BANNER & THANH 3 CỘT (CHUẨN ẢNH 3)
+- **Ảnh Banner 16:9 với Chữ Nằm Hoàn Toàn Bên Trong:**
+  - Tiêu đề sự kiện và slogan phong cách doanh nhân ("GẮN KẾT THỊNH VƯỢNG · ĐỈNH CAO DOANH NHÂN HỘI TỤ") được đặt trực tiếp bên trong lớp phủ gradient tối (`bg-gradient-to-t from-black/90 via-black/45 to-black/20`) ở đáy ảnh 16:9.
+  - Loại bỏ hoàn toàn khối văn bản thừa bên ngoài ảnh poster.
+- **Thanh 3 Cột Metadata Dính Liền (Attached Metric Strip):**
+  - Đặt trực tiếp dưới ảnh banner poster, chia đều 3 cột với đường phân cách mờ:
+    1. `THỜI GIAN`: Giờ phút & ngày diễn ra sự kiện.
+    2. `ĐỊA ĐIỂM`: Tên tòa nhà/khách sạn (ví dụ: Keangnam Hà Nội).
+    3. `ĐỐI TƯỢNG`: Phân hạng tham dự ("Hội viên CEO 1983").
+- **Loại Bỏ Nút CTA Thừa Ở Chân Thẻ Danh Sách:**
+  - Không đặt nút "Chi tiết sự kiện" hay "Đăng ký" ở chân thẻ ngoài danh sách `/association/events` để tạo bố cục thanh thoát, chuẩn giao diện tạp chí doanh nhân cao cấp.
+  - Toàn bộ thẻ là liên kết mở Modal xem chi tiết sự kiện toàn cảnh.
+
+---
+
+## 18. QUY CHUẨN THẺ HỘI VIÊN & HỒ SƠ EXECUTIVE TRỰC DIỆN (`association.card.tsx`)
+- **Vị trí Hồ Sơ Executive:**
+  - Khối thông tin chức danh, doanh nghiệp và tiểu sử doanh nhân được đưa trực tiếp xuống ngay dưới thẻ hội viên kim loại ảo (`vba-member-card`), tạo sự liền mạch thị giác 100%.
+- **Mã QR Khắc Trực Tiếp Trên Ảnh Bìa:**
+  - QR Code kích thước gọn đẹp `h-16 w-16` được tích hợp trang trọng ngay góc phải của ảnh bìa Cover Banner với viền vàng Amber mạ sáng.
+- **Hệ Thống Tiện Ích Đa Kênh Tích Hợp:**
+  - Nút sao chép liên kết danh thiếp công khai chuẩn CEO 1983 (`/card/:code`).
+  - Nút tích hợp Apple Wallet & Google Wallet lưu trữ thẻ thông minh.
+  - Nút chia sẻ Chạm NFC một chạm kết nối.
+  - Dải liên kết mạng xã hội chính thức: Facebook, Zalo, LinkedIn, Website doanh nghiệp.
+
+---
+
+## 19. QUY CHUẨN BỐ CỤC TIN TỨC 50% ẢNH SPLIT & MODAL PREVIEW (`association.news.tsx`)
+- **Tỉ Lệ 50% Ảnh - 50% Nội Dung:**
+  - Thẻ tin tức danh sách được thiết kế chia đôi: 50% diện tích là ảnh phóng viên sắc nét tỉ lệ doanh nghiệp kèm badge thể loại, 50% diện tích là Tiêu đề tin, Đoạn trích dẫn, Lượt xem và Ngày đăng.
+- **Modal Chi Tiết Chuẩn Tạp Chí Doanh Nhân:**
+  - Khi bấm vào tin tức, Modal hiển thị ảnh banner lớn sắc nét, thông tin tác giả ("Ban Truyền Thông CEO 1983"), thời gian đăng, nội dung bài viết định dạng phân đoạn rõ ràng và nút "Chia sẻ tin tức".
+
+---
+
+## 20. QUY CHUẨN HÀNH TRÌNH ĐIỆN ẢNH 6 TẦNG SIÊU THỰC (6-SCENE CINEMATIC LANDING)
+- **Đường dẫn truy cập:** `/landing/ceo1983/cinematic` (và `/landing?template=ceo1983-cinematic`).
+- **Triết Lý Chuyển Cảnh Tự Nhiên (Organic Flow Transitions):**
+  - Tuyệt đối không dùng các khối hộp chữ nhật ngăn cách thô cứng (`no rectangle dividing blocks`).
+  - Sử dụng các đường cong SVG hữu cơ (Organic SVG Wave/Cloud Paths) và hiệu ứng chuyển sắc tự nhiên từ tầng không gian này sang tầng không gian kế tiếp.
+- **Hành Trình 6 Tầng Không Gian:**
+  1. *Scene 1: Bầu Trời Vô Tận (Endless Sky)* - Tầm nhìn chiến lược, mây trôi bồng bềnh, ánh dương hội tụ.
+  2. *Scene 2: Chim Ưng Sải Cánh (Eagles Soaring)* - Biểu tượng thủ lĩnh tiên phong, vượt qua bão tố.
+  3. *Scene 3: Cánh Diều Khát Vọng (Soaring Kites)* - Tinh thần doanh nhân Quý Hợi 1983, vươn cao đón gió lớn.
+  4. *Scene 4: Biệt Thự Ven Biển (Coastal Villas)* - Phong cách sống thượng lưu, không gian đàm đạo tinh hoa.
+  5. *Scene 5: Lướt Sóng Tiên Phong (Waterfront Surf)* - Bản lĩnh đương đầu thử thách, tốc độ và bản lĩnh thương trường.
+  6. *Scene 6: Lòng Đại Dương & Cá Mập Thống Lĩnh (Deep Ocean Apex Predator)* - Sức mạnh tiềm ẩn, chiều sâu nội lực và tinh hoa lãnh đạo dẫn dắt thị trường.
+- **Hệ Thống Âm Thanh Môi Trường Web Audio API Tự Thân (Ambient Sound Synthesizer):**
+  - Tự động tổng hợp âm thanh gió biển, sóng vỗ và tiếng ngân vang huyền bí thông qua Web Audio API Oscillator & Buffer Nodes trực tiếp trong trình duyệt, không phụ thuộc file mp3 ngoài, bảo đảm 100% không lỗi 404 hay CORS.
+
+---
+
+## 21. QUY CHUẨN MỜI HỘI VIÊN VÀ BỐ CỤC SẢN PHẨM B2B
+- **Nút "Mời vào CLB CEO 1983" (`association.members.tsx`):**
+  - Nút bấm nổi bật nền Cobalt Navy kết hợp viền vàng mạ sang trọng.
+  - Kích hoạt Modal Mời Hội Viên (`InviteMemberModal.tsx`) với:
+    - Mã QR tham gia CLB độc quyền của hội viên giới thiệu.
+    - Link giới thiệu định danh (`/join?ref=...`).
+    - Nút gửi lời mời nhanh qua tin nhắn Zalo và SMS với văn mẫu lịch lãm.
+- **Bố Cục Sàn Sản Phẩm B2B (`association.products.tsx`):**
+  - Nút "Đăng sản phẩm" được đưa xuống nằm ngay cạnh thanh tìm kiếm, giúp người dùng thao tác tiện lợi bằng ngón tay cái mà không che khuất tiêu đề trang.
+
+---
+
+## 22. QUY CHUẨN CARD VISIT CEO 1983 CHUẨN THIẾT KẾ VẬT LÝ (`Ceo1983BusinessCardVisit.tsx`)
+- **Tỉ lệ chuẩn danh thiếp quốc tế:** Tỉ lệ 16:10 / 1.7:1 (tiêu chuẩn card visit doanh nhân), responsive mượt mà từ màn hình di động nhỏ nhất tới desktop.
+- **Mặt trước danh thiếp (Front Side):**
+  - **Header trái:** "CÂU LẠC BỘ CEO1983" (Font Sans-Serif hoa, màu xanh navy `#19194D`), bên dưới là email `info@ceo1983club.com` và website `https://ceo1983club.com`.
+  - **Header phải:** Biểu tượng số 8 cách điệu 2 màu + chữ "CEO" (navy) "1983" (cam `#EA580C`); phía sau tỏa ra các đường tròn đồng tâm mờ mô phỏng sóng lan tỏa thương hiệu.
+  - **Thân danh thiếp (Body):** Họ tên doanh nhân in hoa Navy lớn (`#19194D`), chức danh (Director / Chủ tịch / CEO) màu cam rực rỡ (`#EA580C`), thông tin hotline và email có icon điện thoại / phong thư đi kèm.
+  - **Góc trái dưới (Organic Wave Ribbon):** Mảng sóng uốn lượn màu xanh navy đậm (`#1B2456`) tại góc dưới bên trái, viền trên là dải ruy băng màu cam (`#F58220`) uốn cong mềm mại chạy dọc xuống cạnh đáy sang phải, tái hiện 100% bản vẽ thiết kế card visit thực tế của CLB.
+- **Mặt sau danh thiếp (Back Side):**
+  - Nền gradient kim loại tối sang trọng viền vàng hổ phách, logo số 8 trung tâm, mã QR vCard cá nhân có animation nhún nhảy để quét kết nối danh bạ điện thoại trực tiếp, kèm châm ngôn giá trị cốt lõi: *"Tâm - Tầm - Tín - Thịnh"*.
+- **Bộ công cụ tương tác:**
+  - Nút lật mặt sau / mặt trước 3D (3D Card Flip).
+  - Nút chia sẻ danh thiếp qua native Web Share API.
+  - Nút sao chép liên kết danh thiếp điện tử.
+
+---
+
+## 23. QUY CHUẨN TINH GỌN TRANG CHỦ, POSTER SỰ KIỆN & BIỂU TƯỢNG HÌNH SỐ 8
+- **Gỡ bỏ Landing Web Banner tại Trang Chủ (`association.index.tsx`):**
+  - Trang chủ hiệp hội tập trung vào các tính năng hội viên cốt lõi, loại bỏ hoàn toàn banner landing web.
+- **Tinh gọn Thẻ Sự Kiện Trang Chủ (`association.index.tsx`):**
+  - Thu nhỏ diện tích thẻ sự kiện, chỉ hiển thị thumbnail ngày, thời gian và tên sự kiện; loại bỏ icon bookmark và dải metadata 3 cột rườm rà.
+- **Giao diện Danh Sách Sự Kiện Chuẩn Poster 16:9 (`association.events.tsx`):**
+  - Ảnh poster sự kiện tràn viền full-bleed; dải metadata 3 cột (Thời gian, Địa điểm, Đối tượng) nằm trực tiếp trên nền ảnh với hiệu ứng kính mờ tối (`bg-black/60 backdrop-blur-md border-t border-white/15`), chữ trắng và vàng hổ phách nổi bật trên nền ảnh, không đặt trên nền trắng.
+- **Animation Nhún Nhảy Mã QR & Nút "Xem QR" Phóng To:**
+  - Mã QR trên ảnh bìa hồ sơ/thẻ có hiệu ứng nhún nhảy nhẹ nhàng (`.animate-subtle-bounce`), bên dưới có nút bấm "Xem QR" để phóng to modal xem chi tiết và tải ảnh mã QR.
+- **Biểu Tượng Web & App Mobile Số 8 Độc Lập:**
+  - Bỏ chữ "CEO1983", chỉ sử dụng duy nhất biểu tượng cách điệu hình số 8 kép (`/ceo1983-emblem-8.png`) cho favicon web, apple-touch-icon, app-icon, và icon Android APK/Capacitor.
+
+---
+
+## 24. QUY CHUẨN BANNER & SẢN PHẨM ĐÁNG CHÚ Ý C-LEVEL
+- **Banner Tối Giản Ít Chữ (Minimalist Executive Banner):**
+  - Giảm thiểu tối đa mật độ chữ trên banner. Giữ lại duy nhất khẩu hiệu doanh nhân cô đọng và widget đếm ngược thời gian thực.
+  - Loại bỏ hoàn toàn các khẩu hiệu bán lẻ đại trà, không nhồi nhét từ ngữ hoa mỹ rườm rà.
+- **Khối Sản Phẩm Đáng Chú Ý Chuẩn Doanh Nhân:**
+  - Tuyệt đối không dùng các nhãn bán lẻ "Đặc quyền...", "Ad", "HOT" hay badge giật nhảy.
+  - Sử dụng viền kim loại champagne mỏng tinh xảo (`border-amber-500/20`), nhãn đối tác Verified xanh dương nhã nhặn, và hiển thị phân cấp giá niêm yết kết hợp giá ưu đãi hội viên rõ ràng, minh bạch.
+- **Tiện Ích Hội Viên Gọn Đẹp:**
+  - Khối Tiện ích được trình bày dạng card phẳng sang trọng, loại bỏ icon quà nhún nhảy `animate-bounce` và hiệu ứng ping gây mất tập trung.
+
+---
+
+## 25. QUY CHUẨN ĐỒNG BỘ CRUD CƠ HỘI GIAO THƯƠNG & SẢN PHẨM 100% DATABASE
+- **Toàn Vẹn Dữ Liệu Thực Tế (Data Integrity):**
+  - Không sử dụng bất kỳ mảng mock hay fallback giả lập nào cho danh sách cơ hội và sản phẩm. Tất cả dữ liệu phải được lưu và nạp trực tiếp từ PostgreSQL thông qua NestJS REST API.
+- **Quyền Chỉnh Sửa & Xóa Của Tác Giả (Author Ownership):**
+  - Hệ thống tự động đối soát thông tin tác giả qua mã hội viên, user ID, số điện thoại hoặc tên doanh nghiệp (`checkIsMine`, `checkIsProductOwner`).
+  - Nếu là người tạo: hiển thị nút "Sửa" (`Pencil`) và "Xóa" (`Trash2`) trên cả card danh sách và modal xem chi tiết.
+  - Modal Chỉnh sửa hỗ trợ cập nhật tiêu đề, danh mục, ngân sách/giá bán, đơn vị tính, mô tả và liên hệ; gọi API `PATCH` và reload giao diện ngay lập tức.
+  - Nút Xóa có hộp thoại xác nhận an toàn, gọi API `DELETE` và xóa bản ghi vĩnh viễn khỏi hệ thống.
+
+---
+
+## 26. QUY CHUẨN POPUP CHỤP DANH THIẾP VIEWPORT CĂN GIỮA
+- **React Portal & Z-Index Cao Nhất (`z-[99999]`):**
+  - Modal chụp danh thiếp (`AssociationCardCaptureModal.tsx`) bắt buộc phải đóng gói qua React Portal `createPortal(..., document.body)` để tách biệt khỏi cây DOM của trang, ngăn chặn triệt để hiện tượng bị thanh điều hướng di động (`z-50`) che khuất đáy modal.
+- **Căn Giữa Tuyệt Đối Trên Màn Hình Di Động:**
+  - Sử dụng khung bọc `fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md` kết hợp `my-auto`, đảm bảo popup luôn nằm ngay chính giữa màn hình của mọi dòng điện thoại thông minh (iPhone, Android).
+- **Bảng Màu Deep Obsidian & Champagne Gold:**
+  - Khung ngắm và bảng điều khiển sử dụng nền đen sâu Deep Obsidian (`#0C1322`), viền vàng kim Champagne (`#D4AF37`), nút chụp ảnh thiết kế 2 vòng tròn tinh tế tạo cảm giác máy ảnh cơ cao cấp.
+
+---
+
+## 27. QUY CHUẨN THẺ SẢN PHẨM DẠNG NGANG TRANG CHỦ (HORIZONTAL PRODUCT CARDS)
+- **Toàn Ảnh Kiểu Ngang Bên Trái (Dominant Photo Frame):**
+  - Chiếm ưu thế thị giác lớn (62% - 66% bề ngang thẻ). Ảnh hiển thị sắc nét, tràn viền kết hợp lớp chuyển sắc mờ nhẹ sang mép phải.
+- **Lề Thông Tin Tinh Giản Bên Phải (Right Margin Strip):**
+  - Chỉ bố trí một số ít thông tin cốt lõi (Tên công ty/thương hiệu, Tên sản phẩm, Giá ưu đãi hội viên).
+- **Hài Hòa Giữa Chữ Nghiêng & Chữ Đứng (Harmonious Typography):**
+  - Chữ nghiêng (*italic*): Dành cho tên doanh nghiệp/thương hiệu (*Tập đoàn công nghệ...*) và nhãn *Giá hội viên*.
+  - Chữ đứng (regular/bold): Dành cho tên sản phẩm và con số giá bán, tạo phong thái đĩnh đạc, chuẩn gu C-Level.
+
+---
+
+## 28. QUY CHUẨN NỘI DUNG SỰ KIỆN SÁT FOOTER ẢNH & COUNTDOWN SỐ THUẦN
+- **Căn Sát Chân Ảnh (Bottom-Anchored Content):**
+  - Toàn bộ nội dung chính (Badge danh mục, Tiêu đề sự kiện, Ngày giờ & Địa điểm, và Countdown timer) được gom trọn vẹn ở dải chân ảnh (footer) trên nền gradient đen mờ chuyển tiếp (`from-black/95 via-black/80 to-transparent`).
+  - Thân ảnh phía trên giải phóng tối đa tầm nhìn để làm nổi bật hình ảnh và vệt sáng vàng kim (Golden Swoosh).
+- **Đồng Hồ Đếm Ngược Số Thuần (Borderless Pure Numbers):**
+  - Loại bỏ hoàn toàn 4 khung hộp có viền (`border-none`, `bg-transparent`).
+  - Thu nhỏ kích thước tinh tế, chỉ hiển thị số thuần túy kèm ký hiệu đơn vị thời gian ngắn gọn (`font-mono text-[13px] text-amber-300`, ví dụ: `12d : 08h : 45m : 30s`).
+
+---
+
+## 29. QUY CHUẨN SỰ KIỆN SẮP TỚI TRANG CHỦ RỘNG & THẤP HƠN
+- **Tỉ Lệ Thẻ Ngang Rộng (Wider & Shorter Cinematic Aspect Ratio):**
+  - Chuyển đổi từ tỉ lệ đứng cao hẹp `aspect-[2/3]` sang tỉ lệ ngang `aspect-[16/10] sm:aspect-[16/9]`.
+  - Giảm chiều cao chiếm dụng màn hình, mở rộng bề ngang giúp poster hiển thị điện ảnh hơn, tên sự kiện và countdown mini gắn trực tiếp trên ảnh.
+
+---
+
+## 30. QUY CHUẨN 100% POPUP CĂN GIỮA MÀN HÌNH MOBILE, UI SỰ KIỆN TỐI GIẢN & SẢN PHẨM VUÔNG TRANG CHỦ (17/09/2026)
+- **Chuẩn Căn Giữa Tuyệt Đối Cho Mọi Modal / Popup Trên Mobile (Strict Center Modal Rule):**
+  - Mọi modal popup (Tạo nhóm chat `CreateGroupChatModal`, Thành viên nhóm `GroupMembersModal`, Bộ lọc & Sắp xếp `filterModalOpen`, Quét QR, Báo giá, Đăng sản phẩm...) BẮT BUỘC:
+    1. Render qua React Portal: `createPortal(..., document.body)` để thoát khỏi mọi bẫy stacking context, CSS containment và cuộn của màn hình cha.
+    2. Lớp nền toàn màn hình cố định: `fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md`.
+    3. Hộp thoại card nổi chính giữa: `relative w-full max-w-[390px] sm:max-w-lg max-h-[86dvh] my-auto rounded-3xl overflow-hidden shadow-2xl`. Tuyệt đối CẤM để `p-0` và `h-full` trên mobile làm mất đi hình hài popup nổi.
+    4. Tự động khóa cuộn trang nền (`document.body.style.overflow = "hidden"`) khi modal mở và khôi phục khi đóng.
+- **UI Sự Kiện Trang Chủ Tinh Giản (Minimal Event Card Home):**
+  - Thẻ sự kiện trang chủ (`association.index.tsx`) chỉ giữ lại duy nhất:
+    1. Huy hiệu đếm ngược thời gian thực `<EventCountdownMiniBadge />`.
+    2. Tên sự kiện in đậm nổi bật (`font-black text-white line-clamp-2`).
+  - Loại bỏ hoàn toàn thông tin ngày tháng, thứ, địa điểm bên dưới để tạo sự gọn gàng, thanh thoát.
+- **UI Sản Phẩm Trang Chủ Hình Vuông (Square Product Grid Home):**
+  - Chuyển sang bố cục lưới 2 cột các thẻ vuông (`grid grid-cols-2 gap-2.5 sm:gap-3`) với khung hình tỷ lệ `aspect-square`.
+  - Xóa bỏ hoàn toàn lớp mờ trắng chuyển tiếp (`bg-gradient-to-r from-transparent to-white`).
+  - Xóa bỏ hoàn toàn tên thương hiệu / nhãn "CRN 1983" / "CEO 1983".
+  - Dải chân ảnh chỉ hiển thị duy nhất: Tên sản phẩm và Giá bán hội viên rõ ràng trên nền gradient tối mờ.
+
+
+
+
+---
+
+## 31. QUY CHUẨN BANNER KHUYẾN MẠI TRANG CHỦ, MÀN HÌNH TIN TỨC ĐƠN & TAB CÁ NHÂN (17/09/2026)
+- **Bộ 3 Thẻ Banner Khuyến Mại & Giao Thương Trang Chủ (`association.index.tsx`):**
+  - Thẻ Ưu đãi Hội viên & Đối tác: Chiếm trọn bề ngang, vương miện vàng, badge `+Hot` đỏ nổi bật, ảnh quà tặng 3D `vba-gift.png` chuyển động nhịp nhàng, nút "Xem ưu đãi ngay" xanh navy.
+  - Lưới 2 thẻ Giao thương: "TRAO CƠ HỘI" (🤝 Animated Emoji, badge `+Mới`, "Khám phá ngay") và "ĐĂNG SẢN PHẨM" (📦 Animated Emoji, badge `+Mới`, "Đăng ngay" xanh navy).
+- **Màn Hình Tin Tức CLB Thuần Túy (`association.news.tsx`):**
+  - Loại bỏ hoàn toàn tab Sự kiện và thanh chuyển tab; chỉ hiển thị danh sách bài viết Tin tức CLB kèm modal đọc bài viết chi tiết.
+- **Tối Giản Phân Hệ Menu Tab Cá Nhân (`association.profile.tsx`):**
+  - Không đặt phân hệ "Tin tức & Sự kiện" trong tab Cá nhân nhằm tối ưu luồng trải nghiệm, tránh trùng lặp tính năng với thanh điều hướng chính.
+
+---
+
+## 32. QUY CHUẨN TÊN SỰ KIỆN NGOÀI BANNER & LƯỢC BỎ SẢN PHẨM ĐÁNG CHÚ Ý TRANG CHỦ (17/09/2026)
+- **Tên Sự Kiện Nằm Ngoài Banner (`association.events.tsx`):**
+  - Banner chữ nhật giữ vai trò là poster thị giác nghệ thuật: ảnh nền, dải sáng vàng, thể loại, bộ đếm ngược countdown không border và ngày/giờ địa điểm.
+  - Bỏ huy hiệu `CEO 1983` ở góc trái trên để banner thoáng đãng.
+  - Tên sự kiện (`e.title`) được đưa ra ngoài, đặt ngay bên dưới banner card với typography in đậm, độ tương phản cao, dễ đọc trên cả 2 chế độ Light/Dark.
+- **Trang Chủ Tối Giản Không Khối Sản Phẩm Đáng Chú Ý (`association.index.tsx`):**
+  - Xóa bỏ danh mục 4 thẻ vuông sản phẩm đáng chú ý khỏi trang chủ; việc xem và đăng sản phẩm được dẫn thông qua nút "ĐĂNG SẢN PHẨM" hoặc phân hệ gian hàng riêng biệt.

@@ -15,9 +15,18 @@ import {
 
 export const Route = createFileRoute("/association/login")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { redirect?: string; reason?: "expired" } => ({
+  validateSearch: (search: Record<string, unknown>): {
+    redirect?: string;
+    reason?: "expired";
+    username?: string;
+    email?: string;
+    registered?: string;
+  } => ({
     ...(typeof search.redirect === "string" ? { redirect: search.redirect } : {}),
     ...(search.reason === "expired" ? { reason: "expired" as const } : {}),
+    ...(typeof search.username === "string" ? { username: search.username } : {}),
+    ...(typeof search.email === "string" ? { email: search.email } : {}),
+    ...(typeof search.registered === "string" ? { registered: search.registered } : {}),
   }),
   head: () => ({
     meta: [{ title: "Đăng nhập — Hiệp hội Doanh nhân CEO 1983" }],
@@ -44,7 +53,7 @@ function safeRedirect(target?: string): string | null {
 
 function AssociationLoginPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, reason } = Route.useSearch();
+  const { redirect: redirectTo, reason, username, email: searchEmail, registered } = Route.useSearch();
   const { user, setAuthData } = useAuth();
 
   const [identifier, setIdentifier] = useState(""); // Email or Member Code
@@ -56,10 +65,22 @@ function AssociationLoginPage() {
   const [remember, setRemember] = useState(true);
 
   useEffect(() => {
-    setRemember(getRememberPreference());
-    const saved = getRememberedEmail();
-    if (saved) setIdentifier((v) => v || saved);
-  }, []);
+    if (username) {
+      setIdentifier(username);
+    } else if (searchEmail) {
+      setIdentifier(searchEmail);
+    } else {
+      setRemember(getRememberPreference());
+      const saved = getRememberedEmail();
+      if (saved) setIdentifier((v) => v || saved);
+    }
+  }, [username, searchEmail]);
+
+  useEffect(() => {
+    if (registered === "true") {
+      toast.success("🎉 Đăng ký thành công! Quý CEO vui lòng nhập mật khẩu để đăng nhập vào App Hiệp Hội.");
+    }
+  }, [registered]);
 
   useEffect(() => {
     if (reason === "expired") {

@@ -1,9 +1,6 @@
-import { useState, useRef } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  Settings,
-  User,
-  Camera,
   Lock,
   Bell,
   Sun,
@@ -11,11 +8,12 @@ import {
   Contrast,
   LogOut,
   ShieldCheck,
-  Check,
+  ShieldAlert,
   Loader2,
-  ChevronLeft,
   KeyRound,
   Sparkles,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -24,9 +22,14 @@ import { getMyMember, type MyMember } from "@/lib/member-app.functions";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
-import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { fetchNestApi } from "@/lib/api-client";
 import { isEventThemeEnabled, setEventThemeEnabled } from "@/components/member/SeasonalEventHeader";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/association/settings")({
   ssr: false,
@@ -38,70 +41,28 @@ function AssociationSettingsScreen() {
   const { logout: authLogout } = useAuth();
   const { theme, setTheme } = useTheme();
   const fetchMember = useServerFn(getMyMember);
-  const { data: member, reload } = useServerData<MyMember | null>(() => fetchMember(), null);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Form states
+  // Form states for password change
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Track if password was changed in the active session
+  const [passwordChangedInSession, setPasswordChangedInSession] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("vba_password_changed_in_session") === "true";
+  });
+
+  // Account deactivation states
+  const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
+  const [deactivatePassword, setDeactivatePassword] = useState("");
+  const [deactivateLoading, setDeactivateLoading] = useState(false);
+
+  // Preferences states
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [eventThemeEnabled, setEventThemeEnabledState] = useState(isEventThemeEnabled());
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn tệp định dạng hình ảnh (JPEG, PNG, WEBP).");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Kích thước ảnh không được vượt quá 5MB.");
-      return;
-    }
-
-    // Local preview
-    const objectUrl = URL.createObjectURL(file);
-    setAvatarPreview(objectUrl);
-    setUploadingAvatar(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Upload directly to NestJS MinIO endpoint
-      const token = localStorage.getItem("vibe_token");
-      const res = await fetch("/api/upload/avatar", {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Tải lên ảnh thất bại");
-      }
-
-      const json = await res.json();
-      const uploadedUrl = json.url;
-
-      toast.success("Cập nhật ảnh đại diện thành công!");
-      reload();
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi khi cập nhật ảnh đại diện.");
-      setAvatarPreview(null);
-    } finally {
-      setUploadingAvatar(false);
-      if (e.target) e.target.value = "";
-    }
-  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,14 +81,27 @@ function AssociationSettingsScreen() {
 
     setPasswordLoading(true);
     try {
-      await fetchNestApi("/auth/change-password", {
-        method: "POST",
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      toast.success("Đổi mật khẩu thành công!");
+      try {
+        await fetchNestApi("/users/change-password", {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+      } catch (firstErr: any) {
+        // Fallback to /auth/change-password if /users/change-password failed
+        await fetchNestApi("/auth/change-password", {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+      }
+
+      toast.success("Đổi mật khẩu thành công! Quyền 'Đăng xuất' đã được kích hoạt.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setPasswordChangedInSession(true);
+      try {
+        sessionStorage.setItem("vba_password_changed_in_session", "true");
+      } catch {}
     } catch (err: any) {
       toast.error(err.message || "Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.");
     } finally {
@@ -135,18 +109,40 @@ function AssociationSettingsScreen() {
     }
   };
 
+  const handleDeactivateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeactivateLoading(true);
+    try {
+      await fetchNestApi("/users/deactivate", {
+        method: "POST",
+        body: JSON.stringify({ password: deactivatePassword }),
+      });
+      toast.info("Tài khoản đã được vô hiệu hóa thành công.");
+      setDeactivateModalOpen(false);
+      await signOutSession();
+      authLogout?.();
+      navigate({ to: "/association/login" as any, replace: true });
+    } catch (err: any) {
+      toast.error(err.message || "Không thể vô hiệu hóa tài khoản. Vui lòng kiểm tra lại mật khẩu.");
+    } finally {
+      setDeactivateLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
+    if (!passwordChangedInSession) {
+      toast.warning("Vui lòng đổi mật khẩu thành công ít nhất một lần để đảm bảo an toàn trước khi đăng xuất.");
+      return;
+    }
     await signOutSession();
     authLogout?.();
     navigate({ to: "/association/login" as any, replace: true });
   };
 
-  const currentAvatar = avatarPreview || resolveMediaUrl(member?.avatar) || "/ceo1983-logo.png";
-
   return (
-    <div className="vba-animate pb-28 min-h-screen bg-[var(--vba-bg)] text-[var(--vba-text)]">
+    <div className="vba-animate pb-28 min-h-screen bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white">
       <MemberHeader
-        title="Cài đặt Hiệp Hội"
+        title="Bảo mật & Cài đặt"
         subtitle="Hiệp hội Doanh nhân CEO 1983"
         back
       />
@@ -178,70 +174,67 @@ function AssociationSettingsScreen() {
           </div>
         </div>
 
-        {/* 1. Update Profile Avatar Section (MinIO) */}
-        <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
-            <User className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Ảnh đại diện hội viên
+        {/* 1. Change Password Section */}
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
+            <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Đổi mật khẩu tài khoản
           </h3>
-
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <img
-                src={currentAvatar}
-                alt="Avatar"
-                className="h-20 w-20 rounded-full object-cover ring-2 ring-amber-500 shadow-md bg-slate-900"
-                onError={(e) => {
-                  e.currentTarget.src = "/ceo1983-logo.png";
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
-                title="Thay đổi ảnh đại diện"
-              >
-                <Camera className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 min-w-0">
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div>
+              <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                Mật khẩu hiện tại
+              </label>
               <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={handleAvatarChange}
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all cursor-pointer active:scale-95"
-                style={{ color: "#ffffff" }}
-              >
-                {uploadingAvatar ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
-                    <span className="text-white font-bold">Đang lưu MinIO...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="h-3.5 w-3.5 text-white" />
-                    <span className="text-white font-bold">Tải ảnh đại diện mới</span>
-                  </>
-                )}
-              </button>
-              <p className="text-[11px] text-[var(--vba-text-dim)] mt-1.5 leading-snug">
-                Hỗ trợ định dạng JPG, PNG, WEBP. Ảnh được lưu trữ an toàn trên MinIO.
-              </p>
             </div>
-          </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Tối thiểu 6 ký tự"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Nhập lại mật khẩu mới"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md shadow-blue-900/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              style={{ color: "#ffffff" }}
+            >
+              {passwordLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+              ) : (
+                <KeyRound className="h-3.5 w-3.5 text-white" />
+              )}
+              <span className="text-white font-bold">Cập nhật mật khẩu</span>
+            </button>
+          </form>
         </section>
 
         {/* 2. Theme Preferences */}
-        <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Giao diện hiển thị
           </h3>
           <div className="grid grid-cols-3 gap-2">
@@ -257,7 +250,7 @@ function AssociationSettingsScreen() {
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
                   theme === mode
                     ? "border-[#003B95] dark:border-amber-500 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-xs font-bold"
-                    : "border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] text-[var(--vba-text-muted)] hover:text-[var(--vba-text)]"
+                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <Icon className="h-5 w-5 mb-1" />
@@ -268,15 +261,15 @@ function AssociationSettingsScreen() {
         </section>
 
         {/* 3. Event Theme Feature: Tính năng sự kiện */}
-        <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Sparkles className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
               <div>
-                <div className="text-[13px] font-bold text-[var(--vba-text)]">
+                <div className="text-[13px] font-bold text-slate-900 dark:text-white">
                   Tính năng sự kiện
                 </div>
-                <div className="text-[11px] text-[var(--vba-text-muted)]">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Bật / tắt hiệu ứng và chủ đề trang trí sự kiện (Trung thu, Lễ hội)
                 </div>
               </div>
@@ -298,74 +291,16 @@ function AssociationSettingsScreen() {
           </div>
         </section>
 
-        {/* 4. Change Password */}
-        <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--vba-text-dim)] flex items-center gap-1.5 mb-3">
-            <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Đổi mật khẩu
-          </h3>
-          <form onSubmit={handleChangePassword} className="space-y-3">
-            <div>
-              <label className="text-[11px] font-medium text-[var(--vba-text-muted)] block mb-1">
-                Mật khẩu hiện tại
-              </label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-[var(--vba-text-muted)] block mb-1">
-                Mật khẩu mới
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Tối thiểu 6 ký tự"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-[var(--vba-text-muted)] block mb-1">
-                Xác nhận mật khẩu mới
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={passwordLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md shadow-blue-900/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
-              style={{ color: "#ffffff" }}
-            >
-              {passwordLoading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
-              ) : (
-                <KeyRound className="h-3.5 w-3.5 text-white" />
-              )}
-              <span className="text-white font-bold">Cập nhật mật khẩu</span>
-            </button>
-          </form>
-        </section>
-
-        {/* 5. Notification Settings */}
-        <section className="p-4 rounded-2xl vba-card border border-[var(--vba-border)] shadow-sm">
+        {/* 4. Notification Settings */}
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Bell className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
               <div>
-                <div className="text-[13px] font-bold text-[var(--vba-text)]">
+                <div className="text-[13px] font-bold text-slate-900 dark:text-white">
                   Thông báo nợ phí & Cuộc họp
                 </div>
-                <div className="text-[11px] text-[var(--vba-text-muted)]">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   Nhận tin nhắn kèm mã VietQR và lịch họp trực tiếp
                 </div>
               </div>
@@ -382,17 +317,123 @@ function AssociationSettingsScreen() {
           </div>
         </section>
 
-        {/* 5. Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white transition-all active:scale-[0.99] shadow-sm cursor-pointer"
-          style={{ color: "#ffffff" }}
-        >
-          <LogOut className="h-4 w-4 text-white" />
-          <span className="text-white font-bold">Đăng xuất khỏi App Hiệp Hội</span>
-        </button>
+        {/* 5. Account Deactivation Section */}
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-rose-200/80 dark:border-rose-950/50 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                <ShieldAlert className="h-4 w-4" /> Vô hiệu hóa tài khoản
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Tạm dừng hoạt động tài khoản hội viên của bạn. Hồ sơ và danh thiếp sẽ tạm ẩn khỏi danh bạ cho đến khi bạn yêu cầu mở lại qua Ban Thư Ký.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeactivateModalOpen(true)}
+              className="shrink-0 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 px-3 py-2 text-xs font-bold hover:bg-rose-100 transition active:scale-95 cursor-pointer"
+            >
+              Vô hiệu hóa
+            </button>
+          </div>
+        </section>
+
+        {/* 6. Conditional Logout Button */}
+        <div className="pt-2 space-y-2">
+          <button
+            type="button"
+            disabled={!passwordChangedInSession}
+            onClick={handleLogout}
+            className={`w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold transition-all shadow-sm ${
+              passwordChangedInSession
+                ? "bg-[#003B95] hover:bg-[#002B70] text-white active:scale-[0.99] cursor-pointer"
+                : "bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60"
+            }`}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Đăng xuất</span>
+          </button>
+
+          {/* Conditional Note */}
+          <p className="text-[11px] text-center leading-snug px-2">
+            {!passwordChangedInSession ? (
+              <span className="text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
+                <span>🔒</span>
+                <span>
+                  Để đảm bảo an toàn tài khoản, vui lòng đổi mật khẩu thành công ít nhất một lần để kích hoạt quyền Đăng xuất.
+                </span>
+              </span>
+            ) : (
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
+                <span>✅</span>
+                <span>Mật khẩu đã được cập nhật trong phiên. Bạn có thể đăng xuất bất cứ lúc nào.</span>
+              </span>
+            )}
+          </p>
+        </div>
       </div>
+
+      {/* Account Deactivation Modal */}
+      {deactivateModalOpen && (
+        <Dialog open={deactivateModalOpen} onOpenChange={setDeactivateModalOpen}>
+          <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-3xl !bg-white dark:!bg-[#0F172A] border border-rose-200 dark:border-rose-900/60 p-5 text-slate-900 dark:text-white shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-sm">
+                <AlertTriangle className="h-5 w-5" />
+                <DialogTitle className="text-sm font-bold">Xác nhận vô hiệu hóa tài khoản</DialogTitle>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeactivateModalOpen(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDeactivateAccount} className="space-y-3.5 pt-3">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Tài khoản của bạn sẽ tạm dừng quyền truy cập vào các tính năng của CLB CEO 1983. Vui lòng nhập mật khẩu xác nhận để tiếp tục:
+              </p>
+
+              <div>
+                <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-1">
+                  Mật khẩu tài khoản
+                </label>
+                <input
+                  type="password"
+                  value={deactivatePassword}
+                  onChange={(e) => setDeactivatePassword(e.target.value)}
+                  placeholder="Nhập mật khẩu để xác nhận"
+                  required
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeactivateModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={deactivateLoading || !deactivatePassword}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {deactivateLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                  ) : null}
+                  <span>Xác nhận</span>
+                </button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+export default AssociationSettingsScreen;

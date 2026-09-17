@@ -172,7 +172,17 @@ export function useQrScanner(opts: {
       }
 
       if (stopped) {
-        stream.getTracks().forEach((t) => t.stop());
+        if (stream) {
+          stream.getTracks().forEach((t) => {
+            try {
+              t.stop();
+              t.enabled = false;
+            } catch {}
+          });
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
         return;
       }
 
@@ -219,7 +229,20 @@ export function useQrScanner(opts: {
       };
 
       await waitForVideo();
-      if (stopped) return;
+      if (stopped) {
+        if (stream) {
+          stream.getTracks().forEach((t) => {
+            try {
+              t.stop();
+              t.enabled = false;
+            } catch {}
+          });
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+        return;
+      }
 
       setStatus("scanning");
 
@@ -337,8 +360,29 @@ export function useQrScanner(opts: {
     return () => {
       stopped = true;
       if (raf) cancelAnimationFrame(raf);
-      if (stream) stream.getTracks().forEach((t) => t.stop());
-      trackRef.current = null;
+      if (stream) {
+        stream.getTracks().forEach((t) => {
+          try {
+            t.stop();
+            t.enabled = false;
+          } catch {}
+        });
+        stream = null;
+      }
+      if (trackRef.current) {
+        try {
+          trackRef.current.stop();
+          trackRef.current.enabled = false;
+        } catch {}
+        trackRef.current = null;
+      }
+      if (videoRef.current) {
+        try {
+          videoRef.current.srcObject = null;
+          videoRef.current.pause();
+        } catch {}
+      }
+      setStatus("idle");
     };
   }, [active, facingMode, retryNonce]);
 

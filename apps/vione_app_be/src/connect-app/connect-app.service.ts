@@ -58,6 +58,17 @@ export class ConnectAppService implements OnModuleInit {
         );
       `);
       await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS image TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_name TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_phone TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_title TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS company TEXT;
+        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS company TEXT;
+        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
+        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC;
+        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS member_price NUMERIC;
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
         ALTER TABLE public.business_relationship_moments
         ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends';
       `);
@@ -2341,19 +2352,68 @@ export class ConnectAppService implements OnModuleInit {
         requesterDisplayName = mem[0]?.name || 'Hội viên ViOne';
       }
 
+      // Fetch privacy settings and contact info of Account A (requester)
+      let requesterPhone: string | null = null;
+      let requesterEmail: string | null = null;
+      let requesterMemberCode: string | null = null;
+      try {
+        const memA = await this.prisma.$queryRaw<any[]>`
+          SELECT phone, email, code, avatar, contact, name FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+        `.catch(() => []);
+        if (memA[0]) {
+          requesterPhone = memA[0].phone || null;
+          requesterEmail = memA[0].email || null;
+          requesterMemberCode = memA[0].code || null;
+          requesterAvatarUrl = requesterAvatarUrl || memA[0].avatar || null;
+          requesterDisplayName = requesterDisplayName || memA[0].contact || memA[0].name;
+          requesterCompanyName = requesterCompanyName || memA[0].name;
+        }
+      } catch {}
+
+      // Query Account A's privacy settings
+      let aSettings: any = null;
+      try {
+        const sRows = await this.prisma.$queryRaw<any[]>`
+          SELECT show_name, show_company, show_photo, show_email, show_phone, show_address
+          FROM public.card_settings WHERE user_id = ${userId}::uuid LIMIT 1
+        `.catch(() => []);
+        if (sRows[0]) aSettings = sRows[0];
+      } catch {}
+
+      const showName = aSettings ? aSettings.show_name !== false : true;
+      const showCompany = aSettings ? aSettings.show_company !== false : true;
+      const showPhoto = aSettings ? aSettings.show_photo !== false : true;
+      const showPhone = aSettings ? aSettings.show_phone !== false : true;
+      const showEmail = aSettings ? aSettings.show_email !== false : true;
+
       const requester = {
-        display_name: requesterDisplayName,
-        avatar_url: requesterAvatarUrl || null,
-        job_title: requesterJobTitle || null,
-        company_name: requesterCompanyName || null,
+        userId,
+        memberCode: requesterMemberCode,
+        display_name: showName ? requesterDisplayName : 'Hội viên CEO 1983',
+        avatar_url: showPhoto ? requesterAvatarUrl : null,
+        job_title: showCompany ? requesterJobTitle : 'Hội viên CLB CEO 1983',
+        company_name: showCompany ? requesterCompanyName : 'Đã ẩn theo cài đặt riêng tư',
+        phone: showPhone ? requesterPhone : 'Đã ẩn theo cài đặt riêng tư',
+        email: showEmail ? requesterEmail : 'Đã ẩn theo cài đặt riêng tư',
+        connectionId: reqId,
+        privacy: {
+          showName,
+          showCompany,
+          showPhoto,
+          showPhone,
+          showEmail,
+        },
       };
 
       const notifId = crypto.randomUUID();
       const safeData = JSON.stringify({
-        counterpartDisplayName: requester.display_name || 'Hội viên ViOne',
-        avatarUrl: requester.avatar_url || null,
-        jobTitle: requester.job_title || null,
-        companyName: requester.company_name || null,
+        counterpartDisplayName: requester.display_name,
+        avatarUrl: requester.avatar_url,
+        jobTitle: requester.job_title,
+        companyName: requester.company_name,
+        phone: requester.phone,
+        email: requester.email,
+        memberCode: requester.memberCode,
         connectionId: reqId,
       });
       const actionTarget = JSON.stringify({
@@ -3604,6 +3664,8 @@ export class ConnectAppService implements OnModuleInit {
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
           AND (${!unreadOnly} OR (status != 'read' AND read_at IS NULL))
+          AND (app_scope IS NULL OR app_scope != 'association_app')
+          AND (target_app IS NULL OR target_app != 'association_app')
         ORDER BY created_at DESC
         LIMIT ${limit}
       `.catch((err) => {
@@ -4180,56 +4242,50 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async listMyMemberNotifications(userId: string) {
-    const members = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.members WHERE user_id = ${userId}::uuid
+    const users = await this.prisma.$queryRaw<any[]>`
+      SELECT id, email, phone, created_at FROM public.users WHERE id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
-    const memberIds = members.map((m) => m.id);
+    const userEmail = users[0]?.email || '';
+    const userPhone = users[0]?.phone || '';
+    const userCreatedAt = users[0]?.created_at ? new Date(users[0].created_at).getTime() : Date.now();
 
-    const [broadcast, personal, business, events, opportunities] = await Promise.all([
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code FROM public.members
+      WHERE user_id = ${userId}::uuid
+         OR (email IS NOT NULL AND LOWER(email) = LOWER(${userEmail}))
+         OR (phone IS NOT NULL AND phone = ${userPhone})
+    `.catch(() => []);
+
+    const recipientKeys: string[] = [userId];
+    for (const m of members) {
+      if (m.id) recipientKeys.push(String(m.id));
+      if (m.code) recipientKeys.push(String(m.code));
+    }
+
+    const [broadcast, personal, business] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
         SELECT id, code, title, body, audience, sent_at, created_at, app_scope, target_app
         FROM public.notifications
         WHERE (status = 'sent' OR status = 'active' OR status IS NULL)
-          AND (app_scope = 'all' OR app_scope = 'association_app' OR app_scope = 'crm' OR app_scope IS NULL
-               OR target_app = 'all' OR target_app = 'association_app' OR target_app = 'crm' OR target_app IS NULL)
+          AND (app_scope = 'association_app' OR app_scope = 'all' OR app_scope IS NULL
+               OR target_app = 'association_app' OR target_app = 'all' OR target_app IS NULL)
         ORDER BY COALESCE(sent_at, created_at) DESC
+        LIMIT 30
+      `.catch(() => []),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
+        FROM public.member_notifications
+        WHERE recipient_id::text = ANY(${recipientKeys}::text[])
+        ORDER BY created_at DESC
         LIMIT 50
       `.catch(() => []),
-      memberIds.length > 0
-        ? this.prisma.$queryRaw<any[]>`
-            SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
-            FROM public.member_notifications
-            WHERE recipient_id::text = ANY(${memberIds}::text[]) OR recipient_id::text = ${userId}::text
-            ORDER BY created_at DESC
-            LIMIT 50
-          `.catch(() => [])
-        : this.prisma.$queryRaw<any[]>`
-            SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
-            FROM public.member_notifications
-            WHERE recipient_id::text = ${userId}::text
-            ORDER BY created_at DESC
-            LIMIT 50
-          `.catch(() => []),
       this.prisma.$queryRaw<any[]>`
         SELECT id, title_key, body_key, safe_display_data, notification_kind, created_at, read_at, source_record_id
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
+          AND (app_scope = 'association_app' OR target_app = 'association_app')
         ORDER BY created_at DESC
         LIMIT 40
-      `.catch(() => []),
-      this.prisma.$queryRaw<any[]>`
-        SELECT id, name, date, location, type, status, created_at
-        FROM public.events
-        WHERE status IN ('published', 'upcoming', 'ongoing', 'active') OR status IS NULL
-        ORDER BY created_at DESC
-        LIMIT 20
-      `.catch(() => []),
-      this.prisma.$queryRaw<any[]>`
-        SELECT id, title, description, type, budget_min, budget_max, region, industry, deadline, status, created_at, claimed_by_name
-        FROM public.opportunities
-        WHERE status IN ('open', 'published', 'active') OR status IS NULL
-        ORDER BY created_at DESC
-        LIMIT 20
       `.catch(() => []),
     ]);
 
@@ -4270,11 +4326,14 @@ export class ConnectAppService implements OnModuleInit {
       if (p.ref_id) existingPersonalKeys.add(String(p.ref_id));
     }
 
+    // Chỉ lấy broadcast thông báo chung còn hiệu lực (từ lúc tạo tài khoản - 3 ngày trở đi)
     const broadcastItems = broadcast
       .filter((n) => {
         if (n.id && existingPersonalKeys.has(String(n.id))) return false;
         if (n.code && existingPersonalKeys.has(String(n.code))) return false;
-        return true;
+        const sentTime = new Date(n.sent_at || n.created_at).getTime();
+        // Không dump toàn bộ thông báo cũ từ nhiều tháng trước lên tài khoản mới tạo
+        return sentTime >= userCreatedAt - (3 * 24 * 60 * 60 * 1000);
       })
       .map((n) => {
         const isDismissed = dismissedIds.has(n.id) || (n.code && dismissedIds.has(n.code));
@@ -4292,42 +4351,6 @@ export class ConnectAppService implements OnModuleInit {
           notificationKind: 'system_broadcast',
         };
       });
-
-    const eventItems = (events || []).map((e) => {
-      const d = new Date(e.date);
-      const dateStr = d.toLocaleDateString('vi-VN');
-      return {
-        id: `evt-${e.id}`,
-        title: `[Sự kiện] ${e.name}`,
-        body: `Sự kiện "${e.name}" diễn ra ngày ${dateStr} tại ${e.location || 'Trung tâm Hội nghị'}. Bấm để xem chi tiết và đăng ký tham gia!`,
-        time: e.created_at ? new Date(e.created_at).toISOString() : new Date().toISOString(),
-        createdAt: e.created_at ? new Date(e.created_at).toISOString() : new Date().toISOString(),
-        type: 'event',
-        unread: false,
-        dismissed: false,
-        priority: 'high',
-        personal: false,
-        refType: 'event',
-        refId: e.id,
-      };
-    });
-
-    const oppItems = (opportunities || []).map((o) => {
-      return {
-        id: `opp-${o.id}`,
-        title: `[Cơ hội B2B] ${o.title}`,
-        body: `${o.description ? o.description.slice(0, 150) : ''} · Lĩnh vực: ${o.industry || 'Thương mại'} · Khu vực: ${o.region || 'Toàn quốc'}. Bấm để kết nối giao thương!`,
-        time: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
-        createdAt: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
-        type: 'opportunity',
-        unread: false,
-        dismissed: false,
-        priority: 'high',
-        personal: false,
-        refType: 'opportunity',
-        refId: o.id,
-      };
-    });
 
     const personalItems = personal.map((n) => {
       const isConn = n.ref_type === 'connection' && n.ref_id;
@@ -4399,7 +4422,27 @@ export class ConnectAppService implements OnModuleInit {
       };
     });
 
-    const rawAll = [...businessItems, ...personalItems, ...eventItems, ...oppItems, ...broadcastItems].sort(
+    // Thông báo chào mừng chính thức cho hội viên mới
+    const welcomeNotification = {
+      id: `welcome-${userId}`,
+      title: 'Chào mừng bạn đến với CLB Doanh Nhân CEO 1983!',
+      body: 'Chúc mừng bạn đã chính thức gia nhập CLB Doanh Nhân CEO 1983. Hãy hoàn thiện danh thiếp số và bắt đầu khám phá các sự kiện, cơ hội giao thương B2B độc quyền!',
+      time: users[0]?.created_at ? new Date(users[0].created_at).toISOString() : new Date().toISOString(),
+      createdAt: users[0]?.created_at ? new Date(users[0].created_at).toISOString() : new Date().toISOString(),
+      type: 'system',
+      unread: true,
+      dismissed: false,
+      priority: 'high',
+      personal: true,
+      notificationKind: 'welcome_ceo1983',
+    };
+
+    const combined = [...businessItems, ...personalItems, ...broadcastItems];
+    if (combined.length === 0) {
+      combined.push(welcomeNotification);
+    }
+
+    const rawAll = combined.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
@@ -8942,7 +8985,8 @@ export class ConnectAppService implements OnModuleInit {
     await this.prisma.$executeRaw`
       INSERT INTO public.opportunities (
         id, poster_id, title, description, type,
-        budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at
+        budget_min, budget_max, region, industry, deadline, status, views, emoji,
+        image, contact_name, contact_phone, contact_title, company, created_at, updated_at
       ) VALUES (
         ${oppId}, ${userId}, ${data.title || 'Cơ hội mới'},
         ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -8950,9 +8994,27 @@ export class ConnectAppService implements OnModuleInit {
         ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
         ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
         ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
-        'open', 0, ${data.emoji || '💡'}, now(), now()
+        'open', 0, ${data.emoji || '💡'},
+        ${data.image || null}, ${data.contactName || null}, ${data.contactPhone || null}, ${data.contactTitle || null}, ${data.company || null},
+        now(), now()
       )
-    `;
+    `.catch(async () => {
+      // Fallback in case table has fewer columns
+      await this.prisma.$executeRaw`
+        INSERT INTO public.opportunities (
+          id, poster_id, title, description, type,
+          budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at
+        ) VALUES (
+          ${oppId}, ${userId}, ${data.title || 'Cơ hội mới'},
+          ${data.description || ''}, ${data.type || 'opp.type.partnership'},
+          ${data.budgetMin ? BigInt(data.budgetMin) : BigInt(0)},
+          ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
+          ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
+          ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
+          'open', 0, ${data.emoji || '💡'}, now(), now()
+        )
+      `;
+    });
     return { ok: true, id: oppId };
   }
 
@@ -8963,6 +9025,39 @@ export class ConnectAppService implements OnModuleInit {
     await this.prisma.$executeRaw`
       DELETE FROM public.opportunities WHERE id = ${opportunityId}
     `.catch(() => {});
+    return { ok: true };
+  }
+
+  async updateOpportunity(userId: string, opportunityId: string, data: any) {
+    await this.prisma.$executeRaw`
+      UPDATE public.opportunities
+      SET
+        title = COALESCE(${data.title}, title),
+        description = COALESCE(${data.description}, description),
+        type = COALESCE(${data.type}, type),
+        budget_min = COALESCE(${data.budgetMin ? BigInt(data.budgetMin) : null}, budget_min),
+        budget_max = COALESCE(${data.budgetMax ? BigInt(data.budgetMax) : null}, budget_max),
+        region = COALESCE(${data.region}, region),
+        industry = COALESCE(${data.industry}, industry),
+        deadline = COALESCE(${data.deadline ? new Date(data.deadline) : null}, deadline),
+        contact_name = COALESCE(${data.contactName}, contact_name),
+        contact_phone = COALESCE(${data.contactPhone}, contact_phone),
+        contact_title = COALESCE(${data.contactTitle}, contact_title),
+        company = COALESCE(${data.company}, company),
+        image = COALESCE(${data.image}, image),
+        updated_at = now()
+      WHERE id = ${opportunityId}
+    `.catch(async () => {
+      await this.prisma.$executeRaw`
+        UPDATE public.opportunities
+        SET
+          title = COALESCE(${data.title}, title),
+          description = COALESCE(${data.description}, description),
+          type = COALESCE(${data.type}, type),
+          updated_at = now()
+        WHERE id = ${opportunityId}
+      `;
+    });
     return { ok: true };
   }
 
@@ -9009,44 +9104,7 @@ export class ConnectAppService implements OnModuleInit {
       const OPP_COLORS = ['#D97706', '#F59E0B', '#B45309', '#D8B282', '#EDB028'];
 
       if (opportunities.length === 0) {
-        return [
-          {
-            id: 'opp-ceo-1',
-            tag: 'Hợp tác B2B',
-            title: 'Tìm đối tác cung ứng vật tư & công nghệ chuyển đổi số cho nhà máy',
-            company: 'CLB Doanh Nhân CEO 1983',
-            time: new Date().toISOString(),
-            color: '#D97706',
-            interested: false,
-            posterId: 'M1983-001',
-            posterCode: 'M1983-001',
-            posterName: 'Trần Tuấn Anh',
-          },
-          {
-            id: 'opp-ceo-2',
-            tag: 'Đầu tư & Vốn',
-            title: 'Kêu gọi vốn vòng mở rộng chuỗi phân phối F&B toàn quốc',
-            company: 'CEO 1983 Investment Fund',
-            time: new Date().toISOString(),
-            color: '#F59E0B',
-            interested: false,
-            posterId: 'M1983-002',
-            posterCode: 'M1983-002',
-            posterName: 'Phạm Văn Vũ',
-          },
-          {
-            id: 'opp-ceo-3',
-            tag: 'Giao thương',
-            title: 'Kết nối cung cầu xuất khẩu nông sản sạch sang thị trường Nhật Bản & EU',
-            company: 'Ban Xúc tiến Thương mại CEO 1983',
-            time: new Date().toISOString(),
-            color: '#EDB028',
-            interested: false,
-            posterId: 'M1983-003',
-            posterCode: 'M1983-003',
-            posterName: 'James Nguyễn',
-          },
-        ];
+        return [];
       }
 
       const TAG_VI_MAP: Record<string, string> = {
@@ -9061,18 +9119,42 @@ export class ConnectAppService implements OnModuleInit {
       return opportunities.map((o, i) => {
         const rawTag = o.type || o.tag || 'Hợp tác B2B';
         const tagVi = TAG_VI_MAP[rawTag.toLowerCase()] || rawTag;
+        const bMin = o.budget_min ? Number(o.budget_min) : undefined;
+        const bMax = o.budget_max ? Number(o.budget_max) : undefined;
+        let formattedVal = o.value || o.estimated_value || '';
+        if (!formattedVal && (bMin || bMax)) {
+          if (bMin && bMax && bMin !== bMax) {
+            formattedVal = `${bMin.toLocaleString('vi-VN')} - ${bMax.toLocaleString('vi-VN')} đ`;
+          } else if (bMax) {
+            formattedVal = `${bMax.toLocaleString('vi-VN')} đ`;
+          } else if (bMin) {
+            formattedVal = `Từ ${bMin.toLocaleString('vi-VN')} đ`;
+          }
+        }
+        if (!formattedVal) {
+          formattedVal = 'Thỏa thuận B2B';
+        }
+
         return {
           id: String(o.id),
           tag: tagVi,
           title: o.title,
           description: o.description || o.summary || '',
-          company: o.poster_company || o.association_name || o.region || o.industry || 'CLB Doanh Nhân CEO 1983',
+          company: o.company || o.poster_company || o.association_name || o.region || o.industry || 'CLB Doanh Nhân CEO 1983',
           time: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
           color: OPP_COLORS[i % OPP_COLORS.length],
           interested: myInterests.has(String(o.id)),
+          image: o.image || o.cover_image || null,
           posterId: o.poster_id || o.poster_code || 'admin',
           posterCode: o.poster_code || o.poster_id || 'admin',
-          posterName: o.poster_name || o.poster_company || 'Hội viên CLB',
+          posterName: o.contact_name || o.poster_name || o.poster_company || 'Hội viên CLB',
+          contactName: o.contact_name || o.poster_name || 'Đại diện hợp tác',
+          contactPhone: o.contact_phone || null,
+          contactTitle: o.contact_title || 'Đại diện hợp tác',
+          value: formattedVal,
+          estimatedValue: Number(o.estimated_value || bMax || bMin || 0) || undefined,
+          budgetMin: bMin,
+          budgetMax: bMax,
         };
       });
     } catch {
@@ -9087,17 +9169,59 @@ export class ConnectAppService implements OnModuleInit {
   // ── Member Messaging (used by member PWA) ─────────────────────────
   async resolveMemberCodeForUser(userId: string): Promise<string> {
     try {
+      // 1. Kiểm tra trực tiếp trong bảng members theo user_id hoặc id
       const mems = await this.prisma.$queryRaw<any[]>`
         SELECT m.code FROM public.members m
         WHERE m.user_id = ${userId}::uuid
            OR m.id = ${userId}::text
-           OR LOWER(m.email) IN (SELECT LOWER(email) FROM auth.users WHERE id = ${userId}::uuid)
         LIMIT 1
       `.catch(() => []);
       if (mems && mems[0]?.code) {
         return mems[0].code;
       }
 
+      // 2. Kiểm tra trong public.vione_users (tài khoản đăng nhập chính thức của NestJS)
+      const vioneUser = await this.prisma.$queryRaw<any[]>`
+        SELECT email, username, phone, name FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+
+      if (vioneUser && vioneUser[0]) {
+        const u = vioneUser[0];
+        const byUser = await this.prisma.$queryRaw<any[]>`
+          SELECT code FROM public.members 
+          WHERE (email IS NOT NULL AND LOWER(email) = LOWER(${u.email}))
+             OR (phone IS NOT NULL AND phone = ${u.phone})
+             OR (code IS NOT NULL AND LOWER(code) = LOWER(${u.username}))
+          LIMIT 1
+        `.catch(() => []);
+
+        if (byUser && byUser[0]?.code) {
+          // Tự động liên kết user_id vào members để các truy vấn sau nhanh tức thì
+          await this.prisma.$executeRaw`
+            UPDATE public.members SET user_id = ${userId}::uuid WHERE LOWER(code) = LOWER(${byUser[0].code}) AND user_id IS NULL
+          `.catch(() => null);
+          return byUser[0].code;
+        }
+
+        // Tự động tạo hồ sơ hội viên cho tài khoản này
+        const userEmail = u.email || `${u.username || userId}@ceo1983.vn`;
+        const newCode = 'M1983-' + String(Math.floor(100 + Math.random() * 900));
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, code, name, contact, email, phone, type, level, industry, region,
+            status, joined_at, fee_year, fee_paid, address, about, payment_status,
+            user_id, association_id, created_at, updated_at
+          ) VALUES (
+            ${userId}::text, ${newCode}, ${u.name || 'Hội viên CEO 1983'}, ${u.name || 'Hội viên CEO 1983'},
+            ${userEmail}, ${u.phone || '0983000000'}, 'corporate', 'standard', 'Kinh doanh & Quản lý', 'Hà Nội',
+            'active', CURRENT_DATE, 2026, true, 'Hà Nội', 'Hội viên CLB Doanh Nh\u00e2n CEO 1983', 'paid',
+            ${userId}::uuid, 'c1983000-0000-4000-8000-000000001983'::uuid, now(), now()
+          ) ON CONFLICT (id) DO UPDATE SET user_id = ${userId}::uuid
+        `.catch(() => null);
+        return newCode;
+      }
+
+      // 3. Fallback kiểm tra auth.users (nếu có Supabase auth cũ)
       const authUsers = await this.prisma.$queryRaw<any[]>`
         SELECT email FROM auth.users WHERE id = ${userId}::uuid LIMIT 1
       `.catch(() => []);
@@ -9109,21 +9233,6 @@ export class ConnectAppService implements OnModuleInit {
         if (byEmail && byEmail[0]?.code) {
           return byEmail[0].code;
         }
-
-        const newCode = 'M1983-' + String(Math.floor(100 + Math.random() * 900));
-        await this.prisma.$executeRaw`
-          INSERT INTO public.members (
-            id, code, name, contact, email, phone, type, level, industry, region,
-            status, joined_at, fee_year, fee_paid, address, about, payment_status,
-            user_id, association_id, created_at, updated_at
-          ) VALUES (
-            ${userId}::text, ${newCode}, 'Hội viên CEO 1983', 'Hội viên CEO 1983',
-            ${userEmail}, '0983000000', 'corporate', 'standard', 'Kinh doanh & Quản lý', 'Hà Nội',
-            'active', CURRENT_DATE, 2026, true, 'Hà Nội', 'Hội viên CLB Doanh Nhân CEO 1983', 'paid',
-            ${userId}::uuid, 'c1983000-0000-4000-8000-000000001983'::uuid, now(), now()
-          ) ON CONFLICT DO NOTHING
-        `.catch(() => null);
-        return newCode;
       }
 
       const first = await this.prisma.$queryRaw<any[]>`
@@ -9143,6 +9252,7 @@ export class ConnectAppService implements OnModuleInit {
       SELECT id, from_id, to_id, text, created_at, read_at
       FROM public.messages
       WHERE LOWER(from_id) = ${mine} OR LOWER(to_id) = ${mine}
+         OR LOWER(from_id) = LOWER(${userId}) OR LOWER(to_id) = LOWER(${userId})
       ORDER BY created_at DESC
     `.catch(() => []);
 
@@ -9150,7 +9260,7 @@ export class ConnectAppService implements OnModuleInit {
     for (const m of msgs) {
       const from = String(m.from_id).toLowerCase();
       const to = String(m.to_id).toLowerCase();
-      const peer = from === mine ? to : from;
+      const peer = (from === mine || from === userId.toLowerCase()) ? to : from;
       if (!byPeer.has(peer)) byPeer.set(peer, []);
       byPeer.get(peer)!.push(m);
     }
@@ -9177,35 +9287,54 @@ export class ConnectAppService implements OnModuleInit {
       }
     }
 
-    const acceptedConns = await this.prisma.$queryRaw<any[]>`
-      SELECT requester_user_id, recipient_user_id
-      FROM public.user_connections
-      WHERE status = 'accepted'::public.global_connection_status
-        AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
-    `.catch(() => []);
-    const connectedUserIds = new Set<string>();
-    for (const c of acceptedConns) {
-      connectedUserIds.add(String(c.requester_user_id) === userId ? String(c.recipient_user_id) : String(c.requester_user_id));
+    // Tra cứu kết nối thực tế trong public.user_connections để phân loại: Đã kết nối hay Tin nhắn chờ
+    const peerUserIds = Array.from(userByCode.values()).filter(Boolean);
+    const connMap = new Map<string, { status: string; requesterId: string; connectionId: string }>();
+    if (peerUserIds.length > 0) {
+      try {
+        const conns = await this.prisma.$queryRaw<any[]>`
+          SELECT id, requester_user_id, recipient_user_id, status
+          FROM public.user_connections
+          WHERE (requester_user_id = ${userId}::uuid AND recipient_user_id = ANY(${peerUserIds}::uuid[]))
+             OR (recipient_user_id = ${userId}::uuid AND requester_user_id = ANY(${peerUserIds}::uuid[]))
+        `.catch(() => []);
+        for (const c of conns) {
+          const otherId = String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
+            ? String(c.recipient_user_id).toLowerCase()
+            : String(c.requester_user_id).toLowerCase();
+          connMap.set(otherId, {
+            status: String(c.status).toLowerCase(),
+            requesterId: String(c.requester_user_id).toLowerCase(),
+            connectionId: String(c.id),
+          });
+        }
+      } catch {
+        /* ignore */
+      }
     }
 
-    // Luôn đảm bảo kênh Ban Thư Ký / Thông báo hệ thống xuất hiện ở đầu danh sách
     const resList: any[] = [];
     for (const peer of peers) {
       const list = byPeer.get(peer)!;
       const latest = list[0];
-      const unread = list.filter((m) => String(m.to_id).toLowerCase() === mine && m.read_at == null).length;
+      const unread = list.filter((m) => (String(m.to_id).toLowerCase() === mine || String(m.to_id).toLowerCase() === userId.toLowerCase()) && m.read_at == null).length;
       const isSystem = peer === 'admin' || peer === 'system';
       const peerUserId = userByCode.get(peer);
 
-      // Quy tắc: Chỉ hiện những người đã kết nối và đã nhắn tin (ngoại trừ kênh hệ thống)
+      // ĐẢM BẢO: Hễ có tin nhắn giữa 2 bên là hiển thị 100%, không lọc bỏ!
       const hasMessages = Boolean(latest && latest.text && String(latest.text).trim().length > 0);
-      const isConnected = isSystem || (peerUserId ? connectedUserIds.has(peerUserId) : false);
-
-      if (!isSystem && (!isConnected || !hasMessages)) {
+      if (!isSystem && !hasMessages) {
         continue;
       }
 
       const isOnline = isSystem ? true : (peerUserId ? (this.gateway?.isUserOnline(peerUserId) ?? false) : false);
+      const connInfo = peerUserId ? connMap.get(peerUserId.toLowerCase()) : null;
+      const isConnected = isSystem ? true : (connInfo?.status === 'accepted');
+      const connectionStatus = isSystem ? 'accepted' : (connInfo?.status || 'none');
+      const isPending = !isSystem && connInfo?.status === 'pending';
+      const isOutgoingPending = isPending && connInfo?.requesterId === userId.toLowerCase();
+      const isIncomingPending = isPending && connInfo?.requesterId !== userId.toLowerCase();
+      const isStranger = !isSystem && !isConnected;
 
       resList.push({
         peerCode: peer,
@@ -9215,8 +9344,16 @@ export class ConnectAppService implements OnModuleInit {
         avatarUrl: isSystem ? '/ceo1983-logo.png' : (avatarByCode.get(peer) ?? null),
         last: latest.text,
         time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
+        rawTime: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
         unread,
         isSystem,
+        isConnected,
+        connectionStatus,
+        isPending,
+        isOutgoingPending,
+        isIncomingPending,
+        isStranger,
+        connectionId: connInfo?.connectionId || null,
       });
     }
 
@@ -9227,17 +9364,25 @@ export class ConnectAppService implements OnModuleInit {
         avatarUrl: '/ceo1983-logo.png',
         last: '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]',
         time: new Date().toISOString(),
+        rawTime: new Date().toISOString(),
         unread: 1,
         isSystem: true,
         isOnline: true,
+        isConnected: true,
+        connectionStatus: 'accepted',
+        isPending: false,
+        isOutgoingPending: false,
+        isIncomingPending: false,
+        isStranger: false,
+        connectionId: null,
       });
     }
 
-    // Đưa thread hệ thống lên đầu tiên
+    // Đưa hội thoại có tin nhắn mới nhất lên đầu danh sách (giữ admin ở vị trí ưu tiên nếu cần)
     resList.sort((a, b) => {
       if (a.isSystem && !b.isSystem) return -1;
       if (!a.isSystem && b.isSystem) return 1;
-      return new Date(b.time).getTime() - new Date(a.time).getTime();
+      return new Date(b.rawTime || b.time).getTime() - new Date(a.rawTime || a.time).getTime();
     });
 
     return resList;
@@ -9249,14 +9394,25 @@ export class ConnectAppService implements OnModuleInit {
     const peer = peerCode.toLowerCase();
     const isSystem = peer === 'admin' || peer === 'system';
 
+    const isGroup = peer.startsWith('group_');
+
     const [rawMsgs, peerMem] = await Promise.all([
-      this.prisma.$queryRaw<any[]>`
-        SELECT id, from_id, to_id, text, created_at, read_at
-        FROM public.messages
-        WHERE (LOWER(from_id) = ${mine} AND LOWER(to_id) = ${peer})
-           OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine})
-        ORDER BY created_at ASC
-      `.catch((): any[] => []),
+      isGroup
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, from_id, to_id, text, created_at, read_at
+            FROM public.messages
+            WHERE LOWER(to_id) = ${peer}
+            ORDER BY created_at ASC
+          `.catch((): any[] => [])
+        : this.prisma.$queryRaw<any[]>`
+            SELECT id, from_id, to_id, text, created_at, read_at
+            FROM public.messages
+            WHERE (LOWER(from_id) = ${mine} AND LOWER(to_id) = ${peer})
+               OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine})
+               OR (LOWER(from_id) = LOWER(${userId}) AND LOWER(to_id) = ${peer})
+               OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = LOWER(${userId}))
+            ORDER BY created_at ASC
+          `.catch((): any[] => []),
       this.prisma.$queryRaw<any[]>`
         SELECT m.code, m.name, m.contact,
                COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as name,
@@ -9330,6 +9486,43 @@ export class ConnectAppService implements OnModuleInit {
     }
 
     return { ok: true, myCode };
+  }
+
+  async retractMemberMessage(userId: string, messageId: string) {
+    const myCode = await this.resolveMemberCodeForUser(userId);
+    const mine = myCode.toLowerCase();
+
+    const msgRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, from_id, to_id, text FROM public.messages WHERE id = ${messageId}::uuid LIMIT 1
+    `.catch(() => []);
+
+    if (msgRows.length > 0) {
+      if (String(msgRows[0].from_id).toLowerCase() !== mine) {
+        throw new ForbiddenException('cannot_retract_other_message');
+      }
+      await this.prisma.$executeRaw`
+        UPDATE public.messages
+        SET text = '[retracted]'
+        WHERE id = ${messageId}::uuid
+      `.catch(() => null);
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE public.messages
+        SET text = '[retracted]'
+        WHERE id::text = ${messageId} AND LOWER(from_id) = ${mine}
+      `.catch(() => null);
+    }
+
+    if (this.gateway && this.gateway.server) {
+      this.gateway.server.emit('dm:message_retracted', { messageId });
+      this.gateway.server.emit('dm:thread_updated', {});
+      this.gateway.server.emit('member:message_received', {
+        fromCode: mine,
+        retractedMessageId: messageId,
+      });
+    }
+
+    return { ok: true };
   }
 
   // ── Direct Messaging (1-1 Inbox) ──────────────────────────────────
@@ -9839,49 +10032,95 @@ export class ConnectAppService implements OnModuleInit {
       `.catch(() => []);
 
       if (rows.length === 0) {
-        return [
-          {
-            id: 'prod-ceo-1',
-            name: 'Giải pháp Chuyển đổi số Quản trị Doanh nghiệp ERP & CRM',
-            company: 'CLB Doanh Nhân CEO 1983 - Ban Công nghệ',
-            category: 'Công nghệ & Chuyển đổi số',
-            likes: 12,
-            views: 186,
-            time: new Date().toISOString(),
-          },
-          {
-            id: 'prod-ceo-2',
-            name: 'Dịch vụ Tư vấn Tái cấu trúc Tài chính & Thuế Doanh nghiệp',
-            company: 'CEO 1983 Finance Advisory',
-            category: 'Tài chính - Kế toán',
-            likes: 8,
-            views: 142,
-            time: new Date().toISOString(),
-          },
-          {
-            id: 'prod-ceo-3',
-            name: 'Hệ thống Quản lý Chuỗi Cung ứng & Logistics Quốc tế',
-            company: 'Viconnect Logistics Hub',
-            category: 'Vận tải & Kho bãi',
-            likes: 15,
-            views: 230,
-            time: new Date().toISOString(),
-          },
-        ];
+        return [];
       }
 
-      return rows.map((p) => ({
-        id: String(p.id),
-        name: p.title || p.name || 'Sản phẩm doanh nghiệp',
-        company: p.association_name || p.company || p.category || 'CLB Doanh Nhân CEO 1983',
-        category: p.category || 'Sản phẩm & Dịch vụ',
-        likes: Number(p.likes ?? 0),
-        views: Number(p.views ?? 0),
-        time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
-      }));
+      return rows.map((p) => {
+        const numPrice = Number(p.price || p.sale_price || p.cost || 0);
+        const formattedPrice = p.price_text || (numPrice > 0 ? `${numPrice.toLocaleString('vi-VN')} đ` : (p.price || 'Liên hệ báo giá'));
+        return {
+          id: String(p.id),
+          name: p.title || p.name || 'Sản phẩm doanh nghiệp',
+          company: p.association_name || p.company || p.category || 'CLB Doanh Nhân CEO 1983',
+          category: p.category || 'Sản phẩm & Dịch vụ',
+          likes: Number(p.likes ?? 0),
+          views: Number(p.views ?? 0),
+          time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
+          createdAt: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
+          imageUrl: (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls[0] : null) || p.image_url || p.image || null,
+          price: formattedPrice,
+          originalPrice: p.original_price ? `${Number(p.original_price).toLocaleString('vi-VN')} đ` : undefined,
+          memberPrice: p.member_discount_price || p.member_price ? `${Number(p.member_discount_price || p.member_price).toLocaleString('vi-VN')} đ` : undefined,
+          sellerId: p.seller_id ? String(p.seller_id) : undefined,
+        };
+      });
     } catch {
       return [];
     }
+  }
+
+  async createProduct(userId: string, data: any) {
+    const prodId = `PROD-${Date.now().toString(36).toUpperCase()}`;
+    await this.prisma.$executeRaw`
+      INSERT INTO public.products (
+        id, title, name, description, company, category,
+        price, original_price, member_price, image_url,
+        seller_id, status, created_at, updated_at
+      ) VALUES (
+        ${prodId}, ${data.name || 'Sản phẩm mới'}, ${data.name || 'Sản phẩm mới'},
+        ${data.description || ''}, ${data.company || 'Doanh nghiệp CEO 1983'}, ${data.category || 'Sản phẩm & Dịch vụ'},
+        ${data.price ? Number(data.price) : 0}, ${data.originalPrice ? Number(data.originalPrice) : null}, ${data.memberPrice ? Number(data.memberPrice) : null},
+        ${data.imageUrl || null}, ${userId}, 'active', now(), now()
+      )
+    `.catch(async () => {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.products (
+          id, title, description, price, image_url, seller_id, status, created_at, updated_at
+        ) VALUES (
+          ${prodId}, ${data.name || 'Sản phẩm mới'}, ${data.description || ''},
+          ${data.price ? Number(data.price) : 0}, ${data.imageUrl || null},
+          ${userId}, 'active', now(), now()
+        )
+      `;
+    });
+    return { ok: true, id: prodId };
+  }
+
+  async updateProduct(userId: string, productId: string, data: any) {
+    await this.prisma.$executeRaw`
+      UPDATE public.products
+      SET
+        title = COALESCE(${data.name}, title),
+        name = COALESCE(${data.name}, name),
+        description = COALESCE(${data.description}, description),
+        company = COALESCE(${data.company}, company),
+        category = COALESCE(${data.category}, category),
+        price = COALESCE(${data.price ? Number(data.price) : null}, price),
+        original_price = COALESCE(${data.originalPrice ? Number(data.originalPrice) : null}, original_price),
+        member_price = COALESCE(${data.memberPrice ? Number(data.memberPrice) : null}, member_price),
+        image_url = COALESCE(${data.imageUrl}, image_url),
+        updated_at = now()
+      WHERE id = ${productId}
+    `.catch(async () => {
+      await this.prisma.$executeRaw`
+        UPDATE public.products
+        SET
+          title = COALESCE(${data.name}, title),
+          description = COALESCE(${data.description}, description),
+          price = COALESCE(${data.price ? Number(data.price) : null}, price),
+          image_url = COALESCE(${data.imageUrl}, image_url),
+          updated_at = now()
+        WHERE id = ${productId}
+      `;
+    });
+    return { ok: true };
+  }
+
+  async deleteProduct(userId: string, productId: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.products WHERE id = ${productId}
+    `.catch(() => {});
+    return { ok: true };
   }
 
 
@@ -10532,6 +10771,96 @@ export class ConnectAppService implements OnModuleInit {
     };
   }
 
+  async checkClubRegistrationStatus(query: { phone?: string; email?: string }) {
+    const rawPhone = String(query?.phone || '').trim();
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+    const email = String(query?.email || '').trim().toLowerCase();
+
+    if (!cleanPhone && !email) {
+      return { found: false, message: 'Vui lòng cung cấp số điện thoại hoặc email để tra cứu' };
+    }
+
+    // 1. Check in public.members
+    try {
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, name, contact, phone, email, status, joined_at, created_at, user_id
+        FROM public.members
+        WHERE (${cleanPhone} != '' AND regexp_replace(phone, '\\D', '', 'g') = ${cleanPhone})
+           OR (${email} != '' AND LOWER(email) = ${email})
+        ORDER BY created_at DESC
+        LIMIT 1
+      `.catch(() => []);
+
+      if (memRows.length > 0) {
+        const m = memRows[0];
+        const status = (m.status || 'pending').toLowerCase();
+        const isApproved = status === 'active' || status === 'approved' || status === 'memberstatus.active';
+        const isRejected = status === 'rejected' || status === 'declined';
+        return {
+          found: true,
+          status: isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending'),
+          rawStatus: status,
+          isApproved,
+          hasAccount: Boolean(m.user_id),
+          name: m.contact || m.name,
+          company: m.name,
+          memberCode: m.code || m.id,
+          phone: m.phone,
+          email: m.email,
+          createdAt: m.created_at,
+          message: isApproved
+            ? 'Hồ sơ của Quý Doanh nhân đã được phê duyệt chính thức!'
+            : (isRejected
+                ? 'Hồ sơ cần bổ sung thông tin hoặc chưa đạt tiêu chuẩn thẩm định.'
+                : 'Hồ sơ đang chờ Ban Thư Ký CLB CEO 1983 thẩm định trong 24h.'),
+        };
+      }
+    } catch (e) {
+      console.warn('checkClubRegistrationStatus members query error:', e);
+    }
+
+    // 2. Check in public.demo_requests
+    try {
+      const demoRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, organization, phone, email, status, created_at
+        FROM public.demo_requests
+        WHERE (${cleanPhone} != '' AND regexp_replace(phone, '\\D', '', 'g') = ${cleanPhone})
+           OR (${email} != '' AND LOWER(email) = ${email})
+        ORDER BY created_at DESC
+        LIMIT 1
+      `.catch(() => []);
+
+      if (demoRows.length > 0) {
+        const d = demoRows[0];
+        const status = (d.status || 'new').toLowerCase();
+        const isApproved = status === 'approved' || status === 'contacted';
+        return {
+          found: true,
+          status: isApproved ? 'approved' : 'pending',
+          rawStatus: status,
+          isApproved,
+          hasAccount: false,
+          name: d.name,
+          company: d.organization,
+          memberCode: d.id,
+          phone: d.phone,
+          email: d.email,
+          createdAt: d.created_at,
+          message: isApproved
+            ? 'Hồ sơ của Quý Doanh nhân đã được phê duyệt chính thức!'
+            : 'Hồ sơ đang chờ Ban Thư Ký CLB CEO 1983 thẩm định trong 24h.',
+        };
+      }
+    } catch (e) {
+      console.warn('checkClubRegistrationStatus demo_requests query error:', e);
+    }
+
+    return {
+      found: false,
+      message: 'Không tìm thấy hồ sơ đăng ký với thông tin này. Vui lòng nộp hồ sơ mới.',
+    };
+  }
+
   /**
    * Universal Notification Dispatcher for Association Staff / CRM Admins
    * Creates records in public.notifications and public.business_notifications,
@@ -10889,23 +11218,33 @@ export class ConnectAppService implements OnModuleInit {
       return [];
     });
 
-    return rows.map((r) => ({
-      id: r.id,
-      sellerId: r.seller_id,
-      title: r.title,
-      description: r.description ?? '',
-      price: Number(r.price ?? 0),
-      category: r.category ?? 'mk.cat.other',
-      status: r.status ?? 'active',
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
-      views: Number(r.views ?? 0),
-      emoji: r.emoji ?? '🛍️',
-      pdfUrl: r.pdf_url ?? '',
-      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []),
-      websiteUrl: r.website_url ?? '',
-      facebookUrl: r.facebook_url ?? '',
-      associationId: r.association_id,
-    }));
+    return rows.map((r) => {
+      const imgList = Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []);
+      const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || null;
+      return {
+        id: r.id,
+        sellerId: r.seller_id,
+        title: r.title,
+        name: r.title,
+        description: r.description ?? '',
+        price: Number(r.price ?? 0),
+        originalPrice: r.original_price ? Number(r.original_price) : undefined,
+        memberPrice: r.member_price ? Number(r.member_price) : undefined,
+        category: r.category ?? 'mk.cat.other',
+        company: r.company || 'CLB Doanh Nhân CEO 1983',
+        status: r.status ?? 'active',
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+        time: r.created_at ? new Date(r.created_at).toISOString() : '',
+        views: Number(r.views ?? 0),
+        emoji: r.emoji ?? '🛍️',
+        pdfUrl: r.pdf_url ?? '',
+        imageUrls: imgList,
+        imageUrl: firstImg,
+        websiteUrl: r.website_url ?? '',
+        facebookUrl: r.facebook_url ?? '',
+        associationId: r.association_id,
+      };
+    });
   }
 
   async getMarketplaceProductById(id: string) {
@@ -10960,32 +11299,57 @@ export class ConnectAppService implements OnModuleInit {
   async createMarketplaceProduct(userId: string, data: any) {
     const id = data.id || `prod-${Date.now()}`;
     const sellerId = data.sellerId || userId;
-    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : [];
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(sellerId));
+    const sellerUuid = isUuid ? String(sellerId) : null;
+    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : []);
+    const firstImage = imageUrls[0] || data.imageUrl || data.image || null;
+    const company = data.company || null;
+    const originalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : Number(data.price ?? 0);
+    const memberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : Number(data.price ?? 0);
+
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.products (
-        id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, website_url, facebook_url, association_id, created_at, updated_at
+        id, seller_id, title, description, price, original_price, member_price, category, status, views, emoji, pdf_url, image_urls, image_url, company, website_url, facebook_url, association_id, created_at, updated_at
       ) VALUES (
-        ${id}, ${sellerId}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+        ${id}, ${sellerUuid}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+        ${originalPrice}, ${memberPrice},
         ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
-        ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+        ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${firstImage}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
         ${data.associationId ? data.associationId : 'c1983000-0000-4000-8000-000000001983'}::uuid, NOW(), NOW()
       )
       RETURNING *
-    `;
-    const r = rows[0];
+    `.catch(async (err) => {
+      console.warn('createMarketplaceProduct primary insert failed, using fallback:', err?.message);
+      return this.prisma.$queryRaw<any[]>`
+        INSERT INTO public.products (
+          id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, website_url, facebook_url, association_id, created_at, updated_at
+        ) VALUES (
+          ${id}, ${sellerUuid}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+          ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
+          ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+          ${data.associationId ? data.associationId : 'c1983000-0000-4000-8000-000000001983'}::uuid, NOW(), NOW()
+        )
+        RETURNING *
+      `.catch(() => [] as any[]);
+    });
+    const r = rows[0] || {};
     return {
-      id: r.id,
+      id: r.id || id,
       sellerId: r.seller_id,
-      title: r.title,
+      title: r.title || data.title,
       description: r.description ?? '',
       price: Number(r.price ?? 0),
+      originalPrice,
+      memberPrice,
       category: r.category ?? 'mk.cat.other',
       status: r.status ?? 'active',
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       views: 0,
       emoji: r.emoji ?? '🛍️',
       pdfUrl: r.pdf_url ?? '',
-      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : [],
+      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (firstImage ? [firstImage] : []),
+      imageUrl: firstImage,
+      company: company || r.company || 'CLB Doanh Nhân CEO 1983',
       websiteUrl: r.website_url ?? '',
       facebookUrl: r.facebook_url ?? '',
     };
@@ -11075,31 +11439,95 @@ export class ConnectAppService implements OnModuleInit {
 
   async requestProductQuote(userId: string, data: any) {
     const id = `quote-${Date.now()}`;
-    const rows = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.quote_requests (
-        id, product_id, buyer_id, quantity, message, contact, status, reminder_count, created_at, updated_at
-      ) VALUES (
-        ${id}, ${data.productId}, ${userId}::uuid, ${Number(data.quantity ?? 1)},
-        ${data.message ?? ''}, ${data.contact ?? ''}, 'sent', 0, NOW(), NOW()
-      )
-      RETURNING *
-    `;
+    let q: any = {
+      id,
+      product_id: data.productId,
+      buyer_id: userId,
+      quantity: Number(data.quantity ?? 1),
+      message: data.message ?? '',
+      contact: data.contact ?? '',
+      status: 'sent',
+      reminder_count: 0,
+      created_at: new Date(),
+    };
 
-    // 2-Way Notification: Push to product seller (both ViOne & Association App)
     try {
-      const prodRows = await this.prisma.$queryRaw<any[]>`
-        SELECT p.title, p.seller_id, m.user_id as seller_user_id, m.id as member_id
+      const rows = await this.prisma.$queryRaw<any[]>`
+        INSERT INTO public.quote_requests (
+          id, product_id, buyer_id, quantity, message, contact, status, reminder_count, created_at, updated_at
+        ) VALUES (
+          ${id}, ${data.productId}, ${userId}::uuid, ${Number(data.quantity ?? 1)},
+          ${data.message ?? ''}, ${data.contact ?? ''}, 'sent', 0, NOW(), NOW()
+        )
+        RETURNING *
+      `;
+      if (rows && rows.length > 0) q = rows[0];
+    } catch (e: any) {
+      console.warn('Fallback quote insert:', e?.message);
+    }
+
+    // 1. Query buyer info for CRM Lead
+    let buyerName = 'Hội viên CEO 1983';
+    let buyerPhone = data.contact || '';
+    try {
+      const buyerRows = await this.prisma.$queryRaw<any[]>`
+        SELECT name, phone, email FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      if (buyerRows.length > 0) {
+        buyerName = buyerRows[0].name || buyerName;
+        buyerPhone = buyerPhone || buyerRows[0].phone || '';
+      }
+    } catch {}
+
+    // 2. Query product & seller info
+    let prodRows: any[] = [];
+    let prodTitle = 'Sản phẩm Marketplace';
+    let assocId = 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d';
+    try {
+      prodRows = await this.prisma.$queryRaw<any[]>`
+        SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id
         FROM public.products p
         LEFT JOIN public.members m ON (m.user_id = p.seller_id OR m.id::text = p.seller_id::text)
         WHERE p.id = ${data.productId} LIMIT 1
       `.catch(() => []);
+      if (prodRows.length > 0) {
+        prodTitle = prodRows[0].title || prodTitle;
+        if (prodRows[0].association_id) assocId = prodRows[0].association_id;
+      }
+    } catch {}
 
+    // 3. PUSH TO CRM SYSTEM: Dispatch to Association Staff / CRM Notification Center
+    try {
+      await this.notifyAssociationAdmins(assocId, {
+        title: `[CRM Báo giá] Yêu cầu báo giá mới: ${prodTitle}`,
+        body: `Khách hàng/Hội viên ${buyerName} (SĐT: ${buyerPhone || 'Chưa cung cấp'}) gửi yêu cầu báo giá cho sản phẩm "${prodTitle}" (SL: ${data.quantity ?? 1}). Ghi chú: "${(data.message || '').slice(0, 120)}"`,
+        targetRoute: '/marketplace',
+        type: 'crm_quote_lead',
+        sourceRecordId: id,
+        meta: {
+          leadType: 'quote_request',
+          buyerId: userId,
+          buyerName,
+          buyerPhone,
+          productId: data.productId,
+          productTitle: prodTitle,
+          quantity: data.quantity ?? 1,
+          message: data.message,
+          contact: data.contact,
+        },
+      });
+    } catch (crmErr: any) {
+      console.warn('CRM quote notification dispatch error:', crmErr?.message);
+    }
+
+    // 4. 2-Way Notification: Push to product seller (both ViOne & Association App)
+    try {
       if (prodRows.length > 0 && prodRows[0].seller_id) {
         const prod = prodRows[0];
         const targetUserId = prod.seller_user_id || prod.seller_id;
         const targetMemberId = prod.member_id || prod.seller_id;
         const notifTitle = 'Yêu cầu báo giá mới trên Marketplace';
-        const notifBody = `Sản phẩm "${prod.title}" của bạn vừa nhận được yêu cầu báo giá (${data.quantity ?? 1} sản phẩm): "${(data.message || '').slice(0, 100)}"`;
+        const notifBody = `Sản phẩm "${prod.title}" của bạn vừa nhận được yêu cầu báo giá (${data.quantity ?? 1} sản phẩm) từ ${buyerName} (SĐT: ${buyerPhone}): "${(data.message || '').slice(0, 100)}"`;
         const notifId = require('crypto').randomUUID();
         const safeData = JSON.stringify({
           title: notifTitle,
@@ -11109,7 +11537,7 @@ export class ConnectAppService implements OnModuleInit {
           targetRoute: `/marketplace`,
         });
 
-        // 1. business_notifications (ViOne connect app)
+        // business_notifications
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
@@ -11120,7 +11548,7 @@ export class ConnectAppService implements OnModuleInit {
           )
         `, notifId, targetUserId, id, notifTitle, notifBody, safeData, `quote-req-${id}`).catch(() => {});
 
-        // 2. member_notifications (Association member app)
+        // member_notifications
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
@@ -11139,10 +11567,9 @@ export class ConnectAppService implements OnModuleInit {
         });
       }
     } catch (e: any) {
-      console.warn('Failed to send quote notification:', e?.message);
+      console.warn('Failed to send seller quote notification:', e?.message);
     }
 
-    const q = rows[0];
     return {
       id: q.id,
       productId: q.product_id,

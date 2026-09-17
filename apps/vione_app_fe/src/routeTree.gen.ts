@@ -186,6 +186,8 @@ import { Route as MRenewPayRouteImport } from './routes/m.renew.pay'
 import { Route as MRenewHistoryRouteImport } from './routes/m.renew.history'
 import { Route as MRenewAuditRouteImport } from './routes/m.renew.audit'
 import { Route as MPerksIdRouteImport } from './routes/m.perks.$id'
+import { Route as LandingCeo1983CinematicRouteImport } from './routes/landing.ceo1983.cinematic'
+import { Route as LandingCeoV1RouteImport } from './routes/landing.ceo.v1'
 import { Route as ConnectNetworkNotificationsRouteImport } from './routes/connect.network.notifications'
 import { Route as ConnectNetworkConnectionsRouteImport } from './routes/connect.network.connections'
 import { Route as ConnectMeetingsSectionRouteImport } from './routes/connect.meetings.$section'
@@ -1137,6 +1139,16 @@ const MPerksIdRoute = MPerksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MPerksRoute,
 } as any)
+const LandingCeo1983CinematicRoute = LandingCeo1983CinematicRouteImport.update({
+  id: '/cinematic',
+  path: '/cinematic',
+  getParentRoute: () => LandingCeo1983Route,
+} as any)
+const LandingCeoV1Route = LandingCeoV1RouteImport.update({
+  id: '/ceo/v1',
+  path: '/ceo/v1',
+  getParentRoute: () => LandingRoute,
+} as any)
 const ConnectNetworkNotificationsRoute =
   ConnectNetworkNotificationsRouteImport.update({
     id: '/notifications',
@@ -1555,7 +1567,7 @@ export interface FileRoutesByFullPath {
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
   '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983Route
+  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1628,6 +1640,8 @@ export interface FileRoutesByFullPath {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/landing/ceo/v1': typeof LandingCeoV1Route
+  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -1763,7 +1777,7 @@ export interface FileRoutesByTo {
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
   '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983Route
+  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1833,6 +1847,8 @@ export interface FileRoutesByTo {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/landing/ceo/v1': typeof LandingCeoV1Route
+  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -1989,7 +2005,7 @@ export interface FileRoutesById {
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
   '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983Route
+  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -2062,6 +2078,8 @@ export interface FileRoutesById {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/landing/ceo/v1': typeof LandingCeoV1Route
+  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -2296,6 +2314,8 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/landing/ceo/v1'
+    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -2501,6 +2521,8 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/landing/ceo/v1'
+    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -2729,6 +2751,8 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/landing/ceo/v1'
+    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -4095,6 +4119,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MPerksIdRouteImport
       parentRoute: typeof MPerksRoute
     }
+    '/landing/ceo1983/cinematic': {
+      id: '/landing/ceo1983/cinematic'
+      path: '/cinematic'
+      fullPath: '/landing/ceo1983/cinematic'
+      preLoaderRoute: typeof LandingCeo1983CinematicRouteImport
+      parentRoute: typeof LandingCeo1983Route
+    }
+    '/landing/ceo/v1': {
+      id: '/landing/ceo/v1'
+      path: '/ceo/v1'
+      fullPath: '/landing/ceo/v1'
+      preLoaderRoute: typeof LandingCeoV1RouteImport
+      parentRoute: typeof LandingRoute
+    }
     '/connect/network/notifications': {
       id: '/connect/network/notifications'
       path: '/notifications'
@@ -4983,18 +5021,32 @@ const FeesRouteChildren: FeesRouteChildren = {
 
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
+interface LandingCeo1983RouteChildren {
+  LandingCeo1983CinematicRoute: typeof LandingCeo1983CinematicRoute
+}
+
+const LandingCeo1983RouteChildren: LandingCeo1983RouteChildren = {
+  LandingCeo1983CinematicRoute: LandingCeo1983CinematicRoute,
+}
+
+const LandingCeo1983RouteWithChildren = LandingCeo1983Route._addFileChildren(
+  LandingCeo1983RouteChildren,
+)
+
 interface LandingRouteChildren {
   LandingBusinessConnectRoute: typeof LandingBusinessConnectRoute
   LandingBussinessConnectRoute: typeof LandingBussinessConnectRoute
-  LandingCeo1983Route: typeof LandingCeo1983Route
+  LandingCeo1983Route: typeof LandingCeo1983RouteWithChildren
   LandingIndexRoute: typeof LandingIndexRoute
+  LandingCeoV1Route: typeof LandingCeoV1Route
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
   LandingBusinessConnectRoute: LandingBusinessConnectRoute,
   LandingBussinessConnectRoute: LandingBussinessConnectRoute,
-  LandingCeo1983Route: LandingCeo1983Route,
+  LandingCeo1983Route: LandingCeo1983RouteWithChildren,
   LandingIndexRoute: LandingIndexRoute,
+  LandingCeoV1Route: LandingCeoV1Route,
 }
 
 const LandingRouteWithChildren =

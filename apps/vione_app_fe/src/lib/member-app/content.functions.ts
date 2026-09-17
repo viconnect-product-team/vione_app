@@ -13,7 +13,16 @@ export type NewsItem = {
   excerpt: string;
   time: string;
   views: number;
+  image?: string;
 };
+
+const DEFAULT_NEWS_IMAGES = [
+  "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=80",
+];
 
 export const listNews = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
@@ -21,7 +30,7 @@ export const listNews = createServerFn({ method: "GET" })
     try {
       const token = context?.token;
       const items = await fetchNestApiFromServer<any[]>("/content/news", token);
-      return (items ?? []).map((n: any) => ({
+      return (items ?? []).map((n: any, idx: number) => ({
         id: n.id,
         title: n.title,
         category: n.category ?? "",
@@ -29,6 +38,7 @@ export const listNews = createServerFn({ method: "GET" })
         excerpt: n.excerpt ?? "",
         time: relTime(n.time || n.created_at || n.createdAt),
         views: n.views ?? 0,
+        image: n.image || n.thumbnail || n.cover_url || n.cover_image || DEFAULT_NEWS_IMAGES[idx % DEFAULT_NEWS_IMAGES.length],
       }));
     } catch {
       return [];

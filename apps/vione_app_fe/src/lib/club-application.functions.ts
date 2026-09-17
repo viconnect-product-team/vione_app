@@ -46,3 +46,38 @@ export const submitClubApplication = createServerFn({ method: "POST" })
     }
   });
 
+const checkStatusSchema = z.object({
+  phone: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+});
+
+export const checkClubRegistrationStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => checkStatusSchema.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const res = await fetchNestApiFromServer<{
+        found?: boolean;
+        status?: "pending" | "approved" | "rejected";
+        isApproved?: boolean;
+        hasAccount?: boolean;
+        name?: string;
+        company?: string;
+        memberCode?: string;
+        phone?: string;
+        email?: string;
+        message?: string;
+      }>("/public/club-registration/status", null, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      return res || { found: false, message: "Không tìm thấy hồ sơ" };
+    } catch (err: any) {
+      console.error("[checkClubRegistrationStatus] API error:", err);
+      return {
+        found: false,
+        message: "Không thể kết nối máy chủ để kiểm tra trạng thái",
+      };
+    }
+  });
+

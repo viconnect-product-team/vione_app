@@ -17,5 +17,14 @@ yarn-error.log*
 document/
 *.docx
 *.tar
+*.tar.gz
+*.apk
+release_apk/
 apps/mobile
+apps/mobile_vione
+apps/mobile_ceo1983
 .npmrc
+.tanstack
+**/.tanstack
+scratch/
+*.log

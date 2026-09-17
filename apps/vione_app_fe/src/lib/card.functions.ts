@@ -22,9 +22,9 @@ const DEFAULTS: CardSettings = {
   showName: true,
   showCompany: true,
   showPhoto: true,
-  showEmail: false,
-  showPhone: false,
-  showAddress: false,
+  showEmail: true,
+  showPhone: true,
+  showAddress: true,
 };
 
 export const getCardSettings = createServerFn({ method: "GET" })

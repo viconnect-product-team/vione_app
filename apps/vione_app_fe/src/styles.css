@@ -1,5 +1,5 @@
 @import "tailwindcss" source(none);
-@source "../src";
+@source "../src/**/*.{ts,tsx,js,jsx,html}";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -59,6 +59,19 @@
   --gradient-primary: linear-gradient(135deg, oklch(0.45 0.22 270), oklch(0.55 0.2 290));
   --gradient-sidebar: linear-gradient(180deg, oklch(0.22 0.06 265), oklch(0.18 0.05 265));
   --gradient-card: linear-gradient(135deg, oklch(0.55 0.2 285), oklch(0.45 0.22 270));
+}
+
+@keyframes subtle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-subtle-bounce {
+  animation: subtle-bounce 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 :root {

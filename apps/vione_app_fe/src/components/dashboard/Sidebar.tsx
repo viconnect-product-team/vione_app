@@ -113,7 +113,6 @@ const businessConnect: Item[] = [
   },
 ];
 const system: Item[] = [
-  { key: "nav.myperm", icon: ShieldCheck, to: "/my-permissions" },
   { key: "nav.settings", icon: Settings, to: "/settings" },
   { key: "nav.activity", icon: History, to: "/activity" },
 ];
@@ -265,8 +264,21 @@ export function Sidebar({
   mobile = false,
   onNavigate,
 }: { mobile?: boolean; onNavigate?: () => void } = {}) {
-  const t = useT();
-  const { isPlatformAdmin, isAdmin } = useRole();
+  const { isPlatformAdmin, isAdmin, roles } = useRole();
+  const isTongThuKy = roles.some((r) => String(r) === "tong_thu_ky");
+  const isBanThanhVien = roles.some((r) => String(r) === "truong_ban_thanh_vien");
+  const isBanTaiChinh = roles.some((r) => String(r) === "truong_ban_tai_chinh");
+  const isBanTruyenThong = roles.some((r) => String(r) === "truong_ban_truyen_thong");
+  const isBanXucTien = roles.some((r) => String(r) === "truong_ban_xuc_tien");
+
+  // Scoped permissions according to the permission matrix:
+  const canViewMembers = isPlatformAdmin || isAdmin || isTongThuKy || isBanThanhVien;
+  const canViewEvents = isPlatformAdmin || isAdmin || isTongThuKy || isBanTruyenThong || isBanXucTien;
+  const canViewSponsors = isPlatformAdmin || isAdmin || isTongThuKy || isBanTaiChinh;
+  const canViewFinance = isPlatformAdmin || isAdmin || isTongThuKy || isBanTaiChinh;
+  const canViewComm = isPlatformAdmin || isAdmin || isTongThuKy || isBanTruyenThong;
+  const canViewGovernance = isPlatformAdmin || isAdmin || isTongThuKy || isBanThanhVien;
+
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
 
   const fetchMine = useServerFn(listMyAssociationsFn);
@@ -415,49 +427,61 @@ export function Sidebar({
           collapsed={isCollapsed}
           onNavigate={onNavigate}
         />
-        <Group
-          label="nav.group.members"
-          items={members}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.events"
-          items={events}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.sponsors"
-          items={sponsors}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.finance"
-          items={finance}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.comm"
-          items={comm}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-          badges={badges}
-        />
-        <Group
-          label="nav.group.governance"
-          items={governance}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
+        {canViewMembers && (
+          <Group
+            label="nav.group.members"
+            items={members}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewEvents && (
+          <Group
+            label="nav.group.events"
+            items={events}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewSponsors && (
+          <Group
+            label="nav.group.sponsors"
+            items={sponsors}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewFinance && (
+          <Group
+            label="nav.group.finance"
+            items={finance}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewComm && (
+          <Group
+            label="nav.group.comm"
+            items={comm}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+            badges={badges}
+          />
+        )}
+        {canViewGovernance && (
+          <Group
+            label="nav.group.governance"
+            items={governance}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
         <Group
           label="nav.group.network"
           items={network}

@@ -30,6 +30,7 @@ import {
 import { useT } from "@/lib/i18n";
 import { extractScanCode } from "@/lib/scan";
 import { extractNdefPayload, type NdefReadingEventLike } from "@/hooks/use-nfc-scanner";
+import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
@@ -125,15 +126,31 @@ function CheckinScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Real QR (camera) + NFC scanning ---
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const qrControls = useRef<{ stop: () => void } | null>(null);
+  // --- Real QR (camera via useQrScanner) + NFC scanning ---
   const nfcAbort = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const { videoRef, status: qrStatus, scanImageFile } = useQrScanner({
+    active: scanning && mode === "qr",
+    onDetect: (val) => {
+      void handlePayload(val);
+    },
+  });
+
+  useEffect(() => {
+    if (qrStatus === "denied") {
+      setError(t("m.checkin.cameraError") + " — Camera bị chặn, vui lòng cấp quyền trong cài đặt trình duyệt.");
+      setScanning(false);
+    } else if (qrStatus === "unsupported") {
+      setError("Trình duyệt không hỗ trợ truy cập camera.");
+      setScanning(false);
+    } else if (qrStatus === "error") {
+      setError(t("m.checkin.cameraError"));
+      setScanning(false);
+    }
+  }, [qrStatus, t]);
+
   const stopScan = useCallback(() => {
-    qrControls.current?.stop();
-    qrControls.current = null;
     try {
       nfcAbort.current?.abort();
     } catch {
@@ -225,73 +242,7 @@ function CheckinScreen() {
     setError(null);
     setResult(null);
     if (mode === "qr") {
-      // 1. Check camera permission trước
-      try {
-        if (navigator.permissions) {
-          const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
-          if (perm.state === "denied") {
-            setError(t("m.checkin.cameraError") + " — Camera bị chặn, vui lòng cấp quyền trong cài đặt trình duyệt.");
-            setScanning(false);
-            return;
-          }
-        }
-      } catch {
-        /* permissions API không khả dụng — tiếp tục thử */
-      }
-
-      // 2. Thử lấy stream camera sau (environment) trước
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-      } catch {
-        try {
-          // Fallback: camera bất kỳ
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        } catch {
-          setError(t("m.checkin.cameraError"));
-          setScanning(false);
-          return;
-        }
-      }
-
-      // 3. Attach stream vào video element
-      if (videoRef.current && stream) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute("playsinline", "true");
-        try {
-          await videoRef.current.play();
-        } catch {
-          /* Autoplay restriction — user will tap */
-        }
-      }
-
-      try {
-        const { BrowserQRCodeReader } = await import("@zxing/browser");
-        const reader = new BrowserQRCodeReader();
-        const controls = await reader.decodeFromVideoElement(videoRef.current!, (res, _err) => {
-          if (res) void handlePayload(res.getText());
-        });
-        qrControls.current = {
-          stop: () => {
-            controls.stop();
-            // Stop camera tracks to release camera indicator
-            if (videoRef.current?.srcObject) {
-              const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-              tracks.forEach((t) => t.stop());
-              videoRef.current.srcObject = null;
-            }
-          },
-        };
-        setScanning(true);
-      } catch {
-        // Stop stream on failure
-        if (stream) stream.getTracks().forEach((t) => t.stop());
-        setError(t("m.checkin.cameraError"));
-        setScanning(false);
-      }
+      setScanning(true);
     } else {
       if (typeof window === "undefined") {
         setError(t("m.checkin.nfcNotSupported"));

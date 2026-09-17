@@ -9,12 +9,21 @@ export type MyOpportunity = {
   title: string;
   company: string;
   time: string;
-  color: string;
+  color?: string;
   interested: boolean;
   posterId?: string;
   posterCode?: string;
   posterName?: string;
   posterCompany?: string;
+  image?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
+  contactTitle?: string | null;
+  description?: string;
+  value?: string;
+  estimatedValue?: number;
+  budgetMin?: number;
+  budgetMax?: number;
 };
 
 // ---------- Opportunities ----------

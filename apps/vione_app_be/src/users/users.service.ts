@@ -134,6 +134,21 @@ export class UsersService {
       console.error('Failed to sync user to auth.users:', err);
     });
 
+    // Auto-link to approved member in public.members if matching phone or email
+    const cleanPhone = (newUser.username || '').replace(/\D/g, '');
+    const userEmail = (newUser.email || '').toLowerCase().trim();
+    if (cleanPhone || userEmail) {
+      await this.prisma.$executeRaw`
+        UPDATE public.members
+        SET user_id = ${newUser.id}::uuid, updated_at = now()
+        WHERE user_id IS NULL
+          AND (
+            (${cleanPhone} != '' AND regexp_replace(phone, '\\D', '', 'g') = ${cleanPhone})
+            OR (${userEmail} != '' AND LOWER(email) = ${userEmail})
+          )
+      `.catch((e) => console.warn('Could not auto-link member:', e));
+    }
+
     return newUser;
   }
 
@@ -371,6 +386,31 @@ export class UsersService {
       success: true,
       message: 'Mật khẩu đã được thay đổi thành công',
     };
+  }
+
+  async deactivateAccount(userId: string, password?: string) {
+    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+    if (user.password && password) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        throw new BadRequestException('Mật khẩu xác nhận không chính xác');
+      }
+    }
+    await this.prisma.user_profiles.upsert({
+      where: { user_id: userId },
+      create: {
+        user_id: userId,
+        account_status: 'deactivated',
+      },
+      update: {
+        account_status: 'deactivated',
+        updated_at: new Date(),
+      },
+    });
+    return { success: true, message: 'Tài khoản đã được vô hiệu hóa thành công' };
   }
 
   // ── ADMIN USER MANAGEMENT METHODS ───────────────────────────────────────

@@ -71,6 +71,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng CEO 1983 cần truy cập máy ảnh để quét mã QR hội viên và chụp ảnh đại diện.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng CEO 1983 cần truy cập thư viện ảnh để tải lên ảnh đại diện và tài liệu hội viên.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

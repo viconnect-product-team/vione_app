@@ -26,16 +26,75 @@
 - **Asset/Avatar Paths**: Always use relative URLs (e.g. `/api/public/...`) instead of absolute URLs containing `window.location.origin` to ensure assets work across different domains, ports, and subnets.
 - **Vite & PWA Plugins**: Do NOT add manual Vite or PWA plugins to `apps/web/vite.config.ts` unless extending. The preset `@lovable.dev/vite-tanstack-config` already manages these; duplicate declarations break the build.
 - **Cookie Security**: When setting auth cookies, the `secure` flag must only be attached if the current protocol is HTTPS (`window.location.protocol === 'https:'`). Bypassing this is required to allow auth sessions to be saved when accessing Server Dev over HTTP.
+- **CEO 1983 Brand Identity, Namecard & Landing Architecture**:
+  - Header & Card Visit: Logo sử dụng hình số 8 3D kết hợp chữ "CEO" Navy và "1983" Cam (`/ceo1983-official-logo.png`). Mặt trước danh thiếp theo Brandbook Namecard (`Ung_dung-namecard-1024x576.png`): gỡ bỏ hoàn toàn text tên CLB và link ở góc trên trái, logo đặt góc trên phải, tên hội viên Navy in hoa đậm, chức danh màu cam `#EA580C`. Mặt sau danh thiếp chuẩn nền xanh hoàng gia `#24357B`, logo trắng `/brand-header-logo-white.png`, khẩu hiệu cam `#FFA500` "Gắn kết bền - Phát triển vững" và vòng tròn đồng tâm.
+  - Landing Page CEO 1983 (`/landing/ceo/v1`, `/landing/ceo1983/cinematic`): Trải nghiệm Cuộn Điện Ảnh Liên Tục (Immersive Cinematic Scroll Experience) xuyên qua 6 phân cảnh (01 Sky ☀️, 02 Birds, 03 Kites, 04 Villas [20-25% chiều cao chân trời đáy], 05 Water [hồ bơi vô cực khổng lồ & camera đâm xuyên mặt nước], 06 Underwater [đại dương 3D, cá mập bơi tầng sâu, 4 đài tháp ánh sáng lãnh đạo Monolith, thông điệp thương hiệu & Master CTA]). TUYỆT ĐỐI KHÔNG dùng template 4-card lặp lại, icon grid hay corporate SaaS blocks. CẤM dùng từ 'diều', 'cá' trong toàn bộ văn bản/tiêu đề; bảo tồn 100% câu từ doanh nhân chuẩn mực từ `ceo1983.com`. Tông màu thanh lịch Trắng ngọc trai, Xanh da trời nhạt (`#EFF6FF`, `#E0F2FE`) và Vàng kim sang trọng (`#D97706`). Tích hợp Menu danh mục tại Header và Floating Scroll Pill Bar cố định ở đáy theo dõi vị trí cuộn (Scroll-Spy).
+  - Mobile App CEO 1983 APK & Native Camera Scanner: `apps/mobile_ceo1983/` kết nối trực tiếp phân hệ `/association` (`server.url = 'http://14.225.217.232:5002/association'`). Để giải quyết triệt để rào cản hạn chế camera WebRTC trên HTTP của Chromium WebView, app tích hợp trực tiếp **Google Play Services Code Scanner** (`com.google.android.gms:play-services-code-scanner:16.1.0`) ở tầng Android Native thông qua `NativeBridge` trong `MainActivity.java` và `@JavascriptInterface window.AndroidNative.scanQr()`. Khi bấm Quét QR, app kích hoạt trực tiếp máy quét phần cứng của Google (auto-zoom, bắt nét siêu nhạy 60fps, không bị chặn bởi HTTPS trình duyệt) và đẩy kết quả quét trực tiếp về React Modal (`AssociationMemberQrModal.tsx`). Cấu hình `cleartext: true` và `allowNavigation: ['14.225.217.232*', 'ceo1983.com*']` đảm bảo kết nối thông suốt với API backend. Toàn bộ launcher icon giữ Safe Margin 20% (logo chiếm 58-68% canvas) thanh thoát, không chạm viền trên One UI / Android.
+  - Modal Quét QR Căn Giữa 100% Trên Mobile: Mọi modal quét QR (`AssociationMemberQrModal`, `AssociationQrScanModal`) BẮT BUỘC render qua React Portal `createPortal(modalContent, document.body)` với cấu trúc lưới căn giữa fail-safe: container ngoài `fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] bg-black/80 backdrop-blur-md p-4 overflow-y-auto overscroll-contain pt-[max(env(safe-area-inset-top,0px),16px)] pb-[max(env(safe-area-inset-bottom,0px),16px)]` và hộp thoại bên trong `relative w-full max-w-sm my-auto max-h-[88dvh] flex flex-col`. Cấu trúc này triệt tiêu hoàn toàn hiện tượng lệch tâm dọc/ngang trên mobile Safari / Capacitor WebView.
+  - Nhắn Tin & Tạo Nhóm Chat Chuẩn Facebook Messenger 100% (`CreateGroupChatModal.tsx`, `GroupMembersModal.tsx`, `association.messages.tsx`):
+    - **Nút Tạo Nhóm Nhanh**: Đặt nút "Tạo nhóm" tròn bên cạnh "Nhắn mới" ở thanh hoạt động trên cùng; nút "Tạo đoạn chat nhóm" trong modal Tin nhắn mới; và nút CTA "Tạo nhóm chat ngay" ở empty state của Tab "Nhóm".
+    - **Modal Tạo Nhóm Messenger UX (`CreateGroupChatModal`)**: Hỗ trợ chọn Avatar/Emoji nhóm (👥, 🚀, 💼, 💎), tên nhóm gợi ý nhanh (Ban Chấp Hành, Dự Án Đầu Tư, v.v.), tìm kiếm thành viên hiệp hội theo thời gian thực, carousel chip thành viên đã chọn với nút xóa (x) nhanh và danh sách thành viên kèm checkbox tròn hiệu ứng động.
+    - **Thread Chat Nhóm (`ChatThread`)**: Hiển thị Avatar emoji và tên nhóm kèm nhãn "Nhóm", phụ đề số lượng thành viên bấm vào để mở ngay `GroupMembersModal`; Header có nút "Thành viên" xem roster sheet toàn bộ thành viên; tin nhắn tạo nhóm hiển thị dạng pill thông báo hệ thống căn giữa `[system]`; tắt bỏ cảnh báo tin nhắn chờ đối với nhóm chat.
+    - **Lưu Trữ & Đồng Bộ Nhóm**: Đồng bộ song song qua `vba.group_conversations` và `vba.recent_conversations` ở localStorage, đồng thời API Backend `connect-app.service.ts` hỗ trợ truy vấn `LOWER(to_id) = ${peer}` khi peer bắt đầu bằng `group_`.
+  - Đồng Bộ Đăng Sản Phẩm & Cơ Hội B2B Lên Web CRM: Modal Đăng sản phẩm (`association.products.tsx`) bắt buộc có 4 trường giá & đơn vị (Giá niêm yết, Giá ưu đãi VIP, Đơn vị tính, Tiền tệ) gọi `POST /marketplace/products`. Modal Đăng cơ hội (`association.opportunities.tsx`) bắt buộc có đầy đủ trường Deal CRM (Loại cơ hội, Ngân sách min/max, Ngành nghề, Khu vực, Hạn chót) gọi `POST /opportunities`. Dữ liệu đăng từ mobile lập tức hiển thị đồng bộ trên hệ thống Web CRM.
+  - Fast Deploy Wrapper (`fast-deploy.ps1`): Mặc định điều hướng triển khai hệ thống CLB CEO 1983 (Port 5002/5003). Hỗ trợ `-Target vione` cho ViOne Connect (Port 5000/5001).
+  - Favicon & App Icon: Sử dụng biểu tượng số 8 thon gọn chính thức từ Brandbook (`/brand-favicon-64.png` và `/brand-favicon-192.png`).
+  - QR Code Integration: Không hiển thị mã QR trực tiếp trên cover banner hay thẻ gây rối mắt; thống nhất sử dụng nút "Mã QR" mở modal 2 tab (`AssociationMemberQrModal` gồm Tab 1: Mã QR của tôi & Tab 2: Quét QR camera WebRTC).
+  - Landing Page Application Modal 3 Trạng Thái & Onboarding (`Ceo1983CinematicInteractiveWorldLanding.tsx`): Sau khi gửi đăng ký hồ sơ VIP, modal tuyệt đối không được tự ý đóng mà tự động chuyển sang Tab 2 theo dõi trạng thái. Cho phép tra cứu trạng thái bằng Số điện thoại: 1) Chờ phê duyệt (vàng), 2) Đã phê duyệt (xanh lục, mở form tạo tài khoản hội viên gồm Username/SĐT, Password, Confirm Password, tự động gọi `/auth/register` + `/auth/login` và chuyển thẳng vào `/association`), 3) Cần bổ sung / Từ chối (đỏ kèm lý do từ CRM và nút nộp lại).
+  - Quyền Riêng Tư Khi Quét QR & Chạm NFC (`AssociationQrScanModal.tsx`, `business-card.service.ts`): Khi quét QR hoặc chạm NFC, chỉ hiển thị ảnh đại diện và các trường thông tin đối tác cho phép hiển thị trong Cài đặt riêng tư (`card_settings`). Bất kỳ trường nào bị tắt công khai phải hiển thị thông báo "Đã ẩn theo cài đặt riêng tư".
+  - Popup Nhận Yêu Cầu Kết Nối Tức Thời (`IncomingConnectionModal.tsx`, `connect-app.gateway.ts`): Khi tài khoản A gửi yêu cầu kết nối tới tài khoản B, app của B phải lập tức bật popup modal toàn màn hình hiển thị avatar và thông tin của A đã được lọc an toàn theo quyền riêng tư của A, kèm 2 lựa chọn "Chấp nhận ngay" và "Để sau". Modal được gắn toàn cục tại `MemberShell.tsx`.
+  - Danh Mục 7 Ban Ngành CLB CEO 1983 (`ContactSupportModal.tsx`): Phải hiển thị đầy đủ 7 ban chuyên trách (Ban Thường Trực, Ban Thư Ký, Ban Xúc Tiến Thương Mại B2B, Ban Phát Triển Hội Viên, Ban Truyền Thông & Sự Kiện, Ban Tài Chính & Pháp Chế, Ban Đào Tạo & Chuyển Đổi Số) cùng lãnh đạo phụ trách, hotline, email và phím tắt gọi/mail trực tiếp.
+  - Quy Chuẩn 14 Tính Năng Nâng Cấp CEO 1983 & CRM System (Tháng 09/2026):
+    * **Landing Polling & Bắt Buộc Đăng Nhập (`landing.ceo1983.cinematic.tsx`, `association.login.tsx`)**: Polling 4s tự động kiểm tra trạng thái duyệt hồ sơ qua `/connect-app/club-registration/status`. Khi được duyệt, bắt buộc chuyển hướng sang `/association/login?username=...&registered=true`, prefill username/phone, bắt buộc nhập đúng mật khẩu để xác thực phiên (TUYỆT ĐỐI KHÔNG bypass đăng nhập).
+    * **Đồng Bộ Profile Thực Tế (`association.profile.tsx`, `association.index.tsx`)**: TUYỆT ĐỐI CẤM sử dụng chuỗi mock cứng "Lê Hoàng Long". Profile và Home phải đồng bộ 100% dữ liệu danh tính hội viên theo thời gian thực từ session/API.
+    * **Khung Ngắm QR In-Modal & Handshake 2 Chiều (`AssociationMemberQrModal.tsx`, `MainActivity.java`)**: Khung ngắm camera phải render in-modal viewfinder trực tiếp; gỡ bỏ hook `injectNativeQrHook` text interceptor trên Home tab. Khi bấm "Lưu kết nối", modal QR tự động đóng ngay lập tức và emit socket `connection:requested` để bật `IncomingConnectionModal` trên máy đối tác.
+    * **Sàn Cơ Hội B2B Chuẩn Hóa (`association.opportunities.tsx`)**: Hiển thị ảnh thực tế do người dùng tải lên, có tab "Cơ hội của tôi", sắp xếp tin mới nhất lên đầu (`newest-first`), và hiển thị nhãn ngày đăng chi tiết (`DD/MM/YYYY`).
+    * **Gian Hàng Sản Phẩm 2 Cột E-Commerce (`association.products.tsx`)**: Thiết kế lưới 2 cột phong cách sàn thương mại điện tử; cách ly bookmark theo từng tài khoản (`vba_interested_products_${userId}`, fresh account khởi tạo 0); bổ sung tab "Sản phẩm tôi đăng"; sắp xếp mới nhất lên đầu; phân cấp giá niêm yết và giá VIP hội viên rõ nét.
+    * **Thẻ Sự Kiện Poster 2:3 & Backdrop Sân Khấu (`association.index.tsx`, `association.events.tsx`)**: Thẻ sự kiện trang chủ thiết kế theo tỉ lệ dọc 2:3 phong cách poster giải trí điện ảnh, có nhãn độ tuổi (`16+`, `18+`, `13+`) và rating; màn hình Sự kiện có backdrop sân khấu sang trọng với vệt sáng vàng kim.
+    * **Thứ Tự Khối Trang Chủ Chuẩn Nghiệp Vụ (`association.index.tsx`)**: Bắt buộc tuân thủ thứ tự: **1) Sự kiện nổi bật (Poster 2:3) -> 2) Cơ hội giao thương B2B (Middle Banner) -> 3) Gian hàng sản phẩm tiêu biểu (Grid 2 cột)**.
+    * **Cách Ly Thông Báo Từng Tài Khoản (`connect-app.service.ts`)**: Lọc thông báo theo `userCreatedAt` của từng hội viên, loại bỏ việc nhồi nhét sự kiện quá khứ vào tài khoản mới, hiển thị thông báo chào mừng chính thức từ Ban Quản Trị CLB CEO 1983.
+    * **Chat Realtime Deduplication & Mobile (+) Expander (`association.messages.tsx`)**: Khử duplicate tin nhắn theo chữ ký nội dung và timestamp 15s; lắng nghe socket `member:message_received`; thanh nhập mobile thay 3 nút inline bằng nút `(+)` mở rộng menu đính kèm chống tràn mép; popup cuộc gọi hỗ trợ tương tác đầy đủ các nút mic/cam/ngắt; tự động xóa unread badge ngay khi mở cuộc trò chuyện.
+    * **Menu Cá Nhân Chuẩn Image 3 & Phím Tắt (+) Danh Thiếp Số (`association.profile.tsx`, `association.business-cards.tsx`)**: Sắp xếp menu cá nhân theo bản vẽ tham chiếu Image 3; dòng "Quản lý Danh thiếp số" có nút `(+)` mở thẳng modal tạo danh thiếp mới (`action=create`).
+    * **Tab Kép Tin Tức - Sự Kiện (`association.news.tsx`)**: Tích hợp 2 tab `[ 📰 Tin tức CLB ]` và `[ 📅 Sự kiện Hiệp Hội ]` cho phép đọc tin tức hoặc xem nhanh sự kiện kèm poster và link điều hướng sang `/association/events`.
+    * **Bảo Mật Tài Khoản & Vô Hiệu Hóa (`association.settings.tsx`, `users.controller.ts`)**: API đổi mật khẩu trỏ chuẩn `/users/change-password` (có alias `/auth/change-password`); nút "Đăng xuất" bị khóa chặt cho đến khi đổi mật khẩu thành công trong phiên; bổ sung tính năng "Vô hiệu hóa tài khoản" có xác thực mật khẩu; form tải avatar quản lý tập trung ở Profile, không để thừa trong tab bảo mật.
+    * **Phân Quyền CRM & Sơ Đồ Khán Phòng Kéo Thả Ghế Sân Khấu (`Sidebar.tsx`, `CinemaSeatingMap.tsx`)**: Sidebar CRM ẩn/hiện menu chính xác theo ma trận quyền (`platform_admin` vs association `admin` vs Trưởng ban); gỡ bỏ hoàn toàn mục "Quyền của tôi"; sơ đồ khán phòng cinema hỗ trợ kéo thả tự do tọa độ ghế sân khấu (Stage Seats Drag & Drop), thêm/bớt ghế và căn đều vòng cung.
+    * **Quy Chuẩn Test Cases Bắt Buộc (Strict Test Rule)**: Toàn bộ các ca kiểm thử trong tài liệu và Excel BẮT BUỘC để trống ô kiểm `[ ]`, TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GHI "PASS" để người dùng/tester tự nghiệm thu thực tế.
+    * **Loại Bỏ Chính Mình Khỏi Hộp Thư (`association.messages.tsx`)**: Luôn sử dụng hàm kiểm tra danh tính `isSelfUser(m)` dựa trên `id`, `email`, `phone` và `code` để loại trừ chính người dùng hiện tại khỏi danh sách hội thoại gần đây, danh bạ chat, thanh bong bóng hoạt động và danh sách thêm người.
+    * **Xóa Tin Nhắn Phía Tôi & Thao Tác Vuốt / Nhấn Giữ (`association.messages.tsx`)**: Hỗ trợ thao tác vuốt sang trái lộ nút xóa đỏ và nhấn giữ 450ms (long-press) mở Action Sheet xóa cuộc trò chuyện; hỗ trợ "Xóa ở phía tôi" cho từng bong bóng tin nhắn (lưu trữ danh sách ID vào `localStorage` `vba_deleted_for_me_msg_ids_${currentUserId}`).
+    * **Vòng Đời Camera WebRTC & Chống Rò Rỉ (`use-qr-scanner.ts`, `AssociationMemberQrModal.tsx`)**: Mọi luồng bất đồng bộ `getUserMedia` phải kiểm tra cờ `stopped`. Khi người dùng đóng modal hoặc chuyển tab, BẮT BUỘC gọi `track.stop()`, gán `videoRef.current.srcObject = null` và gọi `video.pause()` ngay lập tức để không rò rỉ camera nền hay tự bật lại sau khi đóng popup.
+    * **Thông Báo Quét QR Âm Thầm (`AssociationMemberQrModal.tsx`)**: Quét QR kết nối không dùng popup toast; ghi nhận âm thầm vào `vba_notifications` và kích hoạt badge chuông thông báo.
+    * **Thông Báo Chấp Nhận Kết Nối 2 Chiều (`IncomingConnectionModal.tsx`, `MemberShell.tsx`)**: Khi B chấp nhận yêu cầu của A, B emit `connection:accept`, hệ thống bắn sự kiện socket `connection:accepted` sang cho A, đẩy notification và cập nhật danh sách kết nối tức thì.
+    * **Lọc Thành Viên Tạo Nhóm Chat (`CreateGroupChatModal.tsx`)**: Chỉ hiển thị những hội viên đã kết nối giao thương hoặc bạn bè (`isMemberConnected`), loại trừ chính mình, loại bỏ tab lọc người lạ chưa kết nối.
+    * **Giao Diện Landing & Sự Kiện CEO 1983**: Landing page chuẩn tông Trắng ngọc trai & Vàng Champagne sang trọng, chuẩn 100% chính tả tiếng Việt có dấu, tích hợp tự động polling 4s tra cứu trạng thái; Backdrop sự kiện tại `/association/events` chuẩn sân khấu Grand Gala 3D với hiệu ứng spotlight cone, hạt bụi vàng kim lấp lánh và sàn phản chiếu 3D.
+    * **Đồng Bộ CRUD Cơ Hội & Sản Phẩm 100% Database (`association.opportunities.tsx`, `association.products.tsx`)**: Tuyệt đối không sử dụng mock/fallback data trong danh sách cơ hội và sản phẩm. Tác giả đăng bài được quyền "Sửa" và "Xóa" trực tiếp trên giao diện (`checkIsMine`, `checkIsProductOwner`). Backend NestJS cung cấp đầy đủ endpoint `@Patch(':id')`, `@Delete(':id')`, `@Post()` đồng bộ thời gian thực với PostgreSQL.
+    * **Quy Chuẩn UI C-Level Khối Trang Chủ & Thư Viện**: Banner tinh gọn ít chữ, loại bỏ toàn bộ các badge rẻ tiền ("Đặc quyền...", "Ad", "HOT", icon nhảy tưng bừng `animate-bounce` hay badge ping). Thư viện tài liệu trình bày dạng thẻ tối giản, phân loại định dạng tệp (PDF, XLS, DOC) bằng badge màu tinh tế.
+    * **Modal Camera & Chụp Danh Thiếp Căn Giữa Tuyệt Đối (`AssociationCardCaptureModal.tsx`)**: BẮT BUỘC sử dụng React Portal `createPortal(..., document.body)` với `fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-md` để chống bị đè bởi thanh điều hướng bottom bar (`z-50`) trên thiết bị di động. Bảng màu tuân thủ Deep Obsidian `#0C1322` viền Champagne Gold `#D4AF37`.
 
-## Deployment Workflow (SSH & Docker)
-The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy.ps1`.
+
+
+
+## Deployment Workflow (SSH & Docker - Decoupled 3 Pipelines Architecture)
+The project is deployed to a remote server (`14.225.217.232`) with 3 completely independent Docker Compose pipelines:
+1. **ViOne Connect Platform** (`deploy/vione/fast-deploy.ps1` or `npm run deploy:vione`):
+   - Location: `deploy/vione/`
+   - Ports: Frontend 5000 (`http://14.225.217.232:5000`), Backend 5001 (`http://14.225.217.232:5001`)
+   - Containers: `vione-frontend-prod`, `vione-backend-prod`
+2. **CLB Doanh Nhân CEO 1983 (Hiệp Hội)** (`deploy/ceo1983/fast-deploy.ps1` or `npm run deploy:ceo1983`):
+   - Location: `deploy/ceo1983/`
+   - Ports: Frontend 5002 (`http://14.225.217.232:5002`), Backend 5003 (`http://14.225.217.232:5003`)
+   - Containers: `ceo1983-frontend-prod`, `ceo1983-backend-prod`
+   - Mobile APK live URL: `http://14.225.217.232:5002`
+3. **Hệ Thống Quản Trị CRM** (`deploy/crm/fast-deploy.ps1` or `npm run deploy:crm`):
+   - Location: `deploy/crm/`
+   - Ports: Frontend 5004 (`http://14.225.217.232:5004`), Backend 5005 (`http://14.225.217.232:5005`)
+   - Containers: `crm-frontend-prod`, `crm-backend-prod`
+
 **Deployment Rules:**
-- **Local Build**: Frontend must be built locally to prevent OOM errors on the server (`--max-old-space-size` is used).
-- **Dockerization**: Two separate Dockerfiles are used: `Dockerfile.frontend` and `Dockerfile.backend`. Both must use `node:22-alpine` as their base image to avoid WebSocket errors.
-- **Tarball Transfer**: Images are saved as `.tar` files locally and transferred securely via SCP to avoid Docker Hub overhead.
-- **Server Execution**: SSH is used to load images, replace Windows line endings in config files (using `sed`), and restart containers via docker-compose.
-- **Data/Volume Safety**: Always use `docker compose down --remove-orphans` and `docker compose up -d --force-recreate` instead of manual container deletion to preserve volume mapping safely.
-- **No Hardcoded Env Vars**: Never hardcode environment variables in codebase or Dockerfiles. They must be injected via `.env.production` (transferred as `.env` on server) and consumed in `docker-compose.yml`.
+- **Decoupled Deployment**: Each system has its own dedicated `docker-compose.yml`, `.env.production`, and `fast-deploy.ps1`. Deploying one system NEVER disrupts or rebuilds the other two.
+- **PowerShell UTF-8 with BOM**: All `fast-deploy.ps1` scripts MUST be saved in UTF-8 with BOM (`\uFEFF`) to prevent PowerShell lexer parse errors with Vietnamese characters.
+- **Local Build**: Frontend is compiled locally to prevent OOM errors on the server (`--max-old-space-size=8192`).
+- **Camera QR Scanner (WebRTC)**: Use `useQrScanner` with HTML5 video stream and `BarcodeDetector` / native fallback; do not use unbundled dynamic imports.
+- **Privacy Settings**: Card fields (`showPhone`, `showEmail`, etc.) default to `true` (`!== false`) unless explicitly hidden by user in `POST /business-cards/settings/me`. Public cards render "Đã ẩn theo cài đặt riêng tư" when hidden.
 
 ### Context Synchronization & Documentation Discipline (MANDATORY)
 - **CẬP NHẬT BẮT BUỘC**: Mỗi lần thực hiện bất kỳ thay đổi kiến trúc, tính năng, sửa lỗi hoặc điều chỉnh luồng:
@@ -56,7 +115,7 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
   - **Màn Đăng Nhập App Hiệp Hội CEO 1983 Riêng**: `/association/login` - Màn hình đăng nhập độc quyền CLB Doanh Nhân CEO 1983 (`AssociationAppSignIn`): Chuẩn nhận diện **Phiên bản 1: Classic Navy & Gold (Deep Cobalt Navy `#003B95` & Warm Amber Gold `#F59E0B` / `#EA580C`)**: Nền sáng thanh lịch `bg-slate-50 dark:bg-[#070D1A]` kết hợp quầng sáng xanh navy khuếch tán, thẻ kính trắng tinh khiết `bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 shadow-xl`, logo dập nổi CEO 1983 sắc nét, font Serif tiêu đề màu `text-slate-900 dark:text-white`, form Email/Mã hội viên + Password với icon xanh navy `#003B95` / hổ phách, nút đăng nhập gradient navy doanh nhân (`bg-gradient-to-r from-[#003B95] to-[#002B70] hover:from-[#002B70] hover:to-[#0A1A3A] text-white`), nút kích hoạt tài khoản hội viên mới (`/connect-app/activate`), quét danh thiếp thông minh NFC/QR (`AuthCardScanSheet`). Xử lý triệt để lỗi autofill biến ô input trên Chrome bằng `-webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important`. Hoàn toàn KHÔNG có nút chuyển sang ViOne. Sau khi đăng nhập chuyển thẳng vào `/association`.
   - **Association App UI/UX & Mobile Standards (Phiên bản 1 - Classic Navy & Gold)**:
     * **Bảng màu chủ đạo**: Primary Navy `#003B95` (hover `#002B70`), Accent Amber Gold `#F59E0B` / `#EA580C` (hover `#D97706`), Thẻ nền trắng sáng / dark slate-900, Badge VIP vàng ánh kim `bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800`.
-    * **Thanh Bottom Navigation 5 Tab & Nút QR Code Trung Tâm**: Gồm 5 tab chuẩn: Trang chủ (`/association`), Sự kiện (`/association/events`), Nút QR Thẻ VIP nhô cao ở giữa (`/association/card`), Gắn kết (`/association/messages`), Cá nhân (`/association/profile`). Nút giữa là nút QR Code Thẻ VIP nhô cao (`-mt-7`), màu sắc biến thiên theo từng phiên bản thiết kế:
+    * **Thanh Bottom Navigation 5 Tab & Nút QR Code Trung Tâm**: Gồm 5 tab chuẩn: Trang chủ (`/association`), Sự kiện (`/association/events`), Nút QR Thẻ VIP nhô cao ở giữa (`/association/card`), Tin nhắn (`/association/messages`), Cá nhân (`/association/profile`). Nút giữa là nút QR Code Thẻ VIP nhô cao (`-mt-7`), màu sắc biến thiên theo từng phiên bản thiết kế:
       - **Phiên bản 1 (Classic Navy & Gold)**: Nền Gradient Deep Cobalt Navy `#00224F` -> `#003B95`, viền trắng `#FFFFFF`, icon `QrCode` màu trắng `#FFFFFF` sắc nét tinh tế.
       - **Phiên bản 2 (Digital Sapphire Tech)**: Nền Sapphire `#0284C7`, viền Cyan `#38BDF8`, icon `QrCode` màu trắng `#FFFFFF` sắc nét.
       - **Phiên bản 3 (B2B Commerce Focus)**: Nền Cam B2B `#EA580C`, viền Cam sáng `#FDBA74`, icon `QrCode` màu trắng `#FFFFFF`.
@@ -97,6 +156,46 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
       - **Quy chuẩn Khử Trùng Lặp Thông Báo & Thu Gọn Chiều Cao (Notification & Event Cards)**:
         + Backend & Frontend bắt buộc khử trùng lặp thông báo đa nguồn bằng composite key (`id`, `refType:refId`, `sourceRecordId`, `title|body|dayKey`).
         + Thẻ thông báo và thẻ sự kiện giảm padding xuống `p-2.5 sm:p-3`, icon box 34px, ảnh sự kiện 64x64px (`h-16 w-16`) để tối ưu hóa không gian hiển thị trên mobile.
+    * **QUY CHUẨN THAO TÁC 1 TAY & CỬ CHỈ ĐIỀU HƯỚNG DYNAMIC (BUTTON-FREE ERGONOMICS)**:
+      - **Bỏ Nút Nổi Trợ Năng (No Floating Buttons)**: Tuyệt đối KHÔNG đặt các nút nổi (Floating Thumb Hub) che khuất nội dung màn hình. Thao tác một tay phải hoàn toàn trực quan thông qua cử chỉ ngón tay cái (Dynamic Gestures).
+      - **Vuốt chuyển Tab ngang (Horizontal Swipe Navigation)**: Người dùng có thể vuốt tay sang trái hoặc phải trên màn hình để chuyển qua lại mượt mà giữa các tab chính: Trang chủ ↔ Sự kiện ↔ Thẻ số ↔ Tin nhắn ↔ Cá nhân. Ngưỡng nhận diện `diffX > 50px` kèm rung phản hồi nhẹ (`triggerHaptic(15)`).
+      - **Chỉ báo Cử chỉ Vuốt Động (Dynamic Drag Indicator)**: Hiển thị icon chevron nổi mở rộng theo độ dịch chuyển của ngón tay, tạo phản hồi xúc giác và thị giác trực quan.
+      - **Chế độ Reachability Dynamic (Kéo nửa màn hình xuống bằng cử chỉ)**: Kích hoạt tự nhiên bằng cách vuốt xuống từ mép đáy màn hình (khu vực thanh điều hướng 110px: `startY >= window.innerHeight - 110 && diffY > 30`) hoặc vuốt từ đỉnh màn hình xuống. Toàn bộ nửa trên màn hình trượt xuống `35vh` vừa tầm với ngón cái. Chạm hoặc vuốt lên trên vùng mờ đỉnh để thu gọn lại.
+      - **Vuốt từ mép cạnh trái màn hình (Edge Swipe Back)**: Khi vuốt từ mép trái màn hình (`startX <= 35 && diffX > 45`), hệ thống tự động gọi `window.history.back()` để quay lại trang trước.
+      - **Popup/Modal dài cuộn trung tâm**: Khi popup có nội dung dài, tiêu đề (Header) và chân trang (Footer) BẮT BUỘC ghim cố định, phần thân ở giữa cuộn gọn gàng với chiều rộng giới hạn (`max-w-xl mx-auto`, `[scrollbar-width:thin]`).
+    * **QUY CHUẨN TIN NHẮN CHUẨN FACEBOOK MESSENGER & 5 DANH MỤC ĐA CHIỀU (MESSENGER CHAT & 5 CATEGORY TABS)**:
+      - **Quy chuẩn 5 Danh Mục Tab Phân Loại**:
+        * **Tất cả**: Bao gồm toàn bộ cuộc trò chuyện đã có tin nhắn trao đổi/phản hồi (`Boolean(c.last && c.last.trim())` hoặc tin nhắn hệ thống), không để lẫn liên hệ rỗng chưa từng chat.
+        * **Bạn bè**: Danh sách hội viên chính thức đã kết nối thành công (`isConnected = true`).
+        * **Chưa đọc**: Danh sách các cuộc trò chuyện đang có tin nhắn mới chưa xem (`unread > 0`).
+        * **Hệ thống**: Tin nhắn thông báo từ Ban Thư Ký / Quản trị viên / Hóa đơn (`isSystem = true`).
+        * **Tin nhắn chờ**: Tin nhắn gửi đến từ người chưa kết nối (`!isConnected`), khi danh sách trống BẮT BUỘC hiển thị duy nhất: *"Bạn không có tin nhắn chờ"*.
+      - **Bộ Lọc Đa Chiều (A-Z & Sắp Xếp Nâng Cao)**:
+        * Dải ký tự chữ cái A-Z trượt ngang (`ALPHABET_LETTERS`) hỗ trợ lọc theo chữ cái đầu của tên hội viên (sử dụng hàm chuẩn hóa tiếng Việt `getNormalizedFirstChar`).
+        * 5 Chế độ Sắp xếp: Mới nhất (Newest), Cũ nhất (Oldest), Tên A → Z, Tên Z → A, Ưu tiên chưa đọc (Unread first).
+        * Bộ lọc Online: Lọc nhanh các hội viên đang có kết nối trực tuyến realtime.
+      - **Quy chuẩn Ngôn từ**: Toàn bộ giao diện người dùng (UI) đồng nhất sử dụng thuật ngữ "KẾT NỐI" (Connect), tuyệt đối KHÔNG dùng "kết bạn" / "bạn bè".
+      - **Banner Cảnh báo Người lạ trong Chat (Stranger Warning Banner)**: Khi mở cuộc trò chuyện với người chưa kết nối, hiển thị banner cảnh báo Messenger: *"Người này chưa nằm trong danh sách kết nối của bạn"* kèm nút hành động [Chấp nhận kết nối] hoặc [Gửi lời mời kết nối].
+      - **Trả lời (Reply)**: Hỗ trợ trích dẫn tin nhắn với cú pháp `[reply:id|name:...|text:...]`. Hiển thị thanh banner xem trước tin nhắn đang trả lời ngay trên khung nhập liệu kèm nút hủy `(X)`.
+      - **Chuyển tiếp (Forward)**: Cung cấp modal `ForwardMessageModal` tìm kiếm hội viên theo tên, mã số, ngành nghề và gửi tin nhắn tức thời.
+      - **Nhấn giữ (Long-Press) trên Mobile & Chuột phải trên PC**: Nhấn giữ 450ms vào bong bóng tin nhắn (hoặc click chuột phải trên máy tính) sẽ hiển thị thanh cảm xúc emoji nổi (`👍 ❤️ 😂 😮 😢 😡`) và menu thao tác nhanh: Trả lời, Chuyển tiếp, Sao chép nội dung, Thu hồi tin nhắn.
+      - **Icon Đã Xem (Seen) Nằm NGOÀI Border Bong Bóng Chat**: Avatar tròn thu nhỏ của người nhận (khi đã đọc) hoặc biểu tượng tích gửi (`✓`) BẮT BUỘC đặt **hoàn toàn NGOÀI viền** bong bóng tin nhắn ở góc dưới bên phải.
+      - **Tin nhắn mới nhất luôn nhảy lên vị trí số 1**: Sắp xếp danh sách cuộc trò chuyện theo mốc thời gian ISO `rawTime` giảm dần. Bất kỳ hành động gửi tin nhắn, nhận tin nhắn, trả lời hay thu hồi nào cũng lập tức đưa cuộc trò chuyện đó lên vị trí đầu tiên của danh sách.
+    * **QUY CHUẨN TÀI LIỆU HƯỚNG DẪN SỬ DỤNG 14 CHUYÊN ĐỀ & BÁO CÁO TIẾN ĐỘ WORD (.DOCX)**:
+      - **Tài liệu Word (.docx) Chuyên Nghiệp**: Loại bỏ hoàn toàn định dạng PDF theo yêu cầu, cung cấp file tài liệu Word `.docx` chuyên nghiệp với bảng biểu chi tiết, tiêu đề màu navy, callout boxes nổi bật cho cả App Hiệp hội và App ViOne Connect.
+      - **Modal Hướng Dẫn Sử Dụng 14 Chuyên Đề (`UserGuideModal.tsx`)**: Chuẩn hóa 14 chuyên đề thực chiến đầy đủ kèm ảnh mockup vector SVG riêng biệt: (1) Đăng nhập & Kích hoạt thẻ VIP, (2) Thao tác 1 tay & Cử chỉ Dynamic, (3) Danh thiếp thông minh & Chạm NFC, (4) Tin nhắn Messenger & Phân loại 5 danh mục, (5) Danh bạ hội viên & Kết nối 2 chiều, (6) Sự kiện CLB & Check-in QR 1 giây, (7) Cơ hội kinh doanh & Đăng sản phẩm B2B, (8) Hội phí thường niên & VietQR tự động, (9) Biểu quyết & Bầu cử trực tuyến, (10) Đổi ảnh bìa & Cá nhân hóa hồ sơ VIP, (11) Trung tâm thông báo & Quản lý hóa đơn, (12) Chế độ hiển thị & Tùy biến Theme lễ hội, (13) Tra cứu điều lệ & Thư viện tài liệu CLB, (14) Bảo mật tài khoản & Quản lý phiên đăng nhập.
+      - **Giao Diện Trang Cá Nhân Đơn Nhất**: Chỉ giữ lại mục Hướng dẫn sử dụng và Liên hệ Ban Thư Ký ở dải Cài đặt trên cùng, tuyệt đối loại bỏ các khối thẻ thừa lặp lại ở chân trang gần nút Đăng xuất.
+      - **Báo cáo Tiến độ 100% API Backend**: Lập bảng kê 100% API endpoints: 189 endpoints cho App Hiệp Hội CEO 1983 và 280 endpoints cho App ViOne Connect.
+      - **Kiến trúc Hướng 2 (Monorepo Độc Lập)**: Duy trì cấu trúc monorepo với Docker Compose độc lập (`docker-compose.association.yml` và `docker-compose.vione.yml`), sẵn sàng đóng gói mobile store (App Store & Google Play) riêng biệt.
+    * **QUY CHUẨN GIAO DIỆN TRANG CHỦ, SỰ KIỆN, BIỂU TƯỢNG SỐ 8 & CARD VISIT CEO 1983 (STRICT RULES 16/09/2026)**:
+      - **Gỡ bỏ Banner Landing Web tại Trang Chủ Hiệp Hội (`association.index.tsx`)**: Trang chủ hiệp hội tập trung 100% vào nghiệp vụ hội viên, thẻ số, tin nhắn, sự kiện. Tuyệt đối không đặt banner Landing Web trên trang chủ.
+      - **Tinh gọn Thẻ Sự Kiện Trang Chủ (`association.index.tsx`)**: Thẻ sự kiện trang chủ thu nhỏ gọn gàng, chỉ hiển thị thumbnail ngày, thời gian diễn ra và tên sự kiện; loại bỏ icon đánh dấu bookmark và dải metadata 3 cột rườm rà.
+      - **Chuẩn hóa Giao diện Danh sách Sự kiện (`association.events.tsx`)**: Ảnh poster sự kiện hiển thị tràn viền (full-bleed 16:9); dải thông tin metadata 3 cột (Thời gian, Địa điểm, Đối tượng) BẮT BUỘC nằm trực tiếp trên nền ảnh với lớp kính mờ tối (`bg-black/60 backdrop-blur-md border-t border-white/15`), chữ trắng và vàng hổ phách tương phản cao, không đặt trên nền trắng thô.
+      - **Animation Nhún Nhảy Mã QR Bìa & Nút "Xem QR" Phóng To (`association.index.tsx` & `association.card.tsx`)**: Mã QR trên ảnh bìa hồ sơ/thẻ có animation nhún nhảy nhẹ nhàng (`animate-subtle-bounce`), bên dưới có nút bấm "Xem QR" để mở modal phóng to mã QR với độ phân giải cao và hỗ trợ tải ảnh.
+      - **Biểu Tượng Web & App Mobile Độc Lập Hình Số 8**: Bỏ chữ "CEO1983", chỉ sử dụng duy nhất biểu tượng cách điệu hình số 8 kép (`/ceo1983-emblem-8.png`) cho favicon web, app-icon, apple-touch-icon, và launcher icon Android mipmap (`apps/mobile_ceo1983/android/app/src/main/res/`).
+      - **Bảng Tiến Độ Công Việc Chuẩn Hóa (`scripts/generate_association_progress_excel.js`)**: Cột Người thực hiện ghi "Phạm Văn Vũ", mức độ ưu tiên strictly 3 cấp (Cao, Trung bình, Thấp), phân chia chi tiết cột Giao diện (Màn hình, Tình trạng, % hoàn thiện) và API Mapped (Endpoint, Tình trạng kết nối, % hoàn thiện), cột Ghi chú để trống. Tự động xử lý lỗi EBUSY khi ghi file.
+      - **Thiết Kế Card Visit CEO 1983 Chuẩn Mẫu Thực Tế (`Ceo1983BusinessCardVisit.tsx`)**: Tái hiện chính xác mẫu card visit vật lý của CLB CEO 1983: Tỷ lệ danh thiếp 16:10, Header trái "CÂU LẠC BỘ CEO1983" kèm email & website; Header phải logo số 8 + CEO 1983 kèm các đường tròn đồng tâm mờ; Thân thẻ hiển thị tên in hoa navy lớn, chức danh màu cam, số điện thoại & email; Góc trái dưới mảng sóng xanh navy kèm viền ribbon cam uốn lượn; lật mặt sau 3D chứa mã QR cá nhân và châm ngôn Tâm-Tầm-Tín-Thịnh; tích hợp bộ chuyển đổi Card Visit CEO 1983 / Thẻ VIP Kim Loại tại `association.card.tsx`.
+      - **Landing Page Điện Ảnh 6 Phân Cảnh (`Ceo1983CinematicLanding.tsx`)**: 6 cảnh chuyển tiếp hữu cơ không dùng khối chữ nhật cứng (Bầu trời -> Đàn chim -> Cánh diều -> Dinh thự -> Mặt nước -> Thủy cung & Cá mập), hiệu ứng lặn xuyên qua mặt nước, hình tượng đàn cá mập dũng mãnh và các nhân vật lãnh đạo ("The leaders beneath the surface" - CEO, Executive, General Director) hiển thị dưới dạng đĩa kính nổi phát sáng kết hợp phân cấp thị giác: Môi trường biển -> Cá mập -> Lãnh đạo -> Thông điệp -> Master CTA.
     * **Nút Đăng xuất**: Đồng bộ toàn hệ thống sang màu nền xanh navy chữ trắng (`bg-[#2E3192] hover:bg-[#19194D] text-white font-bold`, icon trắng), tuyệt đối không dùng màu đỏ cảnh báo gây lệch nhận diện thương hiệu.
     * **Nút Chạm thẻ NFC / Quét mã QR (`AssociationAppSignIn`)**: Căn giữa đối xứng hoàn toàn cả icon QR và text tiêu đề + mô tả ở tâm nút (`flex flex-col items-center justify-center text-center`), loại bỏ tình trạng lệch trái.
     * **Thẻ Thông Báo Hóa Đơn (`association.notifications`)**: Khối hóa đơn thanh toán giữ duy nhất 1 nút "Thanh toán ngay" dạng full-width gọi `handlePayNotification`, tuyệt đối không lặp lại nút này ở thanh công cụ đáy; thanh công cụ đáy chỉ giữ 3 nút chuẩn `[Xem chi tiết]`, `[Ẩn]`, `[Xóa]` để hiển thị vừa vặn, không bị tràn dòng trên mobile.
@@ -249,3 +348,64 @@ The project is deployed to a remote server (`14.225.217.232`) using `fast-deploy
    - Ô nhập tin nhắn đáy: Loại bỏ hoàn toàn viền `border-0 border-none outline-none ring-0 focus:ring-0 shadow-none`.
    - Dải avatar hội viên: `getShortName` tự động cắt bỏ hậu tố công ty/hệ thống để hiển thị đúng tên người thật (ví dụ: "Văn Vũ", không hiện "Platform").
    - Sắp xếp tin nhắn: Ưu tiên tuyệt đối theo thời gian tin nhắn mới nhất `timeB - timeA`, tin mới nhất luôn đẩy lên đầu.
+172. **Poster Layout Standards cho Sự Kiện & Cơ Hội B2B (`association.events.tsx` & `association.opportunities.tsx`)**:
+   - **Thẻ Card Danh Sách (Poster Card)**: Ảnh poster banner tỷ lệ 16:9 ở trên cùng (có badge pill trạng thái/thể loại, nút bookmark, số người đăng ký), tiêu đề lớn 2 dòng, và thanh 3 cột metadata cân xứng có 2 vạch kẻ dọc phân tách (`THỜI GIAN/HẠN CHÓT`, `ĐỊA ĐIỂM/ĐỊA BÀN`, `ĐỐI TƯỢNG`).
+   - **Modal Chi Tiết (Poster Detail Modal)**: Ảnh poster lớn sắc nét ở đầu, đoạn văn mô tả bối cảnh / narrative, đường kẻ đứt `----------------`, danh sách keypoint bullet nền nhạt bo góc (thời gian, địa điểm, phí tham gia, link Zalo group sự kiện), đường link đăng ký ngoài, và cụm nút CTA hành động đáy.
+173. **Vòng Đời Kết Nối / Hủy Kết Bạn Vĩnh Viễn (Persistent Connection Lifecycle)**:
+   - Khi hủy kết bạn, ghi nhận mã hội viên / user ID vào `vba.disconnected_members` trong `localStorage`, xóa khỏi `vba.connected_members`, và phát event `vba.connection.changed`.
+   - Mọi hàm kiểm tra bạn bè (`checkIsFriend`) và modal hồ sơ (`MemberProfileModal`) BẮT BUỘC ưu tiên kiểm tra `vba.disconnected_members` trước tiên (nếu có trong danh sách tombstone thì luôn coi là chưa kết nối).
+   - TUYỆT ĐỐI CẤM gán cứng `initialConnected={true}` trong bất kỳ component nào mở từ tin nhắn, danh bạ hay trang chủ.
+174. **Khóa Cuộn Nền & Căn Giữa Modal Mobile (Body Scroll Lock & Full Centering)**:
+   - Mọi modal pop-up trên mobile khi mở phải set `document.body.style.overflow = "hidden"` và cleanup hoàn trả `""` khi modal đóng.
+   - Modal căn giữa màn hình tuyệt đối qua `fixed inset-0 z-[9999] grid place-items-center` hoặc React Portal ra `document.body` để không bị nhảy layout khi cuộn nội dung bên trong modal.
+175. **Phân Luồng & Bảo Mật Thông Báo (Notification Scoping)**:
+   - Mọi thông báo từ phân hệ hiệp hội/CLB CEO 1983 mang thuộc tính `app_scope = 'association_app'`.
+   - ViOne Connect App lọc triệt để loại bỏ thông báo `association_app`.
+   - CEO 1983 App chỉ hiển thị thông báo scoped hội viên, không hiển thị nhãn hệ thống "ViOne".
+176. **Event UI Full-Image Banner & 3 Cột Metadata (Ảnh 3)**:
+   - Tiêu đề và slogan doanh nhân nằm hoàn toàn bên trong lớp phủ tối của ảnh banner 16:9 (`association.events.tsx` và `association.index.tsx`).
+   - Dải 3 cột metadata (`THỜI GIAN`, `ĐỊA ĐIỂM`, `ĐỐI TƯỢNG`) dính liền bên dưới ảnh.
+   - Loại bỏ nút CTA thừa ở chân thẻ danh sách sự kiện để tạo bố cục sang trọng, thanh thoát.
+177. **Executive Member Card & QR Trên Ảnh Bìa (`association.card.tsx`)**:
+   - Hồ sơ Executive nằm trực tiếp dưới thẻ kim loại ảo `vba-member-card`.
+   - Mã QR tích hợp trực tiếp trên ảnh bìa cover với viền vàng ánh kim.
+   - Tích hợp Chạm NFC, Apple/Google Wallet, liên kết danh thiếp số công khai và dải mạng xã hội chính thức.
+178. **News UI 50% Image Split & Modal Preview (`association.news.tsx`)**:
+   - Thẻ tin tức thiết kế chia đôi: 50% ảnh kèm badge thể loại, 50% tiêu đề, trích dẫn, lượt xem, ngày đăng.
+   - Modal chi tiết hiển thị banner phóng viên lớn và nút chia sẻ.
+179. **Member Directory Referral & Marketplace UI**:
+   - "Mời vào CLB CEO 1983" kích hoạt `InviteMemberModal.tsx` (QR, referral link, mẫu Zalo/SMS).
+   - "Đăng sản phẩm" tại `association.products.tsx` đưa xuống nằm cạnh thanh tìm kiếm, thao tác tiện lợi bằng ngón cái.
+180. **6-Scene Cinematic Landing Page (`/landing/ceo1983/cinematic`)**:
+   - Cuộn phim 6 tầng liên tục: `SKY → BIRDS → KITES → VILLAS → WATER → UNDERWATER`.
+   - Chuyển cảnh hữu cơ bằng đường cong SVG (tuyệt đối không dùng khối chữ nhật phân cách).
+   - Tích hợp bộ tổng hợp âm thanh Web Audio API tự thân trong trình duyệt (sóng biển, gió trời, âm hưởng huyền bí), 0% lỗi 404/CORS.
+181. **Thẻ Sản Phẩm Trang Chủ Nằm Ngang & Typography Hài Hòa (`association.index.tsx`)**:
+   - Thay thế lưới 2 cột ô vuông bằng thẻ nằm ngang (`flex-row h-[116px] sm:h-[128px]`).
+   - Khối ảnh sản phẩm tỷ lệ ngang chiếm 62-66% diện tích bên trái, có dải gradient chuyển mượt sang nền tối bên phải.
+   - Cột thông tin bên phải tinh gọn, áp dụng typography đan xen chữ đứng và chữ nghiêng: Tên thương hiệu/công ty in nghiêng (`italic text-slate-400`), Tên sản phẩm in hoa đứng đậm (`font-bold text-white uppercase`), Nhãn đặc quyền in nghiêng vàng hổ phách (`italic text-amber-300`), Giá bán in đứng cỡ lớn (`font-black text-amber-300`).
+182. **Bộ Đếm Ngược Sự Kiện Thuần Số Nhỏ & Nội Dung Sự Kiện Sát Footer Ảnh (`EventCountdownTimer.tsx` & `association.events.tsx`)**:
+   - Bỏ toàn bộ viền hộp box, viền ngăn cách thô cứng của bộ đếm ngược; chỉ hiển thị dãy số thuần túy với font tabular mảnh nhỏ kèm nhãn đơn vị ngắn gọn (`12d : 08h : 45m : 30s`).
+   - 100% nội dung thẻ sự kiện (Thể loại, Tiêu đề, Bộ đếm ngược, Địa điểm & Thời gian) được neo sát ở chân ảnh (Footer-Anchored) trên lớp phủ gradient kính mờ chuyển dần từ chân ảnh lên trên (`from-black/95 via-black/80 to-transparent`).
+183. **Poster Sự Kiện Sắp Tới Trang Chủ Tỷ Lệ Rộng & Chiều Cao Thấp (`association.index.tsx`)**:
+   - Thay thế khung dọc cao `aspect-[2/3]` bằng khung ngang điện ảnh `aspect-[16/10] sm:aspect-[16/9]` giúp poster rộng hơn và giảm chiều cao đáng kể, tránh choáng ngợp không gian cuộn trên thiết bị di động.
+184. **Chuẩn Hóa 100% Popup Căn Giữa Màn Hình Mobile & UI Tối Giản Trang Chủ**:
+   - **Tất cả Modal/Popup (Tạo nhóm, Thành viên, Bộ lọc, Báo giá, Quét QR...)**: BẮT BUỘC dùng `createPortal(..., document.body)`, khóa cuộn nền, căn giữa màn hình tuyệt đối qua `fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md` với card dialog nổi `rounded-3xl` giới hạn chiều rộng/chiều cao vừa vặn; CẤM để `p-0` và `h-full` trên mobile.
+   - **UI Sự kiện trang chủ**: Chỉ để mỗi Tên sự kiện (`font-black text-white line-clamp-2`) và Thời gian đếm ngược (`EventCountdownMiniBadge`), loại bỏ hoàn toàn các thông tin ngày giờ, địa điểm phụ rườm rà.
+   - **UI Sản phẩm trang chủ**: Thiết kế theo lưới 2 cột các thẻ vuông hoàn toàn (`aspect-square`), loại bỏ hoàn toàn lớp vệt mờ trắng và bỏ hẳn chữ "CRN 1983" / "CEO 1983"; chân ảnh chỉ hiển thị tên sản phẩm và giá bán hội viên.
+
+
+
+
+185. **Khôi Phục UI Banner Khuyến Mại Trang Chủ, Tinh Gọn Màn Hình Tin Tức & Tab Cá Nhân**:
+   - **Banner Khuyến Mại Trang Chủ (`association.index.tsx`)**: Giữ vững cấu trúc 3 thẻ chuẩn: Thẻ trên "Ưu đãi Hội viên & Đối tác" (Crown, `+Hot`, hộp quà 3D chuyển động `vba-gift.png`, nút "Xem ưu đãi ngay"); Lưới 2 thẻ dưới gồm "TRAO CƠ HỘI" (🤝 Handshake emoji, `+N Mới`, "Khám phá ngay") và "ĐĂNG SẢN PHẨM" (📦 Package box emoji, `+N Mới`, "Đăng ngay" xanh navy).
+   - **Màn Hình Tin Tức CLB (`association.news.tsx`)**: Chỉ hiển thị Tin tức CLB, TUYỆT ĐỐI KHÔNG tích hợp tab Sự kiện hay thanh chuyển tab kép gây phân tán; toàn bộ sự kiện tập trung tại tab Sự kiện riêng biệt (`/association/events`).
+   - **Tab Cá Nhân (`association.profile.tsx` & `m.profile.tsx`)**: Loại bỏ phân hệ "Tin tức & Sự kiện CLB" khỏi danh mục menu để giữ tab Cá nhân tập trung vào danh thiếp, danh bạ, giao thương, sản phẩm, lịch sử và cài đặt tài khoản.
+
+186. **Quy Chuẩn Thẻ Sự Kiện Ngoài Banner & Lược Bỏ Khối Sản Phẩm Đáng Chú Ý Trang Chủ**:
+   - **Thẻ Sự Kiện (`association.events.tsx`)**:
+     - Bỏ huy hiệu `CEO 1983` ở góc trái trên của banner.
+     - Tên sự kiện BẮT BUỘC đưa ra ngoài banner (nằm ngay dưới banner hình chữ nhật) để giải phóng không gian thẩm mỹ cho ảnh nền và dải sóng vàng.
+     - Dải footer bên trong banner bảo toàn nguyên vẹn: Thể loại, Bộ đếm ngược thời gian thực số thuần, Ngày giờ, Địa điểm và liên kết xem chi tiết.
+   - **Trang Chủ (`association.index.tsx`)**:
+     - Loại bỏ khối "Sản phẩm đáng chú ý" để tối giản luồng xem, tập trung vào Doanh nghiệp mới gia nhập và Tin tức hiệp hội.

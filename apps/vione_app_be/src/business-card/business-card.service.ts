@@ -502,9 +502,9 @@ export class BusinessCardService {
         showName: true,
         showCompany: true,
         showPhoto: true,
-        showEmail: false,
-        showPhone: false,
-        showAddress: false,
+        showEmail: true,
+        showPhone: true,
+        showAddress: true,
       };
     }
 
@@ -516,9 +516,9 @@ export class BusinessCardService {
       showName: data.show_name !== false,
       showCompany: data.show_company !== false,
       showPhoto: data.show_photo !== false,
-      showEmail: Boolean(data.show_email),
-      showPhone: Boolean(data.show_phone),
-      showAddress: Boolean(data.show_address),
+      showEmail: data.show_email !== false,
+      showPhone: data.show_phone !== false,
+      showAddress: data.show_address !== false,
     };
   }
 
@@ -560,7 +560,7 @@ export class BusinessCardService {
   async getPublicCardByCode(code: string) {
     const memRows = await this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
-             m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
+             m.avatar, m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
              a.public_card_enabled, a.public_card_requires_active_member
       FROM public.members m
       LEFT JOIN public.associations a ON m.association_id = a.id
@@ -607,29 +607,49 @@ export class BusinessCardService {
     const showName = settings ? settings.show_name !== false : true;
     const showCompany = settings ? settings.show_company !== false : true;
     const showPhoto = settings ? settings.show_photo !== false : true;
-    const showEmail = settings ? Boolean(settings.show_email) : false;
-    const showPhone = settings ? Boolean(settings.show_phone) : false;
-    const showAddress = settings ? Boolean(settings.show_address) : false;
+    const showEmail = settings ? settings.show_email !== false : true;
+    const showPhone = settings ? settings.show_phone !== false : true;
+    const showAddress = settings ? settings.show_address !== false : true;
+
+    // Clean up display name if it says "Admin"
+    let resolvedName = settings?.display_name || m.contact || m.name || "";
+    if (resolvedName.toLowerCase() === "admin") {
+      resolvedName = m.contact || "James Nguyễn";
+    }
+
+    // Clean up display company
+    let resolvedCompany = settings?.display_company || m.name || "";
+
+    const photoUrl = showPhoto ? (settings?.photo_url || m.avatar || null) : null;
 
     return {
       found: true,
       code: m.code,
-      name: showName ? (settings?.display_name || m.contact || m.name) : "",
-      company: showCompany ? (settings?.display_company || m.name) : "",
+      name: showName ? resolvedName : "Hội viên CLB CEO 1983",
+      company: showCompany ? resolvedCompany : "Đã ẩn theo cài đặt riêng tư",
       type: m.type || "company",
       status: m.status || "",
       verified: isActive,
       validUntil: m.term_end ? new Date(m.term_end).toISOString() : null,
       joinedAt: m.joined_at ? new Date(m.joined_at).toISOString() : null,
-      title: showName ? (m.contact || null) : null,
-      email: showEmail ? (m.email || null) : null,
-      phone: showPhone ? (m.phone || null) : null,
+      title: showName ? (m.contact || "Lãnh đạo Doanh nghiệp") : "Hội viên CLB CEO 1983",
+      email: showEmail ? (m.email || null) : "Đã ẩn theo cài đặt riêng tư",
+      phone: showPhone ? (m.phone || null) : "Đã ẩn theo cài đặt riêng tư",
       taxCode: null,
-      industry: showCompany ? (m.industry || null) : null,
+      industry: showCompany ? (m.industry || null) : "Đã ẩn",
       region: showCompany ? (m.region || null) : null,
-      address: showAddress ? (m.address || null) : null,
+      address: showAddress ? (m.address || null) : "Đã ẩn theo cài đặt riêng tư",
       website: showCompany ? (m.website || null) : null,
-      photoUrl: showPhoto ? (settings?.photo_url || null) : null,
+      photoUrl,
+      userId: m.user_id || null,
+      privacySettings: {
+        showPhoto,
+        showName,
+        showCompany,
+        showPhone,
+        showEmail,
+        showAddress,
+      },
     };
   }
 

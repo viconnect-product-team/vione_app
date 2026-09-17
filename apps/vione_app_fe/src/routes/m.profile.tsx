@@ -73,7 +73,6 @@ function ProfileScreen() {
     { label: t("m.profile.menu_members"), icon: Users, to: "/m/members" as const, desc: "Danh bạ hội viên" },
     { label: t("m.profile.menu_opportunities"), icon: Sparkles, to: "/m/opportunities" as const, desc: "Cơ hội giao thương B2B" },
     { label: t("m.profile.menu_products"), icon: Package, to: "/m/products" as const, desc: "Gian hàng sản phẩm" },
-    { label: t("m.profile.menu_posts"), icon: FileText, to: "/m/news" as const, desc: "Tin tức & sự kiện" },
     { label: t("m.profile.menu_history"), icon: History, to: "/m/history" as const, desc: "Lịch sử kết nối" },
     { label: t("m.profile.menu_notifications"), icon: Bell, to: "/m/notifications" as const, desc: "Thông báo & Lời mời" },
     { label: t("m.profile.menu_settings"), icon: Cog, to: "/connect-app/me" as const, desc: "Bảo mật & Tài khoản" },

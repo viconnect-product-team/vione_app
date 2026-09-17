@@ -405,7 +405,7 @@ export class MembersService {
         validUntil: m.term_end ? (m.term_end instanceof Date ? m.term_end.toISOString().slice(0, 10) : String(m.term_end).slice(0, 10)) : null,
         verified: m.status === 'active',
         type: m.type === 'individual' ? 'individual' : 'company',
-        title: m.contact ?? 'Hội viên',
+        title: m.executive_role || m.department || (m.contact && m.contact !== m.name ? m.contact : null) || 'Hội viên chính thức',
         email: m.email ?? user?.email ?? '',
         phone: m.phone ?? '',
         taxCode: m.tax_code ?? null,

@@ -174,7 +174,18 @@ function Index() {
         (Boolean((window as any).Capacitor) ||
           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
           window.innerWidth <= 768);
-      if (isMobileAppOrDevice && !isCrmPortal && window.location.pathname === "/") {
+      const isCeo1983 =
+        typeof window !== "undefined" &&
+        (import.meta.env.VITE_APP_SCOPE === "association_app" ||
+          window.location.port === "5002" ||
+          window.location.hostname.includes("ceo1983"));
+
+      if (isCeo1983 && window.location.pathname === "/") {
+        navigate({ to: "/association", replace: true });
+        return;
+      }
+
+      if (isMobileAppOrDevice && !isCrmPortal && !isCeo1983 && window.location.pathname === "/") {
         navigate({ to: "/connect-app", replace: true });
       }
     } catch {

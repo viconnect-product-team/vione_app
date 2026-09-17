@@ -245,7 +245,10 @@ function BusinessCardsScreen() {
   const actionHandledRef = useRef(false);
 
   useEffect(() => {
-    if (search.action === "edit" && cards.length > 0 && !editing && !actionHandledRef.current) {
+    if ((search.action === "create" || search.action === "new") && !editing && !actionHandledRef.current) {
+      actionHandledRef.current = true;
+      openNew();
+    } else if (search.action === "edit" && cards.length > 0 && !editing && !actionHandledRef.current) {
       actionHandledRef.current = true;
       const primary = cards.find((c) => c.cardKind === "primary") || cards[0];
       if (primary) {

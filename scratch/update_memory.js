@@ -1,39 +1,35 @@
 const fs = require('fs');
 const path = require('path');
 
-const memPath = path.join(__dirname, '..', 'MEMORY.md');
-let mem = fs.readFileSync(memPath, 'utf8');
-const target = '### 15.12 Chuẩn Hóa Tài Liệu Đề Xuất Giao Diện App CLB Doanh Nhân CEO 1983';
-const idx = mem.indexOf(target);
+const memoryPath = path.resolve(__dirname, '../MEMORY.md');
+let content = fs.readFileSync(memoryPath, 'utf8');
 
-if (idx !== -1) {
-  const newSection = `### 15.12 Chuẩn Hóa Hồ Sơ Thiết Kế App CLB Doanh Nhân CEO 1983: 3 Màn Hình Cốt Lõi (Trang Chủ, Gắn Kết, Cá Nhân) (15/09/2026)
-- **Tập tin xuất bản chính thức**:
-  - Đường dẫn tài liệu: \`scratch/DE_XUAT_GIAO_DIEN_APP_CEO1983.pdf\` (3.63 MB, 8 trang A4 chuẩn).
-  - Bản sao lưu trữ Artifacts: \`C:\\Users\\vumik\\.gemini\\antigravity-ide\\brain\\74644533-8bb8-4b29-a589-3d8714601888\\DE_XUAT_GIAO_DIEN_APP_CEO1983.pdf\`.
-  - Mã nguồn dựng tài liệu siêu nét: \`scratch/build_ultimate_sharp_pdf.js\`.
-- **Cấu trúc 8 trang A4 chuẩn mực**:
-  - **Trang 1**: Trang bìa chính thức chuẩn nhận diện thương hiệu CEO 1983.
-  - **Trang 2**: Bản sắc thương hiệu CEO 1983 & Bảng ánh xạ hệ thống tính năng ứng dụng (Header, Trang chủ, Giao thương B2B, Gắn kết, Cá nhân, Menu đáy).
-  - **Trang 3**: Phương án 1 (Classic Navy & Gold) - Màn 1: Trang chủ hội viên (khung mockup lớn 100x234mm, thuyết minh 5 điểm đặc trưng).
-  - **Trang 4**: Phương án 1 (Classic Navy & Gold) - Màn 2: Gắn kết (Tin nhắn & Hội thoại) & Màn 3: Cá nhân (Hồ sơ Doanh nhân B2B).
-  - **Trang 5**: Phương án 2 (Digital Sapphire Tech) - Màn 1: Trang chủ hội viên (tinh thể 3D đa diện, viền cyan công nghệ).
-  - **Trang 6**: Phương án 2 (Digital Sapphire Tech) - Màn 2: Gắn kết Sapphire & Màn 3: Cá nhân Kỹ thuật số.
-  - **Trang 7**: Phương án 3 (B2B Commerce Focus) - Màn 1: Trang chủ hội viên (thiết kế phẳng tối giản, nút cam nhiệt huyết).
-  - **Trang 8**: Phương án 3 (B2B Commerce Focus) - Màn 2: Gắn kết B2B & Màn 3: Cá nhân Thực chiến + Khối ký duyệt nghiệm thu trang trọng ở chân trang.
-- **Bảo toàn 100% bố cục và tính năng thực tế của app hiệp hội**:
-  1. **Màn 1: Trang chủ**: Logo CEO 1983 & chuông thông báo (badge đếm), Thẻ VIP Đỗ Thị Mai (ảnh skyline, mã M1983-012 kèm copy), Lưới 8 tính năng nhanh (badge Mới, 3, 5, 1), Sự kiện nổi bật (16 SEP Đại Hội Doanh Nhân CEO 1983), Khối Ưu đãi quà tặng 3D, Cặp khối giao thương thực chiến then chốt (Trao Cơ Hội +2 Mới & Đăng Sản Phẩm +11 Mới), Nút cài đặt ứng dụng lên màn hình chính, Bottom Bar 5 tab.
-  2. **Màn 2: Gắn kết (Tin nhắn & Hội thoại)**: Tiêu đề "Gắn Kết & Tin Nhắn", ô tìm kiếm phẳng không viền, hàng avatar đối tác online thời gian thực (Messenger style kèm nút [+] Nhắn mới và chấm xanh online), 4 tab phân loại (Tất cả (8), Chưa đọc (3), Tin chờ, Hệ thống), danh sách hội thoại Ban Thư Ký CLB CEO 1983 (ghim đầu, tích xanh), các đối tác doanh nhân (kèm badge tin chưa đọc), Bottom Bar có tab Gắn kết active.
-  3. **Màn 3: Cá nhân (Hồ sơ Doanh nhân Facebook Executive Profile)**: Ảnh bìa cover toàn cảnh kèm nút [Đổi ảnh bìa], avatar Đỗ Thị Mai nổi bật đè lên ảnh bìa viền vàng VIP kèm chấm xanh online, tích xanh xác thực, chức danh Tổng Giám Đốc • CÔNG TY DU LỊCH QUỐC TẾ Á CHÂU, badge VIP MEMBER CEO 1983, bio sứ mệnh kết nối, hàng 3 nút hành động [+ Thêm vào tin], [Chỉnh sửa], [Chia sẻ], khối thông tin ngành nghề & địa bàn trụ sở, khối BẠN BÈ & ĐỐI TÁC (128) hiển thị lưới 6 avatar kèm số lượng đối tác mở rộng (+122), ô đăng bài chia sẻ cơ hội giao thương, Bottom Bar có tab Cá nhân active.
-  4. **Thanh Menu Đáy (Bottom Navigation) đồng bộ 5 Tab**: \`Trang chủ\` • \`Sự kiện\` • \`[83 - Thẻ]\` • \`Gắn kết\` • \`Cá nhân\` trên cả 3 màn hình.
-- **Độ sắc nét và tiêu chuẩn thị giác**:
-  - Vector SVG siêu nét, typography chuẩn Google Fonts Plus Jakarta Sans từ 8.5px đến 14px, tương phản cao, tối ưu tuyệt đối cho in ấn và trình chiếu màn hình lớn.
-  - Phân hóa rõ rệt 3 trường phái thẩm mỹ: Classic Navy & Gold (sang trọng lịch lãm), Digital Sapphire (công nghệ chuyển đổi số 3D), B2B Commerce Focus (thực chiến phẳng tối giản).
-  - Hoàn toàn khách quan, không chứa bất kỳ nhận xét chủ quan nào của Giám đốc thiết kế, sẵn sàng để gửi cho đối tác và Ban Lãnh đạo.
+const section15_19 = `
+### 15.19 Khắc Phục Lỗi Runtime Màn Hình Sản Phẩm & Sự Kiện, Chuẩn Hóa 100% Popup Căn Giữa Màn Hình Mobile, Đơn Giản Hóa UI Sự Kiện & Sản Phẩm Vuông Trang Chủ (17/09/2026)
+- **Bối cảnh & Yêu cầu Người Dùng**:
+  1. *Lỗi Runtime Screenshot 1*: \`ReferenceError: categoriesList is not defined at ProductsScreen\` tại \`association.products.tsx\`.
+  2. *Lỗi Runtime Screenshot 2*: \`ReferenceError: pad is not defined at EventCountdownBanner\` tại \`EventCountdownTimer.tsx\`.
+  3. *Quy chuẩn 100% Popup Căn Giữa Màn Hình Điện Thoại*: Lỗi popup tạo nhóm chat không hiển thị chính giữa màn hình điện thoại. Yêu cầu bắt buộc: TẤT CẢ popup/modal trong hệ thống phải nằm chính giữa màn hình điện thoại.
+  4. *UI Sự kiện trang chủ*: Chỉ để mỗi tên sự kiện với thời gian đếm ngược, gỡ bỏ thông tin ngày giờ, địa điểm phụ thừa.
+  5. *UI Sản phẩm trang chủ*: Chuyển thành dạng thẻ hình vuông hoàn toàn (\`aspect-square\`), bỏ lớp mờ trắng, bỏ chữ "CRN 1983" / "CEO 1983".
+- **Giải Pháp & Triển Khai Kỹ Thuật**:
+  1. **Khắc phục \`categoriesList is not defined\` (\`association.products.tsx\`)**: Khai báo danh mục \`categoriesList\` hoàn chỉnh (\`all\`, \`my_products\`, \`interested\`, cùng 6 ngành nghề kinh doanh) kèm số lượng bản ghi thực tế từ cơ sở dữ liệu.
+  2. **Khắc phục \`pad is not defined\` (\`EventCountdownTimer.tsx\`)**: Đưa hàm \`pad = (n: number) => String(n).padStart(2, "0")\` ra cấp module ngoài để cả \`EventCountdownBanner\` và \`EventCountdownMiniBadge\` đều truy cập an toàn.
+  3. **Chuẩn Hóa 100% Modal Căn Giữa Màn Hình Điện Thoại Qua React Portal**:
+     - Cập nhật \`CreateGroupChatModal.tsx\`: Sử dụng \`createPortal(..., document.body)\`, khóa cuộn nền \`overflow = "hidden"\`, căn giữa tuyệt đối \`fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md\`, hộp thoại card \`w-full max-w-[400px] sm:max-w-lg max-h-[86dvh] rounded-3xl\` không bị che khuất hay tràn màn hình mobile.
+     - Cập nhật \`GroupMembersModal.tsx\`: Sử dụng \`createPortal(..., document.body)\`, căn giữa \`max-w-[390px] rounded-3xl\`.
+     - Cập nhật \`association.messages.tsx\`: Chuyển \`filterModalOpen\` từ dạng bottom sheet (\`justify-end\`) sang hộp thoại nổi chính giữa màn hình (\`flex items-center justify-center p-3.5 rounded-3xl\`) qua \`createPortal\`. Đồng thời bọc \`paymentModalData\` và \`ForwardMessageModal\` bằng \`createPortal\` để đảm bảo 100% căn giữa.
+  4. **UI Sự Kiện Trang Chủ Tối Giản (\`association.index.tsx\`)**: Loại bỏ \`dateStr\` và địa điểm thừa. Khối chân ảnh chỉ hiển thị duy nhất: Huy hiệu thời gian đếm ngược \`<EventCountdownMiniBadge />\` và Tiêu đề sự kiện in đậm rõ nét.
+  5. **UI Sản Phẩm Trang Chủ Hình Vuông (\`association.index.tsx\`)**:
+     - Chuyển sang lưới 2 cột các thẻ vuông (\`grid grid-cols-2 gap-2.5 sm:gap-3\`), khung ảnh tỷ lệ \`aspect-square\`.
+     - Xóa bỏ hoàn toàn lớp vệt mờ trắng (\`bg-gradient-to-r from-transparent to-white\`).
+     - Xóa bỏ hoàn toàn chữ "CRN 1983" / "CEO 1983" fallback. Chân ảnh chỉ hiển thị tên sản phẩm và giá bán hội viên.
 `;
-  mem = mem.slice(0, idx) + newSection;
-  fs.writeFileSync(memPath, mem, 'utf8');
-  console.log('Updated MEMORY.md successfully!');
+
+if (!content.includes('15.19 Khắc Phục Lỗi Runtime')) {
+  content = content.trimEnd() + '\n' + section15_19;
+  fs.writeFileSync(memoryPath, content, 'utf8');
+  console.log('Successfully appended section 15.19 to MEMORY.md');
 } else {
-  console.log('Target not found in MEMORY.md');
+  console.log('Section 15.19 already exists in MEMORY.md');
 }

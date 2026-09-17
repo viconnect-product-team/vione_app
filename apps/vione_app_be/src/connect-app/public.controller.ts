@@ -38,6 +38,16 @@ export class PublicController {
     return this.connectAppService.submitClubRegistration(body);
   }
 
+  @Get('club-registration/status')
+  async getClubRegistrationStatus(@Query('phone') phone?: string, @Query('email') email?: string) {
+    return this.connectAppService.checkClubRegistrationStatus({ phone, email });
+  }
+
+  @Post('club-registration/status')
+  async checkClubRegistrationStatusPost(@Body() body: { phone?: string; email?: string }) {
+    return this.connectAppService.checkClubRegistrationStatus(body);
+  }
+
   /** Admin renewal audit scope — requires JWT. */
   @Get('admin/renewal-scope')
   @UseGuards(JwtAuthGuard)

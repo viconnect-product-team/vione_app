@@ -386,37 +386,35 @@ export function BusinessCardCapture({
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 px-3">
-                  <Camera className="h-7 w-7 text-[var(--bc-mobile-accent)]" />
-                  <p className="text-xs font-semibold text-[var(--bc-mobile-text)]">
+                  <div className="p-2 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                    <Camera className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-bold text-[var(--bc-mobile-text)]">
                     {typeof window !== "undefined" && !window.isSecureContext
-                      ? "Yêu cầu kết nối HTTPS bảo mật"
+                      ? "Chụp ảnh danh thiếp bằng Camera"
                       : "Đặt danh thiếp trong khung"}
                   </p>
-                  <p className="text-[11px] text-[var(--bc-mobile-muted)] max-w-[270px] leading-relaxed">
+                  <p className="text-[11px] text-[var(--bc-mobile-muted)] max-w-[270px] leading-relaxed text-center">
                     {typeof window !== "undefined" && !window.isSecureContext
-                      ? "Trình duyệt chặn camera live trên HTTP để bảo vệ dữ liệu. Mở qua HTTPS để tự động mở camera live trong khung hoặc chụp bằng máy ảnh."
+                      ? "Nhấn nút bên dưới để mở trực tiếp máy ảnh thiết bị chụp danh thiếp và số hoá tự động."
                       : "Chụp hoặc tải ảnh danh thiếp để số hoá tự động"}
                   </p>
                   <div className="flex flex-col sm:flex-row items-center gap-2 mt-1">
-                    {typeof window !== "undefined" && !window.isSecureContext && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.location.href = window.location.href.replace("http:", "https:");
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 shadow-sm cursor-pointer hover:brightness-110 active:scale-95 transition-all"
-                      >
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        <span>Mở bằng HTTPS (Live Cam)</span>
-                      </button>
-                    )}
                     <button
                       type="button"
-                      onClick={() => setRetryNonce((n) => n + 1)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[var(--bc-mobile-accent)] text-slate-950 shadow-md cursor-pointer hover:brightness-110 active:scale-95 transition-all"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white shadow-md cursor-pointer hover:brightness-105 active:scale-95 transition-all"
                     >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      <span>Thử mở Camera trực tiếp</span>
+                      <Camera className="h-3.5 w-3.5" />
+                      <span>Mở Máy Ảnh Chụp Ngay</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onLibrary()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] text-[var(--bc-mobile-text)] hover:opacity-80 active:scale-95 transition-all"
+                    >
+                      <ImagePlus className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Chọn từ thư viện</span>
                     </button>
                   </div>
                 </div>

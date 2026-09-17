@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BadgeCheck,
   Briefcase,
@@ -37,6 +37,7 @@ import {
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { MemberProfileModal } from "@/components/member/MemberProfileModal";
+import { InviteMemberModal } from "@/components/member/InviteMemberModal";
 
 export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
@@ -56,6 +57,45 @@ function MembersScreen() {
   const [tab, setTab] = useState<FilterTab>("all");
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
   const [localPending, setLocalPending] = useState<Set<string>>(new Set());
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  // Local storage connection synchronization
+  const [disconnectedSet, setDisconnectedSet] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("vba.disconnected_members");
+      return stored ? new Set(JSON.parse(stored).map((s: string) => String(s).toLowerCase())) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [connectedSet, setConnectedSet] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("vba.connected_members");
+      return stored ? new Set(JSON.parse(stored).map((s: string) => String(s).toLowerCase())) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    const handleConnChange = () => {
+      try {
+        const storedD = localStorage.getItem("vba.disconnected_members");
+        setDisconnectedSet(storedD ? new Set(JSON.parse(storedD).map((s: string) => String(s).toLowerCase())) : new Set());
+        const storedC = localStorage.getItem("vba.connected_members");
+        setConnectedSet(storedC ? new Set(JSON.parse(storedC).map((s: string) => String(s).toLowerCase())) : new Set());
+      } catch {}
+    };
+    window.addEventListener("vba.connection.changed", handleConnChange);
+    window.addEventListener("storage", handleConnChange);
+    return () => {
+      window.removeEventListener("vba.connection.changed", handleConnChange);
+      window.removeEventListener("storage", handleConnChange);
+    };
+  }, []);
 
   // Connection data hooks from canonical ViOne connection system
   const { data: connected = [] } = useConnectedPeople(100);
@@ -95,6 +135,16 @@ function MembersScreen() {
     return map;
   }, [incoming]);
 
+  const checkIsFriend = (m: DirectoryMember) => {
+    const mCode = m.code.toLowerCase();
+    const mUserId = (m.userId || "").toLowerCase();
+    const isExplicitlyDisconnected = disconnectedSet.has(mCode) || (mUserId && disconnectedSet.has(mUserId));
+    if (isExplicitlyDisconnected) return false;
+    const isExplicitlyConnected = connectedSet.has(mCode) || (mUserId && connectedSet.has(mUserId));
+    if (isExplicitlyConnected) return true;
+    return Boolean(m.userId && connectedMap.has(mUserId));
+  };
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return members.filter((m) => {
@@ -120,7 +170,7 @@ function MembersScreen() {
 
       // Tab filter
       if (tab === "connected") {
-        return Boolean(m.userId && connectedMap.has(m.userId.toLowerCase()));
+        return checkIsFriend(m);
       }
       if (tab === "pending") {
         return Boolean(
@@ -130,11 +180,47 @@ function MembersScreen() {
       }
       return true;
     });
-  }, [members, q, tab, myMember, connectedMap, outgoingMap, incomingMap, localPending]);
+  }, [members, q, tab, myMember, connectedMap, outgoingMap, incomingMap, localPending, disconnectedSet, connectedSet]);
 
   const handleConnect = async (m: DirectoryMember) => {
     const target = m.userId || m.code;
     const displayName = m.contact || m.personName || m.name;
+    const mCode = m.code.toLowerCase();
+    const mUserId = (m.userId || "").toLowerCase();
+
+    // Clear disconnected status and register connection in localStorage
+    try {
+      const storedD = localStorage.getItem("vba.disconnected_members");
+      const dList: string[] = storedD ? JSON.parse(storedD) : [];
+      const nextD = dList.filter((c) => String(c).toLowerCase() !== mCode && String(c).toLowerCase() !== mUserId);
+      localStorage.setItem("vba.disconnected_members", JSON.stringify(nextD));
+
+      const storedC = localStorage.getItem("vba.connected_members");
+      const cList: string[] = storedC ? JSON.parse(storedC) : [];
+      if (!cList.includes(mCode)) cList.push(mCode);
+      if (mUserId && !cList.includes(mUserId)) cList.push(mUserId);
+      localStorage.setItem("vba.connected_members", JSON.stringify(cList));
+
+      window.dispatchEvent(
+        new CustomEvent("vba.connection.changed", {
+          detail: { memberCode: m.code, userId: m.userId, connected: true },
+        }),
+      );
+    } catch {}
+
+    setDisconnectedSet((prev) => {
+      const next = new Set(prev);
+      next.delete(mCode);
+      if (mUserId) next.delete(mUserId);
+      return next;
+    });
+    setConnectedSet((prev) => {
+      const next = new Set(prev);
+      next.add(mCode);
+      if (mUserId) next.add(mUserId);
+      return next;
+    });
+
     try {
       await fetchNestApi<any>("/network/requests", {
         method: "POST",
@@ -180,13 +266,56 @@ function MembersScreen() {
     }
   };
 
-  const handleDisconnect = async (targetUserId: string, memberName: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn hủy kết bạn với ${memberName}?`)) return;
+  const handleDisconnect = async (m: DirectoryMember) => {
+    const personDisplayName = m.contact || m.personName || m.name;
+    if (!window.confirm(`Bạn có chắc chắn muốn hủy kết bạn với ${personDisplayName}?`)) return;
+
+    const mCode = m.code.toLowerCase();
+    const mUserId = (m.userId || "").toLowerCase();
+
+    // 1. Cập nhật localStorage ngay lập tức
     try {
-      await disconnect.mutateAsync({ targetPersonNodeId: targetUserId });
-      toast.success(`Đã hủy kết bạn với ${memberName}`);
-    } catch {
-      toast.error("Không thể hủy kết bạn");
+      const storedD = localStorage.getItem("vba.disconnected_members");
+      const dList: string[] = storedD ? JSON.parse(storedD) : [];
+      if (!dList.includes(mCode)) dList.push(mCode);
+      if (mUserId && !dList.includes(mUserId)) dList.push(mUserId);
+      localStorage.setItem("vba.disconnected_members", JSON.stringify(dList));
+
+      const storedC = localStorage.getItem("vba.connected_members");
+      const cList: string[] = storedC ? JSON.parse(storedC) : [];
+      const nextC = cList.filter((x) => String(x).toLowerCase() !== mCode && String(x).toLowerCase() !== mUserId);
+      localStorage.setItem("vba.connected_members", JSON.stringify(nextC));
+
+      window.dispatchEvent(
+        new CustomEvent("vba.connection.changed", {
+          detail: { memberCode: m.code, userId: m.userId, connected: false },
+        }),
+      );
+    } catch {}
+
+    // 2. Cập nhật state nội bộ
+    setDisconnectedSet((prev) => {
+      const next = new Set(prev);
+      next.add(mCode);
+      if (mUserId) next.add(mUserId);
+      return next;
+    });
+    setConnectedSet((prev) => {
+      const next = new Set(prev);
+      next.delete(mCode);
+      if (mUserId) next.delete(mUserId);
+      return next;
+    });
+
+    toast.success(`Đã hủy kết bạn với ${personDisplayName}`);
+
+    // 3. Gọi backend nếu có userId
+    if (m.userId) {
+      try {
+        await disconnect.mutateAsync({ targetPersonNodeId: m.userId });
+      } catch (err) {
+        console.warn("Backend disconnect notice:", err);
+      }
     }
   };
 
@@ -201,9 +330,9 @@ function MembersScreen() {
     <div className="vba-animate pb-24">
       <MemberHeader title={t("m.members.title")} back />
 
-      {/* Search Input - Borderless */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
+      {/* Search Input & Invite Button */}
+      <div className="px-4 pt-3 flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <input
             value={q}
@@ -221,6 +350,17 @@ function MembersScreen() {
             </button>
           )}
         </div>
+
+        {/* Nút Mời vào CLB CEO 1983 */}
+        <button
+          type="button"
+          onClick={() => setInviteModalOpen(true)}
+          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-md transition active:scale-95 cursor-pointer"
+        >
+          <UserPlus className="h-4 w-4 text-amber-300" />
+          <span className="hidden sm:inline">Mời vào CLB CEO 1983</span>
+          <span className="sm:hidden">Mời vào CLB</span>
+        </button>
       </div>
 
       {/* Filter Tabs */}
@@ -293,7 +433,7 @@ function MembersScreen() {
 
         {filtered.map((m) => {
           const targetId = (m.userId || m.code).toLowerCase();
-          const isFriend = Boolean(m.userId && connectedMap.has(m.userId.toLowerCase()));
+          const isFriend = checkIsFriend(m);
           const isOutgoing = Boolean(
             (m.userId && outgoingMap.has(m.userId.toLowerCase())) || localPending.has(targetId),
           );
@@ -385,7 +525,7 @@ function MembersScreen() {
                 {/* Connection 2-way Lifecycle Action */}
                 {isFriend ? (
                   <button
-                    onClick={() => m.userId && handleDisconnect(m.userId, personDisplayName)}
+                    onClick={() => handleDisconnect(m)}
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-1.5 px-3 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 active:scale-[0.98] transition-all cursor-pointer group"
                     title="Chạm để hủy kết bạn"
                   >
@@ -433,6 +573,7 @@ function MembersScreen() {
       {/* Member Profile Modal */}
       <MemberProfileModal
         member={selectedMember}
+        initialConnected={selectedMember ? checkIsFriend(selectedMember) : false}
         onClose={() => setSelectedMember(null)}
         onMessage={(m) => {
           const pName = m.contact || m.personName || m.name;
@@ -440,6 +581,15 @@ function MembersScreen() {
           handleOpenChat(m.code, pName);
         }}
         onConnect={(m) => handleConnect(m)}
+        onDisconnect={(m) => handleDisconnect(m)}
+      />
+
+      {/* Invite New Member Modal */}
+      <InviteMemberModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        memberCode={myMember?.code || "M1983-002"}
+        memberName={myMember?.name || "Lãnh đạo Doanh nghiệp"}
       />
     </div>
   );

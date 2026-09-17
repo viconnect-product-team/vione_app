@@ -26,11 +26,28 @@ import {
   Award,
   Sparkles,
   Tag,
+  Building2,
+  Briefcase,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Share2,
+  Copy,
+  MessageSquare,
+  ExternalLink,
+  Crown,
+  Facebook,
+  Linkedin,
+  Camera,
 } from "lucide-react";
+import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
+import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
+import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   getMyMember,
@@ -70,11 +87,31 @@ type Display = {
   showPhoto: boolean;
 };
 
-function resolveDisplay(member: MyMember | null, s: CardSettings | null): Display {
+function resolveDisplay(
+  member: MyMember | null,
+  s: CardSettings | null,
+  customProfile?: any,
+  customAvatar?: string | null,
+): Display {
+  const rawName = customProfile?.name?.trim() || s?.displayName?.trim() || member?.name || "";
+  const cleanName = rawName || "Hội viên CLB CEO 1983";
+
+  const rawCompany =
+    customProfile?.company?.trim() ||
+    s?.displayCompany?.trim() ||
+    (member as any)?.companyName ||
+    (member as any)?.company;
+  const isOldSeed = rawCompany && rawCompany.includes("ViOne Platform");
+  const cleanCompany = !rawCompany || isOldSeed ? "CLB Doanh Nhân CEO 1983" : rawCompany;
+
   return {
-    name: (s?.displayName?.trim() || member?.name || "").trim(),
-    company: (s?.displayCompany?.trim() || member?.title || "").trim(),
-    photo: s?.photoUrl ?? null,
+    name: cleanName.trim() || "Hội viên CLB CEO 1983",
+    company: cleanCompany.trim(),
+    photo:
+      customAvatar ||
+      customProfile?.avatar ||
+      s?.photoUrl ||
+      (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null),
     showName: s?.showName ?? true,
     showCompany: s?.showCompany ?? true,
     showPhoto: s?.showPhoto ?? true,
@@ -256,7 +293,9 @@ function CardScreen() {
   );
 
   const [qrOpen, setQrOpen] = useState(false);
+  const [cardDisplayType, setCardDisplayType] = useState<"business_card" | "membership_card">("business_card");
   const [editOpen, setEditOpen] = useState(false);
+  const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [nfcBusy, setNfcBusy] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [themeId, setThemeId] = useState<string | null>(null);
@@ -302,7 +341,55 @@ function CardScreen() {
     if (member) setLastSync(Date.now());
   }, [member]);
 
-  const d = resolveDisplay(member, settings);
+  const [customProfile, setCustomProfile] = useState<any>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [customAvatar, setCustomAvatar] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("vba_member_avatar_photo");
+  });
+  const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("vba_member_cover_photo");
+  });
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
+        setCustomAvatar(localStorage.getItem("vba_member_avatar_photo"));
+      } catch {}
+    };
+    const handleCoverUpdate = () => {
+      setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+    };
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
+    window.addEventListener("storage", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);
+      window.removeEventListener("storage", handleProfileUpdate);
+    };
+  }, []);
+
+  const handleCopyCode = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!member?.code) return;
+    navigator.clipboard.writeText(member.code);
+    setCopiedCode(true);
+    toast.success(lang === "en" ? "Member code copied!" : "Đã sao chép mã hội viên!");
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const d = resolveDisplay(member, settings, customProfile, customAvatar);
   const vcard = buildVCard(member, d);
   const originForQr = typeof window !== "undefined" ? window.location.origin : "";
   // Prefer the server-signed, short-lived QR token. Fall back to the code-based
@@ -340,7 +427,6 @@ function CardScreen() {
     { label: t("m.card.actionBenefits"), icon: Heart, to: "/association/perks" as const },
     { label: t("m.card.actionHistory"), icon: ReceiptText, to: "/association/history" as const },
     { label: t("m.card.actionRenew"), icon: CalendarPlus, to: "/association/renew" as const },
-    { label: t("m.card.actionUpdate"), icon: UserPen, to: "/association/profile" as const },
   ];
 
   async function shareNfc() {
@@ -391,245 +477,306 @@ function CardScreen() {
     }
   }
 
+  const [copiedLink, setCopiedLink] = useState(false);
+  const handleShareProfile = async () => {
+    if (!member) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Hồ sơ Hội viên CEO 1983 - ${d.name || member.name}`,
+          text: `Danh thiếp & Hồ sơ Doanh nhân ${d.name || member.name} - ${d.company || member.title}`,
+          url,
+        });
+        return;
+      } catch {
+        /* fallback to clipboard */
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      toast.success("Đã sao chép liên kết danh thiếp & hồ sơ!");
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
   return (
     <div className="vba-animate">
       <MemberHeader title={t("m.card.headerTitle")} back />
 
       <div className="px-4 pt-4">
-        {/* Switcher: Thẻ của tôi vs Quét mã QR */}
-        <div className="mx-auto mb-4 flex max-w-md items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-[#14223E] p-1">
+        {/* Đã gỡ bỏ nút Thẻ của tôi & Quét QR kết nối theo yêu cầu */}
+
+        {/* Card Type Switcher: Card Visit CEO 1983 vs Thẻ VIP Kim Loại */}
+        <div className="mx-auto mb-4 flex max-w-md items-center justify-center p-1 rounded-xl bg-slate-100 dark:bg-[#14223E] border border-slate-200 dark:border-slate-800">
           <button
             type="button"
-            className="flex-1 rounded-lg py-2 text-center text-xs font-bold transition bg-[#2E3192] text-white shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
-            style={{ color: "#ffffff" }}
+            onClick={() => setCardDisplayType("business_card")}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+              cardDisplayType === "business_card"
+                ? "bg-[#19194D] text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:text-[#19194D]"
+            }`}
           >
-            <IdCard className="h-3.5 w-3.5 text-white" />
-            <span className="text-white font-bold">Thẻ của tôi</span>
+            <IdCard className="w-3.5 h-3.5" />
+            <span>Card Visit CEO 1983</span>
           </button>
-          <Link
-            to="/association/checkin"
-            className="flex-1 rounded-lg py-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#2E3192] transition inline-flex items-center justify-center gap-1.5"
+          <button
+            type="button"
+            onClick={() => setCardDisplayType("membership_card")}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+              cardDisplayType === "membership_card"
+                ? "bg-[#2E3192] text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:text-[#2E3192]"
+            }`}
           >
-            <QrCode className="h-3.5 w-3.5" />
-            Quét mã QR
-          </Link>
+            <Crown className="w-3.5 h-3.5 text-amber-400" />
+            <span>Thẻ VIP Kim Loại</span>
+          </button>
         </div>
 
-        {/* Membership card */}
-        <div
-          data-dark-card="true"
-          className="vba-member-card relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] text-white"
-          style={{ background: theme.surface, borderColor: theme.border }}
-        >
-          <div
-            className="absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl"
-            style={{ background: theme.accentSoft }}
-          />
-          {theme.shine && (
-            <div
-              className="pointer-events-none absolute inset-0 opacity-40"
-              style={{
-                background:
-                  "linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.14) 48%,transparent 62%)",
-                backgroundSize: "250% 250%",
-                animation: "vba-shine 5s ease-in-out infinite",
-              }}
+        {cardDisplayType === "business_card" ? (
+          <div className="mb-4">
+            <Ceo1983BusinessCardVisit
+              name={d.name || "NGUYỄN VĂN A"}
+              title={customProfile?.title || (member as any)?.position || (member as any)?.title || "Director"}
+              phone={customProfile?.phone || member?.phone || "036xxxxxxx"}
+              email={customProfile?.email || member?.email || "username@gmail.com"}
+              company={d.company || "CÂU LẠC BỘ CEO1983"}
+              website="https://ceo1983club.com"
+              clubEmail="info@ceo1983club.com"
+              cardCode={member?.code || "CEO1983-001"}
+              qrValue={member?.code ? `${origin}/card/${member.code}` : "https://ceo1983club.com"}
+              avatarUrl={d.photo}
+              showActions={true}
             />
-          )}
-
-          <button
-            onClick={() => setThemeOpen((v) => !v)}
-            className="absolute right-12 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
-            aria-label={lang === "en" ? "Change card theme" : "Đổi giao diện thẻ"}
-          >
-            <Palette className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => member && setEditOpen(true)}
-            className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
-            aria-label={t("m.card.editAriaLabel")}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-
-          <div className="relative flex items-start justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 p-1 backdrop-blur-xs">
-                <img
-                  src="/ceo1983-emblem-8.png"
-                  alt="Biểu tượng số 8 CEO 1983"
-                  className="h-full w-auto object-contain drop-shadow-[0_2px_6px_rgba(255,255,255,0.3)]"
-                  width={36}
-                  height={44}
-                />
-              </div>
-              <div className="leading-tight min-w-0 flex-1">
-                <div
-                  data-card-white
-                  className="break-words text-[12px] font-black tracking-wide drop-shadow-sm text-white leading-tight"
-                  style={{ color: "#FFFFFF" }}
-                >
-                  {brand?.name || "CLB DOANH NHÂN CEO 1983"}
-                </div>
-                <div
-                  data-card-white
-                  className="break-words text-[9px] font-semibold drop-shadow-xs text-white/80 leading-tight mt-0.5"
-                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
-                >
-                  {brand?.tagline || "NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI"}
-                </div>
-              </div>
-            </div>
           </div>
-
-          <div className="relative mt-5">
+        ) : (
+          <>
+            {/* Membership card */}
             <div
-              className="text-[17px] font-black tracking-wider"
-              style={{
-                background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
-              }}
+              data-dark-card="true"
+              className="vba-member-card relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] text-white"
+              style={{ background: theme.surface, borderColor: theme.border }}
             >
-              {t("m.card.cardLabel")}
-            </div>
-            <div
-              data-card-white
-              className="text-[10px] font-semibold tracking-[0.2em] text-white/70"
-              style={{ color: "rgba(255, 255, 255, 0.75)" }}
-            >
-              MEMBER CARD
-            </div>
-          </div>
-
-          <div className="relative mt-5 flex items-center gap-3">
-            {d.showPhoto &&
-              (d.photo ? (
-                <img
-                  src={d.photo}
-                  alt={d.name}
-                  className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
-                />
-              ) : (
-                <span
-                  data-card-white
-                  className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm shrink-0"
-                  style={{ color: "#FFFFFF" }}
-                >
-                  {initials(d.name)}
-                </span>
-              ))}
-            <div className="min-w-0 flex-1">
-              {d.showName && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    className="break-words text-[17px] font-black tracking-wide leading-snug"
-                    style={{
-                      background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
-                    }}
-                  >
-                    {d.name || "..."}
-                  </span>
-                  {member?.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-amber-400" />}
-                </div>
-              )}
-              {d.showCompany && d.company && (
+              <div
+                className="absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl"
+                style={{ background: theme.accentSoft }}
+              />
+              {theme.shine && (
                 <div
-                  data-card-white
-                  className="break-words text-[12px] font-medium text-white/85 leading-snug mt-0.5"
-                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
-                >
-                  {d.company}
-                </div>
+                  className="pointer-events-none absolute inset-0 opacity-40"
+                  style={{
+                    background:
+                      "linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.14) 48%,transparent 62%)",
+                    backgroundSize: "250% 250%",
+                    animation: "vba-shine 5s ease-in-out infinite",
+                  }}
+                />
               )}
-              <span
-                className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-xs"
-                style={{ background: stateStyle.bg, color: stateStyle.color }}
-              >
-                {lang === "en" ? stateStyle.labelEn : stateStyle.labelVi}
-              </span>
-            </div>
-          </div>
 
-          <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
-            <div>
-              <div
-                data-card-white
-                className="text-[10px] font-medium text-white/60"
-                style={{ color: "rgba(255, 255, 255, 0.7)" }}
+              <button
+                onClick={() => setThemeOpen((v) => !v)}
+                className="absolute right-12 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
+                aria-label={lang === "en" ? "Change card theme" : "Đổi giao diện thẻ"}
               >
-                {t("m.card.memberId")}
-              </div>
-              <div
-                data-card-white
-                className="text-[13px] font-bold tracking-wider text-white"
-                style={{ color: "#FFFFFF" }}
+                <Palette className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => member && setEditOpen(true)}
+                className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
+                aria-label={t("m.card.editAriaLabel")}
               >
-                {member?.code}
-              </div>
-            </div>
-            <div className="text-right">
-              <div
-                data-card-white
-                className="text-[10px] font-medium text-white/60"
-                style={{ color: "rgba(255, 255, 255, 0.7)" }}
-              >
-                {t("m.card.validUntil")}
-              </div>
-              <div
-                data-card-white
-                className="text-[13px] font-bold tracking-wider text-white"
-                style={{ color: "#FFFFFF" }}
-              >
-                {member?.validUntil ?? "—"}
-              </div>
-            </div>
-          </div>
-        </div>
+                <Pencil className="h-4 w-4" />
+              </button>
 
-        {/* Theme picker */}
-        {themeOpen && (
-          <div className="mt-3 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] p-3">
-            <div className="mb-2 text-[12px] font-semibold text-[var(--vba-text-muted)]">
-              {lang === "en" ? "Card theme" : "Giao diện thẻ"}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {CARD_THEME_LIST.map((th) => {
-                const selected = th.id === theme.id;
-                return (
-                  <button
-                    key={th.id}
-                    onClick={() => pickTheme(th.id)}
-                    className="relative h-14 overflow-hidden rounded-xl border text-left"
-                    style={{
-                      background: th.surface,
-                      borderColor: selected ? th.accent : "transparent",
-                    }}
-                    aria-label={th.label}
-                  >
-                    <span
-                      className="absolute bottom-1 left-1.5 text-[9px] font-semibold"
-                      style={{ color: th.text }}
+              <div className="relative flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 p-1 backdrop-blur-xs">
+                    <img
+                      src="/ceo1983-emblem-8.png"
+                      alt="Biểu tượng số 8 CEO 1983"
+                      className="h-full w-auto object-contain drop-shadow-[0_2px_6px_rgba(255,255,255,0.3)]"
+                      width={36}
+                      height={44}
+                    />
+                  </div>
+                  <div className="leading-tight min-w-0 flex-1">
+                    <div
+                      data-card-white
+                      className="break-words text-[12px] font-black tracking-wide drop-shadow-sm text-white leading-tight"
+                      style={{ color: "#FFFFFF" }}
                     >
-                      {th.label}
+                      {brand?.name || "CLB DOANH NHÂN CEO 1983"}
+                    </div>
+                    <div
+                      data-card-white
+                      className="break-words text-[9px] font-semibold drop-shadow-xs text-white/80 leading-tight mt-0.5"
+                      style={{ color: "rgba(255, 255, 255, 0.85)" }}
+                    >
+                      {brand?.tagline || "NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative mt-5">
+                <div
+                  className="text-[17px] font-black tracking-wider"
+                  style={{
+                    background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
+                  }}
+                >
+                  {t("m.card.cardLabel")}
+                </div>
+                <div
+                  data-card-white
+                  className="text-[10px] font-semibold tracking-[0.2em] text-white/70"
+                  style={{ color: "rgba(255, 255, 255, 0.75)" }}
+                >
+                  MEMBER CARD
+                </div>
+              </div>
+
+              <div className="relative mt-5 flex items-center gap-3">
+                {d.showPhoto &&
+                  (d.photo ? (
+                    <img
+                      src={d.photo}
+                      alt={d.name}
+                      className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <span
+                      data-card-white
+                      className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm shrink-0"
+                      style={{ color: "#FFFFFF" }}
+                    >
+                      {initials(d.name)}
                     </span>
-                    {selected && (
+                  ))}
+                <div className="min-w-0 flex-1">
+                  {d.showName && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span
-                        className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full"
-                        style={{ background: th.accent }}
+                        className="break-words text-[17px] font-black tracking-wide leading-snug"
+                        style={{
+                          background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
+                        }}
                       >
-                        <Check className="h-3 w-3 text-foreground" />
+                        {d.name || "..."}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
+                      {member?.status && (
+                        <span
+                          data-card-white
+                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"
+                          style={{
+                            background: stateStyle.bg,
+                            color: stateStyle.color,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                          }}
+                        >
+                          {lang === "en" ? stateStyle.labelEn : stateStyle.labelVi}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {d.showCompany && (
+                    <div
+                      data-card-white
+                      className="break-words text-[12px] font-medium text-white/90 drop-shadow-xs leading-snug mt-0.5"
+                      style={{ color: "rgba(255, 255, 255, 0.95)" }}
+                    >
+                      {d.company || "CLB Doanh Nhân CEO 1983"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
+                <div>
+                  <div
+                    data-card-white
+                    className="text-[10px] font-medium text-white/60"
+                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                  >
+                    {t("m.card.memberId")}
+                  </div>
+                  <div
+                    data-card-white
+                    className="text-[13px] font-bold tracking-wider text-white"
+                    style={{ color: "#FFFFFF" }}
+                  >
+                    {member?.code}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div
+                    data-card-white
+                    className="text-[10px] font-medium text-white/60"
+                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                  >
+                    {t("m.card.validUntil")}
+                  </div>
+                  <div
+                    data-card-white
+                    className="text-[13px] font-bold tracking-wider text-white"
+                    style={{ color: "#FFFFFF" }}
+                  >
+                    {member?.validUntil ?? "—"}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* Theme picker */}
+            {themeOpen && (
+              <div className="mt-3 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] p-3">
+                <div className="mb-2 text-[12px] font-semibold text-[var(--vba-text-muted)]">
+                  {lang === "en" ? "Card theme" : "Giao diện thẻ"}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {CARD_THEME_LIST.map((th) => {
+                    const selected = th.id === theme.id;
+                    return (
+                      <button
+                        key={th.id}
+                        onClick={() => pickTheme(th.id)}
+                        className="relative h-14 overflow-hidden rounded-xl border text-left cursor-pointer"
+                        style={{
+                          background: th.surface,
+                          borderColor: selected ? th.accent : "transparent",
+                        }}
+                        aria-label={th.label}
+                      >
+                        <span
+                          className="absolute bottom-1 left-1.5 text-[9px] font-semibold"
+                          style={{ color: th.text }}
+                        >
+                          {th.label}
+                        </span>
+                        {selected && (
+                          <span
+                            className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full"
+                            style={{ background: th.accent }}
+                          >
+                            <Check className="h-3 w-3 text-foreground" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Offline / last sync indicator */}
@@ -650,72 +797,249 @@ function CardScreen() {
           )}
         </div>
 
-        {/* QR + NFC sharing */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => member && setQrOpen(true)}
-            disabled={!member}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[13px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
-          >
-            <QrCode className="h-5 w-5 text-[#2E3192] dark:text-blue-400" /> {t("m.card.showQr")}
-          </button>
-          <button
-            onClick={shareNfc}
-            disabled={!member || nfcBusy}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[13px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
-          >
-            <Nfc className="h-5 w-5 text-[#2E3192] dark:text-blue-400" />{" "}
-            {nfcBusy ? t("m.card.nfcWriting") : t("m.card.shareNfc")}
-          </button>
-        </div>
+        {/* ── HỒ SƠ HỘI VIÊN CEO 1983 EXECUTIVE (ĐẶT NGAY DƯỚI THẺ HỘI VIÊN, QR TRÊN ẢNH BÌA) ── */}
+        {member && (
+          <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md overflow-hidden transition hover:border-amber-500/50">
+            {/* Ảnh bìa to rộng (Cover Banner) kèm Mã QR hiện trực tiếp trên ảnh bìa */}
+            <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0f4c9c]">
+              <img
+                src={coverPhoto || heroImg}
+                alt="Cover Banner"
+                className="h-full w-full object-cover opacity-85"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
 
-        {/* Add to Wallet + public verification */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {wallets.map((w) => {
-            const serverAvailable =
-              w.id === "apple"
-                ? Boolean(identity?.walletAppleAvailable)
-                : Boolean(identity?.walletGoogleAvailable);
-            const url = serverAvailable && pass ? walletAddUrl(w.id, pass) : null;
-            return (
-              <button
-                key={w.id}
-                onClick={() => {
-                  if (url) window.open(url, "_blank");
-                  else
-                    toast.info(
-                      lang === "en"
-                        ? `${w.label} is not configured on the server`
-                        : `${w.label} chưa được cấu hình trên máy chủ`,
-                    );
-                }}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/20 bg-white dark:bg-slate-800 py-3 text-[12px] font-semibold text-slate-800 dark:text-slate-100 shadow-xs disabled:opacity-50 hover:border-[#2E3192]/50 transition cursor-pointer"
-              >
-                <Wallet className="h-4 w-4 text-[#2E3192] dark:text-blue-400" /> {w.label}
-                {!serverAvailable && (
-                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
-                    {lang === "en" ? "(off)" : "(tắt)"}
-                  </span>
+              {/* VIP badge on cover banner (bỏ QR ở ảnh bìa theo yêu cầu) */}
+              <div className="absolute top-3 right-3 z-10">
+                <span className="inline-flex items-center gap-1 rounded-lg border border-amber-400/50 bg-amber-500/25 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-xs">
+                  <Crown className="h-3.5 w-3.5 text-amber-400" />
+                  VIP GOLD
+                </span>
+              </div>
+            </div>
+
+            {/* Thân thẻ với Avatar dập viền trắng đè lên ảnh bìa */}
+            <div className="px-4 pb-4 pt-0 relative">
+              <div className="flex items-end justify-between -mt-9 mb-2.5">
+                {/* Avatar tròn to dập viền trắng nổi bật có chấm xanh online */}
+                <div className="relative">
+                  {d.photo ? (
+                    <img
+                      src={d.photo}
+                      alt={d.name}
+                      className="h-18 w-18 shrink-0 rounded-full object-cover ring-3 ring-white dark:ring-[#0F172A] shadow-md bg-slate-100 dark:bg-slate-800"
+                    />
+                  ) : (
+                    <span className="grid h-18 w-18 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#19194D] text-[20px] font-black text-white ring-3 ring-white dark:ring-[#0F172A] shadow-md">
+                      {initials(d.name)}
+                    </span>
+                  )}
+                  <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0F172A]" />
+                </div>
+
+                {/* Mã hội viên */}
+                {member.code && (
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 cursor-pointer transition shadow-xs"
+                    title={lang === "en" ? "Copy Member Code" : "Sao chép mã hội viên"}
+                  >
+                    <span>{member.code}</span>
+                    {copiedCode ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
+                  </button>
                 )}
-              </button>
-            );
-          })}
-        </div>
+              </div>
 
-        {pass && (
-          <a
-            href={pass.verifyUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/30 bg-blue-50/50 dark:bg-slate-800/80 py-3 text-[13px] font-bold text-[#2E3192] dark:text-blue-400 shadow-xs hover:bg-blue-50 transition cursor-pointer"
-          >
-            <ShieldCheck className="h-5 w-5 text-[#2E3192] dark:text-blue-400" />{" "}
-            {lang === "en" ? "Public verification page" : "Trang xác thực công khai"}
-          </a>
+              {/* Thông tin hội viên & doanh nghiệp */}
+              <div className="space-y-0.5 mb-3">
+                <div className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {d.company}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-[17px] font-black text-slate-900 dark:text-white">
+                    {d.name}
+                  </span>
+                  <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-[#0284c7] dark:text-sky-400" />
+                </div>
+                <div className="truncate text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                  {customProfile?.title || member.title || (lang === "en" ? "Official Member" : "Ban Quản Trị")}
+                </div>
+              </div>
+
+              {/* Business Contact Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] rounded-xl bg-slate-50 dark:bg-slate-850/60 p-3 border border-slate-100 dark:border-slate-800 mb-3">
+                {(customProfile?.phone || member.phone) && (
+                  <a
+                    href={`tel:${customProfile?.phone || member.phone}`}
+                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition"
+                  >
+                    <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Hotline:</strong> {customProfile?.phone || member.phone}</span>
+                  </a>
+                )}
+                {(customProfile?.email || member.email) && (
+                  <a
+                    href={`mailto:${customProfile?.email || member.email}`}
+                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition"
+                  >
+                    <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Email:</strong> {customProfile?.email || member.email}</span>
+                  </a>
+                )}
+                {(customProfile?.industry || member.industry) && (
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Tag className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Lĩnh vực:</strong> {customProfile?.industry || member.industry}</span>
+                  </div>
+                )}
+                {(customProfile?.address || member.address) && (
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
+                    <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                    <span className="truncate"><strong>Địa chỉ:</strong> {customProfile?.address || member.address}</span>
+                  </div>
+                )}
+                {(customProfile?.website || member.website) && (
+                  <a
+                    href={(customProfile?.website || member.website).startsWith("http") ? (customProfile?.website || member.website) : `https://${customProfile?.website || member.website}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition sm:col-span-2"
+                  >
+                    <Globe className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Website:</strong> {customProfile?.website || member.website}</span>
+                    <ExternalLink className="h-3 w-3 opacity-60 ml-auto" />
+                  </a>
+                )}
+              </div>
+
+              {/* Social Media Links: Facebook, Zalo, LinkedIn, Web */}
+              <div className="flex items-center gap-2 py-2 mb-3 border-y border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Liên kết:</span>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] font-semibold text-[11px] hover:bg-blue-100 transition"
+                  title="Facebook cá nhân/doanh nghiệp"
+                >
+                  <Facebook className="h-3.5 w-3.5" />
+                  <span>Facebook</span>
+                </a>
+                <a
+                  href={`https://zalo.me/${(customProfile?.phone || member.phone || "0901000002").replace(/\s+/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-[#0068FF] font-bold text-[11px] hover:bg-sky-100 transition"
+                  title="Chat Zalo"
+                >
+                  <span>Zalo</span>
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#0A66C2] font-semibold text-[11px] hover:bg-blue-100 transition"
+                  title="LinkedIn"
+                >
+                  <Linkedin className="h-3.5 w-3.5" />
+                  <span>LinkedIn</span>
+                </a>
+              </div>
+
+              {/* Direct Profile Actions: Nhắn tin & Chia sẻ hồ sơ (bỏ Mã QR ở profile) */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <Link
+                  to="/association/messages"
+                  search={{ peerCode: member.code }}
+                  style={{ color: "#ffffff" }}
+                  className="flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[11.5px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Nhắn tin</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleShareProfile}
+                  className="flex items-center justify-center gap-1 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[11.5px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer"
+                >
+                  {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
+                  <span>{copiedLink ? "Đã chép" : "Chia sẻ hồ sơ"}</span>
+                </button>
+              </div>
+
+              {/* TIỆN ÍCH THẺ SỐ & XÁC THỰC: NFC, GOOGLE/APPLE WALLETS, XÁC THỰC CÔNG KHAI */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>Tiện ích Thẻ số & Ví di động</span>
+                  <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Đã xác thực
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Chạm NFC */}
+                  <button
+                    onClick={shareNfc}
+                    disabled={!member || nfcBusy}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#003B95]/30 bg-blue-50/50 dark:bg-slate-800/80 py-2.5 text-[12px] font-bold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 transition cursor-pointer"
+                  >
+                    <Nfc className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                    <span>{nfcBusy ? "Đang ghi..." : "Chạm thẻ NFC"}</span>
+                  </button>
+
+                  {/* Trang xác thực công khai */}
+                  {pass && (
+                    <a
+                      href={pass.verifyUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 py-2.5 text-[12px] font-bold text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100/60 transition cursor-pointer text-center"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="truncate">Xác thực công khai</span>
+                    </a>
+                  )}
+                </div>
+
+                {/* Ví Apple Wallet & Google Wallet */}
+                <div className="grid grid-cols-2 gap-2">
+                  {wallets.map((w) => {
+                    const serverAvailable =
+                      w.id === "apple"
+                        ? Boolean(identity?.walletAppleAvailable)
+                        : Boolean(identity?.walletGoogleAvailable);
+                    const url = serverAvailable && pass ? walletAddUrl(w.id, pass) : null;
+                    return (
+                      <button
+                        key={w.id}
+                        onClick={() => {
+                          if (url) window.open(url, "_blank");
+                          else
+                            toast.info(
+                              lang === "en"
+                                ? `${w.label} is not configured on the server`
+                                : `${w.label} chưa được cấu hình trên máy chủ`,
+                            );
+                        }}
+                        className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 py-2 text-[11.5px] font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-[#003B95]/40 transition cursor-pointer"
+                      >
+                        <Wallet className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
+                        <span>{w.label}</span>
+                        {!serverAvailable && (
+                          <span className="text-[9.5px] text-slate-400">(tắt)</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Quick actions - Tất cả icon thể hiện tính năng nhanh có màu xanh CEO #2E3192 */}
-        <div className="mt-5 grid grid-cols-4 gap-3">
+        {/* Quick actions - 3 nút chuẩn CEO (Bỏ nút cập nhật bị thừa) */}
+        <div className="mt-5 grid grid-cols-3 gap-3">
           {actions.map((a: any) => {
             const Icon = a.icon;
             return (
@@ -723,47 +1047,12 @@ function CardScreen() {
                 <span className="grid h-14 w-14 place-items-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs transition-transform group-hover:scale-105 group-hover:border-[#2E3192]/50">
                   <Icon className="h-6 w-6 stroke-[2]" />
                 </span>
-                <span className="text-center text-[10px] font-semibold leading-tight text-slate-700 dark:text-slate-300 group-hover:text-[#2E3192]">
+                <span className="text-center text-[10.5px] font-semibold leading-tight text-slate-700 dark:text-slate-300 group-hover:text-[#2E3192]">
                   {a.label}
                 </span>
               </Link>
             );
           })}
-        </div>
-
-        {/* Benefits - Quyền lợi nổi bật */}
-        <div className="mt-5 vba-card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-[14px] font-bold text-[var(--vba-text)]">
-              {t("m.card.benefitsTitle")}
-            </h3>
-            <Link
-              to="/association/perks"
-              className="text-[12px] font-bold text-[#2E3192] dark:text-blue-400 hover:text-[#19194D]"
-            >
-              {t("m.card.viewAll")}
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            {displayBenefits.map((b, i) => {
-              const title = lang === "en" ? b.titleEn || b.titleVi : b.titleVi;
-              const desc = lang === "en" ? b.descEn || b.descVi : b.descVi;
-              const Icon = resolveBenefitIcon(b, i);
-              return (
-                <div key={i} className="group flex flex-col items-center">
-                  <div className="mx-auto mb-1.5 grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 border border-[#2E3192]/20 shadow-xs transition-transform group-hover:scale-105">
-                    <Icon className="h-5 w-5 stroke-[2]" />
-                  </div>
-                  <div className="text-[11px] font-bold leading-tight text-[var(--vba-text)] line-clamp-1">
-                    {title}
-                  </div>
-                  <div className="text-[10px] text-[var(--vba-text-muted)] line-clamp-2 mt-0.5">
-                    {desc}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
@@ -843,6 +1132,17 @@ function CardScreen() {
           }}
         />
       )}
+
+      {/* ── MODAL MÃ QR HỘI VIÊN & QUÉT QR (DUAL TAB) ── */}
+      <AssociationMemberQrModal
+        open={memberQrModalOpen}
+        onClose={() => setMemberQrModalOpen(false)}
+        memberCode={member?.code || "M1983-002"}
+        memberName={d.name || "Hội viên CEO 1983"}
+        memberTitle={customProfile?.title || member?.title || "Ban Quản Trị"}
+        memberCompany={d.company || "CLB Doanh Nhân CEO 1983"}
+        memberAvatar={d.photo || null}
+      />
     </div>
   );
 }

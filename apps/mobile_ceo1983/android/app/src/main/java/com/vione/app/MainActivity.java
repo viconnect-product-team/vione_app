@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -25,6 +26,11 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
+import com.getcapacitor.BridgeWebViewClient;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +59,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestNativePermissions();
+        setupNativeBridge();
         initNfc();
         handleNfcIntent(getIntent());
     }
@@ -297,9 +304,112 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
+    public class NativeBridge {
+        @JavascriptInterface
+        public void scanQr() {
+            MainActivity.this.runOnUiThread(() -> {
+                MainActivity.this.startNativeQrScanner();
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isNative() {
+            return true;
+        }
+    }
+
+    private void startNativeQrScanner() {
+        try {
+            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .enableAutoZoom()
+                .build();
+
+            GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(this, options);
+
+            scanner.startScan()
+                .addOnSuccessListener(barcode -> {
+                    String rawValue = barcode.getRawValue();
+                    if (rawValue != null && !rawValue.isEmpty()) {
+                        dispatchScannedQrToWebView(rawValue);
+                    }
+                })
+                .addOnCanceledListener(() -> {
+                    dispatchScannedQrCancelToWebView();
+                })
+                .addOnFailureListener(e -> {
+                    e.printStackTrace();
+                    dispatchScannedQrErrorToWebView(e.getMessage());
+                });
+        } catch (Exception e) {
+            e.printStackTrace();
+            dispatchScannedQrErrorToWebView(e.getMessage());
+        }
+    }
+
+    private void dispatchScannedQrToWebView(String rawValue) {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String escaped = rawValue.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "");
+                String script = "(function() {" +
+                    "  try {" +
+                    "    if (typeof window.onNativeQrScanned === 'function') {" +
+                    "      window.onNativeQrScanned('" + escaped + "');" +
+                    "    }" +
+                    "    window.dispatchEvent(new CustomEvent('vione:qr_scanned', { detail: '" + escaped + "' }));" +
+                    "    window.postMessage({ type: 'VIONE_QR_SCANNED', detail: '" + escaped + "', payload: '" + escaped + "' }, '*');" +
+                    "    console.log('[Native QR] Dispatched scanned QR:', '" + escaped + "');" +
+                    "  } catch (err) {" +
+                    "    console.error('[Native QR] Failed to dispatch event:', err);" +
+                    "  }" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void dispatchScannedQrCancelToWebView() {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String script = "(function() {" +
+                    "  try {" +
+                    "    if (typeof window.onNativeQrCancelled === 'function') {" +
+                    "      window.onNativeQrCancelled();" +
+                    "    }" +
+                    "    window.dispatchEvent(new CustomEvent('vione:qr_cancelled'));" +
+                    "  } catch (err) {}" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void dispatchScannedQrErrorToWebView(String errMsg) {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String safeMsg = (errMsg != null ? errMsg : "Unknown error").replace("'", "\\'");
+                String script = "(function() {" +
+                    "  try {" +
+                    "    if (typeof window.onNativeQrError === 'function') {" +
+                    "      window.onNativeQrError('" + safeMsg + "');" +
+                    "    }" +
+                    "    window.dispatchEvent(new CustomEvent('vione:qr_error', { detail: '" + safeMsg + "' }));" +
+                    "  } catch (err) {}" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void setupNativeBridge() {
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
             WebSettings settings = webView.getSettings();
@@ -309,6 +419,16 @@ public class MainActivity extends BridgeActivity {
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            webView.addJavascriptInterface(new NativeBridge(), "AndroidNative");
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        setupNativeBridge();
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            WebView webView = getBridge().getWebView();
 
             webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
                 @Override

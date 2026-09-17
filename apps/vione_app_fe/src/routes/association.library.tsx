@@ -60,124 +60,94 @@ function LibraryScreen() {
             {t("m.library.empty")}
           </p>
         )}
-        {docs.map((d) => (
-          <div
-            key={d.id}
-            onClick={() => setSelectedDoc(d)}
-            className="vba-card flex items-center gap-3 p-3.5 cursor-pointer transition hover:border-amber-500/50 hover:shadow-sm active:scale-[0.99]"
-          >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#003B95] dark:text-amber-400">
-              <FileText className="h-5 w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-[var(--vba-text)]">
-                {d.name}
-              </div>
-              <div className="mt-0.5 truncate text-[11px] text-[var(--vba-text-muted)] flex items-center gap-1.5">
-                <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[9.5px] font-bold text-slate-700 dark:text-slate-300">
-                  {d.type?.toUpperCase() || "PDF"}
-                </span>
-                <span>•</span>
-                <span>{d.size}</span>
-                <span>•</span>
-                <span>{d.time}</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedDoc(d);
-              }}
-              className="rounded-xl bg-[#003B95] hover:bg-[#002B70] active:scale-95 text-white px-3.5 py-1.5 text-[11.5px] font-extrabold transition shadow-xs cursor-pointer"
-              style={{ color: "#ffffff" }}
+        {docs.map((d) => {
+          const ext = (d.type || "PDF").toUpperCase();
+          const isPdf = ext.includes("PDF");
+          const isXls = ext.includes("XLS") || ext.includes("SHEET");
+
+          return (
+            <div
+              key={d.id}
+              onClick={() => setSelectedDoc(d)}
+              className="vba-card flex items-center justify-between gap-3 p-3.5 rounded-2xl cursor-pointer transition hover:border-amber-400/50 hover:shadow-md active:scale-[0.99] border border-slate-200/80 dark:border-slate-800"
             >
-              {isEn ? "View" : "Xem"}
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <span
+                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-black text-[11px] shadow-xs ${
+                    isPdf
+                      ? "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60"
+                      : isXls
+                      ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60"
+                      : "bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60"
+                  }`}
+                >
+                  {ext}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-[13px] font-bold text-[var(--vba-text)] leading-snug">
+                    {d.name}
+                  </h3>
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    <span>{d.size}</span>
+                    <span>•</span>
+                    <span>{d.time}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(d);
+                }}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 hover:bg-amber-400 hover:text-slate-950 dark:bg-slate-800 dark:hover:bg-amber-400 dark:hover:text-slate-950 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                title={isEn ? "Download" : "Tải xuống"}
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </div>
+          );
+        })}
       </div>
 
-      {/* ── DOCUMENT VIEWER MODAL (Portal căn giữa màn hình điện thoại) ── */}
+      {/* ── DOCUMENT VIEWER MODAL (Căn giữa, tối giản, ít chữ) ── */}
       {selectedDoc && mounted && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3.5 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setSelectedDoc(null)}
         >
           <div
-            className="relative w-full max-w-[420px] max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-5 text-slate-900 dark:text-white shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="relative w-full max-w-[380px] rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0C1222] p-5 text-slate-900 dark:text-white shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
               type="button"
               onClick={() => setSelectedDoc(null)}
-              className="absolute top-4 right-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
+              className="absolute top-4 right-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Document Header */}
-            <div className="pr-8">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10.5px] font-bold text-[#003B95] dark:text-amber-400 uppercase tracking-wider">
-                  {selectedDoc.category || "Tài liệu chính thức"}
-                </span>
-                <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                  {selectedDoc.type?.toUpperCase() || "PDF"}
-                </span>
-              </div>
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
+            <div className="pr-6">
+              <span className="inline-block rounded-md bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">
+                {selectedDoc.type?.toUpperCase() || "PDF"} • {selectedDoc.category || "Văn bản nội bộ"}
+              </span>
+              <h2 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
                 {selectedDoc.name}
               </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-[11.5px] text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
-                  {selectedDoc.time}
-                </span>
-                <span className="flex items-center gap-1">
-                  <HardDrive className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
-                  {selectedDoc.size}
-                </span>
-              </div>
-            </div>
-
-            {/* Summary Box */}
-            <div className="rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 p-3.5 border border-amber-200/80 dark:border-amber-800/40">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1">
-                <BookOpen className="h-3.5 w-3.5" />
-                {isEn ? "Document Overview" : "Tóm tắt nội dung văn bản"}
-              </div>
-              <p className="text-[12px] leading-relaxed text-slate-700 dark:text-slate-300">
-                {selectedDoc.description ||
-                  "Văn bản chính thức ban hành bởi Ban Điều Hành CLB Doanh Nhân CEO 1983. Toàn bộ hội viên có nghĩa vụ tuân thủ và vận dụng vào hoạt động giao thương nội khối."}
-              </p>
-            </div>
-
-            {/* Chapter Breakdown Preview */}
-            <div className="space-y-1.5">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {isEn ? "Contents & Chapters" : "Mục lục & Các điều khoản chính"}
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-2">
-                {(selectedDoc.chapters || [
-                  "Chương I: Tôn chỉ, mục đích và tư cách pháp nhân",
-                  "Chương II: Tiêu chuẩn, quyền lợi và nghĩa vụ hội viên",
-                  "Chương III: Tổ chức bộ máy Ban Thường Trực và Ban Chấp Hành",
-                  "Chương IV: Quản lý tài chính, quỹ tương trợ và xúc tiến thương mại",
-                ]).map((chap, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 py-1.5 px-2 text-[11.5px] text-slate-700 dark:text-slate-300">
-                    <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[9.5px] font-black text-[#003B95] dark:text-amber-400">
-                      {idx + 1}
-                    </span>
-                    <span className="leading-snug">{chap}</span>
-                  </div>
-                ))}
+              <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                <span>Dung lượng: {selectedDoc.size}</span>
+                <span>•</span>
+                <span>Ngày ban hành: {selectedDoc.time}</span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex gap-2.5">
+            <div className="pt-2 flex gap-2">
               <button
                 type="button"
                 onClick={() => handleDownload(selectedDoc)}
@@ -186,7 +156,7 @@ function LibraryScreen() {
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white py-2.5 text-xs font-bold shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
               >
                 <Download className="h-4 w-4" />
-                <span>{downloading ? (isEn ? "Downloading..." : "Đang tải...") : (isEn ? "Download PDF" : "Tải xuống tài liệu")}</span>
+                <span>{downloading ? (isEn ? "Downloading..." : "Đang tải...") : (isEn ? "Download file" : "Tải xuống văn bản")}</span>
               </button>
 
               <button

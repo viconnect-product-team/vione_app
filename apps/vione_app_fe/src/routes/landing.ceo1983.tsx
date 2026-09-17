@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Ceo1983Landing } from "@/components/landing/Ceo1983Landing";
+import { Ceo1983BlueWhiteGoldLanding } from "@/components/landing/Ceo1983BlueWhiteGoldLanding";
 
 const TITLE = "CLB Doanh Nhân CEO 1983 — Nâng Tầm Vị Thế, Mở Rộng Đế Chế Kinh Doanh";
-const DESC = "Cộng đồng tinh hoa dành riêng cho Lãnh đạo cấp cao. Kết nối giao thương B2B, chia sẻ cơ hội đầu tư độc quyền và định danh thẻ VIP số.";
+const DESC = "Cộng đồng tinh hoa dành riêng cho Lãnh đạo cấp cao sinh năm 1983 (Quý Hợi). Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA).";
 
 export const Route = createFileRoute("/landing/ceo1983")({
   ssr: true,
@@ -23,5 +23,5 @@ export const Route = createFileRoute("/landing/ceo1983")({
 });
 
 function Ceo1983LandingPage() {
-  return <Ceo1983Landing />;
+  return <Ceo1983BlueWhiteGoldLanding />;
 }

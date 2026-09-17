@@ -46,12 +46,17 @@ import {
   MessageSquare,
   Tag,
   Users2,
+  BookOpen,
+  Headphones,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { isEventThemeEnabled, setEventThemeEnabled } from "@/components/member/SeasonalEventHeader";
+import { UserGuideModal } from "@/components/member/UserGuideModal";
+import { ContactSupportModal } from "@/components/member/ContactSupportModal";
+import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
 import { useServerData } from "@/hooks/use-server-data";
-import { getMyMember, listMembers, type MyMember, type DirectoryMember } from "@/lib/member-app.functions";
+import { getMyMember, listMembers, listConversations, type MyMember, type DirectoryMember, type MyConversation } from "@/lib/member-app.functions";
 import { useT, useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
@@ -85,8 +90,10 @@ export default function ProfileScreen() {
   const { user, logout: authLogout } = useAuth();
   const fetchMember = useServerFn(getMyMember);
   const fetchDirectory = useServerFn(listMembers);
+  const fetchConversations = useServerFn(listConversations);
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
   const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), []);
+  const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), []);
 
   const [copied, setCopied] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
@@ -96,6 +103,9 @@ export default function ProfileScreen() {
   const [postLikes, setPostLikes] = useState<Record<string, number>>({ post1: 24, post2: 41 });
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [eventThemeEnabled, setEventThemeState] = useState(() => isEventThemeEnabled());
+  const [userGuideOpen, setUserGuideOpen] = useState(false);
+  const [contactSupportOpen, setContactSupportOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -232,7 +242,7 @@ export default function ProfileScreen() {
     return [
       {
         id: "post1",
-        authorName: member?.name || "Lê Hoàng Long",
+        authorName: member?.name || user?.name || "Hội viên CLB CEO 1983",
         authorAvatar: null,
         time: "Hôm qua lúc 15:30",
         content: "Rất vinh dự được đón tiếp các anh chị lãnh đạo CLB Doanh Nhân CEO 1983 tới thăm và làm việc tại trụ sở ViOne. Chúc các thỏa thuận hợp tác thương mại sớm đơm hoa kết trái! 🤝✨",
@@ -252,81 +262,131 @@ export default function ProfileScreen() {
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
   const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
-  const [isPublishing, setIsPublishing] = useState(false);
+  // Dynamic resolved display info based on real registered user / member
+  const resolvedDisplayName = member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "Hội viên CLB CEO 1983";
+  const resolvedDisplayTitle = member?.title || "Hội viên chính thức CLB CEO 1983";
+  const resolvedDisplayCompany = (member as any)?.companyName || member?.industry || "CLB Doanh Nhân CEO 1983";
+  const resolvedDisplayPhone = member?.phone || user?.phone || "";
+  const resolvedDisplayEmail = member?.email || user?.email || "";
 
-  // Local editable profile state with offline / persisted support
+  const userProfileStorageKey = `vba_custom_profile_${user?.id || member?.id || "default"}`;
+
+  // Local editable profile state with user-scoped persistence
   const [profileName, setProfileName] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.name) return saved.name;
       } catch {}
     }
-    return member?.name || "Lê Hoàng Long";
+    return resolvedDisplayName;
   });
   const [profileTitle, setProfileTitle] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.title) return saved.title;
       } catch {}
     }
-    return member?.title || "Chủ tịch HĐQT & Tổng Giám Đốc";
+    return resolvedDisplayTitle;
   });
   const [profileCompany, setProfileCompany] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.company) return saved.company;
       } catch {}
     }
-    return (member as any)?.companyName || member?.industry || "Công ty CP Giải pháp Phần mềm ViOne";
+    return resolvedDisplayCompany;
   });
   const [profilePhone, setProfilePhone] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.phone) return saved.phone;
       } catch {}
     }
-    return member?.phone || "0988 123 456";
+    return resolvedDisplayPhone;
   });
   const [profileEmail, setProfileEmail] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.email) return saved.email;
       } catch {}
     }
-    return member?.email || "long.lh@vione.vn";
+    return resolvedDisplayEmail;
   });
   const [profileAddress, setProfileAddress] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.address) return saved.address;
       } catch {}
     }
-    return "Trung Hòa, Cầu Giấy, Hà Nội";
+    return "Hà Nội, Việt Nam";
   });
   const [profileWebsite, setProfileWebsite] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.website) return saved.website;
       } catch {}
     }
-    return "https://vione.vn";
+    return "https://ceo1983.vn";
   });
   const [profileBio, setProfileBio] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
         if (saved.bio) return saved.bio;
       } catch {}
     }
-    return "Tiên phong kiến tạo giải pháp chuyển đổi số & kết nối giao thương thông minh cho cộng đồng doanh nghiệp Việt Nam.";
+    return "Hội viên tích cực CLB Doanh Nhân CEO 1983, sẵn sàng giao lưu kết nối và hợp tác giao thương.";
   });
+
+  // Tự động đồng bộ hóa thông tin khi dữ liệu hội viên / user từ backend load xong
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || "{}");
+      const isStaleName = saved.name && (saved.name === "Lê Hoàng Long" || saved.name.includes("ViOne Platform"));
+      const isStaleTitle = saved.title && (saved.title === "James Nguyễn" || saved.title === "Lê Hoàng Long");
+
+      if (saved.name && !isStaleName) {
+        setProfileName(saved.name);
+      } else if (member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username) {
+        setProfileName(member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "");
+      }
+
+      if (saved.title && !isStaleTitle) {
+        setProfileTitle(saved.title);
+      } else if (member?.title) {
+        setProfileTitle(member.title);
+      } else {
+        setProfileTitle("Hội viên chính thức");
+      }
+
+      if (saved.company) {
+        setProfileCompany(saved.company);
+      } else if ((member as any)?.companyName || member?.industry) {
+        setProfileCompany((member as any)?.companyName || member?.industry || "");
+      }
+
+      if (saved.phone) {
+        setProfilePhone(saved.phone);
+      } else if (member?.phone || user?.phone) {
+        setProfilePhone(member?.phone || user?.phone || "");
+      }
+
+      if (saved.email) {
+        setProfileEmail(saved.email);
+      } else if (member?.email || user?.email) {
+        setProfileEmail(member?.email || user?.email || "");
+      }
+    } catch {}
+  }, [member, user, userProfileStorageKey]);
+
   const [privacyDirectMsg, setPrivacyDirectMsg] = useState(true);
   const [privacyShowPhone, setPrivacyShowPhone] = useState(true);
   const [privacyDirectory, setPrivacyDirectory] = useState(true);
@@ -387,7 +447,7 @@ export default function ProfileScreen() {
 
     const newPost: UserPost = {
       id: `post-${Date.now()}`,
-      authorName: profileName || member?.name || "Lê Hoàng Long",
+      authorName: profileName || member?.name || user?.name || "Hội viên CLB CEO 1983",
       authorAvatar: resolvedAvatar,
       time: isEn ? "Just now" : "Vừa xong",
       content: postContent.trim(),
@@ -424,26 +484,10 @@ export default function ProfileScreen() {
 
   const menu = [
     {
-      label: isEn ? "Update Profile & Privacy" : "Cập nhật hồ sơ & Quyền riêng tư",
-      icon: User,
-      onClick: () => {
-        void navigate({
-          to: "/association/business-cards",
-          search: { tab: "cards", action: "edit" },
-        });
-      },
-      desc: isEn ? "Edit personal name, title, contact & privacy" : "Chỉnh sửa tên, chức danh, liên hệ & quyền riêng tư",
-    },
-    {
-      label: isEn ? "Smart VIP Membership Card" : "Thẻ Hội Viên Thông Minh",
-      icon: QrCode,
-      to: "/association/card" as const,
-      desc: isEn ? "View & switch VIP smart digital card" : "Xem và đổi giao diện Thẻ số VIP",
-    },
-    {
       label: isEn ? "Digital Business Cards" : "Quản lý Danh thiếp số",
       icon: Building2,
       to: "/association/business-cards" as const,
+      hasAddAction: true,
       desc: isEn ? "Design & share electronic business card" : "Thiết kế & chia sẻ danh thiếp số cá nhân",
     },
     {
@@ -465,12 +509,6 @@ export default function ProfileScreen() {
       desc: isEn ? "Showcase enterprise products & services" : "Showcase sản phẩm & dịch vụ doanh nghiệp",
     },
     {
-      label: isEn ? "Club News & Events" : "Tin tức & Sự kiện CLB",
-      icon: FileText,
-      to: "/association/news" as const,
-      desc: isEn ? "B2B trading activities & networking events" : "Hoạt động giao thương & sự kiện kết nối",
-    },
-    {
       label: isEn ? "History & Check-in" : "Lịch sử kết nối & Check-in",
       icon: History,
       to: "/association/history" as const,
@@ -481,6 +519,24 @@ export default function ProfileScreen() {
       icon: Bell,
       to: "/association/notifications" as const,
       desc: isEn ? "Messages & connection approvals" : "Cập nhật tin nhắn & phê duyệt kết nối",
+    },
+    {
+      label: isEn ? "User Guide & Manual (PDF/Word)" : "Hướng dẫn sử dụng App Doanh Nhân",
+      icon: BookOpen,
+      onClick: () => setUserGuideOpen(true),
+      desc: isEn ? "Feature manual, demo workflows & document downloads" : "Cẩm nang tính năng, ảnh demo & tải tài liệu PDF/Word",
+    },
+    {
+      label: isEn ? "Secretariat & Support Contact" : "Liên hệ Ban Thư Ký CLB CEO 1983",
+      icon: Headphones,
+      onClick: () => setContactSupportOpen(true),
+      desc: isEn ? "Hotline, Zalo OA & support inquiry" : "Hotline, Tổng đài, Zalo OA & gửi yêu cầu hỗ trợ",
+    },
+    {
+      label: isEn ? "Privacy & QR Visibility" : "Quyền riêng tư & Hiển thị khi quét QR",
+      icon: ShieldCheck,
+      onClick: () => setPrivacyModalOpen(true),
+      desc: isEn ? "Manage visible fields when others scan your QR" : "Chọn thông tin (SĐT, Email, Địa chỉ) hiển thị khi người khác quét QR",
     },
     {
       label: isEn ? "Security & Account Settings" : "Bảo mật & Cài đặt tài khoản",
@@ -512,16 +568,47 @@ export default function ProfileScreen() {
     avatar: string | null;
   };
 
-  // Real CEO 1983 active members from database / CRM
+  // Real CEO 1983 active members who are CONNECTED with the current user
   const friendsList: FriendItem[] = useMemo(() => {
-    return ((realMembers || []) as DirectoryMember[]).map((m: DirectoryMember) => ({
-      code: m.code,
-      name: m.personName || m.name,
-      title: m.personTitle || m.industry || "Hội viên CEO 1983",
-      company: m.name !== m.personName ? m.name : "CLB Doanh Nhân CEO 1983",
-      avatar: m.avatar ? resolveMediaUrl(m.avatar) || m.avatar : null,
-    }));
-  }, [realMembers]);
+    const connectedKeys = new Set<string>();
+    for (const c of conversations) {
+      if (c.isConnected || c.connectionStatus === "accepted") {
+        if (c.peerCode) connectedKeys.add(c.peerCode.toLowerCase());
+        if (c.userId) connectedKeys.add(c.userId.toLowerCase());
+      }
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("vba_connected_peers");
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            list.forEach((k) => connectedKeys.add(String(k).toLowerCase()));
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return ((realMembers || []) as DirectoryMember[])
+      .filter((m: DirectoryMember) => {
+        // Exclude current user themself
+        if (member?.code && m.code.toLowerCase() === member.code.toLowerCase()) return false;
+        if (m.userId && user?.id && m.userId.toLowerCase() === user.id.toLowerCase()) return false;
+        // Only include if connected
+        const matchCode = m.code && connectedKeys.has(m.code.toLowerCase());
+        const matchUserId = m.userId && connectedKeys.has(m.userId.toLowerCase());
+        return Boolean(matchCode || matchUserId);
+      })
+      .map((m: DirectoryMember) => ({
+        code: m.code,
+        name: m.personName || m.name,
+        title: m.personTitle || m.industry || "Hội viên CEO 1983",
+        company: m.name !== m.personName ? m.name : "CLB Doanh Nhân CEO 1983",
+        avatar: m.avatar ? resolveMediaUrl(m.avatar) || m.avatar : null,
+      }));
+  }, [realMembers, conversations, member?.code, user?.id]);
 
   return (
     <div className="vba-animate pb-28 text-slate-900 dark:text-white">
@@ -567,7 +654,7 @@ export default function ProfileScreen() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="truncate text-[15px] font-bold text-slate-900 dark:text-white">
-                  {profileName || member?.name || "Lê Hoàng Long"}
+                  {profileName || resolvedDisplayName}
                 </span>
                 <BadgeCheck className="h-4 w-4 shrink-0 text-amber-500" />
               </div>
@@ -674,7 +761,7 @@ export default function ProfileScreen() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                    {profileName || member?.name || "Lê Hoàng Long"}
+                    {profileName || resolvedDisplayName}
                   </h2>
                   <BadgeCheck className="h-5 w-5 text-amber-500 shrink-0" />
                 </div>
@@ -751,7 +838,7 @@ export default function ProfileScreen() {
               <div className="mt-5 flex border-b border-slate-200 dark:border-slate-800">
                 {[
                   { id: "about" as const, label: isEn ? "About" : "Giới thiệu" },
-                  { id: "friends" as const, label: `${isEn ? "Members" : "Hội viên"} (${realMembers.length})` },
+                  { id: "friends" as const, label: `${isEn ? "Members" : "Hội viên"} (${friendsList.length})` },
                   { id: "posts" as const, label: isEn ? "Posts & Feed" : "Bài viết" },
                   { id: "photos" as const, label: isEn ? "Photos" : "Hình ảnh" },
                 ].map((tab) => (
@@ -801,7 +888,7 @@ export default function ProfileScreen() {
                     <div className="flex items-center gap-2.5">
                       <Globe className="h-5 w-5 text-[#2E3192] dark:text-amber-400 shrink-0" />
                       <span className="font-semibold text-slate-900 dark:text-white group-hover:text-[#2E3192] dark:group-hover:text-amber-400">
-                        Website: https://ceo1983.com • https://vione.vn
+                        Website: https://ceo1983.vn
                       </span>
                     </div>
                     <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-[#2E3192] dark:group-hover:text-amber-400" />
@@ -846,43 +933,79 @@ export default function ProfileScreen() {
                 <div className="mt-3.5">
                   <div className="mb-2 flex items-center justify-between text-xs">
                     <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {realMembers.length} {isEn ? "Connected Members" : "Hội viên đã kết nối"}
+                      {friendsList.length} {isEn ? "Connected Members" : "Hội viên đã kết nối"}
                     </span>
                     <Link to="/association/members" className="text-[#2E3192] dark:text-amber-400 font-semibold hover:underline">
-                      {isEn ? "View all" : "Xem tất cả"}
+                      {isEn ? "Explore all members" : "Khám phá danh bạ"}
                     </Link>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {friendsList.map((f, i) => (
-                      <div
-                        key={f.code || i}
-                        className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 p-2 bg-slate-50/50 dark:bg-slate-800/50 hover:border-amber-400 transition"
-                      >
-                        {f.avatar ? (
-                          <img
-                            src={f.avatar}
-                            alt={f.name}
-                            className="h-10 w-10 rounded-xl object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-white font-bold text-xs grid place-items-center shrink-0 shadow-xs">
-                            {initials(f.name)}
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate">
-                            {f.name}
-                          </p>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                            {f.title}
-                          </p>
-                          <p className="text-[9.5px] text-[#2E3192] dark:text-amber-400 truncate">
-                            {f.company}
-                          </p>
-                        </div>
+                  {friendsList.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+                      <div className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#2E3192] dark:text-amber-400 grid place-items-center mx-auto">
+                        <Users className="h-6 w-6" />
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-[13px] font-bold text-slate-800 dark:text-slate-200">
+                        {isEn ? "No connected members yet" : "Chưa có hội viên kết nối"}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+                        {isEn
+                          ? "You haven't connected with any members yet. Browse the member directory to connect and trade."
+                          : "Bạn chưa kết nối giao thương với hội viên nào. Hãy gửi lời mời kết nối trong Danh bạ để mở rộng mạng lưới kinh doanh."}
+                      </p>
+                      <div className="pt-2">
+                        <Link
+                          to="/association/members"
+                          style={{ color: "#ffffff" }}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-4 py-2 text-[11.5px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                        >
+                          <Users2 className="h-3.5 w-3.5" />
+                          <span>{isEn ? "Browse Directory" : "Khám phá Danh bạ hội viên"}</span>
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {friendsList.map((f, i) => (
+                        <div
+                          key={f.code || i}
+                          className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-850/60 hover:border-[#2E3192]/40 transition"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            {f.avatar ? (
+                              <img
+                                src={f.avatar}
+                                alt={f.name}
+                                className="h-10 w-10 rounded-xl object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-white font-bold text-xs grid place-items-center shrink-0 shadow-xs">
+                                {initials(f.name)}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate">
+                                {f.name}
+                              </p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                {f.title}
+                              </p>
+                              <p className="text-[9.5px] text-[#2E3192] dark:text-amber-400 truncate font-semibold">
+                                {f.company}
+                              </p>
+                            </div>
+                          </div>
+                          <Link
+                            to="/association/messages"
+                            search={{ peerCode: f.code }}
+                            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:text-[#2E3192] hover:bg-blue-50 dark:hover:bg-slate-800 transition"
+                            title="Gửi tin nhắn"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1105,7 +1228,24 @@ export default function ProfileScreen() {
                   </div>
                   <div className="text-[10.5px] text-slate-500 dark:text-slate-400">{m.desc}</div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                {m.hasAddAction && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      void navigate({
+                        to: "/association/business-cards",
+                        search: { tab: "cards", action: "create" },
+                      });
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2E3192] dark:text-blue-400 hover:bg-[#2E3192] hover:text-white transition-colors cursor-pointer mr-1 shrink-0"
+                    title={isEn ? "Create new card" : "Tạo danh thiếp số mới"}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                )}
+                <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
               </Link>
             );
           })}
@@ -1253,6 +1393,7 @@ export default function ProfileScreen() {
 
       {/* ── SUPPORT & LOGOUT ── */}
       <div className="mx-4 mt-6 space-y-2.5">
+
         <Link
           to="/install"
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-white dark:bg-[#0F172A] py-3 text-[13px] font-bold text-[#2E3192] dark:text-amber-400 shadow-xs transition hover:bg-amber-50 dark:hover:bg-[#14223E]"
@@ -1352,8 +1493,9 @@ export default function ProfileScreen() {
               </button>
             </div>
 
-            {/* Scrollable Form */}
+            {/* Scrollable Form Body with Compact Center Width */}
             <form
+              id="edit-profile-form"
               onSubmit={(e) => {
                 e.preventDefault();
                 try {
@@ -1378,7 +1520,7 @@ export default function ProfileScreen() {
                 toast.success(isEn ? "Profile & privacy updated successfully!" : "Đã cập nhật hồ sơ và quyền riêng tư thành công!");
                 setEditProfileOpen(false);
               }}
-              className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5"
+              className="flex-1 min-h-0 overflow-y-auto px-4 py-3.5 w-full max-w-sm mx-auto space-y-3.5 [scrollbar-width:thin]"
             >
               {/* Họ và tên */}
               <div>
@@ -1560,16 +1702,18 @@ export default function ProfileScreen() {
                 </label>
               </div>
 
-              {/* Submit button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-3 text-xs font-bold text-white shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
-                >
-                  {isEn ? "Save Profile & Privacy" : "Lưu Cập Nhật Hồ Sơ & Quyền Riêng Tư"}
-                </button>
-              </div>
             </form>
+
+            {/* Fixed Footer */}
+            <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70">
+              <button
+                type="submit"
+                form="edit-profile-form"
+                className="w-full rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-xs font-bold text-white shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
+              >
+                {isEn ? "Save Profile & Privacy" : "Lưu Cập Nhật Hồ Sơ & Quyền Riêng Tư"}
+              </button>
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -1604,7 +1748,7 @@ export default function ProfileScreen() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    {profileName || member?.name || "Lê Hoàng Long"}
+                    {profileName || resolvedDisplayName}
                   </p>
                   {/* Privacy Selector */}
                   <div className="relative inline-block mt-0.5">
@@ -1794,6 +1938,11 @@ export default function ProfileScreen() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ── MODALS: HƯỚNG DẪN SỬ DỤNG VÀ LIÊN HỆ BAN THƯ KÝ & QUYỀN RIÊNG TƯ ── */}
+      <UserGuideModal open={userGuideOpen} onClose={() => setUserGuideOpen(false)} />
+      <ContactSupportModal open={contactSupportOpen} onClose={() => setContactSupportOpen(false)} />
+      <PrivacySettingsModal open={privacyModalOpen} onClose={() => setPrivacyModalOpen(false)} />
     </div>
   );
 }

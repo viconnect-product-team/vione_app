@@ -9,11 +9,23 @@ export type MyConversation = {
   name: string;
   last: string;
   time: string;
+  rawTime?: string;
   unread: number;
   avatarUrl?: string | null;
   isSystem?: boolean;
   isOnline?: boolean;
   userId?: string | null;
+  isConnected?: boolean;
+  connectionStatus?: string;
+  isPending?: boolean;
+  isOutgoingPending?: boolean;
+  isIncomingPending?: boolean;
+  isStranger?: boolean;
+  connectionId?: string | null;
+  isGroup?: boolean;
+  memberCount?: number;
+  members?: { id?: string; name: string; avatarUrl?: string | null; code?: string; role?: string }[];
+  groupAvatar?: string | null;
 };
 
 export type ChatMessage = {
@@ -25,6 +37,11 @@ export type ChatMessage = {
   seen: boolean;
   retracted?: boolean;
   reactions?: { emoji: string; count?: number }[];
+  replyTo?: {
+    id: string;
+    senderName: string;
+    text: string;
+  };
 };
 
 // ---------- Messaging ----------
@@ -39,11 +56,19 @@ export const listConversations = createServerFn({ method: "GET" })
         name: c.name,
         last: c.last,
         time: relTime(c.time),
+        rawTime: c.rawTime || c.time || new Date().toISOString(),
         unread: c.unread ?? 0,
         avatarUrl: c.avatarUrl ?? null,
         isSystem: Boolean(c.isSystem),
         isOnline: Boolean(c.isOnline),
         userId: c.userId ?? null,
+        isConnected: Boolean(c.isConnected),
+        connectionStatus: c.connectionStatus || (c.isSystem ? "accepted" : "none"),
+        isPending: Boolean(c.isPending),
+        isOutgoingPending: Boolean(c.isOutgoingPending),
+        isIncomingPending: Boolean(c.isIncomingPending),
+        isStranger: Boolean(c.isStranger),
+        connectionId: c.connectionId ?? null,
       }));
     } catch {
       return [];
@@ -73,6 +98,7 @@ export const listMessages = createServerFn({ method: "GET" })
           time: relTime(m.time || m.createdAt),
           createdAt: m.createdAt,
           seen: Boolean(m.seen),
+          retracted: m.text === "[retracted]" || Boolean(m.retracted || m.isRetracted),
         })),
       };
     } catch {
@@ -94,3 +120,56 @@ export const sendMessage = createServerFn({ method: "POST" })
       body: JSON.stringify(data),
     });
   });
+
+export const retractMemberMessage = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ messageId: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<{ ok: boolean }>(
+      `/dm/member/messages/${encodeURIComponent(data.messageId)}`,
+      token,
+      { method: "DELETE" }
+    );
+  });
+
+export const requestMemberConnectionFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ targetUserId: z.string().uuid(), message: z.string().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }: any): Promise<any> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<any>("/network/requests", token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  });
+
+export const respondMemberConnectionFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ connectionId: z.string().uuid(), action: z.enum(["accept", "decline"]) }).parse(d),
+  )
+  .handler(async ({ data, context }: any): Promise<any> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<any>(`/network/connections/${data.connectionId}`, token, {
+      method: "PATCH",
+      body: JSON.stringify({ status: data.action === "accept" ? "accepted" : "declined" }),
+    });
+  });
+
+export const disconnectMemberConnectionFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ connectionId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }: any): Promise<any> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<any>(`/network/connections/${data.connectionId}`, token, {
+      method: "DELETE",
+    });
+  });
+

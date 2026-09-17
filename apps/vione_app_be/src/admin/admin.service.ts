@@ -763,14 +763,15 @@ export class AdminService implements OnModuleInit {
     const userIdsSet = new Set<string>();
     const memberRecipientIds = new Set<string>();
 
-    // 1. Collect from public.members (both id and user_id)
+    // 1. Collect from public.members (id, code, user_id)
     try {
       const members = await this.prisma.$queryRaw<any[]>`
-        SELECT id, user_id FROM public.members
+        SELECT id, code, user_id FROM public.members
         WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
       `.catch(() => []);
       for (const m of members) {
         if (m.id) memberRecipientIds.add(String(m.id));
+        if (m.code) memberRecipientIds.add(String(m.code));
         if (m.user_id) {
           userIdsSet.add(String(m.user_id));
           memberRecipientIds.add(String(m.user_id));
@@ -780,48 +781,36 @@ export class AdminService implements OnModuleInit {
       console.warn('dispatchBroadcast: failed querying members:', e);
     }
 
-    // 2. Collect from public.profiles
-    try {
-      const profiles = await this.prisma.$queryRaw<any[]>`
-        SELECT id FROM public.profiles LIMIT 2000
-      `.catch(() => []);
-      for (const p of profiles) {
-        if (p.id) {
-          userIdsSet.add(String(p.id));
-          memberRecipientIds.add(String(p.id));
+    // 2. Only collect from public.profiles if broadcasting to ViOne app
+    if (appScope !== 'association_app') {
+      try {
+        const profiles = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.profiles LIMIT 2000
+        `.catch(() => []);
+        for (const p of profiles) {
+          if (p.id) {
+            userIdsSet.add(String(p.id));
+          }
         }
+      } catch (e) {
+        console.warn('dispatchBroadcast: failed querying profiles:', e);
       }
-    } catch (e) {
-      console.warn('dispatchBroadcast: failed querying profiles:', e);
     }
 
-    // 3. Collect from auth.users (if accessible)
-    try {
-      const authUsers = await this.prisma.$queryRaw<any[]>`
-        SELECT id FROM auth.users LIMIT 2000
-      `.catch(() => []);
-      for (const u of authUsers) {
-        if (u.id) {
-          userIdsSet.add(String(u.id));
-          memberRecipientIds.add(String(u.id));
-        }
+    // Insert into member_notifications for association members
+    if (appScope === 'association_app' || appScope === 'all') {
+      for (const recipientId of memberRecipientIds) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
+          )
+        `, recipientId, title, body, code).catch(() => {});
       }
-    } catch (e) {
-      /* ignore auth schema restriction */
     }
 
-    // Insert into member_notifications for all unique recipients
-    for (const recipientId of memberRecipientIds) {
-      await this.prisma.$executeRawUnsafe(`
-        INSERT INTO public.member_notifications (
-          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
-        )
-      `, recipientId, title, body, code).catch(() => {});
-    }
-
-    // Insert into business_notifications for all unique user IDs
+    // Insert into business_notifications for all targeted user IDs
     for (const uId of userIdsSet) {
       const dedupeKey = `crm-notif-${code}-${uId}`;
       await this.prisma.$executeRawUnsafe(`

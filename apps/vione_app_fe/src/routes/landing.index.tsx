@@ -10,6 +10,7 @@ import { BusinessConnectLandingV7 } from "@/components/landing/BusinessConnectLa
 import { BusinessConnectLandingV8 } from "@/components/landing/BusinessConnectLandingV8";
 import { Ceo1983Landing } from "@/components/landing/Ceo1983Landing";
 import { Ceo1983BlueWhiteLanding } from "@/components/landing/Ceo1983BlueWhiteLanding";
+import { Ceo1983CinematicLanding } from "@/components/landing/Ceo1983CinematicLanding";
 import {
   getActiveLandingTemplateId,
   LANDING_TEMPLATE_CHANGE_EVENT,
@@ -89,6 +90,9 @@ function ViOneLandingPage() {
     case "ceo1983-official":
     case "ceo1983":
       return <Ceo1983Landing />;
+    case "ceo1983-cinematic":
+    case "cinematic":
+      return <Ceo1983CinematicLanding />;
     case "ceo1983-bluewhite":
     case "ceo1983-bw":
     case "ceo1983-v1":

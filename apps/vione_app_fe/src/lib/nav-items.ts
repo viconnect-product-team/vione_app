@@ -114,7 +114,6 @@ export const navGroups: NavGroup[] = [
     label: "nav.group.system",
     items: [
       { key: "nav.account", icon: UserCog, to: "/account-settings" },
-      { key: "nav.myperm", icon: ShieldCheck, to: "/my-permissions" },
       { key: "nav.settings", icon: Settings, to: "/settings" },
       { key: "nav.activity", icon: History, to: "/activity" },
     ],
