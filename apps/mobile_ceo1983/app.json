@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "vn.ceo1983.app",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "infoPlist": {
         "NSCameraUsageDescription": "CEO 1983 cần quyền truy cập camera để quét mã QR check-in sự kiện và kết nối hội viên.",
         "NSPhotoLibraryUsageDescription": "CEO 1983 cần quyền truy cập thư viện ảnh để tải lên avatar và tài liệu hội viên.",

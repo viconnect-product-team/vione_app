@@ -20,6 +20,8 @@ export type MyMember = {
   website: string | null;
   joinedAt: string | null;
   avatar: string | null;
+  coverUrl?: string | null;
+  cover_url?: string | null;
 };
 
 // ---------- Current member ----------
@@ -82,4 +84,15 @@ export const getMyMember = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<MyMember | null> => {
     return fetchNestApiFromServer("/members/me", context.token);
+  });
+
+export const updateMyCover = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((coverUrl: unknown) => String(coverUrl || ""))
+  .handler(async ({ data: coverUrl, context }: any) => {
+    return fetchNestApiFromServer("/members/me/cover", context.token, {
+      method: "PATCH",
+      body: JSON.stringify({ coverUrl }),
+      headers: { "Content-Type": "application/json" },
+    });
   });

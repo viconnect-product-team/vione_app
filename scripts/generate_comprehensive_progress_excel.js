@@ -295,58 +295,58 @@ async function generateProgressWorkbook() {
       api: 'Không (Nội bộ DB)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: 'Bảng categories'
     },
 
-    // 1.3 Tài Chính & Niên Liễm (LƯU Ý API NGÂN HÀNG)
+    // 1.3 Tài chính & Hội phí (LƯU Ý API NGÂN HÀNG)
     {
-      wbs: 'WBS-CRM-014', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
-      feature: 'Lập kế hoạch thu niên liễm theo niên độ',
+      wbs: 'WBS-CRM-014', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
+      feature: 'Lập kế hoạch THU HỘI PHÍ theo niên độ',
       desc: 'Sinh bảng kê công nợ tự động theo hạng: Kim Cương, Vàng, Bạc, Đồng',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/fees/generate-annual'
     },
     {
-      wbs: 'WBS-CRM-015', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
-      feature: 'Tạo hóa đơn niên liễm hiển thị mã VietQR động',
+      wbs: 'WBS-CRM-015', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
+      feature: 'Tạo HÓA ĐƠN HỘI PHÍ hiển thị mã VietQR động',
       desc: 'Sinh ảnh mã VietQR hiển thị STK ngân hàng, số tiền và nội dung chuyển khoản mẫu',
       api: 'Có (VietQR Tĩnh / Quicklink)', priority: 'Khẩn cấp', prog: '85%', status: 'Hoàn thành UI QR', test: 'Passed UI', notes: 'Chỉ hiển thị QR, chưa gạch nợ'
     },
     {
-      wbs: 'WBS-CRM-016', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-016', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Liên kết Open API Ngân hàng / Webhook biến động số dư',
       desc: 'Ngân hàng đẩy webhook số dư -> Xác thực chữ ký số HMAC-SHA256 -> Tự động gạch nợ hóa đơn',
       api: 'CÓ (API Ngân hàng / Cổng TT)', priority: 'Khẩn cấp', prog: '25%', status: 'CHƯA LIÊN KẾT API', test: 'FAILED - Chưa thông luồng', notes: 'Chưa có hợp đồng & API ngân hàng'
     },
     {
-      wbs: 'WBS-CRM-017', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-017', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Quy trình xác nhận và gạch nợ hóa đơn thủ công',
       desc: 'Kế toán đối soát sao kê ngân hàng, upload ủy nhiệm chi và bấm duyệt gạch nợ bằng tay',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/fees/:id/confirm-manual'
     },
     {
-      wbs: 'WBS-CRM-018', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-018', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Gia hạn ngày hết hạn thẻ hội viên (+1 năm)',
       desc: 'Gia hạn ngày hết hạn thẻ ngay khi kế toán duyệt nộp phí thành công, ghi log audit',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: 'term_end + 1 year'
     },
     {
-      wbs: 'WBS-CRM-019', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-019', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Quản lý thu tiền mặt & thu đột xuất tại sự kiện',
       desc: 'Lập phiếu thu tiền mặt nhanh tại bàn đón tiếp sự kiện, in phiếu thu',
       api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/income'
     },
     {
-      wbs: 'WBS-CRM-020', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-020', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Quản lý chi tiêu, phiếu tạm ứng và hoàn ứng sự kiện',
       desc: 'Ghi nhận chi phí thuê hội trường, in ấn, âm thanh ánh sáng, đối soát tiền tạm ứng',
       api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/expenses'
     },
     {
-      wbs: 'WBS-CRM-021', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
+      wbs: 'WBS-CRM-021', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
       feature: 'Sổ quỹ & Báo cáo quyết toán tài chính',
       desc: 'Tổng hợp thu chi theo quỹ (Quỹ hoạt động, Quỹ từ thiện, Quỹ hội nghị), xuất CSV/PDF',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/finance-report'
     },
     {
-      wbs: 'WBS-CRM-022', module: 'Hệ Thống CRM', epic: 'Tài Chính & Niên Liễm',
-      feature: 'Tra cứu nhật ký gia hạn niên liễm (Renewal Audit)',
+      wbs: 'WBS-CRM-022', module: 'Hệ Thống CRM', epic: 'Tài chính & Hội phí',
+      feature: 'Tra cứu nhật ký GIA HẠN HỘI PHÍ (Renewal Audit)',
       desc: 'Bảng tra cứu lịch sử nộp phí, lọc trạng thái payment/noop/failure, phân trang',
       api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/platform/renewal-audit'
     },
@@ -399,7 +399,7 @@ async function generateProgressWorkbook() {
     {
       wbs: 'WBS-CRM-030', module: 'Hệ Thống CRM', epic: 'Bầu Cử & Biểu Quyết',
       feature: 'Xác minh tư cách cử tri đại biểu có quyền bỏ phiếu',
-      desc: 'Chỉ đại biểu đã hoàn thành niên liễm và có mặt tại Đại hội mới được mở khóa hòm phiếu',
+      desc: 'Chỉ đại biểu đã hoàn thành hội phí và có mặt tại Đại hội mới được mở khóa hòm phiếu',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: 'Kiểm tra active_voter'
     },
     {
@@ -445,7 +445,7 @@ async function generateProgressWorkbook() {
     {
       wbs: 'WBS-CRM-037', module: 'Hệ Thống CRM', epic: 'Truyền Thông & Email',
       feature: 'Quản lý danh sách mẫu email ngoại giao hiệp hội',
-      desc: 'Template thư chúc mừng sinh nhật hội viên, thư mời họp BCH, thông báo đóng niên liễm',
+      desc: 'Template thư chúc mừng sinh nhật hội viên, thư mời họp BCH, thông báo ĐÓNG HỘI PHÍ',
       api: 'Không (Nội bộ DB)', priority: 'Trung bình', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/email-marketing/templates'
     },
     {
@@ -477,7 +477,7 @@ async function generateProgressWorkbook() {
     {
       wbs: 'WBS-CRM-042', module: 'Hệ Thống CRM', epic: 'Quản Trị Nền Tảng',
       feature: 'Cấu hình tham số hiệp hội (Branding, Logo, STK ngân hàng)',
-      desc: 'Khai báo thông tin nhận diện hiệp hội, màu sắc, số tài khoản nhận niên liễm',
+      desc: 'Khai báo thông tin nhận diện hiệp hội, màu sắc, số tài khoản nhận hội phí',
       api: 'Không (Nội bộ DB)', priority: 'Cao', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/platform/settings'
     },
 
@@ -582,27 +582,27 @@ async function generateProgressWorkbook() {
       api: 'Không (Camera Native)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/association/checkin'
     },
 
-    // 2.5 Nộp Niên Liễm Trực Tuyến (LƯU Ý API NGÂN HÀNG)
+    // 2.5 NỘP HỘI PHÍ Trực Tuyến (LƯU Ý API NGÂN HÀNG)
     {
-      wbs: 'WBS-ASS-016', module: 'App Hiệp Hội', epic: 'Niên Liễm Trực Tuyến',
+      wbs: 'WBS-ASS-016', module: 'App Hiệp Hội', epic: 'Hội Phí Trực Tuyến',
       feature: 'Tra cứu tình trạng đóng phí & hạn sử dụng thẻ',
-      desc: 'Hiển thị rõ ngày hết hạn thẻ hội viên, số tiền niên liễm cần nộp cho kỳ mới',
+      desc: 'Hiển thị rõ ngày hết hạn thẻ hội viên, số tiền hội phí cần nộp cho kỳ mới',
       api: 'Không (Nội bộ DB)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: '/association/renew'
     },
     {
-      wbs: 'WBS-ASS-017', module: 'App Hiệp Hội', epic: 'Niên Liễm Trực Tuyến',
+      wbs: 'WBS-ASS-017', module: 'App Hiệp Hội', epic: 'Hội Phí Trực Tuyến',
       feature: 'Hiển thị mã VietQR chuyển khoản ngân hàng',
       desc: 'Hiển thị mã VietQR có sẵn số tiền và nội dung chuyển khoản để hội viên quét bằng app ngân hàng',
       api: 'Có (VietQR Tĩnh)', priority: 'Khẩn cấp', prog: '90%', status: 'Hoàn thành hiển thị QR', test: 'Passed UI QR', notes: '/association/renew/pay'
     },
     {
-      wbs: 'WBS-ASS-018', module: 'App Hiệp Hội', epic: 'Niên Liễm Trực Tuyến',
+      wbs: 'WBS-ASS-018', module: 'App Hiệp Hội', epic: 'Hội Phí Trực Tuyến',
       feature: 'Tự động gạch nợ tức thời qua kết nối Ngân hàng',
       desc: 'Hệ thống tự động kích hoạt gia hạn thẻ ngay khi tiền vào tài khoản hiệp hội',
       api: 'CÓ (API Ngân hàng / Cổng TT)', priority: 'Khẩn cấp', prog: '20%', status: 'CHƯA LIÊN KẾT API', test: 'FAILED - Chưa thông luồng', notes: 'Hội viên phải chờ kế toán xác nhận'
     },
     {
-      wbs: 'WBS-ASS-019', module: 'App Hiệp Hội', epic: 'Niên Liễm Trực Tuyến',
+      wbs: 'WBS-ASS-019', module: 'App Hiệp Hội', epic: 'Hội Phí Trực Tuyến',
       feature: 'Gửi ảnh chụp Ủy nhiệm chi xác nhận chuyển tiền',
       desc: 'Hội viên upload ảnh chụp màn hình chuyển khoản để kế toán kiểm tra thủ công',
       api: 'Không (Nội bộ MinIO)', priority: 'Khẩn cấp', prog: '100%', status: 'Hoàn thành nội bộ', test: 'Passed (Nội bộ)', notes: 'Fallback chờ API ngân hàng'

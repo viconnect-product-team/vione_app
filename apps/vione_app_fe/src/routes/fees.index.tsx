@@ -669,7 +669,7 @@ function FeesPage() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {tc.pageRows.map((r: any) => (
-              <FeeCard key={r.id} r={r} onDelete={handleDelete} canManage={isAdmin} />
+              <FeeCard key={r.id} r={r} onDelete={handleDelete} onRemind={handleRemind} canManage={isAdmin} />
             ))}
           </div>
           <div className="mt-4 rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -746,7 +746,7 @@ function FeesPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {tc.pageRows.map((r: any, idx: number) => (
-                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} canManage={isAdmin} />
+                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} onRemind={handleRemind} canManage={isAdmin} />
                 ))}
               </tbody>
             </table>
@@ -968,29 +968,34 @@ function OverdueOrDueSoonBadge({ r }: { r: FeeRecord }) {
 function FeeCard({
   r,
   onDelete,
+  onRemind,
   canManage,
 }: {
   r: FeeRecord;
   onDelete: (r: FeeRecord) => void;
+  onRemind?: (r: FeeRecord) => void;
   canManage: boolean;
 }) {
   const t = useT();
+  const memberName = r.member?.name || r.member?.contact || r.member?.email || `Hội viên #${(r.member?.code || r.memberId || "").slice(0, 6)}`;
+  const memberCode = r.member?.code || r.memberId || "MB";
+
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <Link
           to="/companies/$companyId"
-          params={{ companyId: r.member.id }}
+          params={{ companyId: r.member?.id || r.memberId || "unknown" }}
           className="group flex min-w-0 items-center gap-2.5"
         >
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[12px] font-bold text-primary">
-            {r.member.code.slice(-2)}
+            {memberCode.slice(-2).toUpperCase()}
           </div>
           <div className="min-w-0">
             <div className="truncate font-semibold text-foreground group-hover:text-primary">
-              {r.member.name}
+              {memberName}
             </div>
-            <div className="text-[11px] text-muted-foreground">{r.member.code}</div>
+            <div className="text-[11px] text-muted-foreground">{memberCode}</div>
           </div>
         </Link>
         <StatusBadge s={r.status} />
@@ -1042,9 +1047,10 @@ function FeeCard({
         {r.status !== "paid" ? (
           <>
             <button
+              onClick={() => onRemind?.(r)}
               title={t("fees.action.remind")}
               aria-label={t("fees.action.remind")}
-              className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
             >
               <Send className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -1212,14 +1218,19 @@ function FeeRow({
   r,
   index,
   onDelete,
+  onRemind,
   canManage,
 }: {
   r: FeeRecord;
   index: number;
   onDelete: (r: FeeRecord) => void;
+  onRemind?: (r: FeeRecord) => void;
   canManage: boolean;
 }) {
   const t = useT();
+  const memberName = r.member?.name || r.member?.contact || r.member?.email || `Hội viên #${(r.member?.code || r.memberId || "").slice(0, 6)}`;
+  const memberCode = r.member?.code || r.memberId || "MB";
+
   return (
     <tr className="group transition-colors hover:bg-accent/40 border-b border-border/50">
       <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
@@ -1237,19 +1248,21 @@ function FeeRow({
       <td className="px-4 py-3 border-b border-border/50">
         <Link
           to="/companies/$companyId"
-          params={{ companyId: r.member.id }}
+          params={{ companyId: r.member?.id || r.memberId || "unknown" }}
           className="group flex items-center gap-2"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary">
-            {r.member.code.slice(-2)}
+            {memberCode.slice(-2).toUpperCase()}
           </div>
           <div className="min-w-0">
             <TruncatedText
-              text={r.member.name}
+              text={memberName}
               maxWidth="max-w-[200px]"
               className="font-semibold text-foreground group-hover:text-primary"
             />
-            <div className="text-[11px] text-muted-foreground">{t(r.member.level)}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {r.member?.level ? (t(r.member.level as TKey) || r.member.level) : memberCode}
+            </div>
           </div>
         </Link>
       </td>
@@ -1270,8 +1283,9 @@ function FeeRow({
           {r.status !== "paid" ? (
             <>
               <button
+                onClick={() => onRemind?.(r)}
                 title={t("fees.action.remind")}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
               </button>

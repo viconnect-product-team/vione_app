@@ -23,6 +23,7 @@ import {
   Users,
   ExternalLink,
   Pencil,
+  MoreVertical,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ import {
 import { uploadChatAttachment } from "@/lib/upload-media";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useT, useFmt } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/association/opportunities")({
   component: OpportunitiesScreen,
@@ -67,6 +69,7 @@ function OpportunitiesScreen() {
   const t = useT();
   const fmt = useFmt();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const fetchOpps = useServerFn(listMyOpportunities);
   const doInterest = useServerFn(expressInterest);
   const fetchMember = useServerFn(getMyMember);
@@ -88,6 +91,7 @@ function OpportunitiesScreen() {
   const [selectedOpp, setSelectedOpp] = useState<(MyOpportunity & { description?: string }) | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(null);
+  const [activeOppMenuId, setActiveOppMenuId] = useState<string | null>(null);
 
   // Scroll lock for modals
   useEffect(() => {
@@ -136,26 +140,37 @@ function OpportunitiesScreen() {
   const [updating, setUpdating] = useState(false);
   const editImageInputRef = useRef<HTMLInputElement>(null);
 
+  const isAdmin = Boolean(
+    (user as any)?.role === "admin" ||
+    (user as any)?.role === "platform_admin" ||
+    (member as any)?.role === "admin" ||
+    (member as any)?.role === "association_admin" ||
+    (member as any)?.executiveRole
+  );
+
   useEffect(() => {
-    if (member) {
-      if (!newContactName) setNewContactName(member.name || "");
-      if (!newContactPhone) setNewContactPhone(member.phone || "");
-      if (!newContactTitle) setNewContactTitle(member.title || "");
-      if (!newCompany) setNewCompany(member.title || "CLB Doanh Nhân CEO 1983");
+    if (member || user) {
+      if (!newContactName) setNewContactName(member?.name || (user as any)?.name || (user as any)?.username || "Ban Quản Trị");
+      if (!newContactPhone) setNewContactPhone(member?.phone || (user as any)?.phone || "0900000000");
+      if (!newContactTitle) setNewContactTitle(member?.title || "Ban Quản Trị");
+      if (!newCompany) setNewCompany((member as any)?.company || (member as any)?.companyName || member?.title || "CLB Doanh Nhân CEO 1983");
     }
-  }, [member]);
+  }, [member, user]);
 
   const allTab = "Tất cả";
   const myOppsTab = "Cơ hội của tôi";
 
-  // Check if an opportunity was posted by current user
+  // Check if an opportunity was posted by current user (or if user is admin with full system permissions)
   const checkIsMine = (o: MyOpportunity) => {
-    if (!member) return false;
+    if (isAdmin) return true;
+    if (!member && !user) return false;
+    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
     return Boolean(
-      (member.code && o.posterCode === member.code) ||
-      (member.name && (o.posterName === member.name || o.contactName === member.name)) ||
-      (member.id && (o.posterId === member.id || o.posterId === member.userId)) ||
-      (member.userId && (o.posterId === member.userId || o.posterId === member.id))
+      (member?.code && o.posterCode === member.code) ||
+      (member?.name && (o.posterName === member.name || o.contactName === member.name)) ||
+      (currentUserId && (o.posterId === currentUserId || o.posterCode === currentUserId)) ||
+      ((member as any)?.id && (o.posterId === (member as any).id || o.posterId === (member as any).userId)) ||
+      ((member as any)?.userId && (o.posterId === (member as any).userId || o.posterId === (member as any).id))
     );
   };
 
@@ -318,14 +333,10 @@ function OpportunitiesScreen() {
       toast.error("Vui lòng nhập tiêu đề cơ hội");
       return;
     }
-    if (!newContactName.trim()) {
-      toast.error("Vui lòng nhập tên người liên hệ");
-      return;
-    }
-    if (!newContactPhone.trim()) {
-      toast.error("Vui lòng nhập số điện thoại liên hệ");
-      return;
-    }
+    const finalContactName = newContactName.trim() || member?.name || (user as any)?.name || "Ban Quản Trị";
+    const finalContactPhone = newContactPhone.trim() || member?.phone || (user as any)?.phone || "0900000000";
+    const finalCompany = newCompany.trim() || (member as any)?.company || (member as any)?.companyName || member?.title || "CLB Doanh Nhân CEO 1983";
+
     setCreating(true);
     const cleanBudgetMin = Number(newBudgetMin.replace(/\D/g, "")) || 0;
     const cleanBudgetMax = Number(newBudgetMax.replace(/\D/g, "")) || 0;
@@ -335,17 +346,17 @@ function OpportunitiesScreen() {
         method: "POST",
         body: JSON.stringify({
           title: newTitle.trim(),
-          description: newDesc.trim() || `${newCompany.trim()} - Cơ hội: ${newTitle.trim()}. Khu vực: ${newRegion}. Ngành nghề: ${newIndustry}`,
+          description: newDesc.trim() || `${finalCompany} - Cơ hội: ${newTitle.trim()}. Khu vực: ${newRegion}. Ngành nghề: ${newIndustry}`,
           type: newTag,
           budgetMin: cleanBudgetMin,
           budgetMax: cleanBudgetMax,
           region: newRegion,
           industry: newIndustry,
           deadline: newDeadline ? new Date(newDeadline).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString(),
-          contactName: newContactName.trim(),
-          contactPhone: newContactPhone.trim(),
-          contactTitle: newContactTitle.trim(),
-          company: newCompany.trim(),
+          contactName: finalContactName,
+          contactPhone: finalContactPhone,
+          contactTitle: newContactTitle.trim() || "Đại diện hợp tác",
+          company: finalCompany,
           image: newImage || null,
         }),
       });
@@ -450,18 +461,66 @@ function OpportunitiesScreen() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
 
                 {/* Top Badges */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#003B95]/90 backdrop-blur-md px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
                     <Sparkles className="h-3 w-3 text-amber-300" />
                     {tagVi}
                   </span>
 
-                  {o.interested && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                      <Check className="h-3 w-3 stroke-[2.5]" />
-                      Đã quan tâm
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {o.interested && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+                        <Check className="h-3 w-3 stroke-[2.5]" />
+                        Đã quan tâm
+                      </span>
+                    )}
+
+                    {checkIsMine(o) && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveOppMenuId(activeOppMenuId === o.id ? null : o.id);
+                          }}
+                          className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
+                          title="Tùy chọn cơ hội"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {activeOppMenuId === o.id && (
+                          <div
+                            className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setActiveOppMenuId(null);
+                                startEditOpp(o, e);
+                              }}
+                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Chỉnh sửa</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setActiveOppMenuId(null);
+                                handleDeleteOpp(o.id, e);
+                              }}
+                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                              <span>Xóa</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Poster Title & Company & Posting Date */}
@@ -540,27 +599,6 @@ function OpportunitiesScreen() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {checkIsMine(o) && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => startEditOpp(o, e)}
-                        className="px-2.5 py-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition active:scale-95 cursor-pointer flex items-center gap-1"
-                        title="Chỉnh sửa cơ hội"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        <span>Sửa</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteOpp(o.id, e)}
-                        className="p-1.5 rounded-xl border border-rose-300 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition active:scale-95 cursor-pointer"
-                        title="Xóa cơ hội"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  )}
 
                   <button
                     type="button"
@@ -834,7 +872,7 @@ function OpportunitiesScreen() {
                   />
                   {newImage ? (
                     <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                      <img src={newImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
+                      <img src={resolveMediaUrl(newImage) || newImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
                       <button
                         type="button"
                         onClick={() => setNewImage(null)}
@@ -1114,7 +1152,7 @@ function OpportunitiesScreen() {
                   />
                   {editImage ? (
                     <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                      <img src={editImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
+                      <img src={resolveMediaUrl(editImage) || editImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
                       <button
                         type="button"
                         onClick={() => setEditImage(null)}

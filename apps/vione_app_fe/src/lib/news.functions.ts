@@ -19,6 +19,7 @@ function mapNews(n: Row): NewsArticle {
     views: (n.views as number) ?? 0,
     status: n.status as NewsArticle["status"],
     excerpt: (n.excerpt as string) ?? "",
+    image: (n.cover_image as string) || (n.coverImage as string) || (n.image as string) || "",
   };
 }
 
@@ -38,6 +39,7 @@ export const listNewsFn = createServerFn({ method: "GET" })
           views: Number(n.views ?? 0),
           status: (n.status as NewsArticle["status"]) ?? "published",
           excerpt: n.excerpt ?? "",
+          image: n.image || n.coverImage || n.cover_image || "",
         }));
       }
     } catch (e) {
@@ -60,6 +62,7 @@ const newsInput = z.object({
   publishedAt: z.string().max(40).default("—"),
   status: z.enum(["published", "draft", "scheduled"]),
   excerpt: z.string().max(2000).default(""),
+  image: z.string().optional().default(""),
 });
 
 export const createNewsFn = createServerFn({ method: "POST" })
@@ -70,7 +73,11 @@ export const createNewsFn = createServerFn({ method: "POST" })
     try {
       const created = await fetchNestApiFromServer<any>("/content/admin/news", token, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          cover_image: data.image || null,
+          coverImage: data.image || null,
+        }),
       });
       if (created && (created.id || created.code)) {
         return {
@@ -82,6 +89,7 @@ export const createNewsFn = createServerFn({ method: "POST" })
           views: 0,
           status: created.status ?? data.status,
           excerpt: created.excerpt ?? data.excerpt,
+          image: created.image || created.coverImage || created.cover_image || data.image || "",
         };
       }
     } catch (e) {
@@ -100,6 +108,7 @@ export const createNewsFn = createServerFn({ method: "POST" })
         published_at: data.publishedAt,
         status: data.status,
         excerpt: data.excerpt,
+        cover_image: data.image || null,
         views: 0,
       })
       .select("*")
@@ -121,7 +130,11 @@ export const updateNewsFn = createServerFn({ method: "POST" })
     try {
       const updated = await fetchNestApiFromServer<any>(`/content/admin/news/${data.id}`, token, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          cover_image: data.image || null,
+          coverImage: data.image || null,
+        }),
       });
       if (updated && (updated.id || updated.code)) {
         return {
@@ -133,6 +146,7 @@ export const updateNewsFn = createServerFn({ method: "POST" })
           views: Number(updated.views ?? 0),
           status: updated.status ?? data.status,
           excerpt: updated.excerpt ?? data.excerpt,
+          image: updated.image || updated.coverImage || updated.cover_image || data.image || "",
         };
       }
     } catch (e) {
@@ -149,6 +163,7 @@ export const updateNewsFn = createServerFn({ method: "POST" })
         published_at: data.publishedAt,
         status: data.status,
         excerpt: data.excerpt,
+        cover_image: data.image || null,
       })
       .eq("code", data.id)
       .select("*")

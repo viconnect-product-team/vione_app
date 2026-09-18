@@ -306,7 +306,7 @@ async function main() {
       features: [
         {
           id: 'DIR-01',
-          name: 'Danh bạ 500+ Doanh nhân, tìm kiếm theo tên, công ty và lọc theo ngành nghề',
+          name: 'Danh bạ Hội viên Doanh nhân, tìm kiếm theo tên, công ty và lọc theo ngành nghề',
           screen: 'Màn hình Danh bạ (/association/members)',
           api: 'GET /api/members, GET /api/members/industries',
           devDate: '12/09/2026',

@@ -5,6 +5,7 @@ export type FeeStatus = "paid" | "unpaid" | "overdue";
 export type FeeRecord = {
   id: string;
   member: Member;
+  memberId?: string;
   year: number;
   amount: number;
   paidAt?: string;

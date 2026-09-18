@@ -32,8 +32,8 @@
     "deploy:ceo1983:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/ceo1983/fast-deploy.ps1 -FrontendOnly -SkipWebBuild",
     "deploy:vione": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1",
     "deploy:vione:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1 -FrontendOnly -SkipWebBuild",
-    "deploy:crm": "powershell -ExecutionPolicy Bypass -File ./deploy/crm/fast-deploy.ps1",
-    "deploy:crm:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/crm/fast-deploy.ps1 -FrontendOnly -SkipWebBuild"
+    "deploy:crm": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1",
+    "deploy:crm:fe": "powershell -ExecutionPolicy Bypass -File ./deploy/vione/fast-deploy.ps1 -FrontendOnly -SkipWebBuild"
   },
   "devDependencies": {
     "docx": "^9.7.1",

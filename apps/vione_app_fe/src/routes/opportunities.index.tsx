@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarClock,
   CheckCircle2,
   Clock,
   Eye,
+  ImagePlus,
   LayoutGrid,
   Lightbulb,
   MapPin,
@@ -218,6 +219,20 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
     new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
   );
   const [emoji, setEmoji] = useState("💡");
+  const [imageUrl, setImageUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setImageUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -233,6 +248,8 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
         industry,
         deadline: new Date(deadline).toISOString(),
         emoji,
+        image: imageUrl || undefined,
+        imageUrl: imageUrl || undefined,
       },
     });
     await router.invalidate();
@@ -253,6 +270,40 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <form onSubmit={submit} className="space-y-4 p-5 max-h-[70vh] overflow-y-auto">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold">Hình ảnh minh họa / Poster cơ hội</label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            {imageUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-border max-h-40 bg-muted/20">
+                <img src={imageUrl} alt="Poster" className="w-full h-40 object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImageUrl("")}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow cursor-pointer transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full rounded-xl border-2 border-dashed border-border p-4 text-center hover:border-primary/50 hover:bg-muted/20 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
+              >
+                <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Chọn ảnh tải lên từ thiết bị (JPG, PNG, WebP)
+                </span>
+              </button>
+            )}
+          </div>
+
           <div>
             <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.titleField")}</label>
             <input

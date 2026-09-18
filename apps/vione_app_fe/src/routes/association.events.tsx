@@ -51,10 +51,11 @@ export const Route = createFileRoute("/association/events")({
 });
 
 const defaultEventImages = [
-  eventImg,
-  "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=1200&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=1200&auto=format&fit=crop&q=80",
 ];
 
 export interface EventAgendaInfo {
@@ -451,132 +452,121 @@ function EventsScreen() {
               key={e.id}
               role="listitem"
               onClick={() => setSelectedEvent(e)}
-              className="group flex flex-col transition-all duration-300 cursor-pointer"
+              className="group relative flex flex-col transition-all duration-300 cursor-pointer rounded-3xl p-1 bg-gradient-to-b from-white/30 via-white/10 to-transparent backdrop-blur-md shadow-xl hover:shadow-[0_22px_45px_rgba(0,0,0,0.35)] hover:-translate-y-1.5"
             >
-              {/* Event Banner */}
-              <div className="relative flex flex-col min-h-[175px] sm:min-h-[195px] overflow-hidden rounded-3xl border border-amber-400/40 shadow-xl hover:border-amber-400/80 hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] text-white">
-                {/* Event Background: Ảnh thật từ CRM hoặc Gradient thương hiệu sang trọng */}
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                  {evImg ? (
-                    <img
-                      src={evImg}
-                      alt={e.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-25 mix-blend-luminosity"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#020714] via-[#081B4B] to-[#0D2566] opacity-95">
-                      <div className="absolute right-3 bottom-3 opacity-10 pointer-events-none">
-                        <img src="/brand-header-logo.png" alt="" className="h-28 w-auto object-contain" />
+              {/* Event Banner Floating Elevated Card */}
+              {(() => {
+                const fallbackImg = defaultEventImages[index % defaultEventImages.length];
+                const displayImg = evImg || fallbackImg;
+                return (
+                  <div className="relative flex flex-col min-h-[195px] sm:min-h-[215px] overflow-hidden rounded-[22px] border border-white/25 shadow-inner transition-all duration-300 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] text-white">
+                    {/* Event Background: Ảnh thật từ CRM hoặc Gradient thương hiệu sang trọng */}
+                    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                      <img
+                        src={displayImg}
+                        alt={e.title}
+                        loading="lazy"
+                        onError={(evt) => {
+                          const target = evt.currentTarget;
+                          if (target.src !== fallbackImg) {
+                            target.src = fallbackImg;
+                          }
+                        }}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-65"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/25" />
+                    </div>
+
+                    {/* Dynamic Golden Swoosh Wave Background */}
+                    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                      <svg
+                        className="absolute inset-0 h-full w-full"
+                        viewBox="0 0 500 300"
+                        preserveAspectRatio="none"
+                        fill="none"
+                      >
+                        <defs>
+                          <linearGradient id={`goldGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.1" />
+                            <stop offset="30%" stopColor="#FFFFFF" stopOpacity="0.6" />
+                            <stop offset="65%" stopColor="#FFFFFF" stopOpacity="0.9" />
+                            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.2" />
+                          </linearGradient>
+                          <linearGradient id={`goldGlowGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
+                            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M -50,280 C 120,270 200,160 300,140 C 390,120 430,145 540,60"
+                          stroke={`url(#goldGlowGrad-${e.id})`}
+                          strokeWidth="24"
+                          strokeLinecap="round"
+                          className="blur-xl opacity-60"
+                        />
+                        <path
+                          d="M -30,270 C 130,260 210,155 310,135 C 400,115 440,135 530,50"
+                          stroke={`url(#goldGrad-${e.id})`}
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-blue-500/20 blur-3xl" />
+                      <div className="absolute top-1/2 -left-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+                    </div>
+
+                    {/* 1. TOP BAR: BOOKMARK & REGISTERED BADGE */}
+                    <div className="relative z-10 flex items-center justify-between p-3.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-semibold text-white border border-white/20">
+                          <MapPin className="h-2.5 w-2.5 text-sky-400" />
+                          {e.place?.split(",")[0] || "Hà Nội"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {registered && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-bold text-white shadow-xs border border-white/40">
+                            <Check className="h-2.5 w-2.5 stroke-[2.5] text-white" />
+                            Đã đăng ký
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            toggleBookmark(e.id);
+                          }}
+                          className={`grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs ${
+                            isBookmarked
+                              ? "bg-white text-slate-950 font-bold border border-white"
+                              : "bg-black/50 hover:bg-black/70 text-white border border-white/30"
+                          }`}
+                          title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
+                        >
+                          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
+                        </button>
                       </div>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#020714] via-[#081B4B]/80 to-[#040C20]/95" />
-                </div>
 
-                {/* Dynamic Golden Swoosh Wave Background */}
-                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-                  <svg
-                    className="absolute inset-0 h-full w-full"
-                    viewBox="0 0 500 300"
-                    preserveAspectRatio="none"
-                    fill="none"
-                  >
-                    <defs>
-                      <linearGradient id={`goldGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.1" />
-                        <stop offset="30%" stopColor="#F59E0B" stopOpacity="0.75" />
-                        <stop offset="65%" stopColor="#FDE68A" stopOpacity="0.95" />
-                        <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.2" />
-                      </linearGradient>
-                      <linearGradient id={`goldGlowGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#D97706" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#FEF08A" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M -50,280 C 120,270 200,160 300,140 C 390,120 430,145 540,60"
-                      stroke={`url(#goldGlowGrad-${e.id})`}
-                      strokeWidth="24"
-                      strokeLinecap="round"
-                      className="blur-xl opacity-60"
-                    />
-                    <path
-                      d="M -30,270 C 130,260 210,155 310,135 C 400,115 440,135 530,50"
-                      stroke={`url(#goldGrad-${e.id})`}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-blue-500/20 blur-3xl" />
-                  <div className="absolute top-1/2 -left-10 h-36 w-36 rounded-full bg-amber-500/15 blur-2xl" />
-                </div>
+                    {/* 2. BANNER FOOTER: TOÀN BỘ TEXT MÀU TRẮNG, ĐẾM NGƯỢC NẰM TRÊN TÊN SỰ KIỆN */}
+                    <div className="relative z-10 mt-auto p-4 pt-6 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col justify-end">
+                      {/* Countdown Timer placed ABOVE Event Title */}
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <EventCountdownBanner event={e} index={index} whiteText={true} />
+                        <span className="text-[11px] font-bold text-white group-hover:text-white/90 transition-colors flex items-center gap-1 shrink-0 bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/35 shadow-xs">
+                          {isEn ? "Details" : "Xem chi tiết"} <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform text-white" />
+                        </span>
+                      </div>
 
-                {/* 1. TOP BAR: BOOKMARK & REGISTERED BADGE (Bỏ CEO 1983 ở góc trái) */}
-                <div className="relative z-10 flex items-center justify-end p-3.5">
-                  <div className="flex items-center gap-1.5">
-                    {registered && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2 py-0.5 text-[9.5px] font-bold text-white shadow-xs border border-emerald-300/40">
-                        <Check className="h-2.5 w-2.5 stroke-[2.5]" />
-                        Đã đăng ký
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        toggleBookmark(e.id);
-                      }}
-                      className={`grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs ${
-                        isBookmarked
-                          ? "bg-amber-400 text-slate-950 font-bold border border-amber-300"
-                          : "bg-black/50 hover:bg-black/70 text-white/90 border border-white/20"
-                      }`}
-                      title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
-                    >
-                      <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : ""}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. BANNER FOOTER: CHỈ CÒN CATEGORY, COUNTDOWN & METADATA (TÊN SỰ KIỆN ĐƯA RA NGOÀI) */}
-                <div className="relative z-10 mt-auto p-4 pt-6 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col justify-end">
-                  {/* Category & Borderless Countdown Timer */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-wider text-amber-300/90">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                      <span>{agenda.category}</span>
-                    </span>
-
-                    {/* Countdown Timer: Nhỏ lại, không có border, chỉ để số thuần */}
-                    <EventCountdownBanner event={e} index={index} />
-                  </div>
-
-                  {/* Metadata Strip sát đáy ảnh */}
-                  <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[10.5px]">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="flex items-center gap-1 font-bold text-amber-300">
-                        <Calendar className="h-3 w-3 text-amber-400" />
-                        <span>{e.time} · {e.day} {e.month}, 2026</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-slate-300 truncate max-w-[150px] sm:max-w-[220px]">
-                        <MapPin className="h-3 w-3 text-amber-400 shrink-0" />
-                        <span className="truncate">{e.place}</span>
-                      </span>
+                      {/* Event Title inside poster - TOÀN BỘ TEXT MÀU TRẮNG */}
+                      <h3 className="text-[15.5px] sm:text-[17px] font-black text-white leading-snug drop-shadow-md group-hover:text-white/95 transition-colors line-clamp-2">
+                        {e.title}
+                      </h3>
                     </div>
-
-                    <span className="text-[10.5px] font-bold text-amber-300 group-hover:text-amber-200 transition-colors flex items-center gap-1 shrink-0">
-                      Chi tiết <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
                   </div>
-                </div>
-              </div>
-
-              {/* 3. TÊN SỰ KIỆN Ở NGOÀI BANNER (CHỈ ĐƯA TÊN SỰ KIỆN RA NGOÀI) */}
-              <h3 className="mt-2.5 px-1 text-[15px] sm:text-[16.5px] font-bold text-slate-900 dark:text-white leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
-                {e.title}
-              </h3>
+                );
+              })()}
             </div>
           );
         })}

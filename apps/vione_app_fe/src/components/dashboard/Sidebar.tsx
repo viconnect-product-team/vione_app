@@ -264,6 +264,7 @@ export function Sidebar({
   mobile = false,
   onNavigate,
 }: { mobile?: boolean; onNavigate?: () => void } = {}) {
+  const t = useT();
   const { isPlatformAdmin, isAdmin, roles } = useRole();
   const isTongThuKy = roles.some((r) => String(r) === "tong_thu_ky");
   const isBanThanhVien = roles.some((r) => String(r) === "truong_ban_thanh_vien");
@@ -278,6 +279,9 @@ export function Sidebar({
   const canViewFinance = isPlatformAdmin || isAdmin || isTongThuKy || isBanTaiChinh;
   const canViewComm = isPlatformAdmin || isAdmin || isTongThuKy || isBanTruyenThong;
   const canViewGovernance = isPlatformAdmin || isAdmin || isTongThuKy || isBanThanhVien;
+  const canViewNetwork = isPlatformAdmin || isAdmin || isTongThuKy || isBanXucTien;
+  const canViewBusinessConnect = isPlatformAdmin || isAdmin || isTongThuKy || isBanXucTien;
+  const canViewSystem = isPlatformAdmin || isAdmin;
 
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
 
@@ -482,27 +486,33 @@ export function Sidebar({
             onNavigate={onNavigate}
           />
         )}
-        <Group
-          label="nav.group.network"
-          items={network}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.bc"
-          items={businessConnect}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
-        <Group
-          label="nav.group.system"
-          items={system}
-          pathname={pathname}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-        />
+        {canViewNetwork && (
+          <Group
+            label="nav.group.network"
+            items={network}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewBusinessConnect && (
+          <Group
+            label="nav.group.bc"
+            items={businessConnect}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {canViewSystem && (
+          <Group
+            label="nav.group.system"
+            items={system}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
         {(isAdmin || isPlatformAdmin) && (
           <Group
             label="nav.group.admin"

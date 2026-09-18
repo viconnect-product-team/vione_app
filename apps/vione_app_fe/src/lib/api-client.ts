@@ -350,3 +350,6 @@ export async function uploadFileToNest(file: File | Blob, filename: string): Pro
   const transformed = transformUrls(data);
   return transformed?.url || data.url;
 }
+
+export const uploadFile = uploadFileToNest;
+

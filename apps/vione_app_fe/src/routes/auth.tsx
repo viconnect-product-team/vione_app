@@ -12,9 +12,9 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  ShieldCheck,
   X,
 } from "lucide-react";
-import { ViOneLogo } from "@/components/business-connect/mobile/ViOneLogo";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
 import {
   applyRememberPreference,
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/auth")({
     ...(search.portal === "crm" || search.portal === "admin" ? { portal: "crm" as const } : {}),
   }),
   head: () => ({
-    meta: [{ title: "Đăng nhập Hệ thống CRM — ViOne" }],
+    meta: [{ title: "Đăng nhập Hệ thống Quản trị CRM" }],
   }),
   component: CrmAdminAuthPage,
 });
@@ -361,17 +361,19 @@ function CrmAdminAuthPage() {
 
         {/* Brand Crest & Headers */}
         <div className="mt-5 flex flex-col items-center justify-center text-center">
-          <ViOneLogo wordmarkOnly className="h-10 sm:h-12 w-auto transition-transform hover:scale-105 duration-300" />
-          <div className="mt-2 text-[10px] font-semibold tracking-[0.32em] uppercase bg-clip-text text-transparent bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-500 text-white shadow-[0_8px_22px_rgba(2,132,199,0.35)]">
+            <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
+          </div>
+          <div className="mt-3 text-[10.5px] font-bold tracking-[0.28em] uppercase text-sky-600 dark:text-sky-400">
             HỆ THỐNG QUẢN TRỊ CRM
           </div>
-          <h1 className="mt-3 font-serif text-[24px] sm:text-[28px] font-light tracking-wide leading-tight bg-[linear-gradient(135deg,#8C653B_0%,#C29B69_45%,#D8B282_100%)] dark:bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(201,158,74,0.25)]">
+          <h1 className="mt-2 text-[23px] sm:text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-white">
             {mode === "signin" ? "Đăng nhập Hệ thống" : "Đăng ký Quản trị viên"}
           </h1>
-          <p className="mt-1.5 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-light tracking-[0.02em] text-muted-foreground dark:text-[#D4C3A3]">
+          <p className="mt-1.5 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-normal text-slate-500 dark:text-slate-400">
             {mode === "signin"
-              ? "Cổng quản trị dành cho Quản lý & Ban Quản trị ViOne"
-              : "Đăng ký tài khoản quản trị hệ thống ViOne"}
+              ? "Cổng quản trị dành cho Ban Quản trị & Ban Thư ký Điều hành"
+              : "Đăng ký tài khoản quản trị hệ thống"}
           </p>
         </div>
 
@@ -409,11 +411,11 @@ function CrmAdminAuthPage() {
             -webkit-box-shadow: 0 0 0px 1000px var(--card) inset !important;
           }
           .auth-field:hover {
-            border-color: var(--input) !important;
+            border-color: #94a3b8 !important;
             background-color: var(--card) !important;
           }
           .auth-field:focus {
-            border-color: #D8B282 !important;
+            border-color: #0284c7 !important;
             background-color: var(--card) !important;
           }
         `}</style>
@@ -433,7 +435,7 @@ function CrmAdminAuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@connect.vn"
-              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
+              className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
             />
           </div>
 
@@ -444,7 +446,7 @@ function CrmAdminAuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t("auth.passwordPlaceholder")}
-              className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
+              className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
             />
             <button
               type="button"
@@ -464,24 +466,20 @@ function CrmAdminAuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu"
-                className="auth-field h-12 w-full rounded-2xl border border-input bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-[#D8B282] focus:ring-1 focus:ring-[#D8B282]/30 shadow-xs"
+                className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
               />
             </div>
           )}
 
-          {/* Primary Submit Button */}
+          {/* Primary Submit Button - Blue White System Gradient */}
           <button
             type="submit"
             disabled={busy}
-            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[16px] sm:text-[17px] font-semibold transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md text-[#1b1206]"
-            style={{
-              background: "linear-gradient(135deg, #AB6D3C 0%, #FDE6B4 100%)",
-              boxShadow: "0 -1px 0 0 #f6e6c4 inset, 0 8px 24px -6px rgba(201, 163, 91, 0.6)",
-            }}
+            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[15px] sm:text-[16px] font-bold text-white transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-lg bg-gradient-to-r from-blue-600 via-sky-600 to-blue-700 hover:from-blue-700 hover:to-sky-700 shadow-[0_8px_25px_rgba(2,132,199,0.35)]"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-[#1b1206]" /> {t("auth.processing")}
+                <Loader2 className="h-5 w-5 animate-spin text-white" /> {t("auth.processing")}
               </span>
             ) : mode === "signin" ? (
               "Đăng nhập Hệ thống CRM"
@@ -490,7 +488,7 @@ function CrmAdminAuthPage() {
             )}
             {!loading && (
               <ArrowRight
-                className="absolute right-5 sm:right-6 h-5 w-5 text-[#1b1206]"
+                className="absolute right-5 sm:right-6 h-5 w-5 text-white"
                 aria-hidden="true"
               />
             )}

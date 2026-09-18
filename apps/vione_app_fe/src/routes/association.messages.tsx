@@ -27,6 +27,7 @@ import {
   Calendar,
   CheckCircle2,
   ChevronLeft,
+  ChevronRight,
   Clock,
   CreditCard,
   Download,
@@ -86,9 +87,9 @@ import { CreateGroupChatModal } from "@/components/member/CreateGroupChatModal";
 import { GroupMembersModal } from "@/components/member/GroupMembersModal";
 
 export function isSelfUser(
-  candidate: { peerCode?: string; userId?: string; name?: string; code?: string } | null | undefined,
-  user: { id?: string; username?: string; email?: string; name?: string } | null | undefined,
-  member: { code?: string; id?: string; name?: string; email?: string } | null | undefined
+  candidate: { peerCode?: string | null; userId?: string | null; name?: string | null; code?: string | null } | null | undefined,
+  user: { id?: string | null; username?: string | null; email?: string | null; name?: string | null } | null | undefined,
+  member: { code?: string | null; id?: string | null; name?: string | null; email?: string | null } | null | undefined
 ): boolean {
   if (!candidate || (!user && !member)) return false;
   const candidateCode = (candidate.peerCode || candidate.code || "").trim().toLowerCase();
@@ -235,6 +236,7 @@ type ParsedContent = {
   | { type: "image"; url: string; name?: string; caption?: string }
   | { type: "file"; url: string; name: string; size?: number; caption?: string }
   | { type: "location"; lat: string; lng: string; name: string; caption?: string }
+  | { type: "call"; callType: "audio" | "video"; duration: number; status: "completed" | "missed" }
   | { type: "action_payment"; data: ActionPaymentData }
   | { type: "action_meeting"; data: ActionMeetingData }
   | { type: "text"; text: string }
@@ -262,6 +264,21 @@ function parseMessageContent(rawBody: string): ParsedContent {
       text: safeDecode(replyMatch[3]),
     };
     body = replyMatch[4].trim();
+  }
+
+  // Action: Call log [call:audio|duration:145|status:completed] or [call:video|duration:0|status:missed]
+  const callMatch = body.match(/\[call:(audio|video)(?:\|duration:(\d+))?(?:\|status:(completed|missed))?\]/i);
+  if (callMatch) {
+    const callType = (callMatch[1].toLowerCase() === "video" ? "video" : "audio") as "audio" | "video";
+    const duration = callMatch[2] ? parseInt(callMatch[2], 10) : 0;
+    const status = (callMatch[3] || (duration > 0 ? "completed" : "missed")) as "completed" | "missed";
+    return {
+      replyQuote,
+      type: "call",
+      callType,
+      duration,
+      status,
+    };
   }
 
   // Action: Payment with VietQR
@@ -353,6 +370,12 @@ function formatMessagePreview(raw?: string | null): string {
     text.includes("đã thu hồi một tin nhắn")
   ) {
     return text.includes("Bạn") ? "Bạn đã thu hồi một tin nhắn" : "Tin nhắn đã được thu hồi";
+  }
+  if (/\[call:video/i.test(text)) {
+    return text.includes("missed") ? "📹 Cuộc gọi video nhỡ" : "📹 Cuộc gọi video";
+  }
+  if (/\[call:audio/i.test(text) || /\[call:/i.test(text)) {
+    return text.includes("missed") ? "📞 Cuộc gọi thoại nhỡ" : "📞 Cuộc gọi thoại";
   }
   if (/\[action:payment/i.test(text)) {
     return "💳 [Hóa đơn] Nhắc nhở thanh toán hội phí VietQR";
@@ -485,6 +508,14 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
       localStorage.setItem("vba.group_conversations", JSON.stringify(nextGroups.slice(0, 50)));
     }
 
+    try {
+      const storedDeleted = JSON.parse(localStorage.getItem("vba_deleted_convs") || "[]");
+      if (Array.isArray(storedDeleted) && storedDeleted.length > 0) {
+        const nextDeleted = storedDeleted.filter((k: string) => String(k).toLowerCase() !== peer.peerCode.toLowerCase());
+        localStorage.setItem("vba_deleted_convs", JSON.stringify(nextDeleted));
+      }
+    } catch {}
+
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
   } catch {}
@@ -541,7 +572,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   });
 
   const rowTouchStartRef = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
-  const rowLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const rowLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRowTouchStart = (e: React.TouchEvent, conv: MyConversation) => {
     const touch = e.touches[0];
@@ -611,6 +642,15 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       e.preventDefault();
     }
     const targetKey = peerCode.toLowerCase();
+    try {
+      const stored = JSON.parse(localStorage.getItem("vba_deleted_convs") || "[]");
+      const list: string[] = Array.isArray(stored) ? stored : [];
+      if (!list.includes(targetKey)) {
+        list.push(targetKey);
+        localStorage.setItem("vba_deleted_convs", JSON.stringify(list));
+      }
+    } catch {}
+
     setLocalRecents((prev) => {
       const next = prev.filter((c) => c.peerCode.toLowerCase() !== targetKey);
       try {
@@ -641,6 +681,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         if (raw) setLocalRecents(JSON.parse(raw));
         const rawGroups = localStorage.getItem("vba.group_conversations");
         if (rawGroups) setLocalGroups(JSON.parse(rawGroups));
+        reload();
       } catch {}
     };
     window.addEventListener("focus", syncLocal);
@@ -773,6 +814,14 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   };
 
   const allConversations = useMemo(() => {
+    const deletedConvs = new Set<string>();
+    try {
+      const stored = JSON.parse(localStorage.getItem("vba_deleted_convs") || "[]");
+      if (Array.isArray(stored)) {
+        stored.forEach((k: string) => deletedConvs.add(String(k).toLowerCase()));
+      }
+    } catch {}
+
     const memberMap = new Map<string, DirectoryMember>();
     for (const m of members) {
       if (m.code) memberMap.set(m.code.toLowerCase(), m);
@@ -781,6 +830,9 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     const map = new Map<string, MyConversation>();
     // First, map server conversations enriched with directory member details
     for (const c of conversations) {
+      if (deletedConvs.has(c.peerCode.toLowerCase())) {
+        continue;
+      }
       if (!c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system" && (!c.last || !c.last.trim())) {
         continue;
       }
@@ -800,6 +852,9 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     }
     // Next, merge any local recent conversations, preserving avatars and names
     for (const rec of localRecents) {
+      if (deletedConvs.has(rec.peerCode.toLowerCase())) {
+        continue;
+      }
       if (!rec.isSystem && rec.peerCode !== "admin" && rec.peerCode !== "system" && (!rec.last || !rec.last.trim())) {
         continue;
       }
@@ -863,6 +918,41 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       }
     }
 
+    // Merge connected members from QR scan (vba_connected_members)
+    try {
+      const rawConn = localStorage.getItem("vba_connected_members");
+      const connList: string[] = rawConn ? JSON.parse(rawConn) : [];
+      if (Array.isArray(connList)) {
+        for (const rawCode of connList) {
+          if (!rawCode) continue;
+          const key = String(rawCode).toLowerCase();
+          if (deletedConvs.has(key)) continue;
+          const mem = memberMap.get(key) || members.find((m) => m.code?.toLowerCase() === key || m.userId?.toLowerCase() === key);
+          const finalKey = mem?.code ? mem.code.toLowerCase() : key;
+          if (deletedConvs.has(finalKey)) continue;
+
+          if (!map.has(finalKey)) {
+            map.set(finalKey, {
+              peerCode: mem?.code || rawCode,
+              name: mem?.personName || mem?.contact || mem?.name || "Hội viên kết nối QR",
+              last: "Đã kết nối qua mã QR. Bắt đầu trò chuyện!",
+              time: "Vừa xong",
+              rawTime: new Date().toISOString(),
+              unread: 0,
+              avatarUrl: mem?.avatar || null,
+              isSystem: false,
+              isOnline: true,
+              userId: mem?.userId || null,
+              isConnected: true,
+            });
+          } else {
+            const existing = map.get(finalKey)!;
+            existing.isConnected = true;
+          }
+        }
+      }
+    } catch {}
+
     // Kiểm tra nếu có tin nhắn bị thu hồi gần đây trong local storage
     for (const [k, c] of map.entries()) {
       try {
@@ -884,6 +974,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       // 1. Loại bỏ chính tài khoản của mình khỏi danh sách tin nhắn
       if (isSelfUser(c, user, myMember)) return false;
       if (c.isSystem || c.peerCode === "admin" || c.peerCode === "system" || c.isGroup || c.peerCode.startsWith("group_")) return true;
+      if (c.isConnected) return true;
       return Boolean(c.last && c.last.trim().length > 0);
     });
 
@@ -969,9 +1060,9 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       // Chưa đọc
       list = allConversations.filter((c) => (c.unread || 0) > 0);
     } else {
-      // "all" (Tất cả): Có tất cả tin nhắn đã rep lại hoặc tin nhắn hệ thống hoặc nhóm
+      // "all" (Tất cả): Có tất cả tin nhắn đã rep lại hoặc tin nhắn hệ thống hoặc nhóm hoặc người đã kết nối
       list = allConversations.filter(
-        (c) => isGroupConv(c) || c.isSystem || c.peerCode === "admin" || c.peerCode === "system" || Boolean(c.last && c.last.trim())
+        (c) => isGroupConv(c) || c.isSystem || c.peerCode === "admin" || c.peerCode === "system" || c.isConnected || Boolean(c.last && c.last.trim())
       );
     }
 
@@ -1247,10 +1338,10 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
           : t("m.messages.announce.count", { count: conversations.length })}
       </p>
 
-      {/* Member Picker Modal */}
-      {pickerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center bg-black/70 backdrop-blur-xs p-0 sm:p-4">
-          <div className="w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 p-4 max-h-[85vh] flex flex-col shadow-2xl animate-fade-in text-slate-900 dark:text-white">
+      {/* Member Picker Modal - Centered on Mobile via Portal */}
+      {pickerOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-[390px] sm:max-w-md mx-auto rounded-3xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 p-4 max-h-[85vh] flex flex-col shadow-2xl animate-fade-in text-slate-900 dark:text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
@@ -1350,7 +1441,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Filter & Sort Modal - Centered on Mobile */}
@@ -1793,14 +1885,14 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         })}
       </div>
 
-      {/* Action Sheet when Long-Pressing Conversation */}
-      {selectedConvForAction && (
+      {/* Action Sheet when Long-Pressing Conversation - Centered on Mobile via Portal */}
+      {selectedConvForAction && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setSelectedConvForAction(null)}
         >
           <div
-            className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-3 animate-in slide-in-from-bottom-5 duration-200"
+            className="w-full max-w-[360px] sm:max-w-sm rounded-3xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-3 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header info */}
@@ -1841,8 +1933,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
                   </>
                 ) : (
                   <>
-                    <BellOff className="h-4 w-4 text-slate-500" />
-                    <span>Tắt thông báo cuộc trò chuyện</span>
+                    <BellOff className="h-4 w-4 text-slate-400" />
+                    <span>Tắt thông báo</span>
                   </>
                 )}
               </button>
@@ -1865,7 +1957,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
               Đóng
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Profile Modal */}
@@ -1935,7 +2028,7 @@ function ChatThread({
   const chatInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const triggerHaptic = (ms = 20) => {
@@ -2239,6 +2332,13 @@ function ChatThread({
       } catch {}
       return next;
     });
+    setLocalMessages((prev) => {
+      const next = prev.filter((m) => m.id !== msgId);
+      try {
+        localStorage.setItem(`vba.chat.${peer.peerCode}`, JSON.stringify(next.slice(-50)));
+      } catch {}
+      return next;
+    });
     setActiveContextMenuMsgId(null);
     setActiveMenuMsgId(null);
     toast.success("Đã xóa tin nhắn ở phía bạn");
@@ -2467,6 +2567,31 @@ function ChatThread({
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const sendCallLogMessage = async (callPayload: string) => {
+    const tempId = "local-call-" + Date.now();
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      text: callPayload,
+      mine: true,
+      time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+      createdAt: new Date().toISOString(),
+      seen: false,
+    };
+    const nextLocal = [...localMessages, optimisticMsg];
+    setLocalMessages(nextLocal);
+    try {
+      localStorage.setItem(`vba.chat.${peer.peerCode}`, JSON.stringify(nextLocal.slice(-50)));
+    } catch {}
+
+    saveRecentConversation(peer, callPayload);
+    try {
+      await send({ data: { peerCode: peer.peerCode, text: callPayload } });
+      reload();
+    } catch (e) {
+      console.warn("sendCallLogMessage fallback:", e);
+    }
   };
 
   async function handleSend(e: React.FormEvent) {
@@ -2773,6 +2898,10 @@ function ChatThread({
           peerName={displayName}
           peerAvatar={peer.avatarUrl}
           onClose={() => setCallModal({ open: false, type: "audio" })}
+          onEndCall={(result) => {
+            const callPayload = `[call:${result.type}|duration:${result.duration}|status:${result.status}]`;
+            void sendCallLogMessage(callPayload);
+          }}
         />
       )}
 
@@ -2934,9 +3063,11 @@ function ChatThread({
                               ? "rounded-2xl bg-transparent border-0 shadow-none p-0 max-w-full"
                               : content.type === "action_meeting"
                                 ? "max-w-full overflow-hidden border border-amber-500/30"
-                                : m.mine
-                                  ? "bg-[#0084FF] text-white rounded-tr-xs"
-                                  : "bg-[#F0F2F5] dark:bg-[#303030] text-[#050505] dark:text-[#E4E6EB] rounded-tl-xs"
+                                : content.type === "call"
+                                  ? "rounded-2xl bg-transparent border-0 shadow-none p-0 max-w-full"
+                                  : m.mine
+                                    ? "bg-[#0084FF] text-white rounded-tr-xs"
+                                    : "bg-[#F0F2F5] dark:bg-[#303030] text-[#050505] dark:text-[#E4E6EB] rounded-tl-xs"
                           }`}
                         >
                           {/* Reply Quote Header Inside Bubble */}
@@ -2958,8 +3089,76 @@ function ChatThread({
                             </div>
                           )}
 
-                          {/* Action Card: Overdue Payment VietQR / Zalo OA style */}
-                          {content.type === "action_payment" ? (
+                          {/* Messenger Call Log Bubble Card */}
+                          {content.type === "call" ? (
+                            <div
+                              className={`p-3.5 space-y-2.5 rounded-2xl min-w-[230px] max-w-xs ${
+                                m.mine
+                                  ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20"
+                                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-md"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                                    content.status === "missed"
+                                      ? "bg-rose-500/20 text-rose-500"
+                                      : m.mine
+                                        ? "bg-white/20 text-white"
+                                        : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                                  }`}
+                                >
+                                  {content.callType === "video" ? (
+                                    <Video className="h-5 w-5" />
+                                  ) : (
+                                    <Phone className="h-5 w-5" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-[13.5px] font-bold leading-tight">
+                                    {content.callType === "video" ? "Cuộc gọi video" : "Cuộc gọi thoại"}
+                                    {content.status === "missed" && (
+                                      <span className="text-rose-400 text-xs ml-1 font-semibold">(Nhỡ)</span>
+                                    )}
+                                  </h4>
+                                  <p
+                                    className={`text-[11.5px] font-medium mt-0.5 ${
+                                      m.mine ? "text-white/80" : "text-slate-500 dark:text-slate-400"
+                                    }`}
+                                  >
+                                    {content.status === "missed"
+                                      ? "Không trả lời"
+                                      : `${Math.floor(content.duration / 60)
+                                          .toString()
+                                          .padStart(2, "0")}:${(content.duration % 60)
+                                          .toString()
+                                          .padStart(2, "0")}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="pt-1.5 border-t border-white/20 dark:border-slate-700/50 flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={(evt) => {
+                                    evt.stopPropagation();
+                                    setCallModal({ open: true, type: content.callType });
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs ${
+                                    m.mine
+                                      ? "bg-white text-blue-700 hover:bg-white/90"
+                                      : "bg-blue-600 text-white hover:bg-blue-700"
+                                  }`}
+                                >
+                                  {content.callType === "video" ? (
+                                    <Video className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Phone className="h-3.5 w-3.5" />
+                                  )}
+                                  <span>Gọi lại</span>
+                                </button>
+                              </div>
+                            </div>
+                          ) : content.type === "action_payment" ? (
                             <ZaloTransactionCard data={content.data} isFromMe={m.mine} />
                           ) : content.type === "action_meeting" ? (
                             /* Action Card: Meeting Invitation */
@@ -3599,11 +3798,13 @@ function MessengerCallModal({
   peerName,
   peerAvatar,
   onClose,
+  onEndCall,
 }: {
   type: "audio" | "video";
   peerName: string;
   peerAvatar?: string | null;
   onClose: () => void;
+  onEndCall?: (result: { type: "audio" | "video"; duration: number; status: "completed" | "missed" }) => void;
 }) {
   const [callStatus, setCallStatus] = useState<"ringing" | "connected">("ringing");
   const [callSeconds, setCallSeconds] = useState(0);
@@ -3614,7 +3815,7 @@ function MessengerCallModal({
   useEffect(() => {
     const ringTimer = setTimeout(() => {
       setCallStatus("connected");
-    }, 2500);
+    }, 2000);
     return () => clearTimeout(ringTimer);
   }, []);
 
@@ -3635,7 +3836,13 @@ function MessengerCallModal({
   };
 
   const handleEndCall = () => {
-    toast.info("Cuộc gọi đã kết thúc");
+    const isConnected = callStatus === "connected" && callSeconds > 0;
+    const duration = isConnected ? callSeconds : 0;
+    const status = isConnected ? "completed" : "missed";
+    toast.info(isConnected ? `Cuộc gọi kết thúc (${fmtDuration(duration)})` : "Cuộc gọi đã kết thúc");
+    if (onEndCall) {
+      onEndCall({ type, duration, status });
+    }
     onClose();
   };
 

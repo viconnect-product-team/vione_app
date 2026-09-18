@@ -61,11 +61,42 @@ import { useT, useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
-import { resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
+import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
 import eventImg from "@/assets/vba-event.jpg";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+
+async function compressImage(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve((e.target?.result as string) || "");
+        }
+      };
+      img.onerror = () => resolve((e.target?.result as string) || "");
+      img.src = (e.target?.result as string) || "";
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
 
 export const Route = createFileRoute("/association/profile")({
   component: ProfileScreen,
@@ -117,11 +148,15 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCover = localStorage.getItem("vba_member_cover_photo");
-      if (savedCover) setCoverPhoto(savedCover);
+      if (savedCover) {
+        setCoverPhoto(savedCover);
+      } else if (member?.coverUrl || (member as any)?.cover_url) {
+        setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+      }
       const savedAvatar = localStorage.getItem("vba_member_avatar_photo");
       if (savedAvatar) setCustomAvatar(savedAvatar);
     }
-  }, []);
+  }, [member?.coverUrl, (member as any)?.cover_url]);
 
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,41 +166,44 @@ export default function ProfileScreen() {
       return;
     }
     setUploadingCover(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const res = ev.target?.result as string;
-      if (res) {
-        setCoverPhoto(res);
-        try {
-          localStorage.setItem("vba_member_cover_photo", res);
-          window.dispatchEvent(new Event("vba_member_cover_updated"));
-        } catch {}
-      }
-    };
-    reader.readAsDataURL(file);
-
     try {
-      const token = localStorage.getItem("vibe_token") || localStorage.getItem("token") || localStorage.getItem("access_token");
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload/file", {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.url) {
-          setCoverPhoto(json.url);
-          localStorage.setItem("vba_member_cover_photo", json.url);
-          window.dispatchEvent(new Event("vba_member_cover_updated"));
+      // 1. Nén ảnh qua Canvas để kích thước vừa vặn và không gây quá tải storage (tối đa 1200px)
+      const compressedUrl = await compressImage(file, 1200, 0.82);
+      let finalCover = compressedUrl;
+
+      // 2. Upload file lên Nest nếu khả dụng
+      try {
+        const uploadUrl = await uploadFileToNest(file, file.name || "cover.jpg");
+        if (uploadUrl && typeof uploadUrl === "string") {
+          finalCover = uploadUrl;
         }
+      } catch (uploadErr) {
+        console.warn("Nest upload media not reachable, fallback to compressed image:", uploadErr);
       }
+
+      // 3. Cập nhật state & lưu localStorage
+      setCoverPhoto(finalCover);
+      try {
+        localStorage.setItem("vba_member_cover_photo", finalCover);
+      } catch (stErr) {
+        console.warn("Storage full:", stErr);
+      }
+
+      // 4. Phát event để toàn app (Home banner, Card điện tử) cập nhật ngay
+      window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: finalCover }));
+
+      // 5. Lưu vĩnh viễn vào backend DB
+      await fetchNestApi("/members/me/cover", {
+        method: "PATCH",
+        body: JSON.stringify({ coverUrl: finalCover }),
+      }).catch((apiErr) => {
+        console.warn("API /members/me/cover PATCH error:", apiErr);
+      });
+
       toast.success(isEn ? "Cover photo updated successfully!" : "Cập nhật ảnh bìa thành công!");
-    } catch {
-      toast.success(isEn ? "Cover photo updated!" : "Đã cập nhật ảnh bìa mới thành công!");
+    } catch (err) {
+      console.error("Error updating cover photo:", err);
+      toast.error(isEn ? "Failed to update cover photo" : "Không thể cập nhật ảnh bìa. Vui lòng thử lại!");
     } finally {
       setUploadingCover(false);
       if (e.target) e.target.value = "";
@@ -187,6 +225,7 @@ export default function ProfileScreen() {
         setCustomAvatar(res);
         try {
           localStorage.setItem("vba_member_avatar_photo", res);
+          window.dispatchEvent(new Event("vba_member_avatar_updated"));
         } catch {}
       }
     };
@@ -208,6 +247,7 @@ export default function ProfileScreen() {
         if (json.url) {
           setCustomAvatar(json.url);
           localStorage.setItem("vba_member_avatar_photo", json.url);
+          window.dispatchEvent(new Event("vba_member_avatar_updated"));
         }
       }
       toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!");
@@ -262,14 +302,15 @@ export default function ProfileScreen() {
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
   const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   // Dynamic resolved display info based on real registered user / member
   const resolvedDisplayName = member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "Hội viên CLB CEO 1983";
   const resolvedDisplayTitle = member?.title || "Hội viên chính thức CLB CEO 1983";
   const resolvedDisplayCompany = (member as any)?.companyName || member?.industry || "CLB Doanh Nhân CEO 1983";
-  const resolvedDisplayPhone = member?.phone || user?.phone || "";
+  const resolvedDisplayPhone = member?.phone || (user as any)?.phone || "";
   const resolvedDisplayEmail = member?.email || user?.email || "";
 
-  const userProfileStorageKey = `vba_custom_profile_${user?.id || member?.id || "default"}`;
+  const userProfileStorageKey = `vba_custom_profile_${user?.id || (member as any)?.id || "default"}`;
 
   // Local editable profile state with user-scoped persistence
   const [profileName, setProfileName] = useState(() => {
@@ -375,8 +416,8 @@ export default function ProfileScreen() {
 
       if (saved.phone) {
         setProfilePhone(saved.phone);
-      } else if (member?.phone || user?.phone) {
-        setProfilePhone(member?.phone || user?.phone || "");
+      } else if (member?.phone || (user as any)?.phone) {
+        setProfilePhone(member?.phone || (user as any)?.phone || "");
       }
 
       if (saved.email) {
@@ -487,7 +528,6 @@ export default function ProfileScreen() {
       label: isEn ? "Digital Business Cards" : "Quản lý Danh thiếp số",
       icon: Building2,
       to: "/association/business-cards" as const,
-      hasAddAction: true,
       desc: isEn ? "Design & share electronic business card" : "Thiết kế & chia sẻ danh thiếp số cá nhân",
     },
     {

@@ -132,47 +132,6 @@ export function AssociationQrScanModal({
     };
   }, [open, scannedPartner]);
 
-  // Support Native Android QR Scanner (Google Code Scanner via MainActivity Bridge)
-  const isAndroidNativeScanner = typeof window !== "undefined" && Boolean((window as any).AndroidNative?.scanQr);
-
-  useEffect(() => {
-    if (!open || scannedPartner) return;
-
-    if (isAndroidNativeScanner) {
-      (window as any).onNativeQrScanned = (scannedCode: string) => {
-        void handleQrValue(scannedCode);
-      };
-      (window as any).onNativeQrCancelled = () => {
-        // User closed the scanner without scanning
-      };
-      (window as any).onNativeQrError = (err: string) => {
-        console.warn("[Native QR] Error:", err);
-      };
-
-      const onQrEvent = (e: any) => {
-        if (e.detail) {
-          void handleQrValue(e.detail);
-        }
-      };
-      window.addEventListener("vione:qr_scanned", onQrEvent);
-
-      // Automatically launch native Google QR Scanner
-      try {
-        (window as any).AndroidNative.scanQr();
-      } catch (e) {
-        console.error("Failed to launch AndroidNative.scanQr:", e);
-      }
-
-      return () => {
-        window.removeEventListener("vione:qr_scanned", onQrEvent);
-        if (typeof window !== "undefined") {
-          delete (window as any).onNativeQrScanned;
-          delete (window as any).onNativeQrCancelled;
-          delete (window as any).onNativeQrError;
-        }
-      };
-    }
-  }, [open, scannedPartner, isAndroidNativeScanner]);
 
   // Handle parsing QR code string
   const handleQrValue = async (raw: string) => {
@@ -369,46 +328,24 @@ export function AssociationQrScanModal({
                 </div>
               )}
 
-              {isAndroidNativeScanner ? (
-                <div className="absolute inset-0 bg-slate-950/85 flex flex-col items-center justify-center p-4 text-center text-white space-y-3 z-10">
-                  <div className="p-3 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 animate-pulse">
-                    <ScanLine className="h-8 w-8 text-amber-400" />
+              {(status === "unsupported" || (typeof window !== "undefined" && !window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) && (
+                <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center text-white space-y-2 z-10">
+                  <div className="p-2.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 mx-auto">
+                    <Camera className="h-6 w-6" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white uppercase tracking-wider">Máy Quét QR Native</p>
-                    <p className="text-[11px] text-slate-300 max-w-[240px] leading-relaxed">
-                      Đang kết nối camera phần cứng Google Android quét mã tự động
-                    </p>
-                  </div>
+                  <p className="text-xs font-bold text-white">Camera trực tiếp yêu cầu HTTPS hoặc App di động độc lập</p>
+                  <p className="text-[10.5px] text-slate-300 max-w-[240px] leading-relaxed">
+                    Nhấn nút bên dưới để mở trực tiếp máy ảnh thiết bị chụp quét mã QR
+                  </p>
                   <button
                     type="button"
-                    onClick={() => (window as any).AndroidNative?.scanQr()}
-                    className="mt-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white font-black text-xs shadow-lg shadow-amber-500/30 active:scale-95 transition cursor-pointer flex items-center gap-2 uppercase tracking-wider"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] text-white font-bold text-xs shadow-md active:scale-95 transition cursor-pointer flex items-center gap-1.5"
                   >
-                    <Camera className="h-4 w-4" />
-                    <span>Mở Lại Camera Quét</span>
+                    <Camera className="h-4 w-4 text-amber-400" />
+                    <span>Mở Máy Ảnh Chụp QR</span>
                   </button>
                 </div>
-              ) : (
-                (status === "unsupported" || (typeof window !== "undefined" && !window.isSecureContext && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) && (
-                  <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center text-white space-y-2 z-10">
-                    <div className="p-2.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 mx-auto">
-                      <Camera className="h-6 w-6" />
-                    </div>
-                    <p className="text-xs font-bold text-white">Camera trực tiếp yêu cầu HTTPS hoặc App di động độc lập</p>
-                    <p className="text-[10.5px] text-slate-300 max-w-[240px] leading-relaxed">
-                      Nhấn nút bên dưới để mở trực tiếp máy ảnh thiết bị chụp quét mã QR
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] text-white font-bold text-xs shadow-md active:scale-95 transition cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Camera className="h-4 w-4 text-amber-400" />
-                      <span>Mở Máy Ảnh Chụp QR</span>
-                    </button>
-                  </div>
-                )
               )}
             </div>
 
@@ -422,18 +359,12 @@ export function AssociationQrScanModal({
             <div className="flex items-center justify-between gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => {
-                  if (isAndroidNativeScanner) {
-                    (window as any).AndroidNative?.scanQr();
-                  } else {
-                    cameraInputRef.current?.click();
-                  }
-                }}
+                onClick={() => cameraInputRef.current?.click()}
                 disabled={isDecodingFile}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white py-2.5 text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
               >
                 <Camera className="h-4 w-4" />
-                <span>{isAndroidNativeScanner ? "Mở Quét QR" : "Chụp ảnh"}</span>
+                <span>Chụp ảnh</span>
               </button>
 
               <button

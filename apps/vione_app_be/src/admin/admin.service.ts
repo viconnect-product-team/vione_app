@@ -176,12 +176,12 @@ export class AdminService implements OnModuleInit {
     const paidAt = r.paid_at ? (r.paid_at instanceof Date ? r.paid_at.toISOString().slice(0, 10) : String(r.paid_at).slice(0, 10)) : null;
 
     let member: any = null;
-    if (r.member_id) {
+    if (r.member_id || r.member_name || r.member_code) {
       member = {
-        id: r.member_id,
-        code: r.member_code || '',
-        name: r.member_name || '',
-        contact: r.member_contact || '',
+        id: r.member_id || '',
+        code: r.member_code || (r.member_id ? `MB-${String(r.member_id).slice(0, 6).toUpperCase()}` : 'MB-CHUA-CO'),
+        name: r.member_name || r.member_contact || r.member_email || 'Hội viên',
+        contact: r.member_contact || r.member_name || '',
         email: r.member_email || '',
         phone: r.member_phone || '',
         type: r.member_type || 'company',
@@ -226,16 +226,16 @@ export class AdminService implements OnModuleInit {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT 
           i.*,
-          m.code as member_code,
-          m.name as member_name,
-          m.contact as member_contact,
-          m.email as member_email,
-          m.phone as member_phone,
-          m.type as member_type,
+          COALESCE(m.code, u.code, '') as member_code,
+          COALESCE(m.name, u.name, u.email, 'Hội viên') as member_name,
+          COALESCE(m.contact, u.name, '') as member_contact,
+          COALESCE(m.email, u.email, '') as member_email,
+          COALESCE(m.phone, u.phone, '') as member_phone,
+          COALESCE(m.type, 'company') as member_type,
           m.level as member_level,
           m.industry as member_industry,
           m.region as member_region,
-          m.status as member_status,
+          COALESCE(m.status, 'active') as member_status,
           m.joined_at as member_joined_at,
           m.fee_year as member_fee_year,
           m.fee_paid as member_fee_paid,
@@ -250,7 +250,8 @@ export class AdminService implements OnModuleInit {
           m.renewed_at as member_renewed_at,
           m.new_term_end as member_new_term_end
         FROM public.invoices i
-        LEFT JOIN public.members m ON i.member_id = m.id
+        LEFT JOIN public.members m ON (i.member_id = m.id OR i.member_id::text = m.user_id::text)
+        LEFT JOIN public.vione_users u ON (i.member_id::text = u.id::text OR m.user_id::text = u.id::text)
         ORDER BY i.invoice_no ASC, i.created_at DESC
       `;
       return (rows || []).map((r) => this.mapInvoiceRow(r));

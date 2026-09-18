@@ -42,7 +42,7 @@ try {
                 Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[0/5] Build Frontend Hiệp Hội (Web) cục bộ với Scope = association_app..." -ForegroundColor Cyan
-                $env:NODE_OPTIONS = "--max-old-space-size=4096"
+                $env:NODE_OPTIONS = "--max-old-space-size=8192"
                 $env:VITE_APP_SCOPE = "association_app"
                 $env:VITE_APP_NAME = "CLB Doanh Nhân CEO 1983"
                 $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5002"

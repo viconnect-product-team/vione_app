@@ -32,13 +32,13 @@
    - 2.1 [SRS-01]: Quản trị Hội viên & Thẩm định Hồ sơ Ứng viên
    - 2.2 [SRS-02]: Cổng Đăng nhập Di động Chuẩn hóa (`/auth/mobile/`)
    - 2.3 [SRS-03]: Quản lý Sự kiện, Khán phòng Sân khấu & Điểm danh QR 0.2s
-   - 2.4 [SRS-04]: Quản lý Niên liễm, VietQR Động & Tự động Gia hạn (+1 năm)
+   - 2.4 [SRS-04]: QUẢN LÝ HỘI PHÍ, VietQR Động & Tự động Gia hạn (+1 năm)
    - 2.5 [SRS-05]: Danh thiếp Kỹ thuật số 3D & Chạm kết nối 1-Tap NFC
    - 2.6 [SRS-06]: Sàn Giao thương B2B & Điều phối Cuộc hẹn 1-on-1
    - 2.7 [SRS-07]: Quản trị Nền tảng, Phân quyền RBAC & Kiểm toán Bất biến
 3. [PHẦN 3: THIẾT KẾ KỸ THUẬT & MÁY TRẠNG THÁI (TECHSPEC & STATE MACHINES)](#phần-3-thiết-kế-kỹ-thuật--máy-trạng-thái)
    - 3.1 Vòng đời Hội viên (Member Lifecycle State Machine)
-   - 3.2 Vòng đời Hóa đơn & Gia hạn Niên liễm (Invoice & Renewal State Machine)
+   - 3.2 Vòng đời Hóa đơn & GIA HẠN HỘI PHÍ (Invoice & Renewal State Machine)
    - 3.3 Vòng đời Cuộc hẹn B2B (Meeting State Machine)
 4. [PHẦN 4: MA TRẬN TRUY VẾT YÊU CẦU & KIỂM THỬ (TRACEABILITY MATRIX)](#phần-4-ma-trận-truy-vết-yêu-cầu--kiểm-thử)
 
@@ -53,12 +53,12 @@ Các Hiệp hội Doanh nghiệp và CLB Doanh nhân (như CLB Doanh nhân CEO 1
 | :--- | :--- | :--- | :--- |
 | **Ban Lãnh đạo (Chủ tịch / BCH)** | Không nắm được con số thực về tỷ lệ sinh hoạt, doanh thu hội phí bị chậm trễ, khó kiểm soát tài chính. | Quyết sách chậm trễ, thiếu căn cứ số liệu, uy tín hiệp hội suy giảm. | **Dashboard CRM thời gian thực**: Nắm bắt tỷ lệ tăng trưởng, dòng tiền thu chi, cảnh báo quá hạn 360°. |
 | **Ban Thư ký** | Quản lý danh bạ bằng file Excel rời rạc; mất hàng giờ điểm danh đại biểu bằng giấy tại các sự kiện lớn. | Thất lạc dữ liệu, nhầm lẫn thông tin đại biểu, ùn tắc cổng đón tiếp. | **Trạm Check-in QR tốc độ cao (0.2s)** và sơ đồ ghế sân khấu thông minh. |
-| **Ban Tài chính / Kế toán** | Thu niên liễm thủ công; gửi tin nhắn Zalo đòi nợ nhạy cảm; khó đối soát các khoản chuyển khoản ngân hàng. | Tỷ lệ quá hạn cao, sai sót hóa đơn, mất nhiều công sức đối chiếu. | **Cổng VietQR động**: Tự động điền số tiền, cú pháp; Webhook gia hạn thẻ tự động ngay trong 1 giây. |
+| **Ban Tài chính / Kế toán** | THU HỘI PHÍ thủ công; gửi tin nhắn Zalo đòi nợ nhạy cảm; khó đối soát các khoản chuyển khoản ngân hàng. | Tỷ lệ quá hạn cao, sai sót hóa đơn, mất nhiều công sức đối chiếu. | **Cổng VietQR động**: Tự động điền số tiền, cú pháp; Webhook gia hạn thẻ tự động ngay trong 1 giây. |
 | **Hội viên Doanh nhân** | Danh thiếp giấy nhanh hỏng, dễ vứt bỏ; không biết các hội viên khác làm ngành gì để hợp tác. | Mất cơ hội kinh doanh, không nhận được giá trị thiết thực khi tham gia Hội. | **Thẻ số NFC / 3D Card** & Sàn giao thương B2B kết hợp lịch hẹn 1-on-1. |
 
 ## 1.2 Mục tiêu chiến lược & Chỉ số Thành công cốt lõi (OKRs / KPIs)
 1. **Số hóa 100% Quy trình Hội viên**: 100% hồ sơ ứng viên được nộp trực tuyến từ Landing Page, thẩm định và phê duyệt trên CRM.
-2. **Tự động hóa 95% Thu phí Niên liễm**: Giảm 90% thời gian kế toán đối soát nhờ cổng VietQR tích hợp Webhook tự động gia hạn nhiệm kỳ.
+2. **Tự động hóa 95% Thu phí Hội phí**: Giảm 90% thời gian kế toán đối soát nhờ cổng VietQR tích hợp Webhook tự động gia hạn nhiệm kỳ.
 3. **Điểm danh Sự kiện Dưới 0.5 Giây / Đại biểu**: Xóa bỏ hoàn toàn tình trạng xếp hàng chờ ký tên tại các hội thảo 500+ khách sạn.
 4. **Tỷ lệ Kích hoạt Giao thương B2B Đạt trên 80%**: Thúc đẩy kết nối kinh doanh nội khối thông qua sàn Marketplace và mạng xã hội Moments.
 
@@ -111,7 +111,7 @@ Các Hiệp hội Doanh nghiệp và CLB Doanh nhân (như CLB Doanh nhân CEO 1
     And Nếu quét lại lần 2, hệ thống cảnh báo "Vé đã điểm danh trước đó"
   ```
 
-## 2.4 [SRS-04]: Quản lý Niên liễm, VietQR Động & Tự động Gia hạn (+1 năm)
+## 2.4 [SRS-04]: QUẢN LÝ HỘI PHÍ, VietQR Động & Tự động Gia hạn (+1 năm)
 - **Mô tả nghiệp vụ**: Tự động phát hiện hội viên sắp hết hạn (30 ngày), tạo mã VietQR thanh toán 1-chạm và gia hạn thẻ ngay lập tức khi tiền về tài khoản.
 - **Tiêu chí Nghiệm thu**:
   ```gherkin
@@ -173,15 +173,15 @@ stateDiagram-v2
     Pending --> Active: Ban Thư ký duyệt & Cấp mã
     Pending --> Rejected: Không đủ tiêu chuẩn điều lệ
     Active --> Due: Còn <= 30 ngày đến hạn thẻ
-    Due --> Renewed: Đóng niên liễm thành công
-    Renewed --> Active: Bắt đầu chu kỳ niên liễm mới
+    Due --> Renewed: ĐÓNG HỘI PHÍ thành công
+    Renewed --> Active: Bắt đầu chu KỲ HỘI PHÍ mới
     Due --> Overdue: Quá hạn term_end mà chưa đóng phí
     Overdue --> Suspended: Khóa quyền truy cập sau 60 ngày
     Suspended --> Active: Đóng phí phạt & khôi phục
     Active --> Resigned: Đơn xin rút lui khỏi Hội
 ```
 
-## 3.2 Vòng đời Hóa đơn & Gia hạn Niên liễm (Invoice & Renewal State Machine)
+## 3.2 Vòng đời Hóa đơn & GIA HẠN HỘI PHÍ (Invoice & Renewal State Machine)
 ```mermaid
 stateDiagram-v2
     [*] --> Unpaid: Kế toán phát hành Hóa đơn
@@ -213,7 +213,7 @@ stateDiagram-v2
 | **SRS-02b**| Chuyển tiếp 301 từ `/m/*` | TanStack Router Config | N/A (Client-side redirect) | `TC-ASC-003` | **PASS (100%)** |
 | **SRS-03** | Khởi tạo Sự kiện & Vé QR | `events`, `event_registrations` | `POST /api/events` | `TC-CRM-008` | **PASS (100%)** |
 | **SRS-03b**| Điểm danh QR Check-in | `event_registrations` | `POST /api/events/checkin-verify` | `TC-CRM-009` | **PASS (100%)** |
-| **SRS-04** | Phát hành Hóa đơn Niên liễm | `invoices` | `POST /api/fees/invoices/generate` | `TC-CRM-010` | **PASS (100%)** |
+| **SRS-04** | Phát hành HÓA ĐƠN HỘI PHÍ | `invoices` | `POST /api/fees/invoices/generate` | `TC-CRM-010` | **PASS (100%)** |
 | **SRS-04b**| Gia hạn Thẻ tự động VietQR| `members`, `renewal_audit_log` | `POST /api/webhooks/payment/vietqr` | `TC-ASC-009` | **PASS (100%)** |
 | **SRS-05** | Thẻ 3D & Xuất vCard | `members`, `business_cards` | `GET /api/public/card/{slug}.vcf` | `TC-ASC-010` | **PASS (100%)** |
 | **SRS-06** | Khoảnh khắc B2B Moments | `business_relationship_moments`| `POST /api/moments` | `TC-VNE-002` | **PASS (100%)** |

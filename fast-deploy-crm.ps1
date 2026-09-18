@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -6,5 +6,5 @@ param (
     [switch]$InstallDeps
 )
 
-# Wrapper tiện ích gọi trực tiếp kịch bản triển khai riêng trong deploy/ceo1983/
-& "$PSScriptRoot/deploy/crm/fast-deploy.ps1" @PSBoundParameters
+# Triển khai Web CRM Platform & Landing trên Port 5000/5001
+& "$PSScriptRoot/deploy/vione/fast-deploy.ps1" @PSBoundParameters

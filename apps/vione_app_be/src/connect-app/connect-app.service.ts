@@ -8981,31 +8981,52 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async createOpportunity(userId: string, data: any) {
-    const oppId = `OPP-${Date.now().toString(36).toUpperCase()}`;
-    await this.prisma.$executeRaw`
-      INSERT INTO public.opportunities (
-        id, poster_id, title, description, type,
-        budget_min, budget_max, region, industry, deadline, status, views, emoji,
-        image, contact_name, contact_phone, contact_title, company, created_at, updated_at
-      ) VALUES (
-        ${oppId}, ${userId}, ${data.title || 'Cơ hội mới'},
-        ${data.description || ''}, ${data.type || 'opp.type.partnership'},
-        ${data.budgetMin ? BigInt(data.budgetMin) : BigInt(0)},
-        ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
-        ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
-        ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
-        'open', 0, ${data.emoji || '💡'},
-        ${data.image || null}, ${data.contactName || null}, ${data.contactPhone || null}, ${data.contactTitle || null}, ${data.company || null},
-        now(), now()
-      )
-    `.catch(async () => {
-      // Fallback in case table has fewer columns
+    const oppId = data.id || `OPP-${Date.now().toString(36).toUpperCase()}`;
+    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+
+    // Fetch poster details (member or vione_user)
+    const mem = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, phone, code FROM public.members
+      WHERE user_id = ${userId}::uuid OR id = ${userId}
+      LIMIT 1
+    `.catch(() => []);
+    const vu = await this.prisma.$queryRaw<any[]>`
+      SELECT name, email, phone FROM public.vione_users
+      WHERE id = ${userId}::uuid OR id::text = ${userId}
+      LIMIT 1
+    `.catch(() => []);
+
+    const contactName = (data.contactName || mem[0]?.name || vu[0]?.name || 'Ban Quản Trị').trim();
+    const contactPhone = (data.contactPhone || mem[0]?.phone || vu[0]?.phone || '').trim();
+    const contactTitle = (data.contactTitle || 'Đại diện hợp tác').trim();
+    const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
+
+    try {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
-          id, poster_id, title, description, type,
+          id, association_id, poster_id, title, description, type,
+          budget_min, budget_max, region, industry, deadline, status, views, emoji,
+          image, contact_name, contact_phone, contact_title, company, created_at, updated_at
+        ) VALUES (
+          ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
+          ${data.description || ''}, ${data.type || 'opp.type.partnership'},
+          ${data.budgetMin ? BigInt(data.budgetMin) : BigInt(0)},
+          ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
+          ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
+          ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
+          'open', 0, ${data.emoji || '💡'},
+          ${data.image || null}, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
+          now(), now()
+        )
+      `;
+    } catch (err: any) {
+      console.warn('createOpportunity primary insert failed, using fallback:', err?.message);
+      await this.prisma.$executeRaw`
+        INSERT INTO public.opportunities (
+          id, association_id, poster_id, title, description, type,
           budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at
         ) VALUES (
-          ${oppId}, ${userId}, ${data.title || 'Cơ hội mới'},
+          ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
           ${data.budgetMin ? BigInt(data.budgetMin) : BigInt(0)},
           ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
@@ -9014,7 +9035,7 @@ export class ConnectAppService implements OnModuleInit {
           'open', 0, ${data.emoji || '💡'}, now(), now()
         )
       `;
-    });
+    }
     return { ok: true, id: oppId };
   }
 
@@ -10028,7 +10049,7 @@ export class ConnectAppService implements OnModuleInit {
         LEFT JOIN public.associations a ON p.association_id = a.id
         WHERE p.status = 'active'
         ORDER BY p.created_at DESC
-        LIMIT 50
+        LIMIT 100
       `.catch(() => []);
 
       if (rows.length === 0) {
@@ -10038,19 +10059,24 @@ export class ConnectAppService implements OnModuleInit {
       return rows.map((p) => {
         const numPrice = Number(p.price || p.sale_price || p.cost || 0);
         const formattedPrice = p.price_text || (numPrice > 0 ? `${numPrice.toLocaleString('vi-VN')} đ` : (p.price || 'Liên hệ báo giá'));
+        const imgList = Array.isArray(p.image_urls) ? p.image_urls : (typeof p.image_urls === 'string' ? JSON.parse(p.image_urls) : []);
+        const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || p.image_url || p.image || null;
         return {
           id: String(p.id),
-          name: p.title || p.name || 'Sản phẩm doanh nghiệp',
-          company: p.association_name || p.company || p.category || 'CLB Doanh Nhân CEO 1983',
+          name: p.name || p.title || 'Sản phẩm doanh nghiệp',
+          company: p.company || p.association_name || 'CLB Doanh Nhân CEO 1983',
           category: p.category || 'Sản phẩm & Dịch vụ',
           likes: Number(p.likes ?? 0),
           views: Number(p.views ?? 0),
           time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
           createdAt: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
-          imageUrl: (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls[0] : null) || p.image_url || p.image || null,
+          imageUrl: firstImg,
+          imageUrls: imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []),
           price: formattedPrice,
           originalPrice: p.original_price ? `${Number(p.original_price).toLocaleString('vi-VN')} đ` : undefined,
           memberPrice: p.member_discount_price || p.member_price ? `${Number(p.member_discount_price || p.member_price).toLocaleString('vi-VN')} đ` : undefined,
+          unit: p.unit || 'Gói',
+          currency: p.currency || 'VND',
           sellerId: p.seller_id ? String(p.seller_id) : undefined,
         };
       });
@@ -10060,66 +10086,101 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async createProduct(userId: string, data: any) {
-    const prodId = `PROD-${Date.now().toString(36).toUpperCase()}`;
-    await this.prisma.$executeRaw`
-      INSERT INTO public.products (
-        id, title, name, description, company, category,
-        price, original_price, member_price, image_url,
-        seller_id, status, created_at, updated_at
-      ) VALUES (
-        ${prodId}, ${data.name || 'Sản phẩm mới'}, ${data.name || 'Sản phẩm mới'},
-        ${data.description || ''}, ${data.company || 'Doanh nghiệp CEO 1983'}, ${data.category || 'Sản phẩm & Dịch vụ'},
-        ${data.price ? Number(data.price) : 0}, ${data.originalPrice ? Number(data.originalPrice) : null}, ${data.memberPrice ? Number(data.memberPrice) : null},
-        ${data.imageUrl || null}, ${userId}, 'active', now(), now()
-      )
-    `.catch(async () => {
+    const prodId = data.id || `PROD-${Date.now().toString(36).toUpperCase()}`;
+    const name = (data.name || data.title || 'Sản phẩm mới').trim();
+    const description = (data.description || '').trim();
+    const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
+    const category = (data.category || 'Sản phẩm & Dịch vụ').trim();
+    const price = Number(data.price || 0);
+    const originalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : price;
+    const memberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : price;
+    const unit = data.unit || 'Gói';
+    const currency = data.currency || 'VND';
+    const imageUrls: string[] = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : []);
+    const imageUrl = imageUrls[0] || data.imageUrl || null;
+    const sellerId = String(data.sellerId || userId || 'ceo1983');
+    const status = data.status || 'active';
+    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+
+    try {
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          id, title, description, price, image_url, seller_id, status, created_at, updated_at
+          id, title, name, description, company, category,
+          price, original_price, member_price, unit, currency,
+          image_url, image_urls, seller_id, status, views, emoji,
+          association_id, created_at, updated_at
         ) VALUES (
-          ${prodId}, ${data.name || 'Sản phẩm mới'}, ${data.description || ''},
-          ${data.price ? Number(data.price) : 0}, ${data.imageUrl || null},
-          ${userId}, 'active', now(), now()
+          ${prodId}, ${name}, ${name}, ${description}, ${company}, ${category},
+          ${price}, ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
+          ${imageUrl}, ${imageUrls}::text[], ${sellerId}, ${status}, 0, '🛍️',
+          ${assocId}::uuid, now(), now()
         )
       `;
-    });
+    } catch (err: any) {
+      console.warn('createProduct primary insert failed, using fallback:', err?.message);
+      await this.prisma.$executeRaw`
+        INSERT INTO public.products (
+          id, title, description, category, price,
+          seller_id, status, views, emoji,
+          association_id, created_at, updated_at
+        ) VALUES (
+          ${prodId}, ${name}, ${description}, ${category}, ${price},
+          ${sellerId}, ${status}, 0, '🛍️',
+          ${assocId}::uuid, now(), now()
+        )
+      `;
+    }
     return { ok: true, id: prodId };
   }
 
   async updateProduct(userId: string, productId: string, data: any) {
-    await this.prisma.$executeRaw`
-      UPDATE public.products
-      SET
-        title = COALESCE(${data.name}, title),
-        name = COALESCE(${data.name}, name),
-        description = COALESCE(${data.description}, description),
-        company = COALESCE(${data.company}, company),
-        category = COALESCE(${data.category}, category),
-        price = COALESCE(${data.price ? Number(data.price) : null}, price),
-        original_price = COALESCE(${data.originalPrice ? Number(data.originalPrice) : null}, original_price),
-        member_price = COALESCE(${data.memberPrice ? Number(data.memberPrice) : null}, member_price),
-        image_url = COALESCE(${data.imageUrl}, image_url),
-        updated_at = now()
-      WHERE id = ${productId}
-    `.catch(async () => {
+    const name = data.name || data.title;
+    const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? Number(data.price) : null;
+    const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : cleanPrice;
+    const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : cleanPrice;
+    const imageUrls: string[] | null = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : null);
+    const imageUrl = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
+
+    try {
       await this.prisma.$executeRaw`
         UPDATE public.products
         SET
-          title = COALESCE(${data.name}, title),
+          title = COALESCE(${name}, title),
+          name = COALESCE(${name}, name),
           description = COALESCE(${data.description}, description),
-          price = COALESCE(${data.price ? Number(data.price) : null}, price),
-          image_url = COALESCE(${data.imageUrl}, image_url),
+          company = COALESCE(${data.company}, company),
+          category = COALESCE(${data.category}, category),
+          price = COALESCE(${cleanPrice}, price),
+          original_price = COALESCE(${cleanOriginalPrice}, original_price),
+          member_price = COALESCE(${cleanMemberPrice}, member_price),
+          unit = COALESCE(${data.unit}, unit),
+          currency = COALESCE(${data.currency}, currency),
+          image_url = COALESCE(${imageUrl}, image_url),
+          image_urls = COALESCE(${imageUrls}::text[], image_urls),
           updated_at = now()
         WHERE id = ${productId}
       `;
-    });
+    } catch (err: any) {
+      console.warn('updateProduct primary update failed, using fallback:', err?.message);
+      await this.prisma.$executeRaw`
+        UPDATE public.products
+        SET
+          title = COALESCE(${name}, title),
+          description = COALESCE(${data.description}, description),
+          price = COALESCE(${cleanPrice}, price),
+          updated_at = now()
+        WHERE id = ${productId}
+      `;
+    }
     return { ok: true };
   }
 
   async deleteProduct(userId: string, productId: string) {
     await this.prisma.$executeRaw`
       DELETE FROM public.products WHERE id = ${productId}
-    `.catch(() => {});
+    `.catch((err) => {
+      console.warn('deleteProduct failed:', err?.message);
+    });
     return { ok: true };
   }
 
@@ -10128,7 +10189,7 @@ export class ConnectAppService implements OnModuleInit {
   // â”€â”€ Content: News & Perks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async listPublishedNews() {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, title, category, author, excerpt, views, created_at
+      SELECT id, title, category, author, excerpt, cover_image, views, created_at
       FROM public.news
       WHERE status = 'published'
       ORDER BY created_at DESC
@@ -10140,6 +10201,8 @@ export class ConnectAppService implements OnModuleInit {
       category: n.category ?? '',
       author: n.author ?? '',
       excerpt: n.excerpt ?? '',
+      image: n.cover_image ?? '',
+      coverImage: n.cover_image ?? '',
       time: n.created_at ? new Date(n.created_at).toISOString() : '',
       views: Number(n.views ?? 0),
     }));
@@ -11107,7 +11170,7 @@ export class ConnectAppService implements OnModuleInit {
   // ==========================================
   async listAdminNews() {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, code, title, category, author, published_at, views, status, excerpt, content, association_id, created_at, updated_at
+      SELECT id, code, title, category, author, published_at, views, status, excerpt, content, cover_image, association_id, created_at, updated_at
       FROM public.news
       ORDER BY created_at DESC
     `.catch((err) => {
@@ -11126,6 +11189,9 @@ export class ConnectAppService implements OnModuleInit {
       status: n.status ?? 'draft',
       excerpt: n.excerpt ?? '',
       content: n.content ?? '',
+      image: n.cover_image ?? '',
+      coverImage: n.cover_image ?? '',
+      cover_image: n.cover_image ?? '',
       associationId: n.association_id,
       createdAt: n.created_at ? new Date(n.created_at).toISOString() : '',
     }));
@@ -11133,8 +11199,9 @@ export class ConnectAppService implements OnModuleInit {
 
   async createNewsAdmin(data: any) {
     const code = data.code || `NEWS-${Date.now().toString().slice(-6)}`;
+    const img = data.image || data.coverImage || data.cover_image || null;
     const rows = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, views, association_id, created_at, updated_at)
+      INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, views, association_id, created_at, updated_at)
       VALUES (
         ${code},
         ${data.title},
@@ -11144,6 +11211,7 @@ export class ConnectAppService implements OnModuleInit {
         ${data.status ?? 'published'},
         ${data.excerpt ?? ''},
         ${data.content ?? ''},
+        ${img},
         0,
         ${data.associationId ? data.associationId : null}::uuid,
         NOW(),
@@ -11163,11 +11231,15 @@ export class ConnectAppService implements OnModuleInit {
       status: n.status ?? 'published',
       excerpt: n.excerpt ?? '',
       content: n.content ?? '',
+      image: n.cover_image ?? '',
+      coverImage: n.cover_image ?? '',
+      cover_image: n.cover_image ?? '',
       associationId: n.association_id,
     };
   }
 
   async updateNewsAdmin(id: string, data: any) {
+    const img = data.image !== undefined ? data.image : (data.coverImage !== undefined ? data.coverImage : (data.cover_image !== undefined ? data.cover_image : null));
     const rows = await this.prisma.$queryRaw<any[]>`
       UPDATE public.news
       SET
@@ -11178,6 +11250,7 @@ export class ConnectAppService implements OnModuleInit {
         status = COALESCE(${data.status}, status),
         excerpt = COALESCE(${data.excerpt}, excerpt),
         content = COALESCE(${data.content}, content),
+        cover_image = COALESCE(${img}, cover_image),
         updated_at = NOW()
       WHERE code = ${id} OR id::text = ${id}
       RETURNING *
@@ -11195,6 +11268,9 @@ export class ConnectAppService implements OnModuleInit {
       status: n.status ?? 'published',
       excerpt: n.excerpt ?? '',
       content: n.content ?? '',
+      image: n.cover_image ?? '',
+      coverImage: n.cover_image ?? '',
+      cover_image: n.cover_image ?? '',
       associationId: n.association_id,
     };
   }
@@ -11298,24 +11374,28 @@ export class ConnectAppService implements OnModuleInit {
 
   async createMarketplaceProduct(userId: string, data: any) {
     const id = data.id || `prod-${Date.now()}`;
-    const sellerId = data.sellerId || userId;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(sellerId));
-    const sellerUuid = isUuid ? String(sellerId) : null;
+    const sellerId = String(data.sellerId || userId || 'ceo1983');
+    const title = (data.title || data.name || 'Sản phẩm mới').trim();
     const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : []);
     const firstImage = imageUrls[0] || data.imageUrl || data.image || null;
-    const company = data.company || null;
+    const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
     const originalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : Number(data.price ?? 0);
     const memberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : Number(data.price ?? 0);
+    const unit = data.unit || 'Gói';
+    const currency = data.currency || 'VND';
+    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.products (
-        id, seller_id, title, description, price, original_price, member_price, category, status, views, emoji, pdf_url, image_urls, image_url, company, website_url, facebook_url, association_id, created_at, updated_at
+        id, seller_id, title, name, description, price, original_price, member_price, unit, currency,
+        category, status, views, emoji, pdf_url, image_urls, image_url, company, website_url, facebook_url,
+        association_id, created_at, updated_at
       ) VALUES (
-        ${id}, ${sellerUuid}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
-        ${originalPrice}, ${memberPrice},
+        ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+        ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
         ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
         ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${firstImage}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
-        ${data.associationId ? data.associationId : 'c1983000-0000-4000-8000-000000001983'}::uuid, NOW(), NOW()
+        ${assocId}::uuid, NOW(), NOW()
       )
       RETURNING *
     `.catch(async (err) => {
@@ -11324,10 +11404,10 @@ export class ConnectAppService implements OnModuleInit {
         INSERT INTO public.products (
           id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, website_url, facebook_url, association_id, created_at, updated_at
         ) VALUES (
-          ${id}, ${sellerUuid}::uuid, ${data.title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+          ${id}, ${sellerId}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
           ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
           ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
-          ${data.associationId ? data.associationId : 'c1983000-0000-4000-8000-000000001983'}::uuid, NOW(), NOW()
+          ${assocId}::uuid, NOW(), NOW()
         )
         RETURNING *
       `.catch(() => [] as any[]);
@@ -11336,11 +11416,14 @@ export class ConnectAppService implements OnModuleInit {
     return {
       id: r.id || id,
       sellerId: r.seller_id,
-      title: r.title || data.title,
+      title: r.title || title,
+      name: r.name || r.title || title,
       description: r.description ?? '',
       price: Number(r.price ?? 0),
       originalPrice,
       memberPrice,
+      unit: r.unit || unit,
+      currency: r.currency || currency,
       category: r.category ?? 'mk.cat.other',
       status: r.status ?? 'active',
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
@@ -11356,12 +11439,27 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async updateMarketplaceProduct(userId: string, id: string, data: any) {
+    const title = data.title || data.name;
+    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : null);
+    const firstImage = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
+    const cleanPrice = data.price !== undefined ? Number(data.price) : null;
+    const cleanOriginalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : null;
+    const cleanMemberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : null;
+
     const rows = await this.prisma.$queryRaw<any[]>`
       UPDATE public.products
       SET
-        title = COALESCE(${data.title}, title),
+        title = COALESCE(${title}, title),
+        name = COALESCE(${title}, name),
         description = COALESCE(${data.description}, description),
-        price = COALESCE(${data.price !== undefined ? Number(data.price) : null}, price),
+        price = COALESCE(${cleanPrice}, price),
+        original_price = COALESCE(${cleanOriginalPrice}, original_price),
+        member_price = COALESCE(${cleanMemberPrice}, member_price),
+        company = COALESCE(${data.company}, company),
+        unit = COALESCE(${data.unit}, unit),
+        currency = COALESCE(${data.currency}, currency),
+        image_url = COALESCE(${firstImage}, image_url),
+        image_urls = COALESCE(${imageUrls}::text[], image_urls),
         category = COALESCE(${data.category}, category),
         status = COALESCE(${data.status}, status),
         emoji = COALESCE(${data.emoji}, emoji),

@@ -58,6 +58,12 @@ function NewsPage() {
         { value: "published", label: t("news.status.published") },
       ],
     },
+    {
+      name: "image",
+      label: "Ảnh đại diện bài viết",
+      type: "image",
+      placeholder: "Tải ảnh lên từ máy tính hoặc dán link ảnh...",
+    },
     { name: "excerpt", label: t("news.col.excerpt"), type: "textarea" },
   ];
 
@@ -137,8 +143,26 @@ function NewsPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {NEWS.map((n: any) => (
-          <Card key={n.id} className="overflow-hidden transition hover:shadow-[var(--shadow-glow)]">
-            <div className="h-32" style={{ background: "var(--gradient-primary)" }} />
+          <Card key={n.id} className="group overflow-hidden transition hover:shadow-[var(--shadow-glow)]">
+            {n.image ? (
+              <div className="relative h-44 w-full overflow-hidden bg-muted">
+                <img
+                  src={n.image}
+                  alt={n.title}
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = "none";
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className="flex h-36 w-full items-center justify-center text-primary-foreground/40"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Newspaper className="h-10 w-10 opacity-30" />
+              </div>
+            )}
             <div className="p-5">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-primary">

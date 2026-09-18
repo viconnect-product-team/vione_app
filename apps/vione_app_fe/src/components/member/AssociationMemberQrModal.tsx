@@ -94,10 +94,6 @@ export function AssociationMemberQrModal({
       ? `${window.location.origin}/card/${memberCode}`
       : `https://ceo1983club.com/card/${memberCode}`;
 
-  // Support Native Android QR Scanner (Google Code Scanner via MainActivity Bridge) - optional manual trigger only
-  const isAndroidNativeScanner =
-    typeof window !== "undefined" &&
-    Boolean((window as any).AndroidNative?.scanQr);
 
   // Auto-close QR modal if someone connects to this user, allowing IncomingConnectionModal to pop up cleanly
   useEffect(() => {
@@ -114,37 +110,6 @@ export function AssociationMemberQrModal({
     };
   }, [open, onClose]);
 
-  useEffect(() => {
-    if (!open || activeTab !== "scan_qr" || scannedPartner) return;
-
-    if (isAndroidNativeScanner) {
-      (window as any).onNativeQrScanned = (scannedCode: string) => {
-        void handleQrValue(scannedCode);
-      };
-      (window as any).onNativeQrCancelled = () => {
-        // User dismissed the scanner
-      };
-      (window as any).onNativeQrError = (err: string) => {
-        console.warn("[Native QR] Error:", err);
-      };
-
-      const onQrEvent = (e: any) => {
-        if (e.detail) {
-          void handleQrValue(e.detail);
-        }
-      };
-      window.addEventListener("vione:qr_scanned", onQrEvent);
-
-      return () => {
-        window.removeEventListener("vione:qr_scanned", onQrEvent);
-        if (typeof window !== "undefined") {
-          delete (window as any).onNativeQrScanned;
-          delete (window as any).onNativeQrCancelled;
-          delete (window as any).onNativeQrError;
-        }
-      };
-    }
-  }, [open, activeTab, scannedPartner, isAndroidNativeScanner]);
 
   const { videoRef, status, hasTorch, scanImageFile } = useQrScanner({
     active: open && activeTab === "scan_qr" && !scannedPartner,
@@ -300,6 +265,9 @@ export function AssociationMemberQrModal({
     if (!scannedPartner) return;
     setConnecting(true);
     try {
+      const peerCode = scannedPartner.code || scannedPartner.userId || "MEMBER";
+      const peerName = scannedPartner.name || "Hội viên";
+
       // 1. Lưu danh bạ kết nối cá nhân
       await fetchNestApi("/api/members/contacts", {
         method: "POST",
@@ -328,13 +296,23 @@ export function AssociationMemberQrModal({
         }).catch(() => {});
       });
 
+      // 3. Khởi tạo hội thoại qua DM API trên backend (để backend tạo thread chat chuẩn)
+      await fetchNestApi("/dm/member/messages", {
+        method: "POST",
+        body: JSON.stringify({
+          peerCode: peerCode,
+          text: "Xin chào! Chúng ta vừa kết nối thành công qua mã QR danh thiếp.",
+        }),
+      }).catch(() => {});
+
       setConnected(true);
-      // Đẩy về icon thông báo của app hiệp hội (vba_notifications) thay vì hiện toast thừa
+
+      // 4. Lưu thông báo và đồng bộ hội thoại sang tab Tin nhắn
       try {
         const newNotif = {
           id: `qr_conn_${Date.now()}`,
           title: "Kết nối giao thương mới",
-          body: `Bạn đã kết nối thành công với ${scannedPartner.name} qua quét mã QR.`,
+          body: `Bạn đã kết nối thành công với ${peerName} qua quét mã QR.`,
           createdAt: new Date().toISOString(),
           unread: true,
           type: "connection",
@@ -345,17 +323,70 @@ export function AssociationMemberQrModal({
         notifs.unshift(newNotif);
         localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
 
+        // Lưu vào danh sách hội viên đã kết nối
         const rawConnected = localStorage.getItem("vba_connected_members");
-        const connectedList = rawConnected ? JSON.parse(rawConnected) : [];
-        if (!connectedList.includes(scannedPartner.code)) {
+        const connectedList: string[] = rawConnected ? JSON.parse(rawConnected) : [];
+        if (!connectedList.includes(peerCode)) connectedList.push(peerCode);
+        if (scannedPartner.code && !connectedList.includes(scannedPartner.code)) {
           connectedList.push(scannedPartner.code);
-          if (scannedPartner.userId) connectedList.push(scannedPartner.userId);
-          localStorage.setItem("vba_connected_members", JSON.stringify(connectedList));
+        }
+        if (scannedPartner.userId && !connectedList.includes(scannedPartner.userId)) {
+          connectedList.push(scannedPartner.userId);
+        }
+        localStorage.setItem("vba_connected_members", JSON.stringify(connectedList));
+
+        // Lưu vào danh sách cuộc trò chuyện gần đây (vba.recent_conversations)
+        const initialText = "Đã kết nối qua mã QR. Bắt đầu trò chuyện!";
+        const newConv = {
+          peerCode: peerCode,
+          name: peerName,
+          last: initialText,
+          unread: 0,
+          unreadCount: 0,
+          isOnline: true,
+          time: "Vừa xong",
+          rawTime: new Date().toISOString(),
+          avatarUrl: scannedPartner.avatar || null,
+          userId: scannedPartner.userId || null,
+          isConnected: true,
+          isQrConnected: true,
+        };
+
+        const rawRecents = localStorage.getItem("vba.recent_conversations");
+        let recents: any[] = [];
+        try {
+          recents = rawRecents ? JSON.parse(rawRecents) : [];
+          if (!Array.isArray(recents)) recents = [];
+        } catch {
+          recents = [];
+        }
+        recents = recents.filter((c) => c.peerCode?.toLowerCase() !== peerCode.toLowerCase());
+        recents.unshift(newConv);
+        localStorage.setItem("vba.recent_conversations", JSON.stringify(recents));
+
+        // Lưu tin nhắn khởi tạo thread chat
+        const chatKey = `vba.chat.${peerCode}`;
+        const existingChat = localStorage.getItem(chatKey);
+        if (!existingChat) {
+          const initMessages = [
+            {
+              id: `qr_init_${Date.now()}`,
+              from: "system",
+              sender: "Hệ thống kết nối QR",
+              text: `Bạn và ${peerName} đã kết nối thành công qua mã QR danh thiếp. Bắt đầu giao lưu hợp tác kinh doanh!`,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              isSystem: true,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+          localStorage.setItem(chatKey, JSON.stringify(initMessages));
         }
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
-        window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
-      } catch {}
+        window.dispatchEvent(new CustomEvent("vba:conversation_updated", { detail: newConv }));
+      } catch (err) {
+        console.warn("Storage error when saving QR connection:", err);
+      }
     } catch {
       setConnected(true);
     } finally {
@@ -694,15 +725,7 @@ export function AssociationMemberQrModal({
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (isAndroidNativeScanner) {
-                        try {
-                          (window as any).AndroidNative.scanQr();
-                          return;
-                        } catch {}
-                      }
-                      cameraInputRef.current?.click();
-                    }}
+                    onClick={() => cameraInputRef.current?.click()}
                     disabled={isDecodingFile}
                     className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs"
                     title="Mở máy ảnh chụp mã QR trực tiếp"

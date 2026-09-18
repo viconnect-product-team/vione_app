@@ -449,7 +449,7 @@ async function main() {
     // CHƯƠNG 6
     createHeading1('CHƯƠNG 6: THU & ĐÓNG HỘI PHÍ TỰ ĐỘNG QUA VIETQR NAPAS 247'),
     createPara(
-      'Hệ thống tích hợp cổng thanh toán VietQR Napas 247 chuẩn quốc gia, cho phép hội viên thanh toán niên liễm nhanh chóng, gạch nợ tự động và nhận hóa đơn VAT điện tử.'
+      'Hệ thống tích hợp cổng thanh toán VietQR Napas 247 chuẩn quốc gia, cho phép hội viên thanh toán hội phí nhanh chóng, gạch nợ tự động và nhận hóa đơn VAT điện tử.'
     ),
     ...createStep(
       1,
@@ -775,7 +775,7 @@ async function main() {
   // Chapter 6
   addPdfHeading1('6. THU & ĐÓNG HỘI PHÍ TỰ ĐỘNG QUA VIETQR NAPAS 247');
   addPdfText('Tích hợp Napas 247 thanh toán hội phí niên khóa an toàn, nhanh chóng và tự động xuất biên lai.');
-  addPdfStep(1, 'Mở hóa đơn nhắc hội phí', 'Bấm vào thông báo hóa đơn trong hộp thư để xem chi tiết khoản niên liễm.', null);
+  addPdfStep(1, 'Mở hóa đơn nhắc hội phí', 'Bấm vào thông báo hóa đơn trong hộp thư để xem chi tiết khoản hội phí.', null);
   addPdfStep(2, 'Quét mã VietQR bằng App Ngân hàng bất kỳ', 'Mã QR tự động điền Số tiền và Cú pháp (CLB1983 [MÃ HỘI VIÊN]). Quét và xác nhận thanh toán trong 3 giây.', null);
   addPdfStep(3, 'Gạch nợ tự động trong 5 giây', 'Sau khi chuyển khoản thành công, hệ thống tự động gạch nợ, gia hạn thẻ hội viên thêm 12 tháng và cấp hóa đơn VAT.', null);
   addPdfImage(pngBuffers['demo_vietqr_fee'], 'Thanh toán hội phí niên khóa qua VietQR Napas 247');
@@ -914,7 +914,7 @@ Số hóa toàn bộ khâu tham dự sự kiện, hội nghị và biểu quyế
 ---
 
 ## 6. THU & ĐÓNG HỘI PHÍ TỰ ĐỘNG QUA VIETQR NAPAS 247
-Tích hợp cổng Napas 247 thanh toán niên liễm an toàn, nhanh chóng và tự động gạch nợ.
+Tích hợp cổng Napas 247 thanh toán hội phí an toàn, nhanh chóng và tự động gạch nợ.
 
 ![Thanh toán hội phí niên khóa qua VietQR Napas 247](/docs/images/demo_vietqr_fee.svg)
 

@@ -155,81 +155,82 @@ interface EventCountdownBannerProps {
   event: Partial<MyEvent>;
   index?: number;
   className?: string;
+  whiteText?: boolean;
 }
 
 /**
  * High-end Executive 4-box segmented Countdown Timer for CEO 1983 Event Banners.
  */
-export const EventCountdownBanner: React.FC<EventCountdownBannerProps> = ({ event, index = 0, className = "" }) => {
+export const EventCountdownBanner: React.FC<EventCountdownBannerProps> = ({ event, index = 0, className = "", whiteText = true }) => {
   const targetDate = useMemo(() => getEventTargetDate(event, index), [event, index]);
   const time = useEventCountdown(targetDate);
 
   if (time.isFinished) {
     return (
-      <div className={`inline-flex items-center gap-1.5 rounded-xl bg-slate-900/80 px-3 py-1.5 border border-slate-700/60 text-[11px] font-bold text-slate-400 ${className}`}>
-        <span>Đã diễn ra</span>
+      <div className={`inline-flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 border border-white/20 text-[11px] font-bold text-white/90 shadow-sm ${className}`}>
+        <span className="text-white">Đã diễn ra</span>
       </div>
     );
   }
 
   if (time.isStarted) {
     return (
-      <div className={`inline-flex items-center gap-2 rounded-xl bg-emerald-950/80 px-3 py-1.5 border border-emerald-500/50 text-[11px] font-black text-emerald-300 shadow-md ${className}`}>
+      <div className={`inline-flex items-center gap-2 rounded-xl bg-emerald-950/80 px-3 py-1.5 border border-white/40 text-[11px] font-black text-white shadow-md ${className}`}>
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
         </span>
-        <span className="tracking-wide uppercase">ĐANG DIỄN RA TRỰC TIẾP</span>
+        <span className="tracking-wide uppercase text-white">ĐANG DIỄN RA TRỰC TIẾP</span>
       </div>
     );
   }
 
   return (
     <div className={`flex items-center gap-1.5 select-none ${className}`}>
-      <Clock className="h-3 w-3 text-amber-400 shrink-0 opacity-80" />
-      <div className="flex items-center gap-1.5 text-amber-300 font-mono">
+      <Clock className={`h-3 w-3 shrink-0 ${whiteText ? "text-white opacity-90" : "text-amber-400 opacity-80"}`} />
+      <div className={`flex items-center gap-1.5 font-mono ${whiteText ? "text-white" : "text-amber-300"}`}>
         {/* Days */}
         <div className="flex items-baseline gap-0.5">
           <span className="text-[13px] sm:text-[14px] font-black text-white drop-shadow-xs">
             {pad(time.days)}
           </span>
-          <span className="text-[8.5px] font-semibold text-amber-300/80">
+          <span className={`text-[8.5px] font-bold ${whiteText ? "text-white/80" : "text-amber-300/80"}`}>
             d
           </span>
         </div>
 
-        <span className="text-amber-400/50 text-[10px]">:</span>
+        <span className={`text-[10px] ${whiteText ? "text-white/60" : "text-amber-400/50"}`}>:</span>
 
         {/* Hours */}
         <div className="flex items-baseline gap-0.5">
           <span className="text-[13px] sm:text-[14px] font-black text-white drop-shadow-xs">
             {pad(time.hours)}
           </span>
-          <span className="text-[8.5px] font-semibold text-amber-300/80">
+          <span className={`text-[8.5px] font-bold ${whiteText ? "text-white/80" : "text-amber-300/80"}`}>
             h
           </span>
         </div>
 
-        <span className="text-amber-400/50 text-[10px]">:</span>
+        <span className={`text-[10px] ${whiteText ? "text-white/60" : "text-amber-400/50"}`}>:</span>
 
         {/* Minutes */}
         <div className="flex items-baseline gap-0.5">
           <span className="text-[13px] sm:text-[14px] font-black text-white drop-shadow-xs">
             {pad(time.minutes)}
           </span>
-          <span className="text-[8.5px] font-semibold text-amber-300/80">
+          <span className={`text-[8.5px] font-bold ${whiteText ? "text-white/80" : "text-amber-300/80"}`}>
             m
           </span>
         </div>
 
-        <span className="text-amber-400/50 text-[10px]">:</span>
+        <span className={`text-[10px] ${whiteText ? "text-white/60" : "text-amber-400/50"}`}>:</span>
 
         {/* Seconds */}
         <div className="flex items-baseline gap-0.5">
-          <span className="text-[13px] sm:text-[14px] font-black text-amber-300 drop-shadow-xs">
+          <span className="text-[13px] sm:text-[14px] font-black text-white drop-shadow-xs">
             {pad(time.seconds)}
           </span>
-          <span className="text-[8.5px] font-semibold text-amber-300/80">
+          <span className={`text-[8.5px] font-bold ${whiteText ? "text-white/80" : "text-amber-300/80"}`}>
             s
           </span>
         </div>

@@ -420,62 +420,80 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
       </nav>
 
       {/* ===================================================================== */}
-      {/* SCENE 01 — SKY                                                        */}
+      {/* SCENE 01 — REAL CLOUDS + REAL SUNLIGHT (CINEMATIC SKY)                */}
       {/* ===================================================================== */}
       <section
         id="scene-sky"
-        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#bde0fe] via-[#d0e8ff] to-[#e8f4fd]"
+        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-950"
       >
-        {/* Celestial Sunlight ☀️ with Volumetric God Rays */}
-        <div className="absolute top-[12%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] pointer-events-none">
-          <div className="absolute inset-0 rounded-full bg-radial from-amber-200/90 via-amber-100/40 to-transparent blur-3xl" />
-          <div className="absolute inset-[20%] rounded-full bg-radial from-white via-amber-200/60 to-transparent blur-2xl animate-pulse" style={{ animationDuration: "5s" }} />
-          {/* Radial God Rays */}
+        {/* Photorealistic Cinematic Sky & Volumetric Clouds Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=2400&q=95"
+            alt="Real Cinematic Clouds"
+            className="w-full h-full object-cover object-center scale-105 filter brightness-[1.03] contrast-[1.05]"
+          />
+          {/* Subtle Ambient Sky Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-900/30 via-transparent to-sky-950/40 mix-blend-multiply" />
+        </div>
+
+        {/* Real Celestial Sunlight & Volumetric God Rays */}
+        <div className="absolute top-[-5%] left-1/2 -translate-x-1/2 w-full max-w-5xl h-[700px] pointer-events-none overflow-hidden">
+          {/* Anamorphic Lens Flare & Solar Flare Bloom */}
+          <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full bg-radial from-amber-100/85 via-amber-200/35 to-transparent blur-3xl" />
+          <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[300px] h-[180px] rounded-full bg-radial from-white via-amber-100/90 to-transparent blur-xl" />
+          {/* Natural Volumetric Sunbeams piercing through clouds */}
           <div
-            className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,247,237,0.8)_0%,transparent_70%)] opacity-80"
+            className="absolute inset-0 opacity-40 mix-blend-screen pointer-events-none"
             style={{
-              maskImage: "repeating-conic-gradient(from 0deg, #000 0deg 15deg, transparent 15deg 30deg)",
-              WebkitMaskImage: "repeating-conic-gradient(from 0deg, #000 0deg 15deg, transparent 15deg 30deg)",
+              background:
+                "conic-gradient(from 180deg at 50% 10%, rgba(255,248,220,0.4) 0deg, transparent 25deg, rgba(255,240,200,0.5) 45deg, transparent 75deg, rgba(255,250,230,0.4) 100deg, transparent 135deg, rgba(255,245,210,0.5) 160deg, transparent 180deg)",
+              filter: "blur(20px)",
             }}
           />
         </div>
 
-        {/* Volumetric Layered Clouds ☁️ with Drifting Animation */}
+        {/* Parallax Drifting Photorealistic Cloud Banks */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Distant Upper Clouds */}
+          {/* Left Upper Drifting Cloud Layer */}
           <motion.div
-            initial={{ x: "-5%" }}
-            animate={{ x: "5%" }}
-            transition={{ duration: 35, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute -top-10 left-[-10%] w-[120%] h-[320px] opacity-40 blur-xl bg-gradient-to-b from-white via-white/80 to-transparent rounded-[100%]"
-          />
-          {/* Foreground Left Cloud Bank */}
+            initial={{ x: "-6%", opacity: 0.7 }}
+            animate={{ x: "6%", opacity: 0.85 }}
+            transition={{ duration: 40, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+            className="absolute -top-12 -left-[10%] w-[80%] h-[400px] mix-blend-screen filter blur-[2px] pointer-events-none"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?auto=format&fit=crop&w=2400&q=95"
+              alt="Drifting Cumulus Clouds"
+              className="w-full h-full object-cover opacity-60"
+            />
+          </motion.div>
+          {/* Right Lower Drifting Atmospheric Mist */}
           <motion.div
-            initial={{ x: "-4%", y: "0%" }}
-            animate={{ x: "4%", y: "-2%" }}
-            transition={{ duration: 25, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute top-[35%] -left-[15%] w-[55%] h-[280px] opacity-75 blur-2xl bg-radial from-white via-white/60 to-transparent rounded-[50%]"
-          />
-          {/* Foreground Right Cloud Bank */}
-          <motion.div
-            initial={{ x: "4%", y: "0%" }}
-            animate={{ x: "-4%", y: "2%" }}
-            transition={{ duration: 28, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute top-[45%] -right-[15%] w-[60%] h-[300px] opacity-70 blur-2xl bg-radial from-white via-white/50 to-transparent rounded-[50%]"
-          />
+            initial={{ x: "5%", opacity: 0.6 }}
+            animate={{ x: "-5%", opacity: 0.8 }}
+            transition={{ duration: 48, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+            className="absolute top-[40%] -right-[15%] w-[85%] h-[420px] mix-blend-screen filter blur-[3px] pointer-events-none"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=2400&q=95"
+              alt="Soft Atmospheric Clouds"
+              className="w-full h-full object-cover opacity-50"
+            />
+          </motion.div>
         </div>
 
-        {/* Floating Atmospheric Hero Text (Large Negative Space, No Cards) */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-24 pb-16">
+        {/* Floating Atmospheric Hero Text (Spacious Cinematic Typography) */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-28 pb-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/80 shadow-xs mb-8"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-lg shadow-sky-950/10 mb-8"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#003B95] uppercase">
-              HANOIBA • CỘNG ĐỒNG DOANH NHÂN QUÝ HỢI
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] text-[#003B95] uppercase">
+              HANOIBA • CỘNG ĐỒNG DOANH NHÂN QUÝ HỢI 1983
             </span>
           </motion.div>
 
@@ -483,10 +501,10 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4, delay: 0.2, ease: "easeOut" }}
-            className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#002766] uppercase leading-[1.1] drop-shadow-xs"
+            className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#002766] uppercase leading-[1.1] drop-shadow-sm"
           >
             GẮN KẾT BỀN VỮNG
-            <span className="block mt-2 text-2xl sm:text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500">
+            <span className="block mt-2 text-2xl sm:text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 drop-shadow-xs">
               HỢP LỰC DOANH NHÂN
             </span>
           </motion.h1>
@@ -495,10 +513,10 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
-            className="mt-8 text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="mt-8 text-base sm:text-lg md:text-xl text-slate-700 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-xs"
           >
             Hành trình hội tụ bản lĩnh và khát vọng của thế hệ doanh nhân 1983.
-            Cùng nhau tạo dựng liên minh kinh doanh vững mạnh, vươn tầm quốc tế.
+            Cùng nhau tạo dựng liên minh kinh doanh vững mạnh, mở rộng tầm nhìn và vươn tầm quốc tế.
           </motion.p>
 
           <motion.div
@@ -508,115 +526,77 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             className="mt-14 flex flex-col items-center justify-center gap-2 cursor-pointer"
             onClick={() => scrollToScene("scene-birds")}
           >
-            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#003B95] font-bold">
-              Cuộn xuống để du hành
+            <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#003B95] font-bold drop-shadow-xs">
+              Cuộn xuống để trải nghiệm
             </span>
-            <ChevronDown className="w-5 h-5 text-[#003B95] animate-bounce" />
+            <ChevronDown className="w-5 h-5 text-[#003B95] animate-bounce drop-shadow-xs" />
           </motion.div>
         </div>
       </section>
 
       {/* ===================================================================== */}
-      {/* SCENE 02 — BIRDS                                                      */}
+      {/* SCENE 02 — REAL BIRDS FLOCK IN FLIGHT (DEPTH & MULTI-LAYER PARALLAX) */}
       {/* ===================================================================== */}
       <section
         id="scene-birds"
-        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#e8f4fd] via-[#d6ecfd] to-[#c7e5fc]"
+        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-900"
       >
-        {/* Dynamic Flock of Birds Flying Across Screen with 3D Parallax & Depth */}
+        {/* Photorealistic Dynamic Sky with Deep Atmospheric Perspective */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1517685352821-92cf88aee5a5?auto=format&fit=crop&w=2400&q=95"
+            alt="Real Birds in Flight over Cinematic Sky"
+            className="w-full h-full object-cover object-center filter brightness-[1.02] contrast-[1.08]"
+          />
+          {/* Subtle Horizon Mist & Lighting Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-900/30 via-transparent to-sky-950/50 mix-blend-multiply" />
+        </div>
+
+        {/* Dynamic Multi-layered Photorealistic Avian Flight Layers */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Foreground Large Birds (Gliding Across Top-Right) */}
+          {/* Midground High Flock Layer (Gliding majestically left-to-right across open sky) */}
           <motion.div
-            initial={{ x: "-20vw", y: "30vh", scale: 1.2, opacity: 0.9 }}
-            whileInView={{ x: "120vw", y: "15vh", scale: 1.3, opacity: 0.95 }}
+            initial={{ x: "-20vw", y: "15vh" }}
+            whileInView={{ x: "120vw", y: "-5vh" }}
             viewport={{ once: false }}
-            transition={{ duration: 18, ease: "linear", repeat: Infinity }}
-            className="absolute top-0 left-0 w-24 h-12"
+            transition={{ duration: 24, ease: "linear", repeat: Infinity }}
+            className="absolute top-0 left-0 w-[420px] h-[180px] pointer-events-none filter drop-shadow-md"
           >
-            <svg viewBox="0 0 100 40" className="w-full h-full fill-slate-700/80 drop-shadow-md">
-              <path d="M0 20 Q 25 5, 50 20 Q 75 5, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z">
-                <animate
-                  attributeName="d"
-                  dur="1.2s"
-                  repeatCount="indefinite"
-                  values="
-                    M0 20 Q 25 5, 50 20 Q 75 5, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z;
-                    M0 10 Q 25 25, 50 18 Q 75 25, 100 10 Q 75 18, 50 24 Q 25 18, 0 10 Z;
-                    M0 20 Q 25 5, 50 20 Q 75 5, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z
-                  "
-                />
-              </path>
-            </svg>
+            <img
+              src="https://images.unsplash.com/photo-1517685352821-92cf88aee5a5?auto=format&fit=crop&w=800&q=90"
+              alt="Avian Flock Formation"
+              className="w-full h-full object-contain mix-blend-multiply opacity-80"
+            />
           </motion.div>
 
-          {/* Main Midground Flock (V-Formation Gliding Across Center) */}
-          {[
-            { delay: 0, top: "25%", speed: 22, size: "w-16 h-8", opacity: 0.75 },
-            { delay: 1.2, top: "28%", speed: 22, size: "w-14 h-7", opacity: 0.7 },
-            { delay: 2.4, top: "23%", speed: 22, size: "w-14 h-7", opacity: 0.7 },
-            { delay: 3.6, top: "31%", speed: 22, size: "w-12 h-6", opacity: 0.65 },
-            { delay: 4.8, top: "21%", speed: 22, size: "w-12 h-6", opacity: 0.65 },
-            { delay: 6.0, top: "34%", speed: 22, size: "w-10 h-5", opacity: 0.6 },
-          ].map((bird, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ x: "-15vw", y: "0vh" }}
-              whileInView={{ x: "115vw", y: "-5vh" }}
-              viewport={{ once: false }}
-              transition={{
-                duration: bird.speed,
-                delay: bird.delay,
-                ease: "linear",
-                repeat: Infinity,
-              }}
-              className={`absolute ${bird.size}`}
-              style={{ top: bird.top, opacity: bird.opacity }}
-            >
-              <svg viewBox="0 0 100 40" className="w-full h-full fill-slate-800">
-                <path d="M0 20 Q 25 6, 50 20 Q 75 6, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z">
-                  <animate
-                    attributeName="d"
-                    dur="0.9s"
-                    repeatCount="indefinite"
-                    values="
-                      M0 20 Q 25 6, 50 20 Q 75 6, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z;
-                      M0 12 Q 25 24, 50 18 Q 75 24, 100 12 Q 75 18, 50 24 Q 25 18, 0 12 Z;
-                      M0 20 Q 25 6, 50 20 Q 75 6, 100 20 Q 75 14, 50 22 Q 25 14, 0 20 Z
-                    "
-                  />
-                </path>
-              </svg>
-            </motion.div>
-          ))}
-
-          {/* Distant Horizon Flock (Tiny silhouettes) */}
+          {/* Distant V-Formation Flock Layer (Higher altitude, slower, softer focus) */}
           <motion.div
-            initial={{ x: "110vw" }}
-            whileInView={{ x: "-20vw" }}
+            initial={{ x: "115vw", y: "25vh" }}
+            whileInView={{ x: "-25vw", y: "10vh" }}
             viewport={{ once: false }}
-            transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-            className="absolute top-[58%] w-48 h-8 flex gap-3 opacity-40 blur-[0.5px]"
+            transition={{ duration: 38, ease: "linear", repeat: Infinity, delay: 2 }}
+            className="absolute top-0 left-0 w-[300px] h-[120px] pointer-events-none filter blur-[0.7px] opacity-60 mix-blend-multiply"
           >
-            {[...Array(6)].map((_, i) => (
-              <svg key={i} viewBox="0 0 50 20" className="w-6 h-3 fill-slate-600">
-                <path d="M0 10 Q 12 3, 25 10 Q 37 3, 50 10 Q 37 8, 25 12 Q 12 8, 0 10 Z" />
-              </svg>
-            ))}
+            <img
+              src="https://images.unsplash.com/photo-1517685352821-92cf88aee5a5?auto=format&fit=crop&w=600&q=85"
+              alt="Distant Wild Birds"
+              className="w-full h-full object-contain scale-x-[-1]"
+            />
           </motion.div>
         </div>
 
-        {/* Cinematic Atmospheric Text Floating in Space (NO KPI Cards) */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        {/* Cinematic Atmospheric Text Floating in Space */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/70 shadow-xs mb-6"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/75 backdrop-blur-md border border-white/80 shadow-md mb-6"
           >
-            <Users className="w-3.5 h-3.5 text-[#003B95]" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#003B95] uppercase">
-              KHÔNG GIAN LIÊN MINH
+            <Users className="w-4 h-4 text-[#003B95]" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] text-[#003B95] uppercase">
+              KHÔNG GIAN LIÊN MINH DOANH NHÂN
             </span>
           </motion.div>
 
@@ -625,10 +605,10 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2 }}
-            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight"
+            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight drop-shadow-sm"
           >
             HỘI TỤ TINH HOA
-            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-600">
+            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-600 drop-shadow-xs">
               SỨC MẠNH LIÊN MINH DOANH NHÂN
             </span>
           </motion.h2>
@@ -638,38 +618,44 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.2 }}
-            className="mt-6 text-base sm:text-lg text-slate-700 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="mt-6 text-base sm:text-lg text-slate-800 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-xs"
           >
             Như đàn chim sải cánh hướng về một chân trời chung, hơn 200 Chủ tịch &amp; Tổng Giám đốc
             cùng thế hệ kết nối chặt chẽ, tạo nên luồng gió sức mạnh nâng tầm toàn khối doanh nghiệp.
           </motion.p>
 
-          {/* Pure Organic Typography Metrics Floating in Space (No Boxes, No Cards) */}
+          {/* Organic Floating Core Metrics in Negative Space */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.4 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-8 sm:gap-16 text-slate-800"
+            className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-14"
           >
-            <div className="text-center">
-              <span className="block text-3xl sm:text-5xl font-black text-[#003B95] tracking-tight">200+</span>
-              <span className="text-xs font-mono font-bold tracking-wider text-slate-600 uppercase mt-1 block">
-                Chủ Tịch &amp; C-Level
+            <div className="flex flex-col items-center">
+              <span className="text-3xl sm:text-5xl font-black text-[#002766] font-mono tracking-tight drop-shadow-xs">
+                200+
+              </span>
+              <span className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold mt-1">
+                Lãnh Đạo Doanh Nghiệp
               </span>
             </div>
-            <div className="hidden sm:block w-px h-10 bg-slate-400/40" />
-            <div className="text-center">
-              <span className="block text-3xl sm:text-5xl font-black text-amber-600 tracking-tight">&gt;5.000 Tỷ</span>
-              <span className="text-xs font-mono font-bold tracking-wider text-slate-600 uppercase mt-1 block">
-                Quy Mô Giao Thương
+            <div className="h-10 w-px bg-slate-300 hidden sm:block" />
+            <div className="flex flex-col items-center">
+              <span className="text-3xl sm:text-5xl font-black text-amber-600 font-mono tracking-tight drop-shadow-xs">
+                30.000+
+              </span>
+              <span className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold mt-1">
+                Nhân Sự Toàn Khối
               </span>
             </div>
-            <div className="hidden sm:block w-px h-10 bg-slate-400/40" />
-            <div className="text-center">
-              <span className="block text-3xl sm:text-5xl font-black text-[#003B95] tracking-tight">+35%</span>
-              <span className="text-xs font-mono font-bold tracking-wider text-slate-600 uppercase mt-1 block">
-                Tăng Trưởng Thường Niên
+            <div className="h-10 w-px bg-slate-300 hidden sm:block" />
+            <div className="flex flex-col items-center">
+              <span className="text-3xl sm:text-5xl font-black text-[#002766] font-mono tracking-tight drop-shadow-xs">
+                100.000+
+              </span>
+              <span className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold mt-1">
+                Tỷ Đồng Tổng Doanh Thu
               </span>
             </div>
           </motion.div>
@@ -677,123 +663,68 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
       </section>
 
       {/* ===================================================================== */}
-      {/* SCENE 03 — KITES (TUYỆT ĐỐI CẤM DÙNG TỪ "DIỀU" TRONG TEXT)             */}
+      {/* SCENE 03 — REAL KITES SOARING IN HIGH WIND (AERODYNAMIC SWAY)         */}
       {/* ===================================================================== */}
       <section
         id="scene-kites"
-        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#c7e5fc] via-[#b6ddfc] to-[#a3d3fb]"
+        className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-900"
       >
-        {/* Dynamic High-Flying Kites with 3D Fluttering Ribbons & Taut Strings */}
+        {/* Photorealistic High-Altitude Wind Sky Backdrop */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=2400&q=95"
+            alt="Real Kites Soaring High in Sky"
+            className="w-full h-full object-cover object-center filter brightness-[1.02] contrast-[1.05]"
+          />
+          {/* Atmospheric Color Tone Integration */}
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-800/30 via-transparent to-sky-900/40 mix-blend-multiply" />
+        </div>
+
+        {/* Photorealistic Floating Kites with Aerodynamic Sway & Taut Tension Lines */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Soaring Primary Kite (Upper Center-Right, Gold & Ivory Diamond) */}
+          {/* Primary High-Flying Photographic Kite (Upper Right) */}
           <motion.div
-            initial={{ y: "15px", rotate: -3 }}
-            animate={{ y: "-20px", rotate: 4 }}
-            transition={{ duration: 4.5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute top-[18%] right-[18%] w-36 h-48 sm:w-48 sm:h-64 filter drop-shadow-xl"
+            initial={{ y: "-15px", rotate: -3 }}
+            animate={{ y: "20px", rotate: 4 }}
+            transition={{ duration: 7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+            className="absolute top-[12%] right-[14%] w-48 h-64 pointer-events-none filter drop-shadow-2xl"
           >
-            {/* Kite Body Diamond */}
-            <svg viewBox="0 0 100 140" className="w-full h-full">
-              <defs>
-                <linearGradient id="kiteGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#F59E0B" />
-                  <stop offset="50%" stopColor="#FCD34D" />
-                  <stop offset="100%" stopColor="#D97706" />
-                </linearGradient>
-                <linearGradient id="kiteGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#FFFFFF" stopColorOpacity="0.9" />
-                  <stop offset="100%" stopColor="#E0F2FE" stopColorOpacity="0.8" />
-                </linearGradient>
-              </defs>
-              {/* Left Wing Facet */}
-              <polygon points="50,10 10,65 50,110" fill="url(#kiteGrad1)" />
-              {/* Right Wing Facet */}
-              <polygon points="50,10 90,65 50,110" fill="url(#kiteGrad2)" />
-              {/* Central Cross Frame */}
-              <line x1="50" y1="10" x2="50" y2="110" stroke="#78350F" strokeWidth="1.5" />
-              <line x1="10" y1="65" x2="90" y2="65" stroke="#78350F" strokeWidth="1.5" />
-              {/* Fluttering Long Silk Tail Ribbons */}
-              <path
-                d="M50 110 Q 40 140, 60 170 T 45 220 T 65 270 T 50 320"
-                fill="none"
-                stroke="#D97706"
-                strokeWidth="3"
-                strokeLinecap="round"
-              >
-                <animate
-                  attributeName="d"
-                  dur="2.5s"
-                  repeatCount="indefinite"
-                  values="
-                    M50 110 Q 40 140, 60 170 T 45 220 T 65 270 T 50 320;
-                    M50 110 Q 65 140, 35 170 T 60 220 T 40 270 T 55 320;
-                    M50 110 Q 40 140, 60 170 T 45 220 T 65 270 T 50 320
-                  "
-                />
-              </path>
-              {/* Fine Kite String Reaching Far Below */}
-              <line x1="50" y1="75" x2="-80" y2="500" stroke="#CBD5E1" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.6" />
-            </svg>
+            <img
+              src="https://images.unsplash.com/photo-1508873696983-2df5703bc20d?auto=format&fit=crop&w=800&q=90"
+              alt="High Soaring Kite"
+              className="w-full h-full object-contain filter contrast-125"
+            />
+            {/* Fine Taut String reaching deep below */}
+            <div className="absolute top-[60%] left-1/2 w-[1px] h-[550px] bg-gradient-to-b from-slate-200/80 to-transparent rotate-[24deg] origin-top opacity-60" />
           </motion.div>
 
-          {/* Distant High Kite (Upper Left, Azure & Coral) */}
+          {/* Secondary Distant Kite (Upper Left Horizon) */}
           <motion.div
-            initial={{ y: "-10px", rotate: 5 }}
-            animate={{ y: "15px", rotate: -4 }}
-            transition={{ duration: 6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-            className="absolute top-[14%] left-[15%] w-24 h-32 opacity-70 filter drop-shadow-md"
+            initial={{ y: "15px", rotate: 4 }}
+            animate={{ y: "-15px", rotate: -2 }}
+            transition={{ duration: 9, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: 1 }}
+            className="absolute top-[20%] left-[12%] w-32 h-44 pointer-events-none filter drop-shadow-xl opacity-80"
           >
-            <svg viewBox="0 0 100 140" className="w-full h-full">
-              <polygon points="50,10 15,65 50,110" fill="#0284C7" />
-              <polygon points="50,10 85,65 50,110" fill="#38BDF8" />
-              <line x1="50" y1="10" x2="50" y2="110" stroke="#0C4A6E" strokeWidth="1" />
-              <line x1="15" y1="65" x2="85" y2="65" stroke="#0C4A6E" strokeWidth="1" />
-              <path
-                d="M50 110 Q 35 135, 55 160 T 40 195 T 50 230"
-                fill="none"
-                stroke="#0284C7"
-                strokeWidth="2"
-              >
-                <animate
-                  attributeName="d"
-                  dur="3s"
-                  repeatCount="indefinite"
-                  values="
-                    M50 110 Q 35 135, 55 160 T 40 195 T 50 230;
-                    M50 110 Q 60 135, 40 160 T 55 195 T 45 230;
-                    M50 110 Q 35 135, 55 160 T 40 195 T 50 230
-                  "
-                />
-              </path>
-              <line x1="50" y1="75" x2="180" y2="480" stroke="#CBD5E1" strokeWidth="0.6" opacity="0.5" />
-            </svg>
-          </motion.div>
-
-          {/* Deep Background Micro Kite (Center Distant Horizon) */}
-          <motion.div
-            initial={{ y: "5px" }}
-            animate={{ y: "-8px" }}
-            transition={{ duration: 5, repeat: Infinity, repeatType: "reverse" }}
-            className="absolute top-[32%] left-[48%] w-10 h-14 opacity-50"
-          >
-            <svg viewBox="0 0 100 140" className="w-full h-full">
-              <polygon points="50,10 20,65 50,110" fill="#EA580C" />
-              <polygon points="50,10 80,65 50,110" fill="#FDBA74" />
-            </svg>
+            <img
+              src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=90"
+              alt="Distant Aerial Kite"
+              className="w-full h-full object-contain filter contrast-110"
+            />
+            <div className="absolute top-[60%] left-1/2 w-[1px] h-[450px] bg-gradient-to-b from-slate-200/70 to-transparent rotate-[-20deg] origin-top opacity-50" />
           </motion.div>
         </div>
 
-        {/* Majestic Floating Text (STRICT: NO WORDS "DIỀU" / "CÁ") */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        {/* Majestic Floating Vision Text */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/70 shadow-xs mb-6"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/75 backdrop-blur-md border border-white/80 shadow-md mb-6"
           >
-            <Compass className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#003B95] uppercase">
+            <Compass className="w-4 h-4 text-amber-600" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] text-[#003B95] uppercase">
               TẦM NHÌN THẾ HỆ
             </span>
           </motion.div>
@@ -803,10 +734,10 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2 }}
-            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight"
+            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight drop-shadow-sm"
           >
             KHÁT VỌNG VƯƠN TẦM
-            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-600">
+            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-600 drop-shadow-xs">
               BỨT PHÁ MỌI GIỚI HẠN
             </span>
           </motion.h2>
@@ -816,20 +747,20 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.2 }}
-            className="mt-6 text-base sm:text-lg text-slate-700 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="mt-6 text-base sm:text-lg text-slate-800 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-xs"
           >
             Càng đón gió lớn của thời đại, bản lĩnh doanh nhân càng vươn cao kiêu hãnh.
             Mỗi thành viên là một điểm tựa vững vàng, cùng nhau chinh phục những đỉnh cao mới
             trong kỷ nguyên kinh tế số và hội nhập toàn cầu.
           </motion.p>
 
-          {/* Delicate Celestial Value Constellations (No 4 Cards) */}
+          {/* Delicate Constellations of Core Pillars */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.4 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8"
+            className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
           >
             {[
               "Tín Nhiệm Danh Dự",
@@ -839,9 +770,9 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             ].map((pillar, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 backdrop-blur-xs border border-white/60 text-xs font-bold text-[#003B95] uppercase tracking-wider"
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-md border border-white/80 text-xs font-black text-[#003B95] uppercase tracking-wider shadow-sm"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <div className="w-2 h-2 rounded-full bg-amber-500 shadow-xs" />
                 <span>{pillar}</span>
               </div>
             ))}
@@ -850,23 +781,33 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
       </section>
 
       {/* ===================================================================== */}
-      {/* SCENE 04 — VILLAS (VILLAS OCCUPY ONLY 20-25% BOTTOM; 75-80% IS SKY)   */}
+      {/* SCENE 04 — REAL LUXURY VILLAS AT HORIZON (STRICT: 20-25% HEIGHT ONLY) */}
       {/* ===================================================================== */}
       <section
         id="scene-villas"
-        className="relative min-h-screen w-full flex flex-col justify-between overflow-hidden bg-gradient-to-b from-[#a3d3fb] via-[#8fc4f7] to-[#7db4f0]"
+        className="relative min-h-screen w-full flex flex-col justify-between overflow-hidden bg-slate-900"
       >
-        {/* Upper 75-80% Sky / Atmospheric Space with Typography */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-28 sm:pt-36">
+        {/* Sky Background for Upper 75-80% */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?auto=format&fit=crop&w=2400&q=95"
+            alt="Atmospheric Clear Sky"
+            className="w-full h-full object-cover object-top filter brightness-[1.05] contrast-[1.05]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-800/35 via-transparent to-sky-950/40 mix-blend-multiply" />
+        </div>
+
+        {/* Upper 75-80%: Vast Negative Space with Cinematic Typography */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-28 sm:pt-36">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/70 shadow-xs mb-6"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/75 backdrop-blur-md border border-white/80 shadow-md mb-6"
           >
-            <Building2 className="w-3.5 h-3.5 text-[#003B95]" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#003B95] uppercase">
+            <Building2 className="w-4 h-4 text-[#003B95]" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] text-[#003B95] uppercase">
               CƠ NGHIỆP TRƯỜNG TỒN
             </span>
           </motion.div>
@@ -876,10 +817,10 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2 }}
-            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight"
+            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight drop-shadow-sm"
           >
             KIẾN TẠO VỊ THẾ
-            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-700">
+            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-amber-700 drop-shadow-xs">
               NỀN TẢNG THỊNH VƯỢNG BỀN LÂU
             </span>
           </motion.h2>
@@ -889,285 +830,61 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.2 }}
-            className="mt-6 text-base sm:text-lg text-slate-700 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="mt-6 text-base sm:text-lg text-slate-800 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-xs"
           >
             Không gian của những giá trị trường tồn. Nơi hội tụ các tập đoàn đa ngành dẫn dắt
-            nền kinh tế, kiến tạo chuỗi giá trị khép kín và dựng xây cơ nghiệp bền vững cho thế hệ tương lai.
+            nền kinh tế, kiến tạo chuỗi giá trị khép kín và dựng xây cơ nghiệp vững vàng cho thế hệ tương lai.
           </motion.p>
         </div>
 
-        {/* Lower 20-25% Horizon: Authentic Architectural Luxury Villa Landscape */}
-        <div className="relative w-full h-[22vh] sm:h-[25vh] overflow-hidden">
+        {/* Lower 20-25% Horizon: Real Modernist Luxury Villas Landscape Photography */}
+        <div className="relative w-full h-[23vh] sm:h-[25vh] overflow-hidden">
           {/* Subtle Warm Atmospheric Glow at Horizon */}
-          <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-amber-100/30 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-amber-200/40 via-amber-100/10 to-transparent pointer-events-none z-10" />
 
-          {/* Panoramic Luxury Modern Villa Landscape SVG Silhouette with Warm Interior Lights */}
-          <svg
-            viewBox="0 0 1600 280"
-            preserveAspectRatio="none"
-            className="w-full h-full object-cover select-none"
-          >
-            <defs>
-              <linearGradient id="villaWall" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#1E293B" />
-                <stop offset="100%" stopColor="#0F172A" />
-              </linearGradient>
-              <linearGradient id="windowGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FEF08A" stopColorOpacity="0.9" />
-                <stop offset="100%" stopColor="#F59E0B" stopColorOpacity="0.75" />
-              </linearGradient>
-              <linearGradient id="lawnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#1E3A5F" />
-                <stop offset="100%" stopColor="#0F1E36" />
-              </linearGradient>
-            </defs>
-
-            {/* Horizon Lawns & Foundations */}
-            <rect x="0" y="220" width="1600" height="60" fill="url(#lawnGrad)" />
-
-            {/* Villa Complex 1 (Left Wing Modernist Cantilever) */}
-            <g>
-              {/* Foundation deck */}
-              <rect x="60" y="200" width="340" height="25" fill="#334155" />
-              {/* Ground floor glass pavilion */}
-              <rect x="80" y="140" width="160" height="60" fill="url(#windowGlow)" opacity="0.85" />
-              {/* Mullions */}
-              <line x1="120" y1="140" x2="120" y2="200" stroke="#0F172A" strokeWidth="3" />
-              <line x1="160" y1="140" x2="160" y2="200" stroke="#0F172A" strokeWidth="3" />
-              <line x1="200" y1="140" x2="200" y2="200" stroke="#0F172A" strokeWidth="3" />
-              {/* Solid upper block */}
-              <rect x="70" y="80" width="320" height="60" fill="url(#villaWall)" />
-              {/* Upper ribbon window */}
-              <rect x="100" y="95" width="220" height="25" fill="url(#windowGlow)" opacity="0.9" />
-              {/* Cantilever roofline */}
-              <rect x="50" y="70" width="360" height="10" fill="#475569" />
-              {/* Minimalist garden trees */}
-              <circle cx="430" cy="180" r="28" fill="#14532D" opacity="0.8" />
-              <rect x="428" y="180" width="4" height="40" fill="#0F172A" />
-            </g>
-
-            {/* Villa Complex 2 (Center Grand Masterpiece Pavilion) */}
-            <g>
-              <rect x="540" y="190" width="520" height="30" fill="#334155" />
-              {/* Dual level glass architecture */}
-              <rect x="580" y="120" width="440" height="70" fill="url(#windowGlow)" opacity="0.9" />
-              {/* Vertical architectural fins */}
-              {[620, 660, 700, 740, 780, 820, 860, 900, 940, 980].map((x, i) => (
-                <line key={i} x1={x} y1="120" x2={x} y2="190" stroke="#0F172A" strokeWidth="4" />
-              ))}
-              {/* Floating cantilever roof */}
-              <rect x="520" y="110" width="560" height="12" fill="#64748B" />
-              {/* Modern penthouse tier */}
-              <rect x="660" y="60" width="280" height="50" fill="url(#villaWall)" />
-              <rect x="700" y="70" width="200" height="30" fill="url(#windowGlow)" opacity="0.95" />
-              <rect x="640" y="50" width="320" height="10" fill="#94A3B8" />
-              {/* Infinity pool glass edge in front of center villa */}
-              <rect x="600" y="215" width="400" height="8" fill="#38BDF8" opacity="0.9" />
-            </g>
-
-            {/* Villa Complex 3 (Right Wing Luxury Estate) */}
-            <g>
-              <rect x="1180" y="195" width="360" height="25" fill="#334155" />
-              <rect x="1200" y="130" width="320" height="65" fill="url(#windowGlow)" opacity="0.8" />
-              <rect x="1190" y="75" width="340" height="55" fill="url(#villaWall)" />
-              <rect x="1230" y="90" width="180" height="25" fill="url(#windowGlow)" opacity="0.9" />
-              <rect x="1170" y="65" width="380" height="10" fill="#475569" />
-              <circle cx="1140" cy="175" r="32" fill="#14532D" opacity="0.8" />
-              <rect x="1138" y="175" width="4" height="45" fill="#0F172A" />
-            </g>
-          </svg>
+          {/* Panoramic Luxury Modernist Villa Architecture at Water's Edge */}
+          <div className="relative w-full h-full flex items-end">
+            <img
+              src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=2400&q=95"
+              alt="Real Luxury Waterfront Modern Villas at Horizon"
+              className="w-full h-full object-cover object-bottom filter brightness-[1.08] contrast-[1.05]"
+            />
+            {/* Seamless gradient blend between horizon villa lawn and water below */}
+            <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#0284c7]/90 to-transparent" />
+          </div>
         </div>
       </section>
 
       {/* ===================================================================== */}
-      {/* SCENE 05 — WATER (GIANT INFINITY POOL & DIVE-THROUGH TRANSITION)       */}
+      {/* SCENE 05 — REALISTIC TURQUOISE WATER / INFINITY POOL CAUSTICS         */}
       {/* ===================================================================== */}
       <section
         id="scene-water"
-        className="relative min-h-screen w-full flex flex-col items-center justify-between overflow-hidden bg-gradient-to-b from-[#7db4f0] via-[#38bdf8] to-[#0284c7]"
+        className="relative min-h-screen w-full flex flex-col items-center justify-between overflow-hidden bg-slate-950"
       >
-        {/* Floating Atmospheric Typography (NO Cards in Center) */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-28 sm:pt-36">
+        {/* Real Turquoise Water Texture with Natural Caustic Refractions */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=2400&q=95"
+            alt="Real Turquoise Water Caustics and Ripples"
+            className="w-full h-full object-cover object-center filter brightness-[0.98] contrast-[1.12]"
+          />
+          {/* Atmospheric Oceanic Blend Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-600/30 via-cyan-900/30 to-[#022c44]/90" />
+        </div>
+
+        {/* Floating Atmospheric Typography */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-28 sm:pt-36">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-xs mb-6"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/80 backdrop-blur-md border border-white/90 shadow-md mb-6"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#003B95]" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[#003B95] uppercase">
+            <ShieldCheck className="w-4 h-4 text-[#003B95]" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] text-[#003B95] uppercase">
               TÂM THỨC DOANH NHÂN
-            </span>
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 1.2 }}
-            className="text-3xl sm:text-5xl md:text-6xl font-black text-[#002766] uppercase tracking-tight leading-tight"
-          >
-            TÂM THỨC TRẦM LẮNG
-            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-white drop-shadow-md">
-              BẢN LĨNH ĐƯƠNG ĐẦU MỌI THỬ THÁCH
-            </span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 1.2, delay: 0.2 }}
-            className="mt-6 text-base sm:text-lg text-slate-900 max-w-2xl mx-auto font-semibold leading-relaxed"
-          >
-            Mặt nước phẳng lặng phản chiếu sự kiên định của người lãnh đạo.
-            Trước khi mở ra đại dương lớn, mọi quyết sách đều được đúc kết từ chiều sâu tư duy
-            và sự trầm tĩnh chiến lược.
-          </motion.p>
-        </div>
-
-        {/* Colossal Infinity Pool Surface with Caustics & Gentle Waves */}
-        <div className="relative w-full h-[45vh] overflow-hidden flex flex-col justify-end">
-          {/* Animated Water Mesh Surface */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#38bdf8]/40 via-[#0284c7]/80 to-[#0369a1]">
-            {/* Water Caustics Shimmer */}
-            <div
-              className="absolute inset-0 opacity-40 mix-blend-overlay animate-pulse"
-              style={{
-                backgroundImage:
-                  "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.6) 0%, transparent 60%)",
-                backgroundSize: "80px 40px",
-              }}
-            />
-
-            {/* Ripple Wave SVG Curves */}
-            <svg
-              viewBox="0 0 1440 320"
-              preserveAspectRatio="none"
-              className="absolute bottom-0 w-full h-48 opacity-70"
-            >
-              <path
-                fill="#0284c7"
-                d="M0,160L48,176C96,192,192,224,288,218.7C384,213,480,171,576,165.3C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-              >
-                <animate
-                  attributeName="d"
-                  dur="8s"
-                  repeatCount="indefinite"
-                  values="
-                    M0,160L48,176C96,192,192,224,288,218.7C384,213,480,171,576,165.3C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L0,320Z;
-                    M0,140L48,150C96,170,192,200,288,205C384,210,480,190,576,180C672,170,768,180,864,195C960,210,1056,190,1152,170C1248,150,1344,140,1392,130L1440,120L1440,320L0,320Z;
-                    M0,160L48,176C96,192,192,224,288,218.7C384,213,480,171,576,165.3C672,160,768,192,864,202.7C960,213,1056,203,1152,181.3C1248,160,1344,128,1392,112L1440,96L1440,320L0,320Z
-                  "
-                />
-              </path>
-            </svg>
-          </div>
-
-          {/* CRITICAL TRANSITION: SUBMERGE THROUGH WATER SURFACE */}
-          <div className="relative z-20 w-full text-center pb-8 flex flex-col items-center">
-            <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-white/90 font-black drop-shadow-md">
-              Lặn xuyên qua mặt nước vào đại dương số
-            </span>
-            <ChevronDown className="w-6 h-6 text-white animate-bounce mt-2 drop-shadow-md" />
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================================== */}
-      {/* SCENE 06 — UNDERWATER (OCEAN DEPTHS, 3D SHARKS, LEADERSHIP BEACONS)   */}
-      {/* STRICT: TUYỆT ĐỐI CẤM DÙNG TỪ "CÁ", "CÁ MẬP" TRONG TEXT               */}
-      {/* ===================================================================== */}
-      <section
-        id="scene-underwater"
-        className="relative min-h-[220vh] w-full flex flex-col items-center justify-between overflow-hidden bg-gradient-to-b from-[#0369a1] via-[#041c32] via-[40%] via-[#021324] to-[#010912] text-white"
-      >
-        {/* Ocean Atmosphere: Light Rays from Surface Above */}
-        <div className="absolute top-0 left-0 right-0 h-[600px] pointer-events-none overflow-hidden">
-          <div
-            className="absolute -top-20 left-1/4 w-[400px] h-[800px] bg-gradient-to-b from-cyan-200/30 via-cyan-400/10 to-transparent transform -rotate-12 blur-2xl"
-          />
-          <div
-            className="absolute -top-20 right-1/4 w-[500px] h-[900px] bg-gradient-to-b from-amber-200/20 via-cyan-300/10 to-transparent transform rotate-15 blur-2xl"
-          />
-        </div>
-
-        {/* Floating Ocean Particles / Bubbles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(24)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: "110vh", opacity: 0 }}
-              animate={{ y: "-10vh", opacity: [0, 0.7, 0] }}
-              transition={{
-                duration: 12 + (i % 8) * 2,
-                repeat: Infinity,
-                delay: (i % 6) * 1.5,
-                ease: "linear",
-              }}
-              className="absolute rounded-full bg-cyan-200/40 backdrop-blur-xs border border-white/40"
-              style={{
-                width: 4 + (i % 4) * 3,
-                height: 4 + (i % 4) * 3,
-                left: `${(i * 4.2) % 96}%`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* 3D SHARKS SWIMMING WITH DEPTH & FLUID TAIL MOVEMENT (VISUAL ONLY) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Alpha Apex Shark 1 (Foreground, Sleek Predatory Silhouette Swimming Across) */}
-          <motion.div
-            initial={{ x: "-30vw", y: "45vh", scale: 1 }}
-            whileInView={{ x: "125vw", y: "55vh", scale: 1.1 }}
-            viewport={{ once: false }}
-            transition={{ duration: 24, ease: "linear", repeat: Infinity }}
-            className="absolute top-0 left-0 w-80 h-36 filter drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] opacity-90"
-          >
-            <svg viewBox="0 0 400 160" className="w-full h-full fill-[#0A2540]">
-              {/* Shark Torso, Dorsal Fin & Tail */}
-              <path d="M20,80 Q 90,40 180,50 L 220,10 L 235,55 Q 310,65 370,80 L 395,50 L 385,85 L 398,115 L 365,95 Q 310,105 230,110 L 190,135 L 180,108 Q 100,115 20,80 Z" />
-              {/* Pectoral Fin */}
-              <polygon points="170,85 130,135 155,130" fill="#061826" />
-              {/* Subtle Ambient Light Shimmer on Shark Back */}
-              <path
-                d="M30,80 Q 90,45 180,52 Q 280,65 360,82"
-                fill="none"
-                stroke="#38BDF8"
-                strokeWidth="2"
-                opacity="0.4"
-              />
-            </svg>
-          </motion.div>
-
-          {/* Deep Ocean Shark 2 (Midground, Turning Smoothly in Deep Blue) */}
-          <motion.div
-            initial={{ x: "120vw", y: "85vh", scale: 0.65 }}
-            whileInView={{ x: "-25vw", y: "78vh", scale: 0.65 }}
-            viewport={{ once: false }}
-            transition={{ duration: 32, ease: "linear", repeat: Infinity, delay: 4 }}
-            className="absolute top-0 left-0 w-64 h-28 opacity-60 filter blur-[0.8px]"
-          >
-            <svg viewBox="0 0 400 160" className="w-full h-full fill-[#031320] transform scale-x-[-1]">
-              <path d="M20,80 Q 90,40 180,50 L 220,10 L 235,55 Q 310,65 370,80 L 395,50 L 385,85 L 398,115 L 365,95 Q 310,105 230,110 L 190,135 L 180,108 Q 100,115 20,80 Z" />
-            </svg>
-          </motion.div>
-        </div>
-
-        {/* TOP SECTION OF UNDERWATER: THE INITIATION */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-32 pb-20">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/60 backdrop-blur-md border border-cyan-500/40 shadow-xs mb-6 text-cyan-300"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase">
-              BẢN LĨNH TIÊN PHONG
             </span>
           </motion.div>
 
@@ -1178,8 +895,143 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             transition={{ duration: 1.2 }}
             className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight drop-shadow-lg"
           >
+            TÂM THỨC TRẦM LẮNG
+            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-cyan-200 drop-shadow-md">
+              BẢN LĨNH ĐƯƠNG ĐẦU MỌI THỬ THÁCH
+            </span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 1.2, delay: 0.2 }}
+            className="mt-6 text-base sm:text-lg text-white/90 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-md"
+          >
+            Mặt nước phẳng lặng phản chiếu sự kiên định của người lãnh đạo.
+            Trước khi mở ra đại dương lớn, mọi quyết sách đều được đúc kết từ chiều sâu tư duy
+            và sự trầm tĩnh chiến lược.
+          </motion.p>
+        </div>
+
+        {/* Real Pool/Ocean Water Surface Edge & Deep Submerge Call */}
+        <div className="relative w-full pb-14 pt-20 flex flex-col items-center justify-center z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false }}
+            transition={{ duration: 1 }}
+            className="flex flex-col items-center gap-3 cursor-pointer"
+            onClick={() => scrollToScene("scene-underwater")}
+          >
+            <div className="px-6 py-2 rounded-full bg-cyan-950/60 border border-cyan-400/40 backdrop-blur-md shadow-lg">
+              <span className="text-[12px] font-mono uppercase tracking-[0.25em] text-cyan-200 font-bold">
+                Lặn xuống lòng đại dương sâu thẳm
+              </span>
+            </div>
+            <ChevronDown className="w-6 h-6 text-cyan-300 animate-bounce drop-shadow-lg" />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* SCENE 06 — DEEP SAPPHIRE OCEAN / REAL SHARKS & 4 PILLARS              */}
+      {/* ===================================================================== */}
+      <section
+        id="scene-underwater"
+        className="relative min-h-[220vh] w-full flex flex-col items-center justify-between overflow-hidden bg-slate-950 text-white"
+      >
+        {/* Photorealistic Deep Sapphire Ocean Backdrop with Penetrating Sun Rays */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&w=2400&q=95"
+            alt="Real Deep Sapphire Ocean with God Rays"
+            className="w-full h-full object-cover object-top filter brightness-[0.9] contrast-[1.15]"
+          />
+          {/* Volumetric Ocean Ray Blend */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#022c44]/85 via-[#011829]/95 to-[#000814]" />
+        </div>
+
+        {/* Real Marine Particulate / Floating Deep Sea Plankton */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(28)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ y: "105vh", opacity: 0 }}
+              animate={{ y: "-10vh", opacity: [0, 0.6, 0] }}
+              transition={{
+                duration: 14 + (i % 8) * 2.5,
+                repeat: Infinity,
+                delay: (i % 7) * 1.8,
+                ease: "linear",
+              }}
+              className="absolute rounded-full bg-cyan-200/50 backdrop-blur-xs border border-white/50"
+              style={{
+                width: 3 + (i % 4) * 2.5,
+                height: 3 + (i % 4) * 2.5,
+                left: `${(i * 3.7) % 96}%`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Real Photographic Sharks Gliding Through Deep Oceanic Abyss */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Alpha Apex Shark 1 (Photorealistic shark gliding horizontally across midground) */}
+          <motion.div
+            initial={{ x: "-35vw", y: "35vh", scale: 1 }}
+            whileInView={{ x: "125vw", y: "42vh", scale: 1.05 }}
+            viewport={{ once: false }}
+            transition={{ duration: 28, ease: "linear", repeat: Infinity }}
+            className="absolute top-0 left-0 w-[420px] h-[190px] filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] opacity-95 pointer-events-none"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1560275619-4662e36fa65c?auto=format&fit=crop&w=1200&q=90"
+              alt="Real Shark Gliding in Ocean"
+              className="w-full h-full object-contain filter brightness-[0.95] contrast-[1.15]"
+            />
+          </motion.div>
+
+          {/* Deep Ocean Shark 2 (Distant, gliding deeper in the abyss) */}
+          <motion.div
+            initial={{ x: "120vw", y: "75vh", scale: 0.65 }}
+            whileInView={{ x: "-30vw", y: "68vh", scale: 0.65 }}
+            viewport={{ once: false }}
+            transition={{ duration: 36, ease: "linear", repeat: Infinity, delay: 5 }}
+            className="absolute top-0 left-0 w-[320px] h-[150px] filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.9)] opacity-75 blur-[0.8px] pointer-events-none"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&w=1000&q=85"
+              alt="Deep Ocean Shark"
+              className="w-full h-full object-contain scale-x-[-1] filter brightness-[0.85] contrast-[1.1]"
+            />
+          </motion.div>
+        </div>
+
+        {/* TOP SECTION OF UNDERWATER: THE INITIATION */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-36 pb-20">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 1 }}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-950/70 backdrop-blur-md border border-cyan-500/40 shadow-lg mb-6 text-cyan-300"
+          >
+            <Zap className="w-4 h-4 text-amber-400" />
+            <span className="text-[12px] font-mono font-bold tracking-[0.22em] uppercase">
+              BẢN LĨNH TIÊN PHONG
+            </span>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 1.2 }}
+            className="text-3xl sm:text-5xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight drop-shadow-2xl"
+          >
             ĐẠI DƯƠNG SỐ
-            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-cyan-400">
+            <span className="block mt-2 text-xl sm:text-3xl md:text-4xl font-extrabold text-cyan-400 drop-shadow-md">
               VỊ THẾ DẪN ĐẦU THỊ TRƯỜNG
             </span>
           </motion.h2>
@@ -1189,20 +1041,20 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 1.2, delay: 0.2 }}
-            className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed"
+            className="mt-6 text-base sm:text-lg text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed drop-shadow-md"
           >
             Giữa biển lớn kinh tế nhiều biến động, bản lĩnh và kinh nghiệm thực chiến của người thuyền trưởng
             là kim chỉ nam định hình tương lai doanh nghiệp.
           </motion.p>
         </div>
 
-        {/* MONOLITHIC LUMINOUS LEADERSHIP FIGURES (NOT PROFILE CARDS) */}
+        {/* 4 PILLARS OF LEADERSHIP (MONOLITHIC LUMINOUS EMBLEMS) */}
         <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-16">
           <div className="text-center mb-14">
             <span className="text-xs font-mono font-bold tracking-[0.25em] text-amber-400 uppercase">
               BAN LÃNH ĐẠO TIÊN PHONG • CLB CEO 1983
             </span>
-            <h3 className="text-2xl sm:text-4xl font-black text-white uppercase mt-2">
+            <h3 className="text-2xl sm:text-4xl font-black text-white uppercase mt-2 drop-shadow-lg">
               NHỮNG CỘT TRỤ BẢN LĨNH
             </h3>
           </div>
@@ -1215,13 +1067,13 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, amount: 0.2 }}
                 transition={{ duration: 1, delay: idx * 0.15 }}
-                className="group relative flex flex-col items-center text-center p-6 rounded-3xl bg-gradient-to-b from-white/5 via-white/[0.02] to-transparent border border-white/10 hover:border-amber-400/50 backdrop-blur-md transition-all duration-500 hover:-translate-y-2"
+                className="group relative flex flex-col items-center text-center p-6 rounded-3xl bg-gradient-to-b from-white/10 via-white/[0.04] to-transparent border border-white/15 hover:border-amber-400/60 backdrop-blur-md transition-all duration-500 hover:-translate-y-2 shadow-xl shadow-black/40"
               >
                 {/* Luminous Aura Beacon behind Leader */}
-                <div className="absolute -top-4 w-32 h-32 rounded-full bg-cyan-400/10 group-hover:bg-amber-400/20 blur-2xl transition-all duration-500" />
+                <div className="absolute -top-4 w-32 h-32 rounded-full bg-cyan-400/15 group-hover:bg-amber-400/25 blur-2xl transition-all duration-500 pointer-events-none" />
 
-                {/* Monolithic Portrait / Emblem */}
-                <div className="relative w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-amber-400/60 to-cyan-400/60 mb-5 shadow-lg shadow-black/60">
+                {/* Monolithic Portrait / Official Emblem */}
+                <div className="relative w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-amber-400/70 to-cyan-400/70 mb-5 shadow-lg shadow-black/60">
                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-900 flex items-center justify-center">
                     <img
                       src={leader.img}
@@ -1237,7 +1089,7 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
                 <h4 className="text-lg font-black text-white group-hover:text-amber-300 transition-colors">
                   {leader.name}
                 </h4>
-                <p className="text-xs text-slate-400 mt-1 font-medium">{leader.company}</p>
+                <p className="text-xs text-slate-300 mt-1 font-medium">{leader.company}</p>
                 <div className="w-8 h-px bg-white/20 my-3 group-hover:w-16 group-hover:bg-amber-400 transition-all" />
                 <p className="text-xs text-slate-300 italic font-normal leading-relaxed">
                   "{leader.quote}"
@@ -1250,7 +1102,7 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
         {/* BOTTOM SECTION: UNDERWATER CALMS DOWN -> SACRED BRAND MESSAGE -> MASTER CTA */}
         <div className="relative z-10 w-full max-w-4xl mx-auto px-6 text-center pt-24 pb-36">
           {/* Water Calming Ethereal Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-cyan-500/10 blur-3xl pointer-events-none rounded-full" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[320px] bg-cyan-500/15 blur-3xl pointer-events-none rounded-full" />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -1272,7 +1124,7 @@ export function Ceo1983CinematicInteractiveWorldLanding() {
               Đồng hành kiến tạo giá trị thực chất và vị thế tự hào của doanh nhân Việt.
             </p>
 
-            {/* MASTER CTA BUTTON */}
+            {/* MASTER CTA BUTTONS */}
             <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 type="button"

@@ -163,6 +163,8 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
         industry: z.string().min(1).max(200),
         deadline: z.string().min(1).max(64),
         emoji: z.string().min(1).max(16).optional(),
+        image: z.string().optional(),
+        imageUrl: z.string().optional(),
       })
       .parse(d),
   )
@@ -199,6 +201,7 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
         status: "open",
         views: 0,
         emoji: data.emoji ?? "💡",
+        image: data.image || data.imageUrl || null,
       })
       .select("*")
       .single();
@@ -222,6 +225,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         deadline: z.string().min(1).max(64),
         emoji: z.string().min(1).max(16),
         status: z.enum(["open", "closed"]),
+        image: z.string().optional(),
+        imageUrl: z.string().optional(),
       })
       .parse(d),
   )

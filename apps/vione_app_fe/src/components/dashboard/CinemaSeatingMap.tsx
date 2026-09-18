@@ -401,7 +401,7 @@ export function CinemaSeatingMap({
         Math.max(6, Math.min(94, dragStartRef.current.tableX + deltaPercentX)),
       );
       const newY = Math.round(
-        Math.max(8, Math.min(92, dragStartRef.current.tableY + deltaPercentY)),
+        Math.max(6, Math.min(95, dragStartRef.current.tableY + deltaPercentY)),
       );
 
       setTables((prev) =>
@@ -728,7 +728,7 @@ export function CinemaSeatingMap({
           </div>
 
           {/* Rows of the Auditorium */}
-          <div className="space-y-4 max-w-3xl mx-auto overflow-x-auto pb-4">
+          <div className="space-y-4 max-w-3xl mx-auto overflow-x-auto pb-16 min-h-[300px]">
             {(cinemaRows || []).map((row) => {
               const seats = getRowSeats(row);
               const half = Math.ceil(seats.length / 2);
@@ -832,6 +832,18 @@ export function CinemaSeatingMap({
                 </div>
               );
             })}
+
+            {/* Quick Add Row at the bottom */}
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={handleAddRow}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-dashed border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Thêm hàng ghế bên dưới</span>
+              </button>
+            </div>
           </div>
 
           {/* Seat Status Legend */}
@@ -1001,7 +1013,7 @@ export function CinemaSeatingMap({
           {/* Interactive 2D Banquet Hall Canvas with Mouse Drag Support */}
           <div
             ref={canvasRef}
-            className="relative w-full h-[540px] rounded-2xl border border-border bg-slate-950/40 dark:bg-black/50 overflow-hidden p-4 shadow-inner select-none"
+            className="relative w-full h-[640px] rounded-2xl border border-border bg-slate-950/40 dark:bg-black/50 overflow-hidden p-4 shadow-inner select-none"
           >
             {/* Floor Grid Lines */}
             <div

@@ -25,6 +25,7 @@ export type NewsArticle = {
   views: number;
   status: "published" | "draft" | "scheduled";
   excerpt: string;
+  image?: string;
 };
 
 export type ActivityLog = {

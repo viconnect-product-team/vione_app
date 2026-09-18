@@ -41,7 +41,7 @@ try {
             if ($SkipWebBuild) {
                 Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
-                Write-Host "`n[0/5] Build Frontend Hiệp Hội (Web) cục bộ với Scope = crm_platform..." -ForegroundColor Cyan
+                Write-Host "`n[0/5] Build Frontend CRM Platform (Web) cục bộ với Scope = crm_platform..." -ForegroundColor Cyan
                 $env:NODE_OPTIONS = "--max-old-space-size=4096"
                 $env:VITE_APP_SCOPE = "crm_platform"
                 $env:VITE_APP_NAME = "ViOne CRM Platform"
@@ -54,7 +54,7 @@ try {
                     Write-Host "  -> Bỏ qua 'npm install' (đã có node_modules). Dùng -InstallDeps nếu muốn tải lại." -ForegroundColor DarkGray
                 }
 
-                Invoke-CheckedCommand -Description "Build Web Web CRM Platform" -Action { npm run build --prefix apps/vione_app_fe }
+                Invoke-CheckedCommand -Description "Build Web CRM Platform" -Action { npm run build --prefix apps/vione_app_fe }
             }
         }
 
@@ -101,7 +101,7 @@ try {
             }
         }
 
-        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) Docker Images cho Hiệp Hội..." -ForegroundColor Cyan
+        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) Docker Images cho Web CRM Platform..." -ForegroundColor Cyan
         if ($buildBE) {
             Invoke-CheckedCommand -Description "Xuất & Nén Backend Image (.tar.gz)" -Action {
                 docker save -o crm-backend.tar crm-backend:latest
@@ -124,8 +124,12 @@ try {
         ssh "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
     }
 
+    # Đảm bảo có tệp tin .env.crm cục bộ
+    Copy-Item "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env.crm" -Force -ErrorAction SilentlyContinue
+
     $filesToUpload = @(
         (Resolve-Path "$DEPLOY_DIR/.env.production").Path,
+        (Resolve-Path "$DEPLOY_DIR/.env.crm").Path,
         (Resolve-Path "$DEPLOY_DIR/docker-compose.yml").Path
     )
     if (-not $SkipBuild) {
@@ -138,7 +142,7 @@ try {
         scp @scpArgs
     }
 
-    Write-Host "`n[4/5] Kích hoạt Docker Compose riêng cho Hiệp Hội từ xa thông qua SSH..." -ForegroundColor Cyan
+    Write-Host "`n[4/5] Kích hoạt Docker Compose riêng cho Web CRM Platform từ xa thông qua SSH..." -ForegroundColor Cyan
 
     $remoteLoadCmd = ""
     if ($buildBE -and (Test-Path "crm-backend.tar.gz")) {
@@ -148,9 +152,9 @@ try {
         $remoteLoadCmd += "docker load -i crm-frontend.tar.gz; rm -f crm-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; mv -f .env.production .env.association 2>/dev/null || true; sed -i 's/\r//g' .env.association docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; cp -f .env.association .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
 
-    Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Hiệp Hội" -Action {
+    Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Web CRM Platform" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
     }
 
@@ -158,9 +162,9 @@ try {
     Remove-Item crm-backend.tar.gz, crm-frontend.tar.gz, crm-backend.tar, crm-frontend.tar -ErrorAction SilentlyContinue
 
     Write-Host "=================================================================" -ForegroundColor Green
-    Write-Host "TRIỂN KHAI ĐỘC LẬP APP HIỆP HỘI CLB CEO 1983 [HUONG 2] THÀNH CÔNG!" -ForegroundColor Green
-    Write-Host "Cổng Frontend Hiệp Hội : http://${SERVER_IP}:5004" -ForegroundColor Yellow
-    Write-Host "Cổng Backend Hiệp Hội  : http://${SERVER_IP}:5005" -ForegroundColor Yellow
+    Write-Host "TRIỂN KHAI ĐỘC LẬP WEB CRM PLATFORM VÀ LANDING CEO 1983 THÀNH CÔNG!" -ForegroundColor Green
+    Write-Host "Cổng Frontend CRM : http://${SERVER_IP}:5004" -ForegroundColor Yellow
+    Write-Host "Cổng Backend CRM  : http://${SERVER_IP}:5005" -ForegroundColor Yellow
     Write-Host "=================================================================" -ForegroundColor Green
 } finally {
     Pop-Location

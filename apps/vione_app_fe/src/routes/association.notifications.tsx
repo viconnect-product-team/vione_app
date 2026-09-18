@@ -504,7 +504,7 @@ function NotificationsScreen() {
     if (n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || n.notificationKind === "invoice" || n.notificationKind === "payment") return true;
     if (Boolean(n.safeDisplayData?.invoiceId) || Boolean(n.safeDisplayData?.amount)) return true;
     const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
-    return /hội phí|niên liễm|phí thường niên|phí sự kiện|tiền vé|thanh toán|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
+    return /hội phí|phí thường niên|quản lý hội phí|phí sự kiện|tiền vé|thanh toán|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
   };
 
   const handlePayNotification = (n: any) => {

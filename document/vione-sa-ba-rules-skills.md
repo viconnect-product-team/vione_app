@@ -19,7 +19,7 @@
 1. [RANH GIỚI MIỀN NGHIỆP VỤ CỐT LÕI (CORE DOMAIN BOUNDARIES)](#1-ranh-giới-miền-nghiệp-vụ-cốt-lõi-core-domain-boundaries)
    - 1.1 Miền Định danh & Xác thực (Identity & Authentication Domain)
    - 1.2 Miền Quản trị Hiệp hội & Hội viên (Association & Membership Domain)
-   - 1.3 Miền Tài chính & Niên liễm (Finance & Renewal Domain)
+   - 1.3 Miền Tài chính & Hội phí (Finance & Renewal Domain)
    - 1.4 Miền Sự kiện & Khán phòng (Events & Check-in Domain)
    - 1.5 Miền Giao thương & Mạng lưới B2B (Networking & Matchmaking Domain)
 2. [CÁC NGUYÊN TẮC THIẾT KẾ KIẾN TRÚC BẮT BUỘC (MANDATORY ARCHITECTURAL RULES)](#2-các-nguyên-tắc-thiết-kế-kiến-trúc-bắt-buộc)
@@ -64,7 +64,7 @@
 - **Trách nhiệm**: Quản lý vòng đời hội viên từ ứng viên nộp đơn từ Landing Page, thẩm định, cấp mã số `M1983-xxx`, lưu trữ hồ sơ doanh nghiệp và bổ nhiệm vai trò Ban Chấp Hành.
 - **Ranh giới**: Phụ thuộc vào Miền Định danh để biết tài khoản nào đang thao tác.
 
-## 1.3 Miền Tài chính & Niên liễm (Finance & Renewal)
+## 1.3 Miền Tài chính & Hội phí (Finance & Renewal)
 - **Thực thể gốc**: `invoices`, `renewal_audit_log`, `transactions`.
 - **Trách nhiệm**: Phát hành hóa đơn thu phí, tích hợp cổng thanh toán VietQR Napas 247, tiếp nhận Webhook ngân hàng và kích hoạt nghiệp vụ kéo dài hạn thẻ (`term_end = term_end + 1 year`).
 - **Ranh giới**: Tuyệt đối không can thiệp trực tiếp vào giao diện hiển thị mà chỉ phát sự kiện `MEMBER_RENEWED` qua Message Bus.
@@ -89,7 +89,7 @@
   - Nghiêm cấm tuyệt đối việc bỏ sót điều kiện `association_id` dẫn đến rò rỉ dữ liệu giữa CLB CEO 1983 và các hiệp hội khác.
 
 ## 2.2 Nguyên tắc Vết Kiểm toán Bất biến (Immutable Audit Trail)
-- Mọi thao tác làm thay đổi dữ liệu nhạy cảm (Bổ nhiệm Ban Chấp Hành, Thay đổi trạng thái Hội viên, Gia hạn Niên liễm, Đổi vai trò Admin) bắt buộc phải ghi 1 bản ghi vào bảng `activity_log` hoặc `renewal_audit_log`.
+- Mọi thao tác làm thay đổi dữ liệu nhạy cảm (Bổ nhiệm Ban Chấp Hành, Thay đổi trạng thái Hội viên, GIA HẠN HỘI PHÍ, Đổi vai trò Admin) bắt buộc phải ghi 1 bản ghi vào bảng `activity_log` hoặc `renewal_audit_log`.
 - Bản ghi kiểm toán bắt buộc phải chứa: `actor_id` (người thực hiện), `timestamp`, `ip_address`, `action`, `target_id`, `details`.
 - Không được phép tồn tại bất kỳ API nào cho phép `UPDATE` hoặc `DELETE` trên bảng audit log.
 

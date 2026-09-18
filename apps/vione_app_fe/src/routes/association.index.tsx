@@ -33,6 +33,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/context/AuthContext";
 import { SeasonalEventHeader } from "@/components/member/SeasonalEventHeader";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { QrCanvas } from "@/components/member/QrCanvas";
@@ -158,9 +159,11 @@ const quickActionDefs = [
 
 // Fallback high-res business event photos with CEO 1983 blue lighting tone
 const defaultEventImages = [
-  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800&auto=format&fit=crop&q=80",
 ];
 
 function Home() {
@@ -168,6 +171,7 @@ function Home() {
   const { lang } = useLang();
   const isEn = lang === "en";
   const navigate = Route.useNavigate();
+  const { user } = useAuth();
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -213,18 +217,71 @@ function Home() {
 
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
-  const [customProfile, setCustomProfile] = useState<{ name?: string; title?: string; company?: string; avatar?: string } | null>(() => {
+  // User-scoped custom profile (prevents new member from inheriting old account's cached profile)
+  const userProfileStorageKey = user?.id ? `vba_custom_profile_${user.id}` : null;
+  const [customProfile, setCustomProfile] = useState<{ name?: string; title?: string; company?: string; avatar?: string; userId?: string } | null>(() => {
     if (typeof window === "undefined") return null;
     try {
-      return JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
+      if (userProfileStorageKey) {
+        const scoped = localStorage.getItem(userProfileStorageKey);
+        if (scoped) return JSON.parse(scoped);
+      }
+      const generic = localStorage.getItem("vba_custom_profile");
+      if (generic) {
+        const parsed = JSON.parse(generic);
+        if (parsed?.userId && user?.id && parsed.userId === user.id) {
+          return parsed;
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   });
 
+  // Re-sync user-scoped profile and purge stale unscoped cache if belonging to another account
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (user?.id) {
+        const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
+        if (scoped) {
+          setCustomProfile(JSON.parse(scoped));
+          return;
+        }
+        const generic = localStorage.getItem("vba_custom_profile");
+        if (generic) {
+          const parsed = JSON.parse(generic);
+          if (parsed?.userId === user.id) {
+            setCustomProfile(parsed);
+            return;
+          } else {
+            // Stale cache from different user session - clear it
+            localStorage.removeItem("vba_custom_profile");
+            localStorage.removeItem("vba_member_avatar_photo");
+          }
+        }
+      }
+      setCustomProfile(null);
+    } catch {
+      setCustomProfile(null);
+    }
+  }, [user?.id]);
+
   const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("vba_member_cover_photo");
+  });
+
+  useEffect(() => {
+    if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
+      setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+    }
+  }, [member?.coverUrl, (member as any)?.cover_url]);
+
+  const [avatarPhoto, setAvatarPhoto] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("vba_member_avatar_photo");
   });
 
   useEffect(() => {
@@ -233,32 +290,65 @@ function Home() {
     };
     const handleProfileUpdate = () => {
       try {
-        setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
+        if (user?.id) {
+          const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
+          if (scoped) {
+            setCustomProfile(JSON.parse(scoped));
+            return;
+          }
+        }
+        const generic = localStorage.getItem("vba_custom_profile");
+        if (generic) {
+          const parsed = JSON.parse(generic);
+          if (parsed?.userId === user?.id) {
+            setCustomProfile(parsed);
+            return;
+          }
+        }
+        setCustomProfile(null);
       } catch {}
     };
-    const handleCoverUpdate = () => {
+    const handleCoverUpdate = (e?: any) => {
       try {
-        setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+        const detailUrl = e?.detail;
+        if (detailUrl && typeof detailUrl === "string") {
+          setCoverPhoto(detailUrl);
+        } else {
+          setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+        }
+      } catch {}
+    };
+    const handleAvatarUpdate = () => {
+      try {
+        setAvatarPhoto(localStorage.getItem("vba_member_avatar_photo"));
       } catch {}
     };
     window.addEventListener("notifications-updated", handleUpdate);
     window.addEventListener("profile-updated", handleProfileUpdate);
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
+    window.addEventListener("vba_member_avatar_updated", handleAvatarUpdate);
     window.addEventListener("storage", handleProfileUpdate);
     return () => {
       window.removeEventListener("notifications-updated", handleUpdate);
       window.removeEventListener("profile-updated", handleProfileUpdate);
       window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);
+      window.removeEventListener("vba_member_avatar_updated", handleAvatarUpdate);
       window.removeEventListener("storage", handleProfileUpdate);
     };
-  }, [reloadNotifs]);
+  }, [reloadNotifs, user?.id]);
 
-  const displayName = customProfile?.name || member?.name || (user as any)?.name || (user as any)?.username || "Hội viên CLB CEO 1983";
-  const displayTitle = customProfile?.title || member?.title || member?.industry || (isEn ? "Official Member" : "Ban Quản Trị");
-  const rawCompany = customProfile?.company || (member as any)?.companyName || (member as any)?.company;
-  const isOldSeedCompany = rawCompany && (rawCompany.includes("ViOne Platform") || rawCompany.includes("Phạm Văn Vũ"));
+  // Priority-driven name resolution: Real Member Name > Auth User Name > Scoped Custom Profile > Fallback
+  const realUserName = (user as any)?.name || (user as any)?.user_metadata?.full_name;
+  const isGenericMemberName = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên VIONE" || member.name === "Hội viên CLB CEO 1983";
+  const displayName = (!isGenericMemberName && member?.name)
+    ? member.name
+    : (realUserName || customProfile?.name || member?.name || (user as any)?.username || "Hội viên CLB CEO 1983");
+
+  const displayTitle = member?.title || customProfile?.title || member?.industry || (isEn ? "Official Member" : "Hội viên chính thức");
+  const rawCompany = (member as any)?.companyName || (member as any)?.company || customProfile?.company;
+  const isOldSeedCompany = rawCompany && (rawCompany.includes("ViOne Platform") || (rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
   const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
-  const displayAvatar = customProfile?.avatar || (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null);
+  const displayAvatar = (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null) || (user as any)?.avatar_url || customProfile?.avatar || avatarPhoto || null;
 
   const handleCopyCode = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -336,7 +426,7 @@ function Home() {
         {/* Ảnh bìa to rộng (Cover Banner) */}
         <div className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0f4c9c]">
           <img
-            src={coverPhoto || heroImg}
+            src={coverPhoto || member?.coverUrl || (member as any)?.cover_url || heroImg}
             alt="Cover Banner"
             className="h-full w-full object-cover opacity-85"
           />
@@ -538,12 +628,13 @@ function Home() {
               <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </h2>
           </Link>
-          <Link to="/association/events" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-            <span className="text-base font-black tracking-widest leading-none">•••</span>
+          <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[#003B95] dark:text-amber-400 hover:underline p-1">
+            <span>{isEn ? "See all" : "Xem tất cả"}</span>
+            <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
-        {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, không mock card thứ 3 */}
+        {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
         {displayEvents.length === 0 ? (
           <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-slate-800">
             <Calendar className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600 mb-1.5" />
@@ -552,42 +643,42 @@ function Home() {
             </p>
           </div>
         ) : (
-          <div className={`grid ${displayEvents.length === 1 ? 'grid-cols-1' : displayEvents.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-2.5 sm:gap-3`}>
-            {displayEvents.slice(0, 3).map((ev, pIdx) => {
+          <div className="flex gap-2.5 overflow-x-auto pb-2 pt-1 no-scrollbar sm:grid sm:grid-cols-3 sm:overflow-visible">
+            {displayEvents.slice(0, 5).map((ev, pIdx) => {
               const realTitle = ev.title;
               const rawImg = (ev as any).image;
-              const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : null;
-              const dateStr = ev.day && ev.month ? `${ev.day}/${ev.month} · ${ev.place?.split(",")[0] || ""}` : (ev.time || "Sắp diễn ra");
+              const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
+              const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
 
               return (
                 <Link
                   key={ev.id || pIdx}
                   to="/association/events"
-                  className="group flex flex-col transition active:scale-95"
+                  className="group flex flex-col transition active:scale-95 w-[68vw] min-w-[220px] max-w-[270px] shrink-0 sm:w-auto"
                 >
-                  {/* Poster Box rộng hơn và thấp hơn chuẩn phong cách cinematic */}
-                  <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-amber-400/50">
-                    {realImg ? (
-                      <img
-                        src={realImg}
-                        alt={realTitle}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] flex flex-col items-center justify-center p-3 text-center">
-                        <img src="/brand-header-logo.png" alt="" className="h-10 w-auto object-contain opacity-25 mb-2" />
-                      </div>
-                    )}
+                  {/* Poster Box thu gọn 2/3 chiều rộng và 1/2 chiều cao hiện tại trên mobile */}
+                  <div className="relative h-[105px] sm:h-[115px] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-sky-400/50">
+                    <img
+                      src={realImg}
+                      alt={realTitle}
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== fallbackImg) {
+                          target.src = fallbackImg;
+                        }
+                      }}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                     {/* Dark gradient overlay on photo */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
 
                     {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
-                    <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3 z-10 flex flex-col gap-1">
+                    <div className="absolute inset-x-0 bottom-0 p-2 sm:p-2.5 z-10 flex flex-col gap-0.5">
                       <div className="flex items-center">
                         <EventCountdownMiniBadge event={ev} index={pIdx} />
                       </div>
-                      <h3 className="line-clamp-2 text-[11.5px] sm:text-[12.5px] font-black text-white leading-snug drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
+                      <h3 className="line-clamp-1 text-[11.5px] sm:text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-sky-300 transition-colors">
                         {realTitle}
                       </h3>
                     </div>

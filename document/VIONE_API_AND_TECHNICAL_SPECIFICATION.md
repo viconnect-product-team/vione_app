@@ -14,7 +14,7 @@
    - 2.1. Phân hệ Xác thực & Quản lý Phiên (Auth & Mobile Login)
    - 2.2. Phân hệ Quản lý Hội viên & Thẩm định (Members & Applications)
    - 2.3. Phân hệ Sự kiện, Khán phòng & Điểm danh QR (Events & Check-in)
-   - 2.4. Phân hệ Tài chính, Niên liễm & Cổng VietQR (Fees, Invoices & Webhooks)
+   - 2.4. Phân hệ Tài chính, Hội phí & Cổng VietQR (Fees, Invoices & Webhooks)
    - 2.5. Phân hệ Quyền lợi & Đặc quyền Đối tác (Benefits & Perks)
    - 2.6. Phân hệ Sàn Giao thương B2B (Marketplace & Quotes)
    - 2.7. Phân hệ Mạng xã hội Doanh nhân (B2B Moments & Feed)
@@ -247,10 +247,10 @@ Mã phản hồi chuẩn RESTful:
 
 ---
 
-## 2.4. Phân hệ Tài chính, Niên liễm & Cổng VietQR (Fees, Invoices & Webhooks)
+## 2.4. Phân hệ Tài chính, Hội phí & Cổng VietQR (Fees, Invoices & Webhooks)
 
 ### 1. `POST /api/fees/invoices/generate`
-- **Mô tả**: Phát hành hóa đơn niên liễm cho hội viên.
+- **Mô tả**: Phát hành HÓA ĐƠN HỘI PHÍ cho hội viên.
 - **Request Body**:
 ```json
 {
@@ -466,7 +466,7 @@ Mã phản hồi chuẩn RESTful:
     "peerCode": "admin",
     "peerName": "Ban Thư Ký CLB Doanh Nhân CEO 1983",
     "avatarUrl": "/ceo1983-logo.png",
-    "lastMessage": "Thông báo: Nộp hội phí niên liễm 2026...",
+    "lastMessage": "Thông báo: Nộp HỘI PHÍ THƯỜNG NIÊN 2026...",
     "lastTime": "2026-09-13T10:00:00.000Z",
     "unreadCount": 1,
     "isSystem": true
@@ -487,7 +487,7 @@ Mã phản hồi chuẩn RESTful:
 - **Mô tả**: Lấy lịch sử tin nhắn 1-on-1 giữa thành viên hiện tại và đối tác `peerCode` (hoặc kênh hệ thống `admin`).
 - **Hỗ trợ thẻ thông báo giao dịch Zalo OA (`ZaloTransactionCard`)**:
   Khi tin nhắn chứa định dạng:
-  `[action:payment|amount=20000000|code=HD-2026-001|title=Hội phí niên liễm 2026|dueDate=31/03/2026]`
+  `[action:payment|amount=20000000|code=HD-2026-001|title=HỘI PHÍ THƯỜNG NIÊN 2026|dueDate=31/03/2026]`
   Hệ thống tự động hiển thị thẻ thông báo giao dịch chuẩn Zalo Official Account với thông tin chuyển khoản MB Bank (`198388889999`), nút bật mã VietQR, nút tải ảnh QR và sao chép số tài khoản.
 - **Hỗ trợ thẻ thư mời họp (`action:meeting`)**:
   `[action:meeting|title=Đại hội Thường niên 2026|time=08:30 - 15/04/2026|location=Keangnam Landmark 72|link=https://meet.google.com/ceo-1983]`
@@ -597,7 +597,7 @@ Mã phản hồi chuẩn RESTful:
 }
 ```
 - **Xử lý Nộp Thừa / Nộp Thiếu**:
-  - *Nộp thừa*: Tự động tất toán hóa đơn hiện tại, phần chênh lệch thặng dư được tự động ghi có vào tài khoản tạm ứng (`advance_balance`) của hội viên để cấn trừ vào niên liễm năm tiếp theo.
+  - *Nộp thừa*: Tự động tất toán hóa đơn hiện tại, phần chênh lệch thặng dư được tự động ghi có vào tài khoản tạm ứng (`advance_balance`) của hội viên để cấn trừ vào hội phí năm tiếp theo.
   - *Nộp thiếu*: Chuyển trạng thái hóa đơn sang `partially_paid`, gửi thông báo ZNS/SMS nhắc số tiền còn thiếu kèm mã VietQR chênh lệch.
 
 ---
@@ -767,7 +767,7 @@ Hệ thống được xác thực qua 2 bộ kịch bản kiểm thử tích h�
 ### 1. Bộ Kiểm Thử Master 110 Luồng (`scratch/test_110_deep_flows.js`) - 110/110 Passed
 - **Nhóm 1 (Flows 001 - 010)**: Web Landing & Thu thập Khách hàng tiềm năng (Public bypass, đổi theme, đăng ký demo, liên hệ, chuyển đổi hiệp hội).
 - **Nhóm 2 (Flows 011 - 025)**: CRM Quản lý Hội viên & Phân ban BCH (CRUD hội viên, phê duyệt/từ chối, bổ nhiệm BCH, lọc ban ngành, xuất nhập Excel).
-- **Nhóm 3 (Flows 026 - 040)**: CRM Quản lý Niên liễm, Thu phí VietQR & Kế toán (Sinh hóa đơn, mã VietQR, webhook thanh toán, ghi log kiểm toán niên liễm).
+- **Nhóm 3 (Flows 026 - 040)**: CRM QUẢN LÝ HỘI PHÍ, Thu phí VietQR & Kế toán (Sinh hóa đơn, mã VietQR, webhook thanh toán, ghi log KIỂM TOÁN HỘI PHÍ).
 - **Nhóm 4 (Flows 041 - 055)**: CRM Quản lý Sự kiện & Điểm danh QR Check-in (Vòng đời sự kiện, cấu hình vé, sinh vé QR, check-in thời gian thực, phân tích tỷ lệ tham dự).
 - **Nhóm 5 (Flows 056 - 070)**: CRM Quyền lợi, Nhà tài trợ & Sàn B2B Marketplace (Cấp nhà tài trợ, quyền lợi song ngữ, vòng đời sản phẩm active/sold/draft, thu thập lead kết nối).
 - **Nhóm 6 (Flows 071 - 085)**: App Hiệp Hội Doanh Nhân `/association/*` (Thẻ hội viên số, trao đổi QR, bầu cử số, tin tức nội bộ, tài liệu hiệp hội, kết nối networking).
@@ -1013,7 +1013,7 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
 
 ### 18.3. Nghiệp vụ Thông báo & Điều hướng Thanh toán (`/association/notifications`)
 - Modal xem chi tiết thông báo (`NotificationDetailModal`) cho phép xem toàn văn thông báo kèm người gửi và thời gian gửi.
-- Tự động nhận diện thông báo có phí: kiểm tra `category === 'fee'`, `notificationKind === 'overdue_payment_reminder'`, hoặc chuỗi chứa các từ khóa thu phí/hội phí/niên liễm/sự kiện/hóa đơn.
+- Tự động nhận diện thông báo có phí: kiểm tra `category === 'fee'`, `notificationKind === 'overdue_payment_reminder'`, hoặc chuỗi chứa các từ khóa thu phí/hội phí/hội phí/sự kiện/hóa đơn.
 - Cung cấp nút nổi bật **"Thanh toán ngay"** trên cả thẻ danh sách và trong modal chi tiết, tự động điều hướng vào trang thanh toán hội phí `/association/renew` hoặc khung chat thanh toán `/association/messages?peerCode=admin`.
 
 ### 11.23 Chuẩn hóa UI/UX Tối giản Mobile & Điều hướng Ứng dụng Hội viên (15/09/2026)

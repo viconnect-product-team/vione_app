@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Search,
@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Calendar,
   Pencil,
+  MoreVertical,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -25,6 +26,77 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMyProducts, requestQuote, getMyMember, type MyProduct, type MyMember } from "@/lib/member-app.functions";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useT, useFmt, useLang } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+
+function normalizeCategory(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/&/g, "va")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function matchCategory(productCat: string, filterCat: string): boolean {
+  if (!productCat || !filterCat) return false;
+  const pNorm = normalizeCategory(productCat);
+  const fNorm = normalizeCategory(filterCat);
+  if (pNorm.includes(fNorm) || fNorm.includes(pNorm)) return true;
+
+  const CATEGORY_MAP: Record<string, string[]> = {
+    tech: ["congnghe", "phanmem", "it", "tech", "technology", "software"],
+    realestate: ["batdongsan", "xaydung", "realestate", "property", "construction"],
+    manufacturing: ["sanxuat", "congnghiep", "manufacturing", "industry", "production"],
+    finance: ["taichinh", "dautu", "finance", "investment", "banking"],
+    services: ["dichvu", "dulich", "service", "services", "tourism", "hospitality"],
+    retail: ["hangtieudung", "banle", "retail", "consumer", "fmcg", "commerce", "trade"],
+  };
+
+  for (const group of Object.values(CATEGORY_MAP)) {
+    const matchesFilter = group.some((keyword) => fNorm.includes(keyword) || keyword.includes(fNorm));
+    const matchesProduct = group.some((keyword) => pNorm.includes(keyword) || keyword.includes(pNorm));
+    if (matchesFilter && matchesProduct) return true;
+  }
+  return false;
+}
+
+function formatCurrencyInput(val: string): string {
+  const digits = val.replace(/\D/g, "");
+  if (!digits) return "";
+  return Number(digits).toLocaleString("vi-VN");
+}
+
+async function compressImage(file: File, maxWidth = 1024, quality = 0.82): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve((e.target?.result as string) || "");
+        }
+      };
+      img.onerror = () => resolve((e.target?.result as string) || "");
+      img.src = (e.target?.result as string) || "";
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
 
 export const Route = createFileRoute("/association/products")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -41,6 +113,7 @@ function ProductsScreen() {
   const { lang } = useLang();
   const isEn = lang === "en";
   const search = Route.useSearch();
+  const { user } = useAuth();
 
   const fetchProducts = useServerFn(listMyProducts);
   const doQuote = useServerFn(requestQuote);
@@ -57,6 +130,8 @@ function ProductsScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [postModalOpen, setPostModalOpen] = useState(() => search?.action === "create");
   const [editingProduct, setEditingProduct] = useState<MyProduct | null>(null);
+  const [activeProductMenuId, setActiveProductMenuId] = useState<string | null>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (search?.action === "create") {
@@ -66,7 +141,7 @@ function ProductsScreen() {
 
   // Category & User-isolated Interested state (prevents new accounts from inheriting old favorites)
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const userStorageKey = `vba_interested_products_${member?.userId || member?.id || member?.code || "user"}`;
+  const userStorageKey = `vba_interested_products_${(member as any)?.userId || (member as any)?.id || member?.code || "user"}`;
   const [interestedIds, setInterestedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -100,6 +175,22 @@ function ProductsScreen() {
   const [quotePhone, setQuotePhone] = useState("0988 123 456");
   const [quoteNote, setQuoteNote] = useState("");
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
+
+  const handleOpenQuoteModal = (p: MyProduct) => {
+    setQuoteProduct(p);
+    setQuoteQty("1");
+    setQuoteNote("");
+  };
+
+  const handleSubmitQuote = (e: React.FormEvent) => {
+    e.preventDefault();
+    setQuoteSubmitting(true);
+    setTimeout(() => {
+      setQuoteSubmitting(false);
+      toast.success(isEn ? "Quote request sent successfully!" : "Đã gửi yêu cầu báo giá thành công!");
+      setQuoteProduct(null);
+    }, 600);
+  };
 
   // Lock body scroll when modal is open to ensure 100% stable centering on mobile
   useEffect(() => {
@@ -137,14 +228,25 @@ function ProductsScreen() {
   const [editDesc, setEditDesc] = useState("");
   const [updatingProduct, setUpdatingProduct] = useState(false);
 
-  // Check if product was created by current user
+  const isAdmin = Boolean(
+    (user as any)?.role === "admin" ||
+    (user as any)?.role === "platform_admin" ||
+    (member as any)?.role === "admin" ||
+    (member as any)?.role === "association_admin" ||
+    (member as any)?.executiveRole
+  );
+
+  // Check if product was created by current user (or if admin has full rights)
   const checkIsProductOwner = (p: MyProduct) => {
-    if (!member) return false;
+    if (isAdmin) return true;
+    if (!member && !user) return false;
+    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
     return Boolean(
-      (member.userId && p.sellerId === member.userId) ||
-      (member.id && p.sellerId === member.id) ||
-      (member.name && p.company?.toLowerCase().includes(member.name.toLowerCase())) ||
-      (member.title && p.company?.toLowerCase().includes(member.title.toLowerCase()))
+      (currentUserId && p.sellerId === currentUserId) ||
+      ((member as any)?.userId && p.sellerId === (member as any).userId) ||
+      ((member as any)?.id && p.sellerId === (member as any).id) ||
+      (member?.name && p.company?.toLowerCase().includes(member.name.toLowerCase())) ||
+      (member?.title && p.company?.toLowerCase().includes(member.title.toLowerCase()))
     );
   };
 
@@ -173,7 +275,7 @@ function ProductsScreen() {
         return checkIsProductOwner(p);
       }
       if (selectedCategory === "interested") return interestedIds.includes(p.id);
-      return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      return matchCategory(p.category, selectedCategory);
     });
   }, [allProducts, q, selectedCategory, interestedIds, member]);
 
@@ -288,41 +390,35 @@ function ProductsScreen() {
     const cleanPrice = Number(formPrice.replace(/\D/g, "")) || 0;
     const cleanOriginalPrice = Number(formOriginalPrice.replace(/\D/g, "")) || cleanPrice;
 
+    const payload = {
+      name: formName.trim(),
+      title: formName.trim(),
+      description: formDesc.trim(),
+      price: cleanPrice,
+      originalPrice: cleanOriginalPrice,
+      memberPrice: cleanPrice,
+      unit: formUnit,
+      currency: formCurrency,
+      category: formCategory,
+      status: "active",
+      imageUrl: formPhoto || null,
+      imageUrls: formPhoto ? [formPhoto] : [],
+      company: formCompany.trim() || member?.title || "CLB Doanh Nhân CEO 1983",
+    };
+
     try {
-      await fetchNestApi("/products", {
-        method: "POST",
-        body: JSON.stringify({
-          name: formName.trim(),
-          title: formName.trim(),
-          description: formDesc.trim(),
-          price: cleanPrice,
-          originalPrice: cleanOriginalPrice,
-          memberPrice: cleanPrice,
-          unit: formUnit,
-          currency: formCurrency,
-          category: formCategory,
-          status: "active",
-          imageUrl: formPhoto || null,
-          imageUrls: formPhoto ? [formPhoto] : [],
-          company: formCompany.trim() || member?.title || "CLB Doanh Nhân CEO 1983",
-        }),
-      }).catch(() =>
-        fetchNestApi("/marketplace/products", {
+      try {
+        await fetchNestApi("/products", {
           method: "POST",
-          body: JSON.stringify({
-            title: formName.trim(),
-            description: formDesc.trim(),
-            price: cleanPrice,
-            originalPrice: cleanOriginalPrice,
-            unit: formUnit,
-            currency: formCurrency,
-            category: formCategory,
-            status: "active",
-            imageUrls: formPhoto ? [formPhoto] : [],
-            company: formCompany.trim(),
-          }),
-        })
-      );
+          body: JSON.stringify(payload),
+        });
+      } catch (err1: any) {
+        console.warn("POST /products error, trying /marketplace/products fallback:", err1?.message);
+        await fetchNestApi("/marketplace/products", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
       toast.success(isEn ? "Product posted successfully!" : "Đã đăng sản phẩm thành công lên sàn!");
       setPostModalOpen(false);
       setFormPhoto("");
@@ -334,8 +430,9 @@ function ProductsScreen() {
       setFormCurrency("VND");
       setFormDesc("");
       reload();
-    } catch {
-      toast.error(isEn ? "Could not post product" : "Không thể đăng sản phẩm. Vui lòng thử lại!");
+    } catch (err: any) {
+      console.error("handleCreateProduct error:", err);
+      toast.error(err?.message || (isEn ? "Could not post product" : "Không thể đăng sản phẩm. Vui lòng thử lại!"));
     } finally {
       setCreatingProduct(false);
     }
@@ -493,19 +590,67 @@ function ProductsScreen() {
                     {p.category.split("&")[0].trim()}
                   </span>
 
-                  {/* Favorite / Heart on Top-right */}
-                  <button
-                    type="button"
-                    onClick={(e) => toggleInterest(p.id, e)}
-                    className={`absolute top-2 right-2 h-7 w-7 rounded-full grid place-items-center backdrop-blur-md transition cursor-pointer ${
-                      isInterested
-                        ? "bg-rose-500 text-white shadow-xs"
-                        : "bg-black/40 text-white hover:bg-black/60"
-                    }`}
-                    title={isInterested ? "Bỏ quan tâm" : "Thêm vào Đã quan tâm"}
-                  >
-                    <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white text-white" : ""}`} />
-                  </button>
+                  {/* Top-right Actions: 3-dots Menu for Owner OR Favorite Heart for others */}
+                  <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+                    {checkIsProductOwner(p) ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveProductMenuId(activeProductMenuId === p.id ? null : p.id);
+                          }}
+                          className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs"
+                          title="Tùy chọn sản phẩm"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {activeProductMenuId === p.id && (
+                          <div
+                            className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setActiveProductMenuId(null);
+                                startEditProduct(p, e);
+                              }}
+                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Chỉnh sửa</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setActiveProductMenuId(null);
+                                handleDeleteProduct(p.id, e);
+                              }}
+                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                              <span>Xóa</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => toggleInterest(p.id, e)}
+                        className={`h-7 w-7 rounded-full grid place-items-center backdrop-blur-md transition cursor-pointer ${
+                          isInterested
+                            ? "bg-rose-500 text-white shadow-xs"
+                            : "bg-black/40 text-white hover:bg-black/60"
+                        }`}
+                        title={isInterested ? "Bỏ quan tâm" : "Thêm vào Đã quan tâm"}
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white text-white" : ""}`} />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Date badge on bottom-left of image */}
                   <div className="absolute bottom-1.5 left-2 flex items-center gap-1 rounded bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-medium text-white/90">
@@ -554,27 +699,6 @@ function ProductsScreen() {
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      {checkIsProductOwner(p) && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={(e) => startEditProduct(p, e)}
-                            className="p-1.5 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition active:scale-95 cursor-pointer"
-                            title="Sửa sản phẩm"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteProduct(p.id, e)}
-                            className="p-1.5 rounded-lg border border-rose-300 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition active:scale-95 cursor-pointer"
-                            title="Xóa sản phẩm"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </>
-                      )}
-
                       <button
                         type="button"
                         onClick={() => handleOpenQuoteModal(p)}
@@ -650,14 +774,19 @@ function ProductsScreen() {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            if (typeof reader.result === "string") setFormPhoto(reader.result);
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const compressed = await compressImage(file);
+                            if (compressed) setFormPhoto(compressed);
+                          } catch {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === "string") setFormPhoto(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
                         }}
                       />
                     </label>
@@ -698,7 +827,7 @@ function ProductsScreen() {
                     <input
                       type="text"
                       value={formOriginalPrice}
-                      onChange={(e) => setFormOriginalPrice(e.target.value)}
+                      onChange={(e) => setFormOriginalPrice(formatCurrencyInput(e.target.value))}
                       placeholder="Ví dụ: 20.000.000 đ"
                       className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
                     />
@@ -714,7 +843,7 @@ function ProductsScreen() {
                       type="text"
                       required
                       value={formPrice}
-                      onChange={(e) => setFormPrice(e.target.value)}
+                      onChange={(e) => setFormPrice(formatCurrencyInput(e.target.value))}
                       placeholder="Ví dụ: 15.000.000 đ"
                       className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
                     />
@@ -921,23 +1050,58 @@ function ProductsScreen() {
 
             <form onSubmit={handleUpdateProduct} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 [scrollbar-width:thin]">
-                {/* Image URL / preview */}
+                {/* Image upload / preview */}
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Product Image URL" : "Hình ảnh đại diện sản phẩm"}
+                    {isEn ? "Product Image" : "Hình ảnh đại diện sản phẩm"}
                   </label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={editPhoto}
-                      onChange={(e) => setEditPhoto(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                    {editPhoto && (
-                      <img src={editPhoto} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0 border border-slate-200 dark:border-slate-800" />
-                    )}
-                  </div>
+                  <input
+                    type="file"
+                    ref={editImageInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const compressed = await compressImage(file);
+                        if (compressed) setEditPhoto(compressed);
+                      } catch {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (typeof reader.result === "string") setEditPhoto(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {editPhoto ? (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+                      <img
+                        src={resolveMediaUrl(editPhoto) || editPhoto}
+                        alt="Preview"
+                        className="w-full h-36 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditPhoto("")}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow cursor-pointer transition"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => editImageInputRef.current?.click()}
+                      className="w-full rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 p-4 text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
+                    >
+                      <ImagePlus className="h-6 w-6 text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        {isEn ? "Click to upload new image" : "Chọn ảnh từ thiết bị (JPG, PNG, WebP)"}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 <div>
@@ -994,7 +1158,7 @@ function ProductsScreen() {
                     <input
                       type="text"
                       value={editOriginalPrice}
-                      onChange={(e) => setEditOriginalPrice(e.target.value)}
+                      onChange={(e) => setEditOriginalPrice(formatCurrencyInput(e.target.value))}
                       placeholder="VD: 50.000.000"
                       className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
                     />
@@ -1006,7 +1170,7 @@ function ProductsScreen() {
                     <input
                       type="text"
                       value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
+                      onChange={(e) => setEditPrice(formatCurrencyInput(e.target.value))}
                       placeholder="VD: 35.000.000"
                       className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
                     />

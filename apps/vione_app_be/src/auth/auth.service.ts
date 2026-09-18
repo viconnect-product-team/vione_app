@@ -44,7 +44,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, sub: user.id, name: user.name, email: user.email };
     const refreshPayload = { sub: user.id, type: 'refresh' };
     
     return {
@@ -70,7 +70,7 @@ export class AuthService {
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
-      const payload = { username: user.username, sub: user.id };
+      const payload = { username: user.username, sub: user.id, name: user.name, email: user.email };
       const newRefreshPayload = { sub: user.id, type: 'refresh' };
       return {
         access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),

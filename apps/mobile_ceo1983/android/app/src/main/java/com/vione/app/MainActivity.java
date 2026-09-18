@@ -27,10 +27,7 @@ import androidx.core.content.FileProvider;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
-import com.google.mlkit.vision.barcode.common.Barcode;
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -319,32 +316,9 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void startNativeQrScanner() {
-        try {
-            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .enableAutoZoom()
-                .build();
-
-            GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(this, options);
-
-            scanner.startScan()
-                .addOnSuccessListener(barcode -> {
-                    String rawValue = barcode.getRawValue();
-                    if (rawValue != null && !rawValue.isEmpty()) {
-                        dispatchScannedQrToWebView(rawValue);
-                    }
-                })
-                .addOnCanceledListener(() -> {
-                    dispatchScannedQrCancelToWebView();
-                })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    dispatchScannedQrErrorToWebView(e.getMessage());
-                });
-        } catch (Exception e) {
-            e.printStackTrace();
-            dispatchScannedQrErrorToWebView(e.getMessage());
-        }
+        // Google Play Code Scanner đã được gỡ bỏ theo yêu cầu.
+        // Chuyển sang quét qua Camera HTML5 / WebRTC tích hợp trong giao diện ứng dụng.
+        dispatchScannedQrErrorToWebView("NATIVE_SCANNER_DISABLED");
     }
 
     private void dispatchScannedQrToWebView(String rawValue) {

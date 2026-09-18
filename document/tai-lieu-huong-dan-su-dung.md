@@ -36,7 +36,7 @@
    - 4.2. Quản trị Danh bạ & Hồ sơ Hội viên 360° (`/members`, `/members/$memberId`)
    - 4.3. Quản lý Doanh nghiệp Thành viên (`/companies`, `/companies/$companyId`)
    - 4.4. Quản lý Sự kiện, Hội thảo & Điểm danh QR (`/events`, `/event-registrations`, `/checkin`)
-   - 4.5. Quản lý Tài chính, Niên liễm & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
+   - 4.5. Quản lý Tài chính, Hội phí & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
    - 4.6. Quản lý Quyền lợi, Đặc quyền & Nhà Tài trợ (`/benefits`, `/perks`, `/sponsors`, `/sponsor-packages`)
    - 4.7. Sàn Giao thương B2B Marketplace (`/marketplace`, `/marketplace/my-quotes`)
    - 4.8. Truyền thông, Tài liệu, Bầu cử & Đặt phòng họp (`/news`, `/documents`, `/voting`, `/meetings`, `/email-marketing`)
@@ -46,7 +46,7 @@
    - 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
    - 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
    - 5.4. Lịch Sự kiện, Vé Điện tử & QR Check-in (`/association/events`, `/association/checkin`)
-   - 5.5. Tra cứu & Nộp Niên liễm VietQR (Quy trình quét mã và chờ duyệt thủ công)
+   - 5.5. Tra cứu & NỘP HỘI PHÍ VietQR (Quy trình quét mã và chờ duyệt thủ công)
    - 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
    - 5.7. Kho Đặc quyền Doanh nghiệp & Thư viện Tài liệu (`/association/perks`, `/association/library`)
    - 5.8. Hộp thư Trao đổi với Ban Thư ký & Hồ sơ Cá nhân (`/association/messages`, `/association/profile`)
@@ -83,7 +83,7 @@ Kiến trúc hệ thống phân định rành mạch 3 trụ cột:
        │           (CRM ADMIN)                 │               │          (/association/*)             │
        │   Dành cho: BCH, Thư ký, Kế toán      │ ◄───────────► │   Dành cho: Hội viên chính thức       │
        │   Quản lý Hội viên, Thu chi, Sự kiện  │   Dữ liệu     │   Đăng nhập: /auth/mobile/            │
-       │   và Báo cáo Tài chính minh bạch      │   đồng bộ     │   Điểm danh QR, Niên liễm VietQR      │
+       │   và Báo cáo Tài chính minh bạch      │   đồng bộ     │   Điểm danh QR, Hội phí VietQR      │
        └───────────────────┬───────────────────┘   thời gian   └───────────────────┬───────────────────┘
                            │                          thực                         │
                            │                                                       │
@@ -98,8 +98,8 @@ Kiến trúc hệ thống phân định rành mạch 3 trụ cột:
                                    └───────────────────────────────────────┘
 ```
 
-1. **Web CRM Quản trị (Desktop Web)**: Bộ công cụ vận hành toàn năng của Ban Thư ký và Ban Lãnh đạo Hiệp hội. Chịu trách nhiệm thẩm định hội viên, xuất hóa đơn niên liễm, cấu hình sơ đồ ghế sự kiện, ghi nhật ký thu chi kế toán và giám sát vết kiểm toán bất biến.
-2. **Ứng dụng Hội viên Hiệp hội (Association Mobile App `/association`)**: Ứng dụng PWA di động được tùy biến thương hiệu riêng cho từng Hiệp hội (ví dụ CLB Doanh nhân CEO 1983). Phục vụ hội viên tra cứu danh bạ nội bộ, nhận vé điện tử QR tham dự sự kiện, thanh toán niên liễm tự động qua VietQR và xuất trình thẻ hội viên điện tử.
+1. **Web CRM Quản trị (Desktop Web)**: Bộ công cụ vận hành toàn năng của Ban Thư ký và Ban Lãnh đạo Hiệp hội. Chịu trách nhiệm thẩm định hội viên, xuất HÓA ĐƠN HỘI PHÍ, cấu hình sơ đồ ghế sự kiện, ghi nhật ký thu chi kế toán và giám sát vết kiểm toán bất biến.
+2. **Ứng dụng Hội viên Hiệp hội (Association Mobile App `/association`)**: Ứng dụng PWA di động được tùy biến thương hiệu riêng cho từng Hiệp hội (ví dụ CLB Doanh nhân CEO 1983). Phục vụ hội viên tra cứu danh bạ nội bộ, nhận vé điện tử QR tham dự sự kiện, thanh toán hội phí tự động qua VietQR và xuất trình thẻ hội viên điện tử.
 3. **Mạng Xã hội Doanh nhân ViOne Connect (`/connect-app`)**: Không gian giao thương mở liên kết đa hiệp hội. Cho phép các chủ doanh nghiệp chia sẻ khoảnh khắc kinh doanh, kết nối đối tác thông qua thuật toán AI Matching, lên lịch hẹn B2B 1-on-1 và số hóa danh thiếp giấy truyền thống.
 
 ## 1.2. Chuẩn mực Nhận diện Thương hiệu & Quy chuẩn Giao diện
@@ -134,8 +134,8 @@ Nhằm tối ưu hóa trải nghiệm di động và đảm bảo tính độc l
 | **Chủ tịch CLB / Trưởng ban** | `ceo.president@ceo1983.com` | `M1983-001` (Trần Quang Anh) | Phê duyệt nhân sự Ban Chấp Hành, ký duyệt ngân sách và chủ trì biểu quyết |
 | **Hội viên Ban Chấp Hành (BCH)** | `james.nguyen@ceo1983.com` | `M1983-002` (James Nguyễn) | Phó Chủ tịch phụ trách công nghệ, kiểm duyệt sự kiện và kết nối B2B |
 | **Ban Thư ký & Vận hành** | `thuky@ceo1983.com` | `SEC-1983-01` | Tiếp nhận hồ sơ gia nhập, tạo sự kiện, điều phối bàn check-in sự kiện |
-| **Kế toán Trưởng Hiệp hội** | `ketoan@ceo1983.com` | `ACC-1983-01` | Lập hóa đơn niên liễm, theo dõi sổ quỹ thu chi, đối soát thanh toán VietQR |
-| **Hội viên Thường (Sắp đến hạn)** | `nam.nguyen@ceo1983.com` | `M1983-005` (Nguyễn Hoàng Nam) | Hội viên có hạn thẻ còn dưới 30 ngày (Due), thực hiện gia hạn niên liễm |
+| **Kế toán Trưởng Hiệp hội** | `ketoan@ceo1983.com` | `ACC-1983-01` | Lập HÓA ĐƠN HỘI PHÍ, theo dõi sổ quỹ thu chi, đối soát thanh toán VietQR |
+| **Hội viên Thường (Sắp đến hạn)** | `nam.nguyen@ceo1983.com` | `M1983-005` (Nguyễn Hoàng Nam) | Hội viên có hạn thẻ còn dưới 30 ngày (Due), thực hiện GIA HẠN HỘI PHÍ |
 | **Hội viên Thường (Quá hạn)** | `thanh.le@ceo1983.com` | `M1983-009` (Lê Văn Thành) | Hội viên quá hạn đóng phí (Overdue), bị khóa quyền truy cập một số đặc quyền |
 | **Khách vãng lai / Ứng viên mới** | `khoi.dang@khoiminhtech.vn` | `CANDIDATE-099` (Đặng Minh Khôi) | Khách tìm hiểu từ Web Landing, nộp đơn đăng ký xét duyệt gia nhập |
 
@@ -149,7 +149,7 @@ Nhằm tối ưu hóa trải nghiệm di động và đảm bảo tính độc l
 | **Tạo & Quản lý Sự kiện (`/events`)** | Toàn quyền | Phê duyệt | Toàn quyền | Phối hợp | Xem & Đăng ký | Xem tin tức |
 | **Quét QR Check-in (`/checkin`)** | Toàn quyền | Toàn quyền | Toàn quyền | ❌ | Xuất trình QR | ❌ |
 | **Phát hành Hóa đơn Phí (`/fees`)** | Toàn quyền | Phê duyệt | Phối hợp | Toàn quyền | Nhận hóa đơn | ❌ |
-| **Nộp Niên liễm VietQR (`/association/renew`)** | Toàn quyền | Thực hiện | Thực hiện | Thực hiện | Toàn quyền | ❌ |
+| **NỘP HỘI PHÍ VietQR (`/association/renew`)** | Toàn quyền | Thực hiện | Thực hiện | Thực hiện | Toàn quyền | ❌ |
 | **Sổ Quỹ Thu Chi (`/income`, `/expenses`)** | Toàn quyền | Xem & Duyệt | Nhập liệu | Toàn quyền | ❌ | ❌ |
 | **Xem Báo cáo Tài chính (`/finance-report`)** | Toàn quyền | Toàn quyền | Chỉ xem | Toàn quyền | Xem công khai | ❌ |
 | **Đăng sản phẩm Marketplace (`/marketplace`)**| Toàn quyền | Duyệt tin | Duyệt tin | ❌ | Đăng & Bán | Mua / Xem |
@@ -201,7 +201,7 @@ sequenceDiagram
     participant CRM as CRM Tài Chính (/fees)
     participant DB as PostgreSQL DB
 
-    Member->>App: Mở App, thấy hóa đơn niên liễm cần đóng
+    Member->>App: Mở App, thấy HÓA ĐƠN HỘI PHÍ cần đóng
     Member->>App: Nhấn "Thanh toán ngay" -> /association/renew/pay
     App-->>Member: Hiển thị mã VietQR động kèm cú pháp: "NL2026 M1983001"
     Member->>BankApp: Mở app ngân hàng cá nhân, quét mã VietQR và xác nhận chuyển khoản
@@ -274,7 +274,7 @@ sequenceDiagram
   1. Đăng nhập hệ thống bằng tài khoản `admin@connect.vn`.
   2. Tại màn hình chính (`/`), quan sát 4 thẻ KPI động:
      - **Tổng số Hội viên**: Tổng quy mô nhân sự của câu lạc bộ, tỷ lệ tăng trưởng so với tháng trước.
-     - **Doanh thu Niên liễm lũy kế**: Tổng tiền thực thu từ niên liễm năm hiện tại.
+     - **Doanh THU HỘI PHÍ lũy kế**: Tổng tiền thực thu từ hội phí năm hiện tại.
      - **Tỷ lệ Tái tục Hội viên**: Phần trăm hội viên đã hoàn tất gia hạn đúng hạn.
      - **Cảnh báo Hội viên Hết hạn**: Số lượng hội viên đang nằm trong chu kỳ 30 ngày đến hạn (`due`) và quá hạn (`overdue`).
   3. Biểu đồ tăng trưởng trực quan: Cho phép lọc theo quý hoặc năm tài chính để xem xu hướng phát triển hội quán.
@@ -308,12 +308,12 @@ sequenceDiagram
   - Khi đại biểu đưa mã QR trên ứng dụng di động vào khung quét: Hệ thống lập tức nhận diện trong 0.2 giây, hiển thị dấu tích xanh thông báo hợp lệ kèm thông tin chỗ ngồi chỉ dẫn đại biểu vào hội trường.
   - Chống gian lận: Nếu mã QR đã quét rồi mà quét lại, hệ thống cảnh báo đỏ: *"Vé đã điểm danh lúc 08:15 bởi Lễ tân 1"*.
 
-## 4.5. Quản lý Tài chính, Niên liễm & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
-- **Phát hành Hóa đơn Thu phí Niên liễm (`/fees`)**:
-  - Nhấn "Phát hành hóa đơn mới" hoặc "Tạo hàng loạt cho kỳ niên liễm 2026-2027".
+## 4.5. Quản lý Tài chính, Hội phí & Thu Chi (`/fees`, `/renewal`, `/income`, `/expenses`, `/finance-report`)
+- **Phát hành Hóa đơn Thu phí Hội phí (`/fees`)**:
+  - Nhấn "Phát hành hóa đơn mới" hoặc "Tạo hàng loạt cho KỲ HỘI PHÍ 2026-2027".
   - Nhập mức phí quy định (ví dụ: 10,000,000 VND / năm đối với Hội viên Tiêu chuẩn).
   - Hệ thống sinh hóa đơn lưu vào bảng `invoices` với trạng thái `unpaid` và mã VietQR thanh toán tự động.
-- **Giám sát Gia hạn Niên liễm (`/renewal`)**:
+- **Giám sát GIA HẠN HỘI PHÍ (`/renewal`)**:
   - Bảng theo dõi tiến độ thu hội phí toàn câu lạc bộ theo 4 nhóm cân bằng:
     1. *Đã gia hạn (Renewed)*: Đã hoàn tất đóng phí kỳ này.
     2. *Sắp đến hạn (Due)*: Còn dưới 30 ngày hết hạn.
@@ -341,7 +341,7 @@ sequenceDiagram
 ## 4.9. Quản trị Nền tảng, Phân quyền & Kiểm toán Bất biến (`/platform/admins`, `/platform/audit`, `/platform/renewal-audit`)
 - **Cấp phát Tài khoản Admin (`/platform/admins`)**: Quản lý danh sách thư ký, quản trị viên, áp dụng xác thực đa yếu tố.
 - **Nhật ký Hoạt động Bất biến (`/platform/audit`)**: Lưu giữ mọi vết thay đổi trong hệ thống (ai làm gì, thời gian nào, địa chỉ IP nào). Không một người dùng nào (kể cả Admin) có thể sửa hoặc xóa nhật ký này.
-- **Kiểm toán Niên liễm (`/platform/renewal-audit`)**: Bảng kê chi tiết toàn bộ các giao dịch gia hạn hội phí, lưu vết mã ngân hàng và tham chiếu giao dịch.
+- **KIỂM TOÁN HỘI PHÍ (`/platform/renewal-audit`)**: Bảng kê chi tiết toàn bộ các giao dịch gia hạn hội phí, lưu vết mã ngân hàng và tham chiếu giao dịch.
 
 ---
 
@@ -377,10 +377,10 @@ sequenceDiagram
   - Mở `/association/checkin`: Ứng dụng hiển thị mã QR cỡ lớn, rõ nét, có hiệu ứng chống chụp ảnh màn hình gian lận.
   - Xuất trình mã QR tại cổng để lễ tân quét điểm danh vào khán phòng.
 
-## 5.5. Tra cứu & Nộp Niên liễm Trực tuyến VietQR (`/association/renew`, `/association/renew/pay`, `/association/renew/result`)
+## 5.5. Tra cứu & NỘP HỘI PHÍ Trực tuyến VietQR (`/association/renew`, `/association/renew/pay`, `/association/renew/result`)
 - **Theo dõi Hạn thẻ**:
   - Màn hình `/association/renew` hiển thị đồng hồ đếm ngược số ngày còn lại của nhiệm kỳ hiện tại.
-  - Khi thẻ sắp hết hạn (dưới 30 ngày): Ứng dụng hiển thị nút cảnh báo màu vàng cam *"Gia hạn Niên liễm kỳ 2026-2027"*.
+  - Khi thẻ sắp hết hạn (dưới 30 ngày): Ứng dụng hiển thị nút cảnh báo màu vàng cam *"GIA HẠN HỘI PHÍ kỳ 2026-2027"*.
 - **Thanh toán VietQR Napas 247 Siêu tốc**:
   - Nhấn "Gia hạn ngay" ➔ Chuyển vào `/association/renew/pay`.
   - Màn hình hiển thị mã VietQR tiêu chuẩn quốc gia: Tự động điền đúng Số tài khoản Hiệp hội, Số tiền (10,000,000 VND) và Cú pháp nộp phí (`CEO1983 M1983-005 RENEW`).
@@ -451,7 +451,7 @@ sequenceDiagram
 | | | `pending` | Hồ sơ mới nộp, đang trong giai đoạn thẩm định của Thư ký |
 | | | `suspended` | Tạm ngưng hoạt động do quá hạn đóng phí hoặc vi phạm quy chế |
 | | | `resigned` | Đã có đơn xin rút lui khỏi câu lạc bộ hiệp hội |
-| **Trạng thái Gia hạn** | Tính toán động | `renewed` | Đã thanh toán hội phí niên liễm cho kỳ hiện tại |
+| **Trạng thái Gia hạn** | Tính toán động | `renewed` | Đã thanh toán HỘI PHÍ THƯỜNG NIÊN cho kỳ hiện tại |
 | | | `due` | Còn dưới 30 ngày là đến ngày hết hạn thẻ (`term_end - NOW() <= 30d`) |
 | | | `overdue` | Đã quá ngày hết hạn mà chưa đóng phí (`term_end < NOW()`) |
 | | | `upcoming` | Còn trên 30 ngày hết hạn, hội viên sinh hoạt bình thường |
@@ -534,10 +534,10 @@ sequenceDiagram
 ## 9.4. Kế toán Đa quỹ Hiệp hội & Đối soát Nộp thừa/thiếu Tiền tự động
 1. **Mô hình Đa Quỹ Tài chính Độc lập**:
    - Hiệp hội quản lý 3 quỹ nghiệp vụ chính: **Quỹ Vận hành thường niên** (70%), **Quỹ Thiện nguyện - Trách nhiệm Xã hội** (20%), và **Quỹ Xúc tiến Thương mại & Đầu tư** (10%).
-   - Mọi khoản thu hội phí niên liễm khi thanh toán qua VietQR sẽ được hệ thống phân bổ tự động theo tỷ lệ quy chế tài chính đã phê duyệt.
+   - Mọi khoản thu HỘI PHÍ THƯỜNG NIÊN khi thanh toán qua VietQR sẽ được hệ thống phân bổ tự động theo tỷ lệ quy chế tài chính đã phê duyệt.
 2. **Xử lý Nộp Thừa Tiền (Overpayment)**:
    - Khi hội viên chuyển khoản số tiền lớn hơn số tiền trên hóa đơn, hệ thống tự động tất toán hóa đơn hiện tại và ghi nhận phần chênh lệch thặng dư vào **Số dư Tạm ứng (`advance_balance`)** của hội viên.
-   - Số dư này sẽ được tự động cấn trừ vào niên liễm của năm tiếp theo hoặc vé tham dự sự kiện có phí.
+   - Số dư này sẽ được tự động cấn trừ vào hội phí của năm tiếp theo hoặc vé tham dự sự kiện có phí.
 3. **Xử lý Nộp Thiếu Tiền (Underpayment)**:
    - Nếu chuyển thiếu số tiền quy định, hệ thống ghi nhận trạng thái hóa đơn là `partially_paid`.
    - Hệ thống tự động phát hành thông báo ZNS giải trình số tiền đã nhận, số tiền còn thiếu kèm mã VietQR bổ sung để hội viên quét nộp nốt phần chênh lệch.

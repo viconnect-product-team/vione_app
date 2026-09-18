@@ -253,7 +253,7 @@ function getEndpointFeatureName(api) {
   if (p.startsWith('/meetings/') && m === 'DELETE') return 'Hủy phiên họp Ban Chấp Hành';
 
   // Members
-  if (p.includes('/members') && (p.includes('/dues/generate-qr') || p.includes('/vietqr'))) return 'Tạo mã VietQR động đóng niên liễm hội viên tự động';
+  if (p.includes('/members') && (p.includes('/dues/generate-qr') || p.includes('/vietqr'))) return 'Tạo mã VietQR động ĐÓNG HỘI PHÍ hội viên tự động';
   if (p.includes('/members') && p.includes('/dues/webhook')) return 'Webhook ngân hàng tự động gạch nợ hội phí sau 3 giây';
   if (p.includes('/members') && p.includes('/dues')) return 'Tra cứu lịch sử đóng hội phí & biên lai điện tử VAT';
   if (p.includes('/members') && p.includes('/card')) return 'Lấy thông tin Thẻ hội viên điện tử & mã định danh CRM';

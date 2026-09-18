@@ -5,8 +5,8 @@
 ---
 
 ## 1. TỔNG QUAN KIỂM THỬ
-- **Tổng số ca kiểm thử:** 61 Test Cases
-- **Ca kiểm thử chờ kiểm tra thủ công (Pending Manual Verification):** 61 / 61 [ ] (100%)
+- **Tổng số ca kiểm thử:** 76 Test Cases
+- **Ca kiểm thử chờ kiểm tra thủ công (Pending Manual Verification):** 76 / 76 [ ] (100%)
 - **Ca kiểm thử đã nghiệm thu (Passed):** [ ] (Để trống cho Tester / Ban Nghiệm Thu đánh dấu thủ công)
 - **Tiến độ hoàn thiện mã nguồn:** 100% (Toàn bộ 14 tính năng và bản sửa lỗi đã code hoàn tất và sẵn sàng kiểm thử)
 
@@ -38,21 +38,21 @@
 |---|---|:---:|:---:|:---:|:---:|
 | **MOD-01** | Xác thực & Đăng nhập | 6 | 6 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-02** | Đăng Ký & Kích Hoạt Hội Viên | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-03** | Thẻ Hội Viên Thông Minh | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-03** | Thẻ Hội Viên Thông Minh | 4 | 4 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-04** | Chạm Thẻ NFC | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-05** | Quét Mã QR & Kết Nối Realtime | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-06** | Trang Cá Nhân & Đồng Bộ | 6 | 6 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-07** | Cơ Hội Giao Thương B2B | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-08** | Gian Hàng Sản Phẩm | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-09** | Sự Kiện & Check-in QR | 4 | 4 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-05** | Quét Mã QR & Kết Nối Realtime | 6 | 6 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-06** | Trang Cá Nhân & Đồng Bộ | 8 | 8 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-07** | Cơ Hội Giao Thương B2B | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-08** | Gian Hàng Sản Phẩm | 4 | 4 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-09** | Sự Kiện & Check-in QR | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-10** | Trang Chủ & Bố Cục | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-11** | Thông Báo & Tin Tức Hệ Thống | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-12** | Gắn Kết & Tin Nhắn | 9 | 9 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-12** | Gắn Kết & Tin Nhắn | 10 | 10 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-13** | Tin Tức & Truyền Thông | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-14** | Cài Đặt & Bảo Mật Hệ Thống | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-15** | Danh Bạ & Quyền Riêng Tư | 4 | 4 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-16** | Hội Phí & VietQR | 3 | 3 [ ] | [ ] | **100% Sẵn sàng** |
-| **MOD-17** | Quản Trị CRM & Sơ Đồ Khán Phòng | 2 | 2 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-15** | Danh Bạ & Quyền Riêng Tư | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-16** | Hội Phí & VietQR | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-17** | Quản Trị CRM & Sơ Đồ Khán Phòng | 6 | 6 [ ] | [ ] | **100% Sẵn sàng** |
 
 ---
 
@@ -831,7 +831,7 @@
   1. Mở cuộc trò chuyện "Ban Thư Ký CLB"
   2. Xem hóa đơn nhắc nợ hội phí
 - **Dữ liệu đầu vào:** `Fee notification payload`
-- **Kết quả mong đợi:** Bong bóng tin nhắn hiển thị số tiền niên liễm và nút "Thanh toán ngay qua VietQR"
+- **Kết quả mong đợi:** Bong bóng tin nhắn hiển thị số tiền hội phí và nút "Thanh toán ngay qua VietQR"
 - **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
 - **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
 - **Ghi chú kỹ thuật & Hướng dẫn test:** Hóa đơn nhắc nợ trực quan.
@@ -893,4 +893,217 @@
 - **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
 - **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
 - **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 14: Tùy biến vị trí ghế sân khấu trực quan linh hoạt trên sơ đồ khán phòng.
+
+### TC-PROD-004: Menu 3 chấm (...) Chỉnh sửa/Xóa & Upload ảnh thật bài đăng chính chủ
+- **Phân hệ:** Gian Hàng Sản Phẩm | **Màn hình/Popup:** `Gian Hàng Sản Phẩm (/association/products)`
+- **Tiền điều kiện:** Hội viên đã đăng ít nhất 1 sản phẩm của chính mình
+- **Các bước thực hiện:**
+  1. Mở /association/products
+  2. Chọn tab "Sản phẩm tôi đăng" hoặc tìm sản phẩm của chính mình
+  3. Quan sát góc trên bên phải ảnh/thẻ sản phẩm
+  4. Bấm vào icon menu 3 chấm (...)
+  5. Chọn "Chỉnh sửa" -> Modal mở ra, chọn ảnh từ máy qua input file, kiểm tra preview ảnh qua resolveMediaUrl
+  6. Chọn "Xóa" -> Hộp thoại xác nhận hiển thị và xóa sản phẩm thành công
+- **Dữ liệu đầu vào:** `Action click menu (...), File upload image/*, Confirm delete`
+- **Kết quả mong đợi:** Menu 3 chấm hiển thị chuẩn ở góc trên phải, chỉ hiển thị cho bài đăng chính chủ; upload file ảnh thật hoạt động mượt mà và preview đúng URL; xóa sản phẩm cập nhật danh sách tức thì
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Menu 3 chấm chuẩn UX, lọc song ngữ matchCategory, upload ảnh từ thiết bị.
+
+### TC-OPP-003: Menu 3 chấm (...) Chỉnh sửa/Xóa bài đăng cơ hội chính chủ
+- **Phân hệ:** Cơ Hội Giao Thương B2B | **Màn hình/Popup:** `Cơ Hội Giao Thương (/association/opportunities)`
+- **Tiền điều kiện:** Hội viên đã đăng cơ hội giao thương của chính mình
+- **Các bước thực hiện:**
+  1. Mở /association/opportunities
+  2. Tìm đến thẻ cơ hội do chính mình đăng
+  3. Quan sát góc trên bên phải thẻ
+  4. Bấm nút 3 chấm (...) -> Chọn "Chỉnh sửa" hoặc "Xóa"
+  5. Kiểm tra chân thẻ không còn các nút inline thô
+- **Dữ liệu đầu vào:** `Action click menu (...), Edit / Delete opportunity`
+- **Kết quả mong đợi:** Menu 3 chấm hiển thị ở góc trên phải, hỗ trợ sửa và xóa cơ hội, chân thẻ gọn gàng không bị vỡ dòng
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Tinh gọn thẻ cơ hội, đưa hành động vào dropdown 3 chấm.
+
+### TC-EVT-005: Trang chủ hiển thị tối đa 5 sự kiện tỷ lệ ngang & Danh sách sự kiện tinh gọn overlay
+- **Phân hệ:** Sự Kiện & Check-in QR | **Màn hình/Popup:** `Trang chủ (/association) & Danh sách sự kiện (/association/events)`
+- **Tiền điều kiện:** Hệ thống có các sự kiện đang diễn ra hoặc sắp tới
+- **Các bước thực hiện:**
+  1. Mở Trang chủ /association -> Kiểm tra khối Sự kiện sắp tới hiển thị tối đa 5 sự kiện
+  2. Quan sát tỷ lệ ảnh poster ngang aspect-[4/3] sm:aspect-[16/10]
+  3. Kiểm tra nút "Xem tất cả" kèm icon ChevronRight (thay cho ••• cũ)
+  4. Bấm vào để chuyển sang /association/events
+  5. Kiểm tra danh sách sự kiện: Toàn bộ Tiêu đề, Countdown timer và nút "Xem chi tiết" nằm gọn gàng bên trong overlay chân poster, không có text rác bên ngoài
+- **Dữ liệu đầu vào:** `Navigation /association -> /association/events`
+- **Kết quả mong đợi:** Trang chủ hiển thị 5 sự kiện ngang chuẩn điện ảnh, nút Xem tất cả trang nhã; trang sự kiện tinh gọn 100% thông tin trong poster overlay
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Chuẩn hóa thẩm mỹ sự kiện C-Level, tỷ lệ ngang điện ảnh.
+
+### TC-AVT-001: Đồng bộ ảnh đại diện thời gian thực giữa Profile và Home qua Event Bus
+- **Phân hệ:** Trang Cá Nhân & Đồng Bộ | **Màn hình/Popup:** `Trang Cá Nhân (/association/profile) & Trang Chủ (/association)`
+- **Tiền điều kiện:** Hội viên đã đăng nhập và đang ở tab Profile
+- **Các bước thực hiện:**
+  1. Mở tab Cá nhân /association/profile
+  2. Bấm đổi avatar và tải ảnh đại diện mới
+  3. Chuyển ngay sang tab Trang chủ /association mà không reload trang
+  4. Quan sát Avatar dập viền nổi trên thẻ VIP trang chủ và trên Header
+- **Dữ liệu đầu vào:** `Upload avatar mới`
+- **Kết quả mong đợi:** Ảnh đại diện trên Trang chủ và Header lập tức cập nhật ảnh mới đồng bộ 100% nhờ event bus vba_member_avatar_updated mà không cần F5
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Cơ chế reactive event bus vba_member_avatar_updated tức thời.
+
+### TC-PRF-007: Gỡ bỏ icon dấu cộng (+) thừa trên dòng "Quản lý Danh thiếp số"
+- **Phân hệ:** Trang Cá Nhân & Đồng Bộ | **Màn hình/Popup:** `Trang Cá Nhân (/association/profile)`
+- **Tiền điều kiện:** Đang ở tab Profile
+- **Các bước thực hiện:**
+  1. Mở /association/profile
+  2. Cuộn đến dòng mục "Quản lý Danh thiếp số"
+  3. Quan sát góc bên phải của dòng mục
+- **Dữ liệu đầu vào:** `Visual inspect item "Quản lý Danh thiếp số"`
+- **Kết quả mong đợi:** Dòng mục chỉ hiển thị mũi tên chevron điều hướng sang trang danh thiếp, ĐÃ GỠ BỎ HOÀN TOÀN nút dấu cộng (+) gây hiểu nhầm tạo thêm thẻ
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Chuẩn hóa UX menu cá nhân theo yêu cầu khách hàng.
+
+### TC-PRF-008: Căn giữa tuyệt đối Modal chi tiết hội viên MemberProfileModal trên Mobile
+- **Phân hệ:** Danh Bạ & Quyền Riêng Tư | **Màn hình/Popup:** `Modal MemberProfileModal (/association/members)`
+- **Tiền điều kiện:** Mở ứng dụng trên điện thoại di động hoặc Responsive Mode (375px - 414px)
+- **Các bước thực hiện:**
+  1. Mở danh bạ hội viên /association/members
+  2. Bấm vào một hội viên bất kỳ để mở Modal chi tiết
+  3. Quan sát vị trí hiển thị của hộp thoại modal trên màn hình điện thoại
+- **Dữ liệu đầu vào:** `Mobile viewport, Open member profile modal`
+- **Kết quả mong đợi:** Modal căn chính xác 100% ở giữa màn hình theo cả trục dọc và ngang, không bị lệch sát mép trên hoặc tràn viền đáy
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Cấu trúc lưới fail-safe grid place-items-center w-full h-[100dvh] min-h-[100dvh] my-auto.
+
+### TC-SCAN-003: Quét QR trực tiếp bằng HTML5 in-app scanner, loại bỏ Google Play Code Scanner native
+- **Phân hệ:** Quét Mã QR & Kết Nối Realtime | **Màn hình/Popup:** `Modal Quét QR (/association/card & AssociationQrScanModal)`
+- **Tiền điều kiện:** Thiết bị có camera (Android/iOS hoặc Web browser)
+- **Các bước thực hiện:**
+  1. Bấm mở modal Quét QR (hoặc tab Quét QR trong Thẻ hội viên)
+  2. Cho phép quyền truy cập camera
+  3. Quan sát khung ngắm camera WebRTC in-app hiển thị ngay lập tức
+  4. Đưa mã QR vào khung ngắm để quét
+- **Dữ liệu đầu vào:** `Camera stream, QR code scan`
+- **Kết quả mong đợi:** Camera in-app bật tức thì mượt mà, nhận diện mã QR thành công, hoàn toàn không gọi AndroidNative.scanQr, không bị đơ/văng trên thiết bị thiếu Google Play Services
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Gỡ bỏ hoàn toàn phụ thuộc Google Play Code Scanner, dùng 100% camera HTML5.
+
+### TC-MSG-010: Xóa cuộc trò chuyện bền vững qua blacklist client-side & Xóa tin nhắn phía tôi trong localMessages
+- **Phân hệ:** Gắn Kết & Tin Nhắn | **Màn hình/Popup:** `Màn hình Tin nhắn (/association/messages)`
+- **Tiền điều kiện:** Có các cuộc trò chuyện và tin nhắn trong hộp thư
+- **Các bước thực hiện:**
+  1. Mở /association/messages
+  2. Vuốt sang trái hoặc nhấn giữ vào một cuộc trò chuyện -> Chọn "Xóa cuộc trò chuyện"
+  3. Xác nhận xóa -> Cuộc trò chuyện biến mất
+  4. F5 hoặc tải lại trang -> Kiểm tra cuộc trò chuyện KHÔNG bị xuất hiện trở lại
+  5. Mở một thread chat, nhấn giữ tin nhắn -> Chọn "Xóa ở phía tôi"
+  6. Tin nhắn biến mất ngay lập tức và không còn trong localMessages
+- **Dữ liệu đầu vào:** `Action delete conversation & delete message for me`
+- **Kết quả mong đợi:** Cuộc trò chuyện bị xóa được lưu vào blacklist vba_deleted_convs và bị lọc vĩnh viễn; xóa tin nhắn phía tôi cập nhật triệt để cả UI và localStorage
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Khắc phục lỗi hồi sinh cuộc trò chuyện sau khi tải lại trang.
+
+### TC-CARD-004: Chuẩn hóa màu sắc Modal chụp danh thiếp Trắng & Xanh Navy #003B95 viền vàng & Toast thông báo
+- **Phân hệ:** Thẻ Hội Viên Thông Minh | **Màn hình/Popup:** `Modal Chụp Danh Thiếp (AssociationCardCaptureModal) & Toast UI (sonner.tsx)`
+- **Tiền điều kiện:** Tại màn hình quản lý danh thiếp số /association/business-cards
+- **Các bước thực hiện:**
+  1. Bấm nút "Chụp quét danh thiếp"
+  2. Quan sát màu sắc nền và viền của Modal
+  3. Thực hiện một hành động thành công bất kỳ (Lưu thẻ, copy mã, v.v.) để kích hoạt Toast thông báo
+- **Dữ liệu đầu vào:** `Open Card Capture Modal, Trigger Toast`
+- **Kết quả mong đợi:** Modal chuyển sang phong cách Trắng & Xanh Navy (#003B95) viền vàng kim Amber Gold sang trọng (loại bỏ màu tối #0C1322); Toast hiển thị chuẩn màu Navy & Gold
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Chuẩn hóa nhận diện màu sắc C-Level CEO 1983.
+
+### TC-CRM-003: Phân quyền Sidebar CRM ẩn các nhóm menu không có quyền (network, businessConnect, system)
+- **Phân hệ:** Quản Trị CRM & Sơ Đồ Khán Phòng | **Màn hình/Popup:** `Sidebar Web CRM (/dashboard, /members, v.v.)`
+- **Tiền điều kiện:** Đăng nhập với các tài khoản vai trò Trưởng ban hoặc nhân viên
+- **Các bước thực hiện:**
+  1. Đăng nhập tài khoản không có quyền Platform Admin / IT System
+  2. Quan sát dải menu Sidebar bên trái
+  3. Kiểm tra các nhóm menu: Mạng lưới (network), Business Connect và Hệ thống (system)
+- **Dữ liệu đầu vào:** `Role-based access check on Sidebar`
+- **Kết quả mong đợi:** Các nhóm menu và mục con vượt quyền bị ẩn hoàn toàn, chỉ hiển thị đúng các phân hệ được phân quyền
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Tăng cường bảo mật phân quyền đa cấp trên Web CRM.
+
+### TC-CRM-004: Tạo cơ hội giao thương CRM hỗ trợ upload ảnh từ máy & Đồng bộ trường ảnh
+- **Phân hệ:** Quản Trị CRM & Sơ Đồ Khán Phòng | **Màn hình/Popup:** `Quản lý Cơ hội CRM (/opportunities)`
+- **Tiền điều kiện:** Đang ở trang Quản lý Cơ hội CRM
+- **Các bước thực hiện:**
+  1. Mở /opportunities -> Bấm nút "Tạo cơ hội mới"
+  2. Trong modal tạo cơ hội, quan sát mục Tải ảnh
+  3. Chọn một file ảnh từ máy tính -> Xem trước ảnh hiển thị rõ nét
+  4. Điền đầy đủ thông tin và bấm Lưu cơ hội
+- **Dữ liệu đầu vào:** `File upload image, New opportunity form data`
+- **Kết quả mong đợi:** Hệ thống hỗ trợ upload file ảnh thật, hiển thị preview ngay trong modal, lưu trữ và đồng bộ trường image/imageUrl lên hệ thống
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Đồng bộ tính năng tải ảnh cơ hội giữa Web CRM và Mobile App.
+
+### TC-CRM-005: Gửi nhắc phí hội viên CRM (kết nối handleRemind trên Card và Row)
+- **Phân hệ:** Hội Phí & VietQR | **Màn hình/Popup:** `Quản lý Hội Phí CRM (/fees)`
+- **Tiền điều kiện:** Có các hóa đơn hội phí chưa thanh toán (unpaid/pending)
+- **Các bước thực hiện:**
+  1. Mở /fees
+  2. Chuyển sang dạng thẻ (Card view) hoặc dạng bảng (Table row view)
+  3. Tìm hóa đơn chưa thanh toán -> Bấm nút "Nhắc phí"
+  4. Quan sát phản hồi của hệ thống
+- **Dữ liệu đầu vào:** `Click "Nhắc phí" button on Card / Row`
+- **Kết quả mong đợi:** Hệ thống kích hoạt hàm handleRemind, hiển thị toast thông báo gửi lời nhắc thành công đến hội viên kèm tên và mã hội viên chính xác
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Gắn kết nối sự kiện nhắc phí đồng bộ cả giao diện thẻ và bảng.
+
+### TC-CRM-006: Khắc phục cột tài khoản bị để trống trong danh sách hội phí CRM
+- **Phân hệ:** Hội Phí & VietQR | **Màn hình/Popup:** `Quản lý Hội Phí CRM (/fees)`
+- **Tiền điều kiện:** Có danh sách hóa đơn hội phí từ backend
+- **Các bước thực hiện:**
+  1. Mở /fees
+  2. Quan sát cột "Hội viên / Tài khoản" trong bảng danh sách
+  3. Kiểm tra các dòng hóa đơn
+- **Dữ liệu đầu vào:** `Table render on /fees`
+- **Kết quả mong đợi:** Cột tài khoản hiển thị đầy đủ thông tin (Mã hội viên, Họ tên, SĐT), KHÔNG BỊ TRỐNG RỖNG nhờ logic fallback kép trong admin.service.ts
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Fallback logic an toàn cho invoice member accounts và joins.
+
+### TC-CRM-007: Lưu trữ trạng thái đóng phí Doanh nghiệp CRM vào Database & Toggle nhanh
+- **Phân hệ:** Quản Trị CRM & Sơ Đồ Khán Phòng | **Màn hình/Popup:** `Quản lý Doanh Nghiệp CRM (/companies)`
+- **Tiền điều kiện:** Đang ở trang Quản lý Doanh nghiệp CRM
+- **Các bước thực hiện:**
+  1. Mở /companies
+  2. Quan sát cột "Hội phí" trong bảng và badge trạng thái trên thẻ doanh nghiệp
+  3. Sử dụng bộ lọc "Hội phí" (Tất cả, Đã đóng phí, Chưa đóng phí)
+  4. Bấm nút gạt / toggle trạng thái đóng phí trên một doanh nghiệp
+  5. Tải lại trang để kiểm tra
+- **Dữ liệu đầu vào:** `Toggle fee status, Filter by feePaid`
+- **Kết quả mong đợi:** Trạng thái đóng phí feePaid và feeYear được lưu trực tiếp vào cơ sở dữ liệu PostgreSQL qua SQL UPDATE; toggle hoạt động mượt mà và bảo lưu sau khi F5
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Quản lý hội phí doanh nghiệp đồng bộ 100% database.
+
+### TC-CRM-008: Sơ đồ rạp chiếu CinemaSeatingMap mở rộng canvas h-[640px], clamp kéo ghế & Thêm hàng ghế dưới
+- **Phân hệ:** Quản Trị CRM & Sơ Đồ Khán Phòng | **Màn hình/Popup:** `Sơ đồ Chỗ Ngồi CRM (/events/seating)`
+- **Tiền điều kiện:** Mở sơ đồ CinemaSeatingMap dạng Tiệc (Banquet) và Rạp chiếu (Cinema)
+- **Các bước thực hiện:**
+  1. Mở /events/seating
+  2. Chuyển sang chế độ Sơ đồ Tiệc (Banquet tables) -> Kiểm tra canvas mở rộng chiều cao h-[640px]
+  3. Thử kéo bàn tiệc/ghế xuống sát đáy canvas -> Tọa độ được clamp an toàn tại tối đa 95%, không bị rơi mất
+  4. Chuyển sang chế độ Sơ đồ Khán phòng (Cinema rows) -> Kiểm tra khoảng đệm đáy pb-16 min-h-[300px]
+  5. Bấm nút "+ Thêm hàng ghế bên dưới" -> Hàng ghế mới được thêm vào đáy sơ đồ
+- **Dữ liệu đầu vào:** `Drag banquet tables, Click "+ Thêm hàng ghế bên dưới"`
+- **Kết quả mong đợi:** Canvas rộng rãi h-[640px], kéo thả không bao giờ bị văng khỏi vùng nhìn thấy, thêm hàng ghế bên dưới hoạt động trực quan chính xác
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Tối ưu trải nghiệm kéo thả sơ đồ rạp chiếu và bàn tiệc sự kiện.
 

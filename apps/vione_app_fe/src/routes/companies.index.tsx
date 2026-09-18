@@ -117,6 +117,7 @@ function CompaniesPage() {
   const [industry, setIndustry] = useState<"" | IndustryKey>("");
   const [region, setRegion] = useState<"" | RegionKey>("");
   const [level, setLevel] = useState<"" | MemberLevelKey>("");
+  const [feeFilter, setFeeFilter] = useState<"" | "paid" | "unpaid">("");
   const [view, setView] = useState<"grid" | "list">("grid");
 
   const [open, setOpen] = useState(false);
@@ -171,6 +172,16 @@ function CompaniesPage() {
         { value: "expired", label: t("status.expired") },
       ],
     },
+    {
+      name: "feePaid",
+      label: "Trạng thái hội phí",
+      type: "select",
+      options: [
+        { value: "unpaid", label: "Chưa thanh toán" },
+        { value: "paid", label: "Đã thanh toán" },
+      ],
+    },
+    { name: "feeYear", label: "Năm hội phí", type: "number" },
     { name: "address", label: t("members.f.address"), type: "text" },
     { name: "website", label: t("members.f.website"), type: "text" },
     { name: "taxCode", label: t("members.f.taxCode"), type: "text" },
@@ -187,12 +198,41 @@ function CompaniesPage() {
     industry: m.industry,
     region: m.region,
     status: m.status,
+    feePaid: m.feePaid ? "paid" : "unpaid",
+    feeYear: m.feeYear ?? new Date().getFullYear(),
     address: m.address,
     website: m.website ?? "",
     taxCode: m.taxCode ?? "",
     employees: m.employees ?? 0,
     about: m.about,
   });
+
+  const handleToggleFeePaid = async (m: Member) => {
+    const nextStatus = !m.feePaid;
+    try {
+      toast.info(`Đang cập nhật trạng thái hội phí của ${m.name}...`);
+      await fetchNestApi(`/members/${m.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          feePaid: nextStatus,
+          feeYear: m.feeYear || new Date().getFullYear(),
+        }),
+      });
+      setMembers((prev) =>
+        prev.map((item) =>
+          item.id === m.id ? { ...item, feePaid: nextStatus, feeYear: m.feeYear || new Date().getFullYear() } : item
+        )
+      );
+      toast.success(
+        nextStatus
+          ? `Đã đánh dấu "${m.name}" ĐÃ THANH TOÁN hội phí!`
+          : `Đã chuyển "${m.name}" sang CHƯA THANH TOÁN!`
+      );
+      await router.invalidate({ sync: true });
+    } catch (err: any) {
+      toast.error("Không thể cập nhật trạng thái: " + (err?.message || "Lỗi mạng"));
+    }
+  };
 
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
@@ -207,6 +247,8 @@ function CompaniesPage() {
         industry: (v.industry as any) || "ind.trade",
         region: (v.region as any) || "region.north",
         status: (v.status as any) || "pending",
+        feePaid: (v as any).feePaid === "paid" || (v as any).feePaid === true,
+        feeYear: v.feeYear ? Number(v.feeYear) : new Date().getFullYear(),
         address: v.address ? String(v.address).trim() : undefined,
         website: v.website ? String(v.website).trim() : undefined,
         taxCode: v.taxCode ? String(v.taxCode).trim() : undefined,
@@ -274,6 +316,8 @@ function CompaniesPage() {
       if (industry && m.industry !== industry) return false;
       if (region && m.region !== region) return false;
       if (level && m.level !== level) return false;
+      if (feeFilter === "paid" && !m.feePaid) return false;
+      if (feeFilter === "unpaid" && m.feePaid) return false;
       if (
         ql &&
         ![m.name, m.code, m.email, m.taxCode ?? "", m.website ?? ""].some((f) =>
@@ -283,7 +327,7 @@ function CompaniesPage() {
         return false;
       return true;
     });
-  }, [base, q, industry, region, level]);
+  }, [base, q, industry, region, level, feeFilter]);
 
   const tc = useTableControls<Member>(
     filtered,
@@ -292,6 +336,7 @@ function CompaniesPage() {
       industry: (m) => t(m.industry),
       region: (m) => t(m.region),
       employees: (m) => m.employees ?? 0,
+      feePaid: (m) => (m.feePaid ? 1 : 0),
       status: (m) => m.status,
     },
     { initialSortKey: "name", initialPageSize: 12 },
@@ -312,6 +357,8 @@ function CompaniesPage() {
       { header: "Industry", value: (m) => m.industry },
       { header: "Region", value: (m) => m.region },
       { header: "Level", value: (m) => m.level },
+      { header: "FeePaid", value: (m) => (m.feePaid ? "Đã thanh toán" : "Chưa thanh toán") },
+      { header: "FeeYear", value: (m) => m.feeYear ?? "" },
       { header: "Employees", value: (m) => m.employees ?? "" },
       { header: "Status", value: (m) => m.status },
     ]);
@@ -322,6 +369,7 @@ function CompaniesPage() {
     setIndustry("");
     setRegion("");
     setLevel("");
+    setFeeFilter("");
   }
 
   const kpis: Array<{
@@ -455,7 +503,16 @@ function CompaniesPage() {
                 placeholder={t("members.f.level")}
                 options={LEVELS.map((k) => ({ value: k, label: t(k) }))}
               />
-              {(q || industry || region || level) && (
+              <FilterSelect
+                value={feeFilter}
+                onChange={(v) => setFeeFilter(v as any)}
+                placeholder="Trạng thái hội phí"
+                options={[
+                  { value: "paid", label: "Đã thanh toán hội phí" },
+                  { value: "unpaid", label: "Chưa thanh toán hội phí" },
+                ]}
+              />
+              {(q || industry || region || level || feeFilter) && (
                 <button
                   onClick={reset}
                   className="h-10 rounded-xl px-3 text-xs font-semibold text-muted-foreground hover:bg-muted"
@@ -510,6 +567,7 @@ function CompaniesPage() {
                   isAdmin={isAdmin}
                   onEdit={(target) => setEditing(target)}
                   onDelete={(target) => setDeleting(target)}
+                  onToggleFee={handleToggleFeePaid}
                 />
               ))}
             </div>
@@ -534,6 +592,7 @@ function CompaniesPage() {
             isAdmin={isAdmin}
             onEdit={(target) => setEditing(target)}
             onDelete={(target) => setDeleting(target)}
+            onToggleFee={handleToggleFeePaid}
           />
         )}
       </div>
@@ -628,11 +687,13 @@ function CompanyCard({
   isAdmin,
   onEdit,
   onDelete,
+  onToggleFee,
 }: {
   m: Member;
   isAdmin?: boolean;
   onEdit?: (m: Member) => void;
   onDelete?: (m: Member) => void;
+  onToggleFee?: (m: Member) => void;
 }) {
   const t = useT();
   const s = statusStyle[m.status];
@@ -678,7 +739,40 @@ function CompanyCard({
           <Row Icon={Mail} text={m.email} />
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
+        {/* Fee status indicator */}
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-xs">
+          <span className="text-[11px] font-medium text-muted-foreground">
+            Hội phí {m.feeYear || new Date().getFullYear()}:
+          </span>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => onToggleFee?.(m)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition cursor-pointer shadow-sm ${
+                m.feePaid
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30"
+              }`}
+              title="Nhấn để đổi trạng thái đóng hội phí"
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${m.feePaid ? "bg-emerald-500" : "bg-amber-500"}`} />
+              {m.feePaid ? "Đã thanh toán" : "Chưa thanh toán"}
+            </button>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                m.feePaid
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${m.feePaid ? "bg-emerald-500" : "bg-amber-500"}`} />
+              {m.feePaid ? "Đã thanh toán" : "Chưa thanh toán"}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />
             {(m.employees ?? 0).toLocaleString("vi-VN")} {t("companies.employees")}
@@ -737,12 +831,14 @@ function CompanyTable({
   isAdmin,
   onEdit,
   onDelete,
+  onToggleFee,
 }: {
   rows: Member[];
   tc: TableControls<Member>;
   isAdmin?: boolean;
   onEdit?: (m: Member) => void;
   onDelete?: (m: Member) => void;
+  onToggleFee?: (m: Member) => void;
 }) {
   const t = useT();
   return (
@@ -780,6 +876,14 @@ function CompanyTable({
               <SortHeader
                 label={t("companies.kpi.employees")}
                 columnKey="employees"
+                sortKey={tc.sortKey}
+                sortDir={tc.sortDir}
+                onSort={tc.toggleSort}
+                className="border-b border-border"
+              />
+              <SortHeader
+                label="Hội phí"
+                columnKey="feePaid"
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
                 onSort={tc.toggleSort}
@@ -831,6 +935,34 @@ function CompanyTable({
                   <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{t(m.region)}</td>
                   <td className="px-4 py-3 font-medium text-foreground border-b border-border/50">
                     {(m.employees ?? 0).toLocaleString("vi-VN")}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => onToggleFee?.(m)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-sm ${
+                          m.feePaid
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30"
+                        }`}
+                        title="Nhấp để chuyển trạng thái hội phí"
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${m.feePaid ? "bg-emerald-500" : "bg-amber-500"}`} />
+                        {m.feePaid ? "Đã thanh toán" : "Chưa thanh toán"}
+                      </button>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          m.feePaid
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${m.feePaid ? "bg-emerald-500" : "bg-amber-500"}`} />
+                        {m.feePaid ? "Đã thanh toán" : "Chưa thanh toán"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 border-b border-border/50">
                     <span

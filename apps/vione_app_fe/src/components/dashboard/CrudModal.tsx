@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState, useRef } from "react";
-import { X, ImagePlus, Trash2, Upload } from "lucide-react";
+import { X, ImagePlus, Trash2, Upload, Loader2 } from "lucide-react";
+import { uploadFile, resolveMediaUrl } from "@/lib/api-client";
 
 export type CrudField =
   | {
@@ -47,6 +48,7 @@ export function CrudModal({
   onClose: () => void;
 }) {
   const [values, setValues] = useState<CrudValues>({});
+  const [uploadingImage, setUploadingImage] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (open) {
@@ -75,12 +77,20 @@ export function CrudModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-glow)]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-[var(--shadow-modal)]">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
-          <button onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -92,7 +102,7 @@ export function CrudModal({
                   {values[f.name] ? (
                     <div className="relative overflow-hidden rounded-xl border border-border">
                       <img
-                        src={String(values[f.name])}
+                        src={resolveMediaUrl(String(values[f.name])) || String(values[f.name])}
                         alt="Preview"
                         className="h-40 w-full object-cover"
                       />
@@ -106,21 +116,41 @@ export function CrudModal({
                     </div>
                   ) : (
                     <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-6 hover:border-primary/50 hover:bg-muted/40 transition">
-                      <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-xs font-semibold text-foreground">Chọn ảnh tải lên</span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5">PNG, JPG hoặc WEBP</span>
+                      {uploadingImage[f.name] ? (
+                        <>
+                          <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                          <span className="text-xs font-semibold text-foreground">Đang tải ảnh lên MinIO...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                          <span className="text-xs font-semibold text-foreground">Chọn ảnh tải lên</span>
+                          <span className="text-[11px] text-muted-foreground mt-0.5">PNG, JPG hoặc WEBP</span>
+                        </>
+                      )}
                       <input
                         type="file"
                         accept="image/*"
+                        disabled={uploadingImage[f.name]}
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            if (typeof reader.result === "string") set(f.name, reader.result);
-                          };
-                          reader.readAsDataURL(file);
+                          setUploadingImage((prev) => ({ ...prev, [f.name]: true }));
+                          try {
+                            const uploadedUrl = await uploadFile(file, file.name);
+                            if (uploadedUrl) {
+                              set(f.name, uploadedUrl);
+                            }
+                          } catch (err) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === "string") set(f.name, reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          } finally {
+                            setUploadingImage((prev) => ({ ...prev, [f.name]: false }));
+                          }
                         }}
                       />
                     </label>

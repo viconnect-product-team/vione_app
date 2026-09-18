@@ -35,7 +35,7 @@ const FALLBACK_TRANSACTIONS: Transaction[] = [
     date: "2026-03-10",
     type: "income",
     category: "Hội phí hội viên",
-    description: "Thu niên liễm hội viên Kim Cương 2026",
+    description: "Thu hội phí hội viên Kim Cương 2026",
     amount: 50000000,
     method: "bank",
     status: "completed",

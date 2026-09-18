@@ -26,7 +26,7 @@
    - 3.2 [UI-02]: Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
    - 3.3 [UI-03]: Danh bạ Hội viên & Tra cứu Đối tác (`/association/members`)
    - 3.4 [UI-04]: Lịch Sự kiện, Vé QR & Trạm Điểm danh (`/association/events`, `/checkin`)
-   - 3.5 [UI-05]: Cổng Nộp Niên liễm Trực tuyến VietQR (`/association/renew/pay`)
+   - 3.5 [UI-05]: Cổng NỘP HỘI PHÍ Trực tuyến VietQR (`/association/renew/pay`)
    - 3.6 [UI-06]: Thẻ Hội viên 3D Kỹ thuật số (`/association/card`)
    - 3.7 [UI-07]: Bảng tin B2B Moments & Feed Giao thương (`/connect-app/moment`)
    - 3.8 [UI-08]: Hộp thư Trò chuyện Realtime (`/connect-app/inbox`)
@@ -113,7 +113,7 @@ Mọi màn hình danh sách trên hệ thống Web CRM (`/members`, `/companies`
 | **/association/members**| Danh bạ Hội viên | Tìm kiếm đối tác theo ngành | `GET /api/members?status=active` | `members (name, company, phone, email)` | Chỉ hiển thị hội viên có `status = 'active'` |
 | **/association/events** | Danh sách Sự kiện | Nhấn "Đăng ký tham dự" | `POST /api/events/register` | `event_registrations (event_id, member_id)` | Kiểm tra `capacity`, sinh `qr_payload` ngẫu nhiên |
 | **/checkin** | Trạm Quét QR Lễ tân | Quét mã QR của đại biểu | `POST /api/events/checkin-verify`| `event_registrations (checked_in_at, status)` | Nhận diện trong < 200ms, chống quét trùng lặp |
-| **/association/renew/pay**| Màn hình Nộp Niên liễm| Quét mã VietQR chuyển khoản | `GET /api/fees/invoices/my-latest`| `invoices (amount, invoice_no, due_date)` | VietQR Napas 247 đúng số tài khoản và cú pháp |
+| **/association/renew/pay**| Màn hình NỘP HỘI PHÍ| Quét mã VietQR chuyển khoản | `GET /api/fees/invoices/my-latest`| `invoices (amount, invoice_no, due_date)` | VietQR Napas 247 đúng số tài khoản và cú pháp |
 | **/association/renew/result**| Kết quả Gia hạn | Xem chứng nhận gia hạn | `GET /api/renewal/status` | `members.term_end`, `renewal_audit_log` | Hạn thẻ tự động cộng thêm đúng 1 năm (`+1 year`) |
 | **/association/card** | Thẻ Hội viên 3D Flip | Chạm lật thẻ & Tải vCard | `GET /api/public/card/{slug}.vcf` | `members`, `member_business_cards` | Trả về chuẩn `text/vcard; charset=utf-8` |
 | **/connect-app/moment** | Bảng tin B2B Social | Đăng bài nhu cầu hợp tác | `POST /api/moments` | `business_relationship_moments` | Ràng buộc `brm_target_xor` (`target_kind = connection`)|
@@ -138,7 +138,7 @@ Mọi màn hình danh sách trên hệ thống Web CRM (`/members`, `/companies`
 ```
 
 1. **Tầng 1 (Client Fast Feedback)**: Sử dụng React Hook Form kết hợp Zod schema kiểm tra số điện thoại (10 chữ số), định dạng email chuẩn, số tiền phải lớn hơn 0, mã số thuế gồm 10-13 chữ số.
-2. **Tầng 2 (Dual Validation - NestJS Pipes)**: Kiểm tra chéo dữ liệu tại Backend, xác minh chữ ký JWT, bảo đảm người dùng không giả mạo số tiền nộp niên liễm hoặc tự ý thay đổi vai trò Admin.
+2. **Tầng 2 (Dual Validation - NestJS Pipes)**: Kiểm tra chéo dữ liệu tại Backend, xác minh chữ ký JWT, bảo đảm người dùng không giả mạo số tiền NỘP HỘI PHÍ hoặc tự ý thay đổi vai trò Admin.
 3. **Tầng 3 (Deep Database Integrity)**: Toàn vẹn dữ liệu ở cấp độ cơ sở dữ liệu với các ràng buộc:
    - `invoices_status_check`: Chỉ nhận `'paid'`, `'unpaid'`, `'overdue'`.
    - `brm_target_xor`: Không bao giờ cho phép bản ghi moment mồ côi không có đối tượng liên kết.
@@ -154,4 +154,4 @@ Mọi màn hình danh sách trên hệ thống Web CRM (`/members`, `/companies`
 2. **`ViOneLogo.tsx`**: Logo vector SVG độc bản của ViOne với chữ "O" khuyết góc và chấm kim cương, tự động đổi màu theo theme.
 3. **`CinemaSeatingMap.tsx`**: Bàn cờ ghế khán phòng và dải ghế sân khấu VIP (`SK-01` đến `SK-06`), hỗ trợ phóng to thu nhỏ (Pan/Zoom) và gán đại biểu tức thì.
 4. **`AuthCardScanSheet.tsx`**: Modal quét thẻ thông minh NFC / QR Code tốc độ cao, tích hợp camera zxing nhận diện mã đa định dạng.
-5. **`StatusBadge.tsx`**: Huy hiệu hiển thị trạng thái chuẩn hóa màu sắc cho 4 trạng thái niên liễm (*Renewed, Due, Overdue, Upcoming*) và trạng thái hóa đơn (*Paid, Unpaid*).
+5. **`StatusBadge.tsx`**: Huy hiệu hiển thị trạng thái chuẩn hóa màu sắc cho 4 trạng thái hội phí (*Renewed, Due, Overdue, Upcoming*) và trạng thái hóa đơn (*Paid, Unpaid*).

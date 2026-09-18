@@ -58,7 +58,7 @@ Hệ sinh thái ViOne được xây dựng dựa trên 5 nguyên tắc vàng c�
 ## 1.4 Interface Segregation Principle (I - Phân Tách Giao Diện)
 - **Định nghĩa**: Không bao giờ ép buộc một Class phải triển khai các phương thức mà nó không sử dụng.
 - **Áp dụng trong ViOne**:
-  - Thay vì tạo một interface khổng lồ `IUserOperations` chứa cả điểm danh sự kiện, gia hạn niên liễm và gửi tin nhắn, hệ thống phân tách thành:
+  - Thay vì tạo một interface khổng lồ `IUserOperations` chứa cả điểm danh sự kiện, GIA HẠN HỘI PHÍ và gửi tin nhắn, hệ thống phân tách thành:
     - `ICheckinScanner`: Dành riêng cho thiết bị lễ tân quét QR.
     - `IRenewalHandler`: Dành riêng cho phân hệ kế toán thu phí.
     - `IMessagingClient`: Dành riêng cho phân hệ chat B2B.
@@ -91,7 +91,7 @@ Hệ sinh thái ViOne được xây dựng dựa trên 5 nguyên tắc vàng c�
 
 ## 2.3 Quản lý State & Caching với TanStack Query
 - Mọi dữ liệu từ Backend phải được quản lý qua `useQuery` và `useMutation`.
-- Thời gian `staleTime` mặc định: 5 phút đối với danh bạ hội viên; 10 giây đối với danh sách vé check-in sự kiện; không cache đối với kết quả thanh toán niên liễm.
+- Thời gian `staleTime` mặc định: 5 phút đối với danh bạ hội viên; 10 giây đối với danh sách vé check-in sự kiện; không cache đối với kết quả thanh toán hội phí.
 
 ---
 

@@ -661,3 +661,48 @@ Mọi lập trình viên và AI Agent khi thao tác trên app Hiệp hội phả
   - Tên sự kiện (`e.title`) được đưa ra ngoài, đặt ngay bên dưới banner card với typography in đậm, độ tương phản cao, dễ đọc trên cả 2 chế độ Light/Dark.
 - **Trang Chủ Tối Giản Không Khối Sản Phẩm Đáng Chú Ý (`association.index.tsx`):**
   - Xóa bỏ danh mục 4 thẻ vuông sản phẩm đáng chú ý khỏi trang chủ; việc xem và đăng sản phẩm được dẫn thông qua nút "ĐĂNG SẢN PHẨM" hoặc phân hệ gian hàng riêng biệt.
+
+---
+
+## 33. QUY CHUẨN KIỂM SOÁT TOÀN VẸN TYPESCRIPT & TRIỆT TIÊU RUNTIME CRASH (17/09/2026)
+- **Chuẩn Hóa Khai Báo Hook Đa Ngôn Ngữ & Ngữ Cảnh:**
+  - `Sidebar.tsx`: Khai báo `const t = useT();` ngay tại component gốc `Sidebar` để cung cấp hàm dịch cho toàn bộ nhãn điều hướng, thương hiệu và mô tả nâng cấp.
+  - `association.index.tsx`: Import và gọi `const { user } = useAuth();` để tránh lỗi tham chiếu `user is not defined`.
+- **Hoàn Thiện Bộ Xử Lý Sự Kiện Mẫu Báo Giá & Đăng Bài:**
+  - `association.products.tsx`: Cung cấp hàm `handleOpenQuoteModal(product)` và `handleSubmitQuote(e)` để phục vụ modal yêu cầu báo giá.
+  - `association.profile.tsx`: Bổ sung state `isPublishing` cho tiến trình tải ảnh và đăng bài viết lên bảng tin.
+- **Chuẩn Hóa Thuộc Tính SVG Trong React:**
+  - Dùng `stopOpacity` thay thế cho `stopColorOpacity` trong các thẻ `<stop>` của SVG LinearGradient.
+- **Quy Trình Kiểm Tra Tĩnh:** Chạy `npx tsc --noEmit` đạt 0 lỗi trước khi xuất bản bản build frontend và đóng gói Docker image.
+
+---
+
+## 34. QUY CHUẨN ĐỒNG BỘ 14 TÍNH NĂNG & NÂNG CẤP THẨM MỸ C-LEVEL (ISSUE 128 - 17/09/2026)
+- **Menu 3 Chấm (...) Dropdown Cho Bài Đăng Chính Chủ:**
+  - Thẻ sản phẩm (`association.products.tsx`) và cơ hội (`association.opportunities.tsx`) thuộc quyền sở hữu (`isMine`) đặt dropdown 3 chấm `...` ở góc trên bên phải ảnh/thẻ, chứa 2 tùy chọn "Chỉnh sửa" và "Xóa".
+  - Loại bỏ hoàn toàn các nút inline thô ở chân thẻ; bộ lọc danh mục hỗ trợ song ngữ (`matchCategory`).
+  - Hỗ trợ tải ảnh thật từ máy tính/điện thoại (`<input type="file" accept="image/*">`) và xem trước an toàn qua `resolveMediaUrl`.
+- **Trang Chủ Hiển Thị Tối Đa 5 Sự Kiện Tỷ Lệ Ngang Điện Ảnh:**
+  - Khối Sự kiện sắp tới mở rộng slice từ 3 lên 5 sự kiện; tỷ lệ khung hình ngang `aspect-[4/3] sm:aspect-[16/10]`.
+  - Thay nút `•••` thô bằng nút "Xem tất cả" kèm icon `ChevronRight` trang nhã.
+  - Trang danh sách sự kiện (`association.events.tsx`) dọn sạch bên ngoài poster, đưa toàn bộ Tiêu đề, Countdown timer thời gian thực và nút "Xem chi tiết" vào trong overlay chân ảnh trên nền gradient đen mờ.
+- **Đồng Bộ Avatar Realtime Event Bus:**
+  - Sử dụng key `vba_member_avatar_photo` và sự kiện `vba_member_avatar_updated` để cập nhật ảnh đại diện trên Trang chủ và Header ngay lập tức khi đổi avatar ở Profile mà không cần tải lại trang.
+- **Tinh Gọn Menu Cá Nhân:**
+  - Gỡ bỏ icon `+` thừa trên dòng "Quản lý Danh thiếp số" trong tab Profile (`association.profile.tsx`), chỉ giữ lại mũi tên điều hướng.
+- **Modal Hội Viên Căn Giữa Fail-Safe:**
+  - `MemberProfileModal.tsx` sử dụng cấu trúc lưới `fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] p-3.5 sm:p-4 my-auto overflow-y-auto` đảm bảo luôn ở chính giữa trục dọc/ngang màn hình mobile.
+- **100% Camera In-App HTML5:**
+  - Loại bỏ hoàn toàn `AndroidNative.scanQr` trong `AssociationQrScanModal.tsx` và `AssociationMemberQrModal.tsx`, sử dụng camera HTML5 WebRTC nội bộ mượt mà, không phụ thuộc Google Play Services.
+- **Xóa Cuộc Trò Chuyện & Tin Nhắn Bền Vững:**
+  - Blacklist `vba_deleted_convs` client-side lọc sạch `allConversations`, chống hồi sinh cuộc trò chuyện đã xóa sau khi tải lại trang; xóa tin nhắn phía tôi cập nhật triệt để `localMessages` và localStorage.
+- **Modal Chụp Danh Thiếp Trắng & Xanh Navy #003B95:**
+  - Thay đổi nền tối `#0C1322` sang Trắng & Xanh Navy viền vàng kim hổ phách sang trọng (`AssociationCardCaptureModal.tsx`); toast notification `sonner.tsx` đồng bộ chuẩn màu CEO 1983 Navy Blue & Amber Gold.
+- **Nâng Cấp Nền Tảng Quản Trị Web CRM:**
+  - **Sidebar CRM:** Phân quyền ẩn các nhóm menu `network`, `businessConnect`, `system` theo vai trò người dùng.
+  - **Cơ hội CRM:** Tải file ảnh thật từ máy tính và đồng bộ trường ảnh `image`/`imageUrl`.
+  - **Quản lý Hội phí:** Gắn kết nối sự kiện `handleRemind` vào cả dạng thẻ và bảng kèm fallback mã/tên hội viên; khắc phục cột tài khoản bị để trống bằng fallback logic trong `admin.service.ts`.
+  - **Doanh nghiệp:** Lưu `feePaid` và `feeYear` vào cơ sở dữ liệu PostgreSQL, cung cấp toggle trạng thái đóng phí nhanh `onToggleFee` và bộ lọc phí.
+  - **Sơ đồ khán phòng CinemaSeatingMap:** Mở rộng canvas banquet `h-[640px]`, clamp tọa độ kéo thả `y: 95%`, khoảng đệm hàng ghế `pb-16 min-h-[300px]` và nút `+ Thêm hàng ghế bên dưới`.
+
+

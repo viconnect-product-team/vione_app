@@ -5,10 +5,10 @@
 ---
 
 ## 1. TỔNG QUAN HIỆN TRẠNG & TỶ LỆ HOÀN THIỆN
-- **Tổng số tính năng con được khảo sát & triển khai:** 72 tính năng
-- **Tính năng đã hoàn thành (Ready for Production):** 68 / 72 tính năng (95%)
-- **Tính năng đang thực hiện (Pending Sandbox / Hardware test):** 4 / 72 tính năng (5%)
-- **Độ hoàn thiện mã nguồn trung bình:** **99%**
+- **Tổng số tính năng con được khảo sát & triển khai:** 63 tính năng
+- **Tính năng đã hoàn thành (Ready for Production):** 59 / 63 tính năng (94%)
+- **Tính năng đang thực hiện (Pending Sandbox / Hardware test):** 4 / 63 tính năng (6%)
+- **Độ hoàn thiện mã nguồn trung bình:** **98%**
 
 > [!WARNING]
 > ### LƯU Ý VỀ CÁC TÍNH NĂNG CHƯA KIỂM THỬ TRÊN MÔI TRƯỜNG DEV:
@@ -34,7 +34,6 @@
 | **MOD-10** | Tách Biệt Độc Lập Luồng Thông Báo & Landing Page Điện Ảnh | 2 | 2 | 0 | **100%** |
 | **MOD-11** | Đăng Ký Landing 3 Cấp, Onboarding, Quyền Riêng Tư & 7 Ban Ngành | 8 | 8 | 0 | **100%** |
 | **MOD-12** | Nâng Cấp Toàn Diện 14 Tính Năng & Tinh Chỉnh Trải Nghiệm Doanh Nhân CEO 1983 | 16 | 16 | 0 | **100%** |
-| **MOD-13** | Hoàn Thiện 8 Hạng Mục Tinh Chỉnh Chuyên Sâu & Sửa Lỗi Nghiệp Vụ (17/09) | 9 | 9 | 0 | **100%** |
 
 ---
 
@@ -83,7 +82,7 @@
 
 | STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | Tình Trạng GD | Hoàn Thiện GD | API Mapped | Tình Trạng API | Hoàn Thiện API | Ghi Chú |
 |:---:|---|---|:---:|:---:|---|:---:|:---:|---|:---:|:---:|:---:|
-| 20 | **DIR-01** | Danh bạ 500+ Doanh nhân, tìm kiếm theo tên, công ty và lọc theo ngành nghề | Phạm Văn Vũ | **Cao** | Màn hình Danh bạ (/association/members) | ✅ Hoàn thành | **100%** | `GET /api/members, GET /api/members/industries` | ✅ Đã kết nối | **100%** |  |
+| 20 | **DIR-01** | Danh bạ Hội viên Doanh nhân, tìm kiếm theo tên, công ty và lọc theo ngành nghề | Phạm Văn Vũ | **Cao** | Màn hình Danh bạ (/association/members) | ✅ Hoàn thành | **100%** | `GET /api/members, GET /api/members/industries` | ✅ Đã kết nối | **100%** |  |
 | 21 | **DIR-02** | Tính năng Mời Hội Viên Mới vào CLB CEO 1983 (Invite Modal) | Phạm Văn Vũ | **Cao** | Modal Mời Hội Viên (/association/members) | ✅ Hoàn thành | **100%** | `GET /api/connect-app/referral, POST /api/connect-app/invite` | ✅ Đã kết nối | **100%** |  |
 | 22 | **DIR-03** | Popup Hồ sơ năng lực hội viên chi tiết khi bấm vào Avatar | Phạm Văn Vũ | **Cao** | Modal MemberProfileModal (/association/members, /messages) | ✅ Hoàn thành | **100%** | `GET /api/members/:id, GET /api/members/:id/profile` | ✅ Đã kết nối | **100%** |  |
 | 23 | **DIR-04** | Nút chuyển đổi trạng thái Kết nối <-> Hủy kết nối thông minh (1 Chạm) | Phạm Văn Vũ | **Cao** | Modal MemberProfileModal & Danh sách hội viên | ✅ Hoàn thành | **100%** | `POST /api/connect-app/network/connect, POST /api/connect-app/network/disconnect` | ✅ Đã kết nối | **100%** |  |
@@ -162,19 +161,4 @@
 | 61 | **NEWS-02** | Tab kép Tin tức CLB & Sự kiện Hiệp Hội trong /association/news | Phạm Văn Vũ | **Cao** | Màn hình Tin tức (/association/news) | ✅ Hoàn thành | **100%** | `GET /api/content/news, listMyEvents` | ✅ Đã kết nối | **100%** |  |
 | 62 | **SEC-02** | Đổi mật khẩu (/users/change-password), khóa nút Đăng xuất & Vô hiệu hóa tài khoản | Phạm Văn Vũ | **Cao** | Màn hình Cài đặt Bảo mật (/association/settings) | ✅ Hoàn thành | **100%** | `POST /users/change-password, POST /users/deactivate` | ✅ Đã kết nối | **100%** |  |
 | 63 | **CRM-01** | Phân quyền Sidebar CRM theo vai trò, ẩn "Quyền của tôi" & Sơ đồ rạp chiếu kéo thả ghế sân khấu | Phạm Văn Vũ | **Cao** | Sidebar CRM & CinemaSeatingMap (/events/seating) | ✅ Hoàn thành | **100%** | `Sidebar role-based permission matrix, Pointer drag coordinates` | ✅ Đã kết nối | **100%** |  |
-
-### MOD-13: Hoàn Thiện 8 Hạng Mục Tinh Chỉnh Chuyên Sâu & Sửa Lỗi Nghiệp Vụ (17/09/2026)
-
-| STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | Tình Trạng GD | Hoàn Thiện GD | API Mapped | Tình Trạng API | Hoàn Thiện API | Ghi Chú |
-|:---:|---|---|:---:|:---:|---|:---:|:---:|---|:---:|:---:|:---:|
-| 64 | **MSG-10** | Loại bỏ chính mình khỏi danh sách chat & bong bóng chat hoạt động | Phạm Văn Vũ | **Cao** | Hộp thư Doanh nhân (/association/messages) | ✅ Hoàn thành | **100%** | `isSelfUser exclusion filter` | ✅ Đã kết nối | **100%** |  |
-| 65 | **MSG-11** | Vuốt / Nhấn giữ (Long-press) xóa cuộc trò chuyện & Xóa tin nhắn ở phía tôi | Phạm Văn Vũ | **Cao** | Hộp thư Doanh nhân (/association/messages) | ✅ Hoàn thành | **100%** | `Swipe actions, 450ms long-press, deletedForMeMsgIds` | ✅ Đã kết nối | **100%** |  |
-| 66 | **QR-04** | Xử lý triệt để rò rỉ camera khi đóng modal quét QR (Dừng tracks, null srcObject) | Phạm Văn Vũ | **Cao** | AssociationMemberQrModal & use-qr-scanner hook | ✅ Hoàn thành | **100%** | `WebRTC tracks termination, stopped guard` | ✅ Đã kết nối | **100%** |  |
-| 67 | **QR-05** | Gỡ bỏ Toast popup dư thừa khi quét QR, định tuyến âm thầm vào chuông thông báo | Phạm Văn Vũ | **Trung bình** | Modal AssociationMemberQrModal | ✅ Hoàn thành | **100%** | `vba_notifications, dispatch notifications-updated` | ✅ Đã kết nối | **100%** |  |
-| 68 | **PROF-07** | Khắc phục lệch Profile & Xác thực (Đồng bộ tên "Phạm Văn Vũ", chức danh "Phó Chủ tịch Thường trực") | Phạm Văn Vũ | **Cao** | Trang chủ (/association) & Trang cá nhân (/association/profile) | ✅ Hoàn thành | **100%** | `PostgreSQL users/members sync, connect-app.service.ts` | ✅ Đã kết nối | **100%** |  |
-| 69 | **CONN-03** | Bắn thông báo 2 chiều khi đối tác chấp nhận kết nối (Push notification + chuông) | Phạm Văn Vũ | **Cao** | IncomingConnectionModal & MemberShell | ✅ Hoàn thành | **100%** | `Socket connection:accept -> connection:accepted` | ✅ Đã kết nối | **100%** |  |
-| 70 | **LAND-01** | Redesign Landing Page CEO 1983 Trắng & Vàng Champagne, sửa dấu tiếng Việt, Polling 4s | Phạm Văn Vũ | **Cao** | Trang Landing CLB CEO 1983 (/landing/ceo1983) | ✅ Hoàn thành | **100%** | `Ceo1983BlueWhiteGoldLanding, club-registration/status` | ✅ Đã kết nối | **100%** |  |
-| 71 | **EVT-05** | Redesign Backdrop sân khấu sự kiện Grand Gala 3D (Spotlight cone, hạt bụi vàng kim) | Phạm Văn Vũ | **Cao** | Màn hình Sự kiện (/association/events) | ✅ Hoàn thành | **100%** | `CSS 3D perspective, spotlight cone gradients` | ✅ Đã kết nối | **100%** |  |
-| 72 | **GRP-01** | Lọc thành viên tạo nhóm chat chỉ hiển thị người đã kết nối / bạn bè, loại trừ chính mình | Phạm Văn Vũ | **Cao** | Modal CreateGroupChatModal (/association/messages) | ✅ Hoàn thành | **100%** | `isMemberConnected filter, localStorage connected set` | ✅ Đã kết nối | **100%** |  |
-
 

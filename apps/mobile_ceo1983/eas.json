@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
+        "scheme": "App",
         "simulator": false
       },
       "android": {
@@ -20,6 +21,7 @@
     "preview": {
       "distribution": "internal",
       "ios": {
+        "scheme": "App",
         "simulator": false
       },
       "android": {
@@ -32,6 +34,7 @@
     "production": {
       "node": "22.14.0",
       "ios": {
+        "scheme": "App",
         "simulator": false,
         "image": "macos-sequoia-15.6-xcode-26.2"
       },

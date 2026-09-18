@@ -34,6 +34,16 @@ export class MembersController {
     return this.membersService.getMyMember(req.user.id);
   }
 
+  @Patch('me/cover')
+  async updateMyCoverPatch(@Request() req: any, @Body() body: { coverUrl: string }) {
+    return this.membersService.updateMyCover(req.user.id, body.coverUrl);
+  }
+
+  @Post('me/cover')
+  async updateMyCoverPost(@Request() req: any, @Body() body: { coverUrl: string }) {
+    return this.membersService.updateMyCover(req.user.id, body.coverUrl);
+  }
+
   @Get('me/context')
   async getMyMemberContext(@Request() req: any) {
     return this.membersService.getMyMemberContext(req.user.id);

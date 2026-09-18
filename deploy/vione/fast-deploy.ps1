@@ -41,8 +41,8 @@ try {
             if ($SkipWebBuild) {
                 Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
-                Write-Host "`n[0/5] Build Frontend Hiệp Hội (Web) cục bộ với Scope = vione_app..." -ForegroundColor Cyan
-                $env:NODE_OPTIONS = "--max-old-space-size=4096"
+                Write-Host "`n[0/5] Build Frontend ViOne Connect (Web) cục bộ với Scope = vione_app..." -ForegroundColor Cyan
+                $env:NODE_OPTIONS = "--max-old-space-size=8192"
                 $env:VITE_APP_SCOPE = "vione_app"
                 $env:VITE_APP_NAME = "ViOne Connect"
                 $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5000"
@@ -101,7 +101,7 @@ try {
             }
         }
 
-        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) Docker Images cho Hiệp Hội..." -ForegroundColor Cyan
+        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) Docker Images cho ViOne Connect..." -ForegroundColor Cyan
         if ($buildBE) {
             Invoke-CheckedCommand -Description "Xuất & Nén Backend Image (.tar.gz)" -Action {
                 docker save -o vione-backend.tar vione-backend:latest
@@ -124,8 +124,12 @@ try {
         ssh "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
     }
 
+    # Đảm bảo có tệp tin .env cục bộ
+    Copy-Item "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env" -Force -ErrorAction SilentlyContinue
+
     $filesToUpload = @(
         (Resolve-Path "$DEPLOY_DIR/.env.production").Path,
+        (Resolve-Path "$DEPLOY_DIR/.env").Path,
         (Resolve-Path "$DEPLOY_DIR/docker-compose.yml").Path
     )
     if (-not $SkipBuild) {
@@ -138,7 +142,7 @@ try {
         scp @scpArgs
     }
 
-    Write-Host "`n[4/5] Kích hoạt Docker Compose riêng cho Hiệp Hội từ xa thông qua SSH..." -ForegroundColor Cyan
+    Write-Host "`n[4/5] Kích hoạt Docker Compose riêng cho ViOne Connect từ xa thông qua SSH..." -ForegroundColor Cyan
 
     $remoteLoadCmd = ""
     if ($buildBE -and (Test-Path "vione-backend.tar.gz")) {
@@ -148,9 +152,9 @@ try {
         $remoteLoadCmd += "docker load -i vione-frontend.tar.gz; rm -f vione-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; mv -f .env.production .env.association 2>/dev/null || true; sed -i 's/\r//g' .env.association docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f vione-frontend-prod vione-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env 2>/dev/null || true; touch .env; sed -i 's/\r//g' .env docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f vione-frontend-prod vione-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
 
-    Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Hiệp Hội" -Action {
+    Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập ViOne Connect" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
     }
 
@@ -158,9 +162,9 @@ try {
     Remove-Item vione-backend.tar.gz, vione-frontend.tar.gz, vione-backend.tar, vione-frontend.tar -ErrorAction SilentlyContinue
 
     Write-Host "=================================================================" -ForegroundColor Green
-    Write-Host "TRIỂN KHAI ĐỘC LẬP APP HIỆP HỘI CLB CEO 1983 [HUONG 2] THÀNH CÔNG!" -ForegroundColor Green
-    Write-Host "Cổng Frontend Hiệp Hội : http://${SERVER_IP}:5000" -ForegroundColor Yellow
-    Write-Host "Cổng Backend Hiệp Hội  : http://${SERVER_IP}:5001" -ForegroundColor Yellow
+    Write-Host "TRIỂN KHAI WEB CRM PLATFORM VÀ LANDING [PORT 5000] THÀNH CÔNG!" -ForegroundColor Green
+    Write-Host "Cổng Frontend Web CRM / Landing : http://${SERVER_IP}:5000 (Đăng nhập: /auth)" -ForegroundColor Yellow
+    Write-Host "Cổng Backend API                : http://${SERVER_IP}:5001" -ForegroundColor Yellow
     Write-Host "=================================================================" -ForegroundColor Green
 } finally {
     Pop-Location

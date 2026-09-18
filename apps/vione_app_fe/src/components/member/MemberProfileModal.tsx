@@ -177,11 +177,11 @@ export function MemberProfileModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3.5 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] p-3.5 sm:p-4 my-auto overflow-y-auto bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col w-full max-w-[400px] max-h-[85vh] rounded-3xl bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-150"
+        className="my-auto relative flex flex-col w-full max-w-[400px] max-h-[90dvh] rounded-3xl bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed Header */}

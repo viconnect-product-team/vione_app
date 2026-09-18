@@ -39,6 +39,8 @@ export class UpdateMemberDto {
   taxCode?: string;
   employees?: number;
   about?: string;
+  feePaid?: boolean;
+  feeYear?: number;
 }
 
 export class UpdateMemberContactDto {
@@ -229,6 +231,9 @@ export class MembersService {
       about: r.about ?? '',
       associationId: r.association_id,
       userId: r.user_id,
+      coverUrl: r.cover_url || null,
+      cover_url: r.cover_url || null,
+      avatarUrl: r.avatar_url || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -364,12 +369,20 @@ export class MembersService {
   // Mobile API: get current user member info for profile
   async getMyMember(userId: string) {
     let rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+      SELECT * FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
     `.catch(() => []);
 
     const user = await this.prisma.vione_users.findUnique({
       where: { id: userId },
     }).catch(() => null);
+
+    const userProfiles = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name, avatar_url, professional_title, company_name, industry, region
+      FROM public.user_profiles
+      WHERE user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+    const profile = userProfiles[0] || null;
 
     if (rows.length === 0) {
       const users = await this.prisma.$queryRaw<any[]>`
@@ -383,6 +396,52 @@ export class MembersService {
       }
     }
 
+    const userPhone = (user as any)?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : null);
+    if (rows.length === 0 && userPhone) {
+      const altPhone = userPhone.startsWith('0') ? userPhone.slice(1) : '0' + userPhone;
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.members 
+        WHERE phone = ${userPhone} OR phone = ${altPhone}
+        LIMIT 1
+      `.catch(() => []);
+    }
+
+    // Auto link user_id if member matched by email/phone
+    if (rows.length > 0 && (!rows[0].user_id || rows[0].user_id !== userId)) {
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET user_id = ${userId}::uuid WHERE id = ${rows[0].id}
+      `.catch(() => {});
+    }
+
+    // If new user has no member record yet, auto-create CEO 1983 member with their real name
+    if (rows.length === 0 && (user || profile)) {
+      const realName = (user?.name || profile?.display_name || user?.username || 'Hội viên CEO 1983').trim();
+      const userEmail = user?.email || `${user?.username || userId.slice(0, 8)}@ceo1983.vn`;
+      const finalPhone = userPhone || '0983000000';
+      const newCode = 'M1983-' + String(Math.floor(100 + Math.random() * 900));
+      const company = profile?.company_name || 'CLB Doanh Nhân CEO 1983';
+      const title = profile?.professional_title || 'Hội viên chính thức';
+      const industry = profile?.industry || 'Kinh doanh & Quản lý';
+      const region = profile?.region || 'Hà Nội';
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.members (
+          id, code, name, contact, email, phone, type, level, industry, region,
+          status, joined_at, fee_year, fee_paid, address, about, payment_status,
+          user_id, association_id, created_at, updated_at
+        ) VALUES (
+          ${userId}::text, ${newCode}, ${realName}, ${realName},
+          ${userEmail}, ${finalPhone}, 'individual', 'standard', ${industry}, ${region},
+          'active', CURRENT_DATE, 2026, true, ${region}, ${company}, 'paid',
+          ${userId}::uuid, 'c1983000-0000-4000-8000-000000001983'::uuid, now(), now()
+        ) ON CONFLICT (id) DO UPDATE SET user_id = ${userId}::uuid, name = EXCLUDED.name
+      `.catch(() => null);
+
+      rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId}::text LIMIT 1
+      `.catch(() => []);
+    }
+
     // Resolve unified avatar from vione_users, user_profiles, or business_identities
     const profileAvatars = await this.prisma.$queryRaw<any[]>`
       SELECT COALESCE(up.avatar_url, bi.avatar_url) as avatar
@@ -391,45 +450,53 @@ export class MembersService {
       WHERE up.user_id = ${userId}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
-    const unifiedAvatar = user?.avatar_url || profileAvatars[0]?.avatar || null;
+    const unifiedAvatar = user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
 
     if (rows.length > 0) {
       const m = rows[0];
+      const memberName = (m.name && m.name !== 'Hội viên CEO 1983' && m.name !== 'Thành viên mới' && m.name !== 'Hội viên VIONE')
+        ? m.name
+        : (user?.name || profile?.display_name || m.name || user?.username || 'Hội viên CEO 1983');
+
       return {
         id: m.id,
         memberId: m.id,
         member_id: m.id,
         code: m.code ?? '',
-        name: m.name,
+        name: memberName,
         status: m.status ?? 'active',
         validUntil: m.term_end ? (m.term_end instanceof Date ? m.term_end.toISOString().slice(0, 10) : String(m.term_end).slice(0, 10)) : null,
         verified: m.status === 'active',
         type: m.type === 'individual' ? 'individual' : 'company',
-        title: m.executive_role || m.department || (m.contact && m.contact !== m.name ? m.contact : null) || 'Hội viên chính thức',
+        title: m.executive_role || m.department || (m.contact && m.contact !== m.name ? m.contact : null) || profile?.professional_title || 'Hội viên chính thức',
         email: m.email ?? user?.email ?? '',
-        phone: m.phone ?? '',
+        phone: m.phone ?? userPhone ?? '',
         taxCode: m.tax_code ?? null,
-        industry: m.industry ?? '',
-        region: m.region ?? '',
+        industry: m.industry ?? profile?.industry ?? '',
+        region: m.region ?? profile?.region ?? '',
         address: m.address ?? '',
         website: m.website ?? null,
         joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
         avatar: unifiedAvatar,
+        avatarUrl: unifiedAvatar,
+        coverUrl: m.cover_url || (user as any)?.cover_url || null,
+        cover_url: m.cover_url || (user as any)?.cover_url || null,
       };
     }
 
-    // Fallback: If no member row exists for this user, return non-member identity
+    // Fallback: If no member row exists for this user, return non-member identity with real user name
+    const fallbackName = user?.name || profile?.display_name || user?.username || 'Thành viên mới';
     return {
       id: null,
       memberId: null,
       member_id: null,
       code: `GUEST-${userId.slice(0, 6).toUpperCase()}`,
-      name: user?.name || user?.username || 'Thành viên mới',
+      name: fallbackName,
       status: 'guest',
       validUntil: null,
       verified: false,
       type: 'individual',
-      title: 'Chưa là hội viên chính thức',
+      title: profile?.professional_title || 'Chưa là hội viên chính thức',
       email: user?.email || '',
       phone: '',
       taxCode: null,
@@ -439,6 +506,54 @@ export class MembersService {
       website: null,
       joinedAt: null,
       avatar: user?.avatar_url ?? null,
+      avatarUrl: user?.avatar_url ?? null,
+      coverUrl: (user as any)?.cover_url || null,
+      cover_url: (user as any)?.cover_url || null,
+    };
+  }
+
+  async updateMyCover(userId: string, coverUrl: string) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    // Update in public.vione_users
+    await this.prisma.$executeRaw`
+      UPDATE public.vione_users
+      SET cover_url = ${coverUrl}, updated_at = NOW()
+      WHERE id = ${userId}::uuid
+    `.catch((err) => {
+      console.warn('Failed to update cover_url in vione_users:', err);
+    });
+
+    // Update in public.members for this user_id
+    const memberUpdated = await this.prisma.$executeRaw`
+      UPDATE public.members
+      SET cover_url = ${coverUrl}, updated_at = NOW()
+      WHERE user_id = ${userId}::uuid OR id = ${userId}
+    `.catch((err) => {
+      console.warn('Failed to update cover_url in members by user_id:', err);
+      return 0;
+    });
+
+    // Fallback: if member record was matched by email
+    if (!memberUpdated || memberUpdated === 0) {
+      const user = await this.prisma.vione_users.findUnique({
+        where: { id: userId },
+      }).catch(() => null);
+      if (user?.email) {
+        await this.prisma.$executeRaw`
+          UPDATE public.members
+          SET cover_url = ${coverUrl}, updated_at = NOW()
+          WHERE LOWER(email) = LOWER(${user.email})
+        `.catch(() => {});
+      }
+    }
+
+    return {
+      success: true,
+      coverUrl,
+      message: 'Cập nhật ảnh bìa thành công',
     };
   }
 
@@ -683,6 +798,8 @@ export class MembersService {
     const taxCode = data.taxCode !== undefined ? data.taxCode : current.tax_code;
     const employees = data.employees !== undefined ? data.employees : current.employees;
     const about = data.about !== undefined ? data.about : current.about;
+    const feePaid = data.feePaid !== undefined ? data.feePaid : current.fee_paid;
+    const feeYear = data.feeYear !== undefined ? data.feeYear : current.fee_year;
 
     await this.prisma.$executeRaw`
       UPDATE public.members SET
@@ -700,6 +817,8 @@ export class MembersService {
         tax_code = ${taxCode},
         employees = ${employees},
         about = ${about},
+        fee_paid = ${feePaid},
+        fee_year = ${feeYear},
         updated_at = now()
       WHERE id = ${id}
     `;
@@ -731,6 +850,35 @@ export class MembersService {
             SELECT id FROM public.vione_users WHERE phone = ${rawPhone} OR phone = ${cleanPhone} LIMIT 1
           `.catch(() => []);
           if (u.length > 0) memberUserId = u[0].id;
+        }
+
+        // Tự động khởi tạo tài khoản đăng nhập khi duyệt hội viên nếu chưa có (BUG-AUTH-001)
+        if (!memberUserId && status === 'active' && (email || current.email || phone || current.phone)) {
+          try {
+            const newUserId = crypto.randomUUID();
+            const memberEmail = email || current.email || `${(current.member_code || 'member').toLowerCase().replace(/[^a-z0-9]/g, '')}@ceo1983.com`;
+            const memberPhone = phone || current.phone || '';
+            const memberName = name || current.name || 'Hội viên CEO 1983';
+            await this.prisma.$executeRaw`
+              INSERT INTO public.vione_users (id, email, phone, name, role, status, created_at, updated_at)
+              VALUES (${newUserId}::uuid, ${memberEmail}, ${memberPhone}, ${memberName}, 'member', 'active', now(), now())
+              ON CONFLICT (email) DO NOTHING
+            `.catch(() => null);
+
+            const linkedUser = await this.prisma.vione_users.findFirst({
+              where: { email: memberEmail },
+              select: { id: true },
+            }).catch(() => null);
+
+            if (linkedUser) {
+              memberUserId = linkedUser.id;
+              await this.prisma.$executeRaw`
+                UPDATE public.members SET user_id = ${memberUserId}::uuid WHERE id = ${id}::uuid
+              `.catch(() => null);
+            }
+          } catch (createErr) {
+            console.warn('Auto create user on member approval notice:', createErr);
+          }
         }
 
         if (memberUserId) {

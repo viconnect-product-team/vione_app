@@ -41,7 +41,7 @@ const DEFAULT_INCOME_TRANSACTIONS: Transaction[] = [
     date: "2026-03-10",
     type: "income",
     category: "membership_fee",
-    description: "Thu niên liễm hội viên VIP 2026",
+    description: "Thu hội phí hội viên VIP 2026",
     amount: 50000000,
     method: "bank",
     status: "completed",
@@ -162,7 +162,7 @@ function IncomePage() {
       defaultCategory === "event_walkin"
         ? "Thu tiền mặt trực tiếp tại bàn đón tiếp sự kiện"
         : defaultCategory === "membership_fee"
-        ? "Thu niên liễm / phí hội viên"
+        ? "Thu hội phí thường niên"
         : ""
     );
     setFormAmount(0);

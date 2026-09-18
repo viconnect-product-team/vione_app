@@ -48,6 +48,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   getMyMember,
@@ -92,15 +93,22 @@ function resolveDisplay(
   s: CardSettings | null,
   customProfile?: any,
   customAvatar?: string | null,
+  currentUser?: any,
 ): Display {
-  const rawName = customProfile?.name?.trim() || s?.displayName?.trim() || member?.name || "";
+  const isGeneric = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên VIONE" || member.name === "Hội viên CLB CEO 1983";
+  const authUserName = currentUser?.name || currentUser?.user_metadata?.full_name;
+  const isCustomForUser = customProfile?.userId && currentUser?.id && customProfile.userId === currentUser.id;
+
+  const rawName = (!isGeneric && member?.name)
+    ? member.name
+    : ((isCustomForUser ? customProfile?.name?.trim() : null) || authUserName || s?.displayName?.trim() || member?.name || "");
   const cleanName = rawName || "Hội viên CLB CEO 1983";
 
   const rawCompany =
-    customProfile?.company?.trim() ||
-    s?.displayCompany?.trim() ||
     (member as any)?.companyName ||
-    (member as any)?.company;
+    (member as any)?.company ||
+    (isCustomForUser ? customProfile?.company?.trim() : null) ||
+    s?.displayCompany?.trim();
   const isOldSeed = rawCompany && rawCompany.includes("ViOne Platform");
   const cleanCompany = !rawCompany || isOldSeed ? "CLB Doanh Nhân CEO 1983" : rawCompany;
 
@@ -108,10 +116,11 @@ function resolveDisplay(
     name: cleanName.trim() || "Hội viên CLB CEO 1983",
     company: cleanCompany.trim(),
     photo:
-      customAvatar ||
-      customProfile?.avatar ||
+      (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null) ||
+      (currentUser as any)?.avatar_url ||
+      (isCustomForUser ? customAvatar || customProfile?.avatar : null) ||
       s?.photoUrl ||
-      (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null),
+      null,
     showName: s?.showName ?? true,
     showCompany: s?.showCompany ?? true,
     showPhoto: s?.showPhoto ?? true,
@@ -207,6 +216,7 @@ function resolveBenefitIcon(b: MemberBenefit, index: number) {
 function CardScreen() {
   const t = useT();
   const { lang } = useLang();
+  const { user } = useAuth();
   const fetchMember = useServerFn(getMyMember);
   const fetchSettings = useServerFn(getCardSettings);
   const fetchBenefits = useServerFn(getMyBenefits);
@@ -357,6 +367,13 @@ function CardScreen() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("vba_member_cover_photo");
   });
+
+  useEffect(() => {
+    if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
+      setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+    }
+  }, [member?.coverUrl, (member as any)?.cover_url]);
+
   const [copiedCode, setCopiedCode] = useState(false);
 
   useEffect(() => {
@@ -366,8 +383,15 @@ function CardScreen() {
         setCustomAvatar(localStorage.getItem("vba_member_avatar_photo"));
       } catch {}
     };
-    const handleCoverUpdate = () => {
-      setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+    const handleCoverUpdate = (e?: any) => {
+      try {
+        const detailUrl = e?.detail;
+        if (detailUrl && typeof detailUrl === "string") {
+          setCoverPhoto(detailUrl);
+        } else {
+          setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+        }
+      } catch {}
     };
     window.addEventListener("profile-updated", handleProfileUpdate);
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
@@ -389,7 +413,7 @@ function CardScreen() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const d = resolveDisplay(member, settings, customProfile, customAvatar);
+  const d = resolveDisplay(member, settings, customProfile, customAvatar, user);
   const vcard = buildVCard(member, d);
   const originForQr = typeof window !== "undefined" ? window.location.origin : "";
   // Prefer the server-signed, short-lived QR token. Fall back to the code-based
