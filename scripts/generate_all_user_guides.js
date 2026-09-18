@@ -737,7 +737,7 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
 ![CRM: Thao tác Bấm nút Phê duyệt (Approve) Hội viên](images/evidence/sub_09_crm_approve_action.png)
 *Hình 4.3: Thao tác phê duyệt hội viên chính thức trên Web CRM.*
 
-![CRM: Trạng thái Hội viên đã được Phê duyệt Thành công](images/evidence/sub_09_crm_approve_action.png)
+![CRM: Trạng thái Hội viên đã được Phê duyệt Thành công](images/evidence/05_crm_member_approved.png)
 *Hình 4.4: Thông báo xác nhận phê duyệt thành công - Hội viên được cấp quyền truy cập Mobile App ngay lập tức.*
 
 ---
@@ -748,6 +748,9 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
 3. Gán chức danh trong hiệp hội: Chủ tịch, Phó chủ tịch, Ủy viên BCH, Trưởng ban, Hội viên chính thức.
 4. Nhấn **"Lưu thông tin"**. Chức danh và phù hiệu này lập tức hiển thị trên Thẻ VIP và App điện thoại của hội viên.
 
+![CRM: Phân quyền vai trò và phân bổ ban ngành](images/evidence/crm_roles_permissions.png)
+*Hình 4.5: Hộp thoại phân quyền vai trò (Super Admin, Executive, Member) và cấp quyền truy cập hệ thống.*
+
 ---
 
 ### 4.5. Khóa, Mở Khóa Tài Khoản & Xuất Dữ Liệu Excel
@@ -757,6 +760,9 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
 2. **Xuất Danh sách Hội viên ra Excel:**
    - Nhấn nút **"Xuất Excel"** ở góc trên bảng.
    - Hệ thống kết xuất file \`.xlsx\` chuẩn hóa chứa đầy đủ danh bạ phục vụ in ấn hoặc lưu trữ hành chính.
+
+![CRM: Chế độ hiển thị dạng Bảng chi tiết và Xuất dữ liệu Excel](images/evidence/crm_members_table_view.png)
+*Hình 4.6: Chế độ xem danh sách hội viên dạng bảng biểu (Table View) tích hợp tính năng xuất file Excel và phân trang.*
 
 ---
 
@@ -810,6 +816,12 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
    - Hướng camera vào Mã QR trên Vé Điện Tử (Ticket Pass) của đại biểu.
    - Hệ thống phát âm thanh "Bíp" xác nhận thành công, màn hình hiển thị ngay: Tên doanh nhân, Công ty, Số ghế và đổi trạng thái sang **"Đã điểm danh"**.
    - Ngăn chặn hoàn toàn tình trạng vé giả hoặc quét trùng lặp 2 lần.
+
+![CRM: Quản lý Danh sách Đăng ký & Trạng thái Điểm danh Check-in](images/evidence/crm_checkin_management.png)
+*Hình 5.4: Danh sách đại biểu đăng ký tham gia sự kiện và theo dõi trạng thái điểm danh thời gian thực.*
+
+![CRM: Màn hình Quét mã QR Điểm danh Sự kiện Tốc độ cao](images/evidence/crm_checkin_qr_display.png)
+*Hình 5.5: Công cụ hiển thị và quét mã QR Check-in đón tiếp đại biểu tại cổng hội nghị.*
 
 ---
 
@@ -875,6 +887,9 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
 2. Nhập danh sách các giải thưởng: Giải Đặc biệt, Giải Nhất, Giải Nhì, Giải Khuyến khích.
 3. Đồng bộ danh sách mã vé của các đại biểu đã check-in thành công qua cổng.
 4. Nhấn **"Bắt đầu quay số"** để hiển thị hiệu ứng quay thưởng kịch tính trên sân khấu.
+
+![CRM: Cấu hình và Vận hành Vòng quay May mắn Lucky Draw](images/evidence/crm_lucky_draw_modal.png)
+*Hình 8.2: Giao diện thiết lập vòng quay may mắn Lucky Draw và danh sách giải thưởng sự kiện.*
 
 ---
 
@@ -948,6 +963,9 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
    - Cú pháp quy định thanh toán tự động cho Vé sự kiện và Hội phí.
 3. Nhấn **"Lưu cấu hình"**: Toàn bộ mã QR động sinh ra trên App và Web sẽ tự động trỏ về tài khoản này.
 
+![CRM: Cấu hình Tài khoản Ngân hàng và Cổng thanh toán VietQR](images/evidence/crm_settings_finance.png)
+*Hình 12.1: Màn hình cấu hình tài khoản thụ hưởng VietQR và chính sách thanh toán tự động.*
+
 ---
 
 ### 12.2. Quản Lý Danh Sách Quản Trị Viên & Nhật Ký Kiểm Toán (Audit Logs)
@@ -955,6 +973,9 @@ Bảng điều khiển Tổng quan (\`/\`) cung cấp cho Ban Lãnh đạo CLB c
 2. **Nhật ký Kiểm toán (Audit Logs):**
    - Hệ thống tự động ghi lại mọi thao tác quan trọng: Ai duyệt hội viên, ai gạch nợ hội phí, ai tạo sự kiện, vào thời gian nào kèm địa chỉ IP truy cập.
    - Đảm bảo tính minh bạch và an toàn tuyệt đối cho cơ sở dữ liệu hiệp hội.
+
+![CRM: Nhật ký Kiểm toán Hoạt động Hệ thống (Audit Logs)](images/evidence/crm_audit_logs.png)
+*Hình 12.2: Nhật ký kiểm toán bảo mật và phân quyền ghi vết 100% lịch sử thao tác của các quản trị viên.*
 
 ---
 *Tài liệu được biên soạn và chuẩn hóa bởi Ban Công nghệ & Kỹ thuật VIONE - Hiệp hội Doanh nhân CEO 1983.*
