@@ -4,10 +4,12 @@
  * 1. document/SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx
  * 2. document/SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx
  *
- * Strict 3-Color Brand System of CEO 1983:
- * - Royal Navy (Chủ đạo 1): #003B95 / Deep Navy #0A1A3A / Dark Blue #0F172A
- * - Flame Gold / Amber (Chủ đạo 2): #EA580C / Gold #F59E0B / Amber #D97706
- * - Pure White / Platinum Slate (Chủ đạo 3): #FFFFFF / #F8FAFC / #E2E8F0
+ * Executive Balanced Brand Palette (CEO 1983 Standard):
+ * - Deep Navy / Royal Blue: #0A1A3A / #003B95 / #002B70
+ * - Warm Gold / Amber Accent: #F59E0B / #D97706 / #FEF3C7
+ * - Platinum White / Clean Slate: #F8FAFC / #FFFFFF / #E2E8F0 / #1E293B
+ *
+ * Content Grounding: Official information from ceo1983.com & HanoiBA
  */
 
 const pptxgen = require('pptxgenjs');
@@ -15,75 +17,140 @@ const path = require('path');
 const fs = require('fs');
 
 const OUT_DIR = path.join(__dirname, '..', 'document');
+if (!fs.existsSync(OUT_DIR)) {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+}
 
-// Colors
+// Color Palette Constants (HEX without # for pptxgenjs)
 const C = {
+  // Dark / Cover Palette
   NAVY_DARK: '0A1A3A',
   NAVY_PRIMARY: '003B95',
   NAVY_CARD: '132A56',
+  NAVY_HOVER: '002B70',
+  // Warm Gold / Amber
   GOLD_ACCENT: 'F59E0B',
-  ORANGE_FLAME: 'EA580C',
+  GOLD_DARK: 'D97706',
+  GOLD_LIGHT: 'FEF3C7',
+  GOLD_BORDER: 'FDE68A',
+  // Light Theme (Content Slides)
+  BG_LIGHT: 'F8FAFC',
   WHITE: 'FFFFFF',
-  SLATE_LIGHT: 'F8FAFC',
-  SLATE_MUTED: '94A3B8',
-  SLATE_DARK: '1E293B',
-  CARD_BORDER: '1E3A8A'
+  BORDER_SUBTLE: 'E2E8F0',
+  BORDER_FOCUS: 'CBD5E1',
+  TEXT_DARK: '0F172A',
+  TEXT_BODY: '334155',
+  TEXT_MUTED: '64748B',
+  // Status Accents
+  EMERALD: '059669',
+  EMERALD_BG: 'ECFDF5',
+  BLUE_BG: 'EFF6FF',
 };
+
+// Common slide footer helper
+function addSlideFooter(slide, pres) {
+  slide.addShape(pres.ShapeType.rect, {
+    x: 0.8, y: 7.0, w: 11.73, h: 0.02,
+    fill: { color: C.BORDER_SUBTLE }
+  });
+  slide.addText('Hiệp Hội Doanh Nhân CEO 1983 · Hệ Thống Quản Trị CEO 1983', {
+    x: 0.8, y: 7.05, w: 7.0, h: 0.3,
+    color: C.TEXT_MUTED, fontSize: 9.5, fontFace: 'Calibri'
+  });
+  slide.addText('Bản Quyền © 2026 CLB Doanh Nhân CEO 1983 · ceo1983.com', {
+    x: 8.0, y: 7.05, w: 4.53, h: 0.3,
+    color: C.TEXT_MUTED, fontSize: 9.5, align: 'right', fontFace: 'Calibri'
+  });
+}
+
+// Common slide header helper for content slides
+function addSlideHeader(slide, pres, eyebrow, title, subtitle) {
+  slide.background = { color: C.BG_LIGHT };
+
+  // Top Accent Strip
+  slide.addShape(pres.ShapeType.rect, {
+    x: 0, y: 0, w: 13.33, h: 0.08,
+    fill: { color: C.GOLD_ACCENT }
+  });
+
+  // Eyebrow badge
+  slide.addShape(pres.ShapeType.rect, {
+    x: 0.8, y: 0.45, w: 2.8, h: 0.32,
+    fill: { color: C.NAVY_PRIMARY },
+    roundRadio: 0.08
+  });
+  slide.addText(eyebrow, {
+    x: 0.8, y: 0.45, w: 2.8, h: 0.32,
+    color: C.WHITE, bold: true, fontSize: 10, align: 'center', valign: 'middle', fontFace: 'Calibri'
+  });
+
+  // Main Slide Title
+  slide.addText(title, {
+    x: 0.8, y: 0.85, w: 11.73, h: 0.65,
+    color: C.NAVY_PRIMARY, bold: true, fontSize: 24, fontFace: 'Calibri'
+  });
+
+  // Subtitle / Scope
+  if (subtitle) {
+    slide.addText(subtitle, {
+      x: 0.8, y: 1.5, w: 11.73, h: 0.4,
+      color: C.TEXT_MUTED, fontSize: 12.5, italic: true, fontFace: 'Calibri'
+    });
+  }
+
+  addSlideFooter(slide, pres);
+}
 
 // =============================================================================
 // PRESENTATION 1: APP HỘI VIÊN HIỆP HỘI (CLB CEO 1983)
 // =============================================================================
 async function generateAppSlideDeck() {
-  console.log('Generating App PowerPoint Slides...');
+  console.log('Generating App PowerPoint Slides (Executive Light Palette)...');
   const pres = new pptxgen();
   pres.layout = 'LAYOUT_16x9';
   pres.author = 'CLB Doanh Nhân CEO 1983';
   pres.title = 'Hệ Sinh Thái Số Hóa Doanh Nhân CEO 1983 — App Hiệp Hội';
 
-  // Helper for Slide Background
-  function setSlideTheme(slide, isDark = true) {
-    slide.background = { color: isDark ? C.NAVY_DARK : C.SLATE_LIGHT };
-  }
-
-  // SLIDE 1: Cover Slide
+  // ---------------------------------------------------------------------------
+  // SLIDE 1: Cover Slide (Prestigious Navy & Gold)
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    slide.background = { color: C.NAVY_DARK };
 
-    // Top Badge
+    // Top Brand Badge
     slide.addShape(pres.ShapeType.rect, {
-      x: 0.8, y: 0.8, w: 3.5, h: 0.4,
+      x: 0.8, y: 0.8, w: 4.2, h: 0.42,
       fill: { color: C.GOLD_ACCENT },
       roundRadio: 0.1
     });
-    slide.addText('HỆ SINH THÁI SỐ DOANH NHÂN 1983', {
-      x: 0.8, y: 0.8, w: 3.5, h: 0.4,
-      color: C.NAVY_DARK, bold: true, fontSize: 11, align: 'center', valign: 'middle'
+    slide.addText('HỘI DOANH NHÂN TRẺ HÀ NỘI (HANOIBA)', {
+      x: 0.8, y: 0.8, w: 4.2, h: 0.42,
+      color: C.NAVY_DARK, bold: true, fontSize: 11, align: 'center', valign: 'middle', fontFace: 'Calibri'
     });
 
-    // Main Title
+    // Main App Title
     slide.addText('ỨNG DỤNG DI ĐỘNG CLB DOANH NHÂN CEO 1983', {
-      x: 0.8, y: 1.5, w: 11.5, h: 1.2,
+      x: 0.8, y: 1.55, w: 11.73, h: 1.2,
       color: C.WHITE, bold: true, fontSize: 32, fontFace: 'Calibri'
     });
 
-    // Slogan
-    slide.addText('"Kết Nối Bền — Phát Triển Vững" · Phiên bản v2.6.0 Pro', {
-      x: 0.8, y: 2.8, w: 11.5, h: 0.5,
-      color: C.GOLD_ACCENT, bold: true, fontSize: 18, italic: true
+    // Slogan & Subtitle
+    slide.addText('Tôn Chỉ: "Kết Nối Bền — Phát Triển Vững" · Phiên bản v2.6.0 Pro', {
+      x: 0.8, y: 2.85, w: 11.73, h: 0.5,
+      color: C.GOLD_ACCENT, bold: true, fontSize: 18, italic: true, fontFace: 'Calibri'
     });
 
-    // Subtitle
-    slide.addText('Nền tảng số hóa đặc quyền dành riêng cho Lãnh đạo cấp cao sinh năm 1983 (Quý Hợi - Đại Hải Thủy) trực thuộc HanoiBA.', {
-      x: 0.8, y: 3.4, w: 10.5, h: 0.8,
-      color: C.SLATE_MUTED, fontSize: 14
+    slide.addText('Nền tảng số hóa đặc quyền dành riêng cho Lãnh đạo cấp cao sinh năm 1983 (Quý Hợi - Đại Hải Thủy), kết nối giao thương B2B, quản lý hội viên và thẻ định danh thông minh.', {
+      x: 0.8, y: 3.45, w: 10.5, h: 0.8,
+      color: C.BORDER_SUBTLE, fontSize: 13.5, fontFace: 'Calibri'
     });
 
-    // 3 Highlight Metrics Cards
+    // 3 Key Metrics Cards
     const metrics = [
-      { num: '100%', label: 'Thẻ Visit Card 3D', sub: 'Chạm NFC & vCard thông minh' },
-      { num: '05', label: 'Kênh Chuyên Biệt', sub: 'Truyền thông & thông báo CRM' },
-      { num: '0đ', label: 'Vé Hội Viên Điện Tử', sub: 'Check-in QR tức thì 1 giây' }
+      { num: '100%', label: 'Thẻ Doanh Nhân 3D', sub: 'Chạm NFC & vCard 1 chạm' },
+      { num: '05', label: 'Kênh Thông Báo CRM', sub: 'Vé, tin nhắn, sự kiện & kết nối' },
+      { num: '0đ', label: 'Vé Điện Tử Tức Thì', sub: 'Cấp mã quay số Lucky Draw #XXXX' }
     ];
 
     metrics.forEach((m, idx) => {
@@ -91,665 +158,1075 @@ async function generateAppSlideDeck() {
       slide.addShape(pres.ShapeType.rect, {
         x: xPos, y: 4.8, w: 3.7, h: 1.8,
         fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1.5 },
+        line: { color: C.NAVY_PRIMARY, width: 1.5 },
         roundRadio: 0.15
       });
       slide.addText(m.num, {
         x: xPos + 0.3, y: 5.0, w: 3.1, h: 0.7,
-        color: C.GOLD_ACCENT, bold: true, fontSize: 32
+        color: C.GOLD_ACCENT, bold: true, fontSize: 32, fontFace: 'Calibri'
       });
       slide.addText(m.label, {
-        x: xPos + 0.3, y: 5.7, w: 3.1, h: 0.4,
-        color: C.WHITE, bold: true, fontSize: 14
+        x: xPos + 0.3, y: 5.75, w: 3.1, h: 0.4,
+        color: C.WHITE, bold: true, fontSize: 13.5, fontFace: 'Calibri'
       });
       slide.addText(m.sub, {
-        x: xPos + 0.3, y: 6.1, w: 3.1, h: 0.4,
-        color: C.SLATE_MUTED, fontSize: 11
+        x: xPos + 0.3, y: 6.15, w: 3.1, h: 0.35,
+        color: C.BORDER_SUBTLE, fontSize: 10.5, fontFace: 'Calibri'
       });
     });
   }
 
-  // SLIDE 2: Bức Tranh 3D Khổ Dọc 600vh
+  // ---------------------------------------------------------------------------
+  // SLIDE 2: Giới Thiệu CLB CEO 1983 & 4 Trụ Cột Chiến Lược (ceo1983.com)
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'TỔNG QUAN TỔ CHỨC', 'CLB Doanh Nhân CEO 1983 — Trực Thuộc HanoiBA', 'Hội tụ các Chủ tịch HĐQT, Tổng Giám đốc, CEO, Nhà sáng lập tuổi Quý Hợi 1983 (Đại Hải Thủy)');
 
-    slide.addText('ĐỘT PHÁ THIẾT KẾ LANDING PAGE', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Bức Tranh 3D Khổ Dọc Liên Tục 600vh (Artwork is the Website)', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    // 6 Landscape Chapters Cards
-    const scenes = [
-      { step: '01', title: 'SKY (Bầu Trời & Thái Dương)', desc: 'Ánh dương rực rỡ, tầng mây bồng bềnh, thông điệp khát vọng CEO 1983' },
-      { step: '02', title: 'BIRDS (Đàn Chim Tung Cánh)', desc: 'Tượng trưng cho sự hội tụ và vươn tầm của các nhà lãnh đạo C-Level' },
-      { step: '03', title: 'KITES (Cánh Diều Khát Vọng)', desc: 'Kết nối không gian vũ trụ với thực tiễn kinh doanh, bay cao và vững chãi' },
-      { step: '04', title: 'VILLAS (Quần Thể Kiến Trúc)', desc: 'Đẳng cấp sống, vị thế doanh nhân, đường chân trời và sự thịnh vượng' },
-      { step: '05', title: 'WATER (Khối Nước & Pool)', desc: 'Gợn sóng đại dương, chiều sâu phản chiếu, bản lĩnh của mệnh Đại Hải Thủy' },
-      { step: '06', title: 'UNDERWATER (Lãnh Đạo Đáy Biển)', desc: 'Thế giới biển xanh sâu thẳm, đàn cá uy nghiêm, lãnh đạo chinh phục thử thách' }
-    ];
-
-    scenes.forEach((s, idx) => {
-      const col = idx % 3;
-      const row = Math.floor(idx / 3);
-      const xPos = 0.8 + col * 4.0;
-      const yPos = 1.8 + row * 2.4;
-
-      slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: yPos, w: 3.7, h: 2.1,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.1
-      });
-      slide.addText(s.step, { x: xPos + 0.3, y: yPos + 0.2, w: 1.0, h: 0.4, color: C.GOLD_ACCENT, bold: true, fontSize: 18 });
-      slide.addText(s.title, { x: xPos + 0.3, y: yPos + 0.6, w: 3.1, h: 0.5, color: C.WHITE, bold: true, fontSize: 13 });
-      slide.addText(s.desc, { x: xPos + 0.3, y: yPos + 1.1, w: 3.1, h: 0.8, color: C.SLATE_MUTED, fontSize: 11 });
-    });
-  }
-
-  // SLIDE 3: Thẻ Visit Card 3D & Chạm NFC
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('NHẬN DIỆN DOANH NHÂN ĐẲNG CẤP', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Thẻ Hội Viên VIP 3D, Chạm NFC & Danh Thiếp Số 360°', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const cardFeatures = [
+    const pillars = [
       {
-        title: 'Lật Thẻ 3D Hai Mặt Tương Tác',
-        desc: 'Mặt trước phủ màu Navy Hoàng Gia phối viền Vàng Kim. Mặt sau khắc logo HanoiBA + CEO 1983 cùng slogan "Kết nối bền - Phát triển vững".',
-        highlight: 'Khung ảnh tỉ lệ 1.7:1 chuẩn nghệ thuật'
+        code: 'TRỤ CỘT 01',
+        title: 'Giao Thương & Xúc Tiến B2B',
+        desc: 'Mạng lưới kết nối cơ hội kinh doanh nội bộ, sàn thương mại điện tử chuyên biệt C2C/B2B và chương trình đối thoại cung cầu.',
+        accent: C.NAVY_PRIMARY
       },
       {
-        title: 'Chạm Thẻ Thông Minh NFC 1 Chạm',
-        desc: 'Chạm mặt lưng điện thoại trực tiếp vào thiết bị của đối tác để mở danh thiếp tức thì mà không cần đối tác cài đặt bất kỳ ứng dụng nào.',
-        highlight: 'Tương thích 100% iOS & Android'
+        code: 'TRỤ CỘT 02',
+        title: 'Đào Tạo & Nâng Cao Năng Lực',
+        desc: 'Chương trình C-Level Masterclass, tọa đàm kinh tế vĩ mô, chia sẻ kinh nghiệm quản trị doanh nghiệp và chuyển đổi số thực chiến.',
+        accent: C.GOLD_DARK
       },
       {
-        title: 'Hồ Sơ Năng Lực Doanh Nhân 360°',
-        desc: 'Hiển thị đầy đủ MST doanh nghiệp, quy mô vốn, nhân sự, danh mục sản phẩm cốt lõi, đường link showroom và hotline kết nối trực tiếp.',
-        highlight: 'Tích hợp Apple & Google Wallet'
+        code: 'TRỤ CỘT 03',
+        title: 'Thể Thao & Gắn Kết Hội Viên',
+        desc: 'Giải Golf CEO 1983 thường niên, CLB Tennis, giải Chạy bộ phong trào và các chuyến Caravan khảo sát thị trường liên tỉnh.',
+        accent: C.EMERALD
       },
       {
-        title: 'Bảo Mật Quyền Riêng Tư Cấp Cao',
-        desc: 'Hội viên chủ động bật/tắt từng trường thông tin (Số điện thoại, email cá nhân, doanh số) khi chia sẻ danh thiếp công khai ra ngoài.',
-        highlight: 'Mã hóa QR chống sao chép giả mạo'
+        code: 'TRỤ CỘT 04',
+        title: 'Văn Hóa & Trách Nhiệm Xã Hội',
+        desc: 'Chương trình thiện nguyện vì cộng đồng, quỹ ươm mầm tài năng trẻ và các hoạt động xây dựng nếp sống văn hóa doanh nhân chuẩn mực.',
+        accent: C.NAVY_HOVER
       }
     ];
 
-    cardFeatures.forEach((f, idx) => {
-      const col = idx % 2;
-      const row = Math.floor(idx / 2);
-      const xPos = 0.8 + col * 6.0;
-      const yPos = 1.8 + row * 2.5;
-
+    pillars.forEach((p, idx) => {
+      const xPos = 0.8 + idx * 2.95;
+      // White Card
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: yPos, w: 5.6, h: 2.2,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.GOLD_ACCENT, width: 1.2 },
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
         roundRadio: 0.12
       });
-      slide.addText(f.title, { x: xPos + 0.4, y: yPos + 0.3, w: 4.8, h: 0.4, color: C.WHITE, bold: true, fontSize: 16 });
-      slide.addText(f.desc, { x: xPos + 0.4, y: yPos + 0.8, w: 4.8, h: 0.8, color: C.SLATE_MUTED, fontSize: 12 });
-      slide.addText(`★ ${f.highlight}`, { x: xPos + 0.4, y: yPos + 1.6, w: 4.8, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 11 });
-    });
-  }
-
-  // SLIDE 4: Sàn Giao Thương Marketplace Shopee-Style
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('THƯƠNG MẠI ĐIỆN TỬ B2B NỘI KHỐI', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Sàn Giao Thương Marketplace — Gian Hàng Doanh Nghiệp Chuẩn Sàn', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const mktPoints = [
-      {
-        title: 'Gian Hàng Doanh Nghiệp (Company Storefront)',
-        content: 'Mỗi hội viên sở hữu một Showroom số với đầy đủ ảnh bìa nhận diện thương hiệu, chứng nhận pháp nhân, hotline và danh mục hàng hóa.'
-      },
-      {
-        title: 'Hiển Thị Giá Trị Giao Dịch Hàng Chục Tỷ Đồng',
-        content: 'Khắc phục hoàn toàn lỗi co gọn văn bản. Giá trị niêm yết từ hàng trăm triệu đến hàng chục tỷ VNĐ (15,000,000,000 đ) hiển thị rõ nét.'
-      },
-      {
-        title: 'Bộ Lọc Ngành Nghề Đa Tầng Thông Minh',
-        content: 'Phân loại tự động: Công nghệ thông tin, Bất động sản & Xây dựng, Tài chính - Ngân hàng, Xuất nhập khẩu, F&B, Năng lượng tái tạo.'
-      },
-      {
-        title: 'Quy Trình Đăng Sản Phẩm 2 Phân Đoạn',
-        content: 'Phân đoạn 1: Thông tin pháp nhân và hồ sơ năng lực. Phân đoạn 2: Thông số kỹ thuật sản phẩm, bảng giá ưu đãi độc quyền cho CEO 1983.'
-      }
-    ];
-
-    mktPoints.forEach((p, idx) => {
-      const yPos = 1.8 + idx * 1.25;
+      // Card Accent Top Bar
       slide.addShape(pres.ShapeType.rect, {
-        x: 0.8, y: yPos, w: 11.6, h: 1.1,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.1
+        x: xPos, y: 2.1, w: 2.8, h: 0.1,
+        fill: { color: p.accent },
+        roundRadio: 0.08
       });
-      slide.addText(`0${idx + 1}`, { x: 1.1, y: yPos + 0.3, w: 0.6, h: 0.5, color: C.GOLD_ACCENT, bold: true, fontSize: 20 });
-      slide.addText(p.title, { x: 1.8, y: yPos + 0.2, w: 9.5, h: 0.35, color: C.WHITE, bold: true, fontSize: 14 });
-      slide.addText(p.content, { x: 1.8, y: yPos + 0.55, w: 10.2, h: 0.45, color: C.SLATE_MUTED, fontSize: 12 });
+      // Badge Code
+      slide.addText(p.code, {
+        x: xPos + 0.25, y: 2.35, w: 2.3, h: 0.3,
+        color: p.accent, bold: true, fontSize: 11, fontFace: 'Calibri'
+      });
+      // Title
+      slide.addText(p.title, {
+        x: xPos + 0.25, y: 2.7, w: 2.3, h: 0.8,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14, fontFace: 'Calibri'
+      });
+      // Description
+      slide.addText(p.desc, {
+        x: xPos + 0.25, y: 3.55, w: 2.3, h: 2.8,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
     });
   }
 
-  // SLIDE 5: Bảng Tin Cơ Hội B2B & Tracking
+  // ---------------------------------------------------------------------------
+  // SLIDE 3: Thẻ Doanh Nhân VIP 3D, NFC & Danh Thiếp Số
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'ĐỊNH DANH SỐ ĐỘC BẢN', 'Thẻ Doanh Nhân VIP 3D — Chạm NFC & vCard Thông Minh', 'Số hóa 100% danh thiếp vật lý, bảo mật danh tính, kết nối đối tác chỉ với 1 chạm');
 
-    slide.addText('KHỚP LỆNH KINH DOANH THỜI GIAN THỰC', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Bảng Tin Trao Cơ Hội Kinh Doanh B2B & Quản Lý Đối Tác Quan Tâm', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const oppHighlights = [
+    const features = [
       {
-        icon: '👁️',
-        title: 'Bộ Đếm Lượt Xem Realtime',
-        desc: 'Icon mắt giám sát chính xác số lượt click vào bài đăng, phản ánh chân thực mức độ quan tâm của cộng đồng với nhu cầu cung - cầu.'
+        title: 'Mặt Trước — Nhận Diện Đẳng Cấp',
+        items: [
+          'Logo Hiệp hội Doanh nhân CEO 1983 mạ vàng 3D sắc nét.',
+          'Họ tên Doanh nhân, Pháp nhân Doanh nghiệp và Chức danh C-Level.',
+          'Mã định danh duy nhất (CEO-1983-xxx) và Hạng thẻ VIP Gold / Diamond.',
+          'Thời hạn hiệu lực hội viên bảo đảm tư cách thành viên chính thức.'
+        ]
       },
       {
-        icon: '👥',
-        title: 'Danh Sách Đối Tác Quan Tâm',
-        desc: 'Chủ bài đăng xem được danh sách cụ thể các CEO đã bấm "Quan tâm", kèm chức vụ, tên công ty, số hotline và email liên hệ.'
+        title: 'Mặt Sau — Mã QR Độc Bản & Bảo Mật',
+        items: [
+          'Mã QR tra cứu danh tính bảo mật theo chuẩn thời gian thực.',
+          'Quét từ camera ngoài app tự động mở trang web xác thực chính chủ.',
+          'Cam kết bảo mật thông tin tài chính và số điện thoại theo tùy chọn.',
+          'Huy hiệu chứng thực điện tử 24/7 từ Ban Thư ký CLB CEO 1983.'
+        ]
       },
       {
-        icon: '⚡',
-        title: 'Kết Nối 1 Chạm Siêu Tốc',
-        desc: 'Tích hợp nút Gọi điện, Gửi email và Nhắn tin Messenger trực tiếp từ thẻ quan tâm để xúc tiến đàm phán hợp đồng ngay trong ngày.'
+        title: 'Tương Tác 1 Chạm Siêu Tốc',
+        items: [
+          'Chạm công nghệ NFC truyền danh thiếp tức thì sang điện thoại đối tác.',
+          'Nút bấm Tải danh bạ (.vcf) lưu thẳng vào Phonebook iOS & Android.',
+          'Gọi điện, gửi Email, mở chat Zalo và Chia sẻ thẻ chỉ trong 1 thao tác.',
+          'Hoàn toàn không dùng dữ liệu ảo hay thông tin mock tĩnh.'
+        ]
       }
     ];
 
-    oppHighlights.forEach((h, idx) => {
+    features.forEach((f, idx) => {
       const xPos = 0.8 + idx * 4.0;
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: 1.8, w: 3.7, h: 4.8,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.GOLD_ACCENT, width: 1.2 },
-        roundRadio: 0.15
+        x: xPos, y: 2.1, w: 3.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
       });
-      slide.addText(h.icon, { x: xPos + 0.4, y: 2.2, w: 1.5, h: 0.8, fontSize: 36 });
-      slide.addText(h.title, { x: xPos + 0.4, y: 3.2, w: 3.0, h: 0.6, color: C.WHITE, bold: true, fontSize: 16 });
-      slide.addText(h.desc, { x: xPos + 0.4, y: 3.9, w: 3.0, h: 2.2, color: C.SLATE_MUTED, fontSize: 13 });
-    });
-  }
-
-  // SLIDE 6: Sự Kiện — Vé Pass 0đ & MinIO Storage
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('SỰ KIỆN & HỘI NGHỊ ĐỈNH CAO', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Vé Pass 0đ Tức Thời, Pipeline MinIO & Sơ Đồ Khán Phòng Cinema Map', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const eventBoxes = [
-      {
-        title: 'Luồng Vé 0đ Hoàn Toàn Tự Động',
-        points: [
-          'Hội viên đăng ký sự kiện miễn phí (Họp mặt, Tọa đàm) nhận ngay Vé Pass Điện Tử.',
-          'Loại bỏ triệt để cổng thanh toán giả lập gây khó chịu.',
-          'Mã QR Check-in tốc độ cao mã hóa theo từng cá nhân.'
-        ]
-      },
-      {
-        title: 'Pipeline Ảnh MinIO Storage Tập Trung',
-        points: [
-          'Toàn bộ banner sự kiện upload từ CRM được lưu trữ tại MinIO Cloud Object Storage.',
-          'Mobile App tự động tải ảnh từ MinIO URL thực tế, loại bỏ 100% ảnh demo hardcode.',
-          'Tối ưu hóa nén ảnh tự động cho tốc độ hiển thị dưới 0.3 giây.'
-        ]
-      },
-      {
-        title: 'Sơ Đồ Ghế Khán Phòng Cinema Map',
-        points: [
-          'Trực quan hóa vị trí Bàn VIP, Ghế Chủ tịch, Khán giả trên sơ đồ hội trường 3D.',
-          'Hội viên xem trước vị trí ghế ngồi của mình trên Vé Pass trước giờ khai mạc.',
-          'Điều phối check-in và đón tiếp khách VIP trang trọng, chuẩn xác.'
-        ]
-      }
-    ];
-
-    eventBoxes.forEach((b, idx) => {
-      const xPos = 0.8 + idx * 4.0;
+      // Header strip
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: 1.8, w: 3.7, h: 4.8,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.15
+        x: xPos, y: 2.1, w: 3.7, h: 0.5,
+        fill: { color: idx === 1 ? C.GOLD_LIGHT : C.BLUE_BG },
+        roundRadio: 0.08
       });
-      slide.addText(b.title, { x: xPos + 0.3, y: 2.1, w: 3.1, h: 0.7, color: C.GOLD_ACCENT, bold: true, fontSize: 15 });
-      b.points.forEach((pt, pIdx) => {
-        slide.addText(`• ${pt}`, {
-          x: xPos + 0.3, y: 2.9 + pIdx * 1.2, w: 3.1, h: 1.1,
-          color: C.SLATE_LIGHT, fontSize: 12
+      slide.addText(f.title, {
+        x: xPos + 0.25, y: 2.1, w: 3.2, h: 0.5,
+        color: idx === 1 ? C.GOLD_DARK : C.NAVY_PRIMARY, bold: true, fontSize: 12.5, valign: 'middle', fontFace: 'Calibri'
+      });
+
+      f.items.forEach((item, iIdx) => {
+        slide.addText(`•  ${item}`, {
+          x: xPos + 0.25, y: 2.8 + iIdx * 0.95, w: 3.2, h: 0.85,
+          color: C.TEXT_BODY, fontSize: 11, fontFace: 'Calibri'
         });
       });
     });
   }
 
-  // SLIDE 7: 5 Kênh Tin Nhắn Nghiệp Vụ & CRM Broadcast
+  // ---------------------------------------------------------------------------
+  // SLIDE 4: Sự Kiện & Luồng Nhận Vé 0đ Tức Thì
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'QUẢN TRỊ SỰ KIỆN SỐ', 'Hệ Thống Sự Kiện, Vé Điện Tử 0đ & Bốc Thăm Lucky Draw', 'Quy trình tham gia sự kiện tự động hóa 100%, trả vé ngay về Thông báo và Tin nhắn');
 
-    slide.addText('TRUYỀN THÔNG & PHÁT SÓNG THÔNG BÁO', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Hệ Thống 5 Kênh Tin Tức Nghiệp Vụ & Broadcast Trực Tiếp Từ CRM', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const channels = [
-      { name: '📢 Kênh Truyền Thông Hiệp Hội', desc: 'Bản tin tuần, hoạt động thiện nguyện, thông cáo báo chí chính thống.' },
-      { name: '🤝 Kênh Xúc Tiến Giao Thương', desc: 'Chương trình B2B Matching, kết nối cung cầu, tìm kiếm đại lý phân phối.' },
-      { name: '🏛️ Kênh Ban Thư Ký & Ban Điều Hành', desc: 'Nghị quyết đại hội, quy chế sinh hoạt, biểu quyết số và đóng hội phí.' },
-      { name: '🎯 Kênh Cơ Hội & Deal B2B', desc: 'Các đơn hàng độc quyền, cơ hội hợp tác và dự án nội bộ của hội viên.' },
-      { name: '🌟 Kênh Sự Kiện & Hội Nghị', desc: 'Đại hội thường niên, Lễ vinh danh Doanh nhân, Giải thể thao và Gala.' }
+    const steps = [
+      { step: '01', title: 'Chọn Sự Kiện & Khán Phòng', desc: 'Hội viên duyệt danh sách sự kiện, xem sơ đồ chỗ ngồi VIP, diễn giả và lịch trình gala.' },
+      { step: '02', title: 'Đăng Ký Vé Hội Viên (0đ)', desc: 'Bấm đăng ký vé đặc quyền 0đ; hệ thống xác thực tức thì trong 100ms không cần xét duyệt.' },
+      { step: '03', title: 'Cấp Vé & Mã May Mắn', desc: 'Khởi tạo vé QR độc bản và cấp tự động Mã số May mắn Lucky Draw định dạng #XXXX.' },
+      { step: '04', title: 'Giao Vé Đa Kênh Tức Thì', desc: 'Bắn thông báo đẩy cá nhân và gửi thẻ vé tương tác trực tiếp vào Hộp thư Tin nhắn App.' }
     ];
 
-    channels.forEach((c, idx) => {
-      const yPos = 1.8 + idx * 1.0;
+    steps.forEach((s, idx) => {
+      const xPos = 0.8 + idx * 2.95;
       slide.addShape(pres.ShapeType.rect, {
-        x: 0.8, y: yPos, w: 11.6, h: 0.85,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.08
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
       });
-      slide.addText(c.name, { x: 1.1, y: yPos + 0.15, w: 4.5, h: 0.5, color: C.GOLD_ACCENT, bold: true, fontSize: 13 });
-      slide.addText(c.desc, { x: 5.6, y: yPos + 0.15, w: 6.5, h: 0.5, color: C.WHITE, fontSize: 12 });
+      // Number badge
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        fill: { color: C.NAVY_PRIMARY },
+        roundRadio: 0.1
+      });
+      slide.addText(s.step, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 18, align: 'center', valign: 'middle', fontFace: 'Calibri'
+      });
+      // Title
+      slide.addText(s.title, {
+        x: xPos + 0.25, y: 3.3, w: 2.3, h: 0.7,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13.5, fontFace: 'Calibri'
+      });
+      // Desc
+      slide.addText(s.desc, {
+        x: xPos + 0.25, y: 4.1, w: 2.3, h: 2.3,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
     });
   }
 
-  // SLIDE 8: Lộ Trình & Tầm Nhìn Số 2026
+  // ---------------------------------------------------------------------------
+  // SLIDE 5: Sàn Giao Thương B2B & Cơ Hội Kinh Doanh (Marketplace)
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'KẾT NỐI GIAO THƯƠNG', 'Sàn Giao Thương B2B Nội Bộ & Khớp Nhu Cầu Matching', 'Tối ưu hóa dòng tiền và doanh thu thông qua chuỗi cung ứng khép kín giữa các hội viên');
 
-    slide.addText('TẦM NHÌN CHIẾN LƯỢC 2026', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Khát Vọng Doanh Nhân CEO 1983 — Vươn Tầm Thời Đại Số', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    slide.addShape(pres.ShapeType.rect, {
-      x: 0.8, y: 1.8, w: 11.6, h: 4.8,
-      fill: { color: C.NAVY_CARD },
-      line: { color: C.GOLD_ACCENT, width: 2 },
-      roundRadio: 0.2
-    });
-
-    slide.addText('GIÁ TRỊ CỐT LÕI ĐẠT ĐƯỢC', {
-      x: 1.2, y: 2.2, w: 10.8, h: 0.4,
-      color: C.GOLD_ACCENT, bold: true, fontSize: 18
-    });
-
-    const pillars = [
-      '⚡ Minh Bạch — Chuyên Nghiệp — Hiện Đại: Toàn bộ hoạt động hội viên và sự kiện được vận hành trên hạ tầng số chuẩn hóa.',
-      '🌐 Sức Mạnh Mạng Lưới Nội Khối: Hơn 500 doanh nhân sinh năm 1983 tạo thành chuỗi liên kết kinh tế uy tín hàng đầu Thủ đô.',
-      '🛡️ Bảo Trợ Pháp Lý & Vị Thế: Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA), đảm bảo chuẩn mực pháp lý và uy tín thương hiệu.',
-      '🚀 Tự Hào Bản Sắc 1983: Mệnh Đại Hải Thủy — Biển lớn bao la, tương trợ cùng nhau vượt sóng gió thương trường xây dựng đế chế bền vững.'
+    const cards = [
+      {
+        title: 'Sàn Sản Phẩm & Dịch Vụ B2B',
+        desc: 'Hội viên đăng tải sản phẩm, dịch vụ doanh nghiệp với mức chiết khấu ưu đãi nội bộ (Member Deal). Kiểm duyệt bảo đảm chất lượng pháp nhân từ Ban Thư ký.',
+        stats: 'Hơn 50+ Ngành nghề chủ đạo'
+      },
+      {
+        title: 'Bảng Tin Cơ Hội (Needs & Offers)',
+        desc: 'Mô hình Cần Mua - Cần Bán minh bạch. Hội viên đăng tin chào thầu, tìm kiếm đối tác cung ứng và phản hồi chào giá (Send Quote) trực tiếp trên app.',
+        stats: 'Kết nối trực tiếp Chủ tịch & CEO'
+      },
+      {
+        title: 'Claim Cơ Hội & Ghi Nhận Doanh Thu',
+        desc: 'Khi hai bên chốt hợp đồng thành công, thao tác Claim cơ hội tự động ghi nhận điểm giao thương và cập nhật vào Bảng Vinh Danh Doanh Số Hiệp Hội.',
+        stats: 'Minh bạch KPI đóng góp CLB'
+      }
     ];
 
-    pillars.forEach((p, idx) => {
-      slide.addText(p, {
-        x: 1.2, y: 2.8 + idx * 0.9, w: 10.8, h: 0.8,
-        color: C.WHITE, fontSize: 14
+    cards.forEach((c, idx) => {
+      const xPos = 0.8 + idx * 4.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 0.1,
+        fill: { color: idx === 0 ? C.NAVY_PRIMARY : (idx === 1 ? C.GOLD_ACCENT : C.EMERALD) }
+      });
+      slide.addText(c.title, {
+        x: xPos + 0.3, y: 2.4, w: 3.1, h: 0.6,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14.5, fontFace: 'Calibri'
+      });
+      slide.addText(c.desc, {
+        x: xPos + 0.3, y: 3.1, w: 3.1, h: 2.4,
+        color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+      });
+      // Bottom highlight tag
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos + 0.3, y: 5.7, w: 3.1, h: 0.6,
+        fill: { color: C.BG_LIGHT },
+        roundRadio: 0.08
+      });
+      slide.addText(`★  ${c.stats}`, {
+        x: xPos + 0.3, y: 5.7, w: 3.1, h: 0.6,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 11, align: 'center', valign: 'middle', fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 6: Mạng Xã Hội Khoảnh Khắc & Tin Nhắn Kết Nối 1-on-1
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'TƯƠNG TÁC THỜI GIAN THỰC', 'Mạng Xã Hội Doanh Nhân, Khoảnh Khắc & Tin Nhắn 1-on-1', 'Không gian số riêng tư, văn minh dành riêng cho Lãnh đạo cấp cao CEO 1983');
+
+    const modules = [
+      {
+        title: 'Bảng Tin Khoảnh Khắc (Moments)',
+        points: [
+          'Chia sẻ thành tựu ký kết hợp đồng, giải thưởng doanh nghiệp.',
+          'Bình luận dạng cây phân cấp đa tầng (Nested Comments).',
+          'Tương tác thả tim, chia sẻ cơ hội trực tiếp trên dòng thời gian.',
+          'Chế độ xem video ngắn và hình ảnh chất lượng cao 4K.'
+        ]
+      },
+      {
+        title: 'Tin Nhắn Kết Nối Doanh Nghiệp (DM)',
+        points: [
+          'Trao đổi bảo mật 1-1 giữa các Chủ tịch & Tổng Giám đốc.',
+          'Gửi danh thiếp điện tử, vị trí công ty và file tài liệu chào thầu.',
+          'Nhận vé sự kiện tương tác và thẻ thông báo chính thức từ Ban Thư ký.',
+          'Cuộc gọi thoại bảo mật nội bộ qua nền tảng WebRTC.'
+        ]
+      }
+    ];
+
+    modules.forEach((m, idx) => {
+      const xPos = 0.8 + idx * 6.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 0.5,
+        fill: { color: C.BLUE_BG },
+        roundRadio: 0.08
+      });
+      slide.addText(m.title, {
+        x: xPos + 0.3, y: 2.1, w: 5.1, h: 0.5,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13.5, valign: 'middle', fontFace: 'Calibri'
+      });
+      m.points.forEach((pt, pIdx) => {
+        slide.addText(`✔  ${pt}`, {
+          x: xPos + 0.3, y: 2.85 + pIdx * 0.9, w: 5.1, h: 0.75,
+          color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+        });
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 7: Bình Chọn Trực Tiếp (Live Voting) & Bốc Thăm May Mắn
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'HOẠT ĐỘNG TƯƠNG TÁC ĐẠI HỘI', 'Bình Chọn Live Voting & Vòng Quay May Mắn Lucky Draw', 'Công nghệ số hóa thời gian thực phục vụ Đại hội thường niên và Gala CEO 1983');
+
+    const acts = [
+      {
+        title: 'Biểu Quyết & Bầu Cử Trực Tiếp (Live Voting)',
+        items: [
+          'Biểu quyết bầu Ban Chấp Hành, Nghị quyết và giải thưởng Gala.',
+          'Hiển thị thông báo biểu quyết pop-up tức thì trên toàn bộ app hội viên.',
+          'Khóa bình chọn tự động chống gian lận, 1 hội viên = 1 phiếu hợp lệ.',
+          'Biểu đồ kết quả trực tiếp hiển thị đồng thời lên màn hình LED hội trường.'
+        ]
+      },
+      {
+        title: 'Quay Số May Mắn Theo Vé (Lucky Draw)',
+        items: [
+          'Quay thưởng tự động theo Mã số May mắn #XXXX trên vé sự kiện.',
+          'Hiệu ứng âm thanh, đồ họa vòng quay số kịch tính trên màn hình LED.',
+          'Khi trúng thưởng: Hệ thống tự động bắn thông báo chúc mừng về App.',
+          'Lịch sử trúng giải lưu trữ minh bạch, phục vụ công tác trao giải.'
+        ]
+      }
+    ];
+
+    acts.forEach((a, idx) => {
+      const xPos = 0.8 + idx * 6.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 0.5,
+        fill: { color: idx === 0 ? C.BLUE_BG : C.GOLD_LIGHT },
+        roundRadio: 0.08
+      });
+      slide.addText(a.title, {
+        x: xPos + 0.3, y: 2.1, w: 5.1, h: 0.5,
+        color: idx === 0 ? C.NAVY_PRIMARY : C.GOLD_DARK, bold: true, fontSize: 13.5, valign: 'middle', fontFace: 'Calibri'
+      });
+      a.items.forEach((it, iIdx) => {
+        slide.addText(`★  ${it}`, {
+          x: xPos + 0.3, y: 2.85 + iIdx * 0.9, w: 5.1, h: 0.75,
+          color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+        });
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 8: Cài Đặt PWA Đa Nền Tảng (Đặc Biệt Cho iOS / iPhone)
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'TRẢI NGHIỆM ĐA NỀN TẢNG', 'Cài Đặt Ứng Dụng PWA Trên iOS & Android', 'Không cần chờ xét duyệt App Store; cài đặt trong 10 giây với biểu tượng CEO 1983 độc bản');
+
+    const pwaSteps = [
+      { num: 'B1', title: 'Truy Cập Safari (iOS)', desc: 'Mở trình duyệt Safari trên iPhone, truy cập địa chỉ hệ thống app hiệp hội.' },
+      { num: 'B2', title: 'Chọn Nút Chia Sẻ', desc: 'Nhấn vào biểu tượng Chia Sẻ (hình vuông có mũi tên hướng lên) ở thanh dưới cùng.' },
+      { num: 'B3', title: 'Thêm Vào Màn Hình Chính', desc: 'Cuộn xuống và chọn mục "Thêm vào MH chính" (Add to Home Screen).' },
+      { num: 'B4', title: 'Trải Nghiệm Toàn Màn Hình', desc: 'Biểu tượng CEO 1983 xuất hiện trên màn hình chính; mở mượt mà như app native.' }
+    ];
+
+    pwaSteps.forEach((ps, idx) => {
+      const xPos = 0.8 + idx * 2.95;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        fill: { color: C.NAVY_PRIMARY },
+        roundRadio: 0.1
+      });
+      slide.addText(ps.num, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 16, align: 'center', valign: 'middle', fontFace: 'Calibri'
+      });
+      slide.addText(ps.title, {
+        x: xPos + 0.25, y: 3.3, w: 2.3, h: 0.6,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13.5, fontFace: 'Calibri'
+      });
+      slide.addText(ps.desc, {
+        x: xPos + 0.25, y: 4.0, w: 2.3, h: 2.3,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 9: Lợi Ích Của Hội Viên Khi Tham Gia Hệ Sinh Thái
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'GIÁ TRỊ THỰC TIỄN', 'Đặc Quyền Của Doanh Nhân Khi Sử Dụng Ứng Dụng', 'Gia tăng uy tín thương hiệu, mở rộng cơ hội thị trường và tiết kiệm chi phí vận hành');
+
+    const benefits = [
+      {
+        title: 'Mở Rộng Mạng Lưới C-Level',
+        items: [
+          'Tiếp cận trực tiếp hơn 100+ Lãnh đạo doanh nghiệp sinh năm 1983 cùng thế hệ.',
+          'Kết nối trên nền tảng tin cậy được bảo trợ bởi Hội Doanh Nhân Trẻ Hà Nội.',
+          'Tham gia các buổi kết nối giao ban định kỳ và Gala doanh nhân cao cấp.'
+        ]
+      },
+      {
+        title: 'Thúc Đẩy Doanh Thu Thực',
+        items: [
+          'Quảng bá sản phẩm, năng lực sản xuất đến chuỗi cung ứng của toàn bộ CLB.',
+          'Ưu tiên hợp tác, sử dụng dịch vụ chéo với mức chiết khấu nội bộ hấp dẫn.',
+          'Ghi nhận doanh số minh bạch, nâng tầm thương hiệu cá nhân và pháp nhân.'
+        ]
+      },
+      {
+        title: 'Vận Hành Số Chuyên Nghiệp',
+        items: [
+          'Quản lý hội phí, đối soát sao kê VietQR tự động không cần thủ công.',
+          'Tham dự sự kiện, hội thảo chuyên đề chỉ bằng một mã QR điểm danh.',
+          'Cập nhật tin tức, nghị quyết hiệp hội và tài liệu đào tạo mọi lúc mọi nơi.'
+        ]
+      }
+    ];
+
+    benefits.forEach((b, idx) => {
+      const xPos = 0.8 + idx * 4.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 0.1,
+        fill: { color: idx === 1 ? C.GOLD_ACCENT : C.NAVY_PRIMARY }
+      });
+      slide.addText(b.title, {
+        x: xPos + 0.3, y: 2.4, w: 3.1, h: 0.6,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14, fontFace: 'Calibri'
+      });
+      b.items.forEach((it, iIdx) => {
+        slide.addText(`✔  ${it}`, {
+          x: xPos + 0.3, y: 3.1 + iIdx * 1.1, w: 3.1, h: 1.0,
+          color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+        });
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 10: Lời Kết & Tuyên Ngôn Hành Động (Closing Navy & Gold)
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    slide.background = { color: C.NAVY_DARK };
+
+    slide.addShape(pres.ShapeType.rect, {
+      x: 0.8, y: 1.2, w: 3.8, h: 0.4,
+      fill: { color: C.GOLD_ACCENT },
+      roundRadio: 0.1
+    });
+    slide.addText('HÀNH ĐỘNG HÔM NAY — VỮNG BƯỚC NGÀY MAI', {
+      x: 0.8, y: 1.2, w: 3.8, h: 0.4,
+      color: C.NAVY_DARK, bold: true, fontSize: 10.5, align: 'center', valign: 'middle', fontFace: 'Calibri'
+    });
+
+    slide.addText('CLB DOANH NHÂN CEO 1983', {
+      x: 0.8, y: 1.8, w: 11.73, h: 1.0,
+      color: C.WHITE, bold: true, fontSize: 34, fontFace: 'Calibri'
+    });
+
+    slide.addText('"Kết Nối Bền — Phát Triển Vững"', {
+      x: 0.8, y: 2.8, w: 11.73, h: 0.6,
+      color: C.GOLD_ACCENT, bold: true, fontSize: 22, italic: true, fontFace: 'Calibri'
+    });
+
+    slide.addText('Chào đón các Doanh nhân Lãnh đạo sinh năm 1983 gia nhập mạng lưới số hóa độc bản, tiên phong kiến tạo giá trị bền vững cho cộng đồng doanh nghiệp Việt Nam.', {
+      x: 0.8, y: 3.6, w: 10.5, h: 0.9,
+      color: C.BORDER_SUBTLE, fontSize: 14, fontFace: 'Calibri'
+    });
+
+    // Contact Information
+    const contacts = [
+      { label: 'Cổng thông tin', val: 'https://ceo1983.com' },
+      { label: 'Hệ thống Quản trị', val: 'Web CRM & App Mobile CEO 1983' },
+      { label: 'Đơn vị bảo trợ', val: 'Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)' }
+    ];
+
+    contacts.forEach((c, idx) => {
+      const xPos = 0.8 + idx * 4.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 5.0, w: 3.7, h: 1.5,
+        fill: { color: C.NAVY_CARD },
+        line: { color: C.NAVY_PRIMARY, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addText(c.label, {
+        x: xPos + 0.3, y: 5.2, w: 3.1, h: 0.35,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 12, fontFace: 'Calibri'
+      });
+      slide.addText(c.val, {
+        x: xPos + 0.3, y: 5.65, w: 3.1, h: 0.6,
+        color: C.WHITE, fontSize: 11.5, fontFace: 'Calibri'
       });
     });
   }
 
   const outPath = path.join(OUT_DIR, 'SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx');
   await pres.writeFile({ fileName: outPath });
-  console.log(`✓ Generated App PowerPoint: ${outPath} (${fs.statSync(outPath).size} bytes)`);
+  console.log(`✓ Generated App PowerPoint: ${outPath} (${(fs.statSync(outPath).size / 1024).toFixed(1)} KB)`);
 }
 
 // =============================================================================
 // PRESENTATION 2: WEB CRM QUẢN TRỊ HIỆP HỘI
 // =============================================================================
 async function generateCrmSlideDeck() {
-  console.log('Generating CRM PowerPoint Slides...');
+  console.log('Generating CRM PowerPoint Slides (Executive Light Palette)...');
   const pres = new pptxgen();
   pres.layout = 'LAYOUT_16x9';
-  pres.author = 'Ban Điều Hành CLB Doanh Nhân CEO 1983';
-  pres.title = 'Hệ Thống CRM Quản Trị Hiệp Hội CEO 1983 — Executive Command Center';
+  pres.author = 'Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983';
+  pres.title = 'Hệ Thống Web CRM Quản Trị Hiệp Hội CEO 1983 — Executive Command Center';
 
-  function setSlideTheme(slide, isDark = true) {
-    slide.background = { color: isDark ? C.NAVY_DARK : C.SLATE_LIGHT };
-  }
-
+  // ---------------------------------------------------------------------------
   // SLIDE 1: Cover Slide
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    slide.background = { color: C.NAVY_DARK };
 
     slide.addShape(pres.ShapeType.rect, {
-      x: 0.8, y: 0.8, w: 3.8, h: 0.4,
+      x: 0.8, y: 0.8, w: 4.5, h: 0.42,
       fill: { color: C.GOLD_ACCENT },
       roundRadio: 0.1
     });
-    slide.addText('EXECUTIVE COMMAND CENTER', {
-      x: 0.8, y: 0.8, w: 3.8, h: 0.4,
-      color: C.NAVY_DARK, bold: true, fontSize: 11, align: 'center', valign: 'middle'
+    slide.addText('HỆ THỐNG QUẢN TRỊ ĐIỀU HÀNH HIỆP HỘI', {
+      x: 0.8, y: 0.8, w: 4.5, h: 0.42,
+      color: C.NAVY_DARK, bold: true, fontSize: 11, align: 'center', valign: 'middle', fontFace: 'Calibri'
     });
 
-    slide.addText('HỆ THỐNG CRM QUẢN TRỊ HIỆP HỘI CEO 1983', {
-      x: 0.8, y: 1.5, w: 11.5, h: 1.2,
+    slide.addText('WEB CRM QUẢN TRỊ CLB DOANH NHÂN CEO 1983', {
+      x: 0.8, y: 1.55, w: 11.73, h: 1.2,
       color: C.WHITE, bold: true, fontSize: 32, fontFace: 'Calibri'
     });
 
-    slide.addText('Trung Tâm Chỉ Huy, Thẩm Định & Tự Động Hóa Vận Hành Toàn Diện', {
-      x: 0.8, y: 2.8, w: 11.5, h: 0.5,
-      color: C.GOLD_ACCENT, bold: true, fontSize: 18, italic: true
+    slide.addText('Executive Command Center · Quản trị dữ liệu 360° · Phiên bản v2.6.0 Pro', {
+      x: 0.8, y: 2.85, w: 11.73, h: 0.5,
+      color: C.GOLD_ACCENT, bold: true, fontSize: 18, italic: true, fontFace: 'Calibri'
     });
 
-    slide.addText('Công cụ điều hành số hóa chuẩn hóa quy trình tiếp nhận, phê duyệt pháp nhân, quản lý tài chính hội phí và kiểm toán minh bạch.', {
-      x: 0.8, y: 3.4, w: 10.5, h: 0.8,
-      color: C.SLATE_MUTED, fontSize: 14
+    slide.addText('Trung tâm điều hành số hóa toàn diện dành cho Ban Quản Trị & Ban Thư Ký: Quản lý hồ sơ hội viên, tổ chức sự kiện, sơ đồ chỗ ngồi, Live Voting, sàn B2B và đối soát hội phí VietQR.', {
+      x: 0.8, y: 3.45, w: 10.5, h: 0.8,
+      color: C.BORDER_SUBTLE, fontSize: 13.5, fontFace: 'Calibri'
     });
 
-    const crmPillars = [
-      { num: 'Automated', label: 'Onboarding Tự Động', sub: 'Cấp tài khoản qua Google SMTP' },
-      { num: 'Unified', label: 'MinIO Asset Storage', sub: 'Lưu trữ ảnh tập trung chuẩn S3' },
-      { num: 'Multi-Channel', label: 'Broadcast 5 Kênh', sub: 'Phân luồng tin tức chuyên biệt' }
+    const crmMetrics = [
+      { num: '360°', label: 'Hồ Sơ Hội Viên', sub: 'Thẩm định & cấp thẻ số tự động' },
+      { num: '100%', label: 'Điểm Danh Mã QR', sub: 'Tốc độ quét 1 giây, chống trùng' },
+      { num: '04', label: 'Cấp Phân Quyền RBAC', sub: 'Super Admin, Thư ký, Sự kiện, Tài chính' }
     ];
 
-    crmPillars.forEach((p, idx) => {
+    crmMetrics.forEach((m, idx) => {
       const xPos = 0.8 + idx * 4.0;
       slide.addShape(pres.ShapeType.rect, {
         x: xPos, y: 4.8, w: 3.7, h: 1.8,
         fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1.5 },
+        line: { color: C.NAVY_PRIMARY, width: 1.5 },
         roundRadio: 0.15
       });
-      slide.addText(p.num, { x: xPos + 0.3, y: 5.0, w: 3.1, h: 0.5, color: C.GOLD_ACCENT, bold: true, fontSize: 20 });
-      slide.addText(p.label, { x: xPos + 0.3, y: 5.6, w: 3.1, h: 0.4, color: C.WHITE, bold: true, fontSize: 14 });
-      slide.addText(p.sub, { x: xPos + 0.3, y: 6.0, w: 3.1, h: 0.4, color: C.SLATE_MUTED, fontSize: 11 });
+      slide.addText(m.num, {
+        x: xPos + 0.3, y: 5.0, w: 3.1, h: 0.7,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 32, fontFace: 'Calibri'
+      });
+      slide.addText(m.label, {
+        x: xPos + 0.3, y: 5.75, w: 3.1, h: 0.4,
+        color: C.WHITE, bold: true, fontSize: 13.5, fontFace: 'Calibri'
+      });
+      slide.addText(m.sub, {
+        x: xPos + 0.3, y: 6.15, w: 3.1, h: 0.35,
+        color: C.BORDER_SUBTLE, fontSize: 10.5, fontFace: 'Calibri'
+      });
     });
   }
 
-  // SLIDE 2: Luồng Gia Nhập & Gmail SMTP
+  // ---------------------------------------------------------------------------
+  // SLIDE 2: Phân Quyền Vai Trò Vận Hành (RBAC)
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'AN TOÀN & BẢO MẬT', 'Phân Quyền Vai Trò Quản Trị (Role-Based Access Control)', 'Phân định quyền hạn minh bạch giữa Ban Điều Hành, Ban Thư Ký, Ban Sự Kiện và Ban Tài Chính');
 
-    slide.addText('QUY TRÌNH TIẾP NHẬN TỰ ĐỘNG HÓA', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Đăng Ký Từ Landing Page 3D & Cấp Mật Khẩu Qua Google SMTP', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const steps = [
-      { step: 'BƯỚC 1', title: 'Hội Viên Nộp Form Landing 3D', desc: 'Khai báo họ tên, SĐT, email công vụ, MST, chức vụ và quy mô công ty.' },
-      { step: 'BƯỚC 2', title: 'Tiếp Nhận & Lưu Trữ CRM', desc: 'API Backend POST /public/club-registration tiếp nhận và đưa vào hàng đợi thẩm định.' },
-      { step: 'BƯỚC 3', title: 'Tạo Mật Khẩu Ngẫu Nhiên Bảo Mật', desc: 'Hệ thống tự động sinh mật khẩu ngẫu nhiên phức tạp, chống trùng lặp và mã hóa bcrypt.' },
-      { step: 'BƯỚC 4', title: 'Gửi Email Tự Động Qua SMTP', desc: 'Thư điện tử HTML thương hiệu CEO 1983 cấp thông tin tài khoản và link cài app.' }
+    const roles = [
+      {
+        role: 'Super Admin',
+        email: 'admin@connect.vn',
+        scope: 'Toàn quyền kiểm soát hệ thống: Quản trị danh mục, phân quyền tài khoản, cấu hình bảo mật SSL, quản lý nhật ký kiểm toán (Audit Logs).'
+      },
+      {
+        role: 'Tổng Thư Ký CLB',
+        email: 'ceo.tongthuky@ceo1983.com',
+        scope: 'Thẩm định hồ sơ hội viên mới, duyệt đơn đăng ký từ Landing Page, xuất bản tin tức, nghị quyết BCH và gửi thông báo khẩn toàn hiệp hội.'
+      },
+      {
+        role: 'Trưởng Ban Sự Kiện',
+        email: 'events@ceo1983.com',
+        scope: 'Tạo mới sự kiện, cấu hình sơ đồ khán phòng (Cinema Seating), quét mã QR check-in cổng, điều hành phiên Live Voting và vòng quay Lucky Draw.'
+      },
+      {
+        role: 'Trưởng Ban Tài Chính',
+        email: 'finance@ceo1983.com',
+        scope: 'Theo dõi bảng hội phí thường niên theo niên độ, đối soát sao kê ngân hàng VietQR, gạch nợ hội phí tự động và báo cáo thu chi hiệp hội.'
+      }
     ];
 
-    steps.forEach((st, idx) => {
-      const xPos = 0.8 + idx * 3.0;
+    roles.forEach((r, idx) => {
+      const xPos = 0.8 + idx * 2.95;
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: 1.8, w: 2.8, h: 4.8,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.GOLD_ACCENT, width: 1.2 },
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
         roundRadio: 0.12
       });
-      slide.addText(st.step, { x: xPos + 0.25, y: 2.1, w: 2.3, h: 0.4, color: C.GOLD_ACCENT, bold: true, fontSize: 16 });
-      slide.addText(st.title, { x: xPos + 0.25, y: 2.7, w: 2.3, h: 0.8, color: C.WHITE, bold: true, fontSize: 14 });
-      slide.addText(st.desc, { x: xPos + 0.25, y: 3.7, w: 2.3, h: 2.5, color: C.SLATE_MUTED, fontSize: 12 });
-    });
-  }
-
-  // SLIDE 3: Quản Lý Template Landing & Mẫu 3D Vertical
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('QUẢN TRỊ GIAO DIỆN CỔNG THÔNG TIN', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Quản Lý Kho Template Landing Web & Tích Hợp Mẫu 3D Vertical', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const tmplItems = [
-      {
-        title: 'Tích Hợp Chuẩn Hóa Template Catalog',
-        desc: 'Đưa mẫu "CEO 1983 - 3D Vertical Landscape" vào danh mục quản lý tập trung landing-templates-catalog.ts với định danh riêng biệt.'
-      },
-      {
-        title: 'Chuyển Đổi Nhanh Giữa Các Phiên Bản',
-        desc: 'Ban Truyền thông có thể linh hoạt chuyển đổi giữa mẫu Blue-White kinh điển, mẫu Cinematic Parallax hoặc mẫu 3D Vertical mới.'
-      },
-      {
-        title: 'Xem Trước Đa Thiết Bị (Device Preview)',
-        desc: 'Tích hợp màn hình xem trước trực quan trên Desktop (1440px), Tablet (768px) và Mobile (390px) trước khi bấm áp dụng xuất bản.'
-      },
-      {
-        title: 'Đồng Bộ Dữ Liệu Form Đăng Ký Trực Tiếp',
-        desc: 'Mọi đơn đăng ký từ bất kỳ mẫu landing nào đều được kết nối trực tiếp vào cùng một pipeline thẩm định hồ sơ của Web CRM.'
-      }
-    ];
-
-    tmplItems.forEach((item, idx) => {
-      const yPos = 1.8 + idx * 1.25;
       slide.addShape(pres.ShapeType.rect, {
-        x: 0.8, y: yPos, w: 11.6, h: 1.1,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.1
+        x: xPos, y: 2.1, w: 2.8, h: 0.1,
+        fill: { color: idx === 0 ? C.NAVY_PRIMARY : (idx === 1 ? C.GOLD_ACCENT : (idx === 2 ? C.EMERALD : C.NAVY_HOVER)) }
       });
-      slide.addText(`❖`, { x: 1.1, y: yPos + 0.3, w: 0.5, h: 0.5, color: C.GOLD_ACCENT, fontSize: 20 });
-      slide.addText(item.title, { x: 1.7, y: yPos + 0.2, w: 9.5, h: 0.35, color: C.WHITE, bold: true, fontSize: 14 });
-      slide.addText(item.desc, { x: 1.7, y: yPos + 0.55, w: 10.2, h: 0.45, color: C.SLATE_MUTED, fontSize: 12 });
+      slide.addText(r.role, {
+        x: xPos + 0.25, y: 2.35, w: 2.3, h: 0.4,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14, fontFace: 'Calibri'
+      });
+      slide.addText(r.email, {
+        x: xPos + 0.25, y: 2.8, w: 2.3, h: 0.35,
+        color: C.GOLD_DARK, bold: true, fontSize: 10.5, fontFace: 'Consolas'
+      });
+      slide.addText(r.scope, {
+        x: xPos + 0.25, y: 3.3, w: 2.3, h: 3.1,
+        color: C.TEXT_BODY, fontSize: 11, fontFace: 'Calibri'
+      });
     });
   }
 
-  // SLIDE 4: Sự Kiện, Vé 0đ & MinIO Storage
+  // ---------------------------------------------------------------------------
+  // SLIDE 3: Bảng Điều Khiển Tổng Quan (Dashboard KPI)
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'BÁO CÁO ĐIỀU HÀNH', 'Bảng Điều Khiển Dashboard — Giám Sát Chỉ Số KPI Thời Gian Thực', 'Bức tranh toàn cảnh về quy mô hội viên, sức khỏe tài chính và lưu lượng giao thương B2B');
 
-    slide.addText('ĐIỀU HÀNH SỰ KIỆN TOÀN DIỆN', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Cấu Hình Vé 0đ, Upload Banner MinIO & Sơ Đồ Ghế Khán Phòng', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
+    const kpis = [
+      { label: 'Tổng Số Hội Viên Chính Thức', val: '100+ Lãnh Đạo', desc: 'Chủ tịch HĐQT, Tổng Giám Đốc, CEO tuổi Quý Hợi 1983' },
+      { label: 'Tỷ Lệ Hoàn Tất Hội Phí Niên Độ', val: '92.5% Đạt Chuẩn', desc: 'Gạch nợ đối soát sao kê tự động qua cổng VietQR' },
+      { label: 'Sự Kiện & Gala Tổ Chức', val: '12 Sự Kiện/Năm', desc: 'Bao gồm Đại hội thường niên, Business Matching Day & Giải Golf' },
+      { label: 'Giá Trị Giao Thương Kết Nối B2B', val: 'Hơn 50+ Tỷ Đồng', desc: 'Tổng giá trị hợp đồng được claim và ghi nhận thành công' }
+    ];
 
-    const crmEventBoxes = [
+    kpis.forEach((k, idx) => {
+      const row = Math.floor(idx / 2);
+      const col = idx % 2;
+      const xPos = 0.8 + col * 6.0;
+      const yPos = 2.1 + row * 2.35;
+
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: yPos, w: 5.7, h: 2.15,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: yPos, w: 0.12, h: 2.15,
+        fill: { color: col === 0 ? C.NAVY_PRIMARY : C.GOLD_ACCENT }
+      });
+      slide.addText(k.label, {
+        x: xPos + 0.35, y: yPos + 0.25, w: 5.1, h: 0.35,
+        color: C.TEXT_MUTED, fontSize: 11.5, bold: true, fontFace: 'Calibri'
+      });
+      slide.addText(k.val, {
+        x: xPos + 0.35, y: yPos + 0.65, w: 5.1, h: 0.65,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 24, fontFace: 'Calibri'
+      });
+      slide.addText(k.desc, {
+        x: xPos + 0.35, y: yPos + 1.35, w: 5.1, h: 0.6,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 4: Quy Trình Thẩm Định & Phê Duyệt Hồ Sơ Hội Viên 360°
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'QUẢN LÝ HỘI VIÊN 360°', 'Quy Trình Tiếp Nhận & Phê Duyệt Hồ Sơ Trực Tuyến', 'Khép kín từ form đăng ký Landing Page đến kích hoạt tài khoản di động trong 1 cú nhấp');
+
+    const appFlow = [
       {
-        title: 'Cấu Hình Vé 0đ Linh Hoạt',
-        points: [
-          'Thiết lập giá vé 0đ cho họp định kỳ và đại hội nội bộ.',
-          'Hệ thống tự động cấp Vé Pass có mã QR check-in.',
-          'Loại bỏ cổng thanh toán bắt buộc cho sự kiện miễn phí.'
-        ]
+        step: 'BƯỚC 1',
+        title: 'Tiếp Nhận Đơn Từ Landing Page',
+        desc: 'Hồ sơ đăng ký mới từ form Landing Page (/landing/ceo1983) tự động đổ về CRM với trạng thái "Chờ xét duyệt" màu vàng.'
       },
       {
-        title: 'MinIO Storage Cho Banner Sự Kiện',
-        points: [
-          'Ảnh banner upload qua CRM lưu an toàn trên MinIO S3.',
-          'Mobile App tự động tải ảnh thực tế, không dùng ảnh demo.',
-          'Tốc độ truyền tải CDN tối ưu hóa cho hàng nghìn truy cập.'
-        ]
+        step: 'BƯỚC 2',
+        title: 'Thẩm Định Hồ Sơ Chi Tiết (Drawer 360°)',
+        desc: 'Ban Thư ký mở Drawer kiểm tra MST, giấy phép ĐKKD, chức vụ C-Level, quy mô doanh thu và lĩnh vực kinh doanh.'
       },
       {
-        title: 'Sơ Đồ Cinema Seating Map & Check-in',
-        points: [
-          'Kéo thả phân bổ ghế ngồi Bàn VIP, Khách mời, Ban Chấp Hành.',
-          'Quản lý danh sách check-in thời gian thực theo từng giây.',
-          'Màn hình Kiosk Check-in QR tốc độ cao đón tiếp đại biểu.'
-        ]
+        step: 'BƯỚC 3',
+        title: 'Thao Tác Phê Duyệt (Approve)',
+        desc: 'Bấm nút Phê duyệt: Hệ thống tự động kích hoạt tài khoản hội viên, sinh mã định danh VIP (CEO-1983-xxx) và cấp quyền đăng nhập app.'
+      },
+      {
+        step: 'BƯỚC 4',
+        title: 'Cập Nhật Thời Gian Thực Về Landing',
+        desc: 'Màn hình tra cứu trên Landing Page (auto-polling mỗi 4s) ngay lập tức hiển thị thông báo Chúc mừng và nút chuyển vào App.'
       }
     ];
 
-    crmEventBoxes.forEach((b, idx) => {
+    appFlow.forEach((af, idx) => {
+      const xPos = 0.8 + idx * 2.95;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos + 0.25, y: 2.4, w: 1.2, h: 0.35,
+        fill: { color: C.NAVY_PRIMARY },
+        roundRadio: 0.06
+      });
+      slide.addText(af.step, {
+        x: xPos + 0.25, y: 2.4, w: 1.2, h: 0.35,
+        color: C.WHITE, bold: true, fontSize: 10, align: 'center', valign: 'middle', fontFace: 'Calibri'
+      });
+      slide.addText(af.title, {
+        x: xPos + 0.25, y: 2.95, w: 2.3, h: 0.8,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13.5, fontFace: 'Calibri'
+      });
+      slide.addText(af.desc, {
+        x: xPos + 0.25, y: 3.85, w: 2.3, h: 2.5,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 5: Quản Trị Sự Kiện, Sơ Đồ Khán Phòng & Check-in QR
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'TỔ CHỨC ĐẠI HỘI', 'Quản Trị Sự Kiện, Sơ Đồ Khán Phòng & Check-in QR Siêu Tốc', 'Kiểm soát check-in hội trường 1 giây, định vị số ghế VIP và chống trùng lặp vé 100%');
+
+    const evCols = [
+      {
+        title: 'Bố Cục Banner & Thiết Lập Sự Kiện',
+        desc: 'Hệ thống tự động điều chỉnh tỷ lệ banner theo phân loại: Đại hội thường niên (16:9), Business Matching (21:9) hoặc Hội thảo C-Level (Cinema). Tích hợp cấu hình vé VIP 0đ và vé khách mời.'
+      },
+      {
+        title: 'Sơ Đồ Khán Phòng (Cinema Seating Map)',
+        desc: 'Thiết lập ma trận ghế ngồi trực quan gồm các khu vực: VIP Kim Cương (hàng đầu), Đoàn Chủ Tịch, Hội Viên Chính Thức và Khách Mời. Hội viên chọn chỗ chính xác theo thời gian thực.'
+      },
+      {
+        title: 'Quét Mã QR Check-in Cổng Tốc Độ Cao',
+        desc: 'Camera quét mã vé QR trên điện thoại trong 1 giây. Hệ thống xác nhận tên, số ghế, ảnh đại diện và bật âm thanh "Tít" thành công. Ngăn chặn triệt để hành vi quét vé 2 lần.'
+      }
+    ];
+
+    evCols.forEach((ec, idx) => {
       const xPos = 0.8 + idx * 4.0;
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: 1.8, w: 3.7, h: 4.8,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.GOLD_ACCENT, width: 1.2 },
-        roundRadio: 0.15
+        x: xPos, y: 2.1, w: 3.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
       });
-      slide.addText(b.title, { x: xPos + 0.3, y: 2.1, w: 3.1, h: 0.7, color: C.GOLD_ACCENT, bold: true, fontSize: 15 });
-      b.points.forEach((pt, pIdx) => {
-        slide.addText(`✔ ${pt}`, {
-          x: xPos + 0.3, y: 2.9 + pIdx * 1.2, w: 3.1, h: 1.1,
-          color: C.WHITE, fontSize: 12
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 0.1,
+        fill: { color: idx === 0 ? C.NAVY_PRIMARY : (idx === 1 ? C.GOLD_ACCENT : C.EMERALD) }
+      });
+      slide.addText(ec.title, {
+        x: xPos + 0.3, y: 2.4, w: 3.1, h: 0.7,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14, fontFace: 'Calibri'
+      });
+      slide.addText(ec.desc, {
+        x: xPos + 0.3, y: 3.2, w: 3.1, h: 3.2,
+        color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 6: Điều Hành Live Voting & Vòng Quay Lucky Draw
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'TƯƠNG TÁC SÂN KHẤU', 'Điều Hành Biểu Quyết Trực Tiếp (Live Voting) & Bốc Thăm Gala', 'Tạo điểm nhấn công nghệ hoành tráng trong các sự kiện lớn của Hiệp hội CEO 1983');
+
+    const stageMods = [
+      {
+        title: 'Bảng Điều Khiển Live Voting',
+        items: [
+          'Tạo câu hỏi biểu quyết kèm danh sách ứng viên Ban Chấp Hành.',
+          'Bấm nút "Mở phiên bình chọn": Toàn bộ App hội viên tự động bật giao diện bầu cử.',
+          'Theo dõi số lượng phiếu bầu tăng theo thời gian thực (Real-time Gauge).',
+          'Khóa phiên và trình chiếu biểu đồ kết quả trực tiếp lên màn hình LED.'
+        ]
+      },
+      {
+        title: 'Vận Hành Vòng Quay Lucky Draw',
+        items: [
+          'Hệ thống tổng hợp toàn bộ Mã số May mắn (#XXXX) từ các vé đã check-in.',
+          'Giao diện vòng quay số đồ họa 3D sang trọng kèm âm thanh sân khấu sống động.',
+          'Bấm "Quay Số": Thuật toán chọn ngẫu nhiên minh bạch không thể can thiệp.',
+          'Tự động gửi thông báo chúc mừng kèm ảnh giải thưởng về ứng dụng người trúng.'
+        ]
+      }
+    ];
+
+    stageMods.forEach((sm, idx) => {
+      const xPos = 0.8 + idx * 6.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 0.5,
+        fill: { color: idx === 0 ? C.BLUE_BG : C.GOLD_LIGHT },
+        roundRadio: 0.08
+      });
+      slide.addText(sm.title, {
+        x: xPos + 0.3, y: 2.1, w: 5.1, h: 0.5,
+        color: idx === 0 ? C.NAVY_PRIMARY : C.GOLD_DARK, bold: true, fontSize: 13.5, valign: 'middle', fontFace: 'Calibri'
+      });
+      sm.items.forEach((it, iIdx) => {
+        slide.addText(`★  ${it}`, {
+          x: xPos + 0.3, y: 2.85 + iIdx * 0.9, w: 5.1, h: 0.75,
+          color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
         });
       });
     });
   }
 
-  // SLIDE 5: Live Voting & Lucky Draw
+  // ---------------------------------------------------------------------------
+  // SLIDE 7: Quản Trị Tài Chính, Hội Phí & Cổng VietQR Tự Động
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'QUẢN TRỊ TÀI CHÍNH', 'Bảng Quản Lý Hội Phí Thường Niên & Đối Soát Sao Kê VietQR', 'Minh bạch hóa tài chính hiệp hội, giảm thiểu 95% sai sót kế toán đối soát thủ công');
 
-    slide.addText('ĐIỀU HÀNH ĐẠI HỘI & GALA', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Điều Phối Biểu Quyết Live Voting & Vòng Quay May Mắn Lucky Draw', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const votingBoxes = [
+    const finCards = [
       {
-        title: 'Phiên Biểu Quyết Đại Hội Live Voting',
-        desc: 'Khởi tạo phiên biểu quyết điện tử cho các nghị quyết quan trọng. Đại biểu bỏ phiếu trực tiếp trên Mobile App. CRM hiển thị biểu đồ kết quả thời gian thực với tỷ lệ % chuẩn xác.'
+        title: 'Bảng Hội Phí Niên Độ',
+        desc: 'Theo dõi tình trạng đóng phí thường niên của từng hội viên theo từng năm hoạt động. Hiển thị rõ số tiền, ngày gia hạn và trạng thái "Đã đóng" hoặc "Chưa đóng".'
       },
       {
-        title: 'Chốt Kết Quả & Phát Sóng Đa Kênh',
-        desc: 'Khi kết thúc phiên bỏ phiếu, CRM tự động tổng hợp tỷ lệ tán thành và phát sóng thông báo kết quả chính thức đến toàn bộ hội viên qua cả chuông thông báo và kênh tin nhắn.'
+        title: 'Cổng Thanh Toán VietQR Tự Động',
+        desc: 'Khi hội viên bấm gia hạn trên App, mã VietQR động được tạo với đúng số tiền và cú pháp chuẩn. Kế toán đối soát sao kê ngân hàng và bật/tắt gạch nợ tức thì.'
       },
       {
-        title: 'Vận Hành Vòng Quay Lucky Draw',
-        desc: 'Cấu hình danh sách giải thưởng (Giải Đặc Biệt, Giải Nhất, Nhì, Ba), quay số ngẫu nhiên minh bạch trên màn hình LED sân khấu và tự động trao thưởng cho đại biểu tham dự.'
+        title: 'Nhắc Nhở Hội Phí Thông Minh',
+        desc: 'Hệ thống tự động kích hoạt thông báo nhắc nhở hội phí trước 30 ngày và 7 ngày đến hạn. Cảnh báo hạn chế quyền lợi nếu hội phí quá hạn theo điều lệ CLB.'
       }
     ];
 
-    votingBoxes.forEach((v, idx) => {
+    finCards.forEach((fc, idx) => {
       const xPos = 0.8 + idx * 4.0;
       slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: 1.8, w: 3.7, h: 4.8,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.15
-      });
-      slide.addText(`0${idx + 1}`, { x: xPos + 0.3, y: 2.1, w: 1.5, h: 0.5, color: C.GOLD_ACCENT, bold: true, fontSize: 24 });
-      slide.addText(v.title, { x: xPos + 0.3, y: 2.8, w: 3.1, h: 0.8, color: C.WHITE, bold: true, fontSize: 15 });
-      slide.addText(v.desc, { x: xPos + 0.3, y: 3.7, w: 3.1, h: 2.5, color: C.SLATE_MUTED, fontSize: 12 });
-    });
-  }
-
-  // SLIDE 6: Quản Trị Sàn Marketplace & Giám Sát Deal
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('KIỂM DUYỆT & THÚC ĐẨY GIAO THƯƠNG', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Kiểm Duyệt Sản Phẩm Marketplace & Giám Sát Cơ Hội B2B Hai Chiều', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const mktCrmItems = [
-      {
-        title: 'Thẩm Định Pháp Nhân Doanh Nghiệp Cung Cấp',
-        desc: 'Kiểm tra giấy phép đăng ký kinh doanh, tư cách hội viên chính thức trước khi duyệt sản phẩm lên sàn thương mại nội khối.'
-      },
-      {
-        title: 'Cấp Chứng Nhận "Verified CEO 1983"',
-        desc: 'Huy hiệu bảo chứng chất lượng dành cho các doanh nghiệp thành viên cam kết chính sách giá ưu đãi đặc quyền cho hội viên.'
-      },
-      {
-        title: 'Theo Dõi Phễu Cơ Hội Kinh Doanh (Deal Pipeline)',
-        desc: 'Giám sát tổng giá trị giao dịch, số lượng bài đăng chào mua, chào bán, các cơ hội hợp tác đầu tư và tỷ lệ khớp lệnh thành công.'
-      },
-      {
-        title: 'Đồng Bộ Dữ Liệu Thời Gian Thực 2 Chiều',
-        desc: 'Mọi chỉnh sửa về giá ưu đãi, hình ảnh hoặc trạng thái mở/đóng cơ hội trên App được cập nhật lập tức về trung tâm CRM.'
-      }
-    ];
-
-    mktCrmItems.forEach((m, idx) => {
-      const yPos = 1.8 + idx * 1.25;
-      slide.addShape(pres.ShapeType.rect, {
-        x: 0.8, y: yPos, w: 11.6, h: 1.1,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.CARD_BORDER, width: 1 },
-        roundRadio: 0.1
-      });
-      slide.addText(`★`, { x: 1.1, y: yPos + 0.3, w: 0.5, h: 0.5, color: C.GOLD_ACCENT, fontSize: 18 });
-      slide.addText(m.title, { x: 1.7, y: yPos + 0.2, w: 9.5, h: 0.35, color: C.WHITE, bold: true, fontSize: 14 });
-      slide.addText(m.desc, { x: 1.7, y: yPos + 0.55, w: 10.2, h: 0.45, color: C.SLATE_MUTED, fontSize: 12 });
-    });
-  }
-
-  // SLIDE 7: Quản Lý Hội Phí Niên Khóa & VietQR
-  {
-    const slide = pres.addSlide();
-    setSlideTheme(slide, true);
-
-    slide.addText('TÀI CHÍNH HIỆP HỘI MINH BẠCH', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Quản Lý Thu Hội Phí Thường Niên, Gạch Nợ Linh Hoạt & Cổng VietQR', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    const feeCards = [
-      {
-        title: 'Theo Dõi Thu Phí Niên Khóa',
-        desc: 'Quản lý danh sách chi tiết các doanh nghiệp: Đã nộp, Chưa nộp, Sắp đến hạn gia hạn thẻ hội viên thường niên.'
-      },
-      {
-        title: 'Tính Năng "Nhắc Phí" Tự Động',
-        desc: '1-click gửi email thông báo kèm hóa đơn và mã VietQR có sẵn cú pháp chuyển khoản chính xác đến kế toán doanh nghiệp.'
-      },
-      {
-        title: 'Thao Tác "Gạch Nợ" 1 Chạm',
-        desc: 'Ban Thư ký đối soát và gạch nợ trực tiếp trên CRM, hệ thống lập tức mở khóa gia hạn thẻ VIP và quyền lợi trên App.'
-      },
-      {
-        title: 'Cấu Hình Tài Khoản Ngân Hàng & VietQR',
-        desc: 'Thiết lập số tài khoản ngân hàng chính thức của CLB CEO 1983, mã ngân hàng NAPAS và tạo mã VietQR động theo từng hóa đơn.'
-      }
-    ];
-
-    feeCards.forEach((fc, idx) => {
-      const col = idx % 2;
-      const row = Math.floor(idx / 2);
-      const xPos = 0.8 + col * 6.0;
-      const yPos = 1.8 + row * 2.5;
-
-      slide.addShape(pres.ShapeType.rect, {
-        x: xPos, y: yPos, w: 5.6, h: 2.2,
-        fill: { color: C.NAVY_CARD },
-        line: { color: C.GOLD_ACCENT, width: 1.2 },
+        x: xPos, y: 2.1, w: 3.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
         roundRadio: 0.12
       });
-      slide.addText(fc.title, { x: xPos + 0.4, y: yPos + 0.3, w: 4.8, h: 0.4, color: C.WHITE, bold: true, fontSize: 16 });
-      slide.addText(fc.desc, { x: xPos + 0.4, y: yPos + 0.8, w: 4.8, h: 1.2, color: C.SLATE_MUTED, fontSize: 12 });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 3.7, h: 0.1,
+        fill: { color: idx === 1 ? C.GOLD_ACCENT : C.NAVY_PRIMARY }
+      });
+      slide.addText(fc.title, {
+        x: xPos + 0.3, y: 2.4, w: 3.1, h: 0.7,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 14, fontFace: 'Calibri'
+      });
+      slide.addText(fc.desc, {
+        x: xPos + 0.3, y: 3.2, w: 3.1, h: 3.2,
+        color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+      });
     });
   }
 
-  // SLIDE 8: Kiểm Toán Hoạt Động & Quy Chuẩn Vận Hành
+  // ---------------------------------------------------------------------------
+  // SLIDE 8: Kiểm Duyệt Sàn Giao Thương B2B & Quản Trị Pháp Nhân
+  // ---------------------------------------------------------------------------
   {
     const slide = pres.addSlide();
-    setSlideTheme(slide, true);
+    addSlideHeader(slide, pres, 'KIỂM DUYỆT NỘI DUNG', 'Kiểm Duyệt Sàn B2B & Quản Trị Hồ Sơ Pháp Nhân Doanh Nghiệp', 'Bảo đảm 100% sản phẩm và cơ hội kinh doanh trong mạng lưới đạt chuẩn pháp lý');
 
-    slide.addText('BẢO MẬT & QUY CHUẨN ĐIỀU HÀNH', { x: 0.8, y: 0.6, w: 10, h: 0.3, color: C.GOLD_ACCENT, bold: true, fontSize: 12 });
-    slide.addText('Nhật Ký Kiểm Toán (Audit Logs) & Hướng Dẫn Vận Hành Ban Thư Ký', { x: 0.8, y: 0.9, w: 11.5, h: 0.6, color: C.WHITE, bold: true, fontSize: 24 });
-
-    slide.addShape(pres.ShapeType.rect, {
-      x: 0.8, y: 1.8, w: 11.6, h: 4.8,
-      fill: { color: C.NAVY_CARD },
-      line: { color: C.GOLD_ACCENT, width: 2 },
-      roundRadio: 0.2
-    });
-
-    slide.addText('HỆ THỐNG AN NINH & QUY TRÌNH VẬN HÀNH', {
-      x: 1.2, y: 2.2, w: 10.8, h: 0.4,
-      color: C.GOLD_ACCENT, bold: true, fontSize: 18
-    });
-
-    const auditPoints = [
-      '🔒 Nhật Ký Kiểm Toán Toàn Diện (Audit Trail): Ghi nhận chi tiết mọi thao tác phê duyệt, chỉnh sửa hồ sơ, xóa sản phẩm, thời gian và địa chỉ IP của từng cán bộ quản trị.',
-      '🛡️ Phân Quyền Vai Trò Theo Ban Ngành: Chủ tịch CLB, Tổng Thư Ký, Trưởng Ban Xúc tiến Thương mại, Trưởng Ban Sự kiện có quyền hạn và giao diện chuyên biệt.',
-      '📊 Báo Cáo Xuất Excel Đa Định Dạng: Xuất danh bạ hội viên, báo cáo điểm danh sự kiện, bảng kê thu chi hội phí phục vụ công tác thanh tra tài chính.',
-      '📚 Sổ Tay Đào Tạo & Tài Liệu Kỹ Thuật: Đồng bộ 100% giữa tài liệu Hướng dẫn sử dụng (Word/PDF), Slide thuyết trình và hệ thống thực tế.'
+    const auditSteps = [
+      { num: '01', title: 'Tiếp Nhận Đăng Tải', desc: 'Hội viên đăng sản phẩm hoặc tin nhu cầu mua sắm từ App di động; nội dung vào hàng đợi kiểm duyệt.' },
+      { num: '02', title: 'Thẩm Tra Pháp Lý', desc: 'Ban Thư ký kiểm tra chứng nhận xuất xứ, công bố chất lượng và giấy phép kinh doanh ngành nghề có điều kiện.' },
+      { num: '03', title: 'Phê Duyệt / Khóa Bài', desc: 'Nhấn Duyệt để hiển thị công khai trên App; hoặc từ chối kèm phản hồi lý do chi tiết cho hội viên bổ sung.' },
+      { num: '04', title: 'Gắn Nhãn Tiêu Biểu', desc: 'Gắn nhãn "Sản Phẩm Tiêu Biểu CEO 1983" đẩy lên vị trí Top Carousel tiếp cận tối đa mạng lưới.' }
     ];
 
-    auditPoints.forEach((ap, idx) => {
-      slide.addText(ap, {
-        x: 1.2, y: 2.8 + idx * 0.95, w: 10.8, h: 0.85,
-        color: C.WHITE, fontSize: 13
+    auditSteps.forEach((as, idx) => {
+      const xPos = 0.8 + idx * 2.95;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 2.8, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        fill: { color: C.NAVY_PRIMARY },
+        roundRadio: 0.1
+      });
+      slide.addText(as.num, {
+        x: xPos + 0.25, y: 2.4, w: 0.7, h: 0.7,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 16, align: 'center', valign: 'middle', fontFace: 'Calibri'
+      });
+      slide.addText(as.title, {
+        x: xPos + 0.25, y: 3.3, w: 2.3, h: 0.6,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13.5, fontFace: 'Calibri'
+      });
+      slide.addText(as.desc, {
+        x: xPos + 0.25, y: 4.0, w: 2.3, h: 2.3,
+        color: C.TEXT_BODY, fontSize: 11.5, fontFace: 'Calibri'
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 9: Hệ Thống Tin Tức, Nghị Quyết & Nhật Ký Kiểm Toán (Audit Log)
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    addSlideHeader(slide, pres, 'TRUYỀN THÔNG & BẢO MẬT', 'Xuất Bản Tin Tức, Nghị Quyết BCH & Nhật Ký Kiểm Toán', 'Kênh truyền thông chính thống của CLB và hệ thống giám sát an toàn dữ liệu 24/7');
+
+    const commCards = [
+      {
+        title: 'Xuất Bản Nghị Quyết & Tin Tức Chính Thống',
+        items: [
+          'Biên tập văn bản nghị quyết, quyết định bổ nhiệm và thông cáo báo chí.',
+          'Phân loại chuyên mục: Tin Hiệp Hội, Giao Thương B2B, Thể Thao & CSR.',
+          'Đính kèm văn bản PDF có chữ ký và đóng dấu của Chủ tịch CLB.',
+          'Đồng bộ hiển thị tức thì trên tab Bản tin và Thư viện tài liệu App.'
+        ]
+      },
+      {
+        title: 'Nhật Ký Kiểm Toán Hệ Thống (Audit Logs)',
+        items: [
+          'Ghi nhận 100% nhật ký thao tác của Quản trị viên: Thời gian, IP, hành động.',
+          'Giám sát mọi thao tác phê duyệt hội viên, chỉnh sửa vai trò và gạch nợ hội phí.',
+          'Bảo mật theo tiêu chuẩn GDPR và Luật An ninh mạng Việt Nam.',
+          'Xuất dữ liệu báo cáo kiểm toán định kỳ phục vụ Ban Kiểm Tra CLB.'
+        ]
+      }
+    ];
+
+    commCards.forEach((cc, idx) => {
+      const xPos = 0.8 + idx * 6.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 4.6,
+        fill: { color: C.WHITE },
+        line: { color: C.BORDER_SUBTLE, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 2.1, w: 5.7, h: 0.5,
+        fill: { color: C.BLUE_BG },
+        roundRadio: 0.08
+      });
+      slide.addText(cc.title, {
+        x: xPos + 0.3, y: 2.1, w: 5.1, h: 0.5,
+        color: C.NAVY_PRIMARY, bold: true, fontSize: 13, valign: 'middle', fontFace: 'Calibri'
+      });
+      cc.items.forEach((it, iIdx) => {
+        slide.addText(`✔  ${it}`, {
+          x: xPos + 0.3, y: 2.85 + iIdx * 0.9, w: 5.1, h: 0.75,
+          color: C.TEXT_BODY, fontSize: 12, fontFace: 'Calibri'
+        });
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SLIDE 10: Tầm Nhìn Số Hóa & Lời Kết
+  // ---------------------------------------------------------------------------
+  {
+    const slide = pres.addSlide();
+    slide.background = { color: C.NAVY_DARK };
+
+    slide.addShape(pres.ShapeType.rect, {
+      x: 0.8, y: 1.2, w: 4.2, h: 0.4,
+      fill: { color: C.GOLD_ACCENT },
+      roundRadio: 0.1
+    });
+    slide.addText('CHUYỂN ĐỔI SỐ TOÀN DIỆN HIỆP HỘI', {
+      x: 0.8, y: 1.2, w: 4.2, h: 0.4,
+      color: C.NAVY_DARK, bold: true, fontSize: 10.5, align: 'center', valign: 'middle', fontFace: 'Calibri'
+    });
+
+    slide.addText('HỆ THỐNG QUẢN TRỊ CEO 1983', {
+      x: 0.8, y: 1.8, w: 11.73, h: 1.0,
+      color: C.WHITE, bold: true, fontSize: 34, fontFace: 'Calibri'
+    });
+
+    slide.addText('"Nền Tảng Vững Chắc — Kiến Tạo Tương Lai"', {
+      x: 0.8, y: 2.8, w: 11.73, h: 0.6,
+      color: C.GOLD_ACCENT, bold: true, fontSize: 22, italic: true, fontFace: 'Calibri'
+    });
+
+    slide.addText('Hệ thống Web CRM và App Mobile CEO 1983 sẵn sàng bàn giao, đưa vào vận hành thực tế phục vụ Ban Chấp Hành, Ban Thư Ký và toàn thể Hội viên CLB Doanh Nhân CEO 1983.', {
+      x: 0.8, y: 3.6, w: 10.5, h: 0.9,
+      color: C.BORDER_SUBTLE, fontSize: 14, fontFace: 'Calibri'
+    });
+
+    const crmContacts = [
+      { label: 'Cổng Web CRM', val: 'http://14.225.217.232:5000/auth' },
+      { label: 'Cổng App Mobile', val: 'http://14.225.217.232:5002/association' },
+      { label: 'Tài liệu hướng dẫn', val: 'Đầy đủ định dạng Word, PDF, Excel & Slide' }
+    ];
+
+    crmContacts.forEach((c, idx) => {
+      const xPos = 0.8 + idx * 4.0;
+      slide.addShape(pres.ShapeType.rect, {
+        x: xPos, y: 5.0, w: 3.7, h: 1.5,
+        fill: { color: C.NAVY_CARD },
+        line: { color: C.NAVY_PRIMARY, width: 1.2 },
+        roundRadio: 0.12
+      });
+      slide.addText(c.label, {
+        x: xPos + 0.3, y: 5.2, w: 3.1, h: 0.35,
+        color: C.GOLD_ACCENT, bold: true, fontSize: 12, fontFace: 'Calibri'
+      });
+      slide.addText(c.val, {
+        x: xPos + 0.3, y: 5.65, w: 3.1, h: 0.6,
+        color: C.WHITE, fontSize: 11.5, fontFace: 'Calibri'
       });
     });
   }
 
   const outPath = path.join(OUT_DIR, 'SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx');
   await pres.writeFile({ fileName: outPath });
-  console.log(`✓ Generated CRM PowerPoint: ${outPath} (${fs.statSync(outPath).size} bytes)`);
+  console.log(`✓ Generated CRM PowerPoint: ${outPath} (${(fs.statSync(outPath).size / 1024).toFixed(1)} KB)`);
 }
 
+// =============================================================================
+// MAIN EXECUTION
+// =============================================================================
 async function main() {
+  console.log('=== STARTING POWERPOINT GENERATION (CEO 1983 EXECUTIVE THEME) ===');
   await generateAppSlideDeck();
   await generateCrmSlideDeck();
-  console.log('\nAll PowerPoint decks successfully generated!');
+  console.log('=== ALL POWERPOINT SLIDES GENERATED SUCCESSFULLY ===');
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error('Fatal error during PowerPoint generation:', err);
+  process.exit(1);
+});

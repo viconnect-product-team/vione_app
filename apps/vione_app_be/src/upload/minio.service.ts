@@ -57,9 +57,10 @@ export class MinioService implements OnModuleInit {
 
   async getFileStream(filename: string): Promise<any> {
     try {
+      if (!this.minioClient) return null;
       return await this.minioClient.getObject(this.bucketName, filename);
     } catch (err) {
-      throw new InternalServerErrorException(`Failed to retrieve file from MinIO: ${err.message}`);
+      return null;
     }
   }
 

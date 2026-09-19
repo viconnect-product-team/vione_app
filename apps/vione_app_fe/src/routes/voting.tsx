@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CheckCircle2,
@@ -12,11 +12,13 @@ import {
   Trophy,
   Vote as VoteIcon,
   X,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   listVotesFn,
   createVoteFn,
@@ -825,26 +827,46 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
 
 function LuckyDrawModal({ onClose }: { onClose: () => void }) {
   const [prize, setPrize] = useState("🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle");
-  const candidates = [
-    { name: "Lê Hoàng Long", company: "Tập đoàn Xây dựng Hoàng Long", code: "M1983-001", seat: "Bàn VIP 01 - Ghế 01" },
-    { name: "Nguyễn Văn Cường", company: "Cường Thịnh Corp", code: "M1983-002", seat: "Bàn VIP 01 - Ghế 02" },
-    { name: "Vũ Thu Trang", company: "Kiến Vàng Capital", code: "M1983-003", seat: "Bàn VIP 01 - Ghế 03" },
-    { name: "Phạm Quang Huy", company: "Huy Hoàng Media Group", code: "M1983-004", seat: "Bàn VIP 01 - Ghế 04" },
-    { name: "Hoàng Minh Tuấn", company: "Tuấn Minh Global Trade", code: "M1983-005", seat: "Bàn VIP 02 - Ghế 01" },
-    { name: "Đỗ Thị Mai", company: "EcoClean Vietnam", code: "M1983-006", seat: "Bàn VIP 02 - Ghế 02" },
-    { name: "Bùi Đức Thắng", company: "Thắng Lợi XNK JSC", code: "M1983-007", seat: "Bàn 03 - Ghế 01" },
-    { name: "Ngô Bảo Anh", company: "MediaPro Solution", code: "M1983-008", seat: "Bàn 04 - Ghế 01" },
-    { name: "Đinh Trọng Hiếu", company: "Tài Chính Việt An", code: "M1983-009", seat: "Bàn 05 - Ghế 01" },
-    { name: "Trịnh Kim Oanh", company: "An Phát Holding", code: "M1983-010", seat: "Bàn 06 - Ghế 01" },
-  ];
+  const [selectedEventName, setSelectedEventName] = useState("DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983");
+  const [eventsList, setEventsList] = useState<Array<{ id: string; name: string }>>([]);
+  const [notifying, setNotifying] = useState(false);
+
+  const initialCandidates = useMemo(
+    () => [
+      { name: "Lê Hoàng Long", company: "Tập đoàn Xây dựng Hoàng Long", code: "#5678", seat: "Bàn VIP 01 - Ghế 01" },
+      { name: "Nguyễn Văn Cường", company: "Cường Thịnh Corp", code: "#9821", seat: "Bàn VIP 01 - Ghế 02" },
+      { name: "Vũ Thu Trang", company: "Kiến Vàng Capital", code: "#3412", seat: "Bàn VIP 01 - Ghế 03" },
+      { name: "Phạm Quang Huy", company: "Huy Hoàng Media Group", code: "#7721", seat: "Bàn VIP 01 - Ghế 04" },
+      { name: "Hoàng Minh Tuấn", company: "Tuấn Minh Global Trade", code: "#4589", seat: "Bàn VIP 02 - Ghế 01" },
+      { name: "Đỗ Thị Mai", company: "EcoClean Vietnam", code: "#6304", seat: "Bàn VIP 02 - Ghế 02" },
+      { name: "Bùi Đức Thắng", company: "Thắng Lợi XNK JSC", code: "#8812", seat: "Bàn 03 - Ghế 01" },
+      { name: "Ngô Bảo Anh", company: "MediaPro Solution", code: "#2190", seat: "Bàn 04 - Ghế 01" },
+      { name: "Đinh Trọng Hiếu", company: "Tài Chính Việt An", code: "#1983", seat: "Bàn 05 - Ghế 01" },
+      { name: "Trịnh Kim Oanh", company: "An Phát Holding", code: "#9901", seat: "Bàn 06 - Ghế 01" },
+    ],
+    [],
+  );
+
+  const [candidates, setCandidates] = useState(initialCandidates);
+
+  useEffect(() => {
+    fetchNestApi<any[]>("/events")
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          setEventsList(res.map((e) => ({ id: e.id, name: e.name })));
+          if (res[0]?.name) setSelectedEventName(res[0].name);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [spinning, setSpinning] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0);
-  const [winner, setWinner] = useState<(typeof candidates)[0] | null>(null);
-  const [history, setHistory] = useState<Array<{ prize: string; winner: (typeof candidates)[0]; time: string }>>([]);
+  const [winner, setWinner] = useState<(typeof initialCandidates)[0] | null>(null);
+  const [history, setHistory] = useState<Array<{ prize: string; winner: (typeof initialCandidates)[0]; time: string }>>([]);
 
   const spin = () => {
-    if (spinning) return;
+    if (spinning || candidates.length === 0) return;
     setWinner(null);
     setSpinning(true);
     let counter = 0;
@@ -862,17 +884,34 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
           { prize, winner: chosen, time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) },
           ...prev,
         ]);
-        toast.success(`🎉 Chúc mừng ${chosen.name} đã trúng ${prize}!`);
+        toast.success(`🎉 Chúc mừng ${chosen.name} (Số may mắn ${chosen.code}) đã trúng ${prize}!`);
       }
     }, 75);
   };
 
-  const handleNotifyWinner = () => {
+  const handleNotifyWinner = async () => {
     if (!winner) return;
-    toast.success(`Đã phát thông báo trúng thưởng ${prize} tới điện thoại của ${winner.name}!`);
+    setNotifying(true);
+    try {
+      await fetchNestApi("/voting/lucky-draw/notify", {
+        method: "POST",
+        body: JSON.stringify({
+          winnerName: winner.name,
+          winnerCompany: winner.company,
+          luckyNumber: winner.code,
+          prizeName: prize,
+          eventName: selectedEventName,
+        }),
+      });
+      toast.success(`Đã phát thông báo trúng thưởng ${prize} tới điện thoại và App Hiệp hội của ${winner.name}!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể gửi thông báo trúng thưởng");
+    } finally {
+      setNotifying(false);
+    }
   };
 
-  const current = candidates[displayIndex];
+  const current = candidates[displayIndex] || candidates[0];
 
   return (
     <div
@@ -889,8 +928,8 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
               <Trophy className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-lg font-bold text-foreground">Bốc Thăm May Mắn Sự Kiện</h3>
-              <p className="text-xs text-muted-foreground">Quay số ngẫu nhiên dành cho tất cả khách tham dự</p>
+              <h3 className="text-lg font-bold text-foreground">Vòng Quay May Mắn Sự Kiện</h3>
+              <p className="text-xs text-muted-foreground">Quay số ngẫu nhiên theo mã vé may mắn của khách tham dự</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-xl p-1 text-muted-foreground hover:bg-secondary">
@@ -899,19 +938,43 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="mt-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-foreground">Hạng mục giải thưởng</label>
-            <select
-              value={prize}
-              onChange={(e) => setPrize(e.target.value)}
-              disabled={spinning}
-              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-bold text-amber-600 outline-none focus:border-primary"
-            >
-              <option value="🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle">🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle</option>
-              <option value="🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm">🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm</option>
-              <option value="🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ">🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ</option>
-              <option value="🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp">🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-foreground">Sự kiện áp dụng</label>
+              <select
+                value={selectedEventName}
+                onChange={(e) => setSelectedEventName(e.target.value)}
+                disabled={spinning}
+                className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:border-primary"
+              >
+                {eventsList.length > 0 ? (
+                  eventsList.map((ev) => (
+                    <option key={ev.id} value={ev.name}>
+                      {ev.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983">
+                    DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983
+                  </option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-foreground">Hạng mục giải thưởng</label>
+              <select
+                value={prize}
+                onChange={(e) => setPrize(e.target.value)}
+                disabled={spinning}
+                className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-amber-600 outline-none focus:border-primary"
+              >
+                <option value="🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle">🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle</option>
+                <option value="🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm">🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm</option>
+                <option value="🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ">🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ</option>
+                <option value="🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp">🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp</option>
+              </select>
+            </div>
           </div>
 
           {/* Wheel / Slot Box */}
@@ -921,23 +984,29 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="my-4">
+              {/* Lucky Ticket Number Display */}
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-4 py-1.5 mb-2 shadow-xs">
+                <Ticket className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="font-mono text-base font-black text-amber-600 dark:text-amber-400">
+                  Mã vé may mắn: {current?.code}
+                </span>
+              </div>
+
               <div className="text-2xl font-black text-foreground transition duration-150">
                 {current?.name}
               </div>
               <div className="mt-1 text-sm font-semibold text-muted-foreground">
                 {current?.company}
               </div>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-200">
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-secondary/80 px-3 py-1 text-xs font-semibold text-muted-foreground">
                 <span>📍 {current?.seat}</span>
-                <span>·</span>
-                <span>{current?.code}</span>
               </div>
             </div>
 
             <button
               onClick={spin}
               disabled={spinning}
-              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Sparkles className="h-4 w-4" />
               {spinning ? "Đang quay số..." : "QUAY SỐ NGẪU NHIÊN"}
@@ -946,19 +1015,20 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
 
           {/* Winner Action */}
           {winner && (
-            <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 animate-in fade-in zoom-in-95">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 animate-in fade-in zoom-in-95">
               <div>
                 <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                  Xác nhận người trúng giải: {winner.name}
+                  Xác nhận người trúng giải: {winner.name} ({winner.code})
                 </div>
                 <div className="text-[11px] text-muted-foreground">{prize}</div>
               </div>
               <button
                 type="button"
+                disabled={notifying}
                 onClick={handleNotifyWinner}
-                className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                className="rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition cursor-pointer"
               >
-                Gửi thông báo trúng
+                {notifying ? "Đang gửi thông báo..." : "Gửi thông báo trúng (App & Chat)"}
               </button>
             </div>
           )}

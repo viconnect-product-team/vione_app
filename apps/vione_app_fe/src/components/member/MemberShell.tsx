@@ -11,6 +11,7 @@ const emblem83 = "/ceo1983-emblem-8.png";
 import { PullToRefresh } from "@/components/member/PullToRefresh";
 import { useNavigate } from "@tanstack/react-router";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
+import { IosInstallPrompt } from "@/components/member/IosInstallPrompt";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 
@@ -123,6 +124,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         </PullToRefresh>
         <MemberTabBar />
         <IncomingConnectionModal />
+        <IosInstallPrompt />
       </div>
     </div>
   );

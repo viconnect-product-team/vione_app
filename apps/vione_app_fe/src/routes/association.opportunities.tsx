@@ -26,6 +26,8 @@ import {
   MoreVertical,
   Eye,
   Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -265,6 +267,13 @@ function OpportunitiesScreen() {
     });
   }, [allOpportunities, tab, q, member]);
 
+  const [pageOpps, setPageOpps] = useState(1);
+  const OPP_PAGE_SIZE = 5;
+
+  useEffect(() => {
+    setPageOpps(1);
+  }, [q, tab]);
+
   async function interest(id: string) {
     setBusy(id);
     try {
@@ -491,7 +500,7 @@ function OpportunitiesScreen() {
             Đang tải danh sách cơ hội giao thương...
           </p>
         )}
-        {list.map((o, index) => {
+        {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
           const tagVi = normalizeTag(o.tag);
           const rawOppImg = o.image;
           const oppImg =
@@ -533,6 +542,20 @@ function OpportunitiesScreen() {
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
                         <Check className="h-3 w-3 stroke-[2.5]" />
                         Đã quan tâm
+                      </span>
+                    )}
+
+                    {checkIsMine(o) && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenOppDetail(o);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 backdrop-blur-md px-2.5 py-1 text-[10px] font-extrabold shadow-sm border border-amber-300/40 cursor-pointer transition"
+                        title="Xem danh sách người quan tâm"
+                      >
+                        <Users className="h-3 w-3" />
+                        <span>Người quan tâm</span>
                       </span>
                     )}
 
@@ -703,6 +726,35 @@ function OpportunitiesScreen() {
             <p className="text-[11.5px] text-slate-400 mt-1">
               Thử chọn mục khác hoặc bấm "Đăng cơ hội" để kết nối với các doanh nhân!
             </p>
+          </div>
+        )}
+
+        {/* Phân trang Bảng Tin Trao Cơ Hội (Requirement 5) */}
+        {list.length > OPP_PAGE_SIZE && (
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 text-xs text-slate-500 shadow-xs">
+            <span className="text-[11.5px] font-medium">
+              Trang <b>{pageOpps}</b> / {Math.ceil(list.length / OPP_PAGE_SIZE)} ({list.length} cơ hội)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={pageOpps <= 1}
+                onClick={() => setPageOpps((prev) => Math.max(1, prev - 1))}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                title="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                disabled={pageOpps >= Math.ceil(list.length / OPP_PAGE_SIZE)}
+                onClick={() => setPageOpps((prev) => Math.min(Math.ceil(list.length / OPP_PAGE_SIZE), prev + 1))}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                title="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -5,27 +5,32 @@ import {
   X, 
   CheckCircle2, 
   Send, 
-  Compass, 
   ChevronDown, 
   Mail, 
   Phone, 
   Building2, 
   User, 
   Briefcase,
-  Layers,
-  ArrowRight
+  Sun,
+  Moon,
+  ShieldCheck,
+  Award,
+  ArrowRight,
+  Globe,
+  Users,
+  Compass
 } from "lucide-react";
 import { toast } from "sonner";
 import { submitClubApplication } from "@/lib/club-application.functions";
 
-/** 6 Scene Steps for the Indicator */
+/** 6 Scene Steps for Continuous Vertical Journey */
 const SCENE_STEPS = [
-  { id: "sky", num: "01", label: "Sky", title: "Khởi Nguyên Bầu Trời" },
-  { id: "birds", num: "02", label: "Birds", title: "Đàn Chim 1983" },
-  { id: "kites", num: "03", label: "Kites", title: "Những Cánh Diều" },
-  { id: "villas", num: "04", label: "Villas", title: "Quần Thể Thịnh Vượng" },
-  { id: "water", num: "05", label: "Water", title: "Mặt Nước Vô Cực" },
-  { id: "leadership", num: "06", label: "Leadership", title: "Bản Lĩnh Đáy Đại Dương" },
+  { id: "sky", num: "01", label: "Tầm Nhìn", title: "Khởi Nguyên Bầu Trời" },
+  { id: "birds", num: "02", label: "Đồng Hành", title: "Đàn Chim 1983 Bay Cao" },
+  { id: "kites", num: "03", label: "Khát Vọng", title: "Cánh Diều Vươn Xa" },
+  { id: "villas", num: "04", label: "Thịnh Vượng", title: "Quần Thể Doanh Nghiệp" },
+  { id: "water", num: "05", label: "Dòng Chảy", title: "Mặt Nước Vô Cực" },
+  { id: "leadership", num: "06", label: "Bản Lĩnh", title: "Đại Dương Sâu Thẳm" },
 ];
 
 export function Ceo1983VerticalLandscape() {
@@ -36,14 +41,33 @@ export function Ceo1983VerticalLandscape() {
   const [submitting, setSubmitting] = useState(false);
   const [regSuccessData, setRegSuccessData] = useState<{ email: string; reference?: string } | null>(null);
 
+  // Dual Sky Theme: "night" (Trời Tối) vs "day" (Trời Sáng)
+  const [skyTheme, setSkyTheme] = useState<"night" | "day">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ceo1983_sky_theme");
+      if (saved === "night" || saved === "day") return saved;
+    }
+    return "night";
+  });
+
+  const toggleSkyTheme = () => {
+    setSkyTheme((prev) => {
+      const next = prev === "night" ? "day" : "night";
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ceo1983_sky_theme", next);
+      }
+      return next;
+    });
+  };
+
   // Form State
   const [form, setForm] = useState({
     fullName: "",
     company: "",
     phone: "",
     email: "",
-    title: "Chủ tịch / CEO",
-    industry: "Công nghệ / B2B",
+    title: "Chủ tịch / Tổng Giám Đốc",
+    industry: "Sản xuất / Thương mại / Công nghệ",
   });
 
   // Track global scroll
@@ -57,12 +81,12 @@ export function Ceo1983VerticalLandscape() {
       setScrollProgress(progress);
 
       // Determine active scene based on continuous percentage
-      if (progress < 0.16) setActiveStepIndex(0); // 01 Sky
-      else if (progress < 0.33) setActiveStepIndex(1); // 02 Birds
-      else if (progress < 0.50) setActiveStepIndex(2); // 03 Kites
-      else if (progress < 0.68) setActiveStepIndex(3); // 04 Villas
-      else if (progress < 0.84) setActiveStepIndex(4); // 05 Water
-      else setActiveStepIndex(5); // 06 Leadership / Underwater
+      if (progress < 0.16) setActiveStepIndex(0);
+      else if (progress < 0.33) setActiveStepIndex(1);
+      else if (progress < 0.50) setActiveStepIndex(2);
+      else if (progress < 0.68) setActiveStepIndex(3);
+      else if (progress < 0.84) setActiveStepIndex(4);
+      else setActiveStepIndex(5);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -99,139 +123,134 @@ export function Ceo1983VerticalLandscape() {
 
       if (res?.ok) {
         setRegSuccessData({
-          email: form.email || "Gmail đăng ký",
-          reference: res.reference,
+          email: form.email,
+          reference: res.reference || `CEO1983-${Date.now().toString().slice(-6)}`,
         });
-        toast.success("Đăng ký thành công! Mật khẩu truy cập đã được gửi qua email.");
+        toast.success("Hồ sơ đã được gửi thành công! Mật khẩu đăng nhập đã được gửi tới email của bạn.");
       } else {
-        toast.error("Có lỗi xảy ra khi nộp hồ sơ, vui lòng thử lại.");
+        toast.error("Gửi hồ sơ thất bại, vui lòng kiểm tra lại thông tin.");
       }
     } catch (err: any) {
-      console.error("Submission error:", err);
-      toast.error("Không thể kết nối máy chủ. Vui lòng thử lại sau.");
+      toast.error(err?.message || "Không thể kết nối đến máy chủ.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const isNight = skyTheme === "night";
+
   return (
-    <div className="relative w-full text-white selection:bg-amber-400 selection:text-slate-900 font-sans">
+    <div 
+      className={`min-h-screen relative w-full overflow-x-hidden font-sans transition-colors duration-700 select-none ${
+        isNight ? "bg-[#020617] text-white" : "bg-[#F0F9FF] text-slate-900"
+      }`}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Cinzel:wght@600;700;800;900&display=swap');
-        
-        .font-cinzel { font-family: 'Cinzel', serif; }
-        .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
-
-        @keyframes sunPulse {
-          0%, 100% { transform: scale(1) translate(-50%, -50%); filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.6)); }
-          50% { transform: scale(1.06) translate(-47%, -47%); filter: drop-shadow(0 0 90px rgba(255, 170, 0, 0.9)); }
+        @keyframes subtleDrift {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-10px) scale(1.02); }
         }
-
-        @keyframes cloudFloat1 {
-          0%, 100% { transform: translateX(0px) translateY(0px); }
-          50% { transform: translateX(25px) translateY(-8px); }
+        @keyframes auraGlow {
+          0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.4)); }
+          50% { opacity: 0.8; filter: drop-shadow(0 0 50px rgba(245, 158, 11, 0.7)); }
         }
-
-        @keyframes cloudFloat2 {
-          0%, 100% { transform: translateX(0px) translateY(0px); }
-          50% { transform: translateX(-35px) translateY(10px); }
-        }
-
-        @keyframes birdFlySlow {
-          0%, 100% { transform: translateY(0) rotate(1deg); }
-          50% { transform: translateY(-12px) rotate(-1deg); }
-        }
-
-        @keyframes kiteHover1 {
-          0%, 100% { transform: translate(0, 0) rotate(4deg); }
-          50% { transform: translate(-14px, -24px) rotate(-3deg); }
-        }
-
-        @keyframes kiteHover2 {
-          0%, 100% { transform: translate(0, 0) rotate(-6deg); }
-          50% { transform: translate(16px, -20px) rotate(2deg); }
-        }
-
-        @keyframes waterCaustics {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.75; transform: scale(1.04); }
-        }
-
-        @keyframes fishGlide1 {
-          0% { transform: translateX(-10vw) translateY(0px) scaleX(1); }
-          48% { transform: translateX(110vw) translateY(-20px) scaleX(1); }
-          50% { transform: translateX(110vw) translateY(-20px) scaleX(-1); }
-          98% { transform: translateX(-10vw) translateY(10px) scaleX(-1); }
-          100% { transform: translateX(-10vw) translateY(0px) scaleX(1); }
-        }
-
-        @keyframes sharkPatrol {
-          0% { transform: translateX(105vw) translateY(0px) scaleX(-1); }
-          48% { transform: translateX(-15vw) translateY(30px) scaleX(-1); }
-          50% { transform: translateX(-15vw) translateY(30px) scaleX(1); }
-          98% { transform: translateX(105vw) translateY(-10px) scaleX(1); }
-          100% { transform: translateX(105vw) translateY(0px) scaleX(-1); }
-        }
-
-        @keyframes godRaySway {
-          0%, 100% { transform: rotate(-14deg) scaleY(1); opacity: 0.35; }
-          50% { transform: rotate(-10deg) scaleY(1.1); opacity: 0.55; }
-        }
-
-        @keyframes bubbleRise {
-          0% { transform: translateY(0px) scale(0.8); opacity: 0; }
-          20% { opacity: 0.8; }
-          80% { opacity: 0.6; }
-          100% { transform: translateY(-380px) scale(1.2); opacity: 0; }
+        @keyframes floatStar {
+          0%, 100% { opacity: 0.3; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.2); }
         }
       `}</style>
 
-      {/* ── MINIMAL TOP BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-slate-950/30 border-b border-white/10 transition-all duration-300">
+      {/* ── TOP NAVIGATION BAR (CỐ ĐỊNH) ── */}
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-8 py-3.5 backdrop-blur-xl transition-all duration-300 border-b ${
+          isNight 
+            ? "bg-slate-950/70 border-amber-500/20 shadow-2xl shadow-black/70" 
+            : "bg-white/85 border-sky-200/80 shadow-lg shadow-sky-950/5"
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 via-amber-300 to-yellow-100 flex items-center justify-center shadow-lg shadow-amber-500/30 border border-white/40">
-            <span className="font-cinzel text-slate-950 font-black text-xs tracking-wider">1983</span>
-          </div>
-          <div>
-            <span className="font-cinzel text-sm font-black tracking-widest text-amber-300 drop-shadow">CLB CEO 1983</span>
-            <span className="hidden sm:inline-block ml-2 text-[10px] text-white/60 tracking-wider uppercase font-medium">HanoiBA · Vertical 3D World</span>
+          <img 
+            src="/ceo1983-official-logo.png" 
+            alt="CLB Doanh Nhân CEO 1983" 
+            className="h-10 sm:h-12 w-auto object-contain drop-shadow-md"
+          />
+          <div className="hidden md:flex flex-col">
+            <span className={`text-xs font-black tracking-wider uppercase ${isNight ? "text-amber-300" : "text-[#1E3A8A]"}`}>
+              CLB Doanh Nhân CEO 1983
+            </span>
+            <span className={`text-[10px] font-medium tracking-wide ${isNight ? "text-slate-400" : "text-slate-500"}`}>
+              Trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA)
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          {/* THEME SWITCHER BUTTON */}
+          <button
+            type="button"
+            onClick={toggleSkyTheme}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+              isNight
+                ? "bg-slate-900/90 text-amber-300 border-amber-400/30 hover:bg-slate-800 shadow-md shadow-amber-500/10"
+                : "bg-sky-50 text-blue-900 border-sky-300 hover:bg-sky-100 shadow-md shadow-sky-500/10"
+            }`}
+            title={isNight ? "Chuyển sang Theme Trời Sáng" : "Chuyển sang Theme Trời Tối"}
+          >
+            {isNight ? (
+              <>
+                <Moon className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Trời Tối</span>
+              </>
+            ) : (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline">Trời Sáng</span>
+              </>
+            )}
+          </button>
+
           <Link
             to="/association/login"
-            className="text-xs font-semibold text-white/80 hover:text-white px-3 py-1.5 rounded-full hover:bg-white/10 transition"
+            className={`text-xs font-bold px-3.5 py-1.5 rounded-full transition ${
+              isNight 
+                ? "text-slate-200 hover:text-white hover:bg-white/10" 
+                : "text-slate-700 hover:text-blue-900 hover:bg-sky-100"
+            }`}
           >
             Đăng Nhập
           </Link>
+
           <button
             onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
-            className="text-xs font-bold px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow-lg shadow-amber-400/25 hover:shadow-amber-300/40 hover:scale-[1.02] active:scale-95 transition-all"
+            className="text-xs font-black px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 text-slate-950 shadow-lg shadow-amber-400/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
             ✦ Đăng Ký Hội Viên
           </button>
         </div>
       </header>
 
-      {/* ── MINIMAL VERTICAL NAVIGATION INDICATOR ── */}
+      {/* ── FLOATING SCENE NAVIGATOR (RIGHT DOCK) ── */}
       <nav 
         aria-label="Scene Navigator"
-        className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 z-40 flex flex-col items-end gap-3 pointer-events-auto"
+        className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-end gap-2 pointer-events-auto"
       >
-        <div className="flex flex-col items-center gap-2 py-3 px-2 rounded-full backdrop-blur-xl bg-slate-950/40 border border-white/15 shadow-2xl shadow-black/50">
+        <div className={`flex flex-col items-center gap-2 py-3 px-2 rounded-full backdrop-blur-2xl border shadow-2xl ${
+          isNight ? "bg-slate-950/60 border-amber-400/20 text-white" : "bg-white/80 border-sky-200 text-slate-900"
+        }`}>
           {SCENE_STEPS.map((step, idx) => {
             const isActive = activeStepIndex === idx;
             return (
               <button
                 key={step.id}
                 onClick={() => scrollToStep(idx)}
-                className="group relative flex items-center justify-center p-1.5 focus:outline-none"
-                title={`${step.num} — ${step.label}`}
+                className="group relative flex items-center justify-center p-1.5 focus:outline-none cursor-pointer"
+                title={`${step.num} — ${step.title}`}
               >
                 {/* Floating tooltip on hover */}
-                <div className="absolute right-8 px-2.5 py-1 rounded-md bg-slate-900/90 text-white text-[11px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-lg border border-white/10">
-                  <span className="text-amber-400 font-bold mr-1.5">{step.num}</span>
+                <div className={`absolute right-9 px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl border ${
+                  isNight ? "bg-slate-900 text-white border-amber-500/30" : "bg-white text-slate-900 border-sky-200"
+                }`}>
+                  <span className="text-amber-500 font-bold mr-1">{step.num}</span>
                   {step.title}
                 </div>
 
@@ -239,847 +258,523 @@ export function Ceo1983VerticalLandscape() {
                 <div
                   className={`rounded-full transition-all duration-300 ${
                     isActive
-                      ? "w-3 h-3 bg-amber-400 ring-4 ring-amber-400/30 scale-125 shadow-lg shadow-amber-400/80"
-                      : "w-2 h-2 bg-white/40 group-hover:bg-white/80 group-hover:scale-110"
+                      ? "w-3.5 h-3.5 bg-amber-400 ring-4 ring-amber-400/30 scale-125 shadow-lg shadow-amber-400/80"
+                      : isNight 
+                        ? "w-2 h-2 bg-white/40 group-hover:bg-white/80" 
+                        : "w-2 h-2 bg-slate-400 group-hover:bg-slate-700"
                   }`}
                 />
               </button>
             );
           })}
         </div>
-        <div className="text-[9px] font-mono uppercase tracking-widest text-amber-400/80 bg-slate-950/50 px-2 py-0.5 rounded border border-white/10">
-          {SCENE_STEPS[activeStepIndex].num} {SCENE_STEPS[activeStepIndex].label}
-        </div>
       </nav>
 
-      {/* ═══════════════════════════════════════════════════════════════════════════════════════
-          THE CONTINUOUS 3D ILLUSTRATED LANDSCAPE (600vh TOTAL HEIGHT)
-          NO INDEPENDENT SECTION BLOCKS. NO CARDS. PURE ARTWORK + TYPOGRAPHY.
-      ══════════════════════════════════════════════════════════════════════════════════════════ */}
-      <div 
-        className="relative w-full overflow-hidden"
-        style={{
-          minHeight: "600vh",
-          background: "linear-gradient(180deg, #020719 0%, #06183e 10%, #0d3875 22%, #19589d 35%, #2b7ebb 46%, #3fa0d4 53%, #4da2be 59%, #2f7a93 63%, #14506c 68%, #0b3755 74%, #06243d 82%, #021223 92%, #010813 100%)",
-        }}
-      >
-        {/* =====================================================================================
-            01 — SKY (0vh - 110vh)
-            - 3D Luminous Sun
-            - Volumetric drifting clouds at multiple depths
-            - Broad soft lighting
-            - Hero typography set directly in the sky
-        ===================================================================================== */}
-        <div className="relative w-full h-[110vh]">
-          {/* Subtle Ambient Stars at Top Atmosphere */}
-          <div className="absolute inset-0 pointer-events-none opacity-40">
-            {Array.from({ length: 45 }).map((_, i) => (
-              <div
-                key={`star-${i}`}
-                className="absolute rounded-full bg-white animate-pulse"
-                style={{
-                  top: `${(i * 17) % 35}%`,
-                  left: `${(i * 29) % 100}%`,
-                  width: i % 4 === 0 ? "3px" : "1.5px",
-                  height: i % 4 === 0 ? "3px" : "1.5px",
-                  opacity: 0.3 + (i % 5) * 0.15,
-                  animationDuration: `${2 + (i % 3)}s`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* 3D Sun with Soft Radiant Corona */}
-          <div 
-            className="absolute pointer-events-none"
-            style={{
-              top: "26%",
-              left: "50%",
-              transform: `translate(-50%, -50%) translateY(${scrollY * 0.12}px)`,
-            }}
-          >
-            {/* Outermost Sun Glow */}
-            <div 
-              className="absolute w-[420px] h-[420px] rounded-full -translate-x-1/2 -translate-y-1/2"
-              style={{
-                background: "radial-gradient(circle, rgba(255, 220, 100, 0.35) 0%, rgba(255, 180, 50, 0.15) 45%, transparent 70%)",
-                filter: "blur(35px)",
-              }}
-            />
-            {/* Core 3D Sun Sphere */}
-            <div 
-              className="w-36 h-36 rounded-full shadow-2xl relative"
-              style={{
-                background: "radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FFF4B8 20%, #FFD000 50%, #FF8C00 85%, #E65100 100%)",
-                boxShadow: "0 0 80px 25px rgba(255, 200, 0, 0.65), 0 0 160px 60px rgba(255, 140, 0, 0.35)",
-                animation: "sunPulse 6s ease-in-out infinite",
-              }}
-            />
-          </div>
-
-          {/* Deep Cloud Layer (Background) */}
-          <div 
-            className="absolute pointer-events-none w-full opacity-60"
-            style={{
-              top: "38%",
-              transform: `translateY(${scrollY * -0.05}px)`,
-              animation: "cloudFloat2 12s ease-in-out infinite",
-            }}
-          >
-            <svg viewBox="0 0 1440 320" className="w-full h-auto text-sky-100/40" fill="currentColor">
-              <path d="M0,160 C120,130 200,180 320,150 C440,120 520,70 640,90 C760,110 880,160 1000,140 C1120,120 1280,70 1440,110 L1440,320 L0,320 Z" />
-            </svg>
-          </div>
-
-          {/* Midground 3D Volumetric Clouds */}
-          <div 
-            className="absolute pointer-events-none w-[120%] -left-[10%] opacity-85"
-            style={{
-              top: "48%",
-              transform: `translateY(${scrollY * -0.09}px)`,
-              animation: "cloudFloat1 9s ease-in-out infinite",
-            }}
-          >
-            <svg viewBox="0 0 1440 280" className="w-full h-auto text-white/50" fill="currentColor">
-              <path d="M0,190 C180,120 300,160 480,130 C660,100 780,140 960,110 C1140,80 1300,140 1440,120 L1440,280 L0,280 Z" />
-            </svg>
-          </div>
-
-          {/* Foreground Fluffy Cloud Bank */}
-          <div 
-            className="absolute pointer-events-none w-full opacity-95"
-            style={{
-              top: "62%",
-              transform: `translateY(${scrollY * -0.14}px)`,
-            }}
-          >
-            <svg viewBox="0 0 1440 260" className="w-full h-auto text-white/70" fill="currentColor">
-              <path d="M0,210 C160,170 320,200 480,180 C640,160 800,190 960,170 C1120,150 1280,180 1440,160 L1440,260 L0,260 Z" />
-            </svg>
-          </div>
-
-          {/* Hero Typography Set Directly Inside Sky Artwork */}
-          <div 
-            className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-36 max-w-4xl mx-auto"
-            style={{
-              transform: `translateY(${scrollY * 0.22}px)`,
-              opacity: Math.max(0, 1 - scrollY / 650),
-            }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-amber-200 text-xs font-semibold uppercase tracking-widest mb-6 shadow-xl">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Thế Hệ Doanh Nhân 1983 · HanoiBA</span>
-            </div>
-
-            <h1 className="font-cinzel text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.08] text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.6)] mb-6">
-              BỨC TRANH <br />
-              <span className="bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500 bg-clip-text text-transparent">
-                CEO 1983
-              </span>
-            </h1>
-
-            <p className="font-jakarta text-base sm:text-lg md:text-xl text-white/90 font-light max-w-2xl leading-relaxed drop-shadow mb-10">
-              Một thế giới liên tục từ tầng không vô tận đến đáy đại dương sâu thẳm. Nơi hội tụ hơn 500 nhà lãnh đạo bản lĩnh kiến tạo vị thế thịnh vượng.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button
-                onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
-                className="px-8 py-3.5 rounded-full font-bold text-sm tracking-wide bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow-2xl shadow-amber-400/50 hover:scale-105 active:scale-95 transition-all"
-              >
-                ✦ Gia Nhập CLB CEO 1983
-              </button>
-              <button
-                onClick={() => scrollToStep(1)}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-full font-medium text-xs tracking-wider text-white/80 border border-white/25 backdrop-blur-md hover:bg-white/10 transition"
-              >
-                <span>Cuộn xuống khám phá</span>
-                <ChevronDown className="w-4 h-4 text-amber-300 animate-bounce" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* =====================================================================================
-            02 — BIRDS (110vh - 200vh)
-            - Seamless continuous sky blending from Layer 01
-            - Flocks of 3D birds flying at diverse altitudes and depths
-            - Upper clouds from scene 01 still gently visible above
-            - No dividing borders or card boxes
-        ===================================================================================== */}
-        <div className="relative w-full h-[90vh]">
-          {/* Continuous Drifting Sky Clouds from Layer 01 */}
-          <div className="absolute top-0 left-0 w-full opacity-45 pointer-events-none">
-            <svg viewBox="0 0 1440 220" className="w-full h-auto text-white/40" fill="currentColor">
-              <path d="M0,90 C220,50 440,110 660,70 C880,30 1100,90 1440,60 L1440,220 L0,220 Z" />
-            </svg>
-          </div>
-
-          {/* 3D Flock 1: Distant Birds (Deep Background, small scale, high altitude) */}
-          <div 
-            className="absolute pointer-events-none w-full"
-            style={{
-              top: "14%",
-              transform: `translateY(${(scrollY - 700) * 0.08}px)`,
-              animation: "birdFlySlow 8s ease-in-out infinite",
-            }}
-          >
-            {[
-              { left: "18%", top: "10px", scale: 0.35, opacity: 0.5 },
-              { left: "21%", top: "24px", scale: 0.3, opacity: 0.45 },
-              { left: "24%", top: "8px", scale: 0.38, opacity: 0.55 },
-              { left: "27%", top: "28px", scale: 0.28, opacity: 0.4 },
-              { left: "72%", top: "16px", scale: 0.4, opacity: 0.6 },
-              { left: "76%", top: "32px", scale: 0.32, opacity: 0.48 },
-              { left: "80%", top: "12px", scale: 0.36, opacity: 0.52 },
-            ].map((b, i) => (
-              <div 
-                key={`dbird-${i}`}
-                className="absolute"
-                style={{ left: b.left, top: b.top, transform: `scale(${b.scale})`, opacity: b.opacity }}
-              >
-                <svg width="60" height="28" viewBox="0 0 60 28" fill="none">
-                  {/* Left Wing */}
-                  <path d="M30 14 C20 4 8 2 0 8 C10 10 22 18 30 14 Z" fill="#0A2A54" />
-                  {/* Right Wing */}
-                  <path d="M30 14 C40 4 52 2 60 8 C50 10 38 18 30 14 Z" fill="#154278" />
-                  {/* Body */}
-                  <ellipse cx="30" cy="14" rx="4" ry="2" fill="#061B36" />
-                </svg>
-              </div>
-            ))}
-          </div>
-
-          {/* 3D Flock 2: Midground Flight (Prominent V-formation) */}
-          <div 
-            className="absolute pointer-events-none w-full"
-            style={{
-              top: "32%",
-              transform: `translateY(${(scrollY - 900) * 0.16}px)`,
-              animation: "birdFlySlow 6s ease-in-out 1s infinite",
-            }}
-          >
-            {[
-              { left: "38%", top: "0px", scale: 0.8, opacity: 0.85 }, // Lead Bird
-              { left: "33%", top: "28px", scale: 0.7, opacity: 0.75 },
-              { left: "43%", top: "32px", scale: 0.72, opacity: 0.78 },
-              { left: "28%", top: "58px", scale: 0.62, opacity: 0.68 },
-              { left: "48%", top: "64px", scale: 0.65, opacity: 0.7 },
-            ].map((b, i) => (
-              <div 
-                key={`mbird-${i}`}
-                className="absolute"
-                style={{ left: b.left, top: b.top, transform: `scale(${b.scale})`, opacity: b.opacity }}
-              >
-                <svg width="84" height="40" viewBox="0 0 84 40" fill="none">
-                  {/* Volumetric Shaded Wings */}
-                  <path d="M42 20 C28 6 12 4 0 12 C14 14 32 26 42 20 Z" fill="url(#birdGradLeft)" />
-                  <path d="M42 20 C56 6 72 4 84 12 C70 14 52 26 42 20 Z" fill="url(#birdGradRight)" />
-                  <ellipse cx="42" cy="20" rx="6" ry="2.5" fill="#0A2244" />
-                  <defs>
-                    <linearGradient id="birdGradLeft" x1="0" y1="0" x2="42" y2="20" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#FDE68A" />
-                      <stop offset="0.6" stopColor="#0E3D75" />
-                      <stop offset="1" stopColor="#051833" />
-                    </linearGradient>
-                    <linearGradient id="birdGradRight" x1="84" y1="0" x2="42" y2="20" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#FFFBEB" />
-                      <stop offset="0.6" stopColor="#1A539B" />
-                      <stop offset="1" stopColor="#072247" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            ))}
-          </div>
-
-          {/* Foreground Large Solo Soaring Bird */}
-          <div 
-            className="absolute pointer-events-none"
-            style={{
-              top: "56%",
-              left: "14%",
-              transform: `translateY(${(scrollY - 1100) * 0.24}px) scale(1.15)`,
-            }}
-          >
-            <svg width="120" height="54" viewBox="0 0 120 54" fill="none" className="drop-shadow-2xl">
-              <path d="M60 27 C40 8 18 5 0 16 C20 19 46 35 60 27 Z" fill="#082348" />
-              <path d="M60 27 C80 8 102 5 120 16 C100 19 74 35 60 27 Z" fill="#164A85" />
-              <ellipse cx="60" cy="27" rx="8" ry="3.5" fill="#041226" />
-            </svg>
-          </div>
-
-          {/* Typography Direct In Landscape (No Cards) */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-32 max-w-2xl mx-auto pointer-events-none">
-            <span className="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase mb-3">
-              02 — BIRDS IN FLIGHT
-            </span>
-            <h2 className="font-cinzel text-3xl sm:text-5xl font-black text-white tracking-wide leading-tight mb-4 drop-shadow-lg">
-              Tụ Hội Đàn Chim Đầu Đàn
-            </h2>
-            <p className="font-jakarta text-sm sm:text-base text-white/80 leading-relaxed font-light">
-              Chim không bay đơn độc. Doanh nhân thế hệ Quý Hợi 1983 nương tựa sức gió của nhau, kết thành đội hình vươn cao, bứt phá mọi tầng mây định kiến.
-            </p>
-          </div>
-        </div>
-
-        {/* =====================================================================================
-            03 — KITES (200vh - 290vh)
-            - 3D Stylized Kites floating at diverse depths (foreground & background)
-            - Long elegant vertical strings trailing down continuously
-            - Birds from scene 02 still visible floating above
-            - Smooth continuous sky transition
-        ===================================================================================== */}
-        <div className="relative w-full h-[90vh]">
-          {/* Distant Kites (Far Background) */}
-          <div 
-            className="absolute pointer-events-none"
-            style={{
-              top: "8%",
-              left: "78%",
-              transform: `translateY(${(scrollY - 1500) * 0.09}px)`,
-              animation: "kiteHover2 8s ease-in-out infinite",
-            }}
-          >
-            {/* Small 3D Kite */}
-            <svg width="44" height="56" viewBox="0 0 44 56" fill="none">
-              <polygon points="22,0 44,24 22,56 0,24" fill="#E65100" opacity="0.75" />
-              <polygon points="22,0 44,24 22,24" fill="#FFB74D" opacity="0.85" />
-              <polygon points="22,24 44,24 22,56" fill="#F57C00" opacity="0.8" />
-              <polygon points="0,24 22,24 22,56" fill="#BF360C" opacity="0.75" />
-              {/* Vertical string */}
-              <path d="M22 56 Q20 180 26 320" stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" />
-            </svg>
-          </div>
-
-          {/* Prominent Midground 3D Diamond Kite */}
-          <div 
-            className="absolute pointer-events-none"
-            style={{
-              top: "18%",
-              left: "22%",
-              transform: `translateY(${(scrollY - 1700) * 0.16}px)`,
-              animation: "kiteHover1 7s ease-in-out infinite",
-            }}
-          >
-            <svg width="84" height="110" viewBox="0 0 84 110" fill="none" className="drop-shadow-2xl">
-              {/* Facet Top-Left */}
-              <polygon points="42,0 42,48 0,48" fill="url(#kiteFacetTL)" />
-              {/* Facet Top-Right */}
-              <polygon points="42,0 84,48 42,48" fill="url(#kiteFacetTR)" />
-              {/* Facet Bottom-Left */}
-              <polygon points="0,48 42,48 42,110" fill="url(#kiteFacetBL)" />
-              {/* Facet Bottom-Right */}
-              <polygon points="42,48 84,48 42,110" fill="url(#kiteFacetBR)" />
-              {/* Trailing Vertical Ribbon / String */}
-              <path d="M42 110 Q35 240 48 380 Q32 520 44 650" stroke="rgba(255, 235, 170, 0.7)" strokeWidth="1.5" fill="none" />
-              <defs>
-                <linearGradient id="kiteFacetTL" x1="0" y1="0" x2="42" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#F59E0B" />
-                  <stop offset="1" stopColor="#D97706" />
-                </linearGradient>
-                <linearGradient id="kiteFacetTR" x1="84" y1="0" x2="42" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#FDE68A" />
-                  <stop offset="1" stopColor="#F59E0B" />
-                </linearGradient>
-                <linearGradient id="kiteFacetBL" x1="0" y1="48" x2="42" y2="110" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#B45309" />
-                  <stop offset="1" stopColor="#78350F" />
-                </linearGradient>
-                <linearGradient id="kiteFacetBR" x1="84" y1="48" x2="42" y2="110" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#D97706" />
-                  <stop offset="1" stopColor="#92400E" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          {/* Foreground Stylized Modern Kite */}
-          <div 
-            className="absolute pointer-events-none"
-            style={{
-              top: "28%",
-              right: "18%",
-              transform: `translateY(${(scrollY - 1900) * 0.22}px)`,
-              animation: "kiteHover2 9s ease-in-out 1.5s infinite",
-            }}
-          >
-            <svg width="70" height="92" viewBox="0 0 70 92" fill="none" className="drop-shadow-xl">
-              <polygon points="35,0 70,40 35,40" fill="#38BDF8" />
-              <polygon points="35,0 35,40 0,40" fill="#0284C7" />
-              <polygon points="0,40 35,40 35,92" fill="#0369A1" />
-              <polygon points="35,40 70,40 35,92" fill="#0EA5E9" />
-              {/* Vertical string descending into next layer */}
-              <path d="M35 92 Q45 220 28 360 Q40 500 32 620" stroke="rgba(186, 230, 253, 0.6)" strokeWidth="1.2" fill="none" />
-            </svg>
-          </div>
-
-          {/* Typography Direct In Landscape */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-36 max-w-2xl mx-auto pointer-events-none">
-            <span className="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase mb-3">
-              03 — KITES & ASPIRATIONS
-            </span>
-            <h2 className="font-cinzel text-3xl sm:text-5xl font-black text-white tracking-wide leading-tight mb-4 drop-shadow-lg">
-              Cánh Diều Đón Ngọn Gió Lớn
-            </h2>
-            <p className="font-jakarta text-sm sm:text-base text-white/80 leading-relaxed font-light">
-              Gió càng lớn, diều càng no gió vươn cao. Sợi dây kết nối doanh nghiệp như cội nguồn vững chắc, giữ vững phương hướng trên hành trình mở rộng quy mô.
-            </p>
-          </div>
-        </div>
-
-        {/* =====================================================================================
-            04 — VILLAS (290vh - 390vh)
-            - Horizon appears
-            - Luxurious 3D architectural villas resting on terraced green topography (~1/4 height)
-            - Sky, drifting clouds, and kites strings still visible above
-            - NO building cards or icons — A true 3D continuous landscape
-        ===================================================================================== */}
-        <div className="relative w-full h-[100vh] flex flex-col justify-end">
-          {/* Upper Atmosphere of this layer (Sky and strings still traversing) */}
-          <div className="absolute top-12 left-0 right-0 z-10 flex flex-col items-center justify-center text-center px-6 max-w-2xl mx-auto pointer-events-none">
-            <span className="text-xs font-mono font-bold tracking-widest text-emerald-300 uppercase mb-3">
-              04 — HORIZON & VILLAS
-            </span>
-            <h2 className="font-cinzel text-3xl sm:text-5xl font-black text-white tracking-wide leading-tight mb-4 drop-shadow-lg">
-              Quần Thể Cơ Đồ & Thịnh Vượng
-            </h2>
-            <p className="font-jakarta text-sm sm:text-base text-white/85 leading-relaxed font-light">
-              Tọa lạc trên đường chân trời vững chãi. Những công trình kiến trúc biểu trưng cho sự nghiệp, doanh nghiệp bề thế và di sản trường tồn của thế hệ 1983.
-            </p>
-          </div>
-
-          {/* Rolling Terraced Horizon Hills (Background) */}
-          <div className="absolute bottom-[22%] left-0 w-full pointer-events-none opacity-90">
-            <svg viewBox="0 0 1440 280" className="w-full h-auto text-[#1b5e20]/60" fill="currentColor">
-              <path d="M0,140 Q360,60 720,110 T1440,70 L1440,280 L0,280 Z" />
-            </svg>
-          </div>
-
-          {/* Forefront Horizon Ridge with 3D Modern Villas (~1/4 height of this region) */}
-          <div className="relative z-20 w-full h-[32vh] flex items-end">
-            <svg viewBox="0 0 1440 420" preserveAspectRatio="none" className="w-full h-full">
-              {/* Lush Ground Surface */}
-              <path d="M0,180 Q320,120 740,150 T1440,110 L1440,420 L0,420 Z" fill="#144d28" />
-
-              {/* 3D Villa Cluster 1 (Left Wing - Modern Cantilevered Villa) */}
-              <g transform="translate(180, 70)" className="drop-shadow-2xl">
-                {/* Ground platform / terrace shadow */}
-                <ellipse cx="140" cy="150" rx="150" ry="18" fill="rgba(0,0,0,0.35)" />
-                {/* Main Lower Villa Structure */}
-                <polygon points="40,140 180,110 240,130 100,160" fill="#E2E8F0" />
-                <polygon points="100,160 240,130 240,148 100,178" fill="#94A3B8" />
-                <polygon points="40,140 100,160 100,178 40,158" fill="#CBD5E1" />
-                {/* Warm Illuminated Glass Floor */}
-                <polygon points="60,135 170,112 210,126 100,148" fill="#FEF08A" opacity="0.9" />
-                {/* Cantilevered 2nd Floor (3D Modern Luxury Villa Roof) */}
-                <polygon points="30,105 190,75 250,95 90,125" fill="#FFFFFF" />
-                <polygon points="90,125 250,95 250,105 90,135" fill="#475569" />
-                {/* Infinity Balcony Railing Glass */}
-                <polygon points="95,120 235,92 235,98 95,126" fill="#38BDF8" opacity="0.6" />
-                {/* Ambient Interior Lights */}
-                <rect x="110" y="105" width="22" height="15" fill="#FDE047" opacity="0.85" rx="2" />
-                <rect x="145" y="100" width="30" height="15" fill="#FDE047" opacity="0.8" rx="2" />
-              </g>
-
-              {/* 3D Villa Cluster 2 (Center - Master CEO Manor) */}
-              <g transform="translate(560, 40)" className="drop-shadow-2xl">
-                <ellipse cx="180" cy="180" rx="190" ry="24" fill="rgba(0,0,0,0.4)" />
-                {/* Stone Podium */}
-                <polygon points="50,170 240,130 330,155 140,195" fill="#64748B" />
-                {/* Glass Facade Main Hall */}
-                <polygon points="70,160 220,128 290,148 140,180" fill="#FDE047" opacity="0.95" />
-                {/* Geometric Minimalist Roof Floating */}
-                <polygon points="40,120 250,85 340,110 130,145" fill="#F8FAFC" />
-                <polygon points="130,145 340,110 340,120 130,155" fill="#334155" />
-                {/* Rooftop Garden Accent */}
-                <ellipse cx="200" cy="105" rx="22" ry="7" fill="#15803D" />
-                {/* Slender Palm Silhouettes Beside Villa */}
-                <path d="M350 170 Q358 120 365 75" stroke="#451A03" strokeWidth="4" fill="none" />
-                <path d="M365 75 Q340 60 325 70" stroke="#166534" strokeWidth="3" fill="none" />
-                <path d="M365 75 Q385 55 405 68" stroke="#166534" strokeWidth="3" fill="none" />
-                <path d="M365 75 Q365 50 365 40" stroke="#15803D" strokeWidth="3.5" fill="none" />
-              </g>
-
-              {/* 3D Villa Cluster 3 (Right Wing - Terraced Waterfront Villa) */}
-              <g transform="translate(1020, 55)" className="drop-shadow-2xl">
-                <ellipse cx="140" cy="160" rx="160" ry="20" fill="rgba(0,0,0,0.35)" />
-                <polygon points="30,150 180,120 250,140 100,170" fill="#E2E8F0" />
-                <polygon points="100,170 250,140 250,150 100,180" fill="#94A3B8" />
-                <polygon points="20,110 190,80 260,102 90,132" fill="#FFFFFF" />
-                <polygon points="90,132 260,102 260,112 90,142" fill="#1E293B" />
-                <polygon points="40,122 170,98 230,115 100,138" fill="#FDE047" opacity="0.85" />
-              </g>
-            </svg>
-          </div>
-        </div>
-
-        {/* =====================================================================================
-            05 — WATER & INFINITY POOL (390vh - 480vh)
-            - Seamless crystal water surface appears directly below the landscape
-            - Giant infinity pool / water volume with depth, reflections, caustics, and ripples
-            - Gradual transition as you scroll down: above surface -> waterline -> submerged
-        ===================================================================================== */}
-        <div className="relative w-full h-[90vh] overflow-hidden">
-          {/* Water Surface Horizon & Shimmering Waves */}
-          <div className="absolute top-0 left-0 right-0 h-44 pointer-events-none overflow-hidden">
-            {/* Luminous Surface Highlight */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: "linear-gradient(180deg, rgba(56, 189, 248, 0.7) 0%, rgba(14, 116, 144, 0.85) 50%, rgba(8, 47, 73, 0.95) 100%)",
-              }}
-            />
-
-            {/* Ripple Waves & Caustic Light Patterns */}
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div
-                key={`ripple-${i}`}
-                className="absolute w-[120%] -left-[10%] h-[2px] rounded-full"
-                style={{
-                  top: `${12 + i * 11}%`,
-                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.65) 40%, rgba(186, 230, 253, 0.9) 60%, transparent 100%)",
-                  animation: `waterCaustics ${3 + (i % 3) * 1.2}s ease-in-out ${i * 0.4}s infinite`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Deep Water Mass Gradient */}
-          <div 
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: "linear-gradient(180deg, rgba(8, 51, 88, 0.8) 0%, rgba(5, 34, 64, 0.95) 40%, #03182E 100%)",
-            }}
-          />
-
-          {/* Subsurface Light Reflections & Refraction */}
-          <div className="absolute inset-0 pointer-events-none opacity-40">
-            <svg viewBox="0 0 1440 600" className="w-full h-full" preserveAspectRatio="none">
-              <path d="M0,0 Q360,180 720,50 T1440,120 L1440,600 L0,600 Z" fill="rgba(56, 189, 248, 0.15)" />
-              <path d="M0,80 Q480,240 960,120 T1440,200 L1440,600 L0,600 Z" fill="rgba(14, 165, 233, 0.1)" />
-            </svg>
-          </div>
-
-          {/* Typography Direct in Water Layer */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-36 max-w-2xl mx-auto pointer-events-none">
-            <span className="text-xs font-mono font-bold tracking-widest text-cyan-300 uppercase mb-3">
-              05 — INFINITY WATER
-            </span>
-            <h2 className="font-cinzel text-3xl sm:text-5xl font-black text-white tracking-wide leading-tight mb-4 drop-shadow-lg">
-              Mặt Nước Vô Cực & Tĩnh Lặng
-            </h2>
-            <p className="font-jakarta text-sm sm:text-base text-cyan-100/80 leading-relaxed font-light">
-              Mặt nước phẳng lặng phản chiếu bầu trời cao rộng. Nhưng bên dưới bề mặt êm ả là nguồn năng lượng đại dương vô tận, sự thích ứng linh hoạt và chiều sâu tích lũy.
-            </p>
-          </div>
-        </div>
-
-        {/* =====================================================================================
-            06 — UNDERWATER WORLD & LEADERSHIP (480vh - 600vh)
-            - Deep blue oceanic abyss
-            - Volumetric godrays piercing through deep water
-            - Translucent rising bubbles & bioluminescent particles
-            - Stylized 3D schools of tropical fish and slow gliding oceanic shark
-            - Stylized leadership figures seamlessly integrated into the underwater world (NO CARDS)
-        ===================================================================================== */}
-        <div className="relative w-full h-[120vh] overflow-hidden">
-          {/* Volumetric Angled Sun Godrays */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[
-              { left: "15%", width: "120px", delay: "0s" },
-              { left: "35%", width: "160px", delay: "1.5s" },
-              { left: "55%", width: "200px", delay: "0.8s" },
-              { left: "75%", width: "140px", delay: "2.2s" },
-            ].map((ray, i) => (
-              <div
-                key={`godray-${i}`}
-                className="absolute top-0 h-full origin-top"
-                style={{
-                  left: ray.left,
-                  width: ray.width,
-                  background: "linear-gradient(180deg, rgba(125, 211, 252, 0.45) 0%, rgba(56, 189, 248, 0.15) 60%, transparent 100%)",
-                  filter: "blur(20px)",
-                  animation: `godRaySway 8s ease-in-out ${ray.delay} infinite`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Drifting Ocean Particles & Rising Bubbles */}
-          <div className="absolute inset-0 pointer-events-none">
-            {Array.from({ length: 28 }).map((_, i) => (
-              <div
-                key={`bubble-${i}`}
-                className="absolute rounded-full bg-cyan-200/40 border border-cyan-100/60 shadow-[0_0_8px_rgba(56,189,248,0.5)]"
-                style={{
-                  bottom: `${(i * 13) % 85}%`,
-                  left: `${(i * 23) % 96}%`,
-                  width: `${4 + (i % 5) * 3}px`,
-                  height: `${4 + (i % 5) * 3}px`,
-                  animation: `bubbleRise ${4 + (i % 4) * 2}s ease-in infinite`,
-                  animationDelay: `${(i * 0.35) % 4}s`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* 3D Fish School Swimming Horizontally Across Landscape */}
-          <div 
-            className="absolute pointer-events-none top-[26%] w-full"
-            style={{ animation: "fishGlide1 24s linear infinite" }}
-          >
-            {[
-              { x: 0, y: 0, scale: 0.8 },
-              { x: 35, y: 15, scale: 0.7 },
-              { x: 65, y: -10, scale: 0.85 },
-              { x: 95, y: 18, scale: 0.65 },
-              { x: 130, y: 5, scale: 0.75 },
-            ].map((f, i) => (
-              <div 
-                key={`fish-${i}`}
-                className="absolute"
-                style={{ transform: `translate(${f.x}px, ${f.y}px) scale(${f.scale})` }}
-              >
-                <svg width="48" height="24" viewBox="0 0 48 24" fill="none">
-                  {/* Fish Body */}
-                  <ellipse cx="22" cy="12" rx="16" ry="8" fill="url(#fishGrad)" />
-                  {/* Fish Tail Fin */}
-                  <polygon points="36,12 48,3 45,12 48,21" fill="#F59E0B" />
-                  {/* Fin */}
-                  <polygon points="20,4 26,0 24,5" fill="#FBBF24" />
-                  {/* Eye */}
-                  <circle cx="10" cy="10" r="1.8" fill="#020617" />
-                  <defs>
-                    <linearGradient id="fishGrad" x1="0" y1="12" x2="36" y2="12" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#F59E0B" />
-                      <stop offset="0.6" stopColor="#0284C7" />
-                      <stop offset="1" stopColor="#0369A1" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            ))}
-          </div>
-
-          {/* Majestic 3D Oceanic Shark Gliding Slowly in Deep Depth */}
-          <div 
-            className="absolute pointer-events-none top-[48%] w-full"
-            style={{ animation: "sharkPatrol 38s linear infinite" }}
-          >
-            <svg width="180" height="70" viewBox="0 0 180 70" fill="none" className="drop-shadow-[0_15px_30px_rgba(0,0,0,0.7)]">
-              {/* Shark Torpedo Body */}
-              <path d="M0 35 Q45 15 130 25 Q155 30 180 20 L170 35 L180 50 Q155 40 130 45 Q45 55 0 35 Z" fill="url(#sharkGrad)" />
-              {/* Dorsal Fin */}
-              <polygon points="85,24 105,2 115,23" fill="#1E293B" />
-              {/* Pectoral Fin */}
-              <polygon points="55,42 70,68 85,43" fill="#334155" />
-              {/* Gill Slits */}
-              <line x1="45" y1="30" x2="45" y2="40" stroke="#0F172A" strokeWidth="1.5" />
-              <line x1="49" y1="31" x2="49" y2="39" stroke="#0F172A" strokeWidth="1.5" />
-              <line x1="53" y1="32" x2="53" y2="38" stroke="#0F172A" strokeWidth="1.5" />
-              <defs>
-                <linearGradient id="sharkGrad" x1="0" y1="20" x2="0" y2="55" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#475569" />
-                  <stop offset="0.5" stopColor="#1E293B" />
-                  <stop offset="1" stopColor="#94A3B8" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          {/* Underwater Typography Direct in Artwork */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-28 max-w-3xl mx-auto">
-            <span className="text-xs font-mono font-bold tracking-widest text-amber-300 uppercase mb-3">
-              06 — UNDERWATER LEADERSHIP
-            </span>
-            <h2 className="font-cinzel text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-wide leading-tight mb-4 drop-shadow-2xl">
-              Bản Lĩnh Người Thuyền Trưởng
-            </h2>
-            <p className="font-jakarta text-sm sm:text-base text-white/80 leading-relaxed font-light max-w-xl mb-14">
-              Càng xuống tầng sâu, áp lực càng lớn. Chỉ những nhà lãnh đạo sở hữu nội lực thâm sâu, ý chí sắt đá và tầm nhìn vượt thời gian mới có thể dẫn dắt con thuyền doanh nghiệp vượt sóng dữ.
-            </p>
-
-            {/* Stylized Leadership Figures Immersed in Underwater Realm (NO PROFILE CARDS) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-5xl mb-16 text-left">
-              {[
-                {
-                  name: "Lê Xuân Tùng",
-                  title: "Chủ tịch CLB CEO 1983",
-                  company: "Chủ tịch HĐQT Tập đoàn V-Group",
-                  quote: "Đoàn kết thế hệ 1983 để cùng nhau bứt phá vươn tầm quốc tế.",
-                  symbol: "01",
-                },
-                {
-                  name: "Nguyễn Mạnh Thắng",
-                  title: "Phó Chủ tịch Thường trực",
-                  company: "Tổng Giám đốc TN Tech",
-                  quote: "Giao thương thực chất trên nền tảng công nghệ số tiên phong.",
-                  symbol: "02",
-                },
-                {
-                  name: "Hoàng Thị Mai Phương",
-                  title: "Phó Chủ tịch Đối ngoại",
-                  company: "Phó Tổng Giám đốc Alphanam Group",
-                  quote: "Mở rộng mạng lưới hợp tác đa phương, lan tỏa vị thế doanh nhân.",
-                  symbol: "03",
-                },
-                {
-                  name: "Vũ Tuấn Dũng",
-                  title: "Tổng Thư Ký CLB",
-                  company: "Chủ tịch HĐQT Dũng Việt Holdings",
-                  quote: "Kỷ cương, chuẩn mực và phụng sự vì sự phát triển bền vững.",
-                  symbol: "04",
-                },
-              ].map((leader, i) => (
-                <div 
-                  key={leader.name}
-                  className="relative group border-l-2 border-amber-400/40 pl-4 py-2 hover:border-amber-300 transition-all duration-300"
-                >
-                  <div className="text-[10px] font-mono text-amber-300/80 mb-1">{leader.symbol} · LEADERSHIP</div>
-                  <h3 className="font-cinzel text-lg font-bold text-white group-hover:text-amber-300 transition">
-                    {leader.name}
-                  </h3>
-                  <div className="text-xs font-semibold text-cyan-300 mb-0.5">{leader.title}</div>
-                  <div className="text-[11px] text-white/60 mb-3">{leader.company}</div>
-                  <p className="font-jakarta text-xs text-white/75 italic leading-relaxed">
-                    "{leader.quote}"
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Giant Final Direct Call to Action */}
-            <div className="flex flex-col items-center gap-4">
-              <button
-                onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
-                className="px-10 py-4 rounded-full font-bold text-base tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow-[0_10px_40px_rgba(251,191,36,0.4)] hover:shadow-[0_15px_60px_rgba(251,191,36,0.6)] hover:scale-105 active:scale-95 transition-all"
-              >
-                ✦ ĐĂNG KÝ GIA NHẬP CLB CEO 1983
-              </button>
-              <p className="text-xs text-white/50 tracking-wide">
-                Hệ thống tự động xét duyệt và gửi thông tin tài khoản qua email cá nhân
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── REGISTRATION MODAL CONNECTED TO CRM & EMAIL ── */}
-      {regModalOpen && (
+      {/* =====================================================================================
+          SECTION 01: KHỞI NGUYÊN BẦU TRỜI (SKY & VISION)
+          - Đường lượn sóng hữu cơ độc đáo, không khối chữ nhật
+          - Background Trời Tối (Cosmos Skyline) / Trời Sáng (Daylight Skyline)
+      ===================================================================================== */}
+      <section className="relative min-h-[95vh] flex flex-col justify-between overflow-hidden pt-28 pb-16">
+        {/* Background Image & Sky Gradients */}
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-200"
-          onClick={() => setRegModalOpen(false)}
-        >
-          <div 
-            className="relative w-full max-w-lg rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-400/30 p-6 sm:p-8 shadow-2xl shadow-black/80 text-white overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Ambient Background Glow */}
-            <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" />
+          className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000"
+          style={{
+            backgroundImage: isNight 
+              ? "url('/ceo1983_hero_cosmos_skyline.jpg')" 
+              : "url('/ceo1983_hero_daylight_skyline.jpg')",
+            filter: isNight ? "brightness(0.7) contrast(1.1)" : "brightness(0.95)",
+          }}
+        />
+        <div className={`absolute inset-0 z-0 transition-all duration-700 ${
+          isNight 
+            ? "bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-[#020617]" 
+            : "bg-gradient-to-b from-sky-100/60 via-transparent to-[#F0F9FF]"
+        }`} />
+
+        {/* Floating Ambient Aura */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Hero Content Box with Organic Rounded Borders */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center my-auto">
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-xl border shadow-lg ${
+            isNight 
+              ? "bg-slate-900/70 border-amber-400/30 text-amber-300" 
+              : "bg-white/80 border-sky-300 text-blue-900"
+          }`}>
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Thế Hệ Doanh Nhân Quý Hợi 1983 · HanoiBA</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] mb-6 drop-shadow-lg">
+            BẢN LĨNH TIÊN PHONG <br />
+            <span className="bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent">
+              VƯƠN TẦM THỊNH VƯỢNG
+            </span>
+          </h1>
+
+          <p className={`text-base sm:text-lg md:text-xl font-medium max-w-3xl mx-auto leading-relaxed mb-8 drop-shadow ${
+            isNight ? "text-slate-200" : "text-slate-700"
+          }`}>
+            Hành trình kết nối hơn 500 nhà sáng lập và lãnh đạo doanh nghiệp tuổi 1983 ưu tú. 
+            Cùng nhau chia sẻ giá trị, mở rộng cơ hội kinh doanh và kiến tạo di sản bền vững cho cộng đồng.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button
+              onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
+              className="px-8 py-3.5 rounded-full font-black text-sm tracking-wide bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 text-slate-950 shadow-xl shadow-amber-400/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              ✦ Gia Nhập CLB CEO 1983
+            </button>
+            <button
+              onClick={() => scrollToStep(1)}
+              className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-xs tracking-wider border backdrop-blur-md transition cursor-pointer ${
+                isNight 
+                  ? "bg-slate-900/60 border-white/20 text-white hover:bg-white/10" 
+                  : "bg-white/70 border-sky-300 text-slate-800 hover:bg-white/90"
+              }`}
+            >
+              <span>Khám Phá Hành Trình</span>
+              <ChevronDown className="w-4 h-4 text-amber-500 animate-bounce" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── ORGANIC SVG WAVE DIVIDER (UỐN LƯỢN ĐỘC ĐÁO) ── */}
+        <div className="relative z-10 w-full overflow-hidden leading-none mt-auto">
+          <svg viewBox="0 0 1440 120" fill="none" className="w-full h-16 sm:h-24 md:h-28 preserve-3d">
+            <path
+              d="M0,32L48,42.7C96,53,192,75,288,80C384,85,480,75,576,58.7C672,43,768,21,864,21.3C960,21,1056,43,1152,53.3C1248,64,1344,64,1392,64L1440,64L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
+              fill={isNight ? "#0A1536" : "#E0F2FE"}
+              fillOpacity="0.8"
+            />
+            <path
+              d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
+              fill={isNight ? "#081026" : "#BAE6FD"}
+              fillOpacity="1"
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* =====================================================================================
+          SECTION 02: ĐÀN CHIM 1983 (BIRDS & TOGETHERNESS)
+          - Không khối chữ nhật: Card uốn lượn bất đối xứng rounded-[48px_16px_48px_16px]
+      ===================================================================================== */}
+      <section 
+        className={`relative py-20 px-6 transition-colors duration-700 ${
+          isNight ? "bg-[#081026]" : "bg-[#BAE6FD]"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <span className={`text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border ${
+              isNight ? "bg-slate-900/80 text-amber-300 border-amber-500/30" : "bg-white/80 text-blue-900 border-sky-300"
+            }`}>
+              Trụ Cột 01 · Gắn Kết & Sức Mạnh Bầy Đàn
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black mt-4 mb-4">
+              ĐÀN CHIM 1983 — BAY CAO & BẢN LĨNH
+            </h2>
+            <p className={`text-sm sm:text-base leading-relaxed ${isNight ? "text-slate-300" : "text-slate-700"}`}>
+              Muốn đi nhanh hãy đi một mình, muốn đi xa hãy đi cùng nhau. Tại CLB CEO 1983, mỗi doanh nhân là một cánh chim đầu đàn kiên định, sẻ chia luồng gió thị trường để cùng nhau vượt ngàn dặm giông bão.
+            </p>
+          </div>
+
+          {/* Asymmetrical Curved Organic Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Users,
+                title: "500+ Doanh Nhân Ưu Tú",
+                desc: "Cộng đồng lãnh đạo tuổi 1983 phủ khắp các lĩnh vực then chốt: sản xuất, bất động sản, logistics, công nghệ, tài chính.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Vị Thế Trực Thuộc HanoiBA",
+                desc: "Hưởng trọn nguồn lực kết nối kinh doanh, giao thương cấp bộ ngành và tổ chức xúc tiến thương mại quốc tế.",
+              },
+              {
+                icon: Award,
+                title: "Chia Sẻ Tri Thức Đỉnh Cao",
+                desc: "Các buổi Mastermind chuyên sâu, giải quyết bài toán quản trị thực chiến từ các chủ tịch và chuyên gia đầu ngành.",
+              },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className={`p-8 transition-all duration-300 hover:-translate-y-1.5 border shadow-xl ${
+                  isNight
+                    ? "bg-slate-900/60 backdrop-blur-xl border-amber-500/20 text-white hover:border-amber-400/50 rounded-[40px_16px_40px_16px]"
+                    : "bg-white/85 backdrop-blur-xl border-sky-300/60 text-slate-900 hover:border-blue-400 rounded-[16px_40px_16px_40px]"
+                }`}
+              >
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-bold mb-5 shadow-lg shadow-amber-500/20">
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-black mb-2">{item.title}</h3>
+                <p className={`text-xs sm:text-sm leading-relaxed ${isNight ? "text-slate-300" : "text-slate-600"}`}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── ORGANIC SVG WAVE DIVIDER NỐI SANG SECTION 03 ── */}
+        <div className="w-full overflow-hidden leading-none mt-16 -mb-20">
+          <svg viewBox="0 0 1440 120" fill="none" className="w-full h-16 sm:h-24 preserve-3d">
+            <path
+              d="M0,40 C320,100 420,0 720,50 C1020,100 1120,10 1440,60 L1440,120 L0,120 Z"
+              fill={isNight ? "#060D20" : "#E0F2FE"}
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* =====================================================================================
+          SECTION 03: CÁNH DIỀU KHÁT VỌNG (KITES & AMBITION)
+          - Đường lượn sóng liên tục
+      ===================================================================================== */}
+      <section 
+        className={`relative pt-28 pb-20 px-6 transition-colors duration-700 ${
+          isNight ? "bg-[#060D20]" : "bg-[#E0F2FE]"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+          <div className="w-full lg:w-1/2">
+            <span className={`text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border ${
+              isNight ? "bg-slate-900/80 text-amber-300 border-amber-500/30" : "bg-white/80 text-blue-900 border-sky-300"
+            }`}>
+              Trụ Cột 02 · Khát Vọng & Đổi Mới Sáng Tạo
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black mt-4 mb-5 leading-tight">
+              NHỮNG CÁNH DIỀU <br />
+              <span className="bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+                ĐÓN GIÓ VƯƠN XA
+              </span>
+            </h2>
+            <p className={`text-sm sm:text-base leading-relaxed mb-6 ${isNight ? "text-slate-300" : "text-slate-700"}`}>
+              Gió càng ngược, diều càng bay cao. Đối với thế hệ lãnh đạo 1983, thách thức kinh tế và sự biến chuyển công nghệ chính là bệ phóng hoàn hảo để tái cơ cấu mô hình, vươn tầm khẳng định vị thế.
+            </p>
+
+            <ul className="space-y-3.5 mb-8 text-xs sm:text-sm">
+              {[
+                "Chuyển đổi số toàn diện mô hình vận hành và kinh doanh B2B.",
+                "Thúc đẩy đổi mới sáng tạo, ứng dụng giải pháp công nghệ tiên phong.",
+                "Hỗ trợ các dự án mở rộng thị trường và liên minh đầu tư chiến lược.",
+              ].map((point, i) => (
+                <li key={i} className="flex items-center gap-2.5 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
 
             <button
+              onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
+              className="px-7 py-3 rounded-full font-bold text-xs tracking-wider bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-lg shadow-amber-400/25 hover:scale-105 transition-all cursor-pointer"
+            >
+              ✦ Đăng Ký Tham Gia Diễn Đàn
+            </button>
+          </div>
+
+          <div className="w-full lg:w-1/2">
+            <div 
+              className={`p-3 border shadow-2xl relative overflow-hidden ${
+                isNight 
+                  ? "bg-slate-900/80 border-amber-500/30 rounded-[48px_20px_48px_20px]" 
+                  : "bg-white/90 border-sky-300 rounded-[20px_48px_20px_48px]"
+              }`}
+            >
+              <img 
+                src="/landing/ceo1983-hero-dark.jpg" 
+                alt="Khát vọng CEO 1983" 
+                className="w-full h-80 sm:h-96 object-cover rounded-[38px_14px_38px_14px]"
+              />
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-xs">
+                <p className="font-bold text-amber-300">Tầm Nhìn 2026 - 2030</p>
+                <p className="text-slate-300 text-[11px] mt-0.5">Xây dựng liên minh 1.000 doanh nghiệp tăng trưởng bền vững.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── ORGANIC SVG WAVE DIVIDER NỐI SANG SECTION 04 ── */}
+        <div className="w-full overflow-hidden leading-none mt-20 -mb-20">
+          <svg viewBox="0 0 1440 120" fill="none" className="w-full h-16 sm:h-24 preserve-3d">
+            <path
+              d="M0,60 C360,0 480,100 840,40 C1200,-20 1320,80 1440,30 L1440,120 L0,120 Z"
+              fill={isNight ? "#040A18" : "#F0F9FF"}
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* =====================================================================================
+          SECTION 04: QUẦN THỂ THỊNH VƯỢNG (VILLAS & ECOSYSTEM)
+          - Không khối chữ nhật: Khung bo tròn hữu cơ mềm mại
+      ===================================================================================== */}
+      <section 
+        className={`relative pt-28 pb-20 px-6 transition-colors duration-700 ${
+          isNight ? "bg-[#040A18]" : "bg-[#F0F9FF]"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <span className={`text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border ${
+              isNight ? "bg-slate-900/80 text-amber-300 border-amber-500/30" : "bg-white/80 text-blue-900 border-sky-300"
+            }`}>
+              Trụ Cột 03 · Quần Thể Giao Thương Thịnh Vượng
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black mt-4 mb-4">
+              HỆ SINH THÁI DOANH NGHIỆP TOÀN DIỆN
+            </h2>
+            <p className={`text-sm sm:text-base leading-relaxed ${isNight ? "text-slate-300" : "text-slate-700"}`}>
+              Kết nối chuỗi cung ứng, xúc tiến hợp tác liên ngành và bảo trợ thương mại cho các hội viên.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div 
+              className={`p-8 border shadow-xl ${
+                isNight 
+                  ? "bg-slate-900/50 backdrop-blur-xl border-amber-500/20 text-white rounded-[44px_16px_44px_16px]" 
+                  : "bg-white/80 backdrop-blur-xl border-sky-200 text-slate-900 rounded-[16px_44px_16px_44px]"
+              }`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 font-bold flex items-center justify-center mb-5 shadow-lg shadow-amber-500/20">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black mb-3">Xúc Tiến Thương Mại B2B Nội Bộ</h3>
+              <p className={`text-xs sm:text-sm leading-relaxed mb-4 ${isNight ? "text-slate-300" : "text-slate-600"}`}>
+                Ưu tiên sử dụng sản phẩm và dịch vụ của các doanh nghiệp hội viên với cơ chế ưu đãi đặc quyền, tối ưu chi phí và tăng trưởng doanh thu vượt bậc.
+              </p>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+                <span>Khám phá danh bạ giao thương</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div 
+              className={`p-8 border shadow-xl ${
+                isNight 
+                  ? "bg-slate-900/50 backdrop-blur-xl border-amber-500/20 text-white rounded-[16px_44px_16px_44px]" 
+                  : "bg-white/80 backdrop-blur-xl border-sky-200 text-slate-900 rounded-[44px_16px_44px_16px]"
+              }`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 font-bold flex items-center justify-center mb-5 shadow-lg shadow-amber-500/20">
+                <Globe className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black mb-3">Quỹ Hợp Tác Đầu Tư & Bảo Trợ</h3>
+              <p className={`text-xs sm:text-sm leading-relaxed mb-4 ${isNight ? "text-slate-300" : "text-slate-600"}`}>
+                Tập hợp nguồn lực vốn thông minh, liên kết đầu tư dự án bất động sản công nghiệp, sản xuất và các thương vụ M&A quy mô lớn.
+              </p>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-500">
+                <span>Tham gia liên minh đầu tư</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── ORGANIC SVG WAVE DIVIDER NỐI SANG SECTION 05 ── */}
+        <div className="w-full overflow-hidden leading-none mt-20 -mb-20">
+          <svg viewBox="0 0 1440 120" fill="none" className="w-full h-16 sm:h-24 preserve-3d">
+            <path
+              d="M0,30 C300,90 500,10 800,60 C1100,110 1300,20 1440,50 L1440,120 L0,120 Z"
+              fill={isNight ? "#030814" : "#BAE6FD"}
+            />
+          </svg>
+        </div>
+      </section>
+
+      {/* =====================================================================================
+          SECTION 05 & 06: MẶT NƯỚC VÔ CỰC & BẢN LĨNH ĐẠI DƯƠNG (LEADERSHIP)
+          - Bức tranh đại dương và lãnh đạo kiên cường
+      ===================================================================================== */}
+      <section 
+        className={`relative pt-28 pb-28 px-6 transition-colors duration-700 ${
+          isNight ? "bg-[#030814]" : "bg-[#BAE6FD]"
+        }`}
+      >
+        <div className="max-w-5xl mx-auto text-center">
+          <span className={`text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border ${
+            isNight ? "bg-slate-900/80 text-amber-300 border-amber-500/30" : "bg-white/80 text-blue-900 border-sky-300"
+          }`}>
+            Trụ Cột 04 · Bản Lĩnh Đáy Đại Dương
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-black mt-4 mb-6 leading-tight">
+            BẢN LĨNH LÃNH ĐẠO <br />
+            <span className="bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
+              VƯỢT NGÀN TRÙNG SÓNG GIÓ
+            </span>
+          </h2>
+          <p className={`text-sm sm:text-base leading-relaxed max-w-3xl mx-auto mb-10 ${
+            isNight ? "text-slate-300" : "text-slate-700"
+          }`}>
+            Ở tầng nước sâu thẳm nhất, áp lực lớn nhất lại chính là nơi kết tinh những viên kim cương sáng nhất. 
+            Thế hệ CEO 1983 trui rèn bản lĩnh để vững vàng lèo lái con thuyền doanh nghiệp vươn ra biển lớn.
+          </p>
+
+          <div className={`p-8 sm:p-12 border shadow-2xl max-w-4xl mx-auto mb-12 ${
+            isNight 
+              ? "bg-gradient-to-b from-slate-900/80 to-slate-950/90 border-amber-500/30 text-white rounded-[50px_20px_50px_20px]" 
+              : "bg-gradient-to-b from-white/90 to-sky-50/90 border-sky-300 text-slate-900 rounded-[20px_50px_20px_50px]"
+          }`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+              <div>
+                <p className="text-3xl sm:text-4xl font-black text-amber-500">500+</p>
+                <p className="text-xs font-semibold mt-1 opacity-80">Doanh nhân hội viên</p>
+              </div>
+              <div>
+                <p className="text-3xl sm:text-4xl font-black text-amber-500">2023</p>
+                <p className="text-xs font-semibold mt-1 opacity-80">Năm thành lập</p>
+              </div>
+              <div>
+                <p className="text-3xl sm:text-4xl font-black text-amber-500">100%</p>
+                <p className="text-xs font-semibold mt-1 opacity-80">Hội viên xác thực KYC</p>
+              </div>
+              <div>
+                <p className="text-3xl sm:text-4xl font-black text-amber-500">HanoiBA</p>
+                <p className="text-xs font-semibold mt-1 opacity-80">Tổ chức trực thuộc</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }}
+            className="px-10 py-4 rounded-full font-black text-sm tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 text-slate-950 shadow-2xl shadow-amber-400/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            ✦ ĐĂNG KÝ GIA NHẬP CLB CEO 1983 NGAY
+          </button>
+        </div>
+      </section>
+
+      {/* ── FOOTER ĐỒNG BỘ ── */}
+      <footer 
+        className={`py-12 px-6 border-t transition-colors duration-700 ${
+          isNight ? "bg-slate-950 border-white/10 text-slate-400" : "bg-white border-sky-200 text-slate-600"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs">
+          <div className="flex items-center gap-3">
+            <img src="/ceo1983-official-logo.png" alt="Logo" className="h-9 w-auto object-contain" />
+            <div>
+              <p className="font-bold text-slate-800 dark:text-white">CLB Doanh Nhân CEO 1983 — HanoiBA</p>
+              <p className="text-[11px] text-slate-500">Hệ sinh thái kết nối & chuyển đổi số doanh nghiệp</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/association" className="hover:text-amber-500 transition">App Hiệp Hội</Link>
+            <Link to="/association/login" className="hover:text-amber-500 transition">Đăng Nhập</Link>
+            <button 
+              onClick={() => { setRegSuccessData(null); setRegModalOpen(true); }} 
+              className="text-amber-500 font-bold hover:underline cursor-pointer"
+            >
+              Gia Nhập CLB
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* =====================================================================================
+          REGISTRATION MODAL (POPUP ĐĂNG KÝ HỘI VIÊN)
+      ===================================================================================== */}
+      {regModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className={`relative w-full max-w-lg rounded-3xl p-6 sm:p-8 border shadow-2xl ${
+            isNight 
+              ? "bg-slate-900 border-amber-500/30 text-white" 
+              : "bg-white border-sky-300 text-slate-900"
+          }`}>
+            <button
               onClick={() => setRegModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition"
+              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             {regSuccessData ? (
-              /* Success State with Email Notice */
               <div className="py-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-9 h-9" />
                 </div>
-                <h3 className="font-cinzel text-2xl font-bold text-white mb-2">
-                  Đăng Ký Thành Công!
-                </h3>
-                <p className="font-jakarta text-sm text-white/80 leading-relaxed mb-4">
-                  Hệ thống CRM đã tiếp nhận hồ sơ của bạn với mã tham chiếu:{" "}
-                  <span className="font-mono text-amber-300 font-bold">{regSuccessData.reference}</span>
+                <h3 className="text-2xl font-black mb-2">Đăng Ký Thành Công!</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-300 mb-4">
+                  Mã tham chiếu hồ sơ: <span className="font-mono text-amber-500 font-bold">{regSuccessData.reference}</span>
                 </p>
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left text-xs space-y-2 mb-6 text-white/85">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-left text-xs space-y-2 mb-6">
+                  <div className="flex items-center gap-2 text-amber-500 font-bold">
                     <Mail className="w-4 h-4" />
-                    <span>Thông tin tài khoản đã được gửi:</span>
+                    <span>Thông tin tài khoản đăng nhập:</span>
                   </div>
-                  <p>
-                    Tên đăng nhập: <strong className="text-white">{form.email || form.phone}</strong>
-                  </p>
-                  <p>
-                    Mật khẩu ngẫu nhiên tạm thời đã được hệ thống tự động gửi tới hòm thư Gmail của bạn. Vui lòng kiểm tra hộp thư đến (hoặc thư mục Spam).
+                  <p>Tài khoản: <strong className="text-slate-900 dark:text-white">{form.email || form.phone}</strong></p>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Mật khẩu ngẫu nhiên đã được hệ thống tự động gửi tới email của bạn. Vui lòng kiểm tra hộp thư đến hoặc thư rác.
                   </p>
                 </div>
                 <button
                   onClick={() => setRegModalOpen(false)}
-                  className="w-full py-3 rounded-full font-bold text-xs uppercase tracking-wider bg-amber-400 text-slate-950 hover:bg-amber-300 transition"
+                  className="w-full py-3 rounded-full font-bold text-xs bg-amber-400 text-slate-950 hover:bg-amber-300 transition cursor-pointer"
                 >
-                  Đóng & Khám Phá
+                  Đóng & Trải Nghiệm
                 </button>
               </div>
             ) : (
-              /* Registration Input Form */
               <div>
                 <div className="mb-6">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-2">
-                    ✦ Hồ Sơ Gia Nhập
-                  </div>
-                  <h3 className="font-cinzel text-2xl font-black text-white">
-                    Gia Nhập CLB CEO 1983
-                  </h3>
-                  <p className="text-xs text-white/60 mt-1">
-                    Nhập thông tin bên dưới để được cấp tài khoản & gia nhập cộng đồng.
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-400/20 text-amber-500 dark:text-amber-300 text-[10.5px] font-bold uppercase tracking-wider mb-2">
+                    ✦ Hồ Sơ Gia Nhập CLB CEO 1983
+                  </span>
+                  <h3 className="text-2xl font-black">Gia Nhập CLB CEO 1983</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Trở thành hội viên chính thức trong mạng lưới doanh nhân tuổi 1983 (HanoiBA).
                   </p>
                 </div>
 
-                <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
                   <div>
-                    <label className="text-xs font-semibold text-white/80 block mb-1">
-                      Họ và Tên Doanh Nhân *
-                    </label>
+                    <label className="text-xs font-semibold block mb-1">Họ và Tên Doanh Nhân *</label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="text"
                         required
                         placeholder="VD: Nguyễn Văn Hưng"
                         value={form.fullName}
                         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-white/80 block mb-1">
-                        Doanh Nghiệp *
-                      </label>
+                      <label className="text-xs font-semibold block mb-1">Doanh Nghiệp *</label>
                       <div className="relative">
-                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="text"
                           required
-                          placeholder="Công ty CP..."
+                          placeholder="Tên công ty..."
                           value={form.company}
                           onChange={(e) => setForm({ ...form, company: e.target.value })}
-                          className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-white/80 block mb-1">
-                        Chức Vụ
-                      </label>
+                      <label className="text-xs font-semibold block mb-1">Chức Vụ</label>
                       <div className="relative">
-                        <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="text"
                           placeholder="Chủ tịch / CEO"
                           value={form.title}
                           onChange={(e) => setForm({ ...form, title: e.target.value })}
-                          className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1087,71 +782,61 @@ export function Ceo1983VerticalLandscape() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold text-white/80 block mb-1">
-                        Số Điện Thoại *
-                      </label>
+                      <label className="text-xs font-semibold block mb-1">Số Điện Thoại *</label>
                       <div className="relative">
-                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="tel"
                           required
                           placeholder="0912 345 678"
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-white/80 block mb-1">
-                        Email Nhận Mật Khẩu *
-                      </label>
+                      <label className="text-xs font-semibold block mb-1">Email Nhận Mật Khẩu *</label>
                       <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="email"
                           required
-                          placeholder="ceo@gmail.com"
+                          placeholder="ceo@company.vn"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
-                          className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-white/80 block mb-1">
-                      Lĩnh Vực Hoạt Động
-                    </label>
+                    <label className="text-xs font-semibold block mb-1">Lĩnh Vực Hoạt Động</label>
                     <input
                       type="text"
                       placeholder="VD: Bất động sản, Sản xuất, Công nghệ thông tin..."
                       value={form.industry}
                       onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400 transition"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:border-amber-500 focus:outline-none"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full mt-2 py-3.5 rounded-xl font-bold text-sm tracking-wide bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow-lg shadow-amber-400/30 hover:scale-[1.01] active:scale-98 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                    className="w-full mt-3 py-3.5 rounded-xl font-bold text-xs tracking-wide bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 text-slate-950 shadow-lg shadow-amber-400/30 hover:scale-[1.01] active:scale-98 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {submitting ? (
-                      <span>Đang nộp hồ sơ & cấp tài khoản...</span>
+                      <span>Đang xử lý cấp tài khoản...</span>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Gửi Hồ Sơ & Nhận Mật Khẩu Đăng Nhập</span>
+                        <span>Gửi Hồ Sơ & Cấp Tài Khoản Tức Thì</span>
                       </>
                     )}
                   </button>
-
-                  <p className="text-[11px] text-center text-white/50">
-                    Bằng việc đăng ký, bạn đồng ý với Điều lệ CLB Doanh Nhân CEO 1983.
-                  </p>
                 </form>
               </div>
             )}

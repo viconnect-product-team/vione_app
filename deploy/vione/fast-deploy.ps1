@@ -3,8 +3,12 @@
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
     [switch]$BackendOnly,
-    [switch]$InstallDeps
+    [switch]$InstallDeps,
+    [switch]$EnableHttps = $true,
+    [switch]$NoHttps
 )
+
+if ($NoHttps) { $EnableHttps = $false }
 
 # =========================================================================
 # Kịch bản triển khai độc lập ViOne Connect CLB CEO 1983 (Hướng 2 - Standalone Compose)
@@ -13,7 +17,7 @@
 
 $SERVER_IP   = "14.225.217.232"
 $SERVER_USER = "root"
-$REMOTE_PATH = "~"
+$REMOTE_PATH = "~/vione"
 
 $DEPLOY_DIR = $PSScriptRoot
 $ROOT_DIR   = (Resolve-Path "$PSScriptRoot/../..").Path
@@ -42,10 +46,14 @@ try {
                 Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[0/5] Build Frontend ViOne Connect (Web) cục bộ với Scope = vione_app..." -ForegroundColor Cyan
-                $env:NODE_OPTIONS = "--max-old-space-size=8192"
+                $env:NODE_OPTIONS = "--max-old-space-size=4096"
                 $env:VITE_APP_SCOPE = "vione_app"
                 $env:VITE_APP_NAME = "ViOne Connect"
-                $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5000"
+                if ($EnableHttps) {
+                    $env:VITE_PUBLIC_APP_URL = "https://14.225.217.232:5445"
+                } else {
+                    $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5000"
+                }
                 $env:NEST_API_URL = "http://vione-backend:4000"
                 
                 if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
@@ -152,7 +160,7 @@ try {
         $remoteLoadCmd += "docker load -i vione-frontend.tar.gz; rm -f vione-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env 2>/dev/null || true; touch .env; sed -i 's/\r//g' .env docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f vione-frontend-prod vione-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env 2>/dev/null || true; touch .env; sed -i 's/\r//g' .env docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f vione-frontend-prod vione-backend-prod vibe_frontend_prod vibe_backend_prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập ViOne Connect" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
@@ -161,10 +169,21 @@ try {
     Write-Host "`n[5/5] Dọn dẹp bộ nhớ đệm tạm thời tại máy cục bộ..." -ForegroundColor Cyan
     Remove-Item vione-backend.tar.gz, vione-frontend.tar.gz, vione-backend.tar, vione-frontend.tar -ErrorAction SilentlyContinue
 
+    if ($EnableHttps) {
+        Write-Host "`n[BỔ SUNG] Đồng bộ Nginx Reverse Proxy SSL / HTTPS..." -ForegroundColor Magenta
+        & "$DEPLOY_DIR/../ssl/deploy-ssl.ps1"
+    }
+
     Write-Host "=================================================================" -ForegroundColor Green
-    Write-Host "TRIỂN KHAI WEB CRM PLATFORM VÀ LANDING [PORT 5000] THÀNH CÔNG!" -ForegroundColor Green
-    Write-Host "Cổng Frontend Web CRM / Landing : http://${SERVER_IP}:5000 (Đăng nhập: /auth)" -ForegroundColor Yellow
-    Write-Host "Cổng Backend API                : http://${SERVER_IP}:5001" -ForegroundColor Yellow
+    Write-Host "TRIỂN KHAI VIONE APP - MẠNG XÃ HỘI DOANH NHÂN [PORT 5000/5445] THÀNH CÔNG!" -ForegroundColor Green
+    if ($EnableHttps) {
+        Write-Host "Cổng Frontend ViOne App (HTTPS) : https://${SERVER_IP}:5445 (hoặc https://dev-vione.14-225-217-232.sslip.io:5445)" -ForegroundColor Yellow
+        Write-Host "Tuyến đường chính              : /connect-app" -ForegroundColor Yellow
+        Write-Host "Cổng Frontend ViOne App (HTTP)  : http://${SERVER_IP}:5000" -ForegroundColor DarkGray
+    } else {
+        Write-Host "Cổng Frontend ViOne App (HTTP)  : http://${SERVER_IP}:5000 (Tuyến đường: /connect-app)" -ForegroundColor Yellow
+    }
+    Write-Host "Cổng Backend API ViOne App      : http://${SERVER_IP}:5001" -ForegroundColor Yellow
     Write-Host "=================================================================" -ForegroundColor Green
 } finally {
     Pop-Location

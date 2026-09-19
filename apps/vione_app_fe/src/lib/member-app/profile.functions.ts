@@ -96,3 +96,14 @@ export const updateMyCover = createServerFn({ method: "POST" })
       headers: { "Content-Type": "application/json" },
     });
   });
+
+export const updateMyProfile = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((profileData: any) => profileData)
+  .handler(async ({ data: profileData, context }: any) => {
+    return fetchNestApiFromServer("/members/me/profile", context.token, {
+      method: "PATCH",
+      body: JSON.stringify(profileData),
+      headers: { "Content-Type": "application/json" },
+    });
+  });

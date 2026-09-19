@@ -61,4 +61,21 @@ export class VotingController {
       body.sourceApp,
     );
   }
+
+  @Post('lucky-draw/notify')
+  async notifyLuckyDrawWinner(
+    @Request() req: any,
+    @Body()
+    body: {
+      winnerName: string;
+      winnerCompany?: string;
+      winnerCode?: string;
+      luckyNumber?: string;
+      prize: string;
+      eventName?: string;
+      eventId?: string;
+    },
+  ) {
+    return this.votingService.notifyLuckyDrawWinner(req.user.id || req.user.sub, body);
+  }
 }

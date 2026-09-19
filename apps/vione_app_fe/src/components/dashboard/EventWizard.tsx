@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   QR_FIELDS,
@@ -9,6 +9,7 @@ import {
 import { fetchNestApi } from "@/lib/api-client";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { useT } from "@/lib/i18n";
+import { EVENT_TYPE_TEMPLATES, type EventTypeKey } from "@/lib/event-type-templates";
 
 type EventType = EventItem["type"];
 type EventStatus = EventItem["status"];
@@ -45,24 +46,49 @@ export function EventWizard({
   onCreated: (event: EventItem) => void;
 }) {
   const t = useT();
+  const defaultTpl = EVENT_TYPE_TEMPLATES.forum;
 
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [submitting, setSubmitting] = useState(false);
   const [info, setInfo] = useState<Info>({
-    name: "",
-    date: "",
-    location: "",
-    capacity: "",
+    name: defaultTpl.name,
+    date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    location: defaultTpl.defaultLocation,
+    capacity: defaultTpl.defaultCapacity,
     type: "forum",
     status: "upcoming",
+    imageUrl: defaultTpl.bgImage,
   });
-  const [tickets, setTickets] = useState<TicketDraft[]>([]);
+  const [tickets, setTickets] = useState<TicketDraft[]>([
+    {
+      name: defaultTpl.defaultTicketName,
+      price: defaultTpl.defaultTicketPrice,
+      quantity: defaultTpl.defaultCapacity,
+      description: defaultTpl.description,
+    },
+  ]);
   const [qrFields, setQrFields] = useState<QrField[]>(["registration_code"]);
 
   const reset = () => {
     setStep(0);
-    setInfo({ name: "", date: "", location: "", capacity: "", type: "forum", status: "upcoming" });
-    setTickets([]);
+    const forumTpl = EVENT_TYPE_TEMPLATES.forum;
+    setInfo({
+      name: forumTpl.name,
+      date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      location: forumTpl.defaultLocation,
+      capacity: forumTpl.defaultCapacity,
+      type: "forum",
+      status: "upcoming",
+      imageUrl: forumTpl.bgImage,
+    });
+    setTickets([
+      {
+        name: forumTpl.defaultTicketName,
+        price: forumTpl.defaultTicketPrice,
+        quantity: forumTpl.defaultCapacity,
+        description: forumTpl.description,
+      },
+    ]);
     setQrFields(["registration_code"]);
   };
 
@@ -283,12 +309,119 @@ const labelCls = "mb-1.5 block text-xs font-medium text-muted-foreground";
 
 function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void }) {
   const t = useT();
+  const currentTpl = EVENT_TYPE_TEMPLATES[info.type as EventTypeKey] || EVENT_TYPE_TEMPLATES.forum;
+
+  const handleSelectType = (newType: EventTypeKey) => {
+    const tpl = EVENT_TYPE_TEMPLATES[newType];
+    setInfo({
+      ...info,
+      type: newType,
+      name: tpl.name,
+      location: tpl.defaultLocation,
+      capacity: tpl.defaultCapacity,
+      imageUrl: tpl.bgImage,
+    });
+    toast.info(`Đã áp dụng bố cục nội dung & banner: ${tpl.label}`);
+  };
+
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-semibold text-foreground">{t("ewz.info.heading")}</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">{t("ewz.info.hint")}</p>
       </div>
+
+      {/* Event Type Grid Selector (Requirement 2: chọn loại sự kiện -> tự động hiện text & banner đúng) */}
+      <div>
+        <label className={labelCls}>
+          Chọn loại sự kiện (Tự động áp dụng bố cục nội dung & banner đặc thù)
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["forum", "workshop", "networking", "training"] as EventTypeKey[]).map((key) => {
+            const tpl = EVENT_TYPE_TEMPLATES[key];
+            const isSelected = info.type === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSelectType(key)}
+                className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/30 shadow-xs"
+                    : "border-border bg-card hover:bg-muted/50 hover:border-primary/40"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 w-full">
+                  <span className="text-xs font-bold text-foreground line-clamp-1">{tpl.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-primary ml-auto shrink-0" />}
+                </div>
+                <span className="mt-1 text-[10px] text-muted-foreground line-clamp-1">
+                  {tpl.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Live Custom Banner Preview */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={labelCls}>Bố cục Banner xem trước theo loại sự kiện</label>
+          <button
+            type="button"
+            onClick={() => handleSelectType(info.type as EventTypeKey)}
+            className="text-[11px] font-semibold text-primary hover:underline"
+          >
+            Khôi phục nội dung mẫu
+          </button>
+        </div>
+        <div
+          className="relative overflow-hidden rounded-2xl p-4 shadow-md text-white min-h-[160px] flex flex-col justify-between border border-white/15"
+          style={{
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.75)), url(${info.imageUrl || currentTpl.bgImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          {/* Top Badge */}
+          <div className="flex items-center justify-between">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-xs"
+              style={{ backgroundColor: currentTpl.badgeBg, color: currentTpl.badgeText }}
+            >
+              {currentTpl.badge}
+            </span>
+            <span className="text-[10px] font-bold text-white/80 bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-xs">
+              CLB CEO 1983
+            </span>
+          </div>
+
+          {/* Headline Title & Tagline */}
+          <div className="my-2">
+            <h4 className="text-sm sm:text-base font-extrabold uppercase leading-tight tracking-tight drop-shadow-md text-white line-clamp-2">
+              {info.name || currentTpl.name}
+            </h4>
+            <p className="mt-1 text-xs font-semibold drop-shadow-sm line-clamp-1" style={{ color: currentTpl.accentColor }}>
+              {currentTpl.tagline}
+            </p>
+          </div>
+
+          {/* Bottom Meta */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/20 text-[10.5px] text-white/90">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-amber-400 shrink-0" />
+              <span className="line-clamp-1 max-w-[220px]">{info.location || currentTpl.defaultLocation}</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono">
+              <span>📅 {info.date || "2026-09-25"}</span>
+              <span>👥 {info.capacity || currentTpl.defaultCapacity} khách</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Editable Fields */}
       <div>
         <label className={labelCls} htmlFor="ewz-name">
           {t("ewz.field.name")}
@@ -300,30 +433,31 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           onChange={(e) => setInfo({ ...info, name: e.target.value })}
         />
       </div>
+
       {/* Event Banner / Photo Upload */}
       <div>
-        <label className={labelCls}>Ảnh Banner / Hình ảnh sự kiện</label>
+        <label className={labelCls}>Ảnh nền Banner sự kiện</label>
         {info.imageUrl ? (
           <div className="relative overflow-hidden rounded-xl border border-border">
             <img
               src={info.imageUrl}
               alt="Banner sự kiện"
-              className="h-36 w-full object-cover"
+              className="h-28 w-full object-cover"
             />
             <button
               type="button"
               onClick={() => setInfo({ ...info, imageUrl: "" })}
-              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/70 text-white hover:bg-rose-600 transition"
+              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-black/70 text-white hover:bg-rose-600 transition"
               aria-label="Xoá ảnh"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-4 hover:border-primary/60 hover:bg-muted/30 transition">
-            <ImagePlus className="h-7 w-7 text-muted-foreground mb-1.5" />
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-3 hover:border-primary/60 hover:bg-muted/30 transition">
+            <ImagePlus className="h-6 w-6 text-muted-foreground mb-1" />
             <span className="text-xs font-semibold text-foreground">Tải ảnh sự kiện lên</span>
-            <span className="text-[11px] text-muted-foreground">PNG, JPG hoặc WEBP (Tỷ lệ 16:9 khuyên dùng)</span>
+            <span className="text-[10px] text-muted-foreground">PNG, JPG hoặc WEBP</span>
             <input
               type="file"
               accept="image/*"
@@ -343,6 +477,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           </label>
         )}
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} htmlFor="ewz-date">
@@ -370,6 +505,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           />
         </div>
       </div>
+
       <div>
         <label className={labelCls} htmlFor="ewz-location">
           {t("ewz.field.location")}
@@ -381,6 +517,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           onChange={(e) => setInfo({ ...info, location: e.target.value })}
         />
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} htmlFor="ewz-type">
@@ -390,7 +527,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
             id="ewz-type"
             className={inputCls}
             value={info.type}
-            onChange={(e) => setInfo({ ...info, type: e.target.value as EventType })}
+            onChange={(e) => handleSelectType(e.target.value as EventTypeKey)}
           >
             {TYPE_OPTS.map((o) => (
               <option key={o} value={o}>

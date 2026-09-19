@@ -76,17 +76,70 @@ export class UploadController {
   async getFile(@Param('path') filePath: any, @Res() res: any) {
     const filePathStr = Array.isArray(filePath) ? filePath.join('/') : filePath;
     if (!filePathStr) {
-      throw new BadRequestException('Filename is missing');
+      return res.status(404).send('Filename is missing');
     }
 
     const contentType = getContentType(filePathStr);
-    res.setHeader('Content-Type', contentType);
+
+    const pipeSafe = (readable: any) => {
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      readable.on('error', () => {
+        if (!res.headersSent) {
+          res.status(404).send('File not found');
+        } else {
+          res.end();
+        }
+      });
+      return readable.pipe(res);
+    };
 
     try {
-      const stream = await this.uploadService.getFileStream(filePathStr);
-      stream.pipe(res);
+      // 1. Thử tìm tệp trên ổ đĩa cục bộ (disk fallback)
+      const fs = await import('fs');
+      const filenameOnly = path.basename(filePathStr);
+      const candidates = [
+        path.join(process.cwd(), 'uploads', filePathStr),
+        path.join(process.cwd(), 'uploads', 'avatars', filenameOnly),
+        path.join(process.cwd(), 'uploads', 'documents', filenameOnly),
+        path.join(process.cwd(), filePathStr),
+      ];
+
+      for (const cand of candidates) {
+        try {
+          if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
+            return pipeSafe(fs.createReadStream(cand));
+          }
+        } catch {}
+      }
+
+      // 2. Thử tìm trên MinIO theo các đường dẫn tiềm năng
+      const minioKeys = [filePathStr];
+      if (!filePathStr.startsWith('avatars/')) {
+        minioKeys.push(`avatars/${filePathStr}`);
+      } else {
+        minioKeys.push(filePathStr.replace(/^avatars\//, ''));
+      }
+      if (!filePathStr.startsWith('documents/')) {
+        minioKeys.push(`documents/${filePathStr}`);
+      }
+
+      for (const key of minioKeys) {
+        try {
+          const stream = await this.uploadService.getFileStream(key);
+          if (stream) {
+            return pipeSafe(stream);
+          }
+        } catch {}
+      }
+
+      return res.status(404).send('File not found');
     } catch (err) {
-      res.status(404).send('File not found');
+      if (!res.headersSent) {
+        return res.status(404).send('File not found');
+      } else {
+        res.end();
+      }
     }
   }
 

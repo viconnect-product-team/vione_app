@@ -9,6 +9,17 @@ import { useViewerUserId } from "./use-viewer-user-id";
 let globalSocket: Socket | null = null;
 
 export function getConnectAppSocket(): Socket {
+  if (typeof window === "undefined") {
+    return {
+      connected: false,
+      connect: () => {},
+      disconnect: () => {},
+      emit: () => {},
+      on: () => {},
+      off: () => {},
+      once: () => {},
+    } as any;
+  }
   if (!globalSocket) {
     globalSocket = io(NEST_API_URL, {
       transports: ["websocket", "polling"],

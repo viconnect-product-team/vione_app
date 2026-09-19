@@ -352,7 +352,7 @@ async function runCapture() {
       console.log('24. Landing Registration Modal...');
       await landing.goto(`${APP_BASE}/landing/ceo1983`, { waitUntil: 'networkidle', timeout: 30000 });
       await landing.waitForTimeout(1000);
-      const regModalBtn = landing.locator('button:has-text("ĐĂNG KÝ GIA NHẬP CLB VIP"), button:has-text("Đăng ký gia nhập")').first();
+      const regModalBtn = landing.locator('button:has-text("ĐĂNG KÝ HỘI VIÊN VIP"), button:has-text("NỘP HỒ SƠ XÉT DUYỆT VIP NGAY"), button:has-text("ĐĂNG KÝ GIA NHẬP CLB VIP")').first();
       if (await regModalBtn.count() > 0) {
         await regModalBtn.click();
         await landing.waitForTimeout(1500);
@@ -369,7 +369,7 @@ async function runCapture() {
       // Reload clean page to ensure modal 24 is closed
       await landing.goto(`${APP_BASE}/landing/ceo1983`, { waitUntil: 'networkidle', timeout: 30000 });
       await landing.waitForTimeout(1000);
-      const statusModalBtn = landing.locator('button:has-text("Tra Cứu Tiến Độ")').first();
+      const statusModalBtn = landing.locator('button:has-text("Tra Cứu Hồ Sơ"), button:has-text("Tra Cứu Tiến Độ")').first();
       if (await statusModalBtn.count() > 0) {
         await statusModalBtn.click();
         await landing.waitForTimeout(1500);
@@ -497,7 +497,8 @@ async function runCapture() {
       await app.waitForTimeout(2000);
       let buf = await app.screenshot();
       saveSnap(buf, [
-        'sub_15_app_public_digital_card.png'
+        'sub_15_app_public_digital_card.png',
+        'sub_16_app_card_public_verified.png'
       ], 'Trang Danh thiếp số Doanh nhân công khai');
     } catch (e) { console.error('  Err 33:', e.message); }
 

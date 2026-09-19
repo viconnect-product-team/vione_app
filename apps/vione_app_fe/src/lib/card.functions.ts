@@ -81,6 +81,20 @@ export type PublicCard = {
   address: string | null;
   website: string | null;
   photoUrl: string | null;
+  headline?: string | null;
+  bio?: string | null;
+  zaloUrl?: string | null;
+  linkedinUrl?: string | null;
+  facebookUrl?: string | null;
+  userId?: string | null;
+  privacySettings?: {
+    showPhoto: boolean;
+    showName: boolean;
+    showCompany: boolean;
+    showPhone: boolean;
+    showEmail: boolean;
+    showAddress: boolean;
+  };
 };
 
 // Public endpoint: verify & display a member card by its code (QR target).

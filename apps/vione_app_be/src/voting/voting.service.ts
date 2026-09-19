@@ -265,7 +265,7 @@ export class VotingService {
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
-            gen_random_uuid(), $1, $2, $3, false, false, 'poll', $4, NOW()
+            gen_random_uuid(), $1, $2, $3, false, false, 'voting', $4, NOW()
           )
         `, u.id, notifTitle, notifBody, pollId).catch(() => {});
       }
@@ -369,5 +369,90 @@ export class VotingService {
       DELETE FROM public.polls WHERE id = ${id}::uuid
     `.catch(() => {});
     return { ok: true, id };
+  }
+
+  async notifyLuckyDrawWinner(userId: string, data: {
+    winnerName: string;
+    winnerCompany?: string;
+    winnerCode?: string;
+    luckyNumber?: string;
+    prize: string;
+    eventName?: string;
+    eventId?: string;
+  }) {
+    const title = `🎉 Chúc mừng bạn đã trúng ${data.prize}!`;
+    const body = `Ban Tổ chức CLB Doanh Nhân CEO 1983 xin trân trọng chúc mừng Anh/Chị ${data.winnerName} (${data.winnerCompany || 'Hội viên'}, Số may mắn: #${data.luckyNumber || 'LUCKY'}) đã xuất sắc trúng giải thưởng "${data.prize}" tại sự kiện "${data.eventName || 'Sự kiện CEO 1983'}". Vui lòng liên hệ Ban Thư Ký để nhận giải!`;
+
+    // 1. Tìm thông tin người nhận
+    let recipients: any[] = [];
+    if (data.winnerCode) {
+      recipients = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id as id, code, name FROM public.members 
+        WHERE code = ${data.winnerCode} OR id = ${data.winnerCode}
+        LIMIT 1
+      `.catch(() => []);
+    }
+    if (recipients.length === 0 && data.winnerName) {
+      recipients = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id as id, code, name FROM public.members 
+        WHERE LOWER(name) LIKE ${'%' + data.winnerName.toLowerCase() + '%'}
+        LIMIT 1
+      `.catch(() => []);
+    }
+
+    const safeDisplayData = JSON.stringify({
+      winnerName: data.winnerName,
+      winnerCompany: data.winnerCompany,
+      winnerCode: data.winnerCode,
+      luckyNumber: data.luckyNumber,
+      prize: data.prize,
+      eventName: data.eventName,
+      eventId: data.eventId,
+      type: 'lucky_draw_winner',
+      targetRoute: '/association/events',
+    });
+
+    const targetUserId = recipients[0]?.id || userId;
+    const targetMemberCode = recipients[0]?.code || data.winnerCode;
+
+    // Gửi business_notifications (chuông thông báo app)
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.business_notifications (
+        id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+        title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, 'events', $2, 'lucky_draw_won', 'lucky_draw_winner',
+        $3, $4, $5::jsonb, 'high', 'delivered', $6, 'association_app', 'association_app', NOW(), NOW()
+      )
+    `, targetUserId, data.eventId || 'lucky-draw', title, body, safeDisplayData, `lucky-win-${Date.now()}`).catch(() => {});
+
+    // Gửi member_notifications
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.member_notifications (
+        id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, false, false, 'lucky_draw', $4, NOW()
+      )
+    `, targetUserId, title, body, data.eventId || 'lucky-draw').catch(() => {});
+
+    // Broadcast vào notifications hiệp hội
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, 'members', 'official_events', 'sent', NOW(), 1,
+        'c1983000-0000-4000-8000-000000001983'::uuid, 'association_app', 'association_app', NOW(), NOW()
+      )
+    `, `NOTIF-WIN-${Date.now().toString().slice(-6)}`, title, body).catch(() => {});
+
+    // Gửi tin nhắn chat 1-1 từ ADMIN
+    if (targetMemberCode) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'ADMIN', ${String(targetMemberCode).toLowerCase()}, ${body}, NOW())
+      `.catch(() => {});
+    }
+
+    return { ok: true, recipient: data.winnerName, prize: data.prize };
   }
 }

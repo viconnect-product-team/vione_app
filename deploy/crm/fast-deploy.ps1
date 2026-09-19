@@ -152,7 +152,7 @@ try {
         $remoteLoadCmd += "docker load -i crm-frontend.tar.gz; rm -f crm-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; cp -f .env.association .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; cp -f .env.association .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Web CRM Platform" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD

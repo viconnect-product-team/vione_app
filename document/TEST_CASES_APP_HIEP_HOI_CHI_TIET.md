@@ -5,8 +5,8 @@
 ---
 
 ## 1. TỔNG QUAN KIỂM THỬ
-- **Tổng số ca kiểm thử:** 76 Test Cases
-- **Ca kiểm thử chờ kiểm tra thủ công (Pending Manual Verification):** 76 / 76 [ ] (100%)
+- **Tổng số ca kiểm thử:** 83 Test Cases
+- **Ca kiểm thử chờ kiểm tra thủ công (Pending Manual Verification):** 83 / 83 [ ] (100%)
 - **Ca kiểm thử đã nghiệm thu (Passed):** [ ] (Để trống cho Tester / Ban Nghiệm Thu đánh dấu thủ công)
 - **Tiến độ hoàn thiện mã nguồn:** 100% (Toàn bộ 14 tính năng và bản sửa lỗi đã code hoàn tất và sẵn sàng kiểm thử)
 
@@ -53,6 +53,13 @@
 | **MOD-15** | Danh Bạ & Quyền Riêng Tư | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-16** | Hội Phí & VietQR | 5 | 5 [ ] | [ ] | **100% Sẵn sàng** |
 | **MOD-17** | Quản Trị CRM & Sơ Đồ Khán Phòng | 6 | 6 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-18** | Hạ Tầng & DevOps HTTPS | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-19** | Quản Trị Sự Kiện CRM | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-20** | Biểu Quyết & Bầu Cử Đại Hội | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-21** | Sự Kiện & Quay Số May Mắn | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-22** | Sàn Thương Mại & Gian Hàng | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-23** | Sàn Cơ Hội Giao Thương B2B | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
+| **MOD-24** | Ứng Dụng PWA & Mobile iOS | 1 | 1 [ ] | [ ] | **100% Sẵn sàng** |
 
 ---
 
@@ -1106,4 +1113,115 @@
 - **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
 - **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
 - **Ghi chú kỹ thuật & Hướng dẫn test:** Tính năng Issue 128: Tối ưu trải nghiệm kéo thả sơ đồ rạp chiếu và bàn tiệc sự kiện.
+
+### TC-REQ-001: Cấu hình SSL Nginx Reverse Proxy & Fast Deploy HTTPS (Ports 5443/5444)
+- **Phân hệ:** Hạ Tầng & DevOps HTTPS | **Màn hình/Popup:** `Server Dev (14.225.217.232)`
+- **Tiền điều kiện:** Nginx SSL Docker Compose và chứng chỉ SAN đã triển khai
+- **Các bước thực hiện:**
+  1. Chạy deploy/ssl/deploy-ssl.ps1 hoặc fast-deploy.ps1 -EnableHttps
+  2. Mở trình duyệt truy cập https://14.225.217.232:5443 (Web CRM)
+  3. Mở trình duyệt truy cập https://14.225.217.232:5444/association (App Hiệp hội)
+  4. Kiểm tra giao thức bảo mật HTTPS và phản hồi API
+- **Dữ liệu đầu vào:** `HTTPS Port 5443 / 5444, SSL SAN Cert`
+- **Kết quả mong đợi:** Cả Web CRM và App Hiệp hội tải mượt mà qua HTTPS, chứng chỉ SAN bao quát IP và sslip.io, API NestJS kết nối ổn định
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Hỗ trợ cả HTTP và HTTPS thông qua Nginx Reverse Proxy an toàn.
+
+### TC-REQ-002: Tạo Sự Kiện CRM & Tự Động Điền Bố Cục Text & Banner Riêng Theo Loại Sự Kiện
+- **Phân hệ:** Quản Trị Sự Kiện CRM | **Màn hình/Popup:** `Tạo Sự Kiện CRM (/events/new, EventWizard)`
+- **Tiền điều kiện:** Đăng nhập CRM bằng quyền Quản trị viên
+- **Các bước thực hiện:**
+  1. Mở /events/new -> Bước 1 "Thông tin cơ bản"
+  2. Bấm chọn loại sự kiện "Diễn đàn" (Forum) -> Quan sát Tiêu đề, Tagline, Banner preview, Sức chứa tự động điền mẫu chuyên nghiệp
+  3. Đổi sang loại "Workshop" -> Quan sát nội dung và banner đổi sang mẫu Workshop chuyên sâu
+  4. Đổi sang loại "Kết nối" (Networking) -> Quan sát nội dung đổi sang Dạ tiệc Doanh nhân
+  5. Đổi sang loại "Đào tạo" (Training) -> Quan sát nội dung đổi sang Masterclass Doanh trí
+  6. Quan sát khung "Xem trước Banner & Bố cục Sự kiện"
+- **Dữ liệu đầu vào:** `Chọn eventType trong EventWizard`
+- **Kết quả mong đợi:** Tự động điền text nội dung, tagline, sức chứa, địa điểm và hiển thị banner preview riêng biệt khớp 100% từng loại sự kiện
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tối ưu trải nghiệm tạo sự kiện cho Admin CRM với bố cục banner động.
+
+### TC-REQ-003: Tạo Biểu Quyết CRM tự động đẩy thông báo thời gian thực về App Hiệp Hội
+- **Phân hệ:** Biểu Quyết & Bầu Cử Đại Hội | **Màn hình/Popup:** `Biểu Quyết CRM (/voting) & Thông Báo App (/association/notifications)`
+- **Tiền điều kiện:** Admin tạo phiên biểu quyết mới trên CRM
+- **Các bước thực hiện:**
+  1. Trên Web CRM /voting, bấm "Tạo biểu quyết mới"
+  2. Nhập tiêu đề, các phương án lựa chọn và lưu phiên
+  3. Mở App Hiệp hội với tài khoản hội viên
+  4. Quan sát chuông thông báo và danh sách thông báo
+  5. Bấm vào thông báo biểu quyết có nút "Tham gia biểu quyết ngay"
+- **Dữ liệu đầu vào:** `Tạo phiên voting trên CRM`
+- **Kết quả mong đợi:** Thông báo đẩy tức thì về App Hiệp hội, hiển thị thẻ biểu quyết tương tác, bấm vào mở ngay modal bầu chọn trực tiếp
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Liên kết luồng realtime giữa Web CRM và App Hiệp hội.
+
+### TC-REQ-004: Đăng ký vé sinh Số May Mắn ngẫu nhiên (#XXXX) & Quay thưởng Lucky Draw gửi thông báo chúc mừng
+- **Phân hệ:** Sự Kiện & Quay Số May Mắn | **Màn hình/Popup:** `Đăng ký sự kiện App (/association/events) & Quay thưởng CRM (/voting)`
+- **Tiền điều kiện:** Có sự kiện mở đăng ký vé
+- **Các bước thực hiện:**
+  1. Hội viên mở sự kiện trên App Hiệp hội -> Bấm "Đăng ký vé tham gia"
+  2. Quan sát hộp thoại xác nhận: Hiển thị "Số may mắn của bạn: #XXXX"
+  3. Mở tab Vé của tôi / Lịch sử check-in: Thẻ vé lưu trữ số may mắn định danh
+  4. Trên CRM /voting -> Mở module "Quay số may mắn (Lucky Draw)"
+  5. Chọn sự kiện và bấm "Bắt đầu quay số"
+  6. Hệ thống quay ngẫu nhiên các số may mắn từ danh sách vé đã đăng ký và chọn người trúng
+  7. Admin bấm "Gửi thông báo trúng" -> App của người trúng nhận thông báo Chúc mừng thẻ vàng
+- **Dữ liệu đầu vào:** `Event registration, Lucky draw spin, Win notification`
+- **Kết quả mong đợi:** Mỗi vé tự động sinh số ngẫu nhiên 4 chữ số; CRM quay số chính xác theo danh sách vé thực tế; người trúng nhận thông báo vinh danh tức thời
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Đã backfill số may mắn cho toàn bộ đăng ký cũ, hỗ trợ trọn vẹn chương trình gala sự kiện.
+
+### TC-REQ-005: Sàn thương mại điện tử Luxury: Header tìm kiếm, menu danh mục, bộ lọc, đăng SP & 3 Section phân trang
+- **Phân hệ:** Sàn Thương Mại & Gian Hàng | **Màn hình/Popup:** `Màn hình Sản phẩm (/association/products)`
+- **Tiền điều kiện:** Đã đăng nhập App Hiệp hội
+- **Các bước thực hiện:**
+  1. Mở /association/products
+  2. Quan sát Header: Icon Menu danh mục (LayoutGrid) bên trái, Thanh tìm kiếm ở giữa, Icon Bộ lọc và nút "Đăng SP" bên phải
+  3. Bấm Icon Menu danh mục -> Menu trượt sổ xuống chọn nhanh ngành hàng
+  4. Cuộn xuống quan sát 3 Section: 1) "Sản phẩm mới đăng", 2) "Sản phẩm được xem nhiều nhất", 3) "Doanh nghiệp nổi bật nhất"
+  5. Thử bấm phân trang "Trang trước / Trang sau" ở từng Section
+  6. Bấm "Xem gian hàng" ở Section 3 -> Mở Showroom giới thiệu doanh nghiệp và các sản phẩm niêm yết
+- **Dữ liệu đầu vào:** `Category menu click, Search keyword, Pagination next/prev, View storefront`
+- **Kết quả mong đợi:** Bố cục chuẩn sàn thương mại điện tử sang trọng; 3 section phân trang độc lập mượt mà; 1 hội viên đại diện cho 1 công ty có gian hàng riêng biệt
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Nâng cấp toàn diện thẩm mỹ và trải nghiệm thương mại B2B nội khối.
+
+### TC-REQ-006: Bảng Tin Trao Cơ Hội: Phân Trang, Tăng Lượt Xem Realtime & Xem Danh Sách Người Quan Tâm Kèm Call/Email/Chat
+- **Phân hệ:** Sàn Cơ Hội Giao Thương B2B | **Màn hình/Popup:** `Màn hình Trao Cơ Hội (/association/opportunities)`
+- **Tiền điều kiện:** Có các bài đăng cơ hội giao thương trên hệ thống
+- **Các bước thực hiện:**
+  1. Mở /association/opportunities -> Quan sát giao diện dạng bảng tin chuyên nghiệp
+  2. Bấm chuyển trang phân trang ở chân danh sách (5 bài / trang)
+  3. Người dùng B bấm vào xem chi tiết bài đăng của Người dùng A -> Lượt xem tăng lên 1 (POST /opportunities/:id/view)
+  4. Người dùng B bấm "Quan tâm"
+  5. Người dùng A (chủ bài đăng) mở bài viết của mình -> Thấy khu vực "Hội viên đã quan tâm (X)"
+  6. Người dùng A bấm nút Gọi điện (tel), Gửi email (mailto) hoặc Nhắn tin (chuyển sang /messages)
+- **Dữ liệu đầu vào:** `Click view detail, Click interest, Owner views interested members list`
+- **Kết quả mong đợi:** Bảng tin phân trang chuẩn mực; đếm lượt xem chuẩn xác khi xem chi tiết; chủ bài đăng nắm bắt đầy đủ thông tin đối tác quan tâm và liên hệ tức thời
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Tối đa hóa hiệu quả kết nối và xúc tiến hợp đồng giữa các hội viên.
+
+### TC-REQ-007: Cài đặt PWA trên iPhone/iPad qua Safari Add to Home Screen & Chạy toàn màn hình Offline
+- **Phân hệ:** Ứng Dụng PWA & Mobile iOS | **Màn hình/Popup:** `Trình duyệt Safari trên iOS & Trình duyệt Chrome trên Android`
+- **Tiền điều kiện:** Mở đường dẫn /association trên thiết bị di động iOS Safari
+- **Các bước thực hiện:**
+  1. Mở Safari trên iPhone truy cập /association
+  2. Quan sát thanh thông báo hướng dẫn cài đặt iOS (IosInstallPrompt) xuất hiện trang nhã ở đáy màn hình
+  3. Làm theo hướng dẫn: Bấm nút Share (Chia sẻ) ở thanh điều hướng Safari
+  4. Cuộn xuống chọn "Thêm vào MH chính" (Add to Home Screen)
+  5. Nhấn "Thêm"
+  6. Quay về màn hình chính iPhone -> Biểu tượng App CEO 1983 xuất hiện sắc nét
+  7. Nhấn mở app từ màn hình chính -> Ứng dụng chạy toàn màn hình standalone, không có thanh URL Safari
+- **Dữ liệu đầu vào:** `iOS Safari, Add to Home Screen, Standalone PWA launch`
+- **Kết quả mong đợi:** Cài đặt thành công PWA trên iOS, icon chuẩn retina, mở app toàn màn hình mượt mà như ứng dụng Native, hỗ trợ bộ nhớ đệm qua Service Worker
+- **Trạng thái kiểm thử:** [ ] Chờ kiểm tra
+- **Kết quả nghiệm thu:** [ ] Đạt (Passed) / [ ] Cần chỉnh sửa (Failed) (Chờ đánh dấu thủ công)
+- **Ghi chú kỹ thuật & Hướng dẫn test:** Đáp ứng trọn vẹn nhu cầu gửi link cho người dùng iOS trải nghiệm ứng dụng hiệp hội.
 

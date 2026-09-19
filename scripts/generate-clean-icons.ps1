@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Drawing
+﻿Add-Type -AssemblyName System.Drawing
 
 $sourcePath = (Resolve-Path "apps/vione_app_fe/public/ceo1983-emblem-8.png").Path
 if (-not (Test-Path $sourcePath)) {

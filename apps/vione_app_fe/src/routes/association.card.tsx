@@ -117,12 +117,16 @@ function resolveDisplay(
   return {
     name: cleanName.trim() || "Hội viên CLB CEO 1983",
     company: cleanCompany.trim(),
-    photo:
-      (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null) ||
-      (currentUser as any)?.avatar_url ||
-      (isCustomForUser ? customAvatar || customProfile?.avatar : null) ||
-      s?.photoUrl ||
-      null,
+    photo: (() => {
+      const raw =
+        member?.avatar ||
+        (currentUser as any)?.avatar_url ||
+        (currentUser as any)?.user_metadata?.avatar_url ||
+        (isCustomForUser ? customAvatar || customProfile?.avatar : null) ||
+        s?.photoUrl ||
+        null;
+      return raw ? (resolveMediaUrl(raw) || raw) : null;
+    })(),
     showName: s?.showName ?? true,
     showCompany: s?.showCompany ?? true,
     showPhoto: s?.showPhoto ?? true,

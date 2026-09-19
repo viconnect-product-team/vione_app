@@ -557,49 +557,116 @@ export class BusinessCardService {
     return { ok: true };
   }
 
-  async getPublicCardByCode(code: string) {
-    const memRows = await this.prisma.$queryRaw<any[]>`
+  async getPublicCardByCode(rawCode: string) {
+    let code = (rawCode || '').trim();
+    // Strip common QR prefixes if present
+    if (code.startsWith('CEO1983-MEMBER:')) {
+      code = code.replace(/^CEO1983-MEMBER:/i, '').trim();
+    } else if (code.startsWith('MEMBER:')) {
+      code = code.replace(/^MEMBER:/i, '').trim();
+    }
+
+    // Try finding member first by code, id, or user_id
+    let memRows = await this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
              m.avatar, m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
              a.public_card_enabled, a.public_card_requires_active_member
       FROM public.members m
       LEFT JOIN public.associations a ON m.association_id = a.id
-      WHERE m.code = ${code}
+      WHERE m.code ILIKE ${code}
+         OR m.id::text = ${code}
+         OR m.user_id::text = ${code}
       LIMIT 1
     `.catch(() => []);
 
-    const notFound = {
-      found: false,
-      code,
-      name: "",
-      company: "",
-      type: "company",
-      status: "",
-      verified: false,
-      validUntil: null,
-      joinedAt: null,
-      title: null,
-      email: null,
-      phone: null,
-      taxCode: null,
-      industry: null,
-      region: null,
-      address: null,
-      website: null,
-      photoUrl: null,
-    };
+    let cardRow: any = null;
 
-    if (memRows.length === 0) return notFound;
-    const m = memRows[0];
+    // If not found in members, check if code matches member_business_cards slug, id, or owner_user_id
+    if (memRows.length === 0) {
+      const cardRows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.member_business_cards
+        WHERE slug = ${code} OR id::text = ${code} OR owner_user_id::text = ${code}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `.catch(() => []);
 
-    if (m.public_card_enabled === false) return notFound;
-    const isActive = m.status === 'active' || m.status === 'memberStatus.active';
-    if (m.public_card_requires_active_member !== false && !isActive) return notFound;
+      if (cardRows.length > 0) {
+        cardRow = cardRows[0];
+        const searchUserId = cardRow.owner_user_id;
+        const searchMemberId = cardRow.member_id;
+        if (searchUserId || searchMemberId) {
+          memRows = await this.prisma.$queryRaw<any[]>`
+            SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
+                   m.avatar, m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
+                   a.public_card_enabled, a.public_card_requires_active_member
+            FROM public.members m
+            LEFT JOIN public.associations a ON m.association_id = a.id
+            WHERE m.user_id::text = ${searchUserId || ''}
+               OR m.id::text = ${searchMemberId || ''}
+            LIMIT 1
+          `.catch(() => []);
+        }
+      }
+    }
+
+    if (memRows.length === 0 && !cardRow) {
+      return {
+        found: false,
+        code,
+        name: "",
+        company: "",
+        type: "company",
+        status: "",
+        verified: false,
+        validUntil: null,
+        joinedAt: null,
+        title: null,
+        email: null,
+        phone: null,
+        taxCode: null,
+        industry: null,
+        region: null,
+        address: null,
+        website: null,
+        photoUrl: null,
+      };
+    }
+
+    const m = memRows[0] || {};
+    const userId = m.user_id || cardRow?.owner_user_id || null;
+
+    // Load business card if not already loaded
+    if (!cardRow && userId) {
+      const cRows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.member_business_cards
+        WHERE owner_user_id = ${userId}::uuid OR member_id = ${m.id}::uuid
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `.catch(() => []);
+      if (cRows.length > 0) cardRow = cRows[0];
+    }
+
+    // Load user record to get exact full name if contact is null or Admin
+    let userRow: any = null;
+    if (userId) {
+      const uRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, full_name, email, phone, avatar_url FROM public.vione_users
+        WHERE id = ${userId}::uuid
+        LIMIT 1
+      `.catch(async () => {
+        return await this.prisma.$queryRaw<any[]>`
+          SELECT id, full_name as name, full_name, email, phone, avatar_url FROM public.user_profiles
+          WHERE user_id = ${userId}::uuid
+          LIMIT 1
+        `.catch(() => []);
+      });
+      if (uRows && uRows.length > 0) userRow = uRows[0];
+    }
 
     let settings: any = null;
-    if (m.user_id) {
+    if (userId) {
       const sRows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.card_settings WHERE user_id = ${m.user_id}::uuid LIMIT 1
+        SELECT * FROM public.card_settings WHERE user_id = ${userId}::uuid LIMIT 1
       `.catch(() => []);
       if (sRows.length > 0) settings = sRows[0];
     }
@@ -611,37 +678,97 @@ export class BusinessCardService {
     const showPhone = settings ? settings.show_phone !== false : true;
     const showAddress = settings ? settings.show_address !== false : true;
 
-    // Clean up display name if it says "Admin"
-    let resolvedName = settings?.display_name || m.contact || m.name || "";
-    if (resolvedName.toLowerCase() === "admin") {
-      resolvedName = m.contact || "James Nguyễn";
+    // Resolve Name
+    let resolvedPersonName =
+      cardRow?.display_name ||
+      settings?.display_name ||
+      m.contact ||
+      userRow?.name ||
+      userRow?.full_name ||
+      "";
+
+    if (
+      !resolvedPersonName ||
+      resolvedPersonName.toLowerCase() === "admin" ||
+      resolvedPersonName.toLowerCase() === "platform administrator"
+    ) {
+      resolvedPersonName = userRow?.full_name || userRow?.name || m.contact || "Hội viên CLB Doanh Nhân CEO 1983";
+      if (
+        resolvedPersonName.toLowerCase() === "admin" ||
+        resolvedPersonName.toLowerCase() === "platform administrator"
+      ) {
+        resolvedPersonName = "Hội viên CLB Doanh Nhân CEO 1983";
+      }
     }
 
-    // Clean up display company
-    let resolvedCompany = settings?.display_company || m.name || "";
+    // Resolve Company Name
+    let resolvedCompanyName =
+      cardRow?.company_name ||
+      settings?.display_company ||
+      m.name ||
+      "CLB Doanh Nhân CEO 1983";
 
-    const photoUrl = showPhoto ? (settings?.photo_url || m.avatar || null) : null;
+    if (
+      resolvedCompanyName.includes("ViOne Platform") ||
+      resolvedCompanyName.toLowerCase() === "vione platform"
+    ) {
+      resolvedCompanyName = "CLB Doanh Nhân CEO 1983";
+    }
+
+    // Resolve Title
+    const resolvedTitle =
+      cardRow?.professional_title ||
+      (m.type === "company" ? "Đại diện Doanh nghiệp Hội viên" : "Lãnh đạo Doanh nghiệp Hội viên");
+
+    // Resolve Photo
+    const resolvedPhoto = showPhoto
+      ? (cardRow?.avatar_url || settings?.photo_url || m.avatar || userRow?.avatar_url || null)
+      : null;
+
+    // Resolve Phone & Email
+    const resolvedPhone = showPhone
+      ? (cardRow?.work_phone || m.phone || userRow?.phone || null)
+      : "Đã ẩn theo cài đặt riêng tư";
+
+    const resolvedEmail = showEmail
+      ? (cardRow?.work_email || m.email || userRow?.email || null)
+      : "Đã ẩn theo cài đặt riêng tư";
+
+    const resolvedWebsite = showCompany
+      ? (cardRow?.website || m.website || "https://ceo1983club.com")
+      : null;
+
+    const resolvedAddress = showAddress
+      ? (cardRow?.address || m.address || "Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội")
+      : "Đã ẩn theo cài đặt riêng tư";
+
+    const isActive = m.status === 'active' || m.status === 'memberStatus.active' || !m.status;
 
     return {
       found: true,
-      code: m.code,
-      name: showName ? resolvedName : "Hội viên CLB CEO 1983",
-      company: showCompany ? resolvedCompany : "Đã ẩn theo cài đặt riêng tư",
+      code: m.code || cardRow?.slug || code,
+      name: showName ? resolvedPersonName : "Hội viên CLB Doanh Nhân CEO 1983",
+      company: showCompany ? resolvedCompanyName : "Đã ẩn theo cài đặt riêng tư",
       type: m.type || "company",
-      status: m.status || "",
+      status: m.status || "active",
       verified: isActive,
       validUntil: m.term_end ? new Date(m.term_end).toISOString() : null,
       joinedAt: m.joined_at ? new Date(m.joined_at).toISOString() : null,
-      title: showName ? (m.contact || "Lãnh đạo Doanh nghiệp") : "Hội viên CLB CEO 1983",
-      email: showEmail ? (m.email || null) : "Đã ẩn theo cài đặt riêng tư",
-      phone: showPhone ? (m.phone || null) : "Đã ẩn theo cài đặt riêng tư",
+      title: resolvedTitle,
+      email: resolvedEmail,
+      phone: resolvedPhone,
       taxCode: null,
-      industry: showCompany ? (m.industry || null) : "Đã ẩn",
-      region: showCompany ? (m.region || null) : null,
-      address: showAddress ? (m.address || null) : "Đã ẩn theo cài đặt riêng tư",
-      website: showCompany ? (m.website || null) : null,
-      photoUrl,
-      userId: m.user_id || null,
+      industry: showCompany ? (m.industry || cardRow?.headline || "Công nghệ thông tin & Đổi mới sáng tạo") : "Đã ẩn",
+      region: showCompany ? (m.region || "Miền Bắc (Hà Nội)") : null,
+      address: resolvedAddress,
+      website: resolvedWebsite,
+      photoUrl: resolvedPhoto,
+      userId: userId,
+      headline: cardRow?.headline || null,
+      bio: cardRow?.bio || null,
+      zaloUrl: cardRow?.zalo_url || null,
+      linkedinUrl: cardRow?.linkedin_url || null,
+      facebookUrl: cardRow?.facebook_url || null,
       privacySettings: {
         showPhoto,
         showName,

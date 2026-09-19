@@ -181,6 +181,41 @@ Mã phản hồi chuẩn RESTful:
 }
 ```
 
+### 3. `PATCH /api/members/me/profile` & `POST /api/members/me/profile`
+- **Mô tả**: Cập nhật hồ sơ cá nhân và thông tin hội viên của chính tài khoản đăng nhập hiện tại. Tự động đồng bộ xuyên suốt 4 bảng CSDL: `vione_users`, `user_profiles`, `members`, `member_business_cards`.
+- **Headers**:
+  - `Authorization: Bearer <jwt_token>` hoặc Cookie `auth_token`
+- **Request Body**:
+```json
+{
+  "full_name": "Nguyễn Minh Khôi",
+  "position": "Tổng Giám Đốc",
+  "company_name": "Tập đoàn Công nghệ Kho Group",
+  "phone": "0912345678",
+  "email": "khoi.dang@khogroup.vn",
+  "address": "Tầng 12 ViOne Tech Hub, Cầu Giấy, Hà Nội",
+  "website": "https://khoiminh.tech",
+  "bio": "Chuyên gia chuyển đổi số và phát triển phần mềm doanh nghiệp.",
+  "avatar_url": "data:image/jpeg;base64,..."
+}
+```
+- **Response 200 OK**:
+```json
+{
+  "success": true,
+  "message": "Cập nhật hồ sơ hội viên thành công",
+  "data": {
+    "user_id": "usr-1983-001",
+    "member_id": "MEM-1983-100",
+    "full_name": "Nguyễn Minh Khôi",
+    "position": "Tổng Giám Đốc",
+    "company_name": "Tập đoàn Công nghệ Kho Group",
+    "phone": "0912345678",
+    "avatar_url": "data:image/jpeg;base64,..."
+  }
+}
+```
+
 ---
 
 ## 2.3. Phân hệ Sự kiện, Khán phòng & Điểm danh QR (Events & Check-in)
@@ -1026,3 +1061,177 @@ Hệ thống được chuẩn hóa tài liệu kiểm thử và ước lượng 
    - `MemberHeader` được trang bị nút quay lại (`back`), đảm bảo trải nghiệm liền mạch khi mở từ menu hoặc trang chủ.
 4. **Sự kiện Hội viên (`/association/events`)**:
    - Tinh gọn thanh tiêu đề bằng cách bỏ icon quét QR trùng lặp ngang hàng với chữ "Sự kiện".
+
+---
+
+## 19. KIẾN TRÚC 100% HTTPS-ONLY & PHÂN TÁCH TRIỂN KHAI ĐỘC LẬP (CẬP NHẬT 09/2026)
+
+### 19.1. Kiến Trúc Bảo Mật 100% HTTPS-Only & Khóa Toàn Diện Plain HTTP
+- **Chuyển Hướng 301 Cổng 80**: Server block Nginx Reverse Proxy (`deploy/ssl/nginx.conf`) lắng nghe toàn bộ request cổng 80 và thực hiện `return 301 https://$host$request_uri;`. Toàn bộ HTTP trần bị triệt tiêu hoàn toàn.
+- **HSTS Header**: Áp dụng `add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` trên tất cả các cổng SSL (443, 5443, 5444).
+- **Cách Ly Cổng Nội Bộ (Loopback Isolation)**:
+  - Cấu hình Docker Compose của CRM (`deploy/vione/docker-compose.yml`) bind cổng `127.0.0.1:5000:8080` (Frontend) và `127.0.0.1:5001:4000` (Backend).
+  - Cấu hình Docker Compose của CEO 1983 (`deploy/ceo1983/docker-compose.yml`) bind cổng `127.0.0.1:5002:8080` (Frontend) và `127.0.0.1:5003:4000` (Backend).
+  - Ngăn chặn mọi truy cập trực tiếp từ Internet vào cổng HTTP trần nội bộ; toàn bộ lưu lượng công khai bắt buộc phải đi qua Nginx SSL Reverse Proxy.
+- **Cổng Dịch Vụ Công Khai**:
+  - `https://14.225.217.232:5443`: Cổng SSL chuyên biệt cho Hệ thống Web CRM & Landing.
+  - `https://14.225.217.232:5444`: Cổng SSL chuyên biệt cho Phân hệ Ứng dụng Hội viên CEO 1983.
+  - `https://14.225.217.232/`: Cổng SSL chuẩn 443 định tuyến hợp nhất.
+
+### 19.2. Phân Tách Hai Lệnh Triển Khai Độc Lập
+1. **Triển khai Phân hệ Hội viên CEO 1983 (`deploy-ceo1983.ps1`)**:
+   - Chỉ biên dịch và cập nhật container `ceo1983-frontend-prod` và `ceo1983-backend-prod` trên cổng 5444 HTTPS.
+   - Lệnh nhanh: `npm run deploy:ceo1983` hoặc `.\deploy-ceo1983.ps1`.
+   - Hỗ trợ cờ `-FrontendOnly -SkipWebBuild` để cập nhật giao diện trong vài giây: `npm run deploy:ceo1983:fe`.
+2. **Triển khai Hệ thống Quản trị Web CRM (`deploy-crm.ps1`)**:
+   - Chỉ biên dịch và cập nhật container `vione-frontend-prod` và `vione-backend-prod` trên cổng 5443 HTTPS.
+   - Lệnh nhanh: `npm run deploy:crm` hoặc `.\deploy-crm.ps1`.
+   - Hỗ trợ cờ `-FrontendOnly -SkipWebBuild`: `npm run deploy:crm:fe`.
+
+---
+
+## 20. ĐẶC TẢ LANDING CEO 1983 V1 (`/landing/ceo/v1`) — ĐỒ HỌA UỐN LƯỢN & DUAL SKY THEME
+
+### 20.1. Ngôn Ngữ Thiết Kế Hữu Cơ (Organic Curved Aesthetics)
+- **Triệt tiêu 100% khối chữ nhật vuông vức**: Không sử dụng các khối thẻ vuông vức cơ bản (rectangular grid blocks).
+- **Đường phân cách uốn lượn đa tầng SVG (Smooth Multi-Layer Wave Dividers)**: Giữa mỗi phân cảnh sử dụng các dải sóng SVG mềm mại (`<svg viewBox="0 0 1440 120">`), tạo cảm giác không gian bầu trời và đại dương liên tục không vết cắt.
+- **Thẻ Card Bo Góc Bất Đối Xứng Hữu Cơ**: Sử dụng cấu trúc bo viền `rounded-[40px_16px_40px_16px]` kết hợp hiệu ứng kính mờ đa tầng Glassmorphism và viền gradient vàng hổ phách.
+- **Logo Thương Hiệu**: Sử dụng duy nhất logo chính thức `/ceo1983-official-logo.png`.
+
+### 20.2. Hệ Thống Hai Theme Bầu Trời (Dual Sky Themes)
+1. **Theme Trời Tối (Cosmos Night Sky)**:
+   - Nền: Bầu trời đêm huyền ảo đầy sao và đường chân trời thành phố lung linh (`/ceo1983_hero_cosmos_skyline.jpg`).
+   - Tông màu: Deep Midnight Navy, Sapphire Blue, Warm Amber Gold (`#F59E0B`), điểm nhấn vệt sáng neon vàng kim.
+   - Thẻ card: Kính đen mờ ngọc bích `bg-slate-950/70 border-amber-500/30`.
+2. **Theme Trời Sáng (Daylight Azure Sky)**:
+   - Nền: Bầu trời bình minh quang đãng, mây trắng bồng bềnh và ánh nắng rực rỡ (`/ceo1983_hero_daylight_skyline.jpg`).
+   - Tông màu: Light Sky Blue (`#F0F9FF`), Pure White, Deep Navy typography (`#0F172A`), Golden Sun accents (`#D97706`).
+   - Thẻ card: Pha lê trắng ngọc trai `bg-white/85 border-amber-400/40 text-slate-900`.
+3. **Bộ Chuyển Đổi Theme Tương Tác**:
+   - Nút công tắc chuyển Theme tại Header (desktop/mobile) và thanh điều hướng nổi (Floating Bottom Dock).
+   - Tự động ghi nhớ lựa chọn vào `localStorage.getItem("ceo1983_v1_theme")`.
+
+---
+
+## 21. QUY CHUẨN MỞ CỔNG TƯỜNG LỬA (FIREWALL & UFW) VÀ CHẨN ĐOÁN KẾT NỐI HTTPS MÁY CHỦ DEV
+
+### 21.1. Phân Tích Sự Cố 'ERR_CONNECTION_REFUSED' & Console DevTools Trống
+- Khi trình duyệt truy cập `https://14.225.217.232:5443` và nhận thông báo `ERR_CONNECTION_REFUSED`:
+  - **Bản chất mạng**: Đây là phản hồi từ chối kết nối ở tầng mạng TCP (gói tin RST từ hệ điều hành máy chủ), xảy ra trước khi bắt tay SSL/TLS hay truyền tải HTTP request.
+  - **Lý do Console DevTools trống**: Do không có bất kỳ phản hồi HTTP/HTML hay tệp Javascript nào được tải về từ máy chủ, Console trình duyệt tự nhiên sẽ hoàn toàn trống trơn.
+
+### 21.2. Quy Trình Tự Động Mở Cổng Trong `deploy/ssl/deploy-ssl.ps1`
+1. **Tự động mở cổng hệ điều hành Ubuntu**:
+   - `ufw allow 5443/tcp`
+   - `ufw allow 5444/tcp`
+   - `ufw reload`
+   - `iptables -I INPUT -p tcp --dport 5443 -j ACCEPT`
+   - `iptables -I INPUT -p tcp --dport 5444 -j ACCEPT`
+2. **Kiểm tra chẩn đoán thực tế ngay trong phiên SSH**:
+   - Chờ `sleep 2` để Nginx worker ổn định.
+   - Hiển thị danh sách container: `docker ps -a --filter name=vione-ssl-proxy`.
+   - Hiển thị log cảnh báo nếu có: `docker logs --tail 10 vione-ssl-proxy`.
+   - Kiểm thử nội bộ: `curl -k -s -I https://127.0.0.1:5443/` và `https://127.0.0.1:5444/` để xác thực mã phản hồi HTTP trực tiếp từ máy chủ.
+
+### 21.3. Lưu Ý Đối Với Cloud Security Group (Viettel IDC / VNPT Cloud)
+- Nếu sau khi mở UFW trên máy chủ mà kết nối từ bên ngoài Internet vẫn bị TIMEOUT hoặc REFUSED:
+  - Quản trị viên hạ tầng cần truy cập Cổng quản trị Cloud Portal của nhà cung cấp (Viettel IDC Dashboard) ➔ Mục **Network / Security Groups** ➔ Thêm luật **Inbound Rule** cho phép:
+    * Port Range: `5443`, Protocol: `TCP`, Source: `0.0.0.0/0`
+    * Port Range: `5444`, Protocol: `TCP`, Source: `0.0.0.0/0`
+
+---
+
+## 22. ĐẶC TẢ PHÂN TÁCH 3 HỆ THỐNG ĐỘC LẬP & BẢO MẬT HTTPS CHO VIONE APP (MẠNG XÃ HỘI)
+
+### 22.1. Ma Trận 3 Hệ Thống Độc Lập Trong Monorepo
+Hệ thống được cấu hình phân tách rành mạch thành 3 ứng dụng độc lập, mỗi ứng dụng sở hữu container Docker, cổng nội bộ và cổng HTTPS SSL Reverse Proxy riêng biệt:
+
+| Phân hệ / Ứng dụng | Scope Mã Nguồn | Route Chính | Cổng HTTP Nội Bộ | Cổng HTTPS SSL Proxy | Tên Container Docker | Kịch Bản Triển Khai |
+|---|---|---|---|---|---|---|
+| **Web CRM Quản trị & Landing** | `crm_platform` | `/auth`, `/`, `/landing` | 5004 / 5005 | **5443** | `crm-frontend-prod`, `crm-backend-prod` | `deploy-crm.ps1` (`npm run deploy:crm`) |
+| **App Hiệp Hội CEO 1983** | `association_app` | `/association` | 5002 / 5003 | **5444** | `ceo1983-frontend-prod`, `ceo1983-backend-prod` | `deploy-ceo1983.ps1` (`npm run deploy:ceo1983`) |
+| **ViOne App (Mạng Xã Hội)** | `vione_app` | `/connect-app` | 5000 / 5001 | **5445** | `vione-frontend-prod`, `vione-backend-prod` | `deploy-vione.ps1` (`npm run deploy:vione`) |
+
+### 22.2. Tính Độc Lập Tuyệt Đối Của ViOne App
+- **ViOne App - Mạng Xã Hội Doanh Nhân ViOne Connect**:
+  - Phục vụ hội viên kết nối giao thương cá nhân, đăng bài khoảnh khắc (Moments), quét danh thiếp số NFC/QR, nhắn tin trò chuyện 1-1, và điều phối cuộc hẹn B2B.
+  - Hoạt động tách biệt hoàn toàn khỏi hệ thống Web CRM Quản trị.
+  - Cổng kết nối bảo mật: `https://14.225.217.232:5445` hoặc `https://dev-vione.14-225-217-232.sslip.io:5445`.
+
+### 22.3. Khắc Phục Lỗi Carriage Return '\r' Khi Triển Khai Qua SSH
+- Lệnh SSH từ máy trạm Windows PowerShell được chuẩn hóa qua tệp thực thi `deploy/ssl/setup-ssl.sh` và lệnh lọc ký tự kết thúc dòng:
+  `sed -i "s/\r$//" ~/ssl-proxy/setup-ssl.sh; bash ~/ssl-proxy/setup-ssl.sh`
+  đảm bảo môi trường Linux thực thi chính xác 100% không phát sinh lỗi `cd: $'/root/ssl-proxy\r': No such file or directory`.
+
+---
+
+## 23. ĐẶC TẢ TRIỆT TIÊU LỖI MIXED CONTENT & ĐỊNH TUYẾN TOÀN DIỆN REVERSE PROXY TRÊN HTTPS
+
+### 23.1. Phân Tích Hiện Tượng & Nguyên Nhân Mixed Content (`blocked:mixed-content`)
+- **Hiện tượng**:
+  - Khi người dùng truy cập `https://14.225.217.232:5444/association/login`, trang web tải giao diện tốt nhưng khi ấn Đăng nhập thì thông báo lỗi `Failed to fetch / bc.mobile.auth.err.networkHint`.
+  - Trên bảng điều khiển trình duyệt (F12 ➔ Network tab), request `login` bị tô đỏ với trạng thái: `(blocked:mixed-content)`.
+- **Nguyên nhân cốt lõi**:
+  - Tệp `apps/vione_app_fe/.env.production` chứa chuỗi `VITE_API_URL="http://14.225.217.232:5001"`. Trong quá trình đóng gói sản xuất (`npm run build`), Vite đã chèn trực tiếp chuỗi URL HTTP này vào các bundle JavaScript của client.
+  - Khi trình duyệt truy cập website bằng HTTPS (`https://...`), chính sách bảo mật nội dung hỗn hợp (Mixed Content Policy) của Chrome/Safari/Edge tự động chặn tất cả các yêu cầu tải dữ liệu hoặc gọi API qua HTTP không bảo mật (`http://...`).
+
+### 23.2. Cơ Chế Triệt Tiêu Mixed Content Bằng Relative API Path & Auto-Upgrade
+1. **Làm sạch tệp cấu hình Build**:
+   - Biến môi trường `VITE_API_URL` trong `apps/vione_app_fe/.env.production` được đưa về chuỗi rỗng `""`.
+2. **Xử lý động tại tầng Client (`api-client.ts`, `AuthContext.tsx`, `business-card.sdk.ts`)**:
+   - Khi chạy trong trình duyệt (`typeof window !== 'undefined'`) qua HTTPS hoặc trên các cổng Reverse Proxy (5443, 5444, 5445), `NEST_API_URL` và `API_BASE` trả về chuỗi rỗng `""`.
+   - Các cuộc gọi API (ví dụ `fetchNestApi("/auth/login")`) sẽ gọi tới `/api/auth/login` (đường dẫn tương đối). Trình duyệt tự động gắn Origin hiện tại (`https://14.225.217.232:5444/api/auth/login`).
+   - Nginx Reverse Proxy tiếp nhận request HTTPS và chuyển tiếp nội bộ qua mạng Docker (`vione-network`) tới backend container tương ứng.
+   - **Kết quả**: 100% kết nối là HTTPS, không phát sinh lỗi Mixed Content, không yêu cầu cấu hình CORS phức tạp.
+3. **Nâng cấp tự động URL Media/Upload (`resolveMediaUrl`, `getImageUrl`)**:
+   - Khi dữ liệu trả về từ cơ sở dữ liệu có chứa URL tuyệt đối dạng `http://14.225.217.232:5001/uploads/...`, các hàm tiện ích sẽ tự động chuyển đổi sang `https://<Origin-Hiện-Tại>/uploads/...`.
+
+### 23.3. Cấu Hình Nginx Đầy Đủ Cho Uploads & WebSockets (`deploy/ssl/nginx.conf`)
+Mỗi khối server (5443, 5444, 5445) được trang bị đầy đủ các định tuyến tới backend container:
+- `location /api/`: Chuyển tiếp tới backend API container cổng 4000.
+- `location /uploads/` & `location /upload/`: Chuyển tiếp các tệp ảnh/tài liệu được backend phục vụ.
+- `location /socket.io/`: Chuyển tiếp kết nối thời gian thực WebSocket với đầy đủ tiêu đề `Upgrade` và `Connection "upgrade"`.
+
+### 23.4. Chẩn Đoán & Khắc Phục Lỗi 502 Bad Gateway Trên Các Cổng Độc Lập
+- Khi người dùng truy cập một cổng và nhận mã lỗi `502 Bad Gateway` (ví dụ cổng 5443 hoặc 5445):
+  - **Nguyên nhân**: Nginx SSL Proxy đang chạy bình thường nhưng container đích của phân hệ đó (ví dụ `crm-frontend-prod` hoặc `vione-frontend-prod`) chưa được khởi chạy trên máy chủ.
+  - **Khắc phục**: Chạy kịch bản triển khai độc lập tương ứng từ máy trạm:
+    * Kích hoạt Web CRM (5443): `npm run deploy:crm`
+    * Kích hoạt ViOne App (5445): `npm run deploy:vione`
+    * Cập nhật App CEO 1983 (5444): `npm run deploy:ceo1983`
+
+---
+
+## 24. KIẾN TRÚC PHỤC VỤ TÀI NGUYÊN MEDIA & KHẮC PHỤC TRIỆT ĐỂ LỖI ẢNH 500 / 404 VÀ LỖI 502 BAD GATEWAY
+
+### 24.1. Phân Tích Hiện Tượng & Nguyên Nhân Lỗi Ảnh 500 và 404
+1. **Lỗi ảnh 500 (Internal Server Error)**:
+   - **Nguyên nhân tầng MinIO Service**: Trong hàm `getFileStream(filename)` của `MinioService`, trước đây sử dụng `throw new InternalServerErrorException(...)` khi MinIO chưa khởi chạy, bucket check thất bại hoặc mã đối tượng không tồn tại (`NoSuchKey`).
+   - **Nguyên nhân tầng Stream Express/NestJS**: Khi gọi `stream.pipe(res)` trong `UploadController.getFile`, thiếu listener sự kiện lỗi `stream.on('error', ...)`. Trong Node.js, khi stream phát sinh lỗi mà không có listener hứng, lỗi sẽ trở thành unhandled stream exception, khiến Express tự động phản hồi mã trạng thái HTTP 500.
+2. **Lỗi ảnh 404 (Not Found)**:
+   - **Nguyên nhân URL tương đối**: Trong cơ sở dữ liệu và local state, một số avatar được lưu dưới dạng tên file thuần (bare filename) hoặc UUID (ví dụ: `00000000-0000-4000-8000-000000000001-170838-i5o6ez.jpg`) mà không có tiền tố thư mục `avatars/` hoặc `/api/upload/file/`.
+   - Khi gán trực tiếp vào thuộc tính `<img src={displayAvatar} />` trên trang `/association`, trình duyệt hiểu là đường dẫn tương đối và gửi request tới máy chủ frontend static: `https://14.225.217.232:5444/association/00000000-...jpg`, dẫn tới phản hồi 404 Not Found từ máy chủ Nitro/Nuxt.
+
+### 24.2. Giải Pháp Toàn Diện Triệt Tiêu Lỗi Ảnh
+1. **Harden Backend UploadController & MinioService (`upload.controller.ts`, `minio.service.ts`)**:
+   - `MinioService.getFileStream`: Tuyệt đối không ném lỗi `InternalServerErrorException`. Nếu MinIO không sẵn sàng hoặc không tìm thấy file, trả về `null`.
+   - `UploadController.getFile`:
+     * Đa tầng tìm kiếm (Local disk fallback): Tìm trong `uploads/<path>`, `uploads/avatars/<filename>`, `uploads/documents/<filename>`.
+     * Tìm kiếm linh hoạt trên MinIO: Thử key gốc, thử thêm tiền tố `avatars/` hoặc bóc tách tiền tố `avatars/`.
+     * Đính kèm listener an toàn `readable.on('error', ...)` trước khi pipe.
+     * Trả về HTTP 404 sạch sẽ thay vì mã lỗi 500.
+2. **Nâng cấp Hàm Nhận Diện URL Media (`api-client.ts`)**:
+   - Bổ sung quy tắc trong `resolveMediaUrl` và `transformUrls`: Bất kỳ chuỗi nào là UUID hoặc bare filename có đuôi mở rộng ảnh (`.jpg`, `.png`, `.webp`, `.gif`, `.svg`) chưa có tiền tố đều được tự động chuyển thành `/api/upload/file/avatars/<filename>`.
+3. **Bổ Sung Fallback Chống Vỡ Giao Diện (`association.index.tsx`, `association.profile.tsx`)**:
+   - Gắn cờ `avatarError` và bộ xử lý `onError={() => setAvatarError(true)}` vào tất cả thẻ `<img />` hiển thị ảnh đại diện.
+   - Khi ảnh lỗi hoặc chưa tồn tại trên storage, UI lập tức chuyển sang huy hiệu chữ cái viết tắt (Initials Badge) nền gradient Navy mạ vàng sang trọng, bảo toàn 100% tính thẩm mỹ cao cấp.
+
+### 24.3. Kiến Trúc Mạng Docker Đồng Bộ & Xử Lý Lỗi 502 Bad Gateway ViOne (Port 5445)
+1. **Nguyên Nhân Lỗi 502 Bad Gateway**:
+   - Nginx SSL Proxy (`vione-ssl-proxy`) được gắn vào Docker bridge network mang tên `vione-network`.
+   - Trước đây trong `deploy/vione/docker-compose.yml`, network thiếu khai báo `name: vione-network`, khiến Docker Compose tự động tạo mạng theo tên thư mục (`root_vione-network` hoặc `vione_vione-network`), cô lập các container của ViOne khỏi proxy.
+   - Do đó, Nginx không thể phân giải DNS `http://vione-frontend-prod:8080`, dẫn tới phản hồi 502 Bad Gateway.
+2. **Giải Pháp Đồng Bộ Mạng & MinIO**:
+   - Chuẩn hóa `name: vione-network` xuyên suốt cả 4 tệp docker-compose (`deploy/ssl/`, `deploy/ceo1983/`, `deploy/crm/`, `deploy/vione/`).
+   - Cung cấp network aliases cho container `vione-minio-prod`: `[minio, vione-minio-prod]` để cả 3 backend container đều kết nối MinIO thông suốt.
+   - Trong script deploy, tự động thực thi `docker network create vione-network 2>/dev/null || true` trước khi khởi chạy container.

@@ -19,9 +19,9 @@
    - 4.5. Khóa, Mở khóa tài khoản & Xuất dữ liệu Excel
 5. [QUẢN TRỊ SỰ KIỆN, SƠ ĐỒ KHÁN PHÒNG & QUÉT MÃ QR CHECK-IN CỔNG](#5-quản-trị-sự-kiện-sơ-đồ-khán-phòng--quét-mã-qr-check-in-cổng)
    - 5.1. Danh sách sự kiện & Bộ lọc trạng thái
-   - 5.2. Tạo Mới Sự Kiện (Banner, Lịch trình, Diễn giả, Cấu hình vé VietQR)
+   - 5.2. Tạo Mới Sự Kiện & Tự Động Bố Cục Banner Theo Từng Loại Sự Kiện
    - 5.3. Cấu hình Sơ đồ Khán phòng (Cinema Seating Map)
-   - 5.4. Quản lý Danh sách Đăng ký & Quét mã QR Điểm danh tốc độ cao
+   - 5.4. Quản lý Danh sách Đăng ký, Mã số May mắn & Quét mã QR Điểm danh tốc độ cao
 6. [QUẢN TRỊ SÀN GIAO THƯƠNG MARKETPLACE (KIỂM DUYỆT & ĐỒNG BỘ APP)](#6-quản-trị-sàn-giao-thương-marketplace-kiểm-duyệt--đồng-bộ-app)
    - 6.1. Kiểm duyệt sản phẩm đăng tải từ App hội viên
    - 6.2. Ẩn / Khóa / Mở sản phẩm & Gắn nhãn sản phẩm tiêu biểu
@@ -29,14 +29,15 @@
    - 7.1. Giám sát các luồng nhu cầu Cần Mua - Cần Bán
    - 7.2. Theo dõi các thương vụ Claim thành công & Thống kê giá trị giao dịch
 8. [QUẢN LÝ HOẠT ĐỘNG SỰ KIỆN: BÌNH CHỌN TRỰC TIẾP & BỐC THĂM MAY MẮN](#8-quản-lý-hoạt-động-sự-kiện-bình-chọn-trực-tiếp--bốc-thăm-may-mắn)
-   - 8.1. Thiết lập phiên biểu quyết Live Voting thời gian thực
-   - 8.2. Cấu hình vòng quay may mắn Lucky Draw
+   - 8.1. Thiết lập phiên biểu quyết Live Voting thời gian thực & Đẩy thông báo tức thì đến App
+   - 8.2. Cấu hình vòng quay may mắn Lucky Draw theo Mã số vé & Bắn thông báo chúc mừng trúng thưởng
 9. [QUẢN TRỊ DOANH NGHIỆP THÀNH VIÊN (COMPANIES MANAGEMENT)](#9-quản-trị-doanh-nghiệp-thành-viên-companies-management)
 10. [QUẢN LÝ TÀI CHÍNH & HỘI PHÍ THƯỜNG NIÊN & THU CHI (FINANCE & DUES)](#10-quản-lý-tài-chính--hội-phí-thường-niên--thu-chi-finance--dues)
     - 10.1. Theo dõi BẢNG HỘI PHÍ hội viên theo niên độ
     - 10.2. Bật / Tắt Gạch nợ Hội phí (Fee Toggle) sau khi đối soát sao kê
 11. [QUẢN LÝ TIN TỨC, NGHỊ QUYẾT & TRUYỀN THÔNG (NEWS & MEDIA)](#11-quản-lý-tin-tức-nghị-quyết--truyền-thông-news--media)
 12. [CẤU HÌNH HỆ THỐNG, TÀI KHOẢN VIETQR THỤ HƯỞNG & NHẬT KÝ KIỂM TOÁN](#12-cấu-hình-hệ-thống-tài-khoản-vietqr-thụ-hưởng--nhật-ký-kiểm-toán)
+13. [CẤU HÌNH BẢO MẬT HTTPS & FAST-DEPLOY TRÊN MÁY CHỦ DEV/STAGING](#13-cấu-hình-bảo-mật-https--fast-deploy-trên-máy-chủ-devstaging)
 
 ---
 
@@ -169,20 +170,24 @@ Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cá
 
 ---
 
-### 5.2. Tạo Mới Sự Kiện (Banner, Lịch Trình, Diễn Giả & Cấu Hình Vé VietQR)
+### 5.2. Tạo Mới Sự Kiện & Tự Động Bố Cục Banner Theo Từng Loại Sự Kiện
 1. Nhấn nút **"+ Tạo Sự Kiện Mới"**.
-2. Modal Tạo sự kiện mở ra với các tab thiết lập:
-   - **Thông tin chung:** Tiêu đề sự kiện, thời gian bắt đầu, thời gian kết thúc, địa chỉ trung tâm hội nghị.
-   - **Hình ảnh truyền thông:** Tải lên Banner sự kiện (chuẩn 1920x1080) và ảnh đại diện.
-   - **Lịch trình (Agenda):** Thêm các khung giờ hoạt động (Đón khách, Khai mạc, Tọa đàm, Trao kỷ niệm chương, Tiệc giao lưu).
+2. **Chọn Loại Sự Kiện (Event Type Templates):**
+   - Khi quản trị viên nhấp chọn loại sự kiện (**Diễn đàn cấp cao / Forum**, **Hội thảo chuyên đề / Workshop**, **Giao thương kết nối / Networking**, hoặc **Đào tạo doanh nghiệp / Training**), hệ thống tự động tải mẫu bố cục thông tin tương ứng:
+     - Tự động điền **Tiêu đề mẫu & Tagline nhận diện thương hiệu**.
+     - Tự động điền **Địa điểm tổ chức chuẩn & Dự toán sức chứa khán phòng**.
+     - Tự động sinh **Khung vé dự thảo (Ticket Tiers)**.
+     - Hiển thị trực quan **Khung xem trước Banner (Live Banner Preview)** với typography, gradient và huy hiệu loại hình chuyên nghiệp.
+3. Modal Tạo sự kiện với các tab thiết lập:
+   - **Thông tin chung:** Tiêu đề sự kiện, loại hình, thời gian bắt đầu/kết thúc, địa chỉ trung tâm hội nghị.
+   - **Hình ảnh & Banner:** Xem trước banner bố cục tự động hoặc tải ảnh banner tùy biến.
+   - **Lịch trình (Agenda):** Thêm các khung giờ hoạt động (Đón khách, Khai mạc, Tọa đàm, Trao kỷ niệm chương, Bốc thăm may mắn).
    - **Diễn giả (Keynote Speakers):** Tải ảnh chân dung, nhập họ tên và chức danh các chuyên gia.
-   - **Cấu hình Vé & VietQR:**
-     - Tùy chọn Vé Miễn Phí (dành riêng hội viên CLB) hoặc Vé Có Phí (nhập đơn giá vé).
-     - Thiết lập số lượng vé tối đa được phép phát hành.
-3. Nhấn **"Xuất bản Sự kiện"**: Dữ liệu đồng bộ sang App di động của tất cả hội viên trong vòng 1 giây.
+   - **Cấu hình Vé & VietQR:** Thiết lập số lượng vé, giá vé và tự động kích hoạt **Cơ chế cấp Mã số vé ngẫu nhiên (#XXXX)** cho mọi lượt đăng ký phục vụ quay thưởng Lucky Draw.
+4. Nhấn **"Xuất bản Sự kiện"**: Dữ liệu đồng bộ tức thì sang App di động của toàn thể hội viên.
 
 ![CRM: Modal Tạo Sự Kiện Mới](images/evidence/03_crm_event_create_modal.png)
-*Hình 5.2: Modal tạo sự kiện với đầy đủ cấu hình thời gian, địa điểm, diễn giả và giá vé VietQR.*
+*Hình 5.2: Modal tạo sự kiện với tính năng tự động điền bố cục text và banner đồ họa theo loại sự kiện.*
 
 ---
 
@@ -257,28 +262,36 @@ Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cá
 
 ## 8. QUẢN LÝ HOẠT ĐỘNG SỰ KIỆN: BÌNH CHỌN TRỰC TIẾP & BỐC THĂM MAY MẮN
 
-### 8.1. Thiết Lập Phiên Biểu Quyết Live Voting Thời Gian Thực
+### 8.1. Thiết Lập Phiên Biểu Quyết Live Voting Thời Gian Thực & Đẩy Thông Báo App
 1. Truy cập CRM menu **"Hoạt động Sự kiện" ➔ "Biểu quyết & Bầu cử"** (`/voting`).
 2. Nhấn **"+ Tạo Phiên Biểu Quyết"**:
    - Nhập nội dung câu hỏi biểu quyết (vd: *"Thông qua Nghị quyết Phương hướng Hoạt động Nhiệm kỳ 2026-2031"*).
    - Nhập các phương án lựa chọn: Đồng ý / Không đồng ý / Ý kiến khác.
 3. Khi MC tuyên bố bắt đầu biểu quyết, quản trị viên bấm **"Kích hoạt Phiên bỏ phiếu"**:
-   - App của toàn thể hội viên có mặt tại hội trường tự động mở màn hình bỏ phiếu.
+   - Hệ thống tự động **bắn thông báo đẩy tương tác (Interactive Notification)** về App Hiệp hội của toàn thể hội viên.
+   - Hội viên chỉ cần nhấp vào thông báo là mở ngay popup biểu quyết để chọn phương án và xác nhận biểu quyết trong 3 giây.
    - Màn hình CRM hiển thị biểu đồ tròn kết quả nhảy số thời gian thực để trình chiếu trực tiếp lên màn hình LED sân khấu.
 
 ![CRM: Quản lý Phiên Biểu Quyết Live Voting và Quay số Lucky Draw](images/evidence/crm_12_voting_luckydraw.png)
-*Hình 8.1: Màn hình điều phối phiên biểu quyết trực tiếp và vòng quay may mắn trên CRM.*
+*Hình 8.1: Màn hình điều phối phiên biểu quyết trực tiếp và đẩy thông báo tức thì đến App hội viên.*
 
 ---
 
-### 8.2. Cấu Hình Vòng Quay May Mắn Lucky Draw
+### 8.2. Cấu Hình Vòng Quay May Mắn Lucky Draw & Bắn Thông Báo Chúc Mừng Trúng Thưởng
 1. Chọn tab **"Lucky Draw (Quay số trúng thưởng)"**.
-2. Nhập danh sách các giải thưởng: Giải Đặc biệt, Giải Nhất, Giải Nhì, Giải Khuyến khích.
-3. Đồng bộ danh sách mã vé của các đại biểu đã check-in thành công qua cổng.
-4. Nhấn **"Bắt đầu quay số"** để hiển thị hiệu ứng quay thưởng kịch tính trên sân khấu.
+2. Nhập danh sách các giải thưởng: Giải Đặc biệt, Giải Nhất, Giải Nhì, Giải Tri ân.
+3. **Quay thưởng theo Mã số vé may mắn (#XXXX):**
+   - Hệ thống đồng bộ danh sách người tham gia kèm Mã số may mắn đã cấp khi đăng ký vé.
+   - Vòng quay số hiển thị tên hội viên, công ty và mã số may mắn (vd: `#8492 - Nguyễn Văn Nam (Nam Hải Group)`).
+4. Nhấn **"Bắt đầu quay số"** để thực hiện vòng quay kịch tính trên màn hình LED.
+5. **Kích hoạt gửi thông báo trúng thưởng (Lucky Draw Push Notification):**
+   - Khi chọn được người trúng giải, quản trị viên nhấn nút **"Gửi thông báo trúng"**.
+   - Hệ thống tự động kích hoạt API `POST /voting/lucky-draw/notify`, đẩy đồng thời:
+     - **Thẻ thông báo chúc mừng mạ vàng VIP** kèm biểu tượng cúp vinh danh, tên giải thưởng và mã số may mắn trên App của người trúng giải.
+     - **Tin nhắn chúc mừng tự động** từ Ban Quản Trị gửi thẳng vào Hộp thư Tin nhắn của hội viên.
 
 ![CRM: Cấu hình và Vận hành Vòng quay May mắn Lucky Draw](images/evidence/crm_lucky_draw_modal.png)
-*Hình 8.2: Giao diện thiết lập vòng quay may mắn Lucky Draw và danh sách giải thưởng sự kiện.*
+*Hình 8.2: Giao diện quay số may mắn Lucky Draw theo mã vé và kích hoạt thông báo chúc mừng trúng thưởng.*
 
 ---
 
@@ -365,6 +378,32 @@ Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cá
 
 ![CRM: Nhật ký Kiểm toán Hoạt động Hệ thống (Audit Logs)](images/evidence/crm_audit_logs.png)
 *Hình 12.2: Nhật ký kiểm toán bảo mật và phân quyền ghi vết 100% lịch sử thao tác của các quản trị viên.*
+
+---
+
+## 13. CẤU HÌNH BẢO MẬT HTTPS & FAST-DEPLOY TRÊN MÁY CHỦ DEV/STAGING
+
+### 13.1. Kiến Trúc Cấu Hình HTTPS Reverse Proxy
+- Hệ thống máy chủ phát triển (`14.225.217.232`) được trang bị chứng chỉ số SSL/TLS X.509 với SAN hỗ trợ cả địa chỉ IP tĩnh `14.225.217.232`, `localhost`, và tên miền wildcard động `*.14-225-217-232.sslip.io`.
+- Nginx Reverse Proxy được đóng gói Docker (`deploy/ssl/docker-compose.ssl.yml`) với các cổng định tuyến chuyên biệt:
+  - **Cổng 5443 (HTTPS):** Định tuyến bảo mật SSL tới Hệ thống Web CRM Quản trị (`http://localhost:5000`).
+  - **Cổng 5444 (HTTPS):** Định tuyến bảo mật SSL tới Ứng dụng Di động Hiệp Hội CEO 1983 (`http://localhost:5002`).
+  - Tự động kích hoạt HTTP Strict Transport Security (HSTS), TLSv1.2, TLSv1.3 và cơ chế WebSocket Proxy mượt mà cho tính năng Chat/Voting thời gian thực.
+
+### 13.2. Quy Trình Fast-Deploy Triển Khai Nhanh Bản Cập Nhật
+1. **Triển khai bình thường qua PowerShell:**
+   ```powershell
+   ./fast-deploy.ps1 -ServerIp "14.225.217.232" -User "root"
+   ```
+2. **Triển khai kèm kích hoạt chứng chỉ bảo mật HTTPS tự động:**
+   ```powershell
+   ./fast-deploy.ps1 -ServerIp "14.225.217.232" -User "root" -EnableHttps
+   ```
+   - Script tự động đồng bộ mã nguồn, đóng gói Docker container mới, cấu hình Nginx SSL và in danh sách URL kiểm thử:
+     - CRM HTTP: `http://14.225.217.232:5000`
+     - CRM HTTPS: `https://14.225.217.232:5443`
+     - App Hiệp Hội HTTP: `http://14.225.217.232:5002/association`
+     - App Hiệp Hội HTTPS: `https://14.225.217.232:5444/association`
 
 ---
 *Tài liệu được biên soạn và chuẩn hóa bởi Ban Công nghệ & Kỹ thuật VIONE - Hiệp hội Doanh nhân CEO 1983.*

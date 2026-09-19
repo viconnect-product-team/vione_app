@@ -49,8 +49,15 @@ function readReplies(meta: Record<string, unknown> | null): LeadReplyEntry[] {
     }));
 }
 
-const NEST_API = import.meta.env.VITE_API_URL || "http://localhost:3000";
-const API_URL = NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`;
+const NEST_API =
+  typeof window !== "undefined" &&
+  (window.location.protocol === "https:" ||
+    window.location.port === "5443" ||
+    window.location.port === "5444" ||
+    window.location.port === "5445")
+    ? ""
+    : (import.meta.env.VITE_API_URL || "http://localhost:3000");
+const API_URL = NEST_API ? (NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`) : "/api";
 const getHeaders = (token?: string): Record<string, string> => {
   const defaultToken = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
   const t = token || defaultToken;

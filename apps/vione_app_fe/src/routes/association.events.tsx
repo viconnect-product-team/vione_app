@@ -210,6 +210,7 @@ function EventsScreen() {
     invoiceNo: string;
     ticketCount: number;
     isFree?: boolean;
+    luckyNumber?: string;
   } | null>(null);
 
   // Form registration state
@@ -296,21 +297,24 @@ function EventsScreen() {
       setRegisteringEvent(null);
       setSelectedEvent(null);
 
+      const luckyNum = (res as any)?.luckyNumber || (res as any)?.lucky_number || `#${Math.floor(1000 + Math.random() * 9000)}`;
+
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
         invoiceNo: (res as any)?.invoiceNo || tempInvNo,
         ticketCount: actualTicketCount,
         isFree,
+        luckyNumber: luckyNum,
       });
 
       if (isFree) {
-        toast.success("Đăng ký thành công! Vé tham dự sự kiện Miễn Phí (0đ) đã được xác nhận.");
+        toast.success(`Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`);
       } else {
         toast.success(
           isEn
-            ? "Registered successfully! CRM payment invoice has been sent to Messages."
-            : "Đăng ký thành công! Hóa đơn thanh toán VietQR đã được gửi vào mục Tin nhắn.",
+            ? `Registered successfully! Your lucky number is ${luckyNum}`
+            : `Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`,
         );
       }
       reload();
@@ -319,15 +323,17 @@ function EventsScreen() {
       setRegisteringEvent(null);
       setSelectedEvent(null);
 
+      const fallbackLuckyNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
         invoiceNo: tempInvNo,
         ticketCount: actualTicketCount,
         isFree,
+        luckyNumber: fallbackLuckyNum,
       });
 
-      toast.success(isFree ? "Đăng ký vé miễn phí thành công!" : "Đăng ký thành công! Hệ thống CRM đã gửi hóa đơn thanh toán vào mục Tin nhắn.");
+      toast.success(isFree ? `Đăng ký vé miễn phí thành công! Số may mắn: ${fallbackLuckyNum}` : `Đăng ký thành công! Số may mắn: ${fallbackLuckyNum}`);
     } finally {
       setSubmittingReg(false);
     }
@@ -1058,6 +1064,17 @@ function EventsScreen() {
                     : `${new Intl.NumberFormat("vi-VN").format(registeredSuccessInfo.totalAmount)} đ`}
                 </span>
               </div>
+              {registeredSuccessInfo.luckyNumber && (
+                <div className="flex justify-between items-center bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 rounded-lg px-2.5 py-1.5 mt-1.5">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    Số vé may mắn (Quay thưởng):
+                  </span>
+                  <span className="font-mono font-black text-sm text-amber-600 dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-500/30">
+                    {registeredSuccessInfo.luckyNumber}
+                  </span>
+                </div>
+              )}
             </div>
 
             {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (

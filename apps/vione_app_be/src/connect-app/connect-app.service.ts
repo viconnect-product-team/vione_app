@@ -4286,7 +4286,7 @@ export class ConnectAppService implements OnModuleInit {
         SELECT id, title_key, body_key, safe_display_data, notification_kind, created_at, read_at, source_record_id
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
-          AND (app_scope = 'association_app' OR target_app = 'association_app')
+          AND (app_scope = 'association_app' OR target_app = 'association_app' OR app_scope = 'all' OR target_app = 'all' OR app_scope IS NULL)
         ORDER BY created_at DESC
         LIMIT 40
       `.catch(() => []),
@@ -4402,7 +4402,8 @@ export class ConnectAppService implements OnModuleInit {
       }
 
       let itemType: any = 'network';
-      if (b.notification_kind === 'interactive_poll' || safe.pollId) itemType = 'opportunity';
+      if (b.notification_kind === 'interactive_poll' || safe.pollId || safe.type === 'poll') itemType = 'voting';
+      else if (b.notification_kind === 'lucky_draw_winner' || safe.type === 'lucky_draw_winner' || safe.luckyNumber) itemType = 'event';
       else if (b.notification_kind === 'overdue_payment_reminder' || safe.invoiceId) itemType = 'fee';
       else if (b.notification_kind?.startsWith('meeting') || b.notification_kind?.startsWith('event')) itemType = 'event';
 
@@ -8341,9 +8342,10 @@ export class ConnectAppService implements OnModuleInit {
     const email = memberRows[0]?.email ?? userRows?.email ?? '';
 
     const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
+    const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
-        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, created_at, updated_at
+        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, lucky_number, created_at, updated_at
       ) VALUES (
         ${regId},
         ${eventRef},
@@ -8354,6 +8356,7 @@ export class ConnectAppService implements OnModuleInit {
         'confirmed',
         'Standard',
         ${communityId}::uuid,
+        ${luckyNum},
         now(),
         now()
       )
@@ -8363,7 +8366,7 @@ export class ConnectAppService implements OnModuleInit {
       UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventRef}
     `.catch(() => null);
 
-    return { ok: true, registrationId: regId };
+    return { ok: true, registrationId: regId, luckyNumber: luckyNum };
   }
 
   async cancelCommunityEventRegistration(userId: string, communityId: string, eventRef: string) {

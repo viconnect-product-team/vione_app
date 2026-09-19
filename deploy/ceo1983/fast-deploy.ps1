@@ -3,8 +3,12 @@
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
     [switch]$BackendOnly,
-    [switch]$InstallDeps
+    [switch]$InstallDeps,
+    [switch]$EnableHttps = $true,
+    [switch]$NoHttps
 )
+
+if ($NoHttps) { $EnableHttps = $false }
 
 # =========================================================================
 # Kịch bản triển khai độc lập App Hiệp Hội CLB CEO 1983 (Hướng 2 - Standalone Compose)
@@ -42,10 +46,14 @@ try {
                 Write-Host "`n[0/5] Bỏ qua Build Frontend (Web) cục bộ (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[0/5] Build Frontend Hiệp Hội (Web) cục bộ với Scope = association_app..." -ForegroundColor Cyan
-                $env:NODE_OPTIONS = "--max-old-space-size=8192"
+                $env:NODE_OPTIONS = "--max-old-space-size=4096"
                 $env:VITE_APP_SCOPE = "association_app"
                 $env:VITE_APP_NAME = "CLB Doanh Nhân CEO 1983"
-                $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5002"
+                if ($EnableHttps) {
+                    $env:VITE_PUBLIC_APP_URL = "https://14.225.217.232:5444"
+                } else {
+                    $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5002"
+                }
                 $env:NEST_API_URL = "http://ceo1983-backend:4000"
                 
                 if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
@@ -148,7 +156,7 @@ try {
         $remoteLoadCmd += "docker load -i ceo1983-frontend.tar.gz; rm -f ceo1983-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; mv -f .env.production .env.association 2>/dev/null || true; sed -i 's/\r//g' .env.association docker-compose.yml; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; mv -f .env.production .env.association 2>/dev/null || true; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Hiệp Hội" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
@@ -157,9 +165,20 @@ try {
     Write-Host "`n[5/5] Dọn dẹp bộ nhớ đệm tạm thời tại máy cục bộ..." -ForegroundColor Cyan
     Remove-Item ceo1983-backend.tar.gz, ceo1983-frontend.tar.gz, ceo1983-backend.tar, ceo1983-frontend.tar -ErrorAction SilentlyContinue
 
+    if ($EnableHttps) {
+        Write-Host "`n[BỔ SUNG] Đồng bộ Nginx Reverse Proxy SSL / HTTPS..." -ForegroundColor Magenta
+        & "$DEPLOY_DIR/../ssl/deploy-ssl.ps1"
+    }
+
     Write-Host "=================================================================" -ForegroundColor Green
     Write-Host "TRIỂN KHAI ĐỘC LẬP APP HIỆP HỘI CLB CEO 1983 [HUONG 2] THÀNH CÔNG!" -ForegroundColor Green
-    Write-Host "Cổng Frontend Hiệp Hội : http://${SERVER_IP}:5002" -ForegroundColor Yellow
+    if ($EnableHttps) {
+        Write-Host "Cổng Frontend Hiệp Hội (HTTPS): https://${SERVER_IP}:5444 (hoặc https://dev-app.14-225-217-232.sslip.io:5444/association)" -ForegroundColor Yellow
+        Write-Host "Cổng Frontend Hiệp Hội (Cổng 443): https://${SERVER_IP}/association" -ForegroundColor Yellow
+        Write-Host "Cổng Frontend Hiệp Hội (HTTP) : http://${SERVER_IP}:5002" -ForegroundColor DarkGray
+    } else {
+        Write-Host "Cổng Frontend Hiệp Hội : http://${SERVER_IP}:5002" -ForegroundColor Yellow
+    }
     Write-Host "Cổng Backend Hiệp Hội  : http://${SERVER_IP}:5003" -ForegroundColor Yellow
     Write-Host "=================================================================" -ForegroundColor Green
 } finally {

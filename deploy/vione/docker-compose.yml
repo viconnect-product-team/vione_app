@@ -11,7 +11,7 @@ services:
       - NITRO_HOST=0.0.0.0
       - NEST_API_URL=http://backend:4000
     ports:
-      - "${TARGET_PROD_PORT_FRONTEND:-5000}:8080"
+      - "127.0.0.1:${TARGET_PROD_PORT_FRONTEND:-5000}:8080"
     depends_on:
       - backend
     networks:
@@ -27,7 +27,7 @@ services:
       - NODE_ENV=production
       - PORT=4000
     ports:
-      - "${TARGET_PROD_PORT_BACKEND:-5001}:4000"
+      - "127.0.0.1:${TARGET_PROD_PORT_BACKEND:-5001}:4000"
     depends_on:
       - minio
     networks:
@@ -47,7 +47,10 @@ services:
       - vione-minio-data-prod:/data
     command: server /data --console-address ":9001"
     networks:
-      - vione-network
+      vione-network:
+        aliases:
+          - minio
+          - vione-minio-prod
 
 volumes:
   vione-minio-data-prod:
@@ -55,4 +58,4 @@ volumes:
 
 networks:
   vione-network:
-    driver: bridge
+    name: vione-network

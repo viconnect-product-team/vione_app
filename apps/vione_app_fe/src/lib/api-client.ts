@@ -3,14 +3,32 @@ export function getAuthToken(): string | null {
   return localStorage.getItem("vibe_token");
 }
 
-export const NEST_API_URL =
-  (typeof process !== "undefined" && (process.env?.NEST_API_URL || process.env?.VITE_API_URL)) ||
-  import.meta.env?.VITE_API_URL ||
-  (typeof window !== "undefined" &&
-  window.location.hostname !== "localhost" &&
-  window.location.hostname !== "127.0.0.1"
-    ? `${window.location.protocol}//${window.location.hostname}:5001`
-    : "http://localhost:4000");
+export function getBaseApiUrl(): string {
+  if (typeof window !== "undefined") {
+    // 1. Khi chạy trên trình duyệt (Web / PWA) với HTTPS hoặc qua Reverse Proxy (5443, 5444, 5445):
+    // Dùng chuỗi rỗng "" để mọi lệnh fetch đều là relative URL (/api/...) trên cùng Origin HTTPS.
+    // Điều này TRÁNH TRIỆT ĐỂ lỗi Mixed Content (blocked:mixed-content) và lỗi CORS!
+    if (
+      window.location.protocol === "https:" ||
+      window.location.port === "5443" ||
+      window.location.port === "5444" ||
+      window.location.port === "5445" ||
+      (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
+    ) {
+      return "";
+    }
+    // 2. Localhost phát triển (Vite Dev Server đã cấu hình proxy /api sang localhost:4000)
+    return "";
+  }
+  // 3. Phía Server-Side Rendering (SSR / Nitro server function chạy trong container)
+  return (
+    (typeof process !== "undefined" && (process.env?.NEST_API_URL || process.env?.VITE_API_URL)) ||
+    (import.meta.env?.VITE_API_URL as string) ||
+    "http://127.0.0.1:4000"
+  );
+}
+
+export const NEST_API_URL = getBaseApiUrl();
 
 function mapEndpoint(endpoint: string): string {
   let mapped = endpoint;
@@ -83,8 +101,14 @@ export function getNestApiUrl(endpoint: string): string {
 
 export function getPublicBackendUrl(): string {
   if (typeof window !== "undefined") {
-    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-      return `${window.location.protocol}//${window.location.hostname}:5001`;
+    if (
+      window.location.protocol === "https:" ||
+      window.location.port === "5443" ||
+      window.location.port === "5444" ||
+      window.location.port === "5445" ||
+      (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
+    ) {
+      return window.location.origin;
     }
     return "http://localhost:4000";
   }
@@ -101,6 +125,27 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   if (!trimmed) return null;
 
   const publicBase = getPublicBackendUrl();
+
+  // NÂNG CẤP BẢO MẬT HTTPS: Nếu trang web đang chạy HTTPS mà URL nhận được chứa http:// hoặc chứa cổng nội bộ (5001, 5003, 4000)
+  // Tự động chuyển đổi sang Origin HTTPS hiện tại để tránh lỗi Mixed Content
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    if (
+      trimmed.startsWith("http://14.225.217.232") ||
+      trimmed.includes(":5001") ||
+      trimmed.includes(":5002") ||
+      trimmed.includes(":5003") ||
+      trimmed.includes(":5004") ||
+      trimmed.includes(":5005") ||
+      trimmed.includes(":4000")
+    ) {
+      try {
+        const parsed = new URL(trimmed);
+        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+      } catch {
+        // fallback bên dưới
+      }
+    }
+  }
 
   // If URL contains internal Docker host backend:4000
   if (trimmed.includes("backend:4000")) {
@@ -132,20 +177,51 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     }
   }
 
-  if (trimmed.startsWith("/uploads/")) {
+  // 4. Nếu là đường dẫn /api/upload/...
+  if (trimmed.startsWith("/api/upload/")) {
     return publicBase ? `${publicBase}${trimmed}` : trimmed;
   }
-  if (trimmed.startsWith("uploads/")) {
+  if (trimmed.startsWith("api/upload/")) {
     return publicBase ? `${publicBase}/${trimmed}` : `/${trimmed}`;
   }
+
+  // 5. Nếu là đường dẫn /upload/... -> Nâng cấp thành /api/upload/...
   if (trimmed.startsWith("/upload/")) {
     return publicBase ? `${publicBase}/api${trimmed}` : `/api${trimmed}`;
   }
   if (trimmed.startsWith("upload/")) {
     return publicBase ? `${publicBase}/api/${trimmed}` : `/api/${trimmed}`;
   }
-  if (trimmed.startsWith("/api/upload/")) {
+
+  // 6. Nếu là đường dẫn /uploads/... -> Phục vụ tĩnh từ backend
+  if (trimmed.startsWith("/uploads/")) {
     return publicBase ? `${publicBase}${trimmed}` : trimmed;
+  }
+  if (trimmed.startsWith("uploads/")) {
+    return publicBase ? `${publicBase}/${trimmed}` : `/${trimmed}`;
+  }
+
+  // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/
+  if (
+    trimmed.startsWith("avatars/") ||
+    trimmed.startsWith("/avatars/") ||
+    trimmed.startsWith("documents/") ||
+    trimmed.startsWith("/documents/") ||
+    trimmed.startsWith("products/") ||
+    trimmed.startsWith("/products/") ||
+    trimmed.startsWith("events/") ||
+    trimmed.startsWith("/events/")
+  ) {
+    const cleanPath = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
+    return publicBase ? `${publicBase}/api/upload/file/${cleanPath}` : `/api/upload/file/${cleanPath}`;
+  }
+
+  // 8. Nếu là bare filename (không chứa /) có đuôi file ảnh/tài liệu, hoặc UUID
+  if (!trimmed.includes("/") && /\.(jpg|jpeg|png|webp|gif|svg|pdf|docx|xlsx)$/i.test(trimmed)) {
+    return publicBase ? `${publicBase}/api/upload/file/avatars/${trimmed}` : `/api/upload/file/avatars/${trimmed}`;
+  }
+  if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}/.test(trimmed)) {
+    return publicBase ? `${publicBase}/api/upload/file/avatars/${trimmed}` : `/api/upload/file/avatars/${trimmed}`;
   }
 
   return trimmed;
@@ -159,6 +235,14 @@ function transformUrls(obj: any): any {
     if (
       obj.startsWith("/upload/") ||
       obj.startsWith("/uploads/") ||
+      obj.startsWith("upload/") ||
+      obj.startsWith("uploads/") ||
+      obj.startsWith("/api/upload/") ||
+      obj.startsWith("api/upload/") ||
+      obj.startsWith("avatars/") ||
+      obj.startsWith("/avatars/") ||
+      (!obj.includes("/") && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(obj)) ||
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}/.test(obj) ||
       obj.includes("backend:4000") ||
       (typeof window !== "undefined" &&
         window.location.hostname !== "localhost" &&

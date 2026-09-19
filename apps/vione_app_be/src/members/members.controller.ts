@@ -44,6 +44,16 @@ export class MembersController {
     return this.membersService.updateMyCover(req.user.id, body.coverUrl);
   }
 
+  @Patch('me/profile')
+  async updateMyProfilePatch(@Request() req: any, @Body() body: any) {
+    return this.membersService.updateMyProfile(req.user.id, body);
+  }
+
+  @Post('me/profile')
+  async updateMyProfilePost(@Request() req: any, @Body() body: any) {
+    return this.membersService.updateMyProfile(req.user.id, body);
+  }
+
   @Get('me/context')
   async getMyMemberContext(@Request() req: any) {
     return this.membersService.getMyMemberContext(req.user.id);

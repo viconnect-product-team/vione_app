@@ -475,8 +475,13 @@ function CheckinScreen() {
                     <div className="truncate text-[13px] font-semibold text-[var(--vba-text)]">
                       {r.eventTitle}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-[var(--vba-text-muted)]">
-                      {r.method === "qr" ? "QR" : "NFC"} · {fmtTime(r.at)}
+                    <div className="flex items-center justify-between gap-1.5 text-[11px] text-[var(--vba-text-muted)]">
+                      <span>{r.method === "qr" ? "QR" : "NFC"} · {fmtTime(r.at)}</span>
+                      {r.luckyNumber && (
+                        <span className="inline-flex items-center rounded-md bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                          🎟️ Số vé: {r.luckyNumber}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

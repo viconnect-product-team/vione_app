@@ -87,6 +87,8 @@ import { listReplyTemplatesFn, type ReplyTemplateRow } from "@/lib/reply-templat
 import { useServerData } from "@/hooks/use-server-data";
 import { LinkMemberProfile } from "@/components/dashboard/LinkMemberProfile";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
+import { getMyMember, type MyMember } from "@/lib/member-app.functions";
+import { useAuth } from "@/context/AuthContext";
 
 type BusinessCardsSearch = {
   tab?: "cards" | "leads" | "stats";
@@ -134,24 +136,46 @@ type Draft = {
   needs: { title: string; description: string }[];
 };
 
-function emptyDraft(): Draft {
+function emptyDraft(member?: any, user?: any): Draft {
+  let saved: any = {};
+  if (typeof window !== "undefined") {
+    try {
+      saved = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+    } catch {}
+  }
+  const name = saved.name || member?.name || user?.name || "";
+  const title = saved.title || member?.title || (user as any)?.user_metadata?.professional_title || "Hội viên chính thức CLB CEO 1983";
+  const company = saved.company || (member as any)?.companyName || member?.industry || (member as any)?.about || "CLB Doanh Nhân CEO 1983";
+  const avatar = saved.avatar || member?.avatar || (member as any)?.avatarUrl || (user as any)?.avatar_url || "";
+  const phone = saved.phone || member?.phone || (user as any)?.phone || "";
+  const email = saved.email || member?.email || user?.email || "";
+  const address = saved.address || member?.address || "Hà Nội, Việt Nam";
+  const website = saved.website || member?.website || "https://ceo1983.vn";
+  const bio = saved.bio || (member as any)?.about || "Hội viên tích cực CLB Doanh Nhân CEO 1983, sẵn sàng giao lưu kết nối và hợp tác giao thương.";
+  const baseSlug = (name || user?.username || "member")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+
   return {
     id: null,
-    slug: "",
+    slug: baseSlug ? `${baseSlug}-${Math.floor(100 + Math.random() * 900)}` : `ceo1983-${Date.now().toString().slice(-4)}`,
     cardKind: "primary",
     publicMode: "members_only",
     visibility: { ...DEFAULT_VISIBILITY },
-    displayName: "",
-    professionalTitle: "",
-    companyName: "",
-    avatarUrl: "",
-    headline: "",
-    bio: "",
-    website: "",
-    workEmail: "",
-    workPhone: "",
-    address: "",
-    zaloUrl: "",
+    displayName: name,
+    professionalTitle: title,
+    companyName: company,
+    avatarUrl: avatar,
+    headline: title ? `${title} tại ${company || "CEO 1983"}` : "",
+    bio: bio,
+    website: website,
+    workEmail: email,
+    workPhone: phone,
+    address: address,
+    zaloUrl: phone ? `https://zalo.me/${phone.replace(/\D/g, "")}` : "",
     linkedinUrl: "",
     facebookUrl: "",
     youtubeUrl: "",
@@ -202,6 +226,9 @@ const STATUS_KEY: Record<CardStatus, TKey> = {
 function BusinessCardsScreen() {
   const t = useT();
   const search = Route.useSearch();
+  const { user } = useAuth();
+  const fetchMember = useServerFn(getMyMember);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
   const listFn = useServerFn(listMyBusinessCardsFn);
   const getFn = useServerFn(getMyBusinessCardFn);
 
@@ -231,7 +258,7 @@ function BusinessCardsScreen() {
     void refresh();
   }, [refresh]);
 
-  const openNew = () => setEditing(emptyDraft());
+  const openNew = () => setEditing(emptyDraft(member, user));
   const openEdit = async (id: string) => {
     try {
       const card = await getFn({ data: { id } });
@@ -248,14 +275,18 @@ function BusinessCardsScreen() {
     if ((search.action === "create" || search.action === "new") && !editing && !actionHandledRef.current) {
       actionHandledRef.current = true;
       openNew();
-    } else if (search.action === "edit" && cards.length > 0 && !editing && !actionHandledRef.current) {
+    } else if (search.action === "edit" && !editing && !actionHandledRef.current) {
       actionHandledRef.current = true;
-      const primary = cards.find((c) => c.cardKind === "primary") || cards[0];
-      if (primary) {
-        void openEdit(primary.id);
+      if (cards.length > 0) {
+        const primary = cards.find((c) => c.cardKind === "primary") || cards[0];
+        if (primary) {
+          void openEdit(primary.id);
+        }
+      } else {
+        openNew();
       }
     }
-  }, [search.action, cards, editing]);
+  }, [search.action, cards, editing, member, user]);
 
   const handleCloseEditor = useCallback(() => {
     actionHandledRef.current = true;

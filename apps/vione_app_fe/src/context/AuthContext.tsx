@@ -94,7 +94,14 @@ function clearSessionCookies() {
   document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+const API_BASE =
+  typeof window !== 'undefined' &&
+  (window.location.protocol === 'https:' ||
+    window.location.port === '5443' ||
+    window.location.port === '5444' ||
+    window.location.port === '5445')
+    ? ''
+    : ((import.meta.env.VITE_API_URL as string | undefined) ?? '');
 
 async function apiRefresh(refreshToken: string): Promise<VioneSession | null> {
   try {

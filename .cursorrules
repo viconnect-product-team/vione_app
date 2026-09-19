@@ -30,8 +30,12 @@
   - Header & Card Visit: Logo sử dụng hình số 8 3D kết hợp chữ "CEO" Navy và "1983" Cam (`/ceo1983-official-logo.png`). Mặt trước danh thiếp theo Brandbook Namecard (`Ung_dung-namecard-1024x576.png`): gỡ bỏ hoàn toàn text tên CLB và link ở góc trên trái, logo đặt góc trên phải, tên hội viên Navy in hoa đậm, chức danh màu cam `#EA580C`. Mặt sau danh thiếp chuẩn nền xanh hoàng gia `#24357B`, logo trắng `/brand-header-logo-white.png`, khẩu hiệu cam `#FFA500` "Gắn kết bền - Phát triển vững" và vòng tròn đồng tâm.
   - Landing Page CEO 1983 (`/landing/ceo/v1`, `/landing/ceo1983/cinematic`): Trải nghiệm Cuộn Điện Ảnh Liên Tục (Immersive Cinematic Scroll Experience) xuyên qua 6 phân cảnh (01 Sky ☀️, 02 Birds, 03 Kites, 04 Villas [20-25% chiều cao chân trời đáy], 05 Water [hồ bơi vô cực khổng lồ & camera đâm xuyên mặt nước], 06 Underwater [đại dương 3D, cá mập bơi tầng sâu, 4 đài tháp ánh sáng lãnh đạo Monolith, thông điệp thương hiệu & Master CTA]). TUYỆT ĐỐI KHÔNG dùng template 4-card lặp lại, icon grid hay corporate SaaS blocks. CẤM dùng từ 'diều', 'cá' trong toàn bộ văn bản/tiêu đề; bảo tồn 100% câu từ doanh nhân chuẩn mực từ `ceo1983.com`. Tông màu thanh lịch Trắng ngọc trai, Xanh da trời nhạt (`#EFF6FF`, `#E0F2FE`) và Vàng kim sang trọng (`#D97706`). Tích hợp Menu danh mục tại Header và Floating Scroll Pill Bar cố định ở đáy theo dõi vị trí cuộn (Scroll-Spy).
   - Mobile App CEO 1983 APK & iOS AppIcon Synchronization: `apps/mobile_ceo1983/` kết nối trực tiếp phân hệ `/association` (`server.url = 'http://14.225.217.232:5002/association'`). Để giải quyết triệt để rào cản hạn chế camera WebRTC trên HTTP của Chromium WebView, app tích hợp trực tiếp camera HTML5/WebRTC in-app scanner. Toàn bộ launcher icon Android (`mipmap-*`) và iOS AppIcon 1024x1024 (`AppIcon-512@2x.png`), Expo assets (`assets/icon.png`, `adaptive-icon.png`) đồng bộ 100% qua kịch bản `scripts/generate-ios-and-android-icons.ps1`, giữ Safe Margin 25-28% (logo chiếm 68-72% canvas trên nền trắng chuẩn) thanh thoát, không chạm viền trên iOS và Android One UI.
+  - Chuẩn Hóa Danh Xưng Thương Hiệu Hệ Thống: Bắt buộc sử dụng danh xưng **"Hiệp hội Doanh nhân CEO 1983 — Hệ thống quản trị CEO 1983"** trên toàn bộ văn bản, tài liệu hướng dẫn sử dụng, slide thuyết trình và giao diện. Tuyệt đối không sử dụng các chuỗi cũ như "Hiệp hội doanh nhân CEO1983 hệ thống vione".
+  - Quét Mã QR Định Danh Thực Tế & Thẻ 3D (/card/$code): Endpoint quét danh thiếp công khai phải ưu tiên truy vấn dữ liệu thực tế từ CSDL (`members`, `member_business_cards`, `vione_users`), loại bỏ hoàn toàn fallback dữ liệu cứng "James Nguyễn", cung cấp giao diện Luxury 3D Flip Card, tải vCard (.vcf), gọi điện, chat Zalo, chia sẻ liên kết và huy hiệu xác thực.
+  - Luồng Vé Sự Kiện Miễn Phí (0đ): Tự động cấp vé QR check-in kèm Lucky Draw Number `#XXXX`, đồng thời tự động bắn thông báo và tin nhắn vào hộp thư người dùng (`public.messages`, `public.business_notifications`, `public.notifications`).
   - Chuẩn Hóa Thuật Ngữ Tài Chính (Strict Fee Rule): TUYỆT ĐỐI CẤM sử dụng từ "niên liễm" trong toàn bộ dự án (cả frontend, backend, tài liệu, modal và cơ sở dữ liệu). Bắt buộc sử dụng thuật ngữ "Hội phí", "Quản lý hội phí", "Hội phí thường niên" hoặc "Thu hội phí".
-  - Hai Bộ Tài Liệu Hướng Dẫn Sử Dụng Độc Lập: Tài liệu người dùng phân tách rõ ràng 2 cẩm nang: 1) `document/HUONG_DAN_SU_DUNG_APP_HIEP_HOI.md` (kèm PDF & DOCX, bao quát mọi chức năng App và chụp chèn các màn hình CRM liên quan tương ứng); 2) `document/HUONG_DAN_SU_DUNG_CRM.md` (kèm PDF & DOCX, bao quát toàn bộ module quản trị CRM). Cả hai đồng bộ vào `apps/vione_app_fe/public/docs/` để xem trực tiếp trong App. Mọi hình ảnh tài liệu BẮT BUỘC là ảnh chụp thực tế từ suite kiểm thử E2E Playwright, tuyệt đối không dùng ảnh mockup hay giao diện cũ.
+  - Hai Bộ Tài Liệu Hướng Dẫn Sử Dụng Độc Lập: Tài liệu người dùng phân tách rõ ràng 2 cẩm nang: 1) `document/HUONG_DAN_SU_DUNG_APP_HIEP_HOI.md` (kèm PDF & DOCX, bao quát mọi chức năng App và chụp chèn các màn hình CRM liên quan tương ứng); 2) `document/HUONG_DAN_SU_DUNG_CRM.md` (kèm PDF & DOCX, bao quát toàn bộ module quản trị CRM). Cả hai đồng bộ vào `apps/vione_app_fe/public/docs/` để xem trực tiếp trong App. Mọi hình ảnh tài liệu BẮT BUỘC là ảnh chụp thực tế từ suite kiểm thử E2E Playwright, tuyệt đối không dùng ảnh mockup hay giao diện cũ. Parser tài liệu DOCX/HTML phải phân tách rõ ràng từng bước thành block riêng biệt (Paragraph có indent và `<ol class="steps-list"><li class="step-item">`), chống hiện tượng dính chữ liền dòng.
+  - Thiết Kế Slide Thuyết Trình Doanh Nghiệp (PPTX): Sử dụng chuẩn Widescreen 16:9 với Executive Light Theme gồm 3 tông màu: Platinum White (`#F8FAFC`), Royal Navy (`#003B95`), Warm Gold (`#F59E0B`), cấu trúc thông tin giàu tính xác thực từ `ceo1983.com`, loại bỏ tone màu xanh đậm đơn điệu, nặng nề.
   - Capacitor iOS Scheme & EAS Cloud Build (`apps/mobile_ceo1983`): Thư mục dự án iOS phải duy trì shared scheme `App.xcscheme` trong `xcshareddata/xcschemes/` tại cả `ios/App.xcodeproj` và `ios/App/App.xcodeproj`. Cấu hình `eas.json` profile iOS phải khai báo tường minh `"scheme": "App"`. Khi nâng cấp phiên bản để nộp TestFlight, tăng đồng bộ `buildNumber` trong `app.json` và `CURRENT_PROJECT_VERSION` trong `project.pbxproj`.
   - Modal Quét QR Căn Giữa 100% Trên Mobile: Mọi modal quét QR (`AssociationMemberQrModal`, `AssociationQrScanModal`) BẮT BUỘC render qua React Portal `createPortal(modalContent, document.body)` với cấu trúc lưới căn giữa fail-safe: container ngoài `fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] bg-black/80 backdrop-blur-md p-4 overflow-y-auto overscroll-contain pt-[max(env(safe-area-inset-top,0px),16px)] pb-[max(env(safe-area-inset-bottom,0px),16px)]` và hộp thoại bên trong `relative w-full max-w-sm my-auto max-h-[88dvh] flex flex-col`. Cấu trúc này triệt tiêu hoàn toàn hiện tượng lệch tâm dọc/ngang trên mobile Safari / Capacitor WebView.
   - Nhắn Tin & Tạo Nhóm Chat Chuẩn Facebook Messenger 100% (`CreateGroupChatModal.tsx`, `GroupMembersModal.tsx`, `association.messages.tsx`):
@@ -516,3 +520,120 @@ The project is deployed to a remote server (`14.225.217.232`) with 2 primary pro
      - **Tuân Thủ Tuyệt Đối Luật Git (Strict Git Rule)**:
        - TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn và tài liệu chỉ được phép chỉnh sửa cục bộ (local).
 
+193. **Quy Chuẩn 7 Tính Năng Nâng Cấp Hệ Sinh Thái CEO 1983 (Tháng 09/2026)**:
+     - **1) Cấu Hình Bảo Mật HTTPS Reverse Proxy & Fast-Deploy Mở Rộng (`-EnableHttps`)**:
+       - Cấu hình Nginx Docker Reverse Proxy (`deploy/ssl/docker-compose.ssl.yml`) với chứng chỉ SSL SAN x509 hỗ trợ IP tĩnh `14.225.217.232`, `localhost` và wildcard `*.14-225-217-232.sslip.io`.
+       - Định tuyến bảo mật: Cổng `5443` (HTTPS) tới Web CRM Quản trị (:5000), Cổng `5444` (HTTPS) tới App Hiệp Hội (:5002/association).
+       - Kịch bản `fast-deploy.ps1` hỗ trợ cờ `-EnableHttps` tự động khởi chạy và in danh sách URL kiểm thử bảo mật.
+     - **2) CRM Tự Động Bố Cục Text & Banner Theo Loại Sự Kiện (`EventWizard.tsx`, `event-type-templates.ts`)**:
+       - Khi Admin chọn loại sự kiện (`forum`, `workshop`, `networking`, `training`), form tự động nạp mẫu: Tiêu đề chuẩn, Tagline nhận diện, Địa điểm tổ chức & sức chứa khán phòng dự kiến, Khung vé dự thảo.
+       - Tích hợp khung xem trước Banner đồ họa thời gian thực (Live Banner Preview) với typography và gradient phong cách hoàng gia.
+     - **3) Mã Vé May Mắn (#XXXX), Đẩy Thông Báo Biểu Quyết & Bắn Thông Báo Trúng Thưởng Lucky Draw**:
+       - Mọi lượt đăng ký vé tự động sinh mã may mắn 4 chữ số ngẫu nhiên `#XXXX` (lưu tại cột `lucky_number` trong `public.event_registrations`), hiển thị nổi bật trên vé điện tử và màn hình check-in.
+       - Vòng quay số may mắn CRM hiển thị đại biểu kèm mã vé `#XXXX`. Khi quay xong, Admin bấm "Gửi thông báo trúng" kích hoạt API `POST /voting/lucky-draw/notify` bắn thông báo đẩy mạ vàng VIP và gửi tin nhắn tự động từ Admin vào hộp thư của người trúng giải.
+       - Tạo phiên biểu quyết từ CRM tự động bắn thông báo đẩy tương tác đến App hội viên để click chọn biểu quyết tức thì trong 3 giây.
+     - **4) Sàn Marketplace Luxury E-Commerce (`association.products.tsx`)**:
+       - Header chuẩn sàn thương mại điện tử: Nút menu danh mục dropdown (`LayoutGrid`) ở góc trái, ô tìm kiếm thông minh ở giữa, icon bộ lọc (`SlidersHorizontal`) và nút "+ Đăng SP" ở góc phải.
+       - 3 section chuyên biệt có phân trang độc lập: 1) "Sản phẩm mới đăng", 2) "Sản phẩm được xem nhiều nhất", 3) "Doanh nghiệp / Công ty nổi bật nhất" (1 hội viên = 1 công ty, kèm nút "Xem gian hàng" mở Storefront Showroom).
+     - **5) Bảng Tin Cơ Hội B2B Social Feed & Quản Lý Người Quan Tâm (`association.opportunities.tsx`)**:
+       - Bảng tin phong cách Social Feed có phân trang (`OPP_PAGE_SIZE = 5`) và ô tìm kiếm Header.
+       - Lượt xem tăng thời gian thực khi có người dùng nhấp vào xem chi tiết bài đăng (gọi `POST /opportunities/:id/view`).
+       - Chủ bài đăng (Post Owner) xem danh sách chi tiết các hội viên bấm quan tâm kèm 3 nút hành động kết nối tức thì: Gọi điện thoại (`tel:`), Gửi Email (`mailto:`), và Nhắn tin trực tiếp (`/association/messages?peerCode=...`).
+     - **6) PWA Toàn Diện Cho iOS Safari & Android**:
+       - Cấu hình `manifest.webmanifest` (`start_url: "/association"`), Service Worker `sw.js` cache offline, thẻ meta Apple Web App.
+       - Component `IosInstallPrompt.tsx` tự động nhận diện thiết bị iOS chưa cài đặt và hướng dẫn trực quan các bước bấm nút "Chia sẻ" (Share) trên Safari ➔ "Thêm vào Màn hình chính" (Add to Home Screen).
+     - **7) Quy Chuẩn Bàn Giao & Đóng Gói Tài Liệu**:
+       - Mọi cập nhật phải được ghi nhận vào `document/TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx`, `document/TEST_CASES_APP_HIEP_HOI_CHI_TIET.xlsx`, slide PowerPoint (.pptx) và sổ tay hướng dẫn sử dụng (Word, PDF, Markdown).
+       - Toàn bộ gói bàn giao được nén vào `document/GOI_TAI_LIEU_CEO1983_CAP_NHAT.zip`.
+
+
+
+194. **Quy Chuẩn Cập Nhật Hồ Sơ Hội Viên, 100% HTTPS-Only, Landing V1 Uốn Lượn Đa Theme & Phân Tách Lệnh Triển Khai (Tháng 09/2026)**:
+     - **1) Tự Động Điền Dữ Liệu Hồ Sơ Hội Viên & Nén Ảnh Đại Diện In-Modal (`association.profile.tsx`, `members.controller.ts`)**:
+       - Khi bấm "Cập nhật" tại trang cá nhân `/association/profile`, hệ thống mở trực tiếp modal in-page `setEditProfileOpen(true)`, tuyệt đối không chuyển hướng sang trang danh thiếp nếu người dùng muốn sửa hồ sơ chính.
+       - Hàm `initProfileFields(true)` tự động trích xuất đầy đủ: Họ tên, Chức danh, Doanh nghiệp, Số điện thoại, Email, Địa chỉ, Website, Giới thiệu và Ảnh đại diện từ CSDL / `user` / `member`.
+       - Tích hợp khung chọn/upload/nén ảnh đại diện bằng HTML5 Canvas trực tiếp bên trong modal với Live Preview tức thì, tối ưu dung lượng ảnh dưới 100KB chống lỗi 413.
+       - Backend NestJS cung cấp endpoint `@Patch('me/profile')` và `@Post('me/profile')` cập nhật đồng bộ các bảng `vione_users`, `user_profiles`, `members`, `member_business_cards`.
+       - Hàm `emptyDraft` trong `association.business-cards.tsx` tự động prefill từ `member` và `user` để khi tạo hoặc chỉnh sửa danh thiếp mới không bao giờ bị trắng thông tin.
+     - **2) Thiết Lập 100% HTTPS-Only & Loại Bỏ Hoàn Toàn HTTP (`deploy/ssl/nginx.conf`, `docker-compose.ssl.yml`)**:
+       - Bổ sung server block bắt toàn bộ traffic cổng 80 (HTTP) và chuyển hướng vĩnh viễn `301 Moved Permanently` sang `https://$host$request_uri`.
+       - Bổ sung header bảo mật nghiêm ngặt HSTS `Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` cho tất cả các cổng SSL (443, 5443, 5444).
+       - Khóa toàn bộ cổng HTTP nội bộ của các container (`vione-frontend-prod`, `ceo1983-frontend-prod`) về địa chỉ loopback `127.0.0.1:5000:8080` và `127.0.0.1:5002:8080`, ngăn chặn hoàn toàn kết nối HTTP trần từ Internet.
+     - **3) Đại Tu Landing CEO 1983 V1 (`Ceo1983VerticalLandscape.tsx`) Chuẩn Nhận Diện & Đồ Họa Cao Cấp**:
+       - **Triệt tiêu hoàn toàn các khối chữ nhật vuông vức**: Mọi section được kết nối liền mạch bằng các đường phân cách sóng uốn lượn đa tầng SVG (Smooth Multi-Layer Wave Dividers: `<svg viewBox="0 0 1440 120">`).
+       - Các thẻ card sử dụng đường viền bo góc bất đối xứng hữu cơ (`rounded-[40px_16px_40px_16px]`) kết hợp hiệu ứng kính mờ Glassmorphism sang trọng.
+       - Bắt buộc sử dụng logo chính thức `/ceo1983-official-logo.png`.
+       - **2 Theme Bầu Trời Độc Đáo**:
+         * **Theme Trời Tối (Cosmos Night Sky)**: Nền vũ trụ đêm đầy sao `/ceo1983_hero_cosmos_skyline.jpg`, tông Deep Navy kết hợp Warm Amber Gold (`#F59E0B`), thẻ ngọc tối huyền bí.
+         * **Theme Trời Sáng (Daylight Azure Sky)**: Nền bình minh xanh biếc `/ceo1983_hero_daylight_skyline.jpg`, mây trắng lam ngọc, thẻ pha lê sáng bóng.
+         * Tích hợp nút chuyển đổi theme tương tác tại Header và thanh điều hướng nổi, tự động lưu lựa chọn vào `localStorage`.
+       - Đồng bộ 100% nội dung văn bản chuẩn xác, chuẩn mực văn phong doanh nhân từ CLB Doanh Nhân CEO 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
+     - **4) Phân Tách 2 Lệnh Triển Khai Độc Lập (`deploy-ceo1983.ps1` & `deploy-crm.ps1`)**:
+       - Tách riêng hoàn toàn 2 kịch bản triển khai độc lập tại thư mục gốc dự án:
+         * `deploy-ceo1983.ps1`: Chỉ build và triển khai App Hiệp Hội (Cổng 5444 HTTPS).
+         * `deploy-crm.ps1`: Chỉ build và triển khai Hệ thống Web CRM & Landing (Cổng 5443 HTTPS).
+       - Tích hợp các lệnh npm tương ứng trong `package.json`: `npm run deploy:ceo1983`, `npm run deploy:crm`, `npm run build:ceo1983`, `npm run build:crm`.
+       - Tất cả các file `.ps1` bắt buộc lưu ở định dạng UTF-8 có BOM (`\uFEFF`) để tránh lỗi Parser của Windows PowerShell khi có ký tự tiếng Việt.
+     - **Tuân Thủ Tuyệt Đối Quy Tắc Git (Strict Git Rule)**:
+       - TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn và cấu hình chỉ lưu trữ cục bộ (local) để người dùng toàn quyền kiểm soát.
+
+195. **Quy Chuẩn Chẩn Đoán Cổng Mạng, Mở Firewall UFW & Quản Trị Cổng Mạng Khi Triển Khai HTTPS Reverse Proxy (`deploy/ssl/deploy-ssl.ps1`)**:
+     - **Hiện tượng `ERR_CONNECTION_REFUSED` & Console trống**:
+       - Lỗi `ERR_CONNECTION_REFUSED` là lỗi từ chối kết nối ở tầng mạng TCP (TCP RST packet) trước khi bắt tay SSL/TLS hay gửi HTTP request. Do trình duyệt chưa tải về bất kỳ tài nguyên nào, DevTools Console hoàn toàn không có log.
+     - **Tự Động Mở Cổng UFW & Iptables Khi Deploy**:
+       - Khi sử dụng các cổng chuyên dụng cho HTTPS Reverse Proxy (`5443` cho CRM & Landing, `5444` cho App Hiệp Hội), kịch bản triển khai SSL (`deploy-ssl.ps1`) BẮT BUỘC phải chủ động mở cổng trên tường lửa Ubuntu:
+         `ufw allow 5443/tcp && ufw allow 5444/tcp && ufw reload` và `iptables -I INPUT -p tcp --dport 5443 -j ACCEPT`.
+     - **Quy Trình Kiểm Tra Chẩn Đoán Thực Tế (Post-Deploy Health Check)**:
+       - Sau khi khởi chạy `vione-ssl-proxy`, bắt buộc duy trì độ trễ `sleep 2` để Nginx kịp khởi tạo worker process.
+       - Tự động hiển thị trạng thái container (`docker ps -a`) và 10 dòng nhật ký gần nhất (`docker logs --tail 10`).
+       - Thực thi kiểm tra nội bộ `curl -k -s -I https://127.0.0.1:5443/` và `https://127.0.0.1:5444/` ngay trong terminal SSH để xác nhận mã phản hồi HTTP.
+     - **Bảo Lưu Bảng Mã UTF-8 BOM Cho Toàn Bộ File PowerShell**:
+       - Mọi tệp script triển khai `.ps1` bắt buộc lưu với tiền tố UTF-8 BOM (`\uFEFF`) và dòng kết thúc CRLF (`\r\n`) để bảo đảm Windows PowerShell 5.1 phân tích cú pháp an toàn 100%.
+
+196. **Quy Chuẩn Phân Tách 3 Hệ Thống Độc Lập (CRM, CEO 1983, ViOne App) & Chống Lỗi Carriage Return '\r' Linux**:
+     - **Tách Biệt Tuyệt Đối 3 Hệ Thống Trong Monorepo**:
+       * **Web CRM Quản trị & Landing**: Scope `crm_platform`, port `5004/5443` HTTPS (`crm-frontend-prod`, `crm-backend-prod`). Lệnh triển khai: `deploy-crm.ps1` hoặc `npm run deploy:crm`.
+       * **App Hiệp Hội CEO 1983**: Scope `association_app`, route `/association`, port `5002/5444` HTTPS (`ceo1983-frontend-prod`, `ceo1983-backend-prod`). Lệnh triển khai: `deploy-ceo1983.ps1` hoặc `npm run deploy:ceo1983`.
+       * **ViOne App - Mạng Xã Hội Doanh Nhân ViOne Connect**: Scope `vione_app`, route `/connect-app`, port `5000/5445` HTTPS (`vione-frontend-prod`, `vione-backend-prod`). Hoàn toàn không liên quan đến hệ thống CRM. Lệnh triển khai: `deploy-vione.ps1` hoặc `npm run deploy:vione`.
+     - **Quy Chuẩn Chống Lỗi Carriage Return (CRLF '\r') Khi Gửi Lệnh Qua SSH**:
+       * Tuyệt đối không gửi trực tiếp PowerShell here-string (`@'...'@`) chứa nhiều dòng xuống SSH vì Bash trên Linux sẽ phân tích ký tự `\r` thành tên tệp/thư mục không tồn tại (`cd /root/ssl-proxy\r`).
+       * Mọi logic cài đặt phức tạp BẮT BUỘC đóng gói vào tệp shell script riêng (`setup-ssl.sh`) lưu bằng LF (`\n`), và thực thi lệnh khử `\r` an toàn:
+         `$cmd = 'sed -i "s/\r$//" ~/ssl-proxy/setup-ssl.sh; bash ~/ssl-proxy/setup-ssl.sh'`
+         `ssh "${ServerUser}@${ServerIp}" $cmd`
+
+197. **Quy Chuẩn Triệt Tiêu Lỗi Mixed Content Khi Chạy Ứng Dụng Trên HTTPS & Quy Tắc Relative API Path**:
+     - **Không Gán Cứng URL HTTP Trong .env.production**:
+       * Biến môi trường `VITE_API_URL` trong `apps/vione_app_fe/.env.production` tuyệt đối không được gán cứng các địa chỉ `http://...` (như `http://14.225.217.232:5001`) vì Vite sẽ nướng chuỗi này vào client bundle khi chạy `vite build`.
+       * Bắt buộc để `VITE_API_URL=""` (chuỗi rỗng) trong môi trường production để ứng dụng linh hoạt sử dụng đường dẫn tương đối.
+     - **Quy Tắc Relative API Path & Auto-Upgrade Trên Trình Duyệt**:
+       * Trong `api-client.ts`, `AuthContext.tsx`, `business-card.sdk.ts`, `lead.service.ts`: Khi `typeof window !== 'undefined'` và chạy qua HTTPS hoặc các cổng Reverse Proxy (5443, 5444, 5445), `NEST_API_URL` và `API_BASE` bắt buộc trả về chuỗi rỗng `""`.
+       * Trình duyệt tự động gửi yêu cầu `/api/...` trên cùng Origin HTTPS (`https://<host>:<port>/api/...`), Nginx Reverse Proxy sẽ chuyển tiếp vào backend container nội bộ. Điều này triệt tiêu hoàn toàn lỗi `(blocked:mixed-content)` và lỗi CORS preflight.
+       * Các hàm phân giải ảnh và tệp tải lên (`resolveMediaUrl`, `getImageUrl`) bắt buộc tự động kiểm tra và nâng cấp (rewrite) các URL cũ từ database chứa `http://14.225.217.232` hoặc các cổng nội bộ (`:5001`, `:5003`, `:4000`) sang `window.location.origin`.
+     - **Định Tuyến Đầy Đủ Trong Nginx SSL Proxy**:
+       * Cấu hình `nginx.conf` cho mỗi cổng (5443, 5444, 5445) BẮT BUỘC có đủ: `location /api/`, `location /uploads/`, `location /upload/`, và WebSocket `location /socket.io/` trỏ sang backend container.
+     - **Chẩn Đoán 502 Bad Gateway Trên Các Cổng Độc Lập**:
+       * Cổng nào trả về `502 Bad Gateway` (ví dụ 5443 hoặc 5445) là do container của phân hệ đó chưa được chạy trên máy chủ. Thực thi kịch bản độc lập tương ứng (`npm run deploy:crm` cho 5443, `npm run deploy:vione` cho 5445, `npm run deploy:ceo1983` cho 5444).
+
+198. **Quy Chuẩn Xử Lý Media Upload 500/404, Safe Stream Piping, Frontend Fallback & Docker Network Alias vione-network**:
+     - **Safe Stream Piping & Graceful Error Handling Trong NestJS/Express**:
+       * Khi stream dữ liệu nhị phân từ Object Storage (MinIO, S3) hoặc file system ra response (`readable.pipe(res)`), BẮT BUỘC phải đăng ký listener lỗi trước:
+         `readable.on('error', (err) => { if (!res.headersSent) res.status(404).end(); });`
+       * Thiếu listener này sẽ khiến Node.js ném `unhandled stream error`, Express tự động trả về lỗi 500 Internal Server Error làm người dùng hiểu nhầm server sập.
+       * Trong Service tầng dưới (`MinioService`), tuyệt đối không ném `InternalServerErrorException` khi không tìm thấy Object Key hoặc khi Object Storage tạm thời không khả dụng; phải bắt lỗi, log cảnh báo và trả về `null` để tầng Controller có cơ hội kích hoạt fallback.
+     - **Multi-tier Fallback Phục Vụ Tệp Tin Đa Môi Trường**:
+       * `UploadController` bắt buộc kiểm tra tuần tự: (1) MinIO theo đúng key truyền vào, (2) MinIO kèm tiền tố bucket/folder (`avatars/`, `documents/`), (3) Tên file trần nếu path đã có tiền tố, (4) Thư mục cục bộ trên ổ cứng máy chủ (`uploads/`, `uploads/avatars/`, `uploads/documents/`).
+       * Chỉ trả về 404 khi toàn bộ các tầng tìm kiếm đều không tồn tại file.
+     - **Quy Chuẩn Phân Giải Media URL Phía Frontend (Chống Lỗi 404 Nitro Static)**:
+       * Database lưu trữ ảnh thường có 3 dạng: (1) Absolute URL (`https://...`), (2) Đường dẫn API tương đối (`/api/upload/file/...`), (3) Tên file trần hoặc UUID (`00000000-...jpg`).
+       * Hàm `resolveMediaUrl()` và `transformUrls()` trong `api-client.ts` BẮT BUỘC nhận diện dạng (3) bằng regex và tự động thêm prefix `/api/upload/file/avatars/...`. Nếu để nguyên tên file trần, thẻ `<img src={filename} />` sẽ gửi request tương đối tới web server (`/association/filename`) và sinh lỗi 404.
+       * Mọi component hiển thị avatar BẮT BUỘC cài đặt `onError` fallback: khi ảnh lỗi tải (404/500/mạng), lập tức ẩn thẻ ảnh hoặc chuyển sang hiển thị Initials Badge (chữ cái đầu của tên), bảo đảm giao diện không bao giờ bị vỡ khung hình tròn.
+     - **Quy Chuẩn Docker Network Độc Lập Cho Multi-Project Compose**:
+       * Khi sử dụng nhiều tệp `docker-compose.yml` độc lập giao tiếp qua chung một bridge network (ví dụ: `vione-network`), BẮT BUỘC khai báo rõ:
+         ```yaml
+         networks:
+           vione-network:
+             name: vione-network
+             external: true # hoặc định nghĩa rõ ràng name: vione-network
+         ```
+       * Nếu không chỉ định rõ `name:`, Docker Compose sẽ tự động gắn prefix thư mục (e.g. `vione_vione-network`), gây cô lập container và phát sinh lỗi `502 Bad Gateway` từ Reverse Proxy.
+       * Service chia sẻ dùng chung (như `vione-minio-prod`) phải có aliases mạng (`aliases: [minio, vione-minio-prod]`) để các container ở các phân hệ khác nhau truy cập ổn định.

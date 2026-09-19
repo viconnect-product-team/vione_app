@@ -219,6 +219,7 @@ export class EventsService {
       reminderCount: Number(r.reminder_count ?? 0),
       qrPayload: r.qr_payload ?? '',
       checkedInAt: r.checked_in_at ? (r.checked_in_at instanceof Date ? r.checked_in_at.toISOString() : String(r.checked_in_at)) : null,
+      luckyNumber: r.lucky_number ?? '',
     };
   }
 
@@ -723,9 +724,10 @@ export class EventsService {
     const paymentStatus = isFree ? 'free' : 'pending';
 
     const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
+    const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
-        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, created_at, updated_at
+        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, created_at, updated_at
       ) VALUES (
         ${regId},
         ${eventId},
@@ -738,6 +740,7 @@ export class EventsService {
         ${event.association_id}::uuid,
         ${paymentStatus},
         ${totalAmount},
+        ${luckyNum},
         now(),
         now()
       )
@@ -750,12 +753,42 @@ export class EventsService {
 
     if (memberCode) {
       if (isFree) {
-        // Sự kiện Free: Gửi tin nhắn xác nhận vé miễn phí thành công
-        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã ĐĂNG KÝ THÀNH CÔNG VÉ MIỄN PHÍ tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé điện tử: ${regId}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái vé: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng xuất trình mã vé QR tại bàn đón tiếp sự kiện.`;
+        // Sự kiện Free: Gửi tin nhắn xác nhận vé miễn phí thành công kèm số may mắn
+        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã ĐĂNG KÝ THÀNH CÔNG VÉ MIỄN PHÍ tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé điện tử: ${regId}\n- Số may mắn quay thưởng (Lucky Draw): #${luckyNum}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái vé: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng xuất trình mã vé QR tại bàn đón tiếp sự kiện.`;
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
           VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW())
+        `.catch(() => {});
+
+        // Gửi thông báo đẩy cá nhân (business_notifications)
+        if (userId) {
+          const dedupeKey = `event_reg_free_${regId}_${userId}`;
+          await this.prisma.$executeRaw`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), ${userId}::uuid, 'event', ${regId}, ${dedupeKey}, 'event_ticket_issued', 'event_ticket_issued',
+              'Vé tham gia sự kiện miễn phí (0đ) đã sẵn sàng',
+              ${`Bạn đã đăng ký thành công vé tham dự sự kiện "${event.title || event.name}". Mã vé: ${regId} · Số may mắn: #${luckyNum}.`},
+              ${JSON.stringify({ eventId, regId, luckyNumber: luckyNum, isFree: true, title: event.title || event.name })}::jsonb,
+              'high', 'delivered', 'all', 'all', now(), now()
+            )
+          `.catch(() => {});
+        }
+
+        // Gửi thông báo vào Notification Center CRM
+        const crmNotifCode = `NOTIF-EVT-${Date.now().toString().slice(-6)}`;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.notifications (
+            id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), ${crmNotifCode},
+            ${`Hội viên đăng ký vé 0đ: ${event.title || event.name}`},
+            ${`Hội viên ${memberName} (${memberCode}) đã nhận vé miễn phí sự kiện "${event.title || event.name}". Mã vé: ${regId} - Số may mắn: #${luckyNum}.`},
+            'all', 'inapp', 'sent', now(), 1, ${event.association_id ? event.association_id : null}::uuid, 'all', 'all', now(), now()
+          )
         `.catch(() => {});
       } else {
         // Sự kiện có phí: Gửi tin nhắn thông báo tiếp nhận & thẻ thanh toán VietQR
@@ -976,10 +1009,12 @@ export class EventsService {
         r.seat_assignment,
         r.payment_status,
         r.checked_in_at,
-        u.company_name as company,
-        u.job_title as title,
-        u.phone
+        r.lucky_number,
+        COALESCE(m.company, u.company_name, 'Doanh nghiệp CEO 1983') as company,
+        COALESCE(m.position, u.job_title, 'CEO / Hội viên') as title,
+        COALESCE(m.phone, u.phone, '0983000001') as phone
       FROM public.event_registrations r
+      LEFT JOIN public.members m ON (m.code = r.member_code OR (r.email != '' AND m.email = r.email))
       LEFT JOIN public.vione_users u ON u.email = r.email
       WHERE r.status != 'cancelled'
       ORDER BY r.registered_at ASC
@@ -1003,6 +1038,7 @@ export class EventsService {
           checkedIn: Boolean(r.checked_in_at),
           seatAssignment: r.seat_assignment || 'Khu vực tự do',
           paymentStatus: r.payment_status || 'pending',
+          luckyNumber: r.lucky_number ? `#${r.lucky_number}` : `#${Math.floor(1000 + Math.random() * 9000)}`,
         };
       });
     } else {

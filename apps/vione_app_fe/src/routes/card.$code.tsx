@@ -9,13 +9,19 @@ import {
   Phone,
   Globe,
   MapPin,
-  Hash,
   CalendarClock,
   ShieldCheck,
   ExternalLink,
+  RotateCw,
+  Download,
+  Share2,
+  MessageCircle,
+  Crown,
+  Check,
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { getPublicCard, type PublicCard } from "@/lib/card.functions";
+import { toast } from "sonner";
 
 const appIcon = "/ceo1983-logo.png";
 
@@ -32,22 +38,30 @@ export const Route = createFileRoute("/card/$code")({
   }),
   component: PublicCardView,
   errorComponent: ({ error }) => (
-    <div className="vba-app flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center text-slate-400">
-      <p className="text-sm">{error.message}</p>
+    <div className="vba-app flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-950">
+      <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
+        <ShieldCheck className="h-8 w-8 text-amber-400" />
+      </div>
+      <h2 className="text-lg font-bold text-white mb-2">Lỗi truy xuất danh thiếp</h2>
+      <p className="text-sm text-slate-400 max-w-sm">{error.message || "Không thể tải thông tin danh thiếp."}</p>
       <Link
         to="/association"
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#002B70]"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#002B70] transition"
       >
         <ArrowLeft className="h-4 w-4" /> Về ứng dụng Hiệp hội
       </Link>
     </div>
   ),
   notFoundComponent: () => (
-    <div className="vba-app flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center text-slate-400">
-      <p className="text-sm">Không tìm thấy thông tin danh thiếp hội viên.</p>
+    <div className="vba-app flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-950">
+      <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+        <User className="h-8 w-8 text-rose-400" />
+      </div>
+      <h2 className="text-lg font-bold text-white mb-2">Không tìm thấy hội viên</h2>
+      <p className="text-sm text-slate-400 max-w-sm">Mã thẻ không tồn tại trên hệ thống CLB Doanh Nhân CEO 1983 hoặc đã hết hạn.</p>
       <Link
         to="/association"
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#002B70]"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#002B70] transition"
       >
         <ArrowLeft className="h-4 w-4" /> Về ứng dụng Hiệp hội
       </Link>
@@ -59,10 +73,10 @@ type Lang = "vi" | "en";
 
 const T = {
   verified: { vi: "Đã xác thực", en: "Verified" },
-  memberCard: { vi: "THẺ HỘI VIÊN SỐ", en: "DIGITAL MEMBER CARD" },
+  memberCard: { vi: "THẺ HỘI VIÊN CHÍNH THỨC", en: "OFFICIAL MEMBER CARD" },
   company: { vi: "Doanh nghiệp", en: "Company" },
   individual: { vi: "Lãnh đạo", en: "Executive" },
-  info: { vi: "Thông tin hội viên chính thức", en: "Official Member Information" },
+  info: { vi: "Hồ sơ hội viên được xác thực", en: "Verified Member Profile" },
   code: { vi: "Mã hội viên", en: "Member code" },
   status: { vi: "Trạng thái", en: "Status" },
   validUntil: { vi: "Hiệu lực đến", en: "Valid until" },
@@ -70,17 +84,19 @@ const T = {
   title: { vi: "Chức danh", en: "Position" },
   email: { vi: "Email", en: "Email" },
   phone: { vi: "Điện thoại", en: "Phone" },
-  tax: { vi: "Mã số thuế", en: "Tax code" },
   industry: { vi: "Ngành nghề", en: "Industry" },
   region: { vi: "Khu vực hoạt động", en: "Region" },
   address: { vi: "Trụ sở / Địa chỉ", en: "Address" },
   website: { vi: "Website doanh nghiệp", en: "Website" },
-  back: { vi: "Về trang chủ", en: "Back to Home" },
+  back: { vi: "Về ứng dụng", en: "Back to App" },
+  saveContact: { vi: "Lưu danh bạ", en: "Save Contact" },
+  shareCard: { vi: "Chia sẻ", en: "Share" },
+  flipCard: { vi: "Lật thẻ", en: "Flip Card" },
   authentic: {
-    vi: "Hồ sơ hội viên hợp lệ, được xác thực bởi CLB Doanh nhân CEO 1983.",
-    en: "Official member record, authenticated by CEO 1983 Business Club.",
+    vi: "Hồ sơ hội viên hợp lệ, được cấp chứng thực điện tử bởi CLB Doanh nhân CEO 1983.",
+    en: "Official verified member record, issued by CEO 1983 Business Club.",
   },
-  noName: { vi: "Hội viên CEO 1983", en: "CEO 1983 Member" },
+  noName: { vi: "Hội viên CLB Doanh Nhân CEO 1983", en: "CEO 1983 Member" },
   noCompany: { vi: "CLB Doanh nhân CEO 1983", en: "CEO 1983 Business Club" },
   noValue: { vi: "—", en: "—" },
 } as const;
@@ -131,52 +147,60 @@ function PublicCardView() {
   const { code } = Route.useParams();
   const member = Route.useLoaderData() as PublicCard;
   const [lang, setLang] = useState<Lang>("vi");
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [copied, setCopied] = useState(false);
   const t = (k: keyof typeof T) => T[k][lang];
+
+  if (!member || (!member.found && !member.name)) {
+    return (
+      <div className="vba-app flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-950">
+        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+          <User className="h-8 w-8 text-rose-400" />
+        </div>
+        <h2 className="text-lg font-bold text-white mb-2">Không tìm thấy thẻ hội viên</h2>
+        <p className="text-sm text-slate-400 max-w-sm mb-1">
+          Mã định danh <span className="font-mono text-amber-300 font-bold">{code}</span> chưa được kích hoạt hoặc không tồn tại.
+        </p>
+        <p className="text-xs text-slate-500 max-w-sm">
+          Vui lòng quét lại mã QR chính thức từ CLB Doanh Nhân CEO 1983 hoặc liên hệ Ban Thư ký để được hỗ trợ.
+        </p>
+        <Link
+          to="/association"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#002B70] transition"
+        >
+          <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội
+        </Link>
+      </div>
+    );
+  }
 
   const isCompany = member.type === "company";
 
-  // Sanitize person & company names so no "Admin" or raw seed artifacts leak
-  let displayPerson = member.name?.trim() || "";
-  let displayCompany = member.company?.trim() || "";
-
-  if (!displayPerson || displayPerson.toLowerCase() === "admin") {
-    displayPerson = "James Nguyễn";
+  // Sanitize person & company names strictly based on real member record
+  const primaryName = member.name?.trim() || t("noName");
+  let secondaryCompany = member.company?.trim() || t("noCompany");
+  if (secondaryCompany.toLowerCase() === "vione platform" || secondaryCompany === "ViOne Platform") {
+    secondaryCompany = "CLB Doanh Nhân CEO 1983";
   }
 
-  if (displayCompany.includes("Jame Nguyễn") || displayCompany.includes("James Nguyễn")) {
-    displayCompany =
-      displayCompany.replace(/Jame[s]?\s*Nguyễn\s*[-–:]*\s*/gi, "").trim() ||
-      "Tập đoàn Công nghệ & Đổi mới sáng tạo";
-  }
-
-  if (displayCompany.toLowerCase() === "vione platform" || displayCompany === "ViOne Platform") {
-    displayCompany = "Công ty CP Tập đoàn Công nghệ ViOne";
-  }
-
-  const primaryName = displayPerson || displayCompany || t("noName");
-  const secondaryName = displayCompany || "Thành viên CLB Doanh nhân CEO 1983";
+  const primaryTitle = member.title?.trim() || (isCompany ? "Đại diện Doanh nghiệp" : "Lãnh đạo Doanh nghiệp Hội viên");
 
   const initials =
     primaryName
       .split(/\s+/)
       .map((w) => w[0])
       .filter(Boolean)
-      .slice(0, 2)
+      .slice(-2)
       .join("")
       .toUpperCase() || "CEO";
 
-  const resolvedPhoto =
-    member.photoUrl ||
-    (displayPerson === "James Nguyễn"
-      ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&fit=crop&crop=faces"
-      : null);
-
+  const resolvedPhoto = member.photoUrl || null;
   const formattedValidUntil = formatDate(member.validUntil);
   const formattedJoinedAt = formatDate(member.joinedAt);
 
   const resolvedIndustry = member.industry
     ? INDUSTRY_MAP[member.industry] || member.industry
-    : "Công nghệ thông tin & Chuyển đổi số";
+    : "Công nghệ thông tin & Đổi mới sáng tạo";
 
   const resolvedRegion = member.region
     ? REGION_MAP[member.region] || member.region
@@ -186,25 +210,105 @@ function PublicCardView() {
     ? STATUS_MAP[member.status] || member.status
     : "Chính thức (Active)";
 
-  const rows: { icon: typeof Mail; label: string; value?: string | null; isLink?: boolean }[] = [
+  const hasPhone = Boolean(member.phone && !member.phone.includes("ẩn"));
+  const hasEmail = Boolean(member.email && !member.email.includes("ẩn"));
+  const cleanPhone = hasPhone ? member.phone!.replace(/[^0-9+]/g, "") : "";
+
+  // Dynamic vCard download for 1-tap phone address book import
+  const handleDownloadVCard = () => {
+    try {
+      const vcardContent = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `FN:${primaryName}`,
+        `ORG:${secondaryCompany}`,
+        `TITLE:${primaryTitle}`,
+        hasPhone ? `TEL;TYPE=CELL:${member.phone}` : "",
+        hasEmail ? `EMAIL;TYPE=WORK:${member.email}` : "",
+        member.website ? `URL:${member.website}` : "URL:https://ceo1983club.com",
+        member.address ? `ADR;TYPE=WORK:;;${member.address};;;;` : "",
+        `NOTE:Hội viên chính thức CLB Doanh Nhân CEO 1983 - Mã: ${code}`,
+        "END:VCARD",
+      ]
+        .filter(Boolean)
+        .join("\r\n");
+
+      const blob = new Blob([vcardContent], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DanhThiep_${primaryName.replace(/\s+/g, "_")}.vcf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Đã tải tệp danh bạ! Mở tệp để lưu vào điện thoại.");
+    } catch {
+      toast.error("Không thể tạo danh thiếp điện tử.");
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : `https://ceo1983club.com/card/${code}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Danh thiếp số: ${primaryName}`,
+          text: `${primaryName} — ${primaryTitle} tại ${secondaryCompany} (CLB Doanh Nhân CEO 1983)`,
+          url: shareUrl,
+        });
+      } catch {
+        // Share cancelled
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        toast.success("Đã sao chép liên kết danh thiếp!");
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast.error("Không thể sao chép liên kết");
+      }
+    }
+  };
+
+  const rows: { icon: typeof Mail; label: string; value?: string | null; isLink?: boolean; href?: string }[] = [
     { icon: ShieldCheck, label: t("status"), value: resolvedStatus },
     { icon: CalendarClock, label: t("joined"), value: formattedJoinedAt },
     { icon: Building2, label: t("industry"), value: resolvedIndustry },
     { icon: MapPin, label: t("region"), value: resolvedRegion },
     { icon: MapPin, label: t("address"), value: member.address || "Trụ sở CLB Doanh Nhân CEO 1983" },
-    { icon: Globe, label: t("website"), value: member.website || "https://ceo1983.vn", isLink: Boolean(member.website) },
-    { icon: Phone, label: t("phone"), value: member.phone || "Đã ẩn theo cài đặt riêng tư" },
-    { icon: Mail, label: t("email"), value: member.email || "Đã ẩn theo cài đặt riêng tư" },
+    {
+      icon: Globe,
+      label: t("website"),
+      value: member.website || "https://ceo1983club.com",
+      isLink: Boolean(member.website),
+      href: member.website || undefined,
+    },
+    {
+      icon: Phone,
+      label: t("phone"),
+      value: member.phone || "Đã ẩn theo cài đặt riêng tư",
+      isLink: hasPhone,
+      href: hasPhone ? `tel:${cleanPhone}` : undefined,
+    },
+    {
+      icon: Mail,
+      label: t("email"),
+      value: member.email || "Đã ẩn theo cài đặt riêng tư",
+      isLink: hasEmail,
+      href: hasEmail ? `mailto:${member.email}` : undefined,
+    },
   ];
 
   return (
-    <div className="vba-app min-h-[100dvh] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col px-4 pb-12">
-        {/* Top bar: back + language */}
+    <div className="vba-app min-h-[100dvh] bg-slate-950 text-slate-100 antialiased">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[500px] flex-col px-4 pb-16">
+        {/* Header navigation & language */}
         <header className="flex items-center justify-between py-4">
           <Link
             to="/association"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-[12px] font-bold text-[#003B95] dark:text-amber-400 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md px-3.5 py-1.5 text-[12px] font-bold text-amber-400 shadow-sm transition hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>{t("back")}</span>
@@ -213,7 +317,7 @@ function PublicCardView() {
           <div
             role="group"
             aria-label="Language"
-            className="inline-flex items-center rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-0.5 text-[11px] font-semibold shadow-sm"
+            className="inline-flex items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md p-0.5 text-[11px] font-semibold shadow-sm"
           >
             {(["vi", "en"] as Lang[]).map((l) => (
               <button
@@ -223,8 +327,8 @@ function PublicCardView() {
                 aria-pressed={lang === l}
                 className={`inline-flex h-7 min-w-[44px] items-center justify-center gap-1 rounded-full px-2.5 transition font-bold ${
                   lang === l
-                    ? "bg-[#003B95] text-white shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 {l === "vi" ? "🇻🇳 VI" : "🇬🇧 EN"}
@@ -233,126 +337,237 @@ function PublicCardView() {
           </div>
         </header>
 
-        {/* Membership card with luxury CEO 1983 aesthetic */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-800/40 bg-gradient-to-br from-[#00224F] via-[#003B95] to-[#0A192F] p-5 shadow-xl text-white">
-          <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-amber-500/20 blur-3xl" />
-          <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-blue-400/10 blur-2xl" />
+        {/* 3D Interactive Card Container */}
+        <div className="relative [perspective:1200px] w-full aspect-[16/10] sm:aspect-[1.7/1] my-2 select-none">
+          <div
+            className={`relative w-full h-full duration-700 [transform-style:preserve-3d] transition-transform rounded-2xl shadow-2xl cursor-pointer ${
+              isFlipped ? "[transform:rotateY(180deg)]" : ""
+            }`}
+            onClick={() => setIsFlipped(!isFlipped)}
+            title="Bấm để lật thẻ"
+          >
+            {/* ================= FRONT SIDE ================= */}
+            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] flex flex-col justify-between p-5 border border-amber-400/40 bg-gradient-to-br from-[#00224F] via-[#003B95] to-[#0A192F] text-white shadow-xl">
+              {/* Background luxury elements */}
+              <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" />
+              <div className="absolute -left-12 -bottom-12 h-44 w-44 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.08),transparent_50%)] pointer-events-none" />
 
-          {/* Card Top Brand */}
-          <div className="relative flex items-start justify-between">
-            <div className="flex items-center gap-2.5">
-              <img
-                src={appIcon}
-                alt="CLB CEO 1983"
-                className="h-11 w-11 rounded-xl shadow-md border border-white/20 bg-white/10 p-0.5 object-contain"
-                width={44}
-                height={44}
-              />
-              <div className="leading-tight">
-                <div className="text-[12px] font-black text-white tracking-wider uppercase">
-                  CLB DOANH NHÂN CEO 1983
+              {/* Card Top Brand & Mini QR */}
+              <div className="relative z-10 flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src={appIcon}
+                    alt="CLB CEO 1983"
+                    className="h-11 w-11 rounded-xl shadow-md border border-amber-400/40 bg-white/10 p-0.5 object-contain"
+                    width={44}
+                    height={44}
+                  />
+                  <div className="leading-tight">
+                    <div className="text-[12px] font-black tracking-wider uppercase text-white drop-shadow-xs">
+                      CLB DOANH NHÂN CEO 1983
+                    </div>
+                    <div className="text-[8.5px] font-bold tracking-widest uppercase text-amber-300 mt-0.5">
+                      NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[9px] font-bold text-amber-300 tracking-widest uppercase mt-0.5">
-                  NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI
+
+                {/* QR Code on front of card */}
+                <div className="rounded-xl bg-white p-1.5 shadow-md border border-amber-400/30 shrink-0">
+                  <QrCanvas value={`CEO1983-MEMBER:${code}`} size={56} />
                 </div>
               </div>
-            </div>
 
-            {/* QR Code on card */}
-            <div className="rounded-xl bg-white p-1.5 shadow-md border border-white/30">
-              <QrCanvas value={`CEO1983-MEMBER:${code}`} size={62} />
-            </div>
-          </div>
-
-          {/* Badge */}
-          <div className="relative mt-4 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 border border-amber-400/40 px-2.5 py-0.5 text-[10.5px] font-black text-amber-300 shadow-xs">
-              {isCompany ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
-              {isCompany ? t("company") : t("individual")}
-            </span>
-            <span className="text-[10px] font-bold tracking-[0.2em] text-white/70">
-              {t("memberCard")}
-            </span>
-          </div>
-
-          {/* Member Profile info */}
-          <div className="relative mt-3.5 flex items-center gap-3.5">
-            {resolvedPhoto ? (
-              <img
-                src={resolvedPhoto}
-                alt={primaryName}
-                className="h-14 w-14 shrink-0 rounded-full border-2 border-amber-400/60 object-cover shadow-lg"
-                width={56}
-                height={56}
-              />
-            ) : (
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/60 bg-white/15 text-[17px] font-black text-amber-300 shadow-lg">
-                {initials}
-              </span>
-            )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[18px] font-black text-white tracking-wide truncate drop-shadow-xs">
-                  {primaryName}
+              {/* Badge */}
+              <div className="relative z-10 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 border border-amber-400/50 px-2.5 py-0.5 text-[10px] font-black text-amber-300 shadow-xs">
+                  <Crown className="h-3 w-3 text-amber-400" />
+                  {t("memberCard")}
                 </span>
-                <BadgeCheck className="h-5 w-5 shrink-0 text-amber-400" />
+                <span className="text-[10px] font-bold text-amber-200/80">
+                  {isCompany ? t("company") : t("individual")}
+                </span>
               </div>
-              <div className="text-[12px] font-medium text-slate-200 truncate mt-0.5">
-                {secondaryName}
-              </div>
-            </div>
-          </div>
 
-          {/* Card Footer: Code & Valid Until */}
-          <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
-            <div>
-              <div className="text-[9.5px] font-semibold text-white/60 uppercase tracking-wider">{t("code")}</div>
-              <div className="text-[13px] font-black tracking-wider text-amber-300">{code}</div>
+              {/* Member Profile Main */}
+              <div className="relative z-10 flex items-center gap-3.5 my-auto">
+                {resolvedPhoto ? (
+                  <img
+                    src={resolvedPhoto}
+                    alt={primaryName}
+                    className="h-15 w-15 shrink-0 rounded-full border-2 border-amber-400 object-cover shadow-lg bg-slate-800"
+                    width={60}
+                    height={60}
+                  />
+                ) : (
+                  <span className="flex h-15 w-15 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-tr from-amber-600 to-amber-400 text-[18px] font-black text-slate-950 shadow-lg">
+                    {initials}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[17px] sm:text-[19px] font-black text-white tracking-wide truncate drop-shadow-md">
+                      {primaryName}
+                    </span>
+                    <BadgeCheck className="h-5 w-5 shrink-0 text-amber-400" />
+                  </div>
+                  <div className="text-[12px] font-bold text-amber-300 truncate mt-0.5">
+                    {primaryTitle}
+                  </div>
+                  <div className="text-[11.5px] font-medium text-slate-200 truncate">
+                    {secondaryCompany}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Footer: Code & Valid Until */}
+              <div className="relative z-10 flex justify-between border-t border-white/15 pt-2.5">
+                <div>
+                  <div className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">{t("code")}</div>
+                  <div className="text-[13px] font-black tracking-wider text-amber-300 font-mono">{code}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">{t("validUntil")}</div>
+                  <div className="text-[12px] font-bold tracking-wider text-white">
+                    {formattedValidUntil}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-[9.5px] font-semibold text-white/60 uppercase tracking-wider">{t("validUntil")}</div>
-              <div className="text-[13px] font-bold tracking-wider text-white">
-                {formattedValidUntil}
+
+            {/* ================= BACK SIDE ================= */}
+            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between p-6 border border-amber-400/40 bg-gradient-to-br from-[#061224] via-[#00224F] to-[#00142E] text-white shadow-xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06),transparent_60%)] pointer-events-none" />
+
+              <div className="text-center relative z-10">
+                <div className="mx-auto w-12 h-12 rounded-full border border-amber-400/40 bg-amber-400/10 flex items-center justify-center mb-2">
+                  <Crown className="h-6 w-6 text-amber-400" />
+                </div>
+                <h3 className="text-[14px] font-black tracking-wider uppercase text-amber-300">
+                  CLB DOANH NHÂN CEO 1983
+                </h3>
+                <p className="text-[10px] font-bold tracking-widest text-slate-300 mt-1 uppercase">
+                  GẮN KẾT • CHIA SẺ • ĐỒNG HÀNH • PHÁT TRIỂN
+                </p>
+              </div>
+
+              <div className="relative z-10 border-y border-white/10 py-3 my-auto space-y-1.5 text-center text-[11px] text-slate-300">
+                <p>Hệ sinh thái kết nối & xúc tiến thương mại doanh nhân Việt Nam.</p>
+                <p className="font-semibold text-amber-200">Hotline: 0983.83.1983 • info@ceo1983club.com</p>
+                <p className="text-[10px] text-slate-400">Trụ sở: Tòa nhà CEO 1983, Hà Nội</p>
+              </div>
+
+              <div className="relative z-10 flex items-center justify-between text-[9.5px] text-slate-400">
+                <span>Xác thực điện tử 24/7</span>
+                <span className="font-mono text-amber-300">{code}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Authenticated Note */}
-        <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2.5 shadow-xs">
-          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <p className="text-[12px] font-medium leading-snug text-emerald-800 dark:text-emerald-300">
+        {/* Action Controls Bar */}
+        <div className="grid grid-cols-4 gap-2 mt-4">
+          {/* Flip Card Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+          >
+            <RotateCw className="h-4 w-4 text-amber-400" />
+            <span className="text-[10.5px] font-bold">{t("flipCard")}</span>
+          </button>
+
+          {/* Download vCard */}
+          <button
+            type="button"
+            onClick={handleDownloadVCard}
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 transition active:scale-95 text-amber-300"
+          >
+            <Download className="h-4 w-4 text-amber-400" />
+            <span className="text-[10.5px] font-bold">{t("saveContact")}</span>
+          </button>
+
+          {/* Call / Contact */}
+          {hasPhone ? (
+            <a
+              href={`tel:${cleanPhone}`}
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 transition active:scale-95 text-emerald-300"
+            >
+              <Phone className="h-4 w-4 text-emerald-400" />
+              <span className="text-[10.5px] font-bold">Gọi điện</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+            >
+              <Share2 className="h-4 w-4 text-blue-400" />
+              <span className="text-[10.5px] font-bold">{t("shareCard")}</span>
+            </button>
+          )}
+
+          {/* Share / Zalo */}
+          {hasPhone ? (
+            <a
+              href={`https://zalo.me/${cleanPhone}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 transition active:scale-95 text-blue-300"
+            >
+              <MessageCircle className="h-4 w-4 text-blue-400" />
+              <span className="text-[10.5px] font-bold">Zalo</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+            >
+              {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Share2 className="h-4 w-4 text-blue-400" />}
+              <span className="text-[10.5px] font-bold">{copied ? "Đã copy" : t("shareCard")}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Authenticated Confirmation Banner */}
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 shadow-xs">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-400" />
+          <p className="text-[12px] font-medium leading-snug text-emerald-200">
             {t("authentic")}
           </p>
         </div>
 
-        {/* Details Information */}
-        <div className="mt-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-4 shadow-sm">
-          <h2 className="mb-3 flex items-center gap-2 text-[13.5px] font-bold text-slate-900 dark:text-white">
-            <Building2 className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+        {/* Detailed Verified Profile */}
+        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-md p-4 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-[13.5px] font-bold text-white">
+            <Building2 className="h-4 w-4 text-amber-400" />
             <span>{t("info")}</span>
           </h2>
 
-          <dl className="divide-y divide-slate-100 dark:divide-white/5 text-[12.5px]">
+          <dl className="divide-y divide-white/5 text-[12.5px]">
             {rows.map((r) => (
               <div key={r.label} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 shrink-0">
-                  <r.icon className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                  <r.icon className="h-4 w-4 text-amber-400" />
                   <span className="text-[12px]">{r.label}</span>
                 </div>
-                <div className="min-w-0 flex-1 text-right font-semibold text-slate-800 dark:text-slate-200">
-                  {r.isLink && r.value ? (
+                <div className="min-w-0 flex-1 text-right font-semibold text-slate-200">
+                  {r.isLink && r.href ? (
                     <a
-                      href={r.value}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[#003B95] dark:text-amber-400 hover:underline"
+                      href={r.href}
+                      target={r.href.startsWith("http") ? "_blank" : undefined}
+                      rel={r.href.startsWith("http") ? "noreferrer" : undefined}
+                      className="inline-flex items-center gap-1 text-amber-400 hover:underline"
                     >
-                      <span>{r.value.replace(/^https?:\/\//, "")}</span>
-                      <ExternalLink className="h-3 w-3" />
+                      <span className="truncate max-w-[220px]">
+                        {r.value ? r.value.replace(/^https?:\/\//, "") : "—"}
+                      </span>
+                      {r.href.startsWith("http") && <ExternalLink className="h-3 w-3 shrink-0" />}
                     </a>
                   ) : (
-                    <span>{r.value || "—"}</span>
+                    <span className="truncate">{r.value || "—"}</span>
                   )}
                 </div>
               </div>
@@ -360,10 +575,10 @@ function PublicCardView() {
           </dl>
         </div>
 
-        {/* Back button */}
+        {/* Back to Home action button */}
         <Link
           to="/association"
-          className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-[13px] font-bold text-white shadow-md transition active:scale-98"
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002766] hover:from-[#002B70] hover:to-[#001D4D] py-3.5 text-[13px] font-bold text-white shadow-lg border border-blue-500/30 transition active:scale-98"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>{t("back")}</span>

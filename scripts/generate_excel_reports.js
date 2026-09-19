@@ -7,7 +7,7 @@ const DOCS_DIR = path.join(__dirname, '..', 'document');
 async function createTestCasesExcel() {
   console.log('Generating TEST_CASES_APP_HIEP_HOI_CHI_TIET.xlsx...');
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'VIONE Quality Assurance Team';
+  wb.creator = 'Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983';
   wb.created = new Date();
 
   const NAVY = '0A1A3A';
@@ -230,7 +230,7 @@ async function createTestCasesExcel() {
 async function createProgressExcel() {
   console.log('Generating TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx...');
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'VIONE Project Management Office';
+  wb.creator = 'Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983';
   wb.created = new Date();
 
   const NAVY = '0A1A3A';

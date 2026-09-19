@@ -56,7 +56,7 @@ import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
 import { useServerData } from "@/hooks/use-server-data";
-import { getMyMember, listMembers, listConversations, type MyMember, type DirectoryMember, type MyConversation } from "@/lib/member-app.functions";
+import { getMyMember, updateMyProfile, listMembers, listConversations, type MyMember, type DirectoryMember, type MyConversation } from "@/lib/member-app.functions";
 import { useT, useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
@@ -120,6 +120,7 @@ export default function ProfileScreen() {
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
   const fetchMember = useServerFn(getMyMember);
+  const updateProfileFn = useServerFn(updateMyProfile);
   const fetchDirectory = useServerFn(listMembers);
   const fetchConversations = useServerFn(listConversations);
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
@@ -140,10 +141,13 @@ export default function ProfileScreen() {
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const modalAvatarInputRef = useRef<HTMLInputElement>(null);
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingModalAvatar, setUploadingModalAvatar] = useState(false);
+  const [modalAvatarPreview, setModalAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -387,46 +391,74 @@ export default function ProfileScreen() {
   });
 
   // Tự động đồng bộ hóa thông tin khi dữ liệu hội viên / user từ backend load xong
+  const initProfileFields = (force = false) => {
+    let saved: any = {};
+    if (typeof window !== "undefined") {
+      try {
+        saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
+      } catch {}
+    }
+    const isStaleName = saved.name && (saved.name === "Lê Hoàng Long" || saved.name.includes("ViOne Platform"));
+    const isStaleTitle = saved.title && (saved.title === "James Nguyễn" || saved.title === "Lê Hoàng Long");
+
+    const resolvedName = (saved.name && !isStaleName)
+      ? saved.name
+      : (member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "");
+    const resolvedTitle = (saved.title && !isStaleTitle)
+      ? saved.title
+      : (member?.title || (user as any)?.user_metadata?.professional_title || "Hội viên chính thức CLB CEO 1983");
+    const resolvedCompany = saved.company || (member as any)?.companyName || member?.industry || (member as any)?.about || "CLB Doanh Nhân CEO 1983";
+    const resolvedPhone = saved.phone || member?.phone || (user as any)?.phone || "";
+    const resolvedEmail = saved.email || member?.email || user?.email || "";
+    const resolvedAddress = saved.address || member?.address || "Hà Nội, Việt Nam";
+    const resolvedWebsite = saved.website || member?.website || "https://ceo1983.vn";
+    const resolvedBio = saved.bio || (member as any)?.about || "Hội viên tích cực CLB Doanh Nhân CEO 1983, sẵn sàng giao lưu kết nối và hợp tác giao thương.";
+    const resolvedAv = saved.avatar || customAvatar || member?.avatar || (member as any)?.avatarUrl || (user as any)?.avatar_url || null;
+
+    if (force || !profileName) setProfileName(resolvedName);
+    if (force || !profileTitle) setProfileTitle(resolvedTitle);
+    if (force || !profileCompany) setProfileCompany(resolvedCompany);
+    if (force || !profilePhone) setProfilePhone(resolvedPhone);
+    if (force || !profileEmail) setProfileEmail(resolvedEmail);
+    if (force || !profileAddress) setProfileAddress(resolvedAddress);
+    if (force || !profileWebsite) setProfileWebsite(resolvedWebsite);
+    if (force || !profileBio) setProfileBio(resolvedBio);
+    if (resolvedAv && (!customAvatar || force)) {
+      setCustomAvatar(resolvedAv);
+      setModalAvatarPreview(resolvedAv);
+    }
+  };
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || "{}");
-      const isStaleName = saved.name && (saved.name === "Lê Hoàng Long" || saved.name.includes("ViOne Platform"));
-      const isStaleTitle = saved.title && (saved.title === "James Nguyễn" || saved.title === "Lê Hoàng Long");
-
-      if (saved.name && !isStaleName) {
-        setProfileName(saved.name);
-      } else if (member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username) {
-        setProfileName(member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "");
-      }
-
-      if (saved.title && !isStaleTitle) {
-        setProfileTitle(saved.title);
-      } else if (member?.title) {
-        setProfileTitle(member.title);
-      } else {
-        setProfileTitle("Hội viên chính thức");
-      }
-
-      if (saved.company) {
-        setProfileCompany(saved.company);
-      } else if ((member as any)?.companyName || member?.industry) {
-        setProfileCompany((member as any)?.companyName || member?.industry || "");
-      }
-
-      if (saved.phone) {
-        setProfilePhone(saved.phone);
-      } else if (member?.phone || (user as any)?.phone) {
-        setProfilePhone(member?.phone || (user as any)?.phone || "");
-      }
-
-      if (saved.email) {
-        setProfileEmail(saved.email);
-      } else if (member?.email || user?.email) {
-        setProfileEmail(member?.email || user?.email || "");
-      }
-    } catch {}
+    initProfileFields(false);
   }, [member, user, userProfileStorageKey]);
+
+  const handleModalAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(isEn ? "Only image files allowed" : "Chỉ chấp nhận tệp hình ảnh (JPG, PNG, WEBP)");
+      return;
+    }
+    setUploadingModalAvatar(true);
+    try {
+      const compressedUrl = await compressImage(file, 800, 0.85);
+      setModalAvatarPreview(compressedUrl);
+      setCustomAvatar(compressedUrl);
+      try {
+        const uploadUrl = await uploadFileToNest(file, file.name || "avatar.jpg");
+        if (uploadUrl && typeof uploadUrl === "string") {
+          setCustomAvatar(uploadUrl);
+          setModalAvatarPreview(uploadUrl);
+        }
+      } catch {}
+      toast.success(isEn ? "Avatar selected" : "Đã chọn ảnh đại diện mới");
+    } catch {
+      toast.error(isEn ? "Failed to process image" : "Lỗi xử lý hình ảnh");
+    } finally {
+      setUploadingModalAvatar(false);
+    }
+  };
 
   const [privacyDirectMsg, setPrivacyDirectMsg] = useState(true);
   const [privacyShowPhone, setPrivacyShowPhone] = useState(true);
@@ -598,7 +630,14 @@ export default function ProfileScreen() {
     navigate({ to: "/association/login" as any, replace: true });
   }
 
-  const resolvedAvatar = member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null;
+  const rawCurrentAvatar =
+    customAvatar ||
+    member?.avatar ||
+    (member as any)?.avatarUrl ||
+    (user as any)?.avatar_url ||
+    (user as any)?.user_metadata?.avatar_url ||
+    null;
+  const resolvedAvatar = rawCurrentAvatar ? (resolveMediaUrl(rawCurrentAvatar) || rawCurrentAvatar) : null;
 
   type FriendItem = {
     code: string;
@@ -677,13 +716,17 @@ export default function ProfileScreen() {
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
-              {(customAvatar || resolvedAvatar) ? (
+              {resolvedAvatar ? (
                 <img
-                  src={customAvatar || resolvedAvatar || ""}
+                  src={resolvedAvatar}
                   alt={member?.name ?? ""}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = "none";
+                  }}
                   className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-amber-500/40 shadow-xs bg-slate-100 dark:bg-slate-800"
                 />
-              ) : (
+              ) : null}
+              {(!resolvedAvatar) && (
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-[16px] font-black text-white shadow-xs">
                   {initials(member?.name)}
                 </span>
@@ -767,13 +810,17 @@ export default function ProfileScreen() {
             <div className="px-4 pb-4">
               <div className="relative flex items-end justify-between -mt-12 mb-3">
                 <div className="relative">
-                  {(customAvatar || resolvedAvatar) ? (
+                  {resolvedAvatar ? (
                     <img
-                      src={customAvatar || resolvedAvatar || ""}
+                      src={resolvedAvatar}
                       alt={member?.name ?? ""}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
                       className="h-22 w-22 rounded-2xl object-cover ring-4 ring-amber-500/80 shadow-lg bg-slate-100 dark:bg-[#14223E]"
                     />
-                  ) : (
+                  ) : null}
+                  {(!resolvedAvatar) && (
                     <span className="grid h-22 w-22 place-items-center rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#1E40AF] text-[26px] font-black text-amber-300 ring-4 ring-amber-500/80 shadow-lg">
                       {initials(member?.name)}
                     </span>
@@ -836,10 +883,8 @@ export default function ProfileScreen() {
                 <button
                   type="button"
                   onClick={() => {
-                    void navigate({
-                      to: "/association/business-cards",
-                      search: { tab: "cards", action: "edit" },
-                    });
+                    initProfileFields(true);
+                    setEditProfileOpen(true);
                   }}
                   className="flex flex-col items-center justify-center gap-1 rounded-xl bg-blue-50/50 dark:bg-[#14223E] hover:bg-blue-100/60 dark:hover:bg-[#1A2D52] py-2.5 text-slate-800 dark:text-slate-200 transition border border-[#2E3192]/20 dark:border-blue-900/40 hover:border-[#2E3192]/50 cursor-pointer shadow-xs"
                 >
@@ -1536,7 +1581,7 @@ export default function ProfileScreen() {
             {/* Scrollable Form Body with Compact Center Width */}
             <form
               id="edit-profile-form"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 try {
                   const updated = {
@@ -1548,20 +1593,82 @@ export default function ProfileScreen() {
                     address: profileAddress,
                     website: profileWebsite,
                     bio: profileBio,
+                    avatar: customAvatar,
                     privacyDirectMsg,
                     privacyShowPhone,
                     privacyDirectory,
                   };
                   localStorage.setItem("vba_custom_profile", JSON.stringify(updated));
+                  localStorage.setItem(userProfileStorageKey, JSON.stringify(updated));
+                  if (customAvatar) {
+                    localStorage.setItem("vba_member_avatar_photo", customAvatar);
+                  }
+
+                  // Đồng bộ lưu trực tiếp lên cơ sở dữ liệu backend
+                  try {
+                    await updateProfileFn({
+                      data: {
+                        name: profileName,
+                        title: profileTitle,
+                        company: profileCompany,
+                        phone: profilePhone,
+                        email: profileEmail,
+                        address: profileAddress,
+                        website: profileWebsite,
+                        bio: profileBio,
+                        avatar: customAvatar,
+                      },
+                    });
+                  } catch (apiErr) {
+                    console.warn("Could not sync to backend directly:", apiErr);
+                  }
+
                   if (typeof window !== "undefined") {
                     window.dispatchEvent(new Event("profile-updated"));
                   }
-                } catch {}
-                toast.success(isEn ? "Profile & privacy updated successfully!" : "Đã cập nhật hồ sơ và quyền riêng tư thành công!");
+                  toast.success(isEn ? "Profile updated successfully!" : "Đã cập nhật hồ sơ hội viên thành công!");
+                } catch {
+                  toast.error(isEn ? "Update failed" : "Cập nhật thất bại");
+                }
                 setEditProfileOpen(false);
               }}
               className="flex-1 min-h-0 overflow-y-auto px-4 py-3.5 w-full max-w-sm mx-auto space-y-3.5 [scrollbar-width:thin]"
             >
+              {/* Ảnh đại diện trong Modal */}
+              <div className="flex flex-col items-center gap-2 pb-2">
+                <div className="relative">
+                  {modalAvatarPreview || customAvatar || resolvedAvatar ? (
+                    <img
+                      src={modalAvatarPreview || customAvatar || resolvedAvatar || ""}
+                      alt=""
+                      className="h-20 w-20 rounded-2xl object-cover ring-2 ring-amber-500/80 shadow-md bg-slate-100 dark:bg-slate-800"
+                    />
+                  ) : (
+                    <div className="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#1E40AF] text-2xl font-black text-amber-300 ring-2 ring-amber-500/80 shadow-md">
+                      {initials(profileName || resolvedDisplayName)}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    disabled={uploadingModalAvatar}
+                    onClick={() => modalAvatarInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-[#2E3192] text-white shadow-md border-2 border-white hover:bg-[#19194D] cursor-pointer"
+                    title={isEn ? "Change avatar" : "Đổi ảnh đại diện"}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                  <input
+                    ref={modalAvatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleModalAvatarChange}
+                  />
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {uploadingModalAvatar ? (isEn ? "Processing..." : "Đang xử lý...") : (isEn ? "Tap camera to change photo" : "Bấm máy ảnh để đổi ảnh đại diện")}
+                </span>
+              </div>
               {/* Họ và tên */}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">

@@ -1148,6 +1148,59 @@ function NotificationsScreen() {
                   </div>
                 )}
 
+                {/* Thẻ chúc mừng trúng thưởng Vòng Quay May Mắn (Lucky Draw Winner) */}
+                {(n.notificationKind === "lucky_draw_winner" ||
+                  (n as any).notification_kind === "lucky_draw_winner" ||
+                  n.title?.toLowerCase().includes("trúng thưởng") ||
+                  n.body?.toLowerCase().includes("trúng thưởng") ||
+                  Boolean(n.safeDisplayData?.luckyNumber)) && (
+                  <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 via-rose-500/15 to-amber-500/10 border-2 border-amber-500/50 shadow-md space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white shadow-sm animate-bounce">
+                          <Trophy className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                            🎉 CHÚC MỪNG TRÚNG THƯỞNG!
+                          </h4>
+                          <span className="text-[10px] text-muted-foreground font-semibold">
+                            {n.safeDisplayData?.eventName || "Vòng quay may mắn sự kiện"}
+                          </span>
+                        </div>
+                      </div>
+                      {n.safeDisplayData?.luckyNumber && (
+                        <span className="px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-500/40 text-xs font-mono font-black text-amber-700 dark:text-amber-300">
+                          Mã vé: {n.safeDisplayData.luckyNumber}
+                        </span>
+                      )}
+                    </div>
+
+                    {n.safeDisplayData?.prizeName && (
+                      <div className="p-2.5 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-amber-500/30 text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                        <span>Phần thưởng: {n.safeDisplayData.prizeName}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                        Liên hệ Ban Tổ Chức tại quầy lễ tân để nhận quà
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void markRead({ data: { id: n.id } }).catch(() => {});
+                          navigate({ to: "/association/messages", search: { peerCode: "admin" } });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 text-white text-[11px] font-bold shadow-xs hover:opacity-95 transition cursor-pointer"
+                      >
+                        Nhắn tin BTC
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Thẻ nhắc nhở thanh toán quá hạn */}
                 {(n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || Boolean(n.safeDisplayData?.invoiceId)) && n.safeDisplayData?.amount && (
                   <div className="mt-3 p-3 rounded-xl bg-red-500/10 dark:bg-red-500/15 border border-red-500/30 space-y-2">

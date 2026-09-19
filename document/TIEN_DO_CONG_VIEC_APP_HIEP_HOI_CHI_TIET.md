@@ -5,9 +5,9 @@
 ---
 
 ## 1. TỔNG QUAN HIỆN TRẠNG & TỶ LỆ HOÀN THIỆN
-- **Tổng số tính năng con được khảo sát & triển khai:** 63 tính năng
-- **Tính năng đã hoàn thành (Ready for Production):** 59 / 63 tính năng (94%)
-- **Tính năng đang thực hiện (Pending Sandbox / Hardware test):** 4 / 63 tính năng (6%)
+- **Tổng số tính năng con được khảo sát & triển khai:** 70 tính năng
+- **Tính năng đã hoàn thành (Ready for Production):** 66 / 70 tính năng (94%)
+- **Tính năng đang thực hiện (Pending Sandbox / Hardware test):** 4 / 70 tính năng (6%)
 - **Độ hoàn thiện mã nguồn trung bình:** **98%**
 
 > [!WARNING]
@@ -34,6 +34,7 @@
 | **MOD-10** | Tách Biệt Độc Lập Luồng Thông Báo & Landing Page Điện Ảnh | 2 | 2 | 0 | **100%** |
 | **MOD-11** | Đăng Ký Landing 3 Cấp, Onboarding, Quyền Riêng Tư & 7 Ban Ngành | 8 | 8 | 0 | **100%** |
 | **MOD-12** | Nâng Cấp Toàn Diện 14 Tính Năng & Tinh Chỉnh Trải Nghiệm Doanh Nhân CEO 1983 | 16 | 16 | 0 | **100%** |
+| **MOD-13** | Nâng Cấp 7 Tính Năng: HTTPS, Sự Kiện Banner Templates, Biểu Quyết, Lucky Draw, Sàn TMĐT Luxury, Bảng Tin Cơ Hội & iOS PWA | 7 | 7 | 0 | **100%** |
 
 ---
 
@@ -161,4 +162,16 @@
 | 61 | **NEWS-02** | Tab kép Tin tức CLB & Sự kiện Hiệp Hội trong /association/news | Phạm Văn Vũ | **Cao** | Màn hình Tin tức (/association/news) | ✅ Hoàn thành | **100%** | `GET /api/content/news, listMyEvents` | ✅ Đã kết nối | **100%** |  |
 | 62 | **SEC-02** | Đổi mật khẩu (/users/change-password), khóa nút Đăng xuất & Vô hiệu hóa tài khoản | Phạm Văn Vũ | **Cao** | Màn hình Cài đặt Bảo mật (/association/settings) | ✅ Hoàn thành | **100%** | `POST /users/change-password, POST /users/deactivate` | ✅ Đã kết nối | **100%** |  |
 | 63 | **CRM-01** | Phân quyền Sidebar CRM theo vai trò, ẩn "Quyền của tôi" & Sơ đồ rạp chiếu kéo thả ghế sân khấu | Phạm Văn Vũ | **Cao** | Sidebar CRM & CinemaSeatingMap (/events/seating) | ✅ Hoàn thành | **100%** | `Sidebar role-based permission matrix, Pointer drag coordinates` | ✅ Đã kết nối | **100%** |  |
+
+### MOD-13: Nâng Cấp 7 Tính Năng: HTTPS, Sự Kiện Banner Templates, Biểu Quyết, Lucky Draw, Sàn TMĐT Luxury, Bảng Tin Cơ Hội & iOS PWA
+
+| STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | Tình Trạng GD | Hoàn Thiện GD | API Mapped | Tình Trạng API | Hoàn Thiện API | Ghi Chú |
+|:---:|---|---|:---:|:---:|---|:---:|:---:|---|:---:|:---:|:---:|
+| 64 | **REQ-01** | Cấu hình HTTPS SSL & Kịch bản Fast Deploy cho Web CRM và App Hiệp Hội | Phạm Văn Vũ | **Cao** | Server Dev (14.225.217.232) | ✅ Hoàn thành | **100%** | `deploy/ssl/nginx.conf, deploy-ssl.ps1, fast-deploy.ps1 -EnableHttps` | ✅ Đã kết nối | **100%** |  |
+| 65 | **REQ-02** | Thiết kế Banner và Bố cục Text riêng cho từng loại Sự kiện (Forum, Workshop, Networking, Training) | Phạm Văn Vũ | **Cao** | Tạo Sự Kiện CRM (/events/new, EventWizard) | ✅ Hoàn thành | **100%** | `apps/vione_app_fe/src/lib/event-type-templates.ts, EventWizard.tsx` | ✅ Đã kết nối | **100%** |  |
+| 66 | **REQ-03** | Thông báo Biểu Quyết Sự Kiện đẩy thời gian thực về App Hiệp Hội | Phạm Văn Vũ | **Cao** | Tạo Biểu Quyết CRM (/voting) & Màn hình Thông báo App (/association/notifications) | ✅ Hoàn thành | **100%** | `POST /api/voting/sessions, connect-app.service.ts, association.notifications.tsx` | ✅ Đã kết nối | **100%** |  |
+| 67 | **REQ-04** | Quay Thưởng May Mắn (Lucky Draw) từ CRM, Số Vé May Mắn Random & Thông Báo Chúc Mừng | Phạm Văn Vũ | **Cao** | Quay số trúng thưởng (/voting) & Thông báo App (/association/notifications) | ✅ Hoàn thành | **100%** | `public.event_registrations.lucky_number, POST /api/voting/lucky-draw/notify` | ✅ Đã kết nối | **100%** |  |
+| 68 | **REQ-05** | Sàn Giao Thương Thương Mại Điện Tử Luxury E-Commerce với 3 Section Phân Trang | Phạm Văn Vũ | **Cao** | Màn hình Sản phẩm (/association/products) | ✅ Hoàn thành | **100%** | `GET /api/products, GET /api/marketplace/products, association.products.tsx` | ✅ Đã kết nối | **100%** |  |
+| 69 | **REQ-06** | Bảng Tin Trao Cơ Hội Giao Thương: Phân Trang, Đếm Lượt Xem & Danh Sách Người Quan Tâm Cho Chủ Bài | Phạm Văn Vũ | **Cao** | Màn hình Trao Cơ Hội (/association/opportunities) | ✅ Hoàn thành | **100%** | `GET /api/opportunities, POST /api/opportunities/:id/view, GET /api/opportunities/:id/interests` | ✅ Đã kết nối | **100%** |  |
+| 70 | **REQ-07** | Cấu Hình PWA Hoàn Chỉnh Cho App Hiệp Hội (Tương Thích Mọi Thiết Bị iOS & Android) | Phạm Văn Vũ | **Cao** | App Hiệp Hội (/association) | ✅ Hoàn thành | **100%** | `public/manifest.webmanifest, public/sw.js, register-sw.ts, IosInstallPrompt.tsx` | ✅ Đã kết nối | **100%** |  |
 

@@ -557,6 +557,90 @@ export class MembersService {
     };
   }
 
+  async updateMyProfile(userId: string, data: {
+    name?: string;
+    title?: string;
+    company?: string;
+    phone?: string;
+    email?: string;
+    avatar?: string;
+    address?: string;
+    website?: string;
+    bio?: string;
+  }) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const { name, title, company, phone, email, avatar, address, website, bio } = data;
+
+    // 1. Update vione_users
+    try {
+      const userUpdate: any = { updated_at: new Date() };
+      if (name) userUpdate.name = name;
+      if (phone) userUpdate.phone = phone;
+      if (avatar) userUpdate.avatar_url = avatar;
+      await this.prisma.vione_users.update({
+        where: { id: userId },
+        data: userUpdate,
+      }).catch(() => null);
+    } catch {}
+
+    // 2. Update user_profiles
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_profiles (user_id, display_name, professional_title, company_name, avatar_url, updated_at)
+        VALUES (${userId}::uuid, ${name || null}, ${title || null}, ${company || null}, ${avatar || null}, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+          display_name = COALESCE(${name || null}, user_profiles.display_name),
+          professional_title = COALESCE(${title || null}, user_profiles.professional_title),
+          company_name = COALESCE(${company || null}, user_profiles.company_name),
+          avatar_url = COALESCE(${avatar || null}, user_profiles.avatar_url),
+          updated_at = NOW()
+      `.catch(() => null);
+    } catch {}
+
+    // 3. Update members table
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.members
+        SET
+          name = COALESCE(${name || null}, name),
+          contact = COALESCE(${name || null}, contact),
+          executive_role = COALESCE(${title || null}, executive_role),
+          about = COALESCE(${bio || company || null}, about),
+          phone = COALESCE(${phone || null}, phone),
+          email = COALESCE(${email || null}, email),
+          address = COALESCE(${address || null}, address),
+          website = COALESCE(${website || null}, website),
+          avatar_url = COALESCE(${avatar || null}, avatar_url),
+          updated_at = NOW()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}
+      `.catch(() => null);
+    } catch {}
+
+    // 4. Also sync primary business card if exists
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards
+        SET
+          display_name = COALESCE(${name || null}, display_name),
+          professional_title = COALESCE(${title || null}, professional_title),
+          company_name = COALESCE(${company || null}, company_name),
+          avatar_url = COALESCE(${avatar || null}, avatar_url),
+          work_phone = COALESCE(${phone || null}, work_phone),
+          work_email = COALESCE(${email || null}, work_email),
+          address = COALESCE(${address || null}, address),
+          website = COALESCE(${website || null}, website),
+          bio = COALESCE(${bio || null}, bio),
+          updated_at = NOW()
+        WHERE user_id = ${userId}::uuid
+      `.catch(() => null);
+    } catch {}
+
+    return this.getMyMember(userId);
+  }
+
   async getAccountStatuses() {
     const profiles = await this.prisma.user_profiles.findMany({
       select: { user_id: true, account_status: true },

@@ -283,6 +283,7 @@ function Home() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("vba_member_avatar_photo");
   });
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -348,7 +349,14 @@ function Home() {
   const rawCompany = (member as any)?.companyName || (member as any)?.company || customProfile?.company;
   const isOldSeedCompany = rawCompany && (rawCompany.includes("ViOne Platform") || (rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
   const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
-  const displayAvatar = (member?.avatar ? resolveMediaUrl(member.avatar) || member.avatar : null) || (user as any)?.avatar_url || customProfile?.avatar || avatarPhoto || null;
+  const rawAvatar =
+    member?.avatar ||
+    (user as any)?.avatar_url ||
+    (user as any)?.user_metadata?.avatar_url ||
+    customProfile?.avatar ||
+    avatarPhoto ||
+    null;
+  const displayAvatar = rawAvatar ? (resolveMediaUrl(rawAvatar) || rawAvatar) : null;
 
   const handleCopyCode = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -446,10 +454,11 @@ function Home() {
           <div className="flex items-end justify-between -mt-8 mb-2">
             {/* Avatar tròn to dập viền trắng nổi bật có chấm xanh online */}
             <div className="relative">
-              {displayAvatar ? (
+              {displayAvatar && !avatarError ? (
                 <img
                   src={displayAvatar}
                   alt={displayName}
+                  onError={() => setAvatarError(true)}
                   className="h-15 w-15 shrink-0 rounded-full object-cover ring-3 ring-white dark:ring-[#0F172A] shadow-md bg-slate-100 dark:bg-slate-800"
                 />
               ) : (

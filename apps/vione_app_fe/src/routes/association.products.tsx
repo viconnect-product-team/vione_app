@@ -22,6 +22,15 @@ import {
   BadgeCheck,
   Globe,
   Users,
+  LayoutGrid,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  Flame,
+  Award,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -320,6 +329,15 @@ function ProductsScreen() {
     return allProducts.filter((p) => checkIsProductOwner(p)).length;
   }, [allProducts, member]);
 
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<"newest" | "most_viewed" | "price_asc" | "price_desc">("newest");
+  const [pageNew, setPageNew] = useState(1);
+  const [pagePopular, setPagePopular] = useState(1);
+  const [pageCompanies, setPageCompanies] = useState(1);
+  const PAGE_SIZE = 4;
+  const COMPANY_PAGE_SIZE = 3;
+
   const categoriesList = useMemo(() => [
     { id: "all", label: isEn ? "All" : "Tất cả", count: allProducts.length },
     { id: "my_products", label: isEn ? "My Products" : "Của tôi", count: myProductsCount },
@@ -331,6 +349,48 @@ function ProductsScreen() {
     { id: "Dịch vụ & Du lịch", label: isEn ? "Services & Tourism" : "Dịch vụ & Du lịch" },
     { id: "Hàng tiêu dùng & Bán lẻ", label: isEn ? "Consumer Goods" : "Hàng tiêu dùng & Bán lẻ" },
   ], [isEn, allProducts.length, myProductsCount, interestedIds.length]);
+
+  // Section 1: Sản phẩm mới đăng
+  const newestProducts = useMemo(() => {
+    return [...list].sort((a, b) => {
+      const tA = a.time ? new Date(a.time).getTime() : 0;
+      const tB = b.time ? new Date(b.time).getTime() : 0;
+      return tB - tA;
+    });
+  }, [list]);
+
+  // Section 2: Sản phẩm được xem nhiều nhất
+  const popularProducts = useMemo(() => {
+    return [...list].sort((a, b) => {
+      const vA = a.views || 0;
+      const vB = b.views || 0;
+      return vB - vA;
+    });
+  }, [list]);
+
+  // Section 3: Doanh nghiệp / Công ty nổi bật nhất (1 hội viên đại diện cho 1 công ty)
+  const featuredCompanies = useMemo(() => {
+    const map = new Map<string, { company: string; repName: string; category: string; count: number; totalViews: number; avatar: string; sampleProduct: MyProduct }>();
+    for (const p of allProducts) {
+      const key = (p.company || "CLB Doanh Nhân CEO 1983").trim();
+      if (!map.has(key)) {
+        map.set(key, {
+          company: key,
+          repName: (p as any).contactName || (p as any).sellerName || "Hội viên CLB CEO 1983",
+          category: p.category || "Doanh nghiệp thành viên",
+          count: 1,
+          totalViews: p.views || 1,
+          avatar: p.imageUrl || "",
+          sampleProduct: p,
+        });
+      } else {
+        const curr = map.get(key)!;
+        curr.count += 1;
+        curr.totalViews += (p.views || 1);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count || b.totalViews - a.totalViews);
+  }, [allProducts]);
 
   const startEditProduct = (p: MyProduct, e?: React.MouseEvent) => {
     if (e) {
@@ -479,6 +539,153 @@ function ProductsScreen() {
     }
   };
 
+  const renderCard = (p: MyProduct) => {
+    const isOwner = checkIsProductOwner(p);
+    const isInterested = interestedIds.includes(p.id);
+    const menuOpen = activeProductMenuId === p.id;
+    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80";
+
+    return (
+      <div
+        key={p.id}
+        className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-md hover:border-[#003B95]/40 transition-all duration-300"
+      >
+        <div>
+          {/* Product Image Box */}
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+            <img
+              src={mediaImg}
+              alt={p.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+            {/* Category Tag Overlay */}
+            <span className="absolute left-2 top-2 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white tracking-wide">
+              {p.category || "Dịch vụ"}
+            </span>
+
+            {/* Interest Heart Button */}
+            <button
+              type="button"
+              onClick={(e) => toggleInterest(p.id, e)}
+              className={`absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full backdrop-blur-xs transition cursor-pointer shadow-xs ${
+                isInterested
+                  ? "bg-rose-500 text-white shadow-rose-500/30"
+                  : "bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-rose-500"
+              }`}
+              title={isInterested ? "Đã lưu quan tâm" : "Lưu quan tâm"}
+            >
+              <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white" : ""}`} />
+            </button>
+
+            {/* Owner action menu button */}
+            {isOwner && (
+              <div className="absolute left-2 bottom-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveProductMenuId(menuOpen ? null : p.id);
+                    }}
+                    className="grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white hover:bg-black transition cursor-pointer"
+                    title="Tùy chọn"
+                  >
+                    <MoreVertical className="h-3 w-3" />
+                  </button>
+                  {menuOpen && (
+                    <div
+                      className="absolute left-0 bottom-7 w-28 rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 py-1 z-30 animate-scale-in"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          setActiveProductMenuId(null);
+                          startEditProduct(p, e);
+                        }}
+                        className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      >
+                        <Pencil className="h-3 w-3 text-blue-500" />
+                        <span>Sửa tin</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          setActiveProductMenuId(null);
+                          handleDeleteProduct(p.id, e);
+                        }}
+                        className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>Xóa tin</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Product Details Info */}
+          <div className="p-3">
+            {/* Company Name */}
+            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate mb-1">
+              <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
+              <span className="truncate">{p.company || "CLB Doanh Nhân CEO 1983"}</span>
+            </div>
+
+            {/* Product Title */}
+            <h4 className="text-xs font-black text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition mb-2">
+              {p.name}
+            </h4>
+
+            {/* Price section: VIP Member Price in prominent Red/Amber */}
+            <div className="space-y-0.5 mb-2">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-amber-400">
+                  {formatSmartProductPrice(p.memberPrice || p.price)}
+                </span>
+                {p.originalPrice && p.originalPrice !== p.memberPrice && (
+                  <span className="text-[10px] text-slate-400 line-through">
+                    {formatSmartProductPrice(p.originalPrice)}
+                  </span>
+                )}
+              </div>
+              <span className="inline-block text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                Ưu đãi độc quyền CEO 1983
+              </span>
+            </div>
+
+            {/* Views counter & contact */}
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+              <span className="flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                <span>{p.views || 1} lượt xem</span>
+              </span>
+              <span className="text-[9.5px] font-medium text-slate-500">
+                {(p as any).unit ? `ĐVT: ${(p as any).unit}` : "Báo giá VIP"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button: Nhận báo giá VIP */}
+        <div className="p-2.5 pt-0">
+          <button
+            type="button"
+            onClick={() => handleOpenQuoteModal(p)}
+            style={{ color: "#ffffff" }}
+            className="w-full py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Send className="h-3 w-3 text-amber-300" />
+            <span>Nhận báo giá VIP</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="vba-animate pb-24 text-slate-900 dark:text-white">
       <MemberHeader
@@ -527,32 +734,144 @@ function ProductsScreen() {
         </div>
       </div>
 
-      {/* Search Bar & Đăng sản phẩm Button */}
-      <div className="px-4 pt-3 flex items-center gap-2">
+      {/* Header: Sàn Thương Mại Điện Tử (Search ở giữa, Icon Menu bên trái, Icon Filter & Đăng SP bên phải) */}
+      <div className="px-4 pt-3 flex items-center gap-2 relative">
+        {/* Left Category Dropdown Menu Button (Requirement 4) */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
+            className={`h-10 w-10 rounded-2xl grid place-items-center transition cursor-pointer border ${
+              categoryMenuOpen || selectedCategory !== "all"
+                ? "bg-[#003B95] text-white border-[#003B95] shadow-sm"
+                : "bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:bg-slate-200"
+            }`}
+            title="Danh mục sản phẩm"
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </button>
+          {categoryMenuOpen && (
+            <div
+              className="absolute left-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-scale-in max-h-84 overflow-y-auto"
+            >
+              <div className="px-3.5 py-1.5 text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Danh mục thương mại</span>
+                <button
+                  type="button"
+                  onClick={() => setCategoryMenuOpen(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {categoriesList.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.id);
+                    setCategoryMenuOpen(false);
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-left text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
+                    selectedCategory === cat.id
+                      ? "bg-[#003B95]/10 text-[#003B95] dark:text-amber-400 font-bold border-l-3 border-[#003B95]"
+                      : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <span className="truncate">{cat.label}</span>
+                  {cat.count !== undefined && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">
+                      {cat.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Center Search Input (Requirement 4) */}
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={isEn ? "Search products, services, companies..." : "Tìm kiếm sản phẩm, dịch vụ, doanh nghiệp..."}
-            className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-10 pr-3 text-[12.5px] text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0 shadow-none"
+            placeholder={isEn ? "Search products, services, companies..." : "Tìm sản phẩm, dịch vụ, doanh nghiệp..."}
+            className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-10 pr-8 text-[12.5px] text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0 shadow-none"
           />
+          {q && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setPostModalOpen(true)}
-          style={{ color: "#ffffff" }}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="h-4 w-4 text-amber-300" />
-          <span className="hidden sm:inline">{isEn ? "Post Product" : "Đăng sản phẩm"}</span>
-          <span className="sm:hidden">{isEn ? "Post" : "Đăng bán"}</span>
-        </button>
+        {/* Right: Filter Icon & Post Product (Requirement 4) */}
+        <div className="relative flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilterMenuOpen(!filterMenuOpen)}
+            className={`h-10 w-10 rounded-2xl grid place-items-center transition cursor-pointer border ${
+              filterMenuOpen || sortMode !== "newest"
+                ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+                : "bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:bg-slate-200"
+            }`}
+            title="Bộ lọc & Sắp xếp"
+          >
+            <SlidersHorizontal className="h-4.5 w-4.5" />
+          </button>
+          {filterMenuOpen && (
+            <div
+              className="absolute right-0 top-12 w-52 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-scale-in"
+            >
+              <div className="px-3.5 py-1 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                Sắp xếp theo
+              </div>
+              {[
+                { id: "newest", label: "Mới đăng nhất" },
+                { id: "most_viewed", label: "Xem nhiều nhất" },
+                { id: "price_asc", label: "Giá: Thấp đến cao" },
+                { id: "price_desc", label: "Giá: Cao đến thấp" },
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setSortMode(s.id as any);
+                    setFilterMenuOpen(false);
+                  }}
+                  className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between cursor-pointer ${
+                    sortMode === s.id
+                      ? "bg-[#003B95]/10 text-[#003B95] dark:text-amber-400 font-bold"
+                      : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <span>{s.label}</span>
+                  {sortMode === s.id && <Check className="h-3.5 w-3.5 text-amber-500" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setPostModalOpen(true)}
+            style={{ color: "#ffffff" }}
+            className="h-10 px-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white flex items-center gap-1.5 text-[12px] font-bold shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap"
+            title="Đăng sản phẩm"
+          >
+            <Plus className="h-4 w-4 text-amber-300" />
+            <span className="hidden sm:inline">Đăng SP</span>
+          </button>
+        </div>
       </div>
 
-      {/* ── THANH TAB DANH MỤC CÓ MỤC "ĐÃ QUAN TÂM" ── */}
+      {/* Quick Category Tab Pills */}
       <div className="flex items-center gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
         {categoriesList.map((cat) => {
           const active = selectedCategory === cat.id;
@@ -586,187 +905,284 @@ function ProductsScreen() {
         })}
       </div>
 
-      {/* Product List: Sàn thương mại điện tử 2 cột chuẩn Mobile UI */}
-      <div className="mt-4 px-3.5">
+      {/* SÀN GIAO THƯƠNG VỚI 3 SECTION PHÂN TRANG (Requirement 4) */}
+      <div className="mt-4 px-3.5 space-y-6">
         {loading && (
           <p className="py-10 text-center text-xs text-slate-400">
             {isEn ? "Loading products..." : t("m.products.loading")}
           </p>
         )}
-        {!loading && list.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-xs text-slate-400">
-              {selectedCategory === "interested"
-                ? (isEn ? "You have no saved or quoted products yet" : "Bạn chưa có sản phẩm nào trong danh mục Đã quan tâm")
-                : selectedCategory === "my_products"
-                ? (isEn ? "You haven't posted any products yet" : "Bạn chưa đăng sản phẩm nào trên sàn")
-                : (isEn ? "No products found matching your filter" : t("m.products.empty"))}
-            </p>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-          {list.map((p) => {
-            const isInterested = interestedIds.includes(p.id);
-            const dateDisplay = p.time && p.time.includes("T")
-              ? new Date(p.time).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
-              : (p.time || "Mới đăng");
 
-            return (
-              <div
-                key={p.id}
-                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:border-[#003B95]/40 transition-all duration-300"
-              >
-                {/* Product Image: Aspect ratio 1:1 with badges */}
-                <div className="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  <img
-                    src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                    alt={p.name}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/20 pointer-events-none" />
-
-                  {/* Top-left Category badge */}
-                  <span className="absolute top-2 left-2 rounded-md bg-black/65 backdrop-blur-md px-1.5 py-0.5 text-[8.5px] font-semibold text-amber-300 border border-amber-400/20 max-w-[75%] truncate">
-                    {p.category.split("&")[0].trim()}
+        {/* TRƯỜNG HỢP CÓ TÌM KIẾM HOẶC LỌC DANH MỤC RIÊNG */}
+        {(q || selectedCategory !== "all") ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Search className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                  <span>
+                    {q ? `Kết quả tìm kiếm cho "${q}"` : `Danh mục: ${categoriesList.find((c) => c.id === selectedCategory)?.label}`}
                   </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">Tìm thấy {list.length} sản phẩm phù hợp</p>
+              </div>
+              {(q || selectedCategory !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    setSelectedCategory("all");
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  Xóa lọc
+                </button>
+              )}
+            </div>
 
-                  {/* Top-right Actions: 3-dots Menu for Owner OR Favorite Heart for others */}
-                  <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
-                    {checkIsProductOwner(p) ? (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveProductMenuId(activeProductMenuId === p.id ? null : p.id);
-                          }}
-                          className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs"
-                          title="Tùy chọn sản phẩm"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                        {activeProductMenuId === p.id && (
-                          <div
-                            className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                setActiveProductMenuId(null);
-                                startEditProduct(p, e);
-                              }}
-                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-amber-500" />
-                              <span>Chỉnh sửa</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                setActiveProductMenuId(null);
-                                handleDeleteProduct(p.id, e);
-                              }}
-                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                              <span>Xóa</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => toggleInterest(p.id, e)}
-                        className={`h-7 w-7 rounded-full grid place-items-center backdrop-blur-md transition cursor-pointer ${
-                          isInterested
-                            ? "bg-rose-500 text-white shadow-xs"
-                            : "bg-black/40 text-white hover:bg-black/60"
-                        }`}
-                        title={isInterested ? "Bỏ quan tâm" : "Thêm vào Đã quan tâm"}
-                      >
-                        <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white text-white" : ""}`} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Date badge on bottom-left of image */}
-                  <div className="absolute bottom-1.5 left-2 flex items-center gap-1 rounded bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-medium text-white/90">
-                    <Calendar className="h-2.5 w-2.5 text-amber-400" />
-                    <span>{dateDisplay}</span>
+            {list.length === 0 ? (
+              <div className="py-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
+                <p className="text-xs text-slate-400">Không tìm thấy sản phẩm nào phù hợp</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                {list.map((p) => renderCard(p))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* SECTION 1: SẢN PHẨM MỚI ĐĂNG (CÓ PHÂN TRANG) */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 p-3.5 sm:p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/15 text-amber-500">
+                    <Flame className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wide">
+                      Sản phẩm mới đăng
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Cập nhật liên tục từ các doanh nhân CLB CEO 1983
+                    </p>
                   </div>
                 </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-bold font-mono">
+                  {newestProducts.length} SP
+                </span>
+              </div>
 
-                {/* Product Content */}
-                <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
-                  <div>
-                    {/* Company / Seller name with click to open Storefront */}
+              {/* Grid 2 Cột */}
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                {newestProducts
+                  .slice((pageNew - 1) * PAGE_SIZE, pageNew * PAGE_SIZE)
+                  .map((p) => renderCard(p))}
+              </div>
+
+              {/* Phân trang Section 1 */}
+              {newestProducts.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                  <span className="text-[11px]">
+                    Trang <b>{pageNew}</b> / {Math.ceil(newestProducts.length / PAGE_SIZE)} ({newestProducts.length} sản phẩm)
+                  </span>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setViewingCompany({
-                          name: p.company || "CLB Doanh Nhân CEO 1983",
-                          avatarUrl: resolveMediaUrl(p.imageUrl) || p.imageUrl,
-                          industry: p.category,
-                        });
-                      }}
-                      className="flex items-center gap-1 text-[10.5px] font-medium text-slate-500 hover:text-[#003B95] dark:text-slate-400 dark:hover:text-amber-400 mb-1 text-left cursor-pointer transition-colors max-w-full"
+                      disabled={pageNew <= 1}
+                      onClick={() => setPageNew((prev) => Math.max(1, prev - 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang trước"
                     >
-                      <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
-                      <span className="truncate hover:underline">{p.company}</span>
+                      <ChevronLeft className="h-4 w-4" />
                     </button>
-
-                    {/* Product Name */}
-                    <h3 className="line-clamp-2 text-[12.5px] sm:text-[13px] font-bold text-slate-900 dark:text-white leading-tight group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors min-h-[32px]">
-                      {p.name}
-                    </h3>
-
-                    {/* Price Block: Không bị cắt thành ... khi giá dài */}
-                    <div className="mt-1.5 flex flex-wrap items-baseline gap-1.5 min-w-0">
-                      <span className="text-[13px] sm:text-[14px] font-extrabold text-red-600 dark:text-amber-400 whitespace-normal break-words leading-tight">
-                        {formatSmartProductPrice(p.memberPrice || p.price)}
-                      </span>
-                      {p.originalPrice && p.originalPrice !== p.price && (
-                        <span className="text-[10px] text-slate-400 line-through whitespace-normal break-words">
-                          {formatSmartProductPrice(p.originalPrice)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action & Stats Row */}
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-0.5">
-                        <Eye className="h-3 w-3" /> {p.views || 0}
-                      </span>
-                      <span className="flex items-center gap-0.5">
-                        <Heart className={`h-3 w-3 ${isInterested ? "fill-rose-500 text-rose-500" : ""}`} />
-                        {(p.likes || 0) + (isInterested ? 1 : 0)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenQuoteModal(p)}
-                        style={{ color: "#ffffff" }}
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
-                      >
-                        <FileText className="h-3 w-3" />
-                        <span>{isEn ? "Quote" : "Báo giá"}</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      disabled={pageNew >= Math.ceil(newestProducts.length / PAGE_SIZE)}
+                      onClick={() => setPageNew((prev) => Math.min(Math.ceil(newestProducts.length / PAGE_SIZE), prev + 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang sau"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* SECTION 2: SẢN PHẨM ĐƯỢC XEM NHIỀU NHẤT (CÓ PHÂN TRANG) */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 p-3.5 sm:p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                    <TrendingUp className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wide">
+                      Sản phẩm được xem nhiều nhất
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Sản phẩm thịnh hành và được hội viên quan tâm hàng đầu
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-bold font-mono">
+                  Trending
+                </span>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Grid 2 Cột */}
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                {popularProducts
+                  .slice((pagePopular - 1) * PAGE_SIZE, pagePopular * PAGE_SIZE)
+                  .map((p) => renderCard(p))}
+              </div>
+
+              {/* Phân trang Section 2 */}
+              {popularProducts.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                  <span className="text-[11px]">
+                    Trang <b>{pagePopular}</b> / {Math.ceil(popularProducts.length / PAGE_SIZE)} ({popularProducts.length} sản phẩm)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={pagePopular <= 1}
+                      onClick={() => setPagePopular((prev) => Math.max(1, prev - 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang trước"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pagePopular >= Math.ceil(popularProducts.length / PAGE_SIZE)}
+                      onClick={() => setPagePopular((prev) => Math.min(Math.ceil(popularProducts.length / PAGE_SIZE), prev + 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang sau"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 3: DOANH NGHIỆP / CÔNG TY NỔI BẬT NHẤT (1 người đại diện cho 1 công ty dùng) */}
+            <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-white dark:via-slate-900 to-amber-500/10 p-3.5 sm:p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
+                    <Building2 className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wide">
+                      Doanh nghiệp nổi bật nhất
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Mỗi hội viên đại diện cho một doanh nghiệp tiêu biểu trong CLB
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold font-mono">
+                  {featuredCompanies.length} Công ty
+                </span>
+              </div>
+
+              {/* Danh sách công ty nổi bật */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {featuredCompanies
+                  .slice((pageCompanies - 1) * COMPANY_PAGE_SIZE, pageCompanies * COMPANY_PAGE_SIZE)
+                  .map((comp) => (
+                    <div
+                      key={comp.company}
+                      className="flex flex-col justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-[#003B95]/50 transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <div className="h-10 w-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700">
+                            <img
+                              src={resolveMediaUrl(comp.avatar) || comp.avatar || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&auto=format&fit=crop&q=80"}
+                              alt={comp.company}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                              {comp.company}
+                            </h4>
+                            <span className="text-[10.5px] text-slate-500 truncate block">
+                              {comp.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 text-[11px] space-y-1 mb-3">
+                          <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                            <span>Người đại diện:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-100">{comp.repName}</span>
+                          </div>
+                          <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                            <span>Sản phẩm niêm yết:</span>
+                            <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">{comp.count} sản phẩm</span>
+                          </div>
+                          <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                            <span>Tổng lượt xem:</span>
+                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{comp.totalViews}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewingCompany({
+                            name: comp.company,
+                            avatarUrl: comp.avatar,
+                            industry: comp.category,
+                          });
+                        }}
+                        style={{ color: "#ffffff" }}
+                        className="w-full py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Store className="h-3.5 w-3.5 text-amber-300" />
+                        <span>Xem gian hàng</span>
+                      </button>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Phân trang Section 3 */}
+              {featuredCompanies.length > COMPANY_PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                  <span className="text-[11px]">
+                    Trang <b>{pageCompanies}</b> / {Math.ceil(featuredCompanies.length / COMPANY_PAGE_SIZE)} ({featuredCompanies.length} doanh nghiệp)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={pageCompanies <= 1}
+                      onClick={() => setPageCompanies((prev) => Math.max(1, prev - 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang trước"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pageCompanies >= Math.ceil(featuredCompanies.length / COMPANY_PAGE_SIZE)}
+                      onClick={() => setPageCompanies((prev) => Math.min(Math.ceil(featuredCompanies.length / COMPANY_PAGE_SIZE), prev + 1))}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                      title="Trang sau"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── MODAL ĐĂNG SẢN PHẨM: ĐÃ SỬA THEME SÁNG TRANG NHÃ & CHÍNH GIỮA MÀN MOBILE ── */}
