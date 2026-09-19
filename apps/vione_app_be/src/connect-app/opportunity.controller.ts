@@ -65,4 +65,14 @@ export class OpportunityController {
   async expressInterest(@Request() req: any, @Body() body: { opportunityId: string; message?: string }) {
     return this.connectAppService.expressOpportunityInterest(req.user.id, body.opportunityId, body.message);
   }
+
+  @Post(':id/view')
+  async incrementView(@Param('id') id: string) {
+    return this.connectAppService.incrementOpportunityView(id);
+  }
+
+  @Get(':id/interests')
+  async getOpportunityInterests(@Param('id') id: string) {
+    return this.connectAppService.getOpportunityInterestedMembers(id);
+  }
 }

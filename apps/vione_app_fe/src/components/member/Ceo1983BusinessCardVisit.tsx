@@ -198,7 +198,7 @@ export function Ceo1983BusinessCardVisit({
 
           {/* ==================================================================== */}
           {/* MẶT SAU (BACK): CHUẨN 100% ẢNH MẪU 2 VÀ BRANDBOOK                    */}
-          {/* Nền xanh hoàng gia + Logo trắng + Khẩu hiệu cam "Gắn kết bền - Phát triển vững" */}
+          {/* Nền xanh hoàng gia + Logo trắng + Khẩu hiệu cam "Kết nối bền - Phát triển vững" */}
           {/* ==================================================================== */}
           <div className="absolute inset-0 w-full h-full bg-[#24357B] text-white rounded-2xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 shadow-xl border border-blue-900">
             {/* Vòng tròn đồng tâm chìm ở viền phải */}
@@ -227,7 +227,7 @@ export function Ceo1983BusinessCardVisit({
               {/* Khẩu hiệu màu cam chính thức */}
               <div className="mt-4 text-center">
                 <span className="text-sm sm:text-base md:text-lg font-bold text-[#FFA500] tracking-wide drop-shadow-xs font-sans">
-                  Gắn kết bền - Phát triển vững
+                  Kết nối bền - Phát triển vững
                 </span>
               </div>
             </div>

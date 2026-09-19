@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Ceo1983CinematicInteractiveWorldLanding } from "@/components/landing/Ceo1983CinematicInteractiveWorldLanding";
+import { Ceo1983VerticalLandscape } from "@/components/landing/Ceo1983VerticalLandscape";
 
-const TITLE = "CLB Doanh Nhân CEO 1983 — Hành Trình Khát Vọng & Vị Thế Doanh Nhân";
-const DESC = "Hành trình trải nghiệm điện ảnh tương tác xuyên suốt 6 chiều không gian: Sky, Birds, Kites, Villas, Infinity Pool và Thế giới Lãnh đạo Underwater của CLB Doanh nhân CEO 1983 (HanoiBA).";
+const TITLE = "CLB Doanh Nhân CEO 1983 — Bức Tranh 3D Khổ Dọc Liên Tục";
+const DESC = "Hành trình trải nghiệm bức tranh 3D khổ dọc liên tục: Sky, Birds, Kites, Villas, Water và Underwater Leadership của CLB Doanh nhân CEO 1983 (HanoiBA).";
 
 export const Route = createFileRoute("/landing/ceo/v1")({
   ssr: true,
@@ -23,6 +23,6 @@ export const Route = createFileRoute("/landing/ceo/v1")({
 });
 
 function Ceo1983CinematicRoute() {
-  return <Ceo1983CinematicInteractiveWorldLanding />;
+  return <Ceo1983VerticalLandscape />;
 }
 

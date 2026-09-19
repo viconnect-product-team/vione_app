@@ -44,6 +44,9 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
   const [showCompany, setShowCompany] = useState(true);
   const [showName, setShowName] = useState(true);
   const [showPhoto, setShowPhoto] = useState(true);
+  const [showIndustry, setShowIndustry] = useState(true);
+  const [showCompanySize, setShowCompanySize] = useState(true);
+  const [showFeaturedProducts, setShowFeaturedProducts] = useState(true);
 
   // Load current settings
   useEffect(() => {
@@ -60,6 +63,9 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
         if (typeof parsed.showCompany === "boolean") setShowCompany(parsed.showCompany);
         if (typeof parsed.showName === "boolean") setShowName(parsed.showName);
         if (typeof parsed.showPhoto === "boolean") setShowPhoto(parsed.showPhoto);
+        if (typeof parsed.showIndustry === "boolean") setShowIndustry(parsed.showIndustry);
+        if (typeof parsed.showCompanySize === "boolean") setShowCompanySize(parsed.showCompanySize);
+        if (typeof parsed.showFeaturedProducts === "boolean") setShowFeaturedProducts(parsed.showFeaturedProducts);
       }
     } catch {
       /* ignore */
@@ -108,6 +114,9 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
         showCompany,
         showName,
         showPhoto,
+        showIndustry,
+        showCompanySize,
+        showFeaturedProducts,
       };
 
       // Save to server
@@ -133,6 +142,9 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
         showCompany,
         showName,
         showPhoto,
+        showIndustry,
+        showCompanySize,
+        showFeaturedProducts,
       };
       localStorage.setItem("vba_qr_privacy_settings", JSON.stringify(payload));
       window.dispatchEvent(new Event("vba_privacy_settings_updated"));
@@ -367,6 +379,75 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
                     type="checkbox"
                     checked={showPhoto}
                     onChange={(e) => setShowPhoto(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#003B95] focus:ring-[#003B95] cursor-pointer"
+                  />
+                </label>
+
+                {/* 7. Industry */}
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-850 transition cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400">
+                      <Building2 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {isEn ? "Industry & Business Field" : "Lĩnh vực kinh doanh & Hoạt động"}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {isEn ? "Show industry details on digital card" : "Hiển thị lĩnh vực chuyên sâu của doanh nghiệp"}
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showIndustry}
+                    onChange={(e) => setShowIndustry(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#003B95] focus:ring-[#003B95] cursor-pointer"
+                  />
+                </label>
+
+                {/* 8. Company Size */}
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-850 transition cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {isEn ? "Employee Scale" : "Quy mô nhân viên"}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {isEn ? "Show enterprise staff size" : "Hiển thị quy mô nhân sự của công ty"}
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showCompanySize}
+                    onChange={(e) => setShowCompanySize(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#003B95] focus:ring-[#003B95] cursor-pointer"
+                  />
+                </label>
+
+                {/* 9. Featured Products */}
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-850 transition cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {isEn ? "Featured Products & Services" : "Sản phẩm / Dịch vụ nổi bật"}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {isEn ? "Highlight flagship solutions on profile" : "Hiển thị giải pháp chủ lực trên danh thiếp"}
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showFeaturedProducts}
+                    onChange={(e) => setShowFeaturedProducts(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300 text-[#003B95] focus:ring-[#003B95] cursor-pointer"
                   />
                 </label>

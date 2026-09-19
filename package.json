@@ -39,6 +39,7 @@
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
     "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1",
     "prettier": "^3.2.5",
     "turbo": "^2.1.2",
     "typescript": "^5.8.3"

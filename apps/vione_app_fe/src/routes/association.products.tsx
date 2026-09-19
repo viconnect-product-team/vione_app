@@ -18,6 +18,10 @@ import {
   Calendar,
   Pencil,
   MoreVertical,
+  Store,
+  BadgeCheck,
+  Globe,
+  Users,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -65,6 +69,26 @@ function formatCurrencyInput(val: string): string {
   const digits = val.replace(/\D/g, "");
   if (!digits) return "";
   return Number(digits).toLocaleString("vi-VN");
+}
+
+function formatSmartProductPrice(rawPrice: string | number | undefined | null): string {
+  if (!rawPrice) return "Liên hệ";
+  if (typeof rawPrice === "string") {
+    if (rawPrice.includes("Tỷ") || rawPrice.includes("Tr") || rawPrice.toLowerCase().includes("thương lượng") || rawPrice.toLowerCase().includes("liên hệ")) {
+      return rawPrice;
+    }
+  }
+  const num = typeof rawPrice === "number" ? rawPrice : Number(String(rawPrice).replace(/\D/g, ""));
+  if (isNaN(num) || num <= 0) return typeof rawPrice === "string" && rawPrice.trim() ? rawPrice : "Liên hệ";
+  if (num >= 1_000_000_000) {
+    const billions = num / 1_000_000_000;
+    return `${billions % 1 === 0 ? billions : billions.toFixed(1).replace(".0", "")} Tỷ đ`;
+  }
+  if (num >= 1_000_000) {
+    const millions = num / 1_000_000;
+    return `${millions % 1 === 0 ? millions : millions.toFixed(1).replace(".0", "")} Tr đ`;
+  }
+  return `${num.toLocaleString("vi-VN")} đ`;
 }
 
 async function compressImage(file: File, maxWidth = 1024, quality = 0.82): Promise<string> {
@@ -192,9 +216,20 @@ function ProductsScreen() {
     }, 600);
   };
 
+  // Company Storefront modal state
+  const [viewingCompany, setViewingCompany] = useState<{
+    name: string;
+    avatarUrl?: string | null;
+    bio?: string;
+    industry?: string;
+    phone?: string;
+    website?: string;
+  } | null>(null);
+  const [companyCatFilter, setCompanyCatFilter] = useState<string>("all");
+
   // Lock body scroll when modal is open to ensure 100% stable centering on mobile
   useEffect(() => {
-    if (quoteProduct || postModalOpen || editingProduct) {
+    if (quoteProduct || postModalOpen || editingProduct || viewingCompany) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -202,12 +237,14 @@ function ProductsScreen() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [quoteProduct, postModalOpen, editingProduct]);
+  }, [quoteProduct, postModalOpen, editingProduct, viewingCompany]);
 
-  // Form states for posting product with full CRM pricing fields
+  // Form states for posting product with full CRM pricing fields & Company storefront
   const [formPhoto, setFormPhoto] = useState("");
   const [formName, setFormName] = useState("");
   const [formCompany, setFormCompany] = useState("");
+  const [formCompanyIntro, setFormCompanyIntro] = useState("");
+  const [formCompanySize, setFormCompanySize] = useState("10 - 50 nhân sự");
   const [formCategory, setFormCategory] = useState("Công nghệ & Phần mềm");
   const [formOriginalPrice, setFormOriginalPrice] = useState("");
   const [formPrice, setFormPrice] = useState("");
@@ -404,6 +441,8 @@ function ProductsScreen() {
       imageUrl: formPhoto || null,
       imageUrls: formPhoto ? [formPhoto] : [],
       company: formCompany.trim() || member?.title || "CLB Doanh Nhân CEO 1983",
+      companyIntro: formCompanyIntro.trim(),
+      companySize: formCompanySize,
     };
 
     try {
@@ -424,6 +463,8 @@ function ProductsScreen() {
       setFormPhoto("");
       setFormName("");
       setFormCompany("");
+      setFormCompanyIntro("");
+      setFormCompanySize("10 - 50 nhân sự");
       setFormOriginalPrice("");
       setFormPrice("");
       setFormUnit("Gói");
@@ -662,25 +703,36 @@ function ProductsScreen() {
                 {/* Product Content */}
                 <div className="p-2.5 sm:p-3 flex flex-col justify-between flex-1">
                   <div>
-                    {/* Company / Seller name */}
-                    <div className="flex items-center gap-1 text-[10.5px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                    {/* Company / Seller name with click to open Storefront */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewingCompany({
+                          name: p.company || "CLB Doanh Nhân CEO 1983",
+                          avatarUrl: resolveMediaUrl(p.imageUrl) || p.imageUrl,
+                          industry: p.category,
+                        });
+                      }}
+                      className="flex items-center gap-1 text-[10.5px] font-medium text-slate-500 hover:text-[#003B95] dark:text-slate-400 dark:hover:text-amber-400 mb-1 text-left cursor-pointer transition-colors max-w-full"
+                    >
                       <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
-                      <span className="truncate">{p.company}</span>
-                    </div>
+                      <span className="truncate hover:underline">{p.company}</span>
+                    </button>
 
                     {/* Product Name */}
                     <h3 className="line-clamp-2 text-[12.5px] sm:text-[13px] font-bold text-slate-900 dark:text-white leading-tight group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors min-h-[32px]">
                       {p.name}
                     </h3>
 
-                    {/* Price Block */}
-                    <div className="mt-1.5 flex flex-wrap items-baseline gap-1.5">
-                      <span className="text-[13px] sm:text-[14px] font-extrabold text-red-600 dark:text-amber-400">
-                        {p.memberPrice || p.price}
+                    {/* Price Block: Không bị cắt thành ... khi giá dài */}
+                    <div className="mt-1.5 flex flex-wrap items-baseline gap-1.5 min-w-0">
+                      <span className="text-[13px] sm:text-[14px] font-extrabold text-red-600 dark:text-amber-400 whitespace-normal break-words leading-tight">
+                        {formatSmartProductPrice(p.memberPrice || p.price)}
                       </span>
                       {p.originalPrice && p.originalPrice !== p.price && (
-                        <span className="text-[10px] text-slate-400 line-through">
-                          {p.originalPrice}
+                        <span className="text-[10px] text-slate-400 line-through whitespace-normal break-words">
+                          {formatSmartProductPrice(p.originalPrice)}
                         </span>
                       )}
                     </div>
@@ -742,168 +794,218 @@ function ProductsScreen() {
             </div>
 
             <form onSubmit={handleCreateProduct} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                {/* Photo Upload */}
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Product Image (Clear & Required)" : "Ảnh sản phẩm (Bắt buộc & Rõ ràng)"}
-                  </label>
-                  {formPhoto ? (
-                    <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                      <img
-                        src={formPhoto}
-                        alt="Ảnh sản phẩm"
-                        className="h-40 w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setFormPhoto("")}
-                        className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/75 text-white hover:bg-rose-600 transition cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
-                      <ImagePlus className="h-7 w-7 text-[#003B95] dark:text-amber-400 mb-1" />
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                        {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên"}
-                      </span>
-                      <span className="text-[10.5px] text-slate-400 mt-0.5">PNG, JPG, WEBP</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          try {
-                            const compressed = await compressImage(file);
-                            if (compressed) setFormPhoto(compressed);
-                          } catch {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              if (typeof reader.result === "string") setFormPhoto(reader.result);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Product / Service Name *" : "Tên sản phẩm / Dịch vụ *"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder={isEn ? "e.g. Enterprise Cloud Digital Transformation..." : "Ví dụ: Gói giải pháp chuyển đổi số doanh nghiệp..."}
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Company / Brand" : "Doanh nghiệp / Hãng"}
-                    </label>
-                    <input
-                      type="text"
-                      value={formCompany}
-                      onChange={(e) => setFormCompany(e.target.value)}
-                      placeholder={isEn ? "Company name" : "Tên công ty"}
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
-                    />
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
+                {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
+                <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 p-3.5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">
+                    <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                    <span>1. Thông tin Doanh Nghiệp & Gian Hàng</span>
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Listed Price (Original)" : "Giá niêm yết (Gốc)"}
-                    </label>
-                    <input
-                      type="text"
-                      value={formOriginalPrice}
-                      onChange={(e) => setFormOriginalPrice(formatCurrencyInput(e.target.value))}
-                      placeholder="Ví dụ: 20.000.000 đ"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-1">
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "VIP Member Price *" : "Giá ưu đãi Hội viên *"}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      {isEn ? "Company / Brand Name *" : "Tên Doanh Nghiệp / Thương Hiệu *"}
                     </label>
                     <input
                       type="text"
                       required
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(formatCurrencyInput(e.target.value))}
-                      placeholder="Ví dụ: 15.000.000 đ"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
+                      value={formCompany}
+                      onChange={(e) => setFormCompany(e.target.value)}
+                      placeholder={isEn ? "Company name" : "Ví dụ: Công ty Cổ phần Công nghệ ABC"}
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
                     />
                   </div>
-                  <div className="col-span-1">
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Unit" : "Đơn vị tính"}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "Employee Scale" : "Quy mô nhân sự"}
+                      </label>
+                      <select
+                        value={formCompanySize}
+                        onChange={(e) => setFormCompanySize(e.target.value)}
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                      >
+                        <option value="Dưới 10 nhân sự">Dưới 10 nhân sự</option>
+                        <option value="10 - 50 nhân sự">10 - 50 nhân sự</option>
+                        <option value="50 - 200 nhân sự">50 - 200 nhân sự</option>
+                        <option value="200 - 500 nhân sự">200 - 500 nhân sự</option>
+                        <option value="Trên 500 nhân sự">Trên 500 nhân sự</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "Industry" : "Lĩnh vực chính"}
+                      </label>
+                      <select
+                        value={formCategory}
+                        onChange={(e) => setFormCategory(e.target.value)}
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                      >
+                        <option value="Công nghệ & Phần mềm">Công nghệ & Phần mềm</option>
+                        <option value="Bất động sản & Xây dựng">Bất động sản & Xây dựng</option>
+                        <option value="Sản xuất & Công nghiệp">Sản xuất & Công nghiệp</option>
+                        <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
+                        <option value="Dịch vụ & Du lịch">Dịch vụ & Du lịch</option>
+                        <option value="Hàng tiêu dùng & Bán lẻ">Hàng tiêu dùng & Bán lẻ</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      {isEn ? "Company Bio / Intro" : "Giới thiệu ngắn về doanh nghiệp"}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formCompanyIntro}
+                      onChange={(e) => setFormCompanyIntro(e.target.value)}
+                      placeholder="Giới thiệu năng lực cung ứng, giấy phép hoặc kinh nghiệm thị trường..."
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* ── PHẦN 2: THÔNG TIN SẢN PHẨM / DỊCH VỤ ── */}
+                <div className="rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 p-3.5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <PackageCheck className="h-4 w-4" />
+                    <span>2. Thông tin Sản Phẩm / Dịch Vụ</span>
+                  </div>
+
+                  {/* Photo Upload */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      {isEn ? "Product Image (Clear & Required)" : "Ảnh sản phẩm (Bắt buộc & Rõ nét)"}
+                    </label>
+                    {formPhoto ? (
+                      <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <img
+                          src={formPhoto}
+                          alt="Ảnh sản phẩm"
+                          className="h-36 w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormPhoto("")}
+                          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/75 text-white hover:bg-rose-600 transition cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
+                        <ImagePlus className="h-6 w-6 text-[#003B95] dark:text-amber-400 mb-1" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                          {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const compressed = await compressImage(file);
+                              if (compressed) setFormPhoto(compressed);
+                            } catch {
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                if (typeof reader.result === "string") setFormPhoto(reader.result);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      {isEn ? "Product / Service Name *" : "Tên sản phẩm / Dịch vụ *"}
                     </label>
                     <input
                       type="text"
-                      value={formUnit}
-                      onChange={(e) => setFormUnit(e.target.value)}
-                      placeholder="Gói / Chiếc / Tháng"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0"
+                      required
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder={isEn ? "e.g. Enterprise Cloud Solution..." : "Ví dụ: Gói giải pháp chuyển đổi số doanh nghiệp..."}
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
                     />
                   </div>
-                  <div className="col-span-1">
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Currency" : "Tiền tệ"}
-                    </label>
-                    <select
-                      value={formCurrency}
-                      onChange={(e) => setFormCurrency(e.target.value)}
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 cursor-pointer"
-                    >
-                      <option value="VND">VNĐ</option>
-                      <option value="USD">USD</option>
-                    </select>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "Listed Price (Original)" : "Giá niêm yết (Gốc)"}
+                      </label>
+                      <input
+                        type="text"
+                        value={formOriginalPrice}
+                        onChange={(e) => setFormOriginalPrice(formatCurrencyInput(e.target.value))}
+                        placeholder="Ví dụ: 20.000.000 đ"
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "VIP Member Price *" : "Giá ưu đãi Hội viên *"}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formPrice}
+                        onChange={(e) => setFormPrice(formatCurrencyInput(e.target.value))}
+                        placeholder="Ví dụ: 15.000.000 đ"
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Industry / Category" : "Lĩnh vực / Danh mục"}
-                  </label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 cursor-pointer"
-                  >
-                    <option value="Công nghệ & Phần mềm">{isEn ? "Technology & Software" : "Công nghệ & Phần mềm"}</option>
-                    <option value="Bất động sản & Xây dựng">{isEn ? "Real Estate & Construction" : "Bất động sản & Xây dựng"}</option>
-                    <option value="Sản xuất & Công nghiệp">{isEn ? "Manufacturing & Industry" : "Sản xuất & Công nghiệp"}</option>
-                    <option value="Tài chính & Đầu tư">{isEn ? "Finance & Investment" : "Tài chính & Đầu tư"}</option>
-                    <option value="Dịch vụ & Du lịch">{isEn ? "Services & Hospitality" : "Dịch vụ & Du lịch"}</option>
-                    <option value="Hàng tiêu dùng & Bán lẻ">{isEn ? "Retail & Consumer Goods" : "Hàng tiêu dùng & Bán lẻ"}</option>
-                  </select>
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "Unit" : "Đơn vị tính"}
+                      </label>
+                      <input
+                        type="text"
+                        value={formUnit}
+                        onChange={(e) => setFormUnit(e.target.value)}
+                        placeholder="Gói / Chiếc / Tháng"
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {isEn ? "Currency" : "Tiền tệ"}
+                      </label>
+                      <select
+                        value={formCurrency}
+                        onChange={(e) => setFormCurrency(e.target.value)}
+                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700 cursor-pointer"
+                      >
+                        <option value="VND">VNĐ</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Description & Quality Commitment" : "Mô tả sản phẩm & Cam kết chất lượng"}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formDesc}
-                    onChange={(e) => setFormDesc(e.target.value)}
-                    placeholder={isEn ? "Describe specs, warranty, exclusive member discounts..." : "Mô tả thông số, chính sách bảo hành, ưu đãi riêng cho hội viên CEO 1983..."}
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-0 resize-none"
-                  />
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      {isEn ? "Description & Quality Commitment" : "Mô tả sản phẩm & Cam kết chất lượng"}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={formDesc}
+                      onChange={(e) => setFormDesc(e.target.value)}
+                      placeholder={isEn ? "Describe specs, warranty, exclusive member discounts..." : "Mô tả thông số, chính sách bảo hành, ưu đãi riêng cho hội viên CEO 1983..."}
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 resize-none"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1209,6 +1311,113 @@ function ProductsScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── MODAL GIAN HÀNG DOANH NGHIỆP (COMPANY STOREFRONT) ── */}
+      {mounted && viewingCompany && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
+          onClick={() => setViewingCompany(null)}
+        >
+          <div
+            className="my-auto w-full max-w-[480px] max-h-[88dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Storefront Header with Royal Blue Gradient */}
+            <div className="relative bg-gradient-to-r from-[#003B95] via-[#002B70] to-[#1E3A8A] p-5 text-white shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewingCompany(null)}
+                className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full bg-black/35 text-white hover:bg-black/60 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-3 mt-1">
+                <div className="relative h-14 w-14 rounded-2xl overflow-hidden bg-white/10 border-2 border-white/30 shrink-0 shadow-md">
+                  <img
+                    src={viewingCompany.avatarUrl || "/ceo1983-official-logo.png"}
+                    alt={viewingCompany.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h2 className="text-sm sm:text-base font-black text-white truncate drop-shadow-xs">
+                      {viewingCompany.name}
+                    </h2>
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-400/25 border border-amber-300/40 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                      <BadgeCheck className="h-3 w-3 text-amber-400" /> Xác thực CEO 1983
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-100/80 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span>{viewingCompany.industry || "Doanh nghiệp thành viên"}</span>
+                    <span>•</span>
+                    <span>Hội viên chính thức CLB CEO 1983</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Bio / Intro */}
+              <div className="mt-3.5 rounded-xl bg-white/10 backdrop-blur-xs p-2.5 text-[11px] text-white/90 leading-relaxed border border-white/10">
+                {viewingCompany.bio || `Doanh nghiệp thành viên chính thức CLB Doanh Nhân CEO 1983. Cam kết cung ứng giải pháp và sản phẩm chất lượng cao với chính sách ưu đãi đặc quyền cho các hội viên.`}
+              </div>
+            </div>
+
+            {/* Storefront Products Catalog */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:thin]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                  <span>Danh Mục Sản Phẩm ({allProducts.filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase()).length})</span>
+                </h3>
+                <span className="text-[10px] text-slate-400">Cam kết bảo trợ CLB</span>
+              </div>
+
+              {allProducts.filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase()).length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Gian hàng hiện đang chuẩn bị thêm sản phẩm mới.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {allProducts
+                    .filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase())
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2.5 overflow-hidden"
+                      >
+                        <div className="aspect-square w-full rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 mb-2">
+                          <img
+                            src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-[11.5px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight">
+                          {p.name}
+                        </p>
+                        <p className="text-[12px] font-black text-red-600 dark:text-amber-400 mt-1 whitespace-normal break-words leading-tight">
+                          {formatSmartProductPrice(p.memberPrice || p.price)}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewingCompany(null);
+                            handleOpenQuoteModal(p);
+                          }}
+                          className="mt-2 w-full py-1 rounded-lg bg-[#003B95] text-white text-[10.5px] font-bold hover:bg-[#002B70] transition cursor-pointer"
+                        >
+                          Nhận báo giá
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>,
         document.body

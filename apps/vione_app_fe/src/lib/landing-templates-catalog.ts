@@ -224,6 +224,27 @@ export const LANDING_TEMPLATES_CATALOG: LandingTemplateMeta[] = [
       "Form đăng ký xét duyệt hội viên trực tuyến tích hợp",
     ],
   },
+  {
+    id: "ceo1983-vertical-3d",
+    name: "CLB CEO 1983 — Bức Tranh 3D Khổ Dọc (Continuous Landscape)",
+    versionLabel: "3D Vertical Landscape",
+    category: "association",
+    categoryName: "Hiệp Hội Uy Tín",
+    tagline: "Bức tranh 3D khổ dọc liên tục: Sky → Birds → Kites → Villas → Water → Underwater Leadership",
+    description:
+      "Trải nghiệm cuộn khám phá một bức tranh 3D khổ dọc không phân cắt: Bầu trời rộng mở, đàn chim bứt phá, cánh diều no gió, quần thể villa thượng lưu, khối nước vô cực và đại dương sâu thẳm cùng ban lãnh đạo CLB CEO 1983.",
+    tags: ["3D Tranh Dọc", "Continuous Landscape", "CEO 1983", "Sky to Ocean", "Điện Ảnh 3D"],
+    themeColor: "#0284C7",
+    badge: "Mới · Độc Bản",
+    previewRoute: "/landing/ceo/v1",
+    recommendedFor: "CLB Doanh Nhân CEO 1983, trải nghiệm thương hiệu độc bản ấn tượng khi người dùng đăng ký hội viên.",
+    features: [
+      "Bức tranh 3D liên tục không chia cắt section chữ nhật",
+      "Parallax đa tầng mượt mà: Sky, Birds, Kites, Villas, Water, Underwater",
+      "Thanh điều hướng Navigation Indicator 6 nấc tương tác tối giản",
+      "Đăng ký nộp hồ sơ tự động cấp tài khoản & mật khẩu gửi về Gmail",
+    ],
+  },
 ];
 
 export const ACTIVE_LANDING_TEMPLATE_STORAGE_KEY = "vione_active_landing_template";

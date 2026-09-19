@@ -448,8 +448,71 @@ The project is deployed to a remote server (`14.225.217.232`) with 2 primary pro
    - **Action Handlers Trong Modal & Form**: Mọi hàm xử lý sự kiện như `handleOpenQuoteModal`, `handleSubmitQuote`, `isPublishing` phải được định nghĩa đầy đủ cùng với state quản lý tương ứng.
 
 189. **Quy Chuẩn Kiểm Thử Toàn Diện E2E, Tài Liệu Nghiệm Thu & Nhật Ký Lỗi**:
-   - **Tách Biệt Báo Cáo Nghiệm Thu & Sửa Lỗi**: Báo cáo kiểm thử người dùng (User Guide) phải xuất bản dạng PDF (`document/HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.pdf`), sử dụng ngôn ngữ phổ thông, không dùng thuật ngữ kỹ thuật khó hiểu, chú thích đầy đủ hình ảnh thực tế và tài khoản thử nghiệm.
-   - **Bảng Test Cases & Tiến Độ Chuẩn Excel**: Các bảng kiểm thử và tiến độ dự án bắt buộc xuất bản định dạng Excel `.xlsx` (`TEST_CASES_APP_HIEP_HOI_CHI_TIET.xlsx`, `TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx`) với đầy đủ phân hệ, checkbox `[ ]` chờ nghiệm thu thủ công và liên kết minh chứng ảnh.
-   - **Nhật Ký Lỗi Dành Riêng Cho Đội Ngũ Lập Trình**: Mọi lỗi phát hiện trong quá trình kiểm thử phải được tập trung vào `document/DANH_SACH_LOI_VA_DIEM_CAN_SUA.md` với mã định danh (Issue ID), phân hệ, triệu chứng, đường dẫn file mã nguồn chính xác và đoạn code gợi ý để lập trình viên xử lý trực tiếp.
-   - **Tuân Thủ Tuyệt Đối Luật Git**: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn chỉ được phép chỉnh sửa cục bộ (local).
+    - **Tách Biệt Báo Cáo Nghiệm Thu & Sửa Lỗi**: Báo cáo kiểm thử người dùng (User Guide) phải xuất bản dạng PDF (`document/HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.pdf`), sử dụng ngôn ngữ phổ thông, không dùng thuật ngữ kỹ thuật khó hiểu, chú thích đầy đủ hình ảnh thực tế và tài khoản thử nghiệm.
+    - **Bảng Test Cases & Tiến Độ Chuẩn Excel**: Các bảng kiểm thử và tiến độ dự án bắt buộc xuất bản định dạng Excel `.xlsx` (`TEST_CASES_APP_HIEP_HOI_CHI_TIET.xlsx`, `TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx`) với đầy đủ phân hệ, checkbox `[ ]` chờ nghiệm thu thủ công và liên kết minh chứng ảnh.
+    - **Nhật Ký Lỗi Dành Riêng Cho Đội Ngũ Lập Trình**: Mọi lỗi phát hiện trong quá trình kiểm thử phải được tập trung vào `document/DANH_SACH_LOI_VA_DIEM_CAN_SUA.md` với mã định danh (Issue ID), phân hệ, triệu chứng, đường dẫn file mã nguồn chính xác và đoạn code gợi ý để lập trình viên xử lý trực tiếp.
+    - **Tuân Thủ Tuyệt Đối Luật Git**: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn chỉ được phép chỉnh sửa cục bộ (local).
+
+190. **Quy Chuẩn 12 Điểm Nâng Cấp Hệ Sinh Thái CEO 1983 (Landing 3D, Mail SMTP, Marketplace Luxury & 5 Kênh Chính Thức)**:
+    - **1) Landing Page 3D Khổ Dọc Liên Tục 600vh (`Ceo1983VerticalLandscape.tsx`)**:
+      - Xây dựng website theo nguyên lý MỘT BỨC TRANH 3D KHỔ DỌC LIÊN TỤC 600vh, cuộn mượt mà qua 6 phân tầng: 01 Sky ☀️☁️ (Mặt trời vàng, mây 3D bồng bềnh, Hero text) -> 02 Birds 🦅 (Đàn chim 3D đa tầng sâu) -> 03 Kites 🪁 (Cánh diều 3D với dây cước căng) -> 04 Villas 🏡 (Biệt thự ven hồ chiếm đúng 1/4 = 25% chiều cao) -> 05 Water 🌊 (Nước xanh ngọc lam trong suốt, gợn sóng caustics) -> 06 Underwater 🦈🐟 (Đại dương sapphire, cá mập bơi ngầm, 4 Tượng đài Lãnh đạo và Master CTA).
+      - Đăng ký và quản lý mẫu landing trong thư viện `landing-templates-catalog.ts` của CRM.
+    - **2) Tự Động Sinh Mật Khẩu & Gửi Gmail SMTP (`mail.service.ts`, `connect-app.service.ts`)**:
+      - Khi doanh nhân nộp đơn từ Landing Page (`POST /connect-app/public/club-registration`), hệ thống tự động sinh mật khẩu ngẫu nhiên bảo mật cao và gửi thư kích hoạt tài khoản kèm thông tin đăng nhập trực tiếp qua dịch vụ Google SMTP tự động.
+    - **3) Ưu Tiên Tuyệt Đối Ảnh Sự Kiện MinIO S3 (`events.functions.ts`, `association.events.tsx`)**:
+      - 100% ảnh sự kiện do CRM tải lên qua MinIO S3 (`event.image`, `event.banner`) được ưu tiên hàng đầu, loại bỏ hoàn toàn các ảnh mockup/fallback khi đã có ảnh thật từ ban tổ chức.
+    - **4) Bảng Tin Cơ Hội B2B — View Counter & Interested Members (`association.opportunities.tsx`, `opportunity.controller.ts`)**:
+      - Tích hợp bộ đếm lượt xem thực tế với biểu tượng Con mắt (`Eye`) và lượt nhấp (`POST /opportunities/:id/view`).
+      - Tác giả bài đăng có quyền xem danh sách hội viên quan tâm (`GET /opportunities/:id/interests`) và thực hiện 3 hành động kết nối 1 chạm: Gọi điện (Call), Gửi thư (Email), Nhắn tin (Chat 1-1).
+    - **5) Sàn Marketplace Shopee-Style CEO Luxury (`association.products.tsx`)**:
+      - Danh mục động theo thời gian thực (Dynamic Categories) & Thanh tìm kiếm sản phẩm thông minh.
+      - Modal Gian Hàng Doanh Nghiệp (Company Storefront Modal): Xem ảnh bìa, logo, bio, verified badge và toàn bộ sản phẩm của doanh nghiệp.
+      - Form tạo sản phẩm 2 phần rõ ràng: Phần 1 - Thông tin doanh nghiệp/nhà cung cấp; Phần 2 - Chi tiết sản phẩm.
+      - Loại bỏ triệt để lỗi rút gọn giá (`...`), sử dụng hàm `formatSmartProductPrice` hiển thị số tiền đầy đủ (kể cả hàng chục tỷ đồng).
+    - **6) Vé Miễn Phí (0đ) & Sửa Ô Nhập Số Lượng Vé (`events.service.ts`, `association.events.tsx`)**:
+      - Đăng ký sự kiện giá vé 0đ lập tức cấp Vé Điện Tử (Ticket Pass) chính thức kèm mã QR check-in xác nhận tham dự thành công mà không yêu cầu thanh toán hay tạo hóa đơn nợ.
+      - Ô nhập số lượng vé cho phép xóa trắng về 0 mà không bị kẹt hay lỗi NaN.
+    - **7) 5 Kênh Thông Báo & Tin Nhắn Chính Thức Của Hiệp Hội (`association.messages.tsx`, `notifications.tsx`)**:
+      - Tích hợp 5 kênh chính thức từ Ban Chấp Hành: Truyền thông (`official_media`), Xúc tiến thương mại (`official_trade`), Ban thư ký (`official_secretariat`), Giao thương B2B (`official_deals`), Sự kiện (`official_events`).
+      - CRM Notification Center tích hợp bộ chọn `targetChatChannel` cho phép phát sóng thông báo mục tiêu trực tiếp vào đúng phòng chat của kênh đã chọn.
+    - **8) Mở Rộng Hồ Sơ Doanh Nhân & Quyền Riêng Tư Thẻ (`association.card.tsx`)**:
+      - Bổ sung 3 trường mở rộng: `industryDetail` (Chi tiết ngành nghề), `companySize` (Quy mô công ty), `featuredProducts` (Sản phẩm tiêu biểu).
+      - Modal Thiết lập quyền riêng tư (Privacy Settings) cho phép chủ thẻ kiểm soát bật/tắt hiển thị mã QR khi quét/chạm danh thiếp.
+    - **9) Chuẩn Hóa Thuật Ngữ "Kết Nối" Thay Thế "Gắn Kết" (Strict Terminology Rule)**:
+      - 100% ứng dụng sử dụng thuật ngữ "kết nối" (Kết nối doanh nhân, Kết nối giao thương, Kết nối bền - Phát triển vững). Tuyệt đối không dùng từ "gắn kết".
+    - **10) Loại Bỏ Hoàn Toàn Thẻ Nhựa Cứng, Chuẩn Hóa Thẻ Thăm Viếng 3D (`Ceo1983BusinessCardVisit`)**:
+      - Toàn bộ app sử dụng Thẻ Danh Thiếp Thăm Viếng 3D Visit Card lật 2 mặt sang trọng, tích hợp trực tiếp bảng điều khiển hồ sơ Executive ngay bên dưới thẻ.
+    - **11) Định Dạng Giá Tiền Tệ Thông Minh Không Bị Cắt Ba Chấm**:
+      - Mọi vị trí hiển thị giá trên Sản phẩm và Cơ hội đều áp dụng thuật toán chia chuỗi và xuống dòng tự động, loại bỏ class `truncate` gây xuất hiện dấu ba chấm `...`.
+    - **12) Tuân Thủ Luật Git Bất Biến**:
+      - TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn chỉ được phép chỉnh sửa cục bộ (local).
+
+191. **Quy Chuẩn Slide Thuyết Trình PowerPoint (.pptx) 3 Màu Chỉ Đạo & Bộ Ảnh Minh Chứng Khắc Phục Triệt Để Sai Khác**:
+     - **Slide PowerPoint (.pptx) Chuẩn 3 Màu Thương Hiệu CLB CEO 1983**:
+       - 1) **Màu Chủ Đạo 1**: Xanh Navy Hoàng Gia (`#003B95` / Deep Navy `#0A1A3A` / Card `#132A56`).
+       - 2) **Màu Chủ Đạo 2**: Vàng Kim / Cam Lửa (`#F59E0B` / Flame Orange `#EA580C` / Amber `#D97706`).
+       - 3) **Màu Chủ Đạo 3**: Trắng Ngà / Bạc Sáng (`#FFFFFF` / Platinum Slate `#F8FAFC` / `#E2E8F0`).
+       - Định dạng trình chiếu 16:9 widescreen, xuất bản thành 2 bộ slide chuẩn C-Level:
+         * `document/SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx` (8 slide phân hệ Hội viên).
+         * `document/SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx` (8 slide phân hệ Quản trị CRM).
+     - **Quy Chuẩn Chụp Ảnh Minh Chứng Live 100% Khắc Phục Sai Khác Bước Mô Tả**:
+       - Toàn bộ ảnh hướng dẫn sử dụng phải được trích xuất trực tiếp từ 2 hệ thống live đang hoạt động: Web CRM (`http://14.225.217.232:5000`) và App Hiệp Hội (`http://14.225.217.232:5002/association`).
+       - TUYỆT ĐỐI KHÔNG lưu lặp lại cùng một ảnh chụp màn hình cho nhiều bước khác nhau. Mọi bước mô tả thao tác tương tác (mở modal, mở drawer, bật công tắc toggle, click menu 3 chấm, mở thread chat, mở popup cuộc gọi, thu hồi tin nhắn, chia sẻ GPS) bắt buộc phải kích hoạt phần tử giao diện thực tế trước khi chụp.
+       - Bộ ảnh 64/64 tệp độc nhất (`sub_01` -> `sub_51` và các ảnh HD trọng điểm) phải có dung lượng và nội dung khác biệt nhau hoàn toàn.
+       - Lưu trữ đồng thời và đồng bộ 100% vào cả hai thư mục: `document/images/evidence/` (build tài liệu) và `apps/vione_app_fe/public/docs/images/evidence/` (in-app web viewer).
+     - **Tái Biên Dịch & Đồng Bộ Đa Nền Tảng**:
+       - Toàn bộ thay đổi ảnh phải được tự động nhúng vào cả 3 định dạng: Microsoft Word (`.docx`), PDF in qua Playwright Chrome (`.pdf`), và Markdown (`.md`).
+       - Đồng bộ cả tên file chuẩn `HUONG_DAN_SU_DUNG_APP_HIEP_HOI.docx` và tên file tương thích `HDSD_App_Hiep_Hoi_CEO1983.docx`.
+192. **Quy Chuẩn Chống Đè Thẻ Giao Diện & Mượt Hóa Chuyển Tab (Mobile Shell Stability & SWR Cache Transition)**:
+     - **Không Dùng Breakpoint Desktop Trong Mobile Wrapper (`MemberScreen`)**:
+       - Khung ứng dụng di động hiệp hội (`MemberScreen`) bị khống chế bề ngang cố định `max-w-[480px]`.
+       - TUYỆT ĐỐI KHÔNG sử dụng media query desktop (`sm:grid`, `md:grid`, `lg:grid`, `sm:overflow-visible`, v.v.) cho các component bên trong khung di động này, vì khi người dùng mở app trên màn hình máy tính (`window.innerWidth >= 640px`), CSS `sm:` sẽ kích hoạt tạo cột lưới desktop bên trong khung ~448px gây tràn viền, vỡ tỉ lệ và đè chéo các thẻ lên nhau (như trường hợp thẻ sự kiện 2 đè 50% lên thẻ 1).
+       - Đối với danh sách thẻ cuộn ngang (sự kiện, ưu đãi, sản phẩm nổi bật), BẮT BUỘC sử dụng Pure Flex Carousel: `flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain`, với kích thước thẻ cấu hình tỉ lệ linh hoạt `w-[245px] max-w-[78%] min-w-[215px] shrink-0 snap-start`.
+     - **Triệt Tiêu Hoàn Toàn Hiện Tượng Nhảy Giật Khung Hình Khi Chuyển Tab**:
+       - 1) **Loại bỏ Dịch Chuyển Trục Y (`styles.css`)**: Tuyệt đối không dùng animation có `translateY(...)` cho hiệu ứng vào trang `.vba-animate` vì sẽ làm toàn bộ viewport nảy 8px và giật header. Bắt buộc dùng `@keyframes vba-fade-in` thuần opacity từ 0 -> 1 trong 0.15s với `cubic-bezier(0.16, 1, 0.3, 1)` và `will-change: opacity`.
+       - 2) **Bộ Nhớ Đệm SWR In-Memory (`useServerData`)**: Hook lấy dữ liệu server bắt buộc hỗ trợ bộ đệm `memoryCache = new Map<string, any>()` qua `cacheKey`. Khi chuyển tab, hook trả về dữ liệu cache ngay frame 0 (`loading = false`), ngăn chặn tình trạng nhấp nháy skeleton, co sụt chiều cao và nảy layout (Layout Shift), sau đó revalidate ngầm. Luôn khai báo `cacheKey` chuẩn khi gọi `useServerData` trên các tab chính (`vba_events`, `vba_my_member`, `vba_conversations`, `vba_directory_members`, `vba_brand`, `vba_benefits`, `vba_identity_pass`, `vba_card_settings`).
+       - 3) **Tự Động Reset Tọa Độ Cuộn Khi Đổi Tab (`PullToRefresh.tsx`)**: Bắt buộc truyền `pathname` vào `PullToRefresh` để `useEffect` lập tức gán `containerRef.current.scrollTop = 0` ngay khi route thay đổi, ngăn ngừa giữ lại vị trí scroll của tab trước.
+       - 4) **Đồng Bộ Chiều Cao Khung Tab**: Sử dụng `min-h-full` thay vì `min-h-[100dvh]` để tránh xung đột co giãn theo thanh địa chỉ trình duyệt di động.
+     - **Tuân Thủ Tuyệt Đối Luật Git (Strict Git Rule)**:
+       - TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`. Mọi thay đổi mã nguồn và tài liệu chỉ được phép chỉnh sửa cục bộ (local).
 

@@ -605,7 +605,7 @@ function CheckinScreen() {
                   className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-[#2E3192]/20 disabled:opacity-60"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>{connecting ? "Đang gửi..." : "Gắn kết ngay"}</span>
+                  <span>{connecting ? "Đang gửi..." : "Kết nối ngay"}</span>
                 </button>
               </div>
 

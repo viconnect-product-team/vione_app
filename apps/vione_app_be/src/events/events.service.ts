@@ -15,6 +15,10 @@ export class CreateEventDto {
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
   associationId?: string;
   qrFields?: string[];
+  image?: string;
+  banner?: string;
+  ticketPrice?: number;
+  fee?: number;
   tickets?: {
     name: string;
     price?: number;
@@ -30,6 +34,10 @@ export class UpdateEventDto {
   capacity?: number;
   type?: 'forum' | 'workshop' | 'networking' | 'training';
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  image?: string;
+  banner?: string;
+  ticketPrice?: number;
+  fee?: number;
 }
 
 @Injectable()
@@ -408,9 +416,12 @@ export class EventsService {
     const eventId = `EV-${timestamp}`;
     const qrFields = Array.from(new Set(data.qrFields && data.qrFields.length > 0 ? data.qrFields : ['registration_code']));
 
+    const evImg = data.image || data.banner || '';
+    const ticketPrice = Number(data.ticketPrice ?? data.fee ?? 0);
+
     await this.prisma.$executeRaw`
       INSERT INTO public.events (
-        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, created_at, updated_at
+        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, created_at, updated_at
       ) VALUES (
         ${eventId},
         ${data.name},
@@ -422,6 +433,10 @@ export class EventsService {
         ${data.type ?? 'forum'},
         ${qrFields}::text[],
         ${assocId}::uuid,
+        ${evImg},
+        ${evImg},
+        ${ticketPrice},
+        ${ticketPrice},
         now(),
         now()
       )
@@ -508,6 +523,8 @@ export class EventsService {
     const capacity = data.capacity !== undefined ? data.capacity : current.capacity;
     const type = data.type !== undefined ? data.type : current.type;
     const status = data.status !== undefined ? data.status : current.status;
+    const evImg = data.image !== undefined ? data.image : (data.banner !== undefined ? data.banner : current.image);
+    const ticketPrice = data.ticketPrice !== undefined ? Number(data.ticketPrice) : (data.fee !== undefined ? Number(data.fee) : Number(current.ticket_price ?? 0));
 
     await this.prisma.$executeRaw`
       UPDATE public.events SET
@@ -517,6 +534,10 @@ export class EventsService {
         capacity = ${capacity},
         type = ${type},
         status = ${status},
+        image = ${evImg},
+        banner = ${evImg},
+        ticket_price = ${ticketPrice},
+        fee = ${ticketPrice},
         updated_at = now()
       WHERE id = ${id}
     `;
@@ -650,6 +671,10 @@ export class EventsService {
         isToday,
         time: valid ? dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
         place: e.location ?? '',
+        image: e.image || e.banner || null,
+        banner: e.banner || e.image || null,
+        ticketPrice: Number(e.ticket_price ?? e.fee ?? 0),
+        fee: Number(e.fee ?? e.ticket_price ?? 0),
         registered: regIds.has(e.id),
         communityName: e.association_name ?? null,
         associationName: e.association_name ?? null,
@@ -690,10 +715,17 @@ export class EventsService {
     const ticketType = attendeeData?.ticketType || 'Standard';
     const note = attendeeData?.note || '';
 
+    const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)
+      ? Number(event.ticket_price)
+      : ((event.fee !== undefined && event.fee !== null) ? Number(event.fee) : 0);
+    const isFree = ticketPrice === 0;
+    const totalAmount = ticketPrice * ticketCount;
+    const paymentStatus = isFree ? 'free' : 'pending';
+
     const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
-        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, created_at, updated_at
+        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, created_at, updated_at
       ) VALUES (
         ${regId},
         ${eventId},
@@ -704,6 +736,8 @@ export class EventsService {
         'confirmed',
         ${ticketType},
         ${event.association_id}::uuid,
+        ${paymentStatus},
+        ${totalAmount},
         now(),
         now()
       )
@@ -714,40 +748,51 @@ export class EventsService {
       UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventId}
     `.catch(() => null);
 
-    // Tính toán phí sự kiện và tự động gửi tin nhắn thanh toán VietQR về mục Tin nhắn trong app hội viên
-    const ticketPrice = Number(event.ticket_price || event.fee || 500000);
-    const totalAmount = ticketPrice * ticketCount;
-    const invoiceNo = `EV-${Date.now().toString(36).toUpperCase()}`;
-    const vietQrUrl = `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
-    const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN');
-    const paymentDesc = encodeURIComponent(`Phí tham dự sự kiện "${event.title || 'Sự kiện'}" (${ticketCount} vé)`);
-    const actionMsg = `[action:payment|amount:${totalAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${dueDate}|desc:${paymentDesc}]`;
-
     if (memberCode) {
-      // 1. Gửi tin nhắn thông báo tiếp nhận đăng ký
-      const greetingMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận thành công thông tin đăng ký tham dự sự kiện "${event.title || 'Sự kiện'}".\n\n- Người đăng ký: ${memberName} (${position ? position + ' - ' : ''}${company || 'Hội viên'})\n- Số điện thoại: ${phone || 'Chưa cập nhật'}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Tổng chi phí: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ\n\nVui lòng quét mã VietQR hoặc chuyển khoản theo hóa đơn bên dưới để hoàn tất thủ tục tham dự.`;
+      if (isFree) {
+        // Sự kiện Free: Gửi tin nhắn xác nhận vé miễn phí thành công
+        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã ĐĂNG KÝ THÀNH CÔNG VÉ MIỄN PHÍ tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé điện tử: ${regId}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái vé: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng xuất trình mã vé QR tại bàn đón tiếp sự kiện.`;
 
-      await this.prisma.$executeRaw`
-        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-        VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${greetingMsg}, NOW() - interval '1 second')
-      `.catch(() => {});
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW())
+        `.catch(() => {});
+      } else {
+        // Sự kiện có phí: Gửi tin nhắn thông báo tiếp nhận & thẻ thanh toán VietQR
+        const invoiceNo = `EV-${Date.now().toString(36).toUpperCase()}`;
+        const vietQrUrl = `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
+        const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN');
+        const paymentDesc = encodeURIComponent(`Phí tham dự sự kiện "${event.title || event.name || 'Sự kiện'}" (${ticketCount} vé)`);
+        const actionMsg = `[action:payment|amount:${totalAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${dueDate}|desc:${paymentDesc}]`;
 
-      // 2. Gửi thẻ thanh toán VietQR (Actionable transaction card)
-      await this.prisma.$executeRaw`
-        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-        VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
-      `.catch(() => {});
+        const greetingMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận thành công thông tin đăng ký tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Người đăng ký: ${memberName} (${position ? position + ' - ' : ''}${company || 'Hội viên'})\n- Số điện thoại: ${phone || 'Chưa cập nhật'}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Tổng chi phí: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ\n\nVui lòng quét mã VietQR hoặc chuyển khoản theo hóa đơn bên dưới để hoàn tất thủ tục tham dự.`;
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${greetingMsg}, NOW() - interval '1 second')
+        `.catch(() => {});
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
+        `.catch(() => {});
+      }
     }
-
-    // Payment invoice is already sent via messages directly with VietQR card.
-    // Redundant fee notifications in the notifications screen have been removed as requested.
 
     return {
       ok: true,
+      registered: true,
       registrationId: regId,
-      invoiceNo,
+      eventId,
+      ticketType,
+      ticketCount,
       totalAmount,
-      message: 'Đăng ký sự kiện thành công! Ban Thư Ký đã gửi thông tin thanh toán vào mục Tin nhắn.',
+      isFree,
+      paymentStatus,
+      status: 'confirmed',
+      message: isFree
+        ? 'Đăng ký vé tham dự sự kiện miễn phí thành công!'
+        : 'Đăng ký sự kiện thành công! Vui lòng hoàn tất thanh toán theo hóa đơn VietQR trong mục Tin nhắn.',
     };
   }
 

@@ -21,6 +21,7 @@ export interface PullToRefreshProps {
   enableSwipeNav?: boolean;
   enableReachability?: boolean;
   enableThumbHub?: boolean;
+  pathname?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ export function PullToRefresh({
   enableSwipeNav = true,
   enableReachability = true,
   enableThumbHub = true,
+  pathname,
 }: PullToRefreshProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +110,13 @@ export function PullToRefresh({
     const t = setTimeout(() => setIsReachabilityActive(false), 10000);
     return () => clearTimeout(t);
   }, [isReachabilityActive]);
+
+  // Instantly reset scroll to top on tab / route switch to prevent scroll jumps
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [pathname]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isRefreshing) return;

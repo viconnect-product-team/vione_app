@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide Thuyết Trình: Ứng Dụng Di Động CLB Doanh Nhân CEO 1983</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #070D1B;
+      --bg-card: #0F172A;
+      --bg-card-hover: #1E293B;
+      --brand-blue: #003B95;
+      --brand-blue-light: #2563EB;
+      --brand-gold: #F59E0B;
+      --brand-orange: #EA580C;
+      --accent-cyan: #06B6D4;
+      --text-white: #FFFFFF;
+      --text-muted: #94A3B8;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(245, 158, 11, 0.35);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      background: var(--bg-dark);
+      color: var(--text-white);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+    .presentation-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(20px) scale(0.98);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 64px 36px;
+      background: radial-gradient(circle at 80% 20%, rgba(0, 59, 149, 0.25) 0%, transparent 50%),
+                  radial-gradient(circle at 10% 80%, rgba(234, 88, 12, 0.12) 0%, transparent 45%),
+                  var(--bg-dark);
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    /* Header */
+    .slide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--brand-blue), #1E3A8A);
+      border: 1px solid var(--border-accent);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #FDE047;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-white);
+    }
+    .slide-step {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-gold);
+      background: rgba(245, 158, 11, 0.12);
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    /* Slide Content */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 0;
+    }
+    .hero-title {
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 50%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #FDE047 0%, #F59E0B 50%, #EA580C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .blue-gradient-text {
+      background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #1D4ED8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 900px;
+      margin-bottom: 32px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    /* Card Elements */
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-4px);
+    }
+    .feature-card.highlight {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(0, 59, 149, 0.25));
+    }
+    .icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(0, 59, 149, 0.35);
+      border: 1px solid rgba(0, 59, 149, 0.5);
+      color: #93C5FD;
+    }
+    .icon-box.gold {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #FDE047;
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    /* Status pills & stats */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      width: fit-content;
+    }
+    .pill.green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .pill.orange {
+      background: rgba(234, 88, 12, 0.15);
+      color: #FB923C;
+      border: 1px solid rgba(234, 88, 12, 0.3);
+    }
+    /* Controls Footer */
+    .slide-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-white);
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--brand-blue);
+      border-color: var(--brand-blue-light);
+    }
+    .dot-indicators {
+      display: flex;
+      gap: 8px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .dot.active {
+      background: var(--brand-gold);
+      transform: scale(1.3);
+      box-shadow: 0 0 10px var(--brand-gold);
+    }
+    /* Visual Showcase Containers */
+    .showcase-visual {
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.95));
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .showcase-tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.2);
+      color: #FDE047;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      text-transform: uppercase;
+    }
+    .stat-number {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--brand-gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="presentation-container">
+
+    <!-- SLIDE 1: COVER -->
+    <div class="slide active" id="slide-1">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">CEO 1983 ECOSYSTEM</span>
+          <span class="brand-title">CLB DOANH NHÂN CEO 1983 · NÂNG TẦM GIÁ TRỊ</span>
+        </div>
+        <div class="slide-step">01 / 08 · TỔNG QUAN</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <div class="pill orange" style="margin-bottom: 16px;">
+              ⭐ PHIÊN BẢN CÔNG NGHỆ CAO CẤP v2.6.0
+            </div>
+            <h1 class="hero-title">
+              HỆ SINH THÁI SỐ<br />
+              <span class="gold-gradient-text">CLB DOANH NHÂN CEO 1983</span>
+            </h1>
+            <p class="hero-subtitle">
+              Ứng dụng di động chuyên biệt dành riêng cho thế hệ lãnh đạo doanh nghiệp sinh năm 1983 (Quý Hợi). 
+              Thiết kế đột phá theo tinh thần: <strong>"Kết nối bền - Phát triển vững"</strong>, số hóa 100% tài nguyên giao thương, danh thiếp số và hợp tác B2B.
+            </p>
+            <div style="display: flex; gap: 20px;">
+              <div>
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Danh thiếp số Visit Card</div>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 20px;">
+                <div class="stat-number">05</div>
+                <div class="stat-label">Kênh tin tức chuyên biệt</div>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 20px;">
+                <div class="stat-number">0đ</div>
+                <div class="stat-label">Vé Pass sự kiện tức thì</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">ARCHITECTURE</span>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="feature-card highlight">
+                <div class="icon-box gold">☀️</div>
+                <div class="card-title">Vertical 3D Illustrated Landscape</div>
+                <div class="card-desc">Landing page thế hệ mới: Khổ dọc 600vh liên tục từ Bầu trời (Sky) xuống Lãnh đạo Đáy đại dương (Underwater).</div>
+              </div>
+              <div class="feature-card">
+                <div class="icon-box">🤝</div>
+                <div class="card-title">Trao Cơ Hội & Sàn Sản Phẩm B2B Luxury</div>
+                <div class="card-desc">Showroom số Shopee-style phong cách CEO, tracking lượt click và danh tính đối tác quan tâm trực tiếp.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Bản quyền nội dung © CLB Doanh Nhân CEO 1983 (ceo1983.com)</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators" id="dots"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: 3D VERTICAL LANDSCAPE -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">ĐỘT PHÁ THIẾT KẾ</span>
+          <span class="brand-title">CONTINUOUS VERTICAL 3D ILLUSTRATED LANDSCAPE</span>
+        </div>
+        <div class="slide-step">02 / 08 · LANDING PAGE 3D</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          BỨC TRANH 3D KHỔ DỌC LIÊN TỤC <span class="gold-gradient-text">600VH</span>
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Không chia 6 block độc lập · Không card-heavy · Toàn bộ trang web là MỘT BỨC TRANH 3D NGHỆ THUẬT ĐIỆN ẢNH sống động từ trên cao xuống đáy biển.
+        </p>
+        <div class="grid-3">
+          <div class="feature-card">
+            <div class="icon-box gold">☀️ ☁️</div>
+            <div class="card-title">01. SKY — Bầu Trời & Vầng Thái Dương</div>
+            <div class="card-desc">Ánh sáng mềm mại, nhiều tầng mây 3D bồng bềnh lơ lửng. Hero text và tinh thần khát vọng vươn tầm của CEO 1983.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box">🦅</div>
+            <div class="card-title">02. BIRDS — Đàn Chim Tung Cánh</div>
+            <div class="card-desc">Đàn chim 3D bay lượn ở nhiều cự ly và độ cao khác nhau. Không có đường cắt phân cách, mây scene trước vẫn tồn tại.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">🪁</div>
+            <div class="card-title">03. KITES — Cánh Diều Khát Vọng</div>
+            <div class="card-desc">Cánh diều 3D với dây diều kéo dài theo chiều dọc, chim và mây hòa quyện tạo chiều sâu không gian đa lớp.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box">🏡</div>
+            <div class="card-title">04. VILLAS — Quần Thể Kiến Trúc Sang Trọng</div>
+            <div class="card-desc">Đường chân trời xuất hiện, villa sang trọng chỉ chiếm 1/4 chiều cao khu vực, phía trên vẫn nhìn thấy cánh diều và bầu trời xa.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">🌊</div>
+            <div class="card-title">05. WATER — Infinity Pool & Mặt Nước</div>
+            <div class="card-desc">Khối nước đại dương khổng lồ, hiệu ứng gợn sóng (ripples), phản chiếu ánh sáng (reflection) chuyển tiếp mượt mà xuống lòng biển.</div>
+          </div>
+          <div class="feature-card highlight">
+            <div class="icon-box">🦈 👤</div>
+            <div class="card-title">06. UNDERWATER — Lãnh Đạo & Cá Mập</div>
+            <div class="card-desc">Deep blue ocean, cá mập bơi chậm rãi, bọt khí và luồng sáng xuyên nước. Chân dung Leadership hòa quyện vào đại dương.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tương tác cuộn mượt mà (Parallax Cinematic Scroll) tích hợp Modal Đăng Ký Đẩy CRM Tức Thời</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: THẺ VISIT CARD & DANH THIẾP SỐ -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">TIỆN ÍCH HỘI VIÊN</span>
+          <span class="brand-title">DANH THIẾP SỐ & PROFILE DOANH NGHIỆP 360°</span>
+        </div>
+        <div class="slide-step">03 / 08 · THẺ DOANH NHÂN</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <h2 class="hero-title" style="font-size: 34px;">
+              XÓA BỎ THẺ CỨNG VẬT LÝ<br />
+              <span class="gold-gradient-text">100% THẺ VISIT CARD 3D</span>
+            </h2>
+            <p class="hero-subtitle">
+              Ứng dụng chuyển đổi hoàn toàn sang giao diện thẻ Visit Card chuẩn doanh nhân cao cấp. Tích hợp hồ sơ 360° và cơ chế bảo mật quyền riêng tư trực tiếp.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="pill green">✓ Lật thẻ 3D 2 mặt (Mặt trước Brandbook · Mặt sau Slogan Cam)</div>
+              <div class="pill green">✓ Khung ngắm chụp / Tải ảnh nền danh thiếp chuẩn tỷ lệ 1.7:1</div>
+              <div class="pill green">✓ Chạm NFC 1 chạm truyền danh thiếp vào smartphone đối tác</div>
+              <div class="pill green">✓ Tích hợp Apple Wallet & Google Wallet tiện dụng</div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">EXTENDED PROFILE</span>
+            <h3 class="card-title" style="margin-bottom: 12px; font-size: 19px;">Trường Thông Tin Mở Rộng Cho Hội Viên</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="feature-card" style="padding: 14px;">
+                <strong style="color: #FDE047;">Lĩnh vực & Chuyên ngành chi tiết:</strong>
+                <span style="font-size: 12.5px; color: #CBD5E1;">Định danh rõ năng lực lõi (ERP, Chuyển đổi số, Xây dựng dân dụng, Logistics...).</span>
+              </div>
+              <div class="feature-card" style="padding: 14px;">
+                <strong style="color: #60A5FA;">Quy mô nhân sự & Pháp nhân:</strong>
+                <span style="font-size: 12.5px; color: #CBD5E1;">Xác thực quy mô công ty (&lt;50, 50-200, &gt;500 nhân sự) tạo niềm tin hợp tác B2B.</span>
+              </div>
+              <div class="feature-card" style="padding: 14px;">
+                <strong style="color: #34D399;">Sản phẩm / Dịch vụ nổi bật:</strong>
+                <span style="font-size: 12.5px; color: #CBD5E1;">Giới thiệu năng lực cung ứng ngay trên danh thiếp khi quét mã QR hoặc chạm thẻ.</span>
+              </div>
+              <div class="feature-card highlight" style="padding: 14px;">
+                <strong style="color: #F59E0B;">Bảo mật & Quyền riêng tư hiển thị:</strong>
+                <span style="font-size: 12.5px; color: #CBD5E1;">Hội viên tự do bật/tắt hiển thị SĐT, Email, Địa chỉ, Sản phẩm khi chia sẻ công khai.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đồng bộ tức thời giữa Thẻ cá nhân và Hồ sơ công khai trên web card/CEO1983-xxx</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: SÀN GIAO THƯƠNG MARKETPLACE -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">SÀN THƯƠNG MẠI B2B</span>
+          <span class="brand-title">GIAN HÀNG SỐ SHOPEE-STYLE ĐẲNG CẤP CEO</span>
+        </div>
+        <div class="slide-step">04 / 08 · SÀN SẢN PHẨM</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          SÀN GIAO THƯƠNG DOANH NGHIỆP <span class="gold-gradient-text">CHUẨN SHOPEE CEO</span>
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Không chỉ bán sản phẩm tiêu dùng, đây là sàn đa dụng phục vụ công nghệ, xây dựng, tư vấn, chuỗi cung ứng. Bố cục thương mại điện tử hiện đại, phối màu xanh hoàng gia và vàng kim sang trọng.
+        </p>
+        <div class="grid-4">
+          <div class="feature-card">
+            <div class="icon-box gold">🏢</div>
+            <div class="card-title">Gian Hàng Doanh Nghiệp (Storefront)</div>
+            <div class="card-desc">Bấm vào công ty sẽ mở Showroom số: Ảnh bìa, Logo dập nổi, tiểu sử doanh nghiệp, chứng nhận xác thực và toàn bộ danh mục sản phẩm của riêng công ty đó.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box">🏷️</div>
+            <div class="card-title">Danh Mục & Lĩnh Vực Dynamic</div>
+            <div class="card-desc">Hệ thống danh mục động linh hoạt theo từng ngành nghề: Công nghệ thông tin, Thiết bị xây dựng, F&B, Xuất nhập khẩu, Dịch vụ tài chính.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">💰</div>
+            <div class="card-title">Hiển Thị Giá Thông Minh (Không Bị "...")</div>
+            <div class="card-desc">Khắc phục triệt để lỗi giá dài bị cắt thành <code>...</code>. Giá tiền tệ tỷ đồng (Ví dụ: <code>15,000,000,000 đ</code>) được format tự động, rõ ràng và đầy đủ.</div>
+          </div>
+          <div class="feature-card highlight">
+            <div class="icon-box">✍️</div>
+            <div class="card-title">Form Đăng 2 Phân Đoạn Chuẩn Hóa</div>
+            <div class="card-desc">Khai báo thông tin Doanh nghiệp (Tên công ty, ngành hàng, website) và thông tin Sản phẩm (Tên, danh mục, giá, mô tả, ảnh MinIO chuẩn).</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tích hợp thanh tìm kiếm thông minh kết hợp lọc theo danh mục, khoảng giá và công ty thành viên</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: BẢNG TIN TRAO CƠ HỘI KINH DOANH -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">KẾT NỐI DOANH THƯƠNG</span>
+          <span class="brand-title">BẢNG TIN CƠ HỘI & TRACKING TƯƠNG TÁC THỜI GIAN THỰC</span>
+        </div>
+        <div class="slide-step">05 / 08 · TRAO CƠ HỘI B2B</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <h2 class="hero-title" style="font-size: 34px;">
+              TRAO CƠ HỘI B2B<br />
+              <span class="gold-gradient-text">TRACKING REAL-TIME MINH BẠCH</span>
+            </h2>
+            <p class="hero-subtitle">
+              Mỗi cơ hội hợp tác được theo dõi chỉ số click xem và nhận diện chính xác danh tính các hội viên quan tâm, giúp chủ doanh nghiệp chủ động kết nối chốt deal.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="feature-card">
+                <div class="icon-box gold">👁️</div>
+                <div>
+                  <h4 class="card-title">Bộ Đếm Lượt Xem Thực Tế (View Counter)</h4>
+                  <p class="card-desc">Icon con mắt thể hiện chính xác số lần hội viên nhấp vào xem cơ hội kinh doanh. Tự động tăng đếm qua API Backend chuyên biệt.</p>
+                </div>
+              </div>
+              <div class="feature-card highlight">
+                <div class="icon-box">👥</div>
+                <div>
+                  <h4 class="card-title">Nhận Diện Người Quan Tâm 1-Click</h4>
+                  <p class="card-desc">Chủ bài đăng có thể mở danh sách các CEO đã bấm "Quan tâm", xem chức vụ, công ty và liên hệ ngay qua Điện thoại, Email hoặc Chat nội bộ.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">OPPORTUNITY FLOW</span>
+            <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px; margin-bottom: 16px;">
+              <span class="pill orange">TRAO CƠ HỘI ĐỘC QUYỀN</span>
+              <h3 style="font-size: 18px; font-weight: 800; margin-top: 8px;">Cung cấp vật tư thiết bị điện cho dự án KĐT</h3>
+              <p style="font-size: 12.5px; color: #94A3B8; margin-top: 4px;">Giá trị deal: <strong style="color: #FDE047;">8,500,000,000 đ</strong> · Hạn chót: 30/10/2026</p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px;">
+                <div style="font-size: 11px; color: #94A3B8;">LƯỢT XEM BÀI</div>
+                <div style="font-size: 24px; font-weight: 900; color: #60A5FA;">142 lượt</div>
+              </div>
+              <div style="background: rgba(245, 158, 11, 0.08); padding: 12px; border-radius: 12px;">
+                <div style="font-size: 11px; color: #F59E0B;">CEO QUAN TÂM</div>
+                <div style="font-size: 24px; font-weight: 900; color: #FDE047;">08 đối tác</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #34D399; font-weight: 700;">
+              ✓ Danh sách hội viên quan tâm có đầy đủ SĐT, Email và nút Chat trực tiếp
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Xóa bỏ tình trạng rút gọn giá thành '...' · Giá trị cơ hội hiển thị trọn vẹn và chuyên nghiệp</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: SỰ KIỆN & VÉ MIỄN PHÍ 0Đ -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">QUẢN TRỊ SỰ KIỆN</span>
+          <span class="brand-title">LUỒNG VÉ 0Đ & ĐỒNG BỘ ẢNH MINIO TỰ ĐỘNG</span>
+        </div>
+        <div class="slide-step">06 / 08 · SỰ KIỆN HIỆP HỘI</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          SỰ KIỆN THÔNG MINH: <span class="gold-gradient-text">VÉ MIỄN PHÍ 0Đ</span> & ĐỒNG BỘ ẢNH
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Giải quyết hoàn hảo các bất cập trước đây: Hỗ trợ trọn vẹn luồng vé miễn phí 0đ, input số lượng vé nhập xóa mượt mà, và pipeline ảnh chuẩn MinIO ghi đè ảnh demo.
+        </p>
+        <div class="grid-3">
+          <div class="feature-card highlight">
+            <div class="icon-box gold">🎟️</div>
+            <div class="card-title">Luồng Sự Kiện Miễn Phí (0đ) Hoàn Thiện</div>
+            <div class="card-desc">Khi hội viên đăng ký sự kiện 0đ, hệ thống lập tức xuất Vé Pass Hội đồng điện tử kèm QR Check-in mà không ép tạo hóa đơn thanh toán giả lập.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box">🖼️</div>
+            <div class="card-title">Đồng Bộ Ảnh MinIO Tuyệt Đối</div>
+            <div class="card-desc">Ảnh sự kiện được upload từ CRM qua MinIO Storage sẽ tự động ưu tiên hiển thị trên mobile app, tự động ghi đè mọi ảnh hardcode / ảnh demo cũ.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">⚡</div>
+            <div class="card-title">Sửa Lỗi Nhập Ô Vé Sự Kiện</div>
+            <div class="card-desc">Ô nhập số lượng vé cho phép xóa trắng về 0 và nhập số mới tự nhiên, không bị kẹt số hoặc lỗi không xóa được số lượng vé.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Check-in QR tốc độ cao tại cửa hội nghị · Đối soát danh sách khách mời thời gian thực</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: HỆ THỐNG TIN NHẮN ĐA KÊNH CHUYÊN BIỆT -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">TRUYỀN THÔNG ĐA KÊNH</span>
+          <span class="brand-title">5 KÊNH CHUYÊN BIỆT & BROADCAST DYNAMIC TỪ CRM</span>
+        </div>
+        <div class="slide-step">07 / 08 · TIN NHẮN ĐA KÊNH</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          5 KÊNH TIN TỨC CHUYÊN BIỆT & <span class="gold-gradient-text">CRM BROADCAST</span>
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Thông báo quan trọng từ Ban Quản Trị không chỉ hiện ở chuông thông báo mà được đẩy trực tiếp vào các kênh tin nhắn nghiệp vụ của toàn thể hội viên.
+        </p>
+        <div class="grid-4" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="feature-card">
+            <div class="icon-box" style="background: rgba(244, 63, 94, 0.2); color: #FB7185;">📢</div>
+            <div class="card-title" style="font-size: 15px;">Kênh Truyền Thông</div>
+            <div class="card-desc">Bản tin hoạt động, thông cáo báo chí, hình ảnh và hoạt động vì cộng đồng của CLB.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box" style="background: rgba(16, 185, 129, 0.2); color: #34D399;">🤝</div>
+            <div class="card-title" style="font-size: 15px;">Kênh Xúc Tiến</div>
+            <div class="card-desc">Chương trình giao thương B2B, đoàn khảo sát doanh nghiệp, cơ hội hợp tác dự án lớn.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA;">🏛️</div>
+            <div class="card-title" style="font-size: 15px;">Kênh Ban Thư Ký</div>
+            <div class="card-desc">Nghị quyết, quyết định công nhận hội viên mới, thông báo hội phí và điều lệ sinh hoạt.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">🎯</div>
+            <div class="card-title" style="font-size: 15px;">Kênh Deal B2B</div>
+            <div class="card-desc">Đơn đặt hàng nóng, nhu cầu mua sắm nguyên vật liệu độc quyền trong nội bộ hội viên.</div>
+          </div>
+          <div class="feature-card highlight">
+            <div class="icon-box" style="background: rgba(168, 85, 247, 0.2); color: #C084FC;">🌟</div>
+            <div class="card-title" style="font-size: 15px;">Kênh Sự Kiện</div>
+            <div class="card-desc">Lịch hội nghị thường niên, giải Golf Doanh nhân, lễ vinh danh và ngày hội gia đình.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Từ ngữ chuẩn hóa 100%: Thay thế toàn bộ từ "gắn kết" thành "kết nối" trên toàn hệ thống</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: KẾT LUẬN & TẦM NHÌN -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">TẦM NHÌN PHÁT TRIỂN</span>
+          <span class="brand-title">KẾT NỐI BỀN - PHÁT TRIỂN VỮNG · CLB CEO 1983</span>
+        </div>
+        <div class="slide-step">08 / 08 · TẦM NHÌN SỐ</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <div class="pill orange" style="margin-bottom: 16px;">
+              GIÁ TRỊ TIÊN PHONG CỦA THẾ HỆ 1983
+            </div>
+            <h2 class="hero-title">
+              NÂNG TẦM DOANH NGHIỆP<br />
+              <span class="gold-gradient-text">TRONG KỶ NGUYÊN SỐ</span>
+            </h2>
+            <p class="hero-subtitle">
+              Ứng dụng di động Hiệp hội CEO 1983 không chỉ là công cụ liên lạc mà là <strong>Nền tảng Tác chiến Kinh doanh Toàn diện</strong>, biến sức mạnh đoàn kết của các doanh nhân tuổi Hợi thành lợi thế cạnh tranh vượt trội trên thương trường.
+            </p>
+            <div style="display: flex; gap: 14px; margin-top: 24px;">
+              <div class="feature-card" style="padding: 16px; flex: 1;">
+                <strong style="color: #FDE047;">MINH BẠCH</strong>
+                <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Dữ liệu sự kiện, hội phí và cơ hội deal đều được kiểm soát chuẩn mực.</p>
+              </div>
+              <div class="feature-card" style="padding: 16px; flex: 1;">
+                <strong style="color: #60A5FA;">HIỆU QUẢ</strong>
+                <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Giao thương trực tiếp giữa các CEO mà không qua khâu trung gian.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-visual" style="text-align: center; padding: 40px 24px;">
+            <div style="font-size: 50px; margin-bottom: 12px;">🌟</div>
+            <h3 style="font-size: 26px; font-weight: 900; color: #FFFFFF; margin-bottom: 8px;">CLB DOANH NHÂN CEO 1983</h3>
+            <p style="font-size: 15px; color: #F59E0B; font-weight: 700; margin-bottom: 24px;">
+              "KẾT NỐI BỀN - PHÁT TRIỂN VỮNG"
+            </p>
+            <div style="display: inline-flex; gap: 12px;">
+              <span class="pill green">Web: ceo1983.com</span>
+              <span class="pill">Hệ điều hành: iOS & Android</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Cảm ơn Ban Chấp Hành & Toàn thể Hội Viên Doanh Nhân CLB CEO 1983</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="goToSlide(0)">Về Đầu ↺</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function buildDots() {
+      document.querySelectorAll('.dot-indicators').forEach(container => {
+        container.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+          const dot = document.createElement('div');
+          dot.className = `dot ${i === currentSlide ? 'active' : ''}`;
+          dot.onclick = () => goToSlide(i);
+          container.appendChild(dot);
+        }
+      });
+    }
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+      currentSlide = index;
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+      buildDots();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    function goToSlide(i) {
+      showSlide(i);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'Home') {
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    buildDots();
+  </script>
+</body>
+</html>

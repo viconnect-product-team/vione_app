@@ -19,6 +19,9 @@ export type EventItem = {
   status: "upcoming" | "ongoing" | "completed" | "cancelled";
   type: "forum" | "workshop" | "networking" | "training";
   qrFields: QrField[];
+  image?: string | null;
+  banner?: string | null;
+  ticketPrice?: number | null;
 };
 
 export type TicketType = {
@@ -65,6 +68,9 @@ function mapEvent(r: Row): EventItem {
     status: r.status as EventItem["status"],
     type: r.type as EventItem["type"],
     qrFields: normalizeQrFields(r.qr_fields),
+    image: (r.image as string) ?? null,
+    banner: (r.banner as string) ?? null,
+    ticketPrice: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : null,
   };
 }
 
@@ -153,6 +159,9 @@ const eventInput = z.object({
   capacity: z.number().int().min(0).max(1000000).default(0),
   type: z.enum(["forum", "workshop", "networking", "training"]),
   status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]),
+  image: z.string().optional().nullable(),
+  banner: z.string().optional().nullable(),
+  ticketPrice: z.number().optional().nullable(),
 });
 
 export const createEventFn = createServerFn({ method: "POST" })

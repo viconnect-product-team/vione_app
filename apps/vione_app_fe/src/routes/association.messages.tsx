@@ -73,6 +73,10 @@ import {
   Pin,
   BellOff,
   Bell,
+  Megaphone,
+  Handshake,
+  Building2,
+  Sparkles,
 } from "lucide-react";
 import { uploadChatAttachment } from "@/lib/upload-media";
 import { toast } from "sonner";
@@ -405,7 +409,7 @@ function formatMessagePreview(raw?: string | null): string {
 function MessagesScreen() {
   const search = Route.useSearch();
   const fetchMembers = useServerFn(listMembers);
-  const { data: members = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
+  const { data: members = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), [], "vba_directory_members");
 
   const [active, setActive] = useState<MyConversation | null>(() => {
     if (search.peerCode) {
@@ -455,7 +459,7 @@ function MessagesScreen() {
   return <ConversationList onOpen={handleOpenConversation} members={members} />;
 }
 
-type ConvFilter = "all" | "groups" | "friends" | "unread" | "system" | "pending";
+type ConvFilter = "all" | "channels" | "groups" | "friends" | "unread" | "system" | "pending";
 type ConvSortMode = "newest" | "oldest" | "alpha_asc" | "alpha_desc" | "unread_first";
 
 const ALPHABET_LETTERS = [
@@ -523,7 +527,7 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
 
 function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConversation) => void; members?: DirectoryMember[] }) {
   const { user } = useAuth();
-  const { data: myMember } = useServerData<MyMember | null>(() => getMyMember(), null);
+  const { data: myMember } = useServerData<MyMember | null>(() => getMyMember(), null, "vba_my_member");
   const t = useT();
   const fmt = useFmt();
   const {
@@ -531,7 +535,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     loading,
     error,
     reload,
-  } = useServerData<MyConversation[]>(() => listConversations(), []);
+  } = useServerData<MyConversation[]>(() => listConversations(), [], "vba_conversations");
 
   const [localRecents, setLocalRecents] = useState<MyConversation[]>(() => {
     if (typeof window === "undefined") return [];
@@ -695,7 +699,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   }, []);
 
   const fetchMembers = useServerFn(listMembers);
-  const { data: fetchedMembers = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
+  const { data: fetchedMembers = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), [], "vba_directory_members");
   const members = propMembers && propMembers.length > 0 ? propMembers : fetchedMembers;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
@@ -953,6 +957,87 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       }
     } catch {}
 
+    // CÁC KÊNH THÔNG TIN CHÍNH THỨC HIỆP HỘI (Req 7: Kênh truyền thông, xúc tiến, thư ký, deal B2B, sự kiện)
+    const officialChannels: MyConversation[] = [
+      {
+        peerCode: "channel_media",
+        name: "📢 Kênh Truyền Thông Hiệp Hội",
+        last: "Bản tin hoạt động CLB CEO 1983, thông cáo báo chí & sự kiện mới",
+        time: "Hôm nay",
+        rawTime: new Date().toISOString(),
+        unread: 0,
+        isSystem: true,
+        avatarUrl: null,
+      },
+      {
+        peerCode: "channel_promotion",
+        name: "🤝 Kênh Xúc Tiến Giao Thương",
+        last: "Cơ hội giao thương B2B, liên kết chuỗi cung ứng doanh nghiệp",
+        time: "Hôm nay",
+        rawTime: new Date().toISOString(),
+        unread: 0,
+        isSystem: true,
+        avatarUrl: null,
+      },
+      {
+        peerCode: "channel_secretariat",
+        name: "🏛️ Kênh Ban Thư Ký & Ban Điều Hành",
+        last: "Văn bản chỉ đạo, nghị quyết, thông báo hội phí & điều lệ CLB",
+        time: "Hôm qua",
+        rawTime: new Date(Date.now() - 86400000).toISOString(),
+        unread: 0,
+        isSystem: true,
+        avatarUrl: null,
+      },
+      {
+        peerCode: "channel_deals",
+        name: "🎯 Kênh Cơ Hội & Deal B2B",
+        last: "Đơn hàng B2B độc quyền, chào mua cung ứng vật tư & dịch vụ",
+        time: "Hôm qua",
+        rawTime: new Date(Date.now() - 86400000).toISOString(),
+        unread: 0,
+        isSystem: true,
+        avatarUrl: null,
+      },
+      {
+        peerCode: "channel_events",
+        name: "🌟 Kênh Sự Kiện & Hội Nghị",
+        last: "Lễ hội giao thương, Gala thường niên & các giải đấu thể thao CLB",
+        time: "2 ngày trước",
+        rawTime: new Date(Date.now() - 172800000).toISOString(),
+        unread: 0,
+        isSystem: true,
+        avatarUrl: null,
+      },
+    ];
+
+    for (const chan of officialChannels) {
+      const key = chan.peerCode.toLowerCase();
+      try {
+        const chanHistory = localStorage.getItem(`vba.chat.${chan.peerCode}`);
+        if (chanHistory) {
+          const parsed = JSON.parse(chanHistory);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const lastMsg = parsed[parsed.length - 1];
+            chan.last = lastMsg.text || lastMsg.body || chan.last;
+            chan.time = lastMsg.time || chan.time;
+            chan.rawTime = lastMsg.createdAt || chan.rawTime;
+          }
+        }
+      } catch {}
+      if (!map.has(key)) {
+        map.set(key, chan);
+      } else {
+        const existing = map.get(key)!;
+        map.set(key, {
+          ...chan,
+          last: existing.last || chan.last,
+          time: existing.time || chan.time,
+          rawTime: existing.rawTime || chan.rawTime,
+        });
+      }
+    }
+
     // Kiểm tra nếu có tin nhắn bị thu hồi gần đây trong local storage
     for (const [k, c] of map.entries()) {
       try {
@@ -1020,25 +1105,30 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   });
 
   const isGroupConv = (c: MyConversation) => Boolean(c.isGroup || c.peerCode.startsWith("group_"));
+  const isChannelConv = (c: MyConversation) => Boolean(c.peerCode.startsWith("channel_"));
 
+  const channelsCount = allConversations.filter(isChannelConv).length;
   const groupsCount = allConversations.filter(isGroupConv).length;
   const pendingCount = allConversations.filter(
-    (c) => !isGroupConv(c) && !c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system" && !c.isConnected
+    (c) => !isGroupConv(c) && !isChannelConv(c) && !c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system" && !c.isConnected
   ).length;
   const friendsCount = allConversations.filter(
-    (c) => !isGroupConv(c) && c.isConnected && !c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system"
+    (c) => !isGroupConv(c) && !isChannelConv(c) && c.isConnected && !c.isSystem && c.peerCode !== "admin" && c.peerCode !== "system"
   ).length;
   const systemCount = allConversations.filter(
-    (c) => c.isSystem || c.peerCode === "admin" || c.peerCode === "system"
+    (c) => (c.isSystem || c.peerCode === "admin" || c.peerCode === "system") && !isChannelConv(c)
   ).length;
   const unreadCount = allConversations.filter((c) => (c.unread || 0) > 0).length;
   const allCount = allConversations.filter(
-    (c) => isGroupConv(c) || c.isSystem || c.peerCode === "admin" || c.peerCode === "system" || Boolean(c.last && c.last.trim())
+    (c) => isGroupConv(c) || isChannelConv(c) || c.isSystem || c.peerCode === "admin" || c.peerCode === "system" || Boolean(c.last && c.last.trim())
   ).length;
 
   const baseConvs = useMemo(() => {
     let list = allConversations;
-    if (activeTab === "groups") {
+    if (activeTab === "channels") {
+      // Kênh Hiệp Hội chính thức (Req 7)
+      list = allConversations.filter(isChannelConv);
+    } else if (activeTab === "groups") {
       // Nhóm trò chuyện (Messenger Style)
       list = allConversations.filter(isGroupConv);
     } else if (activeTab === "pending") {
@@ -1130,7 +1220,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   }, [baseConvs, searchTerm]);
 
   return (
-    <div className="vba-app vba-animate min-h-[100dvh] bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white pb-20">
+    <div className="vba-animate min-h-full bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white pb-20">
       <MemberHeader title="Tin nhắn" back />
 
       {/* Clean Full-width Search Bar */}
@@ -1252,6 +1342,20 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         >
           <span>Tất cả</span>
           <span className="text-[11px] opacity-80">({allCount})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("channels")}
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === "channels"
+              ? "bg-[#003B95] text-white font-bold shadow-xs"
+              : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
+          }`}
+        >
+          <Megaphone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+          <span>Kênh Hiệp Hội</span>
+          {channelsCount > 0 && <span className="text-[11px] opacity-80">({channelsCount})</span>}
         </button>
 
         <button
@@ -1799,7 +1903,27 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
                     }}
                     title={isGroup ? "Nhóm chat" : "Xem thông tin hội viên & Nhắn tin"}
                   >
-                    {isGroup ? (
+                    {c.peerCode === "channel_media" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white shadow-xs">
+                        <Megaphone className="h-6 w-6" />
+                      </div>
+                    ) : c.peerCode === "channel_promotion" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs">
+                        <Handshake className="h-6 w-6" />
+                      </div>
+                    ) : c.peerCode === "channel_secretariat" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-[#003B95] to-blue-600 text-white shadow-xs">
+                        <Building2 className="h-6 w-6" />
+                      </div>
+                    ) : c.peerCode === "channel_deals" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-amber-600 to-orange-500 text-white shadow-xs">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                    ) : c.peerCode === "channel_events" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white shadow-xs">
+                        <Calendar className="h-6 w-6" />
+                      </div>
+                    ) : isGroup ? (
                       <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-[#003B95] via-[#1E40AF] to-indigo-600 text-white text-xl ring-2 ring-indigo-500/50 shadow-xs group-hover/avatar:scale-105 transition-transform">
                         {c.groupAvatar || "👥"}
                       </div>
@@ -1820,7 +1944,14 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
                         {initialsOf(resolvedName)}
                       </span>
                     )}
-                    {isGroup ? (
+                    {c.peerCode?.startsWith("channel_") ? (
+                      <span
+                        className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs"
+                        title="Kênh thông báo"
+                      >
+                        <Megaphone className="h-2.5 w-2.5" />
+                      </span>
+                    ) : isGroup ? (
                       <span
                         className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xs"
                         title="Nhóm chat"
@@ -1850,17 +1981,20 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
                           {resolvedName}
                         </span>
                         {isMuted && <BellOff className="h-3 w-3 text-slate-400 shrink-0" />}
-                        {isGroup && (
+                        {c.peerCode?.startsWith("channel_") ? (
+                          <span className="shrink-0 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700/60 px-1.5 py-0.2 text-[9px] font-extrabold text-[#003B95] dark:text-blue-300 uppercase tracking-wide flex items-center gap-0.5">
+                            Kênh chính thức
+                          </span>
+                        ) : isGroup ? (
                           <span className="shrink-0 rounded-md bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-700/50 px-1.5 py-0.2 text-[9px] font-bold text-indigo-600 dark:text-indigo-300 flex items-center gap-0.5">
                             <Users className="h-2.5 w-2.5" />
                             {c.memberCount || (c.members?.length ? c.members.length + 1 : 2)} TV
                           </span>
-                        )}
-                        {isSystem && (
+                        ) : isSystem ? (
                           <span className="shrink-0 rounded-md bg-[var(--vba-gold-soft)] border border-[var(--vba-border-accent)] px-1.5 py-0.2 text-[9px] font-extrabold text-[var(--vba-gold)] uppercase tracking-wide">
                             Hệ thống
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {fmt.rel(c.time)}

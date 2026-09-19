@@ -15,9 +15,10 @@ import { ContentController } from './content.controller';
 import { ConnectAppService } from './connect-app.service';
 import { ConnectAppGateway } from './connect-app.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MailModule],
   controllers: [
     MeController,
     CommunityController,

@@ -24,6 +24,7 @@ export type MyOpportunity = {
   estimatedValue?: number;
   budgetMin?: number;
   budgetMax?: number;
+  views?: number;
 };
 
 // ---------- Opportunities ----------

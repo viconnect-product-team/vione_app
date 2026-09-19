@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from './connect-app.gateway';
+import { MailService } from '../mail/mail.service';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { z } from 'zod';
 
 const formatVNTime = (date: Date) => {
@@ -17,6 +19,7 @@ export class ConnectAppService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private gateway: ConnectAppGateway,
+    private mailService?: MailService,
   ) {}
 
   async onModuleInit() {
@@ -9187,6 +9190,55 @@ export class ConnectAppService implements OnModuleInit {
     return this.expressCommunityOpportunityInterest(userId, '', opportunityId, 'high');
   }
 
+  async incrementOpportunityView(opportunityId: string) {
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.opportunities 
+        SET views = COALESCE(views, 0) + 1, updated_at = now()
+        WHERE id = ${opportunityId}
+      `;
+      return { ok: true, id: opportunityId };
+    } catch (err) {
+      console.warn('incrementOpportunityView error:', err);
+      return { ok: false };
+    }
+  }
+
+  async getOpportunityInterestedMembers(opportunityId: string) {
+    try {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT 
+          oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
+          COALESCE(m.name, u.name, 'Hội viên CLB') as name,
+          COALESCE(m.company, '') as company,
+          COALESCE(m.phone, u.phone, oi.contact, '') as phone,
+          COALESCE(m.email, u.email, '') as email,
+          COALESCE(m.code, '') as member_code
+        FROM public.opportunity_interests oi
+        LEFT JOIN public.members m ON (oi.member_id = m.user_id::text OR oi.member_id = m.id OR oi.member_id = m.code)
+        LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
+        WHERE oi.opportunity_id = ${opportunityId}
+        ORDER BY oi.created_at DESC
+      `;
+      return rows.map((r) => ({
+        id: r.id,
+        opportunityId: r.opportunity_id,
+        memberId: r.member_id,
+        name: r.name,
+        company: r.company,
+        phone: r.phone,
+        email: r.email,
+        contact: r.contact || r.phone,
+        message: r.message,
+        interestLevel: r.interest_level || 'high',
+        createdAt: r.created_at,
+      }));
+    } catch (err) {
+      console.error('getOpportunityInterestedMembers error:', err);
+      return [];
+    }
+  }
+
   // ── Member Messaging (used by member PWA) ─────────────────────────
   async resolveMemberCodeForUser(userId: string): Promise<string> {
     try {
@@ -10750,17 +10802,64 @@ export class ConnectAppService implements OnModuleInit {
       console.warn('Demo request insert error:', e);
     }
 
-    // 3. Insert into public.members with status='pending' and association_id
+    // 3. Generate random secure password & provision user account
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const randomChar = ['K', 'H', 'T', 'V', 'P', 'Q', 'M', 'N'][Math.floor(Math.random() * 8)];
+    const rawPassword = `CEO1983@${randomChar}${randomSuffix}`;
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
     const now = new Date();
     const memberId = `MB${now.getTime().toString(36).toUpperCase()}`;
     const joinedAt = now.toISOString().slice(0, 10);
     const feeYear = now.getFullYear();
 
+    let userId: string | null = null;
+    try {
+      // Find existing user by email or username
+      const existing = await this.prisma.vione_users.findFirst({
+        where: {
+          OR: [
+            { email: email.toLowerCase() },
+            { username: email.toLowerCase() },
+          ],
+        },
+      });
+
+      if (existing) {
+        userId = existing.id;
+        await this.prisma.$executeRaw`
+          UPDATE public.vione_users 
+          SET password_hash = ${hashedPassword}, email = ${email.toLowerCase()}, phone = ${phone}, name = ${fullName}, updated_at = now()
+          WHERE id = ${existing.id}::uuid
+        `.catch(() => null);
+      } else {
+        userId = crypto.randomUUID();
+        await this.prisma.$executeRaw`
+          INSERT INTO public.vione_users (id, username, email, phone, name, password_hash, email_verified, is_active, created_at, updated_at)
+          VALUES (${userId}::uuid, ${email.toLowerCase()}, ${email.toLowerCase()}, ${phone}, ${fullName}, ${hashedPassword}, true, true, now(), now())
+          ON CONFLICT (id) DO NOTHING
+        `.catch(() => null);
+      }
+
+      // Sync to auth.users for compatibility
+      if (userId) {
+        await this.prisma.$executeRaw`
+          INSERT INTO auth.users (id, email, role)
+          VALUES (${userId}::uuid, ${email.toLowerCase()}, 'authenticated')
+          ON CONFLICT (id) DO UPDATE SET email = ${email.toLowerCase()}
+        `.catch(() => null);
+      }
+    } catch (uErr) {
+      console.warn('User account provisioning note:', uErr);
+    }
+
+    const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} / Pass=${rawPassword}`;
+
     try {
       if (assocId) {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
-            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, association_id, created_at, updated_at
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, association_id, created_at, updated_at
           ) VALUES (
             ${memberId},
             '',
@@ -10776,7 +10875,8 @@ export class ConnectAppService implements OnModuleInit {
             ${joinedAt}::date,
             ${feeYear},
             false,
-            ${notesContent},
+            ${detailedNotes},
+            ${userId ? userId : null}::uuid,
             ${assocId}::uuid,
             now(),
             now()
@@ -10785,7 +10885,7 @@ export class ConnectAppService implements OnModuleInit {
       } else {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
-            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, created_at, updated_at
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, created_at, updated_at
           ) VALUES (
             ${memberId},
             '',
@@ -10801,11 +10901,25 @@ export class ConnectAppService implements OnModuleInit {
             ${joinedAt}::date,
             ${feeYear},
             false,
-            ${notesContent},
+            ${detailedNotes},
+            ${userId ? userId : null}::uuid,
             now(),
             now()
           )
         `;
+      }
+
+      // Gửi email tự động thông báo tài khoản & mật khẩu ngẫu nhiên tới Gmail của người đăng ký
+      if (this.mailService && email && email.includes('@')) {
+        void this.mailService.sendRegistrationAccountEmail({
+          to: email,
+          fullName,
+          username: email,
+          passwordRaw: rawPassword,
+          companyName: company,
+          memberCode: memberId,
+          portalUrl: 'http://14.225.217.232:5002/association/login',
+        });
       }
 
       const targetAssocId = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
@@ -10813,11 +10927,11 @@ export class ConnectAppService implements OnModuleInit {
         // Trigger Realtime Notifications to Association Admins & Web CRM
         void this.notifyAssociationAdmins(targetAssocId, {
           title: `Đăng ký hội viên mới: ${fullName} - ${company}`,
-          body: `Ứng viên ${fullName} (${title}) vừa nộp hồ sơ xin gia nhập CLB CEO 1983. Bấm để duyệt ngay.`,
+          body: `Ứng viên ${fullName} (${title}) vừa nộp hồ sơ xin gia nhập CLB CEO 1983. Hệ thống đã tạo tài khoản và gửi email mật khẩu tạm thời.`,
           targetRoute: `/members?status=pending`,
           type: 'club_registration_received',
           sourceRecordId: memberId,
-          meta: { applicantName: fullName, companyName: company, phone, clubSlug },
+          meta: { applicantName: fullName, companyName: company, phone, clubSlug, email, username: email },
         });
       }
     } catch (err) {
@@ -10828,9 +10942,12 @@ export class ConnectAppService implements OnModuleInit {
       success: true,
       ok: true,
       memberId,
+      username: email,
+      email,
       reference: `APP-${memberId}`,
       leadId: demoReqId || memberId,
-      message: 'Hồ sơ đăng ký gia nhập của bạn đã được tiếp nhận thành công!',
+      accountCreated: true,
+      message: 'Hồ sơ đăng ký gia nhập đã được tiếp nhận! Tên đăng nhập và mật khẩu khởi tạo đã được gửi đến email của bạn.',
     };
   }
 

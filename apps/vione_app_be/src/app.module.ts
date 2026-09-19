@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { BusinessCardModule } from './business-card/business-card.module';
 import { UploadModule } from './upload/upload.module';
+import { MailModule } from './mail/mail.module';
 import { ConnectAppModule } from './connect-app/connect-app.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
@@ -30,6 +31,7 @@ import { MeetingsModule } from './meetings/meetings.module';
     PrismaModule,
     BusinessCardModule,
     UploadModule,
+    MailModule,
     ConnectAppModule,
     DocumentsModule,
     EventsModule,

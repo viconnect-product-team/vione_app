@@ -874,7 +874,7 @@ function NotificationsScreen() {
             network: {
               iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
               badge: "bg-blue-50 text-[#2E3192] dark:bg-slate-800 dark:text-amber-300 border-[#2E3192]/30 dark:border-amber-500/30 font-bold",
-              label: "Gắn kết",
+              label: "Kết nối",
             },
             info: {
               iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",

@@ -40,6 +40,7 @@ import {
   Facebook,
   Linkedin,
   Camera,
+  Users,
 } from "lucide-react";
 import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +49,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
 import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
 import {
@@ -222,15 +224,16 @@ function CardScreen() {
   const fetchBenefits = useServerFn(getMyBenefits);
   const fetchAssocId = useServerFn(getActiveAssociationId);
   const fetchBrand = useServerFn(getMyAssociationBrand);
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
-  const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
+  const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null, "vba_brand");
   const fetchIdentity = useServerFn(getMyIdentityPassFn);
-  const { data: identity } = useServerData<MyIdentityPass | null>(() => fetchIdentity(), null);
+  const { data: identity } = useServerData<MyIdentityPass | null>(() => fetchIdentity(), null, "vba_identity_pass");
   const { data: benefits, reload: reloadBenefits } = useServerData<MemberBenefit[]>(
     () => fetchBenefits(),
     [],
+    "vba_benefits",
   );
-  const { data: activeAssocId } = useServerData<string | null>(() => fetchAssocId(), null);
+  const { data: activeAssocId } = useServerData<string | null>(() => fetchAssocId(), null, "vba_active_assoc_id");
 
   // Auto-refresh benefits when the active association changes, or when an admin
   // updates the benefits list — but only when the update targets the association
@@ -300,10 +303,11 @@ function CardScreen() {
   const { data: settings, reload: reloadSettings } = useServerData<CardSettings | null>(
     () => fetchSettings(),
     null,
+    "vba_card_settings",
   );
 
   const [qrOpen, setQrOpen] = useState(false);
-  const [cardDisplayType, setCardDisplayType] = useState<"business_card" | "membership_card">("business_card");
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [nfcBusy, setNfcBusy] = useState(false);
@@ -526,282 +530,26 @@ function CardScreen() {
   };
 
   return (
-    <div className="vba-animate">
+    <div className="vba-animate min-h-full pb-20">
       <MemberHeader title={t("m.card.headerTitle")} back />
 
       <div className="px-4 pt-4">
-        {/* Đã gỡ bỏ nút Thẻ của tôi & Quét QR kết nối theo yêu cầu */}
-
-        {/* Card Type Switcher: Card Visit CEO 1983 vs Thẻ VIP Kim Loại */}
-        <div className="mx-auto mb-4 flex max-w-md items-center justify-center p-1 rounded-xl bg-slate-100 dark:bg-[#14223E] border border-slate-200 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setCardDisplayType("business_card")}
-            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              cardDisplayType === "business_card"
-                ? "bg-[#19194D] text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-[#19194D]"
-            }`}
-          >
-            <IdCard className="w-3.5 h-3.5" />
-            <span>Card Visit CEO 1983</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setCardDisplayType("membership_card")}
-            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              cardDisplayType === "membership_card"
-                ? "bg-[#2E3192] text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-300 hover:text-[#2E3192]"
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5 text-amber-400" />
-            <span>Thẻ VIP Kim Loại</span>
-          </button>
+        {/* Visit Card CEO 1983 (100% thay thế hoàn toàn thẻ cứng theo yêu cầu) */}
+        <div className="mb-4">
+          <Ceo1983BusinessCardVisit
+            name={d.name || "NGUYỄN VĂN A"}
+            title={customProfile?.title || (member as any)?.position || (member as any)?.title || "Director"}
+            phone={customProfile?.phone || member?.phone || "036xxxxxxx"}
+            email={customProfile?.email || member?.email || "username@gmail.com"}
+            company={d.company || "CÂU LẠC BỘ CEO1983"}
+            website="https://ceo1983club.com"
+            clubEmail="info@ceo1983club.com"
+            cardCode={member?.code || "CEO1983-001"}
+            qrValue={member?.code ? `${origin}/card/${member.code}` : "https://ceo1983club.com"}
+            avatarUrl={d.photo}
+            showActions={true}
+          />
         </div>
-
-        {cardDisplayType === "business_card" ? (
-          <div className="mb-4">
-            <Ceo1983BusinessCardVisit
-              name={d.name || "NGUYỄN VĂN A"}
-              title={customProfile?.title || (member as any)?.position || (member as any)?.title || "Director"}
-              phone={customProfile?.phone || member?.phone || "036xxxxxxx"}
-              email={customProfile?.email || member?.email || "username@gmail.com"}
-              company={d.company || "CÂU LẠC BỘ CEO1983"}
-              website="https://ceo1983club.com"
-              clubEmail="info@ceo1983club.com"
-              cardCode={member?.code || "CEO1983-001"}
-              qrValue={member?.code ? `${origin}/card/${member.code}` : "https://ceo1983club.com"}
-              avatarUrl={d.photo}
-              showActions={true}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Membership card */}
-            <div
-              data-dark-card="true"
-              className="vba-member-card relative mx-auto max-w-md overflow-hidden rounded-2xl border p-5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] text-white"
-              style={{ background: theme.surface, borderColor: theme.border }}
-            >
-              <div
-                className="absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl"
-                style={{ background: theme.accentSoft }}
-              />
-              {theme.shine && (
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-40"
-                  style={{
-                    background:
-                      "linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.14) 48%,transparent 62%)",
-                    backgroundSize: "250% 250%",
-                    animation: "vba-shine 5s ease-in-out infinite",
-                  }}
-                />
-              )}
-
-              <button
-                onClick={() => setThemeOpen((v) => !v)}
-                className="absolute right-12 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
-                aria-label={lang === "en" ? "Change card theme" : "Đổi giao diện thẻ"}
-              >
-                <Palette className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => member && setEditOpen(true)}
-                className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white/90 hover:text-white backdrop-blur transition cursor-pointer"
-                aria-label={t("m.card.editAriaLabel")}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-
-              <div className="relative flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 p-1 backdrop-blur-xs">
-                    <img
-                      src="/ceo1983-emblem-8.png"
-                      alt="Biểu tượng số 8 CEO 1983"
-                      className="h-full w-auto object-contain drop-shadow-[0_2px_6px_rgba(255,255,255,0.3)]"
-                      width={36}
-                      height={44}
-                    />
-                  </div>
-                  <div className="leading-tight min-w-0 flex-1">
-                    <div
-                      data-card-white
-                      className="break-words text-[12px] font-black tracking-wide drop-shadow-sm text-white leading-tight"
-                      style={{ color: "#FFFFFF" }}
-                    >
-                      {brand?.name || "CLB DOANH NHÂN CEO 1983"}
-                    </div>
-                    <div
-                      data-card-white
-                      className="break-words text-[9px] font-semibold drop-shadow-xs text-white/80 leading-tight mt-0.5"
-                      style={{ color: "rgba(255, 255, 255, 0.85)" }}
-                    >
-                      {brand?.tagline || "NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative mt-5">
-                <div
-                  className="text-[17px] font-black tracking-wider"
-                  style={{
-                    background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
-                  }}
-                >
-                  {t("m.card.cardLabel")}
-                </div>
-                <div
-                  data-card-white
-                  className="text-[10px] font-semibold tracking-[0.2em] text-white/70"
-                  style={{ color: "rgba(255, 255, 255, 0.75)" }}
-                >
-                  MEMBER CARD
-                </div>
-              </div>
-
-              <div className="relative mt-5 flex items-center gap-3">
-                {d.showPhoto &&
-                  (d.photo ? (
-                    <img
-                      src={d.photo}
-                      alt={d.name}
-                      className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm shrink-0"
-                    />
-                  ) : (
-                    <span
-                      data-card-white
-                      className="grid h-12 w-12 place-items-center rounded-full bg-white/15 text-[14px] font-bold text-white border border-white/20 shadow-sm shrink-0"
-                      style={{ color: "#FFFFFF" }}
-                    >
-                      {initials(d.name)}
-                    </span>
-                  ))}
-                <div className="min-w-0 flex-1">
-                  {d.showName && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        className="break-words text-[17px] font-black tracking-wide leading-snug"
-                        style={{
-                          background: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 50%, #FFFFFF 70%, #CBD5E1 100%)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))",
-                        }}
-                      >
-                        {d.name || "..."}
-                      </span>
-                      {member?.status && (
-                        <span
-                          data-card-white
-                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"
-                          style={{
-                            background: stateStyle.bg,
-                            color: stateStyle.color,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                          }}
-                        >
-                          {lang === "en" ? stateStyle.labelEn : stateStyle.labelVi}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {d.showCompany && (
-                    <div
-                      data-card-white
-                      className="break-words text-[12px] font-medium text-white/90 drop-shadow-xs leading-snug mt-0.5"
-                      style={{ color: "rgba(255, 255, 255, 0.95)" }}
-                    >
-                      {d.company || "CLB Doanh Nhân CEO 1983"}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="relative mt-4 flex justify-between border-t border-white/15 pt-3">
-                <div>
-                  <div
-                    data-card-white
-                    className="text-[10px] font-medium text-white/60"
-                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                  >
-                    {t("m.card.memberId")}
-                  </div>
-                  <div
-                    data-card-white
-                    className="text-[13px] font-bold tracking-wider text-white"
-                    style={{ color: "#FFFFFF" }}
-                  >
-                    {member?.code}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div
-                    data-card-white
-                    className="text-[10px] font-medium text-white/60"
-                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                  >
-                    {t("m.card.validUntil")}
-                  </div>
-                  <div
-                    data-card-white
-                    className="text-[13px] font-bold tracking-wider text-white"
-                    style={{ color: "#FFFFFF" }}
-                  >
-                    {member?.validUntil ?? "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Theme picker */}
-            {themeOpen && (
-              <div className="mt-3 rounded-2xl border border-[var(--vba-border-soft)] bg-[var(--vba-surface)] p-3">
-                <div className="mb-2 text-[12px] font-semibold text-[var(--vba-text-muted)]">
-                  {lang === "en" ? "Card theme" : "Giao diện thẻ"}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {CARD_THEME_LIST.map((th) => {
-                    const selected = th.id === theme.id;
-                    return (
-                      <button
-                        key={th.id}
-                        onClick={() => pickTheme(th.id)}
-                        className="relative h-14 overflow-hidden rounded-xl border text-left cursor-pointer"
-                        style={{
-                          background: th.surface,
-                          borderColor: selected ? th.accent : "transparent",
-                        }}
-                        aria-label={th.label}
-                      >
-                        <span
-                          className="absolute bottom-1 left-1.5 text-[9px] font-semibold"
-                          style={{ color: th.text }}
-                        >
-                          {th.label}
-                        </span>
-                        {selected && (
-                          <span
-                            className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full"
-                            style={{ background: th.accent }}
-                          >
-                            <Check className="h-3 w-3 text-foreground" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </>
-        )}
 
         {/* Offline / last sync indicator */}
         <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-[var(--vba-text-dim)]">
@@ -917,6 +665,24 @@ function CardScreen() {
                     <span className="truncate"><strong>Lĩnh vực:</strong> {customProfile?.industry || member.industry}</span>
                   </div>
                 )}
+                {(customProfile?.industryDetail || (member as any)?.industryDetail) && (
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Chuyên ngành:</strong> {customProfile?.industryDetail || (member as any)?.industryDetail}</span>
+                  </div>
+                )}
+                {(customProfile?.companySize || (member as any)?.companySize) && (
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate"><strong>Quy mô:</strong> {customProfile?.companySize || (member as any)?.companySize}</span>
+                  </div>
+                )}
+                {(customProfile?.featuredProducts || (member as any)?.featuredProducts) && (
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate"><strong>Sản phẩm nổi bật:</strong> {customProfile?.featuredProducts || (member as any)?.featuredProducts}</span>
+                  </div>
+                )}
                 {(customProfile?.address || member.address) && (
                   <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
                     <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
@@ -935,6 +701,14 @@ function CardScreen() {
                     <ExternalLink className="h-3 w-3 opacity-60 ml-auto" />
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setPrivacyModalOpen(true)}
+                  className="sm:col-span-2 mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 py-2 text-[11.5px] font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-xs"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
+                  <span>Cài đặt bảo mật & Hiển thị QR / Danh thiếp số</span>
+                </button>
               </div>
 
               {/* Social Media Links: Facebook, Zalo, LinkedIn, Web */}
@@ -971,13 +745,13 @@ function CardScreen() {
                 </a>
               </div>
 
-              {/* Direct Profile Actions: Nhắn tin & Chia sẻ hồ sơ (bỏ Mã QR ở profile) */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              {/* Direct Profile Actions: Nhắn tin, Chia sẻ hồ sơ & Sửa hồ sơ */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 <Link
                   to="/association/messages"
                   search={{ peerCode: member.code }}
                   style={{ color: "#ffffff" }}
-                  className="flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[11.5px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
                   <span>Nhắn tin</span>
@@ -985,10 +759,18 @@ function CardScreen() {
                 <button
                   type="button"
                   onClick={handleShareProfile}
-                  className="flex items-center justify-center gap-1 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[11.5px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[11px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer"
                 >
                   {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
-                  <span>{copiedLink ? "Đã chép" : "Chia sẻ hồ sơ"}</span>
+                  <span>{copiedLink ? "Đã chép" : "Chia sẻ"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="flex items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/60 py-2.5 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Sửa hồ sơ</span>
                 </button>
               </div>
 
@@ -1167,6 +949,15 @@ function CardScreen() {
         memberCompany={d.company || "CLB Doanh Nhân CEO 1983"}
         memberAvatar={d.photo || null}
       />
+
+      {/* ── MODAL BẢO MẬT & QUYỀN RIÊNG TƯ HIỂN THỊ TRÊN QR / THẺ ── */}
+      <PrivacySettingsModal
+        open={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        onUpdated={() => {
+          reloadSettings();
+        }}
+      />
     </div>
   );
 }
@@ -1191,6 +982,81 @@ function EditCardModal({
   const [showName, setShowName] = useState(current.showName);
   const [showCompany, setShowCompany] = useState(current.showCompany);
   const [showPhoto, setShowPhoto] = useState(current.showPhoto);
+
+  // Extended Profile Attributes (Req 8)
+  const [title, setTitle] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.title || (member as any)?.position || member?.title || "";
+    } catch {
+      return "";
+    }
+  });
+  const [phone, setPhone] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.phone || member?.phone || "";
+    } catch {
+      return "";
+    }
+  });
+  const [email, setEmail] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.email || member?.email || "";
+    } catch {
+      return "";
+    }
+  });
+  const [industry, setIndustry] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.industry || member?.industry || "";
+    } catch {
+      return "";
+    }
+  });
+  const [industryDetail, setIndustryDetail] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.industryDetail || (member as any)?.industryDetail || "";
+    } catch {
+      return "";
+    }
+  });
+  const [companySize, setCompanySize] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.companySize || (member as any)?.companySize || "";
+    } catch {
+      return "";
+    }
+  });
+  const [featuredProducts, setFeaturedProducts] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.featuredProducts || (member as any)?.featuredProducts || "";
+    } catch {
+      return "";
+    }
+  });
+  const [address, setAddress] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.address || member?.address || "";
+    } catch {
+      return "";
+    }
+  });
+  const [website, setWebsite] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.website || member?.website || "";
+    } catch {
+      return "";
+    }
+  });
+
   const [busy, setBusy] = useState(false);
 
   async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1219,7 +1085,28 @@ function EditCardModal({
           showPhoto,
         },
       });
-      toast.success(t("m.card.saveSuccess"));
+
+      // Save full extended profile to local storage & trigger live sync
+      const updatedProfile = {
+        name: name.trim() || member.name,
+        company: company.trim() || (member as any).company || member.title || "",
+        title: title.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        industry: industry.trim(),
+        industryDetail: industryDetail.trim(),
+        companySize: companySize.trim(),
+        featuredProducts: featuredProducts.trim(),
+        address: address.trim(),
+        website: website.trim(),
+      };
+      localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
+      if (photo) {
+        localStorage.setItem("vba_member_avatar_photo", photo);
+      }
+      window.dispatchEvent(new Event("profile-updated"));
+
+      toast.success("Đã cập nhật đầy đủ hồ sơ hội viên thành công!");
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("m.card.saveError"));
@@ -1229,7 +1116,7 @@ function EditCardModal({
   }
 
   const inputCls =
-    "h-10 w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 text-[14px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition";
+    "h-10 w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 text-[13px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition";
 
   if (typeof document === "undefined") return null;
 
@@ -1239,7 +1126,7 @@ function EditCardModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-t-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-5 sm:rounded-3xl max-h-[90dvh] overflow-y-auto"
+        className="relative w-full max-w-lg rounded-t-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-5 sm:rounded-3xl max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -1249,14 +1136,15 @@ function EditCardModal({
         >
           <X className="h-4 w-4" />
         </button>
-        <h2 className="mb-4 text-[15px] font-bold text-[var(--vba-text)]">
-          {t("m.card.editTitle")}
+        <h2 className="mb-4 text-[16px] font-bold text-[var(--vba-text)] flex items-center gap-2">
+          <Pencil className="h-4 w-4 text-amber-500" />
+          <span>Chỉnh sửa hồ sơ & Danh thiếp số</span>
         </h2>
 
         {/* Photo */}
         <div className="mb-4 flex items-center gap-3">
           {photo ? (
-            <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover" />
+            <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-amber-400" />
           ) : (
             <span className="grid h-16 w-16 place-items-center rounded-full bg-blue-50 dark:bg-[#2E3192]/15 text-[16px] font-bold text-[#2E3192] dark:text-blue-400 border border-[#2E3192]/20">
               {initials(name || member.name)}
@@ -1265,14 +1153,14 @@ function EditCardModal({
           <div className="flex gap-2">
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-text)] hover:border-[#2E3192]/50"
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-text)] hover:border-[#2E3192]/50 cursor-pointer"
             >
               <ImagePlus className="h-4 w-4 text-[#2E3192] dark:text-blue-400" /> {t("m.card.pickPhoto")}
             </button>
             {photo && (
               <button
                 onClick={() => setPhoto(null)}
-                className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-danger)]"
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-danger)] cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" /> {t("m.card.deletePhoto")}
               </button>
@@ -1287,10 +1175,10 @@ function EditCardModal({
           />
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-[12px] font-medium text-[var(--vba-text-muted)]">
-              {t("m.card.displayName")}
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Họ và tên hội viên
             </label>
             <input
               value={name}
@@ -1299,21 +1187,132 @@ function EditCardModal({
               className={inputCls}
             />
           </div>
+
           <div>
-            <label className="mb-1 block text-[12px] font-medium text-[var(--vba-text-muted)]">
-              {t("m.card.displayCompany")}
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Chức vụ / Vị trí
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Tổng Giám Đốc / Founder"
+              className={inputCls}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Công ty / Doanh nghiệp
             </label>
             <input
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              placeholder={member.title}
+              placeholder={(member as any).company || member.title || "Tên công ty"}
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Số điện thoại / Hotline
+            </label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={member.phone || "09xxxxxxx"}
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Email liên hệ
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={member.email || "email@company.com"}
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Lĩnh vực kinh doanh
+            </label>
+            <input
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              placeholder="Công nghệ, Xây dựng, F&B..."
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Chuyên ngành / Chi tiết lĩnh vực
+            </label>
+            <input
+              value={industryDetail}
+              onChange={(e) => setIndustryDetail(e.target.value)}
+              placeholder="Chuyển đổi số, Phần mềm ERP..."
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Quy mô nhân sự
+            </label>
+            <input
+              value={companySize}
+              onChange={(e) => setCompanySize(e.target.value)}
+              placeholder="50 - 200 nhân viên"
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Website doanh nghiệp
+            </label>
+            <input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://company.vn"
+              className={inputCls}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Sản phẩm / Dịch vụ nổi bật
+            </label>
+            <textarea
+              value={featuredProducts}
+              onChange={(e) => setFeaturedProducts(e.target.value)}
+              placeholder="Giải pháp tự động hóa CRM, Hạ tầng mạng Doanh nghiệp, Xuất nhập khẩu..."
+              rows={2}
+              className="w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 p-3 text-[13px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition resize-none"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
+              Địa chỉ doanh nghiệp
+            </label>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder={member.address || "Tầng 5, Tòa nhà CEO..."}
               className={inputCls}
             />
           </div>
         </div>
 
         {/* Visibility toggles */}
-        <div className="mt-4 space-y-1">
+        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Quyền hiển thị trên thẻ</div>
           <Toggle label={t("m.card.showName")} checked={showName} onChange={setShowName} />
           <Toggle label={t("m.card.showCompany")} checked={showCompany} onChange={setShowCompany} />
           <Toggle label={t("m.card.showPhoto")} checked={showPhoto} onChange={setShowPhoto} />
@@ -1322,7 +1321,7 @@ function EditCardModal({
         <div className="mt-5 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[var(--vba-border-soft)] py-2.5 text-[14px] font-semibold text-[var(--vba-text)]"
+            className="flex-1 rounded-xl border border-[var(--vba-border-soft)] py-2.5 text-[14px] font-semibold text-[var(--vba-text)] cursor-pointer"
           >
             {t("m.card.cancel")}
           </button>

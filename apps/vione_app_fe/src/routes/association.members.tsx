@@ -561,7 +561,7 @@ function MembersScreen() {
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-1.5 px-3 text-[12px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    Gắn kết
+                    Kết nối
                   </button>
                 )}
               </div>

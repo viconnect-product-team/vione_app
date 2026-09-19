@@ -122,9 +122,9 @@ export default function ProfileScreen() {
   const fetchMember = useServerFn(getMyMember);
   const fetchDirectory = useServerFn(listMembers);
   const fetchConversations = useServerFn(listConversations);
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
-  const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), []);
-  const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), []);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
+  const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
+  const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), [], "vba_conversations");
 
   const [copied, setCopied] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
@@ -651,7 +651,7 @@ export default function ProfileScreen() {
   }, [realMembers, conversations, member?.code, user?.id]);
 
   return (
-    <div className="vba-animate pb-28 text-slate-900 dark:text-white">
+    <div className="vba-animate min-h-full pb-28 text-slate-900 dark:text-white">
       <MemberHeader
         title={isEn ? "Profile & Administration" : "Trang Cá Nhân & Quản Trị"}
         back

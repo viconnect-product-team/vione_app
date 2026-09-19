@@ -116,6 +116,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         <PullToRefresh
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
+          pathname={pathname}
           className="flex-1 pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+72px)]"
         >
           {children}

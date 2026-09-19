@@ -206,14 +206,14 @@ function Home() {
   const fetchDirectory = useServerFn(listMembers);
   const fetchNews = useServerFn(listNews);
 
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
-  const { data: serverEvents = [] } = useServerData<MyEvent[]>(() => fetchEvents(), []);
-  const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null);
-  const { data: opportunities = [] } = useServerData<MyOpportunity[]>(() => fetchOpps(), []);
-  const { data: products = [] } = useServerData<MyProduct[]>(() => fetchProducts(), []);
-  const { data: notifications = [], reload: reloadNotifs } = useServerData<MyNotification[]>(() => fetchNotifs(), []);
-  const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), []);
-  const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), []);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
+  const { data: serverEvents = [] } = useServerData<MyEvent[]>(() => fetchEvents(), [], "vba_events");
+  const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null, "vba_brand");
+  const { data: opportunities = [] } = useServerData<MyOpportunity[]>(() => fetchOpps(), [], "vba_opportunities");
+  const { data: products = [] } = useServerData<MyProduct[]>(() => fetchProducts(), [], "vba_products");
+  const { data: notifications = [], reload: reloadNotifs } = useServerData<MyNotification[]>(() => fetchNotifs(), [], "vba_notifications_list");
+  const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
+  const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), [], "vba_news");
 
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
@@ -364,7 +364,7 @@ function Home() {
   const displayEvents: MyEvent[] = serverEvents || [];
 
   return (
-    <div className="vba-animate">
+    <div className="vba-animate min-h-full">
       {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS (BỎ ICON CHỤP ẢNH, GIỮ LOGO CHUẨN CEO1983) ── */}
       <header
         className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-[var(--vba-border)] bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-xs"
@@ -643,21 +643,24 @@ function Home() {
             </p>
           </div>
         ) : (
-          <div className="flex gap-2.5 overflow-x-auto pb-2 pt-1 no-scrollbar sm:grid sm:grid-cols-3 sm:overflow-visible">
+          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain">
             {displayEvents.slice(0, 5).map((ev, pIdx) => {
               const realTitle = ev.title;
               const rawImg = (ev as any).image;
               const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
               const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
+              const isSingle = displayEvents.length === 1;
 
               return (
                 <Link
                   key={ev.id || pIdx}
                   to="/association/events"
-                  className="group flex flex-col transition active:scale-95 w-[68vw] min-w-[220px] max-w-[270px] shrink-0 sm:w-auto"
+                  className={`group flex flex-col transition active:scale-95 shrink-0 snap-start ${
+                    isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
+                  }`}
                 >
                   {/* Poster Box thu gọn 2/3 chiều rộng và 1/2 chiều cao hiện tại trên mobile */}
-                  <div className="relative h-[105px] sm:h-[115px] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-sky-400/50">
+                  <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-sky-400/50">
                     <img
                       src={realImg}
                       alt={realTitle}
@@ -674,11 +677,11 @@ function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
 
                     {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
-                    <div className="absolute inset-x-0 bottom-0 p-2 sm:p-2.5 z-10 flex flex-col gap-0.5">
+                    <div className="absolute inset-x-0 bottom-0 p-2.5 z-10 flex flex-col gap-1">
                       <div className="flex items-center">
                         <EventCountdownMiniBadge event={ev} index={pIdx} />
                       </div>
-                      <h3 className="line-clamp-1 text-[11.5px] sm:text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-sky-300 transition-colors">
+                      <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-sky-300 transition-colors">
                         {realTitle}
                       </h3>
                     </div>

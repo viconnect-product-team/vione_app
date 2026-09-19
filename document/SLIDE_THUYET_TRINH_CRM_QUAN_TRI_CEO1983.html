@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide Thuyết Trình: Hệ Thống CRM Quản Trị CLB Doanh Nhân CEO 1983</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #070D1B;
+      --bg-card: #0F172A;
+      --bg-card-hover: #1E293B;
+      --brand-blue: #003B95;
+      --brand-blue-light: #2563EB;
+      --brand-gold: #F59E0B;
+      --brand-orange: #EA580C;
+      --accent-cyan: #06B6D4;
+      --text-white: #FFFFFF;
+      --text-muted: #94A3B8;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(245, 158, 11, 0.35);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      background: var(--bg-dark);
+      color: var(--text-white);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+    .presentation-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(20px) scale(0.98);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 64px 36px;
+      background: radial-gradient(circle at 80% 20%, rgba(0, 59, 149, 0.25) 0%, transparent 50%),
+                  radial-gradient(circle at 10% 80%, rgba(234, 88, 12, 0.12) 0%, transparent 45%),
+                  var(--bg-dark);
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    .slide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--brand-blue), #1E3A8A);
+      border: 1px solid var(--border-accent);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #FDE047;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-white);
+    }
+    .slide-step {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-gold);
+      background: rgba(245, 158, 11, 0.12);
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 0;
+    }
+    .hero-title {
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 50%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #FDE047 0%, #F59E0B 50%, #EA580C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 900px;
+      margin-bottom: 32px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-4px);
+    }
+    .feature-card.highlight {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(0, 59, 149, 0.25));
+    }
+    .icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(0, 59, 149, 0.35);
+      border: 1px solid rgba(0, 59, 149, 0.5);
+      color: #93C5FD;
+    }
+    .icon-box.gold {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #FDE047;
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      width: fit-content;
+    }
+    .pill.green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .pill.orange {
+      background: rgba(234, 88, 12, 0.15);
+      color: #FB923C;
+      border: 1px solid rgba(234, 88, 12, 0.3);
+    }
+    .slide-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-white);
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--brand-blue);
+      border-color: var(--brand-blue-light);
+    }
+    .dot-indicators {
+      display: flex;
+      gap: 8px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .dot.active {
+      background: var(--brand-gold);
+      transform: scale(1.3);
+      box-shadow: 0 0 10px var(--brand-gold);
+    }
+    .showcase-visual {
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.95));
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .showcase-tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.2);
+      color: #FDE047;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      text-transform: uppercase;
+    }
+    .stat-number {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--brand-gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="presentation-container">
+
+    <!-- SLIDE 1: CRM COVER -->
+    <div class="slide active" id="slide-1">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">EXECUTIVE COMMAND CENTER</span>
+          <span class="brand-title">HỆ THỐNG CRM QUẢN TRỊ CLB DOANH NHÂN CEO 1983</span>
+        </div>
+        <div class="slide-step">01 / 08 · TỔNG QUAN HỆ THỐNG</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <div class="pill orange" style="margin-bottom: 16px;">
+              ⚡ TRUNG TÂM ĐIỀU HÀNH SỐ TOÀN DIỆN
+            </div>
+            <h1 class="hero-title">
+              HỆ THỐNG QUẢN TRỊ CRM<br />
+              <span class="gold-gradient-text">HIỆP HỘI CEO 1983</span>
+            </h1>
+            <p class="hero-subtitle">
+              Nền tảng quản trị thông minh dành cho Ban Điều Hành, Ban Thư Ký và các Ban Chuyên Môn CLB Doanh Nhân CEO 1983. Tự động hóa thẩm định hội viên, phân phối thông báo đa kênh, điều phối sự kiện và quản lý sàn thương mại điện tử.
+            </p>
+            <div style="display: flex; gap: 20px;">
+              <div>
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Email SMTP Tự Động</div>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 20px;">
+                <div class="stat-number">Realtime</div>
+                <div class="stat-label">Đồng bộ Web - Mobile</div>
+              </div>
+              <div style="border-left: 1px solid var(--border-subtle); padding-left: 20px;">
+                <div class="stat-number">MinIO</div>
+                <div class="stat-label">Lưu trữ ảnh chuẩn hóa</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">CONTROL SUITE</span>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="feature-card highlight">
+                <div class="icon-box gold">📧</div>
+                <div class="card-title">Tự Động Sinh Pass & Gửi Email Google SMTP</div>
+                <div class="card-desc">Hội viên đăng ký từ landing page được đưa về CRM, tự động sinh password bảo mật ngẫu nhiên và gửi về hộp thư Google ngay lập tức.</div>
+              </div>
+              <div class="feature-card">
+                <div class="icon-box">📢</div>
+                <div class="card-title">Quản Trị Thông Báo Động (Dynamic Broadcast)</div>
+                <div class="card-desc">Tạo thông báo linh hoạt, đẩy đồng thời vào chuông app và phát sóng trực tiếp vào 5 kênh chat nghiệp vụ của hội viên.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Bản quyền giải pháp © CLB Doanh Nhân CEO 1983 & VIONE Ecosystem</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators" id="dots"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: AUTOMATED ONBOARDING & GMAIL SMTP -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">LUỒNG TIẾP NHẬN HỘI VIÊN</span>
+          <span class="brand-title">AUTOMATED ONBOARDING & GOOGLE SMTP SERVICE</span>
+        </div>
+        <div class="slide-step">02 / 08 · GIA NHẬP TỰ ĐỘNG</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          LUỒNG GIA NHẬP & <span class="gold-gradient-text">GỬI TÀI KHOẢN TỰ ĐỘNG</span> QUA GMAIL
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Quy trình tiếp nhận hồ sơ từ Landing Page tới CRM được khép kín 100% không cần can thiệp thủ công tạo tài khoản.
+        </p>
+        <div class="grid-3">
+          <div class="feature-card">
+            <div class="icon-box gold">📝</div>
+            <div class="card-title">1. Tiếp Nhận Từ Landing Page 3D</div>
+            <div class="card-desc">Doanh nhân điền thông tin (Họ tên, SĐT, Email Google, Công ty, MST, Lĩnh vực). Dữ liệu được đẩy ngay về API Backend <code>/public/club-registration</code> của CRM.</div>
+          </div>
+          <div class="feature-card highlight">
+            <div class="icon-box">🔐</div>
+            <div class="card-title">2. Sinh Mật Khẩu Random Bảo Mật Cao</div>
+            <div class="card-desc">Hệ thống tự sinh mật khẩu an toàn chuẩn doanh nghiệp (gồm ký tự hoa, thường, số và ký tự đặc biệt) đồng thời tạo User & Member trong CSDL.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">📬</div>
+            <div class="card-title">3. Gửi Thư Xác Thực Google SMTP Tức Thì</div>
+            <div class="card-desc">Dịch vụ <code>MailService</code> gửi email HTML thương hiệu CEO 1983 chứa Tên đăng nhập (Email) và Mật khẩu khởi tạo trực tiếp vào hộp thư Gmail của hội viên.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Bảo mật tuyệt đối thông tin hội viên · Sẵn sàng kích hoạt quyền đăng nhập trên Mobile App</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: QUẢN LÝ TEMPLATE LANDING -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">QUẢN TRỊ TRUYỀN THÔNG</span>
+          <span class="brand-title">KHO TEMPLATE LANDING PAGE & CEO1983 3D LANDSCAPE</span>
+        </div>
+        <div class="slide-step">03 / 08 · QUẢN LÝ TEMPLATE</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <h2 class="hero-title" style="font-size: 34px;">
+              QUẢN LÝ KHO TEMPLATE<br />
+              <span class="gold-gradient-text">LANDING WEB DOANH NGHIỆP</span>
+            </h2>
+            <p class="hero-subtitle">
+              Module Quản lý Template Landing Web trên CRM cho phép Ban Truyền thông xuất bản và cấu hình các mẫu giao diện đón tiếp hội viên mới, hỗ trợ xem trước (preview) và áp dụng chỉ với 1 thao tác.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="pill green">✓ Mẫu 3D Vertical Landscape CEO 1983 đã đăng ký chính thức vào Catalog</div>
+              <div class="pill green">✓ Tích hợp Router động <code>/landing/ceo/v1</code></div>
+              <div class="pill green">✓ Xem trước trực tiếp trên đa màn hình (Desktop, Tablet, Mobile)</div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">CATALOG MANAGEMENT</span>
+            <div class="feature-card highlight" style="margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <strong style="color: #FDE047;">CEO 1983 - 3D Vertical Landscape</strong>
+                <span class="pill orange">MẪU CHÍNH THỨC</span>
+              </div>
+              <p style="font-size: 13px; color: #CBD5E1; margin-top: 6px;">
+                Bức tranh 3D dọc 600vh điện ảnh: Bầu trời mặt trời → Đàn chim → Cánh diều → Villa cao cấp → Mặt nước biển → Đại dương cá mập Leadership.
+              </p>
+            </div>
+            <div class="feature-card">
+              <strong style="color: #60A5FA;">Thao tác Quản trị viên:</strong>
+              <p style="font-size: 12.5px; color: #94A3B8; margin-top: 4px;">
+                Chọn làm Template Mặc định khi có người dùng đăng ký mới qua link chia sẻ của CLB.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tích hợp bộ công cụ thu thập Lead và phân luồng tiếp nhận hội viên theo ban chuyên môn</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: QUẢN LÝ SỰ KIỆN & PIPELINE ẢNH MINIO -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">VẬN HÀNH SỰ KIỆN</span>
+          <span class="brand-title">ĐIỀU PHỐI VÉ 0Đ & ĐỒNG BỘ ẢNH MINIO XUYÊN SUỐT</span>
+        </div>
+        <div class="slide-step">04 / 08 · SỰ KIỆN & MEDIA</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          QUẢN TRỊ SỰ KIỆN & <span class="gold-gradient-text">PIPELINE ẢNH MINIO</span> CHUẨN XÁC
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Khắc phục hoàn toàn tình trạng ảnh tải lên từ CRM không hiển thị trên app và hỗ trợ nghiệp vụ đăng ký sự kiện miễn phí (0đ).
+        </p>
+        <div class="grid-3">
+          <div class="feature-card highlight">
+            <div class="icon-box gold">🖼️</div>
+            <div class="card-title">Ưu Tiên Ảnh MinIO Tuyệt Đối</div>
+            <div class="card-desc">Khi Ban Thư ký upload banner / thumbnail sự kiện mới trên CRM, hệ thống lưu trữ tại MinIO Storage và tự động ưu tiên hiển thị đồng bộ xuống Mobile App, ghi đè 100% ảnh demo cũ.</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box">🎟️</div>
+            <div class="card-title">Cấu Hình Vé Sự Kiện 0đ (Free Pass)</div>
+            <div class="card-desc">CRM cho phép thiết lập giá vé 0đ cho các buổi sinh hoạt thường kỳ hoặc workshop nội bộ. App di động tự động cấp vé tham dự thành công mà không yêu cầu cổng thanh toán.</div>
+          </div>
+          <div class="feature-card gold">
+            <div class="icon-box gold">📊</div>
+            <div class="card-title">Báo Cáo Điểm Danh QR Thời Gian Thực</div>
+            <div class="card-desc">Theo dõi chính xác tỷ lệ quét mã QR check-in tại hội trường, đối soát khách mời VIP, đại biểu và thành viên CLB tham dự.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tự động tạo thông báo nhắc lịch sự kiện và điều phối hội nghị chuyên nghiệp</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: THÔNG BÁO ĐỘNG CRM -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">TRUYỀN THÔNG ĐIỀU HÀNH</span>
+          <span class="brand-title">DYNAMIC NOTIFICATION CENTER & BROADCAST TIN NHẮN</span>
+        </div>
+        <div class="slide-step">05 / 08 · THÔNG BÁO ĐỘNG</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <h2 class="hero-title" style="font-size: 34px;">
+              TRUNG TÂM THÔNG BÁO ĐỘNG<br />
+              <span class="gold-gradient-text">PHÂN PHỐI ĐA KÊNH TIN NHẮN</span>
+            </h2>
+            <p class="hero-subtitle">
+              Không chỉ gửi chuông thông báo thông thường, CRM cho phép Ban Điều Hành lựa chọn kênh nghiệp vụ để phát sóng trực tiếp thông điệp vào hộp thư của hội viên.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="pill green">✓ Lựa chọn phạm vi: CRM Quản trị · ViOne Connect · App Hiệp Hội</div>
+              <div class="pill green">✓ Đẩy vào 5 kênh chat chính thức: Truyền thông · Xúc tiến · Thư ký · B2B · Sự kiện</div>
+              <div class="pill green">✓ Phát sóng toàn hệ thống (All Channels) chỉ với 1 cú nhấp chuột</div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">DYNAMIC FORM</span>
+            <div class="feature-card highlight" style="margin-bottom: 12px;">
+              <strong style="color: #FDE047;">Trường nghiệp vụ: targetChatChannel</strong>
+              <div style="font-size: 12.5px; color: #CBD5E1; margin-top: 6px; line-height: 1.6;">
+                • Chỉ hiện chuông thông báo<br />
+                • 📢 Kênh Truyền Thông Hiệp Hội<br />
+                • 🤝 Kênh Xúc Tiến Giao Thương<br />
+                • 🏛️ Kênh Ban Thư Ký & BĐH<br />
+                • 🎯 Kênh Cơ Hội & Deal B2B<br />
+                • 🌟 Kênh Sự Kiện & Hội Nghị<br />
+                • ⚡ Đẩy vào Tất cả các kênh chính thức
+              </div>
+            </div>
+            <p style="font-size: 12px; color: #34D399; font-weight: 700;">
+              ✓ Tin nhắn xuất hiện ngay trong tab "Kênh Hiệp Hội" trên App của toàn bộ hội viên
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tăng tỷ lệ đọc thông báo quan trọng lên tới 98% so với phương thức thông báo chuông truyền thống</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: QUẢN TRỊ SÀN GIAO THƯƠNG & BẢNG TIN B2B -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">XÚC TIẾN THƯƠNG MẠI</span>
+          <span class="brand-title">KIỂM SOÁT SÀN SẢN PHẨM & CƠ HỘI GIAO THƯƠNG</span>
+        </div>
+        <div class="slide-step">06 / 08 · GIAO THƯƠNG B2B</div>
+      </div>
+      <div class="slide-body">
+        <h2 class="hero-title" style="font-size: 34px;">
+          QUẢN TRỊ SÀN SẢN PHẨM & <span class="gold-gradient-text">CƠ HỘI DOANH NGHIỆP</span>
+        </h2>
+        <p class="hero-subtitle" style="margin-bottom: 24px;">
+          Công cụ quản lý toàn diện giúp Ban Xúc tiến Thương mại phê duyệt gian hàng, kiểm duyệt bài đăng và đánh giá hiệu quả kết nối cung cầu.
+        </p>
+        <div class="grid-3">
+          <div class="feature-card">
+            <div class="icon-box gold">🏬</div>
+            <div class="card-title">Phê Duyệt Gian Hàng Doanh Nghiệp</div>
+            <div class="card-desc">Thẩm định tính hợp pháp của doanh nghiệp, cấp nhãn xác thực Verified Doanh Nghiệp CEO 1983 để các hội viên yên tâm ký kết hợp đồng.</div>
+          </div>
+          <div class="feature-card highlight">
+            <div class="icon-box">🏷️</div>
+            <div class="card-title">Quản Lý Danh Mục Ngành Hàng Động</div>
+            <div class="card-desc">Dễ dàng thêm mới, chỉnh sửa các ngành nghề kinh doanh mới theo xu thế thị trường (AI, ESG, Bất động sản công nghiệp, Năng lượng xanh).</div>
+          </div>
+          <div class="feature-card">
+            <div class="icon-box gold">📈</div>
+            <div class="card-title">Thống Kê Lượt Quan Tâm & Deal Chốt</div>
+            <div class="card-desc">Theo dõi tổng giá trị các deal trao đổi giữa các thành viên, số lượt click xem bài và các cặp doanh nghiệp kết nối thành công.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Xây dựng chuỗi cung ứng nội bộ bền vững cho cộng đồng doanh nhân 1983</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: QUẢN LÝ HỘI PHÍ & TÀI CHÍNH MINH BẠCH -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">QUẢN TRỊ TÀI CHÍNH</span>
+          <span class="brand-title">ĐỐI SOÁT HỘI PHÍ & HÓA ĐƠN ĐIỆN TỬ MINH BẠCH</span>
+        </div>
+        <div class="slide-step">07 / 08 · TÀI CHÍNH CLB</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <h2 class="hero-title" style="font-size: 34px;">
+              MINH BẠCH TÀI CHÍNH &<br />
+              <span class="gold-gradient-text">QUẢN LÝ HỘI PHÍ TỰ ĐỘNG</span>
+            </h2>
+            <p class="hero-subtitle">
+              Giải phóng Ban Tài chính khỏi các bảng tính Excel rời rạc. Toàn bộ hội phí thường niên, phí tài trợ sự kiện được ghi nhận tập trung với mã hóa bảo mật.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="pill green">✓ Tự động gửi thông báo gia hạn hội phí trước 30 ngày</div>
+              <div class="pill green">✓ Xuất biên lai điện tử có chữ ký số CLB</div>
+              <div class="pill green">✓ Đối soát tài khoản ngân hàng nhận hội phí tức thời</div>
+            </div>
+          </div>
+
+          <div class="showcase-visual">
+            <span class="showcase-tag">FINANCIAL LEDGER</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+              <div style="background: rgba(255,255,255,0.04); padding: 14px; border-radius: 14px;">
+                <div style="font-size: 11px; color: #94A3B8;">TỔNG THU HỘI PHÍ</div>
+                <div style="font-size: 26px; font-weight: 900; color: #34D399;">100%</div>
+                <div style="font-size: 11px; color: #CBD5E1; margin-top: 4px;">Đã đối soát minh bạch</div>
+              </div>
+              <div style="background: rgba(245, 158, 11, 0.08); padding: 14px; border-radius: 14px;">
+                <div style="font-size: 11px; color: #F59E0B;">TỶ LỆ GIA HẠN</div>
+                <div style="font-size: 26px; font-weight: 900; color: #FDE047;">96.8%</div>
+                <div style="font-size: 11px; color: #CBD5E1; margin-top: 4px;">Hội viên gắn bó lâu dài</div>
+              </div>
+            </div>
+            <p style="font-size: 12.5px; color: #CBD5E1; line-height: 1.5;">
+              Báo cáo tài chính định kỳ được xuất bản trực tiếp lên trang thông tin nội bộ của CLB cho các hội viên theo dõi.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Tôn chỉ tài chính công khai, minh bạch vì sự phát triển bền vững của CLB Doanh Nhân CEO 1983</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="nextSlide()">Tiếp →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: KẾT LUẬN & KIẾN TRÚC TƯƠNG LAI -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <div class="brand-group">
+          <span class="brand-badge">CHIẾN LƯỢC SỐ HÓA</span>
+          <span class="brand-title">HỆ THỐNG VẬN HÀNH TIÊN PHONG CHO HIỆP HỘI THỜI KỲ MỚI</span>
+        </div>
+        <div class="slide-step">08 / 08 · TẦM NHÌN CRM</div>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div>
+            <div class="pill orange" style="margin-bottom: 16px;">
+              CHUYỂN ĐỔI SỐ TOÀN DIỆN
+            </div>
+            <h2 class="hero-title">
+              VẬN HÀNH THÔNG MINH<br />
+              <span class="gold-gradient-text">KẾT NỐI BỀN - VỮNG TƯƠNG LAI</span>
+            </h2>
+            <p class="hero-subtitle">
+              Sự kết hợp hoàn hảo giữa <strong>CRM Quản trị Tập trung</strong> và <strong>Ứng dụng Di động Hội viên</strong> mang lại trải nghiệm số liền mạch, đưa CLB Doanh Nhân CEO 1983 trở thành một trong những tổ chức doanh nhân tiên phong công nghệ hàng đầu Việt Nam.
+            </p>
+            <div style="display: flex; gap: 14px; margin-top: 20px;">
+              <div class="feature-card" style="padding: 14px; flex: 1;">
+                <strong style="color: #FDE047;">TỰ ĐỘNG HÓA</strong>
+                <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Giảm 80% thời gian xử lý thủ tục hành chính thư ký.</p>
+              </div>
+              <div class="feature-card" style="padding: 14px; flex: 1;">
+                <strong style="color: #60A5FA;">GẮN KẾT B2B</strong>
+                <p style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Thúc đẩy doanh thu hàng trăm tỷ đồng trong nội bộ CLB.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-visual" style="text-align: center; padding: 40px 24px;">
+            <div style="font-size: 50px; margin-bottom: 12px;">🏛️</div>
+            <h3 style="font-size: 26px; font-weight: 900; color: #FFFFFF; margin-bottom: 8px;">CLB DOANH NHÂN CEO 1983</h3>
+            <p style="font-size: 15px; color: #F59E0B; font-weight: 700; margin-bottom: 24px;">
+              "KẾT NỐI BỀN - PHÁT TRIỂN VỮNG"
+            </p>
+            <div style="display: inline-flex; gap: 12px;">
+              <span class="pill green">Hệ thống: Web CRM Cloud</span>
+              <span class="pill">Cổng thông tin: ceo1983.com</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Cảm ơn Ban Chấp Hành CLB Doanh Nhân CEO 1983 đã tin tưởng lựa chọn giải pháp!</span>
+        <div class="nav-controls">
+          <button class="nav-btn" onclick="prevSlide()">← Trước</button>
+          <div class="dot-indicators"></div>
+          <button class="nav-btn" onclick="goToSlide(0)">Về Đầu ↺</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    function buildDots() {
+      document.querySelectorAll('.dot-indicators').forEach(container => {
+        container.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+          const dot = document.createElement('div');
+          dot.className = `dot ${i === currentSlide ? 'active' : ''}`;
+          dot.onclick = () => goToSlide(i);
+          container.appendChild(dot);
+        }
+      });
+    }
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+      currentSlide = index;
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === currentSlide);
+      });
+      buildDots();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    function goToSlide(i) {
+      showSlide(i);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'Home') {
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    buildDots();
+  </script>
+</body>
+</html>

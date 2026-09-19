@@ -598,8 +598,17 @@ span.bg-sky-600 *,
     transform: translateY(0);
   }
 }
+@keyframes vba-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .vba-animate {
-  animation: vba-fade-up 0.4s ease-out both;
+  animation: vba-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity;
 }
 
 /* ── Motion system ─────────────────────────────────────────────
@@ -1878,7 +1887,7 @@ textarea::placeholder {
   animation: bc-home-enter 160ms ease-out !important;
 }
 .force-motion .vba-animate {
-  animation: vba-fade-up 0.4s ease-out both !important;
+  animation: vba-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 .force-motion .vba-shimmer,
 .force-motion .vba-shine,

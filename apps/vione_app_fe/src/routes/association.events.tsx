@@ -132,7 +132,7 @@ function getEventAgenda(e: MyEvent, index: number): EventAgendaInfo {
   const categories = ["WORKSHOP", "HỘI THẢO", "TỌA ĐÀM B2B", "DIỄN ĐÀN"];
   const subtitles = [
     "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
-    "GẮN KẾT THỊNH VƯỢNG · ĐỈNH CAO DOANH NHÂN HỘI TỤ",
+    "KẾT NỐI THỊNH VƯỢNG · ĐỈNH CAO DOANH NHÂN HỘI TỤ",
     "ĐỔI MỚI SÁNG TẠO · NÂNG TẦM THƯƠNG HIỆU DOANH NGHIỆP",
   ];
   return {
@@ -169,8 +169,8 @@ function EventsScreen() {
   const fetchMember = useServerFn(getMyMember);
   const doRegister = useServerFn(registerForEvent);
   const doCancel = useServerFn(cancelEventRegistration);
-  const { data: serverEvents, loading, reload } = useServerData<MyEvent[]>(() => fetchEvents(), []);
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
+  const { data: serverEvents, loading, reload } = useServerData<MyEvent[]>(() => fetchEvents(), [], "vba_events");
+  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
 
   const [busy, setBusy] = useState<string | null>(null);
   const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>({});
@@ -209,6 +209,7 @@ function EventsScreen() {
     totalAmount: number;
     invoiceNo: string;
     ticketCount: number;
+    isFree?: boolean;
   } | null>(null);
 
   // Form registration state
@@ -217,7 +218,7 @@ function EventsScreen() {
   const [formEmail, setFormEmail] = useState("");
   const [formCompany, setFormCompany] = useState("");
   const [formPosition, setFormPosition] = useState("");
-  const [formTicketCount, setFormTicketCount] = useState(1);
+  const [formTicketCount, setFormTicketCount] = useState<number | "">(1);
   const [formTicketType, setFormTicketType] = useState("Standard");
   const [formNote, setFormNote] = useState("");
   const [submittingReg, setSubmittingReg] = useState(false);
@@ -268,8 +269,12 @@ function EventsScreen() {
 
     setSubmittingReg(true);
     const eventId = registeringEvent.id;
-    const ticketPrice = 500000;
-    const totalAmount = ticketPrice * formTicketCount;
+    const actualTicketCount = typeof formTicketCount === "number" && formTicketCount > 0 ? formTicketCount : 1;
+    const rawPrice = (registeringEvent as any).ticketPrice !== undefined && (registeringEvent as any).ticketPrice !== null
+      ? Number((registeringEvent as any).ticketPrice)
+      : ((registeringEvent as any).fee !== undefined ? Number((registeringEvent as any).fee) : 0);
+    const isFree = rawPrice === 0;
+    const totalAmount = isFree ? 0 : rawPrice * actualTicketCount;
     const tempInvNo = `EV-${Date.now().toString(36).toUpperCase()}`;
 
     try {
@@ -281,7 +286,7 @@ function EventsScreen() {
           email: formEmail.trim(),
           company: formCompany.trim(),
           position: formPosition.trim(),
-          ticketCount: formTicketCount,
+          ticketCount: actualTicketCount,
           ticketType: formTicketType,
           note: formNote.trim(),
         },
@@ -295,14 +300,19 @@ function EventsScreen() {
         eventTitle: registeringEvent.title,
         totalAmount,
         invoiceNo: (res as any)?.invoiceNo || tempInvNo,
-        ticketCount: formTicketCount,
+        ticketCount: actualTicketCount,
+        isFree,
       });
 
-      toast.success(
-        isEn
-          ? "Registered successfully! CRM payment invoice has been sent to Messages."
-          : "Đăng ký thành công! Hóa đơn thanh toán VietQR đã được gửi vào mục Tin nhắn.",
-      );
+      if (isFree) {
+        toast.success("Đăng ký thành công! Vé tham dự sự kiện Miễn Phí (0đ) đã được xác nhận.");
+      } else {
+        toast.success(
+          isEn
+            ? "Registered successfully! CRM payment invoice has been sent to Messages."
+            : "Đăng ký thành công! Hóa đơn thanh toán VietQR đã được gửi vào mục Tin nhắn.",
+        );
+      }
       reload();
     } catch (err: any) {
       setLocalRegistered((prev) => ({ ...prev, [eventId]: true }));
@@ -313,10 +323,11 @@ function EventsScreen() {
         eventTitle: registeringEvent.title,
         totalAmount,
         invoiceNo: tempInvNo,
-        ticketCount: formTicketCount,
+        ticketCount: actualTicketCount,
+        isFree,
       });
 
-      toast.success("Đăng ký thành công! Hệ thống CRM đã gửi hóa đơn thanh toán vào mục Tin nhắn.");
+      toast.success(isFree ? "Đăng ký vé miễn phí thành công!" : "Đăng ký thành công! Hệ thống CRM đã gửi hóa đơn thanh toán vào mục Tin nhắn.");
     } finally {
       setSubmittingReg(false);
     }
@@ -345,7 +356,7 @@ function EventsScreen() {
   }
 
   return (
-    <div className="vba-animate pb-24">
+    <div className="vba-animate min-h-full pb-24">
       <MemberHeader
         title={isEn ? "Club Events" : t("m.events.title")}
         back
@@ -862,25 +873,30 @@ function EventsScreen() {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setFormTicketCount((prev) => Math.max(1, prev - 1))}
+                      onClick={() => setFormTicketCount((prev) => Math.max(1, (Number(prev) || 1) - 1))}
                       className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
                     >
                       -
                     </button>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       max={100}
                       value={formTicketCount}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        setFormTicketCount(isNaN(val) ? 1 : Math.max(1, Math.min(100, val)));
+                        const raw = e.target.value;
+                        if (raw === "") {
+                          setFormTicketCount("");
+                        } else {
+                          const parsed = parseInt(raw, 10);
+                          setFormTicketCount(isNaN(parsed) ? 0 : Math.min(100, Math.max(0, parsed)));
+                        }
                       }}
                       className="w-full text-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
                     />
                     <button
                       type="button"
-                      onClick={() => setFormTicketCount((prev) => Math.min(100, prev + 1))}
+                      onClick={() => setFormTicketCount((prev) => Math.min(100, (Number(prev) || 0) + 1))}
                       className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
                     >
                       +
@@ -936,22 +952,41 @@ function EventsScreen() {
               </div>
 
               {/* Khối tóm tắt thanh toán */}
-              <div className="rounded-xl bg-amber-50 dark:bg-amber-950/50 p-3 border border-amber-200 dark:border-amber-800/80 space-y-1.5">
-                <div className="flex items-center justify-between font-medium text-slate-700 dark:text-slate-300">
-                  <span>Đơn giá vé:</span>
-                  <span>500.000 đ / vé</span>
-                </div>
-                <div className="flex items-center justify-between font-bold text-sm text-amber-900 dark:text-amber-300 pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
-                  <span>Tổng phí thanh toán:</span>
-                  <span className="text-base text-rose-600 dark:text-rose-400">
-                    {new Intl.NumberFormat("vi-VN").format(500000 * formTicketCount)} đ
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex items-start gap-1">
-                  <Info className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span>Hệ thống CRM sẽ tự động gửi thông tin thanh toán VietQR vào mục <b>Gắn kết</b> của bạn ngay sau khi bấm Gửi.</span>
-                </div>
-              </div>
+              {(() => {
+                const actualCount = typeof formTicketCount === "number" && formTicketCount > 0 ? formTicketCount : (formTicketCount === 0 ? 0 : 1);
+                const rawPrice = (registeringEvent as any)?.ticketPrice !== undefined && (registeringEvent as any)?.ticketPrice !== null
+                  ? Number((registeringEvent as any)?.ticketPrice)
+                  : ((registeringEvent as any)?.fee !== undefined ? Number((registeringEvent as any)?.fee) : 0);
+                const isFree = rawPrice === 0;
+                const totalCost = isFree ? 0 : rawPrice * actualCount;
+
+                return (
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-950/50 p-3 border border-amber-200 dark:border-amber-800/80 space-y-1.5">
+                    <div className="flex items-center justify-between font-medium text-slate-700 dark:text-slate-300">
+                      <span>Đơn giá vé:</span>
+                      <span className={isFree ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}>
+                        {isFree ? "Miễn phí (0 đ)" : `${new Intl.NumberFormat("vi-VN").format(rawPrice)} đ / vé`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between font-bold text-sm text-amber-900 dark:text-amber-300 pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
+                      <span>Tổng phí thanh toán:</span>
+                      <span className={`text-base ${isFree ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                        {isFree ? "0 đ (Miễn phí)" : `${new Intl.NumberFormat("vi-VN").format(totalCost)} đ`}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex items-start gap-1">
+                      <Info className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+                      <span>
+                        {isFree ? (
+                          "Sự kiện này hoàn toàn miễn phí. Vé tham dự sẽ được xác nhận ngay khi bạn bấm Đăng ký."
+                        ) : (
+                          <span>Hệ thống CRM sẽ tự động gửi thông tin thanh toán VietQR vào mục <b>Kết nối</b> của bạn ngay sau khi bấm Gửi.</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Action */}
               <div className="pt-2 flex items-center justify-end gap-2.5">
@@ -974,7 +1009,11 @@ function EventsScreen() {
                   ) : (
                     <>
                       <Send className="h-3.5 w-3.5" />
-                      <span>Xác nhận & Gửi đăng ký</span>
+                      <span>
+                        {(registeringEvent as any)?.ticketPrice === 0 || (registeringEvent as any)?.fee === 0
+                          ? "Xác nhận đăng ký vé miễn phí"
+                          : "Xác nhận & Gửi đăng ký"}
+                      </span>
                     </>
                   )}
                 </button>
@@ -984,7 +1023,7 @@ function EventsScreen() {
         </Dialog>
       )}
 
-      {/* MODAL 3: THÔNG BÁO ĐÃ GỬI HÓA ĐƠN VÀO TIN NHẮN THÀNH CÔNG */}
+      {/* MODAL 3: THÔNG BÁO ĐÃ GỬI HÓA ĐƠN VÀO TIN NHẮN HOẶC VÉ MIỄN PHÍ THÀNH CÔNG */}
       {registeredSuccessInfo && (
         <Dialog open={!!registeredSuccessInfo} onOpenChange={(open) => !open && setRegisteredSuccessInfo(null)}>
           <DialogContent className="max-w-sm p-5 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] text-center space-y-3">
@@ -992,7 +1031,9 @@ function EventsScreen() {
               <Check className="h-6 w-6 stroke-[3]" />
             </div>
             <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-              Đăng ký sự kiện thành công!
+              {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0
+                ? "Nhận vé sự kiện miễn phí thành công!"
+                : "Đăng ký sự kiện thành công!"}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận đăng ký tham gia sự kiện <b>"{registeredSuccessInfo.eventTitle}"</b>.
@@ -1000,43 +1041,71 @@ function EventsScreen() {
 
             <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 text-xs text-left space-y-1">
               <div className="flex justify-between">
-                <span className="text-slate-500">Mã hóa đơn:</span>
+                <span className="text-slate-500">
+                  {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? "Mã vé tham dự:" : "Mã hóa đơn:"}
+                </span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">{registeredSuccessInfo.invoiceNo}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Số lượng vé:</span>
                 <span className="font-bold">{registeredSuccessInfo.ticketCount} vé</span>
               </div>
-              <div className="flex justify-between font-bold text-rose-600 dark:text-rose-400 pt-1 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t border-slate-200 dark:border-slate-800">
                 <span>Tổng phí:</span>
-                <span>{new Intl.NumberFormat("vi-VN").format(registeredSuccessInfo.totalAmount)} đ</span>
+                <span>
+                  {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0
+                    ? "0 đ (Miễn phí)"
+                    : `${new Intl.NumberFormat("vi-VN").format(registeredSuccessInfo.totalAmount)} đ`}
+                </span>
               </div>
             </div>
 
-            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-center gap-2 text-left">
-              <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400" />
-              <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Gắn kết</b> của bạn.</span>
-            </div>
+            {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-center gap-2 text-left">
+                <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. Vui lòng sử dụng mã QR khi tới sự kiện!</span>
+              </div>
+            ) : (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-center gap-2 text-left">
+                <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400" />
+                <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> của bạn.</span>
+              </div>
+            )}
 
             <div className="pt-2 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setRegisteredSuccessInfo(null);
-                  navigate({ to: "/association/messages", search: { peerCode: "admin" } });
-                }}
-                style={{ color: "#ffffff" }}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <span>Đến mục Gắn kết để thanh toán</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
+              {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegisteredSuccessInfo(null);
+                    navigate({ to: "/association/checkin" });
+                  }}
+                  style={{ color: "#ffffff" }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <span>Xem mã QR Check-in sự kiện</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegisteredSuccessInfo(null);
+                    navigate({ to: "/association/messages", search: { peerCode: "admin" } });
+                  }}
+                  style={{ color: "#ffffff" }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <span>Đến mục Kết nối để thanh toán</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setRegisteredSuccessInfo(null)}
                 className="w-full py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
               >
-                Để sau
+                Đóng
               </button>
             </div>
           </DialogContent>

@@ -199,6 +199,20 @@ function NotifyPage() {
       ],
     },
     {
+      name: "targetChatChannel",
+      label: "Đẩy thông báo vào Kênh tin nhắn Hiệp Hội",
+      type: "select",
+      options: [
+        { value: "none", label: "Chỉ hiện chuông thông báo (Không đẩy vào tin nhắn)" },
+        { value: "channel_media", label: "📢 Kênh Truyền Thông Hiệp Hội" },
+        { value: "channel_promotion", label: "🤝 Kênh Xúc Tiến Giao Thương" },
+        { value: "channel_secretariat", label: "🏛️ Kênh Ban Thư Ký & Ban Điều Hành" },
+        { value: "channel_deals", label: "🎯 Kênh Cơ Hội & Deal B2B" },
+        { value: "channel_events", label: "🌟 Kênh Sự Kiện & Hội Nghị" },
+        { value: "all_channels", label: "⚡ Đẩy vào Tất cả các kênh chính thức" },
+      ],
+    },
+    {
       name: "status",
       label: t("notif.col.status"),
       type: "select",
@@ -220,6 +234,35 @@ function NotifyPage() {
         await createFn({ data: v as never });
         toast.success(t("common.created"));
       }
+
+      // Đẩy vào kênh tin nhắn Hiệp hội tương ứng (Req 7)
+      const targetChannel = (v as any).targetChatChannel;
+      if (targetChannel && targetChannel !== "none") {
+        const channelList =
+          targetChannel === "all_channels"
+            ? ["channel_media", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
+            : [targetChannel];
+
+        for (const ch of channelList) {
+          const chatKey = `vba.chat.${ch}`;
+          try {
+            const history = JSON.parse(localStorage.getItem(chatKey) || "[]");
+            const newMsg = {
+              id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              text: `📢 THÔNG BÁO TỪ BAN ĐIỀU HÀNH:\n\n*${v.title}*\n\n${v.body || ""}`,
+              mine: false,
+              time: "Vừa xong",
+              createdAt: new Date().toISOString(),
+              seen: false,
+            };
+            history.push(newMsg);
+            localStorage.setItem(chatKey, JSON.stringify(history));
+          } catch {}
+        }
+        window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
+        toast.success("Đã đẩy thông báo tới các kênh tin nhắn Hiệp hội!");
+      }
+
       setOpen(false);
       setEditing(null);
       await router.invalidate();

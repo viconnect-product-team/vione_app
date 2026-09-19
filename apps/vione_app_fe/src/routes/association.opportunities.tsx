@@ -24,6 +24,8 @@ import {
   ExternalLink,
   Pencil,
   MoreVertical,
+  Eye,
+  Mail,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -65,6 +67,21 @@ function normalizeTag(tag: string): string {
   return TAG_VI_MAP[tag.toLowerCase()] || tag;
 }
 
+function formatSmartPrice(val: string | number | undefined | null): string {
+  if (!val) return "Thỏa thuận B2B";
+  const str = String(val).trim();
+  const num = parseFloat(str.replace(/[^\d.-]/g, ""));
+  if (!isNaN(num) && num >= 1_000_000_000) {
+    const b = num / 1_000_000_000;
+    return `${b % 1 === 0 ? b : b.toFixed(1)} Tỷ đ`;
+  }
+  if (!isNaN(num) && num >= 1_000_000) {
+    const m = num / 1_000_000;
+    return `${m % 1 === 0 ? m : m.toFixed(0)} Tr đ`;
+  }
+  return str;
+}
+
 function OpportunitiesScreen() {
   const t = useT();
   const fmt = useFmt();
@@ -92,6 +109,26 @@ function OpportunitiesScreen() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(null);
   const [activeOppMenuId, setActiveOppMenuId] = useState<string | null>(null);
+  const [interestedMembers, setInterestedMembers] = useState<Array<{
+    memberId: string;
+    name: string;
+    company?: string;
+    phone?: string;
+    email?: string;
+    avatar?: string;
+    expressedAt: string;
+  }>>([]);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+
+  const handleOpenOppDetail = async (o: MyOpportunity & { description?: string }) => {
+    setSelectedOpp(o);
+    try {
+      await fetchNestApi(`/opportunities/${o.id}/view`, { method: "POST" });
+      setSelectedOpp((prev) => (prev && prev.id === o.id ? { ...prev, views: (prev.views || 0) + 1 } : prev));
+    } catch {
+      /* ignore */
+    }
+  };
 
   // Scroll lock for modals
   useEffect(() => {
@@ -173,6 +210,24 @@ function OpportunitiesScreen() {
       ((member as any)?.userId && (o.posterId === (member as any).userId || o.posterId === (member as any).id))
     );
   };
+
+  useEffect(() => {
+    if (selectedOpp && checkIsMine(selectedOpp)) {
+      setLoadingInterests(true);
+      fetchNestApi<{ ok: boolean; interests: any[] }>(`/opportunities/${selectedOpp.id}/interests`)
+        .then((res) => {
+          if (res?.interests) {
+            setInterestedMembers(res.interests);
+          } else {
+            setInterestedMembers([]);
+          }
+        })
+        .catch(() => setInterestedMembers([]))
+        .finally(() => setLoadingInterests(false));
+    } else {
+      setInterestedMembers([]);
+    }
+  }, [selectedOpp]);
 
   const allOpportunities = useMemo(() => {
     const arr = [...(opportunities || [])];
@@ -447,7 +502,7 @@ function OpportunitiesScreen() {
           return (
             <div
               key={o.id}
-              onClick={() => setSelectedOpp(o)}
+              onClick={() => handleOpenOppDetail(o)}
               className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-500/50 hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-[#131a26] group"
             >
               {/* 1. POSTER BANNER ON TOP (IMAGE 3) */}
@@ -468,6 +523,12 @@ function OpportunitiesScreen() {
                   </span>
 
                   <div className="flex items-center gap-1.5">
+                    {/* View Count Badge */}
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 shadow-sm border border-white/20">
+                      <Eye className="h-3 w-3 text-amber-300" />
+                      <span>{o.views || 0}</span>
+                    </span>
+
                     {o.interested && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
                         <Check className="h-3 w-3 stroke-[2.5]" />
@@ -562,8 +623,8 @@ function OpportunitiesScreen() {
                     <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
                     <span>GIÁ TRỊ DEAL</span>
                   </div>
-                  <p className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 leading-snug truncate max-w-full">
-                    {o.value || "Thỏa thuận B2B"}
+                  <p className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 leading-snug whitespace-normal break-words text-center">
+                    {formatSmartPrice(o.value)}
                   </p>
                   <p className="text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
                     Từ CRM CEO 1983
@@ -599,12 +660,11 @@ function OpportunitiesScreen() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-
                   <button
                     type="button"
                     onClick={(evt) => {
                       evt.stopPropagation();
-                      setSelectedOpp(o);
+                      handleOpenOppDetail(o);
                     }}
                     className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#003B95] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer"
                   >
@@ -673,10 +733,16 @@ function OpportunitiesScreen() {
                 <X className="h-4 w-4" />
               </button>
               <div className="absolute bottom-3 left-4 right-4 z-10">
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#003B95]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 mb-1 shadow-sm border border-amber-400/30">
-                  <Sparkles className="h-3 w-3" />
-                  {normalizeTag(selectedOpp.tag)}
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#003B95]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/30">
+                    <Sparkles className="h-3 w-3" />
+                    {normalizeTag(selectedOpp.tag)}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white/90 border border-white/20">
+                    <Eye className="h-3 w-3 text-amber-300" />
+                    <span>{selectedOpp.views || 0} lượt xem</span>
+                  </span>
+                </div>
                 <h3 className="text-[16px] font-extrabold text-white line-clamp-2 leading-tight">
                   {selectedOpp.title}
                 </h3>
@@ -727,13 +793,86 @@ function OpportunitiesScreen() {
                   </span>
                   <div>
                     <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Giá trị hợp đồng / Deal CRM</span>
-                    <p className="text-[15px] font-black text-amber-600 dark:text-amber-400">{selectedOpp.value || "Thỏa thuận B2B"}</p>
+                    <p className="text-[15px] font-black text-amber-600 dark:text-amber-400 whitespace-normal break-words">{formatSmartPrice(selectedOpp.value)}</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   Xác thực CRM
                 </span>
               </div>
+
+              {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội */}
+              {checkIsMine(selectedOpp) && (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-[13px] text-slate-900 dark:text-amber-300">
+                      <Users className="h-4 w-4 text-amber-500" />
+                      <span>Hội viên đã quan tâm ({interestedMembers.length})</span>
+                    </div>
+                    <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                      CRM Realtime
+                    </span>
+                  </div>
+
+                  {loadingInterests ? (
+                    <p className="text-xs text-slate-400 text-center py-3">Đang tải danh sách người quan tâm...</p>
+                  ) : interestedMembers.length === 0 ? (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 py-2 italic text-center">
+                      Chưa có hội viên nào bấm quan tâm cơ hội này. Khi có người quan tâm, thông tin liên hệ sẽ hiển thị tại đây.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {interestedMembers.map((m) => (
+                        <div key={m.memberId || m.phone} className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-[#003B95] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                              {m.name ? m.name.charAt(0).toUpperCase() : "U"}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{m.name}</div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{m.company || "Hội viên CLB CEO 1983"}</div>
+                              {m.expressedAt && (
+                                <div className="text-[10px] text-amber-600 dark:text-amber-400">{fmt.rel(m.expressedAt)}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            {m.phone && (
+                              <a
+                                href={`tel:${m.phone}`}
+                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 transition"
+                                title="Gọi điện"
+                              >
+                                <Phone className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            {m.email && (
+                              <a
+                                href={`mailto:${m.email}`}
+                                className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 hover:bg-blue-100 transition"
+                                title="Gửi email"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOpp(null);
+                                navigate({ to: "/association/messages", search: { peerCode: m.memberId || m.phone } });
+                              }}
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                              title="Nhắn tin"
+                            >
+                              <MessageSquare className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Highlighted Key Points (Image 4 Style) */}
               <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
