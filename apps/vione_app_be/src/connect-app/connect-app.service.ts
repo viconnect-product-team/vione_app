@@ -10921,7 +10921,7 @@ export class ConnectAppService implements OnModuleInit {
           passwordRaw: rawPassword,
           companyName: company,
           memberCode: memberId,
-          portalUrl: 'http://14.225.217.232:5002/association/login',
+          portalUrl: 'https://14.225.217.232:5444/association/login',
         });
       }
 

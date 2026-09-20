@@ -3,8 +3,10 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 
 export class CreateEventDto {
   name!: string;
@@ -42,7 +44,13 @@ export class UpdateEventDto {
 
 @Injectable()
 export class EventsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(EventsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+  ) {}
+
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
     if (!userId) return false;
@@ -812,6 +820,31 @@ export class EventsService {
       }
     }
 
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+
+    // Tự động gửi Email xác nhận vé sự kiện điện tử (E-Ticket) kèm Mã QR Check-in
+    if (email && email.includes('@')) {
+      this.mailService.sendEventTicketEmail({
+        to: email,
+        fullName: memberName,
+        phone,
+        company,
+        position,
+        eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+        eventDate: event.date ? (event.date instanceof Date ? event.date.toISOString().slice(0, 10) : String(event.date).slice(0, 10)) : 'Xem chi tiết trong app',
+        eventLocation: event.location || 'Hà Nội',
+        registrationId: regId,
+        ticketType,
+        ticketCount,
+        luckyNumber: luckyNum,
+        isFree,
+        totalAmount,
+        qrCodeUrl,
+      }).catch((err: any) => {
+        this.logger.warn(`Failed to dispatch event ticket email to ${email}: ${err?.message}`);
+      });
+    }
+
     return {
       ok: true,
       registered: true,
@@ -823,11 +856,16 @@ export class EventsService {
       isFree,
       paymentStatus,
       status: 'confirmed',
+      luckyNumber: luckyNum,
+      qrCodeUrl,
+      memberName,
+      eventTitle: event.title || event.name,
       message: isFree
-        ? 'Đăng ký vé tham dự sự kiện miễn phí thành công!'
+        ? 'Đăng ký vé tham dự sự kiện miễn phí thành công! Thông tin vé và mã QR check-in đã được gửi tới email của Anh/Chị.'
         : 'Đăng ký sự kiện thành công! Vui lòng hoàn tất thanh toán theo hóa đơn VietQR trong mục Tin nhắn.',
     };
   }
+
 
   // Mobile API: Cancel registration for an event
   async cancelEventRegistration(userId: string, eventId: string) {

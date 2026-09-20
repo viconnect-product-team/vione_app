@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Building2,
   BadgeCheck,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -300,14 +301,26 @@ function CheckinScreen() {
     stopScan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
-  useEffect(() => () => stopScan(), [stopScan]);
+
+  useEffect(() => {
+    return () => {
+      stopScan();
+    };
+  }, [stopScan]);
 
   return (
     <div className="vba-animate">
-      <MemberHeader title={t("m.checkin.headerTitle")} back />
+      <MemberHeader title="Soát Vé Sự Kiện (BTC / CRM)" back />
+
+      {/* Organizer Notice */}
+      <div className="mx-4 mt-3 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />
+        <span>Chức năng quét mã QR / NFC dành riêng cho Ban Tổ Chức & Ban Thư Ký để soát vé và điểm danh đại biểu khi đến sự kiện.</span>
+      </div>
 
       {/* Mode toggle */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-3">
+
         <div className="relative grid grid-cols-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/60 p-1">
           <span
             className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-xl transition-transform duration-300 bg-[#2E3192] shadow-sm"
@@ -528,10 +541,13 @@ function CheckinScreen() {
             <div className="p-5 pt-0 text-center space-y-3">
               {/* Overlapping Avatar with Verified Badge */}
               <div className="relative -mt-10 mx-auto w-20 h-20">
-                {scannedMember.avatar ? (
+                {scannedMember.avatar && resolveMediaUrl(scannedMember.avatar) ? (
                   <img
-                    src={resolveMediaUrl(scannedMember.avatar) || scannedMember.avatar}
+                    src={resolveMediaUrl(scannedMember.avatar)!}
                     alt={scannedMember.personName}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
                     className="w-full h-full rounded-2xl object-cover ring-3 ring-white dark:ring-[#0f172a] shadow-lg"
                   />
                 ) : (

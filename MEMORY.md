@@ -52,6 +52,7 @@
 
 | Issue / Symptom | Root Cause | Solution | Prevention |
 |:---:|---|---|---|
+| **144** | **Chuẩn Hóa Luồng Đăng Ký Vé Sự Kiện: Tự Động Gửi Email E-Ticket Kèm QR Check-in & Thông Tin Đại Biểu; Phân Định Rõ Ràng Người Dùng Không Quét Sự Kiện (Chỉ Xuất Trình Vé Cho BTC/CRM Quét); Khắc Phục Triệt Để Hiện Tượng 'UI Lúc Này Lúc Kia' Khuyết Avatar & Lệch Chức Danh (/association/profile)** | Khách hàng phản ánh 3 điểm bất cập: 1) Luồng đăng ký vé sự kiện chưa chuẩn: Đăng ký vé miễn phí thành công phải gửi email thông tin vé, thông tin người đăng ký kèm mã QR check-in; 2) Người dùng không phải tự quét mã sự kiện, quét mã sự kiện chỉ dành cho hệ thống CRM khi người tham gia sự kiện tới thì BTC mới quét; 3) 'không hiểu sao UI lúc này lúc kia' kèm 2 ảnh chụp màn hình trang profile của hội viên Phạm Văn Vũ (M1983-002): ảnh 1 có avatar và chức danh 'Hội viên chính thức', ảnh 2 khuyết avatar (lỗ trống tròn, lỗi 404) và chức danh đổi thành 'Phó Chủ tịch Thường trực'. Nguyên nhân: 1) `EventsService.registerForEvent` chưa tích hợp dịch vụ gửi email vé điện tử; 2) Giao diện `association.events.tsx` có nút điều hướng tới camera scanner làm người dùng nhầm lẫn; 3) Dữ liệu avatar trong DB của tài khoản test chứa tên file ảnh cũ không còn tồn tại trên server/MinIO sinh mã 404; thẻ `<img>` khi bị lỗi chỉ ẩn thẻ nhưng fallback initials `<span>` lại bị chặn bởi điều kiện `!resolvedAvatar`, dẫn tới khung avatar trống trơn; chức danh giữa local state và async member bị ghi đè không nhất quán khi render. | 1) **Backend NestJS (`apps/vione_app_be`)**: Thêm `sendEventTicketEmail` trong `mail.service.ts` với template email HTML thương hiệu CEO 1983 chuyên nghiệp, hiển thị tên sự kiện, thời gian, địa điểm, họ tên, email, SĐT, công ty, chức vụ, số may mắn quay thưởng (#XXXX), và ảnh QR Check-in động (`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=...`). `EventsService.registerForEvent` tự động kích hoạt gửi email ngay khi đăng ký vé thành công. 2) **Frontend App Sự Kiện (`association.events.tsx`, `association.checkin.tsx`)**: Đổi nút 'Event QR Check-in' trên trang sự kiện thành 'Vé Sự Kiện Của Tôi' (mở hộp thoại Thẻ Vé Điện Tử hiển thị mã QR check-in của cá nhân để đưa cho BTC quét); trên trang checkin bổ sung banner 'Soát Vé Sự Kiện (BTC / CRM)' giải thích rõ ràng đây là khu vực dành riêng cho BTC/Thư ký điểm danh đại biểu. 3) **Khắc Phục Ổn Định Profile (`association.profile.tsx`)**: Bổ sung `const [avatarError, setAvatarError] = useState(false);` và `onError={() => setAvatarError(true)}`; thẻ fallback Initials Badge được render ngay lập tức khi `!resolvedAvatar || avatarError`, triệt tiêu hoàn toàn khung tròn rỗng; thống nhất chức danh hiển thị ưu tiên `member?.title || profileTitle` trên cả thẻ mini và thẻ mở rộng; dọn dẹp các đường dẫn avatar chết trong CSDL cho `M1983-002`. Tuân thủ nghiêm ngặt quy tắc AGENTS không chạy git push/commit. | Mọi nghiệp vụ đăng ký vé phải luôn có email xác nhận kèm mã QR check-in để dự phòng khi người dùng không mở app; phân tách rõ ràng quyền quét (Ban Tổ Chức) và quyền xuất trình (Hội viên); component hiển thị avatar phải luôn có cờ `avatarError` để fallback ngay sang Initials Badge khi request ảnh gặp 404/500, tránh để lại khoảng trống trên UI. |
 | **143** | **Khắc Phục Lỗi Cổng 80 Bị Chiếm Dụng Trên Server Dev Khi Khởi Chạy Nginx SSL Proxy (failed to bind host port 0.0.0.0:80/tcp: address already in use) Khiến Container vione-ssl-proxy Crash & Gây ERR_CONNECTION_REFUSED Trên Cổng 5443 và 5444** | Cổng 80 trên máy chủ Linux 14.225.217.232 đang bị chiếm dụng bởi dịch vụ sẵn có trên host OS (Apache2 hoặc Nginx native). Việc khai báo `80:80` trong `docker-compose.ssl.yml` và `listen 80;` trong `nginx.conf` khiến Docker daemon báo lỗi `address already in use` và từ chối khởi chạy container `vione-ssl-proxy`. Do container proxy bị dừng, các cổng SSL 443, 5443, 5444 hoàn toàn không có tiến trình lắng nghe, dẫn tới trình duyệt báo lỗi `ERR_CONNECTION_REFUSED` khi truy cập `https://14.225.217.232:5443` và `https://14.225.217.232:5444`. | 1) Gỡ bỏ hoàn toàn dòng `80:80` khỏi `deploy/ssl/docker-compose.ssl.yml`, tuân thủ đúng yêu cầu bỏ hoàn toàn HTTP, chỉ để lại các cổng HTTPS (`443`, `5443`, `5444`); 2) Gỡ bỏ server block `listen 80;` trong `deploy/ssl/nginx.conf`; 3) Bổ sung lệnh kiểm tra và hiển thị bảng trạng thái container trực quan (`docker ps --filter name=vione-ssl-proxy`) trong `deploy/ssl/deploy-ssl.ps1`. Người dùng chỉ cần chạy lại `deploy/ssl/deploy-ssl.ps1` trong 2 giây để proxy khởi chạy thành công ngay lập tức mà không cần build lại web. | Khi triển khai container reverse proxy trên máy chủ đã có dịch vụ nền tảng, tuyệt đối không bind cổng 80 nếu server host đang chạy web server khác; tập trung vào các cổng HTTPS chuyên dụng để loại bỏ 100% rủi ro xung đột cổng. |
 | **142** | **Khắc Phục Toàn Diện 4 Hạng Mục Cốt Lõi: 1) Sửa Lỗi UI Không Tự Lấy Dữ Liệu Hội Viên & Khuyết Ảnh Khi Cập Nhật Profile (/association/profile); 2) Cấu Hình Loại Bỏ Hoàn Toàn HTTP, Thiết Lập 100% HTTPS-Only Qua Nginx 301 Redirect, Cổng 443/5443/5444 & Khóa Cổng Nội Bộ; 3) Thiết Kế Lại Landing CEO 1983 V1 (/landing/ceo/v1) Không Khối Chữ Nhật, Viền Uốn Lượn SVG Độc Đáo, Logo CEO 1983 Chuẩn & 2 Theme Trời Tối / Trời Sáng; 4) Tách 2 Lệnh Độc Lập Build & Deploy Cho App Hiệp Hội (`deploy-ceo1983.ps1`) và Web CRM (`deploy-crm.ps1`)** | Khách hàng yêu cầu: 1) Sửa bug khi bấm cập nhật profile ở app hiệp hội thì UI không tự lấy thông tin hội viên, chức danh tên ảnh đều bị trống; 2) Cấu hình bỏ hết HTTP đi chỉ để mỗi HTTPS; 3) Sửa lại web landing ceo 1983 v1 (`landing/ceo/v1`) đẹp hơn, đồng bộ text chuẩn, sửa hiệu ứng hình ảnh lỗi/xấu, tuyệt đối KHÔNG thiết kế theo kiểu khối chữ nhật, mỗi section đều có đường viền uốn lượn độc đáo, logo dùng logo ceo1983, thiết kế 2 theme background trời tối và trời sáng; 4) Làm 2 lệnh để build và deploy riêng biệt app hiệp hội và CRM, không gộp chung. Nguyên nhân: 1) Nút "Cập nhật" trên trang profile trước đây navigate sang `/association/business-cards?tab=cards&action=edit` thay vì mở modal cập nhật trực tiếp; trong modal thiếu khung upload ảnh đại diện và cơ chế load dữ liệu ban đầu bị khuyết khi `member` load bất đồng bộ; hàm `emptyDraft` của danh thiếp trả về chuỗi rỗng; backend thiếu API cập nhật profile toàn diện; 2) Nginx chưa có block bắt cổng 80 redirect 301 sang HTTPS; các container nội bộ vẫn bind public; 3) Landing V1 trước đây dùng keyframe vẽ chim/cá SVG thô sơ, bố cục khối hộp vuông vức; 4) Bộ script deploy trước đây gộp chung cả 2 phân hệ trong `fast-deploy.ps1`. | 1) **Profile App Hiệp Hội (`association.profile.tsx`, `association.business-cards.tsx`, `profile.functions.ts`, `members.controller.ts`, `members.service.ts`)**: Nút Cập nhật mở thẳng modal in-page `setEditProfileOpen(true)`; hàm `initProfileFields(true)` tự động trích xuất đầy đủ Họ tên, Chức danh, Doanh nghiệp, Số điện thoại, Email, Địa chỉ, Website, Giới thiệu và Ảnh đại diện; bổ sung khung chọn/upload/nén ảnh đại diện Canvas trực tiếp trong modal; triển khai `@Patch('me/profile')` và `@Post('me/profile')` cập nhật đồng bộ `vione_users`, `user_profiles`, `members`, `member_business_cards`; hàm `emptyDraft` tự động prefill từ `member` và `user`. 2) **100% HTTPS-Only (`deploy/ssl/nginx.conf`, `docker-compose.ssl.yml`, `docker-compose.yml`)**: Thêm server block listen cổng 80 thực hiện `return 301 https://$host$request_uri`; thêm header HSTS `Strict-Transport-Security` cho 443, 5443, 5444; bind cổng container nội bộ sang `127.0.0.1:5000:8080` và `127.0.0.1:5002:8080` chặn hoàn toàn truy cập HTTP từ Internet. 3) **Đại Tu Landing CEO 1983 V1 (`Ceo1983VerticalLandscape.tsx`)**: Triệt tiêu 100% khối chữ nhật vuông vức; liên kết các phân cảnh bằng các đường sóng uốn lượn đa tầng SVG (Smooth Multi-Layer Wave Dividers); bo viền thẻ card bất đối xứng hữu cơ `rounded-[40px_16px_40px_16px]`; sử dụng chuẩn logo `/ceo1983-official-logo.png`; xây dựng 2 Theme Bầu Trời: Theme Trời Tối (Cosmos Night Sky, `/ceo1983_hero_cosmos_skyline.jpg`, ánh vàng hổ phách) & Theme Trời Sáng (Daylight Azure Sky, `/ceo1983_hero_daylight_skyline.jpg`, mây trắng lam ngọc) với bộ chuyển đổi theme mượt mà; đồng bộ nội dung chuẩn CLB CEO 1983 trực thuộc HanoiBA. 4) **Tách 2 Lệnh Độc Lập**: Tạo `deploy-ceo1983.ps1` (chỉ chạy App Hiệp Hội trên cổng 5444 HTTPS) và `deploy-crm.ps1` (chỉ chạy CRM trên cổng 5443 HTTPS); tích hợp `npm run deploy:ceo1983`, `npm run deploy:crm`, `npm run build:ceo1983`, `npm run build:crm` vào `package.json`. Đảm bảo UTF-8 BOM cho toàn bộ file `.ps1`. Tuân thủ nghiêm ngặt AGENTS không tự ý git push/commit. | Mọi form cập nhật hồ sơ phải có cơ chế fallback đa tầng từ CSDL đến local storage và hỗ trợ tải ảnh trực tiếp; các ứng dụng production cần ép buộc HTTPS ở tầng gateway/reverse proxy và cô lập cổng HTTP nội bộ; thiết kế landing cao cấp cần sử dụng đường viền hữu cơ (organic waves) thay vì khối hộp cơ bản để tạo ấn tượng thị giác mạnh mẽ; các script vận hành cần phân tách độc lập theo từng phân hệ để tối ưu tốc độ triển khai. |
 | **141** | **Hoàn Thiện Toàn Diện 8 Hạng Mục Trọng Điểm Cho Hệ Sinh Thái CEO 1983 (App Hiệp Hội, Web CRM & Bộ Tài Liệu Bàn Giao C-Level): 1) Xác Minh An Toàn Server Dev 14.225.217.232 (Giữ Nguyên 100% Cục Bộ); 2) Quét QR Định Danh Thực Tế & Thẻ Danh Thiếp 3D (/card/$code - Truy Vấn CSDL Thực, Bỏ Fallback 'James Nguyễn', Tải vCard, Gọi, Zalo, Chia Sẻ); 3) Khắc Phục Triệt Để Lỗi Dính Chữ/Liền Dòng Tài Liệu HDSD (Overhaul Parser Sang Block List & Table DOCX); 4) Chuẩn Hóa 100% Tên Thương Hiệu 'Hiệp hội Doanh nhân CEO 1983 — Hệ thống quản trị CEO 1983'; 5) Hoàn Thiện Luồng Vé Sự Kiện 0đ Nhận Mã QR May Mắn #XXXX & Bắn Thông Báo/Tin Nhắn Hộp Thư; 6) Thu Thập 100% Ảnh Minh Chứng Thao Tác Mới Độc Bản; 7) Đại Tu Bộ Slide PowerPoint PPTX Sang Executive Light Theme (Trắng Bạc, Navy & Gold); 8) Tái Biên Dịch & Đóng Gói Trọn Gói `GOI_TAI_LIEU_CEO1983_CAP_NHAT.zip`** | Khách hàng yêu cầu giải quyết đồng bộ 8 vấn đề cốt lõi: 1) Kiểm tra và cam kết tuyệt đối không sửa đổi lung tung trên server dev 14.225.217.232; 2) Sửa trang quét mã QR danh thiếp /card/$code khi quét từ bên ngoài hiện dữ liệu mock James Nguyễn thay vì thông tin hội viên thực tế; 3) Sửa lỗi dính chữ, liền dòng, các bước dồn thành 1 dòng liên tục trong tài liệu HDSD Word/PDF; 4) Chuẩn hóa tên thương hiệu thành 'Hiệp hội Doanh nhân CEO 1983 — Hệ thống quản trị CEO 1983'; 5) Hoàn thiện luồng vé sự kiện 0đ xuất vé QR ngay kèm số may mắn và gửi tin nhắn/thông báo; 6) Kiểm tra và chụp lại ảnh thực tế khớp từng bước; 7) Sửa slide PowerPoint màu xanh nặng nề sang thiết kế sang trọng, thanh thoát với 3 màu Platinum White, Royal Navy, Warm Gold; 8) Biên dịch toàn bộ tài liệu và đóng gói zip. | 1) **Xác Minh An Toàn Server**: 100% mã nguồn chỉ sửa đổi cục bộ, không can thiệp server dev. 2) **Backend & Frontend Danh Thiếp Thật (`business-card.service.ts`, `card.functions.ts`, `card.$code.tsx`)**: Sanitize tham số `rawCode`, truy vấn CSDL PostgreSQL các bảng `members`, `member_business_cards`, `vione_users`, `user_profiles`. Xóa bỏ 100% fallback cứng 'James Nguyễn'. Xây dựng giao diện Luxury 3D Flip Card với tải danh bạ vCard (.vcf), Gọi điện thoại, Zalo, Chia sẻ liên kết và huy hiệu xác thực. 3) **Overhaul Bộ Sinh Tài Liệu HDSD (`scripts/generate_all_user_guides.js`)**: Viết lại `generateHtmlPage` phân tách danh sách có thứ tự/không thứ tự thành block thẻ `<ol class="steps-list"><li class="step-item">` và bảng HTML chuẩn. Viết lại `generateDocx` phân tích bold, italic, inline code và chuyển đổi định dạng bước thành Paragraph có hanging indent và bảng `docx.Table` độc lập. 4) **Chuẩn Hóa Tên Thương Hiệu**: Thay thế toàn bộ header, footer, tiêu đề sang 'Hiệp Hội Doanh Nhân CEO 1983 · Hệ Thống Quản Trị CEO 1983'. 5) **Vé Sự Kiện 0đ (`events.service.ts`)**: Cấp vé tức thì, sinh mã số may mắn ngẫu nhiên `#XXXX` và tự động gửi thông báo qua `public.messages`, `public.business_notifications`, `public.notifications`. 6) **Chụp Minh Chứng Mới Khớp 100% (`scripts/capture_all_unique_evidence.js`)**: Cập nhật selector nút ĐĂNG KÝ HỘI VIÊN VIP, Tra Cứu Hồ Sơ, chụp đầy đủ 64 ảnh độc bản không trùng lặp. 7) **Bộ Slide PPTX Executive Light Theme (`scripts/generate_powerpoint_slides.js`)**: Thiết kế lại 2 bộ slide Widescreen 16:9 với nền Platinum White `#F8FAFC`, Navy `#003B95`, Warm Gold `#F59E0B` và nội dung bám sát `ceo1983.com`. 8) **Biên Dịch & Đóng Gói**: Xuất bản PDF, DOCX (App 5.38MB, CRM 4.48MB), MD, XLSX, PPTX và đóng gói vào `document/GOI_TAI_LIEU_CEO1983_CAP_NHAT.zip` (20.25 MB). Tuyệt đối tuân thủ quy tắc AGENTS không chạy git push hay git commit. | Định dạng tài liệu xuất bản từ Markdown sang Word/PDF phải sử dụng parser phân tách thẻ khối (block-level elements) thay vì nối chuỗi trực tiếp; dữ liệu danh thiếp công khai phải luôn ưu tiên truy vấn CSDL thực tế với cơ chế fallback an toàn thay vì mock tĩnh; bài thuyết trình doanh nghiệp C-Level cần phối màu cân bằng giữa nền sáng thanh lịch và điểm nhấn thương hiệu. |
@@ -1677,3 +1678,131 @@ Người dùng phản ánh một loạt tồn đọng trong trải nghiệm th�
      - `deploy/ssl/nginx.conf`: Bổ sung rewrite rule `rewrite ^/upload/(.*)$ /api/upload/$1 break;` trên cả 3 server block 5443, 5444, 5445.
   4. **Kiểm Tra Biên Dịch**:
      - Cả 2 dự án `apps/vione_app_be` và `apps/vione_app_fe` đều biên dịch thành công 100% không có cảnh báo hay lỗi.
+
+
+### 15.34 Chuẩn Hóa Luồng Đăng Ký Vé Sự Kiện (Email E-Ticket Kèm QR Check-in), Phân Định Quyền Quét Soát Vé CRM vs Hội Viên & Triệt Tiêu Lỗi UI Lúc Này Lúc Kia Trên Trang Profile (20/09/2026)
+- **Bối cảnh & Phản ánh của người dùng**:
+  1. *Luồng vé sự kiện chưa chuẩn*: Đăng ký vé miễn phí (0đ) thành công phải gửi email chứa thông tin vé, thông tin người đăng ký kèm mã QR check-in điểm danh.
+  2. *Nhầm lẫn vai trò quét mã*: Người dùng hội viên không tự quét mã QR của sự kiện. Quét mã QR chỉ dành cho hệ thống CRM / Ban Tổ Chức khi người tham gia sự kiện tới cửa hội trường.
+  3. *Hiện tượng UI lúc này lúc kia (kèm 2 ảnh chụp /association/profile)*:
+     - Ảnh 1: Avatar có ảnh, chức danh hiển thị "Hội viên chính thức CLB CEO 1983".
+     - Ảnh 2: Avatar bị thủng/trống tròn kèm lỗi 404 Console (`/api/upload/file/avatars/00000000-0000-4...170838-i5o6ez.jpg`), chức danh nhảy thành "Phó Chủ tịch Thường trực".
+- **Nguyên Nhân Kỹ Thuật**:
+  1. *Backend Email*: `EventsService.registerForEvent` mới chỉ ghi nhận CSDL và sinh mã vé, chưa gọi `MailService` gửi email xác nhận cho người tham dự.
+  2. *Frontend QR Check-in UX*: Trên giao diện `association.events.tsx`, dòng banner có link "Event QR Check-in" điều hướng sang `/association/checkin` (màn hình camera scanner). Điều này khiến người dùng lầm tưởng mình phải bật camera quét sự kiện, trong khi thực tế người dùng là chủ vé cần xuất trình mã QR vé cho BTC quét.
+  3. *Lỗi UI lúc này lúc kia*:
+     - **Về Avatar 404 & Lỗ thủng**: Tài khoản `M1983-002` (Phạm Văn Vũ) trong database có chứa đường dẫn ảnh cũ không còn tồn tại trên server MinIO (`...170838-i5o6ez.jpg`). Trình duyệt cố gắng tải ảnh và ném lỗi 404. Khi ảnh lỗi, code cũ chỉ gán `e.currentTarget.style.display = 'none'`, nhưng điều kiện render Initials Badge lại là `{!resolvedAvatar && ...}`. Do `resolvedAvatar` vẫn là chuỗi URL nên Initials Badge không được render, tạo ra một vòng tròn trống rỗng màu trắng.
+     - **Về Chức danh nhảy lung tung**: Local state `profileTitle` khởi tạo với giá trị mặc định là "Hội viên chính thức CLB CEO 1983". Khi dữ liệu hội viên từ backend trả về bất đồng bộ, trong DB `executive_role` của `M1983-002` là "Phó Chủ tịch Thường trực". Do điều kiện gán `if (!profileTitle)` bị chặn bởi giá trị mặc định, các thành phần giao diện khác nhau lấy từ các nguồn khác nhau (`profileTitle` vs `member?.executive_role`), gây ra hiện tượng không đồng bộ giữa các lần tải.
+- **Giải Pháp Triệt Để**:
+  1. **Backend Gửi Email Vé Tự Động (`apps/vione_app_be`)**:
+     - `mail.service.ts`: Xây dựng hàm `sendEventTicketEmail(...)` với mẫu email HTML sang trọng mang nhận diện CLB CEO 1983:
+       * Thông tin sự kiện: Tên sự kiện, Thời gian tổ chức, Địa điểm, Sơ đồ.
+       * Thông tin đại biểu: Họ tên, Số điện thoại, Email, Doanh nghiệp, Chức vụ.
+       * Số may mắn quay thưởng: `#XXXX`.
+       * Mã QR Check-in: Tích hợp hình ảnh QR trực quan từ endpoint `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=...`.
+     - `events.module.ts`: Import `MailModule`.
+     - `events.service.ts`: Inject `MailService` vào `EventsService`, tự động gọi `sendEventTicketEmail` khi người tham dự có email hợp lệ.
+  2. **Frontend Chuẩn Hóa Phân Định Vai Trò Soát Vé (`apps/vione_app_fe`)**:
+     - `association.events.tsx`:
+       * Thay thế nút dẫn sang camera scanner bằng nút **"Vé Sự Kiện Của Tôi"** (`ticketPassModal`).
+       * Khi đăng ký vé thành công (kể cả vé 0đ), nút hành động là **"Xem Thẻ Vé Điện Tử Của Tôi"**, mở popup thẻ vé với mã QR to, rõ ràng và hướng dẫn: *"Xuất trình mã QR này để Ban Tổ Chức quét check-in khi đến sự kiện"*.
+     - `association.checkin.tsx`: Bổ sung banner thông báo rõ ràng: **"Soát Vé Sự Kiện (BTC / CRM) - Chức năng quét mã QR / NFC dành riêng cho Ban Tổ Chức & Ban Thư Ký để soát vé và điểm danh đại biểu khi đến sự kiện."**
+  3. **Khắc Phục Ổn Định Profile (`association.profile.tsx`)**:
+     - Thêm state `avatarError` và listener `onError={() => setAvatarError(true)}` trên thẻ `<img>`.
+     - Sửa điều kiện hiển thị fallback: `(!resolvedAvatar || avatarError) && <span className="...">{initials(profileName || member?.name)}</span>`. Nếu ảnh 404, lập tức hiển thị huy hiệu chữ cái đầu (PV) mượt mà, triệt tiêu 100% khoảng trống avatar.
+     - Thống nhất hiển thị chức danh ưu tiên: `member?.title || profileTitle || "Hội viên chính thức CLB CEO 1983"` đồng nhất trên cả thẻ thu gọn và thẻ mở rộng.
+     - Dọn dẹp bản ghi avatar chết trong DB cho tài khoản `00000000-0000-4000-8000-000000000002`.
+  4. **Kiểm Thử & Tuân Thủ Quy Tắc Git**:
+     - Backend NestJS biên dịch `nest build` thành công exit code 0.
+     - Tuân thủ nghiêm ngặt quy tắc AGENTS không chạy `git commit` hay `git push`. Toàn bộ mã nguồn lưu trữ cục bộ.
+
+### 15.35 Triệt Tiêu Lỗi Vòng Lặp 404 Avatar (8 Requests) & Lỗi 500 /api/upload/avatar: Cơ Chế Lưu Trữ Kép (Dual-Storage Fallback) & Dọn Sạch Dữ Liệu Avatar Chết Toàn Hệ Thống (20/09/2026)
+- **Bối cảnh & Phản ánh của người dùng**:
+  - Người dùng gửi ảnh chụp màn hình DevTools Console tại `https://14.225.217.232:5444/association/profile` phản ánh lỗi:
+    * 8 lần báo lỗi đỏ: `Failed to load resource: the server responded with a status of 404 (Not Found)` với URL `.../api/upload/file/avatars/00000000-0000-4000-8000-000000000002-1789634170838-i5o6ez.jpg`.
+    * 1 lần báo lỗi đỏ: `Failed to load resource: the server responded with a status of 500 (Internal Server Error)` tại `https://14.225.217.232:5444/api/upload/avatar`.
+- **Nguyên Nhân Kỹ Thuật**:
+  1. **Lỗi 404 lặp lại 8 lần (Vòng lặp re-render reset lỗi)**:
+     - Trong database PostgreSQL (`public.business_identities`), trường `avatar_url` của user `00000000-0000-4000-8000-000000000002` (Phạm Văn Vũ) lưu đường dẫn file cũ `...170838-i5o6ez.jpg`. File vật lý này đã bị xóa hoặc mất sau khi container MinIO tái khởi động.
+     - Khi gọi `getMyMember()`, backend lấy `COALESCE(up.avatar_url, bi.avatar_url)` nên giá trị này được trả về frontend.
+     - Tại `association.profile.tsx`, hook `useEffect([customAvatar, member?.avatar])` trước đó có đoạn `setAvatarError(false)`. Khi component re-render nhiều lần do các state khác thay đổi (như danh sách hội viên, bạn bè kết nối), `setAvatarError(false)` liên tục bị gọi lại, khiến thẻ `<img>` thử load lại ảnh chết nhiều lần (tổng cộng 8 lần 404).
+     - Đồng thời, `localStorage` lưu key `vba_member_avatar_photo` hoặc `vba_custom_profile_*` vẫn chứa URL file chết này.
+  2. **Lỗi 500 Internal Server Error tại `/api/upload/avatar`**:
+     - Khi người dùng bấm nút máy ảnh để đổi avatar, frontend gửi `POST /api/upload/avatar`.
+     - `upload.service.ts` gọi `minioService.uploadFile(...)`. Nếu container MinIO trên server gặp sự cố mạng nội bộ hoặc không sẵn sàng, phương thức ném trực tiếp `InternalServerErrorException`.
+     - `upload.service.ts` trước đó có một câu truy vấn SQL thô: `UPDATE public.members SET avatar = $1 WHERE user_id = $2`. Tuy nhiên trong PostgreSQL, bảng `public.members` **không hề có cột `avatar`** (hệ thống lưu avatar tại `user_profiles.avatar_url`, `business_identities.avatar_url` và `vione_users.avatar_url`), dẫn đến lỗi Postgres syntax / missing column gây crash 500.
+     - Tại frontend `association.profile.tsx`, khối `catch` của hàm `handleAvatarChange` trước đây bị lỗi logic: hiển thị `toast.success("Đã cập nhật ảnh đại diện mới thành công!")` ngay cả khi upload bị lỗi.
+- **Giải Pháp Triệt Để & Đã Triển Khai**:
+  1. **Dọn Sạch Dữ Liệu Avatar Chết Toàn CSDL (`scripts/clean_all_dead_avatars.js`)**:
+     - Quét toàn bộ CSDL và reset `avatar_url = NULL` cho tất cả các file chết (`i5o6ez`, `d9ut5z`, `4qjy8i`) trên các bảng:
+       * `public.business_identities` (3 bản ghi đã làm sạch)
+       * `public.user_profiles` (2 bản ghi đã làm sạch)
+       * `public.vione_users` (1 bản ghi đã làm sạch)
+       * `public.user_uploads` (3 bản ghi thừa đã xóa)
+     - Xác nhận qua `scripts/list_all_avatars.js`: Toàn bộ 4 bảng hiện tại có 0 đường dẫn avatar chết.
+  2. **Kiến Trúc Lưu Trữ Kép (Dual-Storage Fallback) Cho Backend (`apps/vione_app_be`)**:
+     - `upload.service.ts`:
+       * Bổ sung cơ chế `saveToLocalDisk`: Mọi file avatar/tài liệu upload luôn được lưu vào đĩa cứng cục bộ server (`uploads/avatars/` hoặc `uploads/documents/`) trước tiên.
+       * Sau đó thử upload lên MinIO trong khối `try/catch`. Nếu MinIO gặp sự cố hoặc timeout, hệ thống tự động fallback sử dụng đường dẫn đĩa cứng cục bộ (`/uploads/avatars/...`) mà không quăng lỗi 500.
+       * Loại bỏ hoàn toàn câu lệnh SQL cập nhật cột không tồn tại `public.members.avatar`.
+       * Đồng bộ chính xác `avatar_url` vào các bảng thực tế: `user_profiles`, `business_identities`, `vione_users`, và `member_business_cards`.
+     - `upload.controller.ts`: Bọc `try/catch` an toàn, trích xuất `userId` linh hoạt (`req.user?.id || req.user?.sub`), trả về mã lỗi chuẩn mực.
+     - `nest build` thành công 100% exit code 0.
+  3. **Bộ Lọc Đa Tầng Triệt Tiêu Lỗi Frontend (`apps/vione_app_fe`)**:
+     - `src/lib/api-client.ts`:
+       * Cung cấp hàm `isDeadAvatarUrl(url)` nhận diện các hash file chết hoặc url bất thường.
+       * `resolveMediaUrl(url)` tự động trả về `null` ngay lập tức nếu gặp URL chết, ngăn chặn trình duyệt gửi request mạng 404.
+     - `association.profile.tsx`:
+       * Dọn sạch `localStorage` ngay khi component mount và khi `handleAvatarLoadError` kích hoạt.
+       * Loại bỏ vòng lặp `setAvatarError(false)`. Chỉ reset `avatarError` khi có file ảnh mới upload (`data:` base64 URI hợp lệ).
+       * Thêm `handleAvatarLoadError` và bộ kiểm tra `!isDeadAvatar(...)` cho toàn bộ các vị trí hiển thị avatar: Top header bar thu gọn, Profile body mở rộng, Modal Chỉnh sửa hồ sơ, và Modal Đăng bài viết (Post Composer).
+       * Sửa hàm `handleAvatarChange`: Kiểm tra `res.ok` trước khi cập nhật state và thông báo lỗi chính xác khi upload thất bại.
+       * Khi không có avatar hoặc avatar lỗi, hiển thị Initials Avatar Badge ("VV") phong cách sang trọng với gradient `#2E3192` -> `#19194D` và chữ vàng gold hổ phách.
+
+### 15.36 Khắc Phục Lỗi Cú Pháp Unclosed Hook Cleanup & Import Thiếu ShieldCheck Tại association.checkin.tsx (20/09/2026)
+- **Bối cảnh & Phản ánh của người dùng**:
+  - Người dùng gửi ảnh chụp màn hình VSCode tại `apps/vione_app_fe/src/routes/association.checkin.tsx` với lỗi cú pháp trên tab editor (`Problems 1`, `1, M`) tại dòng 316: `Cannot find name 'ShieldCheck'`.
+- **Nguyên nhân**:
+  1. Thiếu import `ShieldCheck` từ gói thư viện `lucide-react` ở đầu file.
+  2. Dòng 303 trước đó bị cắt mất ngoặc đóng `stopScan]);`.
+- **Giải pháp triển khai**:
+  1. Thêm `ShieldCheck` vào danh sách import từ `lucide-react`.
+  2. Chuẩn hóa cú pháp rõ ràng cho `useEffect` cleanup hook:
+     ```tsx
+     useEffect(() => {
+       return () => {
+         stopScan();
+       };
+     }, [stopScan]);
+     ```
+  3. Bổ sung bộ lọc an toàn cho avatar của đại biểu khi quét vé (`scannedMember.avatar`) kết hợp `resolveMediaUrl` và `onError` ẩn ảnh lỗi nếu dữ liệu avatar của đại biểu không tồn tại.
+
+
+### 15.37 Kien Truc Luu Tru Ben Vung (Shared Volume + MinIO Multi-Endpoint Fallback Pool) Cho CRM & App Hiep Hoi (20/09/2026)
+- **Nguyen nhan goc re loi khong doi duoc anh moi**:
+  1. **CRM tra ve HTTP 500 (Internal Server Error)**: crm-backend-prod tren remote server chay ban Docker cu, gap loi unhandled DNS exception getaddrinfo ENOTFOUND minio khi ket noi MinIO va loi cu phap truy van cot avatar khong ton tai trong public.members.
+  2. **App Hiep Hoi tai anh bao thanh cong nhung hien thi loi 404**:
+     - Dockerfile.backend chay duoi quyen USER appuser. Thu muc /app thuoc so huu root, nen appuser bi tu choi quyen ghi (EACCES: permission denied) khi co gang tao /app/uploads.
+     - File bi luu tam vao /tmp/uploads, nhung UploadController.getFile truoc do khong tim trong /tmp/uploads, dan den request GET /api/upload/file/avatars/... tra ve 404.
+     - Dong thoi, docker-compose.yml cua ca CRM va CEO 1983 khong co Docker Volume mount cho /app/uploads, khien file luu tren dia bi co lap giua cac container va bi mat khi container restart/recreate.
+- **Giai phap trien khai toan dien**:
+  1. **Nang cap Dockerfile.backend**:
+     - Khoi tao truoc cau truc thu muc upload va phan quyen ghi day du cho appuser:appgroup truoc khi chuyen sang USER appuser:
+       RUN mkdir -p /app/uploads/avatars /app/uploads/documents /tmp/uploads/avatars /tmp/uploads/documents && chown -R appuser:appgroup /app/uploads /tmp/uploads && chmod -R 775 /app/uploads /tmp/uploads.
+  2. **Chia se Docker Named Volume giua CRM va App Hiep Hoi (vione-uploads-data)**:
+     - Cap nhat ca 2 file deploy/ceo1983/docker-compose.yml va deploy/crm/docker-compose.yml:
+       * Gan volume vione-uploads-data:/app/uploads cho backend service.
+       * Dinh nghia volume dung chung vione-uploads-data: { name: vione-uploads-data }.
+       * Gan ket mang noi bo vione-network voi co external: true.
+       * Nho volume dung chung, moi avatar tai len tu CRM hay App Hiep Hoi deu ngay lap tuc kha dung va ben vung giua cac service.
+  3. **Multi-Endpoint Fallback Pool trong MinioService (apps/vione_app_be)**:
+     - Thiet lap danh sach ket noi du phong tu dong nhan dien moi truong:
+       * 1: Bien moi truong cau hinh (MINIO_ENDPOINT, MINIO_PORT).
+       * 2: Cong public cua host (14.225.217.232:9050 - da kiem tra song 100%).
+       * 3: Container alias trong vione-network (vione-minio-prod:9000, minio:9000).
+       * 4: Docker gateway (172.17.0.1:9050).
+     - Tu dong uu tien client thanh cong len dau danh sach de toi uu hoa toc do cac request tiep theo.
+  4. **Nang cap UploadController.getFile**:
+     - Quet toan bo cac candidate locations tren dia (/app/uploads, /tmp/uploads, dist/uploads) va tat ca cac bien the key tren MinIO (avatars/, documents/, basename).
+  5. **Cap nhat cau hinh moi truong**:
+     - Dong bo MINIO_ENDPOINT=14.225.217.232 va MINIO_PORT=9050 trong deploy/ceo1983/.env.production, deploy/crm/.env.production, va deploy/crm/.env.crm.

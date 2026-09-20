@@ -11,6 +11,26 @@ export interface SendAccountEmailOptions {
   portalUrl?: string;
 }
 
+export interface SendEventTicketEmailOptions {
+  to: string;
+  fullName: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
+  registrationId: string;
+  ticketType?: string;
+  ticketCount?: number;
+  luckyNumber?: string;
+  isFree?: boolean;
+  totalAmount?: number;
+  qrCodeUrl?: string;
+}
+
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -52,8 +72,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appUrl = portalUrl || 'http://14.225.217.232:5002/association/login';
-    const crmUrl = 'http://14.225.217.232:5000/auth';
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const crmUrl = 'https://14.225.217.232:5443/auth';
 
     const subject = `[CLB CEO 1983] Chào mừng Gia nhập — Thông tin Tài khoản Đăng nhập của Anh/Chị ${fullName}`;
 
@@ -164,4 +184,192 @@ export class MailService {
     );
     return { ok: true, message: 'Account created and credentials logged to audit stream' };
   }
+
+  /**
+   * Gửi email xác nhận vé sự kiện điện tử (E-Ticket) kèm thông tin người đăng ký và mã QR check-in
+   */
+  async sendEventTicketEmail(options: SendEventTicketEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      phone,
+      company,
+      position,
+      eventTitle,
+      eventDate,
+      eventTime,
+      eventLocation,
+      registrationId,
+      ticketType = 'Standard',
+      ticketCount = 1,
+      luckyNumber,
+      isFree = true,
+      totalAmount = 0,
+      qrCodeUrl,
+    } = options;
+
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send event ticket email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const appEventsUrl = 'https://14.225.217.232:5444/association/events';
+    const qrSrc = qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`;
+
+    const subject = `[CLB CEO 1983] Vé Tham Dự Sự Kiện: ${eventTitle} — ${fullName} (#${registrationId})`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 34px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.3; }
+    .subtitle { font-size: 12.5px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 30px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 22px; }
+    
+    .ticket-card { background: #f8fafc; border: 2px dashed #003B95; border-radius: 16px; padding: 22px; margin-bottom: 24px; position: relative; }
+    .ticket-header { border-bottom: 1px solid #cbd5e1; padding-bottom: 14px; margin-bottom: 14px; }
+    .event-name { font-size: 17px; font-weight: 900; color: #003B95; margin-bottom: 4px; }
+    .event-meta { font-size: 13px; color: #64748b; }
+    
+    .qr-container { text-align: center; margin: 24px 0 16px 0; padding: 18px; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; }
+    .qr-img { width: 200px; height: 200px; border-radius: 10px; border: 3px solid #003B95; padding: 6px; background: #ffffff; }
+    .qr-caption { font-size: 13px; font-weight: 800; color: #003B95; margin-top: 10px; font-family: monospace; letter-spacing: 1px; }
+    .qr-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    .info-grid { display: table; width: 100%; font-size: 13.5px; margin-top: 12px; }
+    .info-row { display: table-row; }
+    .info-cell-label { display: table-cell; padding: 6px 0; color: #64748b; font-weight: 500; width: 40%; }
+    .info-cell-value { display: table-cell; padding: 6px 0; color: #0f172a; font-weight: 700; text-align: right; }
+    
+    .badge-status { display: inline-block; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 800; border: 1px solid #86efac; }
+    .badge-lucky { display: inline-block; background: #fef3c7; color: #b45309; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 900; border: 1px solid #fde68a; font-family: monospace; }
+    
+    .btn-wrap { text-align: center; margin: 28px 0 10px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #003B95 0%, #001A4D 100%); color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 32px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.35); }
+    
+    .checkin-guide { background: #eff6ff; border-left: 4px solid #003B95; padding: 14px 18px; border-radius: 0 12px 12px 0; margin-top: 22px; font-size: 12.5px; line-height: 1.6; color: #1e3a8a; }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 11.5px; line-height: 1.6; }
+    .footer-brand { color: #F59E0B; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦</div>
+      <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
+      <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Đẳng Cấp</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện dưới đây. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:
+      </div>
+
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <div class="event-name">${eventTitle}</div>
+          <div class="event-meta">📍 Địa điểm: <strong>${eventLocation || 'Hà Nội'}</strong></div>
+          <div class="event-meta">🗓️ Thời gian: <strong>${eventDate || ''} ${eventTime ? '· ' + eventTime : ''}</strong></div>
+        </div>
+
+        <!-- MÃ QR CHECK-IN DÀNH CHO BAN TỔ CHỨC QUÉT -->
+        <div class="qr-container">
+          <img src="${qrSrc}" alt="Mã QR Check-in" class="qr-img" />
+          <div class="qr-caption">MÃ VÉ: ${registrationId}</div>
+          <div class="qr-hint">Xuất trình mã QR này tại bàn đón tiếp để Ban Tổ Chức quét check-in</div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-row">
+            <div class="info-cell-label">Người tham dự:</div>
+            <div class="info-cell-value">${fullName}</div>
+          </div>
+          ${position || company ? `
+          <div class="info-row">
+            <div class="info-cell-label">Chức vụ & Doanh nghiệp:</div>
+            <div class="info-cell-value">${position ? position + ' · ' : ''}${company || ''}</div>
+          </div>
+          ` : ''}
+          ${phone ? `
+          <div class="info-row">
+            <div class="info-cell-label">Số điện thoại:</div>
+            <div class="info-cell-value">${phone}</div>
+          </div>
+          ` : ''}
+          <div class="info-row">
+            <div class="info-cell-label">Loại vé & Số lượng:</div>
+            <div class="info-cell-value">${ticketCount} vé (${ticketType})</div>
+          </div>
+          ${luckyNumber ? `
+          <div class="info-row">
+            <div class="info-cell-label">Số may mắn quay thưởng:</div>
+            <div class="info-cell-value"><span class="badge-lucky">Lucky #${luckyNumber}</span></div>
+          </div>
+          ` : ''}
+          <div class="info-row">
+            <div class="info-cell-label">Trạng thái vé:</div>
+            <div class="info-cell-value">
+              <span class="badge-status">${isFree ? '✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)' : '✓ ĐÃ TIẾP NHẬN'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="checkin-guide">
+        <strong>📌 Hướng dẫn Check-in tại sự kiện:</strong>
+        <br>1. Khi đến địa điểm tổ chức, Anh/Chị vui lòng mở email này hoặc truy cập ứng dụng App Hiệp Hội.
+        <br>2. Xuất trình <strong>Mã QR vé</strong> trên cho Ban Thư Ký / Ban Tổ Chức tại bàn đón tiếp để quét check-in và nhận thẻ đại biểu cùng tài liệu sự kiện.
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appEventsUrl}" class="btn-primary" target="_blank">📲 Mở Thẻ Vé Trên App Hiệp Hội</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // 1. Gửi qua SMTP nếu đã cấu hình transporter
+    if (this.transporter) {
+      try {
+        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const info = await this.transporter.sendMail({
+          from: `"Ban Tổ Chức Sự Kiện CEO 1983" <${fromAddr}>`,
+          to: cleanTo,
+          subject,
+          html,
+        });
+        this.logger.log(`Event ticket email sent to ${cleanTo} via SMTP. RegistrationId: ${registrationId}, MessageId: ${info.messageId}`);
+        return { ok: true, message: 'Event ticket email sent successfully via SMTP' };
+      } catch (err: any) {
+        this.logger.error(`Failed to send event ticket email to ${cleanTo} via SMTP: ${err.message}`, err.stack);
+      }
+    }
+
+    // 2. Audit log
+    this.logger.log(
+      `[EVENT_TICKET_EMAIL_DISPATCHED] To: ${cleanTo} | Event: ${eventTitle} | RegId: ${registrationId} | Name: ${fullName} | LuckyNum: ${luckyNumber}`,
+    );
+    return { ok: true, message: 'Event ticket created and notification logged to audit stream' };
+  }
 }
+

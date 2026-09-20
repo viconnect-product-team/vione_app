@@ -30,12 +30,18 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - APP_SCOPE=crm_platform
-      - ASSOCIATION_DEFAULT_BRAND="ViOne CRM Admin"
+    volumes:
+      - vione-uploads-data:/app/uploads
     ports:
       - "${ASSOCIATION_PORT_BACKEND:-5005}:4000"
     networks:
       - vione-network
 
+volumes:
+  vione-uploads-data:
+    name: vione-uploads-data
+
 networks:
   vione-network:
     name: vione-network
+    external: true

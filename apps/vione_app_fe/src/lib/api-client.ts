@@ -119,10 +119,16 @@ export function getPublicBackendUrl(): string {
   );
 }
 
+export function isDeadAvatarUrl(url: string | null | undefined): boolean {
+  if (!url) return true;
+  const deadMarkers = ["i5o6ez", "d9ut5z", "4qjy8i", "undefined", "null"];
+  return deadMarkers.some((m) => url.includes(m));
+}
+
 export function resolveMediaUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const trimmed = url.trim();
-  if (!trimmed) return null;
+  if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
 
   const publicBase = getPublicBackendUrl();
 

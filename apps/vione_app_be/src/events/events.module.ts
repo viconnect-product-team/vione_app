@@ -4,11 +4,13 @@ import { CheckinController } from './checkin.controller';
 import { EventsService } from './events.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, MailModule],
   controllers: [EventsController, CheckinController],
   providers: [EventsService],
   exports: [EventsService],
 })
 export class EventsModule {}
+

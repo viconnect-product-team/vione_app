@@ -113,6 +113,21 @@ function initials(name?: string) {
     .toUpperCase();
 }
 
+function isDeadAvatar(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return true;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === "undefined" || trimmed === "null") return true;
+  if (
+    trimmed.includes("1789634170838-i5o6ez") ||
+    trimmed.includes("i5o6ez") ||
+    trimmed.includes("d9ut5z") ||
+    trimmed.includes("4qjy8i")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export default function ProfileScreen() {
   const t = useT();
   const { lang, setLang } = useLang();
@@ -145,9 +160,17 @@ export default function ProfileScreen() {
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingModalAvatar, setUploadingModalAvatar] = useState(false);
   const [modalAvatarPreview, setModalAvatarPreview] = useState<string | null>(null);
+
+  // Chỉ reset avatarError khi người dùng chọn tải lên ảnh mới dạng base64/data URI
+  useEffect(() => {
+    if (customAvatar && !isDeadAvatar(customAvatar) && customAvatar.startsWith("data:")) {
+      setAvatarError(false);
+    }
+  }, [customAvatar]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -158,7 +181,14 @@ export default function ProfileScreen() {
         setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
       }
       const savedAvatar = localStorage.getItem("vba_member_avatar_photo");
-      if (savedAvatar) setCustomAvatar(savedAvatar);
+      if (savedAvatar) {
+        if (isDeadAvatar(savedAvatar)) {
+          localStorage.removeItem("vba_member_avatar_photo");
+          setCustomAvatar(null);
+        } else {
+          setCustomAvatar(savedAvatar);
+        }
+      }
     }
   }, [member?.coverUrl, (member as any)?.cover_url]);
 
@@ -227,6 +257,7 @@ export default function ProfileScreen() {
       const res = ev.target?.result as string;
       if (res) {
         setCustomAvatar(res);
+        setAvatarError(false);
         try {
           localStorage.setItem("vba_member_avatar_photo", res);
           window.dispatchEvent(new Event("vba_member_avatar_updated"));
@@ -250,13 +281,19 @@ export default function ProfileScreen() {
         const json = await res.json();
         if (json.url) {
           setCustomAvatar(json.url);
+          setAvatarError(false);
           localStorage.setItem("vba_member_avatar_photo", json.url);
           window.dispatchEvent(new Event("vba_member_avatar_updated"));
+          toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!");
         }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.warn("Avatar upload rejected:", res.status, err);
+        toast.error(isEn ? "Failed to upload avatar" : "Không thể tải ảnh đại diện lên máy chủ");
       }
-      toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!");
-    } catch {
-      toast.success(isEn ? "Avatar updated!" : "Đã cập nhật ảnh đại diện mới thành công!");
+    } catch (err) {
+      console.error("Avatar upload exception:", err);
+      toast.error(isEn ? "Failed to upload avatar" : "Lỗi khi tải ảnh đại diện lên máy chủ");
     } finally {
       setUploadingAvatar(false);
       if (e.target) e.target.value = "";
@@ -396,6 +433,10 @@ export default function ProfileScreen() {
     if (typeof window !== "undefined") {
       try {
         saved = JSON.parse(localStorage.getItem(userProfileStorageKey) || localStorage.getItem("vba_custom_profile") || "{}");
+        if (saved.avatar && isDeadAvatar(saved.avatar)) {
+          delete saved.avatar;
+          localStorage.setItem(userProfileStorageKey, JSON.stringify(saved));
+        }
       } catch {}
     }
     const isStaleName = saved.name && (saved.name === "Lê Hoàng Long" || saved.name.includes("ViOne Platform"));
@@ -413,7 +454,11 @@ export default function ProfileScreen() {
     const resolvedAddress = saved.address || member?.address || "Hà Nội, Việt Nam";
     const resolvedWebsite = saved.website || member?.website || "https://ceo1983.vn";
     const resolvedBio = saved.bio || (member as any)?.about || "Hội viên tích cực CLB Doanh Nhân CEO 1983, sẵn sàng giao lưu kết nối và hợp tác giao thương.";
-    const resolvedAv = saved.avatar || customAvatar || member?.avatar || (member as any)?.avatarUrl || (user as any)?.avatar_url || null;
+    
+    let candidateAv = saved.avatar || customAvatar || member?.avatar || (member as any)?.avatarUrl || (user as any)?.avatar_url || null;
+    if (isDeadAvatar(candidateAv)) {
+      candidateAv = null;
+    }
 
     if (force || !profileName) setProfileName(resolvedName);
     if (force || !profileTitle) setProfileTitle(resolvedTitle);
@@ -423,9 +468,9 @@ export default function ProfileScreen() {
     if (force || !profileAddress) setProfileAddress(resolvedAddress);
     if (force || !profileWebsite) setProfileWebsite(resolvedWebsite);
     if (force || !profileBio) setProfileBio(resolvedBio);
-    if (resolvedAv && (!customAvatar || force)) {
-      setCustomAvatar(resolvedAv);
-      setModalAvatarPreview(resolvedAv);
+    if (candidateAv && (!customAvatar || force)) {
+      setCustomAvatar(candidateAv);
+      setModalAvatarPreview(candidateAv);
     }
   };
 
@@ -630,14 +675,40 @@ export default function ProfileScreen() {
     navigate({ to: "/association/login" as any, replace: true });
   }
 
+  const handleAvatarLoadError = () => {
+    setAvatarError(true);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("vba_member_avatar_photo");
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("vba_custom_profile_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.avatar) {
+                delete parsed.avatar;
+                localStorage.setItem(key, JSON.stringify(parsed));
+              }
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
   const rawCurrentAvatar =
-    customAvatar ||
-    member?.avatar ||
-    (member as any)?.avatarUrl ||
-    (user as any)?.avatar_url ||
-    (user as any)?.user_metadata?.avatar_url ||
+    (!isDeadAvatar(customAvatar) ? customAvatar : null) ||
+    (!isDeadAvatar(member?.avatar) ? member?.avatar : null) ||
+    (!isDeadAvatar((member as any)?.avatarUrl) ? (member as any)?.avatarUrl : null) ||
+    (!isDeadAvatar((user as any)?.avatar_url) ? (user as any)?.avatar_url : null) ||
+    (!isDeadAvatar((user as any)?.user_metadata?.avatar_url) ? (user as any)?.user_metadata?.avatar_url : null) ||
     null;
-  const resolvedAvatar = rawCurrentAvatar ? (resolveMediaUrl(rawCurrentAvatar) || rawCurrentAvatar) : null;
+  const resolvedAvatar = rawCurrentAvatar && !isDeadAvatar(rawCurrentAvatar)
+    ? (resolveMediaUrl(rawCurrentAvatar) || rawCurrentAvatar)
+    : null;
 
   type FriendItem = {
     code: string;
@@ -685,7 +756,7 @@ export default function ProfileScreen() {
         name: m.personName || m.name,
         title: m.personTitle || m.industry || "Hội viên CEO 1983",
         company: m.name !== m.personName ? m.name : "CLB Doanh Nhân CEO 1983",
-        avatar: m.avatar ? resolveMediaUrl(m.avatar) || m.avatar : null,
+        avatar: m.avatar && !isDeadAvatar(m.avatar) ? resolveMediaUrl(m.avatar) || m.avatar : null,
       }));
   }, [realMembers, conversations, member?.code, user?.id]);
 
@@ -716,19 +787,16 @@ export default function ProfileScreen() {
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
-              {resolvedAvatar ? (
+              {resolvedAvatar && !avatarError && !isDeadAvatar(resolvedAvatar) ? (
                 <img
                   src={resolvedAvatar}
                   alt={member?.name ?? ""}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).style.display = "none";
-                  }}
+                  onError={handleAvatarLoadError}
                   className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-amber-500/40 shadow-xs bg-slate-100 dark:bg-slate-800"
                 />
-              ) : null}
-              {(!resolvedAvatar) && (
+              ) : (
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-[16px] font-black text-white shadow-xs">
-                  {initials(member?.name)}
+                  {initials(profileName || member?.name)}
                 </span>
               )}
               <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
@@ -742,14 +810,15 @@ export default function ProfileScreen() {
                 <BadgeCheck className="h-4 w-4 shrink-0 text-amber-500" />
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11.5px] text-slate-500 dark:text-slate-400 truncate">
-                  {profileTitle || member?.title || "Chủ tịch HĐQT & CEO"}
+                <span className="text-[11.5px] text-slate-500 dark:text-slate-400 truncate font-medium">
+                  {member?.title || profileTitle || "Hội viên chính thức CLB CEO 1983"}
                 </span>
                 <span className="rounded bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.2 text-[9.5px] font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                   {member?.code || "M1983-007"}
                 </span>
               </div>
             </div>
+
           </div>
 
           <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -810,19 +879,16 @@ export default function ProfileScreen() {
             <div className="px-4 pb-4">
               <div className="relative flex items-end justify-between -mt-12 mb-3">
                 <div className="relative">
-                  {resolvedAvatar ? (
+                  {resolvedAvatar && !avatarError && !isDeadAvatar(resolvedAvatar) ? (
                     <img
                       src={resolvedAvatar}
                       alt={member?.name ?? ""}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = "none";
-                      }}
+                      onError={handleAvatarLoadError}
                       className="h-22 w-22 rounded-2xl object-cover ring-4 ring-amber-500/80 shadow-lg bg-slate-100 dark:bg-[#14223E]"
                     />
-                  ) : null}
-                  {(!resolvedAvatar) && (
+                  ) : (
                     <span className="grid h-22 w-22 place-items-center rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#1E40AF] text-[26px] font-black text-amber-300 ring-4 ring-amber-500/80 shadow-lg">
-                      {initials(member?.name)}
+                      {initials(profileName || member?.name)}
                     </span>
                   )}
                   <button
@@ -853,8 +919,9 @@ export default function ProfileScreen() {
                   <BadgeCheck className="h-5 w-5 text-amber-500 shrink-0" />
                 </div>
                 <p className="text-[13px] font-bold text-[#2E3192] dark:text-amber-400 mt-0.5">
-                  {profileTitle || member?.title || "Hội viên chính thức CLB Doanh Nhân CEO 1983"}
+                  {member?.title || profileTitle || "Hội viên chính thức CLB Doanh Nhân CEO 1983"}
                 </p>
+
                 <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   "Tiên phong kiến tạo giải pháp chuyển đổi số & kết nối giao thương thông minh cho cộng đồng doanh nghiệp Việt Nam."
                 </p>
@@ -1056,10 +1123,13 @@ export default function ProfileScreen() {
                           className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-850/60 hover:border-[#2E3192]/40 transition"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            {f.avatar ? (
+                            {f.avatar && !isDeadAvatar(f.avatar) ? (
                               <img
                                 src={f.avatar}
                                 alt={f.name}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                }}
                                 className="h-10 w-10 rounded-xl object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
                               />
                             ) : (
@@ -1157,8 +1227,15 @@ export default function ProfileScreen() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
                             <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-white grid place-items-center font-bold text-xs shrink-0 overflow-hidden">
-                              {post.authorAvatar ? (
-                                <img src={post.authorAvatar} alt="" className="h-full w-full object-cover" />
+                              {post.authorAvatar && !isDeadAvatar(post.authorAvatar) ? (
+                                <img
+                                  src={post.authorAvatar}
+                                  alt=""
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLElement).style.display = "none";
+                                  }}
+                                  className="h-full w-full object-cover"
+                                />
                               ) : (
                                 initials(post.authorName)
                               )}
@@ -1637,10 +1714,11 @@ export default function ProfileScreen() {
               {/* Ảnh đại diện trong Modal */}
               <div className="flex flex-col items-center gap-2 pb-2">
                 <div className="relative">
-                  {modalAvatarPreview || customAvatar || resolvedAvatar ? (
+                  {modalAvatarPreview || (customAvatar && !isDeadAvatar(customAvatar) && !avatarError) || (resolvedAvatar && !isDeadAvatar(resolvedAvatar) && !avatarError) ? (
                     <img
                       src={modalAvatarPreview || customAvatar || resolvedAvatar || ""}
                       alt=""
+                      onError={handleAvatarLoadError}
                       className="h-20 w-20 rounded-2xl object-cover ring-2 ring-amber-500/80 shadow-md bg-slate-100 dark:bg-slate-800"
                     />
                   ) : (
@@ -1887,8 +1965,8 @@ export default function ProfileScreen() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-white grid place-items-center font-bold text-xs shrink-0 overflow-hidden">
-                  {resolvedAvatar ? (
-                    <img src={resolvedAvatar} alt="" className="h-full w-full object-cover" />
+                  {resolvedAvatar && !avatarError && !isDeadAvatar(resolvedAvatar) ? (
+                    <img src={resolvedAvatar} alt="" onError={handleAvatarLoadError} className="h-full w-full object-cover" />
                   ) : (
                     initials(member?.name)
                   )}

@@ -36,9 +36,13 @@ COPY --chown=appuser:appgroup --from=installer /app/apps/vione_app_be/package.js
 COPY --chown=appuser:appgroup --from=installer /app/apps/vione_app_be/dist ./apps/vione_app_be/dist
 COPY --chown=appuser:appgroup --from=installer /app/node_modules ./node_modules
 
-# Add entrypoint for migration/seed (optional)
 COPY --chown=appuser:appgroup docker-entrypoint.s[h] ./
 RUN chmod +x docker-entrypoint.sh 2>/dev/null || true
+
+# Pre-create uploads directory and set permissions for appuser
+RUN mkdir -p /app/uploads/avatars /app/uploads/documents /tmp/uploads/avatars /tmp/uploads/documents \
+    && chown -R appuser:appgroup /app/uploads /tmp/uploads \
+    && chmod -R 775 /app/uploads /tmp/uploads
 
 USER appuser
 

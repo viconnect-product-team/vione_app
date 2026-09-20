@@ -1235,3 +1235,38 @@ Mỗi khối server (5443, 5444, 5445) được trang bị đầy đủ các đ�
    - Chuẩn hóa `name: vione-network` xuyên suốt cả 4 tệp docker-compose (`deploy/ssl/`, `deploy/ceo1983/`, `deploy/crm/`, `deploy/vione/`).
    - Cung cấp network aliases cho container `vione-minio-prod`: `[minio, vione-minio-prod]` để cả 3 backend container đều kết nối MinIO thông suốt.
    - Trong script deploy, tự động thực thi `docker network create vione-network 2>/dev/null || true` trước khi khởi chạy container.
+
+### 24.4. Triệt Tiêu Lỗi Vòng Lặp 404 Avatar (8 Requests) & Lỗi 500 /api/upload/avatar (Dual-Storage Fallback)
+1. **Khắc phục Vòng lặp 404 (Re-render Reset Loop)**:
+   - **Nguyên nhân**: State `avatarError` bị reset về `false` mỗi khi `useEffect([customAvatar, member?.avatar])` chạy lại trong `association.profile.tsx`. Khi component re-render (do cập nhật danh sách bạn bè/tin nhắn), thẻ `<img>` lại thử load URL ảnh cũ không còn tồn tại trên server, gây ra chuỗi 8 request 404 Not Found liên tiếp. Đồng thời `localStorage` lưu trữ `vba_member_avatar_photo` chứa URL ảnh chết.
+   - **Giải pháp**:
+     * `scripts/clean_all_dead_avatars.js`: Đã dọn sạch các URL avatar chết (`i5o6ez`, `d9ut5z`, `4qjy8i`) trên `public.business_identities`, `public.user_profiles`, `public.vione_users`, và `public.user_uploads`.
+     * `src/lib/api-client.ts`: Thêm `isDeadAvatarUrl(url)` và tích hợp vào `resolveMediaUrl(url)` để trả về `null` ngay lập tức, chặn request mạng 404 từ gốc.
+     * `association.profile.tsx`: Bổ sung `handleAvatarLoadError` tự động xóa key chết khỏi `localStorage`, chỉ reset `avatarError` khi có file ảnh mới tải lên (`data:` base64 URI hợp lệ).
+2. **Khắc phục Lỗi 500 Internal Server Error tại `/api/upload/avatar`**:
+   - **Nguyên nhân**:
+     * `upload.service.ts` gọi `UPDATE public.members SET avatar = $1 WHERE user_id = $2`. Bảng `public.members` không có cột `avatar` khiến PostgreSQL throw exception.
+     * `minioService.uploadFile` throw lỗi 500 unhandled khi container MinIO không sẵn sàng hoặc gặp sự cố mạng nội bộ.
+     * `handleAvatarChange` hiển thị `toast.success` trong khối `catch` gây nhầm lẫn cho người dùng.
+   - **Giải pháp**:
+     * **Cơ chế Dual-Storage Fallback**: Mọi file upload lên server đều được ghi vào đĩa cứng cục bộ server (`uploads/avatars/` hoặc `uploads/documents/`) trước tiên. Sau đó hệ thống thử upload lên MinIO trong khối `try/catch`. Nếu MinIO lỗi, hệ thống tự động fallback sử dụng URL đĩa cục bộ (`/uploads/avatars/...`) mà không ném lỗi 500.
+     * Đồng bộ `avatar_url` chuẩn xác vào các bảng: `user_profiles`, `business_identities`, `vione_users`, và `member_business_cards`.
+     * Chuẩn hóa `upload.controller.ts` xử lý `userId` linh hoạt (`req.user?.id || req.user?.sub`) và trả về `BadRequestException` rõ ràng khi thiếu file.
+
+
+
+### 24.5. Kien Truc Luu Tru Ben Vung Da Tang Cho Upload (Shared Volume + MinIO Multi-Endpoint Connection Pool)
+1. **Nguyen Nhan Loi Upload Moi Tren Server (500 Tai CRM va 404 Tai App Hiep Hoi)**:
+   - **CRM (5443)**: Container crm-backend-prod tren may chu tu xa chay phien ban Docker cu, gap unhandled DNS exception getaddrinfo ENOTFOUND minio khi ket noi MinIO va loi truy van cot avatar khong ton tai trong public.members.
+   - **App Hiep Hoi (5444)**: Dockerfile.backend chay duoi quyen USER appuser. Thu muc /app thuoc root:root, nen appuser bi tu choi quyen ghi (EACCES: permission denied) khi co tao thu muc /app/uploads. File bi luu tam vao /tmp/uploads, nhung UploadController.getFile truoc do khong tim trong /tmp/uploads, dan toi request GET /api/upload/file/avatars/... tra ve 404. Ngoai ra, thieu Docker Volume khien file dia bi mat khi restart container.
+2. **Kien Truc Trien Khai Hoan Chinh**:
+   - **Pre-creation & Chown Trong Dockerfile.backend**:
+     Tao truoc /app/uploads/avatars, /app/uploads/documents, /tmp/uploads/... va gan quyen chown -R appuser:appgroup /app/uploads /tmp/uploads && chmod -R 775 /app/uploads /tmp/uploads truoc USER appuser.
+   - **Docker Shared Volume vione-uploads-data**:
+     Gan volume chung vione-uploads-data:/app/uploads cho ca ceo1983-backend va crm-backend, ket noi mang ngoai vione-network (external: true).
+   - **Multi-Endpoint MinIO Connection Pool**:
+     MinioService khoi tao danh sach endpoint candidate (bien moi truong, IP cong khai 14.225.217.232:9050, Docker internal aliases vione-minio-prod:9000 / minio:9000, Docker gateway 172.17.0.1:9050). Khi ket noi thanh cong, uu tien client do len dau pool.
+   - **UploadController.getFile Phuc Vu Da Vi Tri**:
+     Tim kiem tep tuan tu tren /app/uploads, /tmp/uploads, dist/uploads va stream MinIO voi nhieu tien to du phong.
+   - **Chong Hoan Toan Ghost URL**:
+     Neu ca dia cung lan MinIO deu khong the luu tru tep, he thong nem InternalServerErrorException va khong ghi URL hong vao CSDL.

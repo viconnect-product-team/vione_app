@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as path from 'path';
+import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import { MinioService } from './minio.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,10 +12,64 @@ export class UploadService {
     private readonly prisma: PrismaService,
   ) {}
 
+  private async saveToLocalDisk(subfolder: string, filename: string, buffer: Buffer): Promise<string> {
+    const candidates = [
+      path.join(process.cwd(), 'uploads', subfolder),
+      path.join('/tmp', 'uploads', subfolder),
+      path.join(process.cwd(), 'dist', 'uploads', subfolder),
+    ];
+    let saved = false;
+    for (const uploadDir of candidates) {
+      try {
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const filePath = path.join(uploadDir, filename);
+        await fs.promises.writeFile(filePath, buffer);
+        saved = true;
+        break;
+      } catch (err: any) {
+        console.warn(`Local disk write failed for ${uploadDir}:`, err?.message);
+      }
+    }
+    if (!saved) {
+      throw new Error('All local disk candidate locations failed to write');
+    }
+    return `/upload/file/${subfolder}/${filename}`;
+  }
+
   async saveAvatar(file: any, userId: string): Promise<string> {
     const fileExt = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const safeFilename = `avatars/${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
-    const url = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+    const baseFilename = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
+    const safeFilename = `avatars/${baseFilename}`;
+
+    let saved = false;
+    let localUrl = `/upload/file/avatars/${baseFilename}`;
+
+    // 1. Luôn ghi vào ổ đĩa cục bộ làm fallback chắc chắn
+    try {
+      localUrl = await this.saveToLocalDisk('avatars', baseFilename, file.buffer);
+      saved = true;
+    } catch (diskErr: any) {
+      console.warn('Local disk write notice in saveAvatar:', diskErr?.message);
+    }
+
+    // 2. Cố gắng tải lên MinIO nếu có sẵn (không ném 500 nếu MinIO lỗi)
+    let url = localUrl;
+    try {
+      const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+      if (minioUrl) {
+        url = minioUrl;
+        saved = true;
+      }
+    } catch (minioErr: any) {
+      console.warn('MinIO upload unreachable/failed, fallback to disk storage:', minioErr?.message);
+      url = localUrl;
+    }
+
+    if (!saved) {
+      throw new InternalServerErrorException('Không thể lưu trữ tệp ảnh lên hệ thống. Vui lòng thử lại sau.');
+    }
     
     // Save upload metadata (non-fatal if uuid check fails)
     try {
@@ -41,13 +96,6 @@ export class UploadService {
       WHERE owner_user_id = ${userId}::uuid
     `.catch(() => null);
 
-    // Save url to database members
-    await this.prisma.$executeRaw`
-      UPDATE public.members
-      SET avatar = ${url}
-      WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
-    `.catch(() => null);
-
     // Save url to database member_business_cards
     await this.prisma.$executeRaw`
       UPDATE public.member_business_cards
@@ -67,15 +115,47 @@ export class UploadService {
 
   async saveFile(file: any, userId: string, folder = 'documents'): Promise<string> {
     const fileExt = path.extname(file.originalname).toLowerCase() || '.bin';
-    const safeFilename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
-    const url = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+    const baseFilename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
+    const safeFilename = `${folder}/${baseFilename}`;
+
+    let saved = false;
+    let localUrl = `/upload/file/${folder}/${baseFilename}`;
+
+    // 1. Luôn ghi vào ổ đĩa cục bộ làm fallback chắc chắn
+    try {
+      localUrl = await this.saveToLocalDisk(folder, baseFilename, file.buffer);
+      saved = true;
+    } catch (diskErr: any) {
+      console.warn('Local disk write notice in saveFile:', diskErr?.message);
+    }
+
+    // 2. Cố gắng tải lên MinIO nếu có sẵn (không ném 500 nếu MinIO lỗi)
+    let url = localUrl;
+    try {
+      const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+      if (minioUrl) {
+        url = minioUrl;
+        saved = true;
+      }
+    } catch (minioErr: any) {
+      console.warn('MinIO upload unreachable/failed, fallback to disk storage:', minioErr?.message);
+      url = localUrl;
+    }
+
+    if (!saved) {
+      throw new InternalServerErrorException('Không thể lưu trữ tệp tin lên hệ thống. Vui lòng thử lại sau.');
+    }
 
     // Save upload metadata
-    const uploadId = randomUUID();
-    await this.prisma.$executeRaw`
-      INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
-      VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
-    `;
+    try {
+      const uploadId = randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
+        VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
+      `;
+    } catch (err: any) {
+      console.warn('user_uploads metadata insert notice in saveFile:', err?.message);
+    }
 
     return url;
   }

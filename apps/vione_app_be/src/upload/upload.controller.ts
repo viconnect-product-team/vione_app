@@ -52,9 +52,18 @@ export class UploadController {
       throw new BadRequestException('Invalid file type. Only images are allowed.');
     }
 
-    const userId = req.user.id || req.user.sub;
-    const url = await this.uploadService.saveAvatar(file, userId);
-    return { url };
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      throw new BadRequestException('User ID not identified in auth session');
+    }
+
+    try {
+      const url = await this.uploadService.saveAvatar(file, userId);
+      return { url };
+    } catch (err: any) {
+      console.error('uploadAvatar error:', err);
+      throw new BadRequestException(err?.message || 'Failed to process avatar upload');
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -67,9 +76,18 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const userId = req.user.id || req.user.sub;
-    const url = await this.uploadService.saveFile(file, userId);
-    return { url };
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      throw new BadRequestException('User ID not identified in auth session');
+    }
+
+    try {
+      const url = await this.uploadService.saveFile(file, userId);
+      return { url };
+    } catch (err: any) {
+      console.error('uploadFile error:', err);
+      throw new BadRequestException(err?.message || 'Failed to process file upload');
+    }
   }
 
   @Get('file/*path')
@@ -102,6 +120,11 @@ export class UploadController {
         path.join(process.cwd(), 'uploads', filePathStr),
         path.join(process.cwd(), 'uploads', 'avatars', filenameOnly),
         path.join(process.cwd(), 'uploads', 'documents', filenameOnly),
+        path.join('/tmp', 'uploads', filePathStr),
+        path.join('/tmp', 'uploads', 'avatars', filenameOnly),
+        path.join('/tmp', 'uploads', 'documents', filenameOnly),
+        path.join(process.cwd(), 'dist', 'uploads', filePathStr),
+        path.join(process.cwd(), 'dist', 'uploads', 'avatars', filenameOnly),
         path.join(process.cwd(), filePathStr),
       ];
 
@@ -123,6 +146,9 @@ export class UploadController {
       if (!filePathStr.startsWith('documents/')) {
         minioKeys.push(`documents/${filePathStr}`);
       }
+      minioKeys.push(filenameOnly);
+      minioKeys.push(`avatars/${filenameOnly}`);
+      minioKeys.push(`documents/${filenameOnly}`);
 
       for (const key of minioKeys) {
         try {

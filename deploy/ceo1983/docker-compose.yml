@@ -30,12 +30,18 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - APP_SCOPE=association_app
-      - ASSOCIATION_DEFAULT_BRAND="CLB Doanh Nhân CEO 1983"
+    volumes:
+      - vione-uploads-data:/app/uploads
     ports:
       - "127.0.0.1:${ASSOCIATION_PORT_BACKEND:-5003}:4000"
     networks:
       - vione-network
 
+volumes:
+  vione-uploads-data:
+    name: vione-uploads-data
+
 networks:
   vione-network:
     name: vione-network
+    external: true

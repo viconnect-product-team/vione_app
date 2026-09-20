@@ -95,6 +95,9 @@ Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cá
    - Ban chuyên môn sinh hoạt.
    - Ngày nộp hồ sơ đăng ký.
    - Trạng thái: **"Chờ phê duyệt"** (màu vàng), **"Đang hoạt động"** (màu xanh), **"Tạm khóa"** (màu đỏ).
+3. **Cơ chế Đồng Bộ Tự Động Từ Landing Page:**
+   - Khi doanh nhân gửi hồ sơ từ Cổng Landing Page (`https://14.225.217.232:5444/landing/ceo/v1`), hệ thống Backend tự động tạo tài khoản đăng nhập trong `vione_users` và **gửi ngay một bức Email HTML chào mừng chứa tên đăng nhập & mật khẩu ngẫu nhiên** về hòm thư người đăng ký.
+   - Bản ghi hồ sơ được đẩy đồng thời sang CRM dưới trạng thái **"Chờ phê duyệt"** để Ban Thư Ký kiểm tra giấy tờ pháp lý trước khi cấp toàn quyền hội viên.
 
 ![CRM: Danh sách Quản lý Hội viên](images/evidence/sub_07_crm_members_list.png)
 *Hình 4.1: Màn hình CRM Quản lý Danh bạ Hội viên và danh sách hồ sơ mới tiếp nhận.*
@@ -170,24 +173,26 @@ Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cá
 
 ---
 
-### 5.2. Tạo Mới Sự Kiện & Tự Động Bố Cục Banner Theo Từng Loại Sự Kiện
-1. Nhấn nút **"+ Tạo Sự Kiện Mới"**.
-2. **Chọn Loại Sự Kiện (Event Type Templates):**
-   - Khi quản trị viên nhấp chọn loại sự kiện (**Diễn đàn cấp cao / Forum**, **Hội thảo chuyên đề / Workshop**, **Giao thương kết nối / Networking**, hoặc **Đào tạo doanh nghiệp / Training**), hệ thống tự động tải mẫu bố cục thông tin tương ứng:
-     - Tự động điền **Tiêu đề mẫu & Tagline nhận diện thương hiệu**.
-     - Tự động điền **Địa điểm tổ chức chuẩn & Dự toán sức chứa khán phòng**.
-     - Tự động sinh **Khung vé dự thảo (Ticket Tiers)**.
-     - Hiển thị trực quan **Khung xem trước Banner (Live Banner Preview)** với typography, gradient và huy hiệu loại hình chuyên nghiệp.
-3. Modal Tạo sự kiện với các tab thiết lập:
-   - **Thông tin chung:** Tiêu đề sự kiện, loại hình, thời gian bắt đầu/kết thúc, địa chỉ trung tâm hội nghị.
-   - **Hình ảnh & Banner:** Xem trước banner bố cục tự động hoặc tải ảnh banner tùy biến.
-   - **Lịch trình (Agenda):** Thêm các khung giờ hoạt động (Đón khách, Khai mạc, Tọa đàm, Trao kỷ niệm chương, Bốc thăm may mắn).
-   - **Diễn giả (Keynote Speakers):** Tải ảnh chân dung, nhập họ tên và chức danh các chuyên gia.
-   - **Cấu hình Vé & VietQR:** Thiết lập số lượng vé, giá vé và tự động kích hoạt **Cơ chế cấp Mã số vé ngẫu nhiên (#XXXX)** cho mọi lượt đăng ký phục vụ quay thưởng Lucky Draw.
-4. Nhấn **"Xuất bản Sự kiện"**: Dữ liệu đồng bộ tức thì sang App di động của toàn thể hội viên.
+### 5.2. Tạo Mới Sự Kiện: 2 Case Miễn Phí (0đ) & Thu Phí VietQR (500.000 VNĐ)
+Nhấn nút **"+ Tạo Sự Kiện Mới"** để mở Modal cấu hình:
 
-![CRM: Modal Tạo Sự Kiện Mới](images/evidence/03_crm_event_create_modal.png)
-*Hình 5.2: Modal tạo sự kiện với tính năng tự động điền bố cục text và banner đồ họa theo loại sự kiện.*
+#### Case 1: Sự Kiện Miễn Phí (0đ) Dành Cho Hội Viên
+1. Nhập tiêu đề sự kiện: *"Tọa Đàm Kết Nối Doanh Nghiệp 4.0"*.
+2. Thiết lập đơn giá vé: **`0 đ`**.
+3. Cấu hình lịch trình Agenda, danh sách Diễn giả C-Level và tải lên Banner 16:9 sắc nét.
+4. Khi xuất bản, trên App hội viên sẽ hiển thị nhãn **"Miễn phí (0 đ)"** và cho phép đăng ký nhận vé Pass 1-chạm không cần thanh toán.
+
+![CRM: Modal Tạo Sự Kiện Miễn phí 0đ](images/evidence/crm_06_event_create_modal.png)
+*Hình 5.2a: CRM: Modal tạo sự kiện Miễn phí (0đ) với các thông tin diễn giả và lịch trình.*
+
+#### Case 2: Sự Kiện Thu Phí (500.000 VNĐ)
+1. Nhập tiêu đề sự kiện: *"Đại Hội Thường Niên & Gala Dinner CLB CEO 1983"*.
+2. Thiết lập đơn giá vé: **`500.000 đ`**.
+3. Cấu hình tài khoản ngân hàng thụ hưởng nhận tiền qua cổng VietQR Napas 247.
+4. Khi xuất bản, trên App hội viên sẽ hiển thị nhãn **"500.000 đ / vé"**, mở bảng tóm tắt chi phí và hiển thị mã VietQR động để quét thanh toán.
+
+![CRM: Modal Tạo Sự Kiện Thu Phí Gala Dinner 500k](images/evidence/crm_06b_event_create_paid_modal.png)
+*Hình 5.2b: CRM: Modal tạo sự kiện Thu phí (500.000 VNĐ) tích hợp cổng thanh toán VietQR Napas 247.*
 
 ---
 

@@ -37,10 +37,10 @@ Hệ thống được thiết lập sẵn các tài khoản demo chuẩn để k
 
 ---
 
-## 2. QUY TRÌNH GIA NHẬP: LANDING PAGE ➔ CRM PHÊ DUYỆT ➔ KÍCH HOẠT TÀI KHOẢN APP
+## 2. QUY TRÌNH GIA NHẬP: LANDING PAGE ➔ TỰ ĐỘNG GỬI EMAIL TÀI KHOẢN ➔ CRM PHÊ DUYỆT HỒ SƠ ➔ KÍCH HOẠT THẺ VIP
 
 ### 2.1. Thao Tác Trên Cổng Thông Tin Landing Page (Dành cho Doanh Nhân Mới)
-1. Doanh nhân truy cập cổng thông tin chính thức CLB Doanh Nhân CEO 1983 tại địa chỉ Landing Page (`/landing/ceo1983`).
+1. Doanh nhân truy cập cổng thông tin chính thức CLB Doanh Nhân CEO 1983 tại địa chỉ Landing Page (`https://14.225.217.232:5444/landing/ceo/v1`).
 2. Giao diện trang chủ chào đón với phong cách Xanh Royal Navy - Vàng Kim - Trắng sang trọng, giới thiệu 4 trụ cột chiến lược và tôn chỉ hoạt động của CLB trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA).
 3. Nhấp chọn nút **"ĐĂNG KÝ HỘI VIÊN VIP"** trên thanh điều hướng hoặc nút **"NỘP HỒ SƠ XÉT DUYỆT VIP NGAY"** tại banner chính.
 4. Màn hình hiển thị Form tiếp nhận hồ sơ xét duyệt trực tuyến:
@@ -50,7 +50,14 @@ Hệ thống được thiết lập sẵn các tài khoản demo chuẩn để k
    - **Tên doanh nghiệp & Mã số thuế (MST):** Thông tin pháp nhân đăng ký kinh doanh hợp pháp.
    - **Số điện thoại di động & Email công vụ:** Dùng để nhận thông báo tiến trình thẩm định và kích hoạt tài khoản.
    - **Quy mô doanh thu & Ngành nghề:** Lĩnh vực kinh doanh chủ đạo phục vụ mạng lưới kết nối B2B.
-5. Nhấn **"Gửi hồ sơ xét duyệt"**: Hệ thống khởi tạo hồ sơ trên CSDL và trả về mã định danh đăng ký tự động.
+5. Nhấn **"Gửi hồ sơ xét duyệt"**:
+   - **Cơ chế Tự Động Khởi Tạo Tài Khoản & Gửi Email Mật Khẩu Tức Thì:**  
+     Ngay khi người dùng nhấn nút gửi hồ sơ, hệ thống Backend (`connect-app.service.ts` & `mail.service.ts`) tự động tạo mới tài khoản trong hệ thống `vione_users`, khởi tạo hồ sơ hội viên `public.members` với trạng thái `pending`, và **gửi ngay một bức thư điện tử (HTML Welcome Email) qua giao thức SMTP** về địa chỉ Email đăng ký của người dùng.
+   - **Nội dung Email chào mừng bao gồm:**
+     - Thông tin tài khoản đăng nhập: Tên tài khoản (Email / Số điện thoại đăng ký) và Mật khẩu khởi tạo bảo mật.
+     - Đường link đăng nhập trực tiếp vào App Hiệp hội: `https://14.225.217.232:5444/association/login`.
+     - Hướng dẫn cài đặt ứng dụng lên màn hình chính điện thoại (PWA iOS/Android).
+     - Thông báo hồ sơ doanh nghiệp đã được chuyển tới Ban Thư Ký để thẩm định tư cách hội viên chính thức.
 6. **Tra cứu tiến độ thẩm định:**
    - Bấm nút **"Tra Cứu Hồ Sơ"** trên thanh điều hướng.
    - Nhập Số điện thoại hoặc Email đã nộp hồ sơ.
@@ -65,10 +72,13 @@ Hệ thống được thiết lập sẵn các tài khoản demo chuẩn để k
 ![Màn hình Tra cứu Tiến độ Thẩm định Hồ sơ](images/evidence/sub_04_landing_status_polling.png)
 *Hình 2.3: Công cụ tra cứu tiến trình thẩm định hồ sơ với cơ chế tự động cập nhật thời gian thực.*
 
+![Email Thông Báo Tài Khoản & Mật Khẩu Gửi Tự Động Vào Hộp Thư Người Đăng Ký](images/evidence/05_email_credentials_sent.png)
+*Hình 2.4: Email hệ thống tự động gửi thông tin tài khoản, mật khẩu và link đăng nhập vào hòm thư hội viên ngay sau khi đăng ký.*
+
 ---
 
 ### 2.2. Thao Tác Phê Duyệt Của Ban Thư Ký Trên Web CRM (Luồng CRM Liên Quan Trực Tiếp)
-1. Ban Thư ký đăng nhập hệ thống Web CRM (`http://14.225.217.232:5000/auth`) bằng tài khoản Quản trị.
+1. Ban Thư ký đăng nhập hệ thống Web CRM (`https://14.225.217.232:5443/auth`) bằng tài khoản Quản trị.
 2. Điều hướng vào menu **"Quản lý Hội viên"** (`/members`).
 3. Danh sách hồ sơ mới hiển thị với nhãn trạng thái màu vàng: **"Chờ xét duyệt"**.
 4. Nhấp vào dòng hội viên để mở **Drawer Hồ sơ Chi tiết 360°**, kiểm tra MST, giấy phép ĐKKD và năng lực doanh nghiệp.
@@ -76,24 +86,24 @@ Hệ thống được thiết lập sẵn các tài khoản demo chuẩn để k
 6. **Cơ chế đồng bộ tự động:**
    - CSDL cập nhật trạng thái hội viên sang `Active` (Hoạt động).
    - Hệ thống tự động khởi tạo Thẻ Hội Viên VIP Kỹ Thuật Số với Mã ID độc bản (`CEO-1983-xxx`).
-   - Cấp quyền đăng nhập tức thì trên Ứng dụng Di động (Mobile App) cho hội viên.
+   - Kích hoạt toàn bộ các quyền đặc quyền: Tham dự sự kiện, Sàn giao thương B2B, Kết nối danh bạ 500+ CEO.
 
 ![CRM: Danh sách Hội viên tiếp nhận hồ sơ chờ duyệt](images/evidence/sub_07_crm_members_list.png)
-*Hình 2.4: Màn hình CRM Quản lý Hội viên hiển thị danh sách hồ sơ đăng ký mới cần thẩm định.*
+*Hình 2.5: Màn hình CRM Quản lý Hội viên hiển thị danh sách hồ sơ đăng ký mới cần thẩm định.*
 
 ![CRM: Drawer kiểm tra chi tiết hồ sơ doanh nghiệp và tư cách hội viên](images/evidence/sub_08_crm_member_detail_drawer.png)
-*Hình 2.5: Drawer chi tiết hồ sơ hội viên trên CRM phục vụ thẩm định năng lực trước khi kích hoạt.*
+*Hình 2.6: Drawer chi tiết hồ sơ hội viên trên CRM phục vụ thẩm định năng lực trước khi kích hoạt.*
 
 ![CRM: Thao tác bấm nút Phê duyệt (Approve) cấp quyền vào App](images/evidence/sub_09_crm_approve_action.png)
-*Hình 2.6: Thao tác bấm nút Phê duyệt trên CRM - Kích hoạt quyền đăng nhập App di động cho hội viên.*
+*Hình 2.7: Thao tác bấm nút Phê duyệt trên CRM - Kích hoạt quyền đăng nhập App di động cho hội viên.*
 
 ---
 
 ## 3. ĐĂNG NHẬP, KHÔI PHỤC THÔNG TIN & TRANG CHỦ (HOME DASHBOARD)
 
 ### 3.1. Đăng Nhập Ứng Dụng Mobile App
-1. Mở ứng dụng **CEO 1983** trên điện thoại iOS (TestFlight/App Store) hoặc Android (APK/Google Play).
-2. Nhập Email hoặc Số điện thoại đã được đăng ký và phê duyệt.
+1. Mở ứng dụng **CEO 1983** trên điện thoại hoặc trình duyệt tại `https://14.225.217.232:5444/association/login`.
+2. Nhập Email hoặc Số điện thoại đã được đăng ký và nhận qua email chào mừng.
 3. Nhập Mật khẩu (mặc định ban đầu do hệ thống cấp: `123456` hoặc mật khẩu cá nhân).
 4. Nhấn **"Đăng nhập"**.
 5. Trường hợp quên mật khẩu: Bấm liên kết **"Quên mật khẩu?"** hoặc bấm nút **"Hỗ trợ Thư ký"** để được cấp lại mật khẩu xác thực qua SMS/Email.
@@ -131,12 +141,12 @@ Trang chủ được thiết kế theo phong cách hiện đại với đầy đ
    - Logo Hiệp hội Doanh nhân CEO 1983.
    - Họ tên Doanh nhân, Tên Công ty, Chức danh.
    - Hạng thẻ: **VIP Gold / Diamond Member**.
-   - Mã định danh hội viên duy nhất: `CEO-1983-xxx`.
+   - Mã định danh hội viên duy nhất: `M1983-007` (hoặc mã riêng của hội viên).
    - Thời hạn hiệu lực của hội phí (Hạn thẻ).
 3. **Mã QR Độc Bản:** Dùng để đối tác quét kết nối trực tiếp hoặc quét điểm danh vào cổng sự kiện của hiệp hội.
 
 ![Thẻ Hội Viên VIP Kỹ Thuật Số CLB Doanh Nhân CEO 1983](images/evidence/sub_13_app_vip_card_front.png)
-*Hình 4.1: Thẻ Hội Viên VIP 3D với mã QR định danh và thời hạn hiệu lực của thẻ.*
+*Hình 4.1: Thẻ Hội Viên VIP 3D của đồng chí Lê Hoàng Long (Tổng Thư Ký, Long Tech Solutions, Mã M1983-007) với mã QR định danh.*
 
 ---
 
@@ -154,10 +164,15 @@ Trang chủ được thiết kế theo phong cách hiện đại với đầy đ
 ### 4.3. Quét Mã QR Từ Bên Ngoài & Danh Thiếp Số Công Khai (Public Digital Business Card)
 1. **Quét Mã QR Bằng Camera Điện Thoại Hoặc Zalo:**
    - Đối tác, khách mời hoặc hội viên khác có thể sử dụng bất kỳ camera điện thoại thông thường (iOS/Android), ứng dụng Zalo hoặc máy quét QR để quét mã trên thẻ của hội viên.
-   - Hệ thống tự động điều hướng tới trang Danh Thiếp Số chính thức: `https://<domain>/card/<mã_hội_viên>` (vd: `/card/M1983-007`).
-2. **Xác Thực Danh Tính Thật 100% Khớp Hồ Sơ Hội Viên:**
-   - Dữ liệu hiển thị trực tiếp từ hồ sơ thực tế của hội viên trong CSDL Hiệp hội: Họ tên đầy đủ, Chức vụ lãnh đạo, Tên doanh nghiệp pháp nhân, Ảnh chân dung đại diện, Mã số hội viên độc bản, Huy hiệu xác thực chính thức bởi CLB CEO 1983.
-   - Tuyệt đối không còn tình trạng hiển thị sai lệch sang tên mẫu hay hồ sơ giả lập.
+   - Hệ thống tự động điều hướng tới trang Danh Thiếp Số chính thức: `https://14.225.217.232:5444/card/<id_hội_viên>`.
+2. **Xác Thực Danh Tính Thật 100% Khớp Hồ Sơ Tài Khoản Test Thực Tế:**
+   - Dữ liệu hiển thị trực tiếp từ hồ sơ thực tế của tài khoản đang kiểm thử (`ceo.tongthuky@ceo1983.com`):
+     - **Họ và tên:** Lê Hoàng Long.
+     - **Chức vụ:** Tổng Thư Ký CLB Doanh Nhân CEO 1983.
+     - **Công ty pháp nhân:** Long Tech Solutions.
+     - **Mã hội viên:** `M1983-007`.
+     - **Huy hiệu:** Đã xác thực chính thức bởi Hiệp Hội Doanh Nghiệp.
+   - Đảm bảo tính nhất quán 100% giữa tài khoản đăng nhập, thẻ VIP trên App và trang công khai khi quét QR từ bên ngoài.
 3. **Trải Nghiệm Thẻ 3D Tương Tác & Lật Mặt Trước / Sau:**
    - Mặt trước: Thiết kế Xanh Royal Navy mạ Vàng Kim sang trọng, hiển thị chức vụ, doanh nghiệp, mã QR tích hợp và thời hạn thẻ.
    - Mặt sau: Tôn chỉ CLB *"GẮN KẾT • CHIA SẺ • ĐỒNG HÀNH • PHÁT TRIỂN"*, thông tin Ban Thư Ký, Hotline và Trụ sở CLB.
@@ -168,97 +183,114 @@ Trang chủ được thiết kế theo phong cách hiện đại với đầy đ
    - **Chia Sẻ:** Gửi liên kết danh thiếp số qua mạng xã hội, tin nhắn hoặc sao chép clipboard.
 
 ![Trang Danh thiếp số Doanh nhân công khai xác thực thực tế](images/evidence/sub_16_app_card_public_verified.png)
-*Hình 4.3: Giao diện Danh thiếp số công khai chuẩn nhận diện CEO 1983 hiển thị đúng danh tính và hỗ trợ lưu danh bạ 1-chạm.*
+*Hình 4.3: Giao diện Danh thiếp số công khai chuẩn nhận diện CEO 1983 của tài khoản test thực tế (Đ/c Lê Hoàng Long - Tổng Thư Ký, Long Tech Solutions, Mã thẻ M1983-007) xác thực 100% hồ sơ.*
 
 ---
 
-## 5. QUẢN LÝ SỰ KIỆN: CHI TIẾT SỰ KIỆN, VÉ MIỄN PHÍ 0Đ, MUA VÉ VIETQR & CHECK-IN (KÈM ẢNH CRM)
+## 5. QUẢN LÝ SỰ KIỆN: ĐĂNG SỰ KIỆN CRM, ĐỒNG BỘ APP (2 CASE: MIỄN PHÍ 0Đ & THU PHÍ VIETQR)
 
-### 5.1. Luồng CRM Cấu Hình & Quản Trị Sự Kiện (Chức năng CRM tương ứng)
-Để sự kiện xuất hiện trên App, Ban tổ chức thực hiện các bước trên Web CRM:
-1. Truy cập CRM menu **"Quản lý Sự kiện"** (`/events`).
-2. Bấm nút **"Tạo Sự kiện Mới"**:
-   - Nhập Tiêu đề sự kiện, Địa điểm tổ chức, Thời gian bắt đầu/kết thúc.
-   - Tải lên Banner sự kiện (tỷ lệ 16:9 chất lượng cao).
-   - Nhập danh sách Diễn giả (Speaker) và Lịch trình chi tiết (Agenda).
-   - Cấu hình loại vé: Vé Miễn phí (0đ) dành cho Hội viên hoặc Vé Thu phí (nhập giá vé VNĐ).
-   - Cấu hình Sơ đồ Khán phòng (Cinema Hall Seating Map): Phân hàng ghế VIP, Hạng Thương gia, Tiêu chuẩn.
-3. Xuất bản sự kiện: Sự kiện ngay lập tức đồng bộ thời gian thực sang App hội viên.
+### 5.1. Luồng CRM: Tạo và Điều Phối Sự Kiện (Chức năng Quản trị CRM)
+Để sự kiện xuất hiện trên App, Ban Quản Trị / Ban Thư Ký thực hiện các bước trên Web CRM (`https://14.225.217.232:5443/events`):
+1. Bấm nút **"Tạo Sự kiện Mới"**:
+   - **Tiêu đề sự kiện, thời gian, địa điểm:** Nhập thông tin chi tiết và tải lên Banner 16:9 chất lượng cao.
+   - **Cấu hình Diễn giả & Lịch trình (Agenda):** Thêm diễn giả C-Level và timeline chi tiết.
+   - **Cấu hình Giá vé Sự kiện:**
+     - **Trường hợp 1 (Sự kiện Miễn phí):** Thiết lập đơn giá vé = `0 đ`. Dành cho các buổi Tọa đàm nội bộ, Cafe Doanh nhân định kỳ.
+     - **Trường hợp 2 (Sự kiện Thu phí):** Thiết lập đơn giá vé cụ thể (ví dụ: `500.000 đ`). Dành cho Đại hội Thường niên, Tiệc Gala Dinner hoặc Khóa đào tạo chuyên sâu.
+2. **Cấu hình Sơ đồ Khán phòng (Cinema Hall Seating Map):** Thiết lập phân khu Hàng ghế VIP, Thương gia, Tiêu chuẩn để đại biểu chọn chỗ ngồi.
+3. Xuất bản sự kiện: Sự kiện ngay lập tức được đồng bộ thời gian thực sang App hội viên.
 
-![CRM: Quản lý danh sách sự kiện và thiết lập tổ chức](images/evidence/sub_27_crm_events_management.png)
-*Hình 5.1: Màn hình CRM Quản lý Sự kiện - Nơi tạo và điều phối các sự kiện của CLB.*
+![CRM: Modal Tạo Sự kiện Miễn phí (0đ)](images/evidence/crm_06_event_create_modal.png)
+*Hình 5.1a: CRM: Tạo Sự kiện Miễn phí (0đ) dành cho hội viên CLB CEO 1983.*
+
+![CRM: Modal Tạo Sự kiện Thu phí Gala Dinner (500.000 đ)](images/evidence/crm_06b_event_create_paid_modal.png)
+*Hình 5.1b: CRM: Tạo Sự kiện Thu phí (500.000 VNĐ) có cấu hình cổng thanh toán VietQR.*
 
 ![CRM: Thiết lập Sơ đồ Khán phòng Cinema Map và vị trí ghế ngồi](images/evidence/sub_28_crm_seating_cinema_map.png)
 *Hình 5.2: Công cụ cấu hình sơ đồ khán phòng và chỗ ngồi sự kiện trên hệ thống Web CRM.*
 
 ---
 
-### 5.2. Xem Danh Sách Sự Kiện Trên App Hội Viên
+### 5.2. Hiển Thị Danh Sách Sự Kiện Trên App Hiệp Hội
 1. Trên thanh điều hướng đáy (Bottom Bar), chọn tab **"Sự kiện"**.
 2. Giao diện hiển thị danh sách các sự kiện được phân loại rõ ràng:
-   - Tab **Sắp diễn ra:** Các chương trình sắp tổ chức trong tháng.
-   - Tab **Đang diễn ra:** Các chương trình đang chạy trong ngày để hội viên vào check-in.
-   - Tab **Đã tham gia:** Lịch sử các sự kiện hội viên từng dự.
-3. Nhãn trạng thái trực quan: Tag xanh lá cây **"Miễn phí (0đ)"** cho sự kiện đặc quyền hội viên và tag vàng cho sự kiện đóng góp.
+   - Thẻ sự kiện thiết kế tràn viền sang trọng với hiệu ứng sóng ánh sáng động (Golden Swoosh Wave).
+   - Nhãn trạng thái trực quan phân biệt 2 loại sự kiện:
+     - Tag xanh ngọc: **"Miễn phí (0 đ)"** cho sự kiện đặc quyền hội viên.
+     - Tag vàng hổ phách: **"500.000 đ / vé"** cho sự kiện thu phí.
 
 ![Danh sách Sự kiện trên App Hiệp hội](images/evidence/sub_29_app_events_screen.png)
-*Hình 5.3: Màn hình danh sách Sự kiện với thẻ hình ảnh trực quan và trạng thái sự kiện.*
+*Hình 5.3: Màn hình danh sách Sự kiện trên App hiển thị trực quan cả 2 loại sự kiện Miễn phí (0đ) và Có phí.*
 
 ---
 
-### 5.3. Xem Chi Tiết Sự Kiện (Event Detail Modal)
-1. Nhấp vào bất kỳ sự kiện nào trong danh sách.
-2. Màn hình Chi tiết Sự kiện mở ra cung cấp toàn bộ dữ liệu:
-   - **Banner và Tiêu đề:** Hình ảnh chủ đạo sắc nét, thời gian và địa chỉ tổ chức cụ thể kèm bản đồ dẫn đường.
-   - **Nội dung chương trình (Agenda):** Lịch trình chi tiết từng khung giờ (Đón khách, Khai mạc, Tọa đàm, Ký kết hợp tác, Tiệc tối).
-   - **Danh sách Diễn giả (Keynote Speakers):** Ảnh đại diện, họ tên, chức vụ và chuyên đề thuyết trình.
-   - **Quyền lợi đại biểu:** Tài liệu độc quyền, tea-break, quà tặng lưu niệm.
-   - **Sơ đồ khán phòng:** Vị trí khán phòng và phân khu chỗ ngồi.
-3. Nhấn nút **"Đăng ký tham dự"** ở chân trang.
-
-![Modal Chi tiết Sự kiện trên App Hiệp hội](images/evidence/sub_30_app_event_detail_modal.png)
-*Hình 5.4: Chi tiết sự kiện với đầy đủ lịch trình, diễn giả, quyền lợi và sơ đồ chỗ ngồi.*
-
----
-
-### 5.4. Quy Trình Tham Gia Sự Kiện Miễn Phí (0đ) & Trả Vé Chi Tiết Về Thông Báo & Tin Nhắn
+### 5.3. CASE 1: ĐĂNG KÝ SỰ KIỆN MIỄN PHÍ (0Đ) & NHẬN VÉ PASS ĐIỆN TỬ TỨC THÌ
 Đối với các sự kiện đặc quyền dành cho Hội viên CLB CEO 1983 (giá vé 0đ):
-1. **Đăng Ký 1-Chạm Tức Thì:**
-   - Hội viên nhấn nút **"Đăng ký tham gia ngay (Miễn phí 0đ)"**.
-   - Hệ thống không yêu cầu quét mã VietQR hay thủ tục thanh toán, chuyển ngay trạng thái đăng ký thành công (`confirmed`).
-2. **Cấp Mã Vé & Sinh Mã Số May Mắn Bốc Thăm (#XXXX):**
-   - Tự động sinh mã định danh vé: `REG-1983-FREE-XXXX`.
-   - Cấp tự động **Số may mắn quay thưởng Lucky Draw** gồm 4 chữ số (ví dụ `#5829`, `#1983`) lưu vĩnh viễn trong CSDL sự kiện.
-3. **Trả Vé Chi Tiết Về Trung Tâm Thông Báo (Notification Center):**
-   - Hệ thống bắn ngay một Thông báo đẩy (Push Notification) đến điện thoại: *"🎉 Chúc mừng! Bạn đã nhận vé tham dự sự kiện [Tên Sự Kiện]. Mã vé: REG-XXXX · Số may mắn: #XXXX"*.
-   - Chạm vào thông báo sẽ mở ngay vé điện tử kèm mã QR check-in.
-4. **Gửi Tin Nhắn Kèm Thẻ Vé Tương Tác Vào Hộp Thư (Inbox Messages):**
-   - Ban Thư Ký CLB tự động gửi tin nhắn riêng vào mục Tin Nhắn (`/association/messages`):
-     - Lời chào trân trọng đích danh Hội viên.
-     - Thẻ thông tin vé chi tiết: Tên chương trình, Thời gian bắt đầu, Địa điểm tổ chức, Số lượng vé (1 vé miễn phí), Mã may mắn `#XXXX`.
-     - Lời nhắc nhở xuất trình mã vé tại bàn lễ tân khi tham dự.
-5. **Lưu Vé Trong Mục "Vé Của Tôi":**
-   - Vé hiển thị đầy đủ mã QR động để lễ tân quét mã điểm danh trong 1 giây tại cổng hội trường.
+1. **Xem Chi tiết Sự kiện Miễn phí:**
+   - Chạm vào thẻ sự kiện *"Tọa Đàm Kết Nối Doanh Nghiệp 4.0"* (Miễn phí).
+   - Modal Chi tiết mở ra hiển thị đầy đủ: Banner, Thời gian, Địa điểm kèm bản đồ, Lịch trình, Danh sách Diễn giả và Sơ đồ chỗ ngồi.
+2. **Mở Form Đăng ký Vé Miễn phí:**
+   - Nhấn nút **"Đăng ký tham gia ngay"**.
+   - Form đăng ký hiển thị thông tin người tham dự, số lượng vé và tóm tắt chi phí: `Đơn giá: Miễn phí (0 đ)` · `Tổng phí: 0 đ (Miễn phí)`.
+3. **Xác nhận Đăng ký, Nhận Vé Pass & Email Xác Nhận Tức Thì:**
+   - Nhấn nút **"Xác nhận đăng ký vé miễn phí"**.
+   - Hệ thống tự động xác nhận thành công mà không yêu cầu bước thanh toán:
+     - Tự động sinh mã vé tham dự: `REG-1983-FREE-XXXX`.
+     - Cấp tự động **Mã số may mắn quay thưởng Lucky Draw** (#XXXX) lưu vào CSDL.
+     - Hiển thị hộp thoại **Vé Pass Điện Tử** kèm Mã QR Check-in sắc nét.
+     - **Tự động gửi Email Vé Điện Tử (E-Ticket)** tới địa chỉ email của người đăng ký: Email chứa đầy đủ thông tin sự kiện (Tên sự kiện, Thời gian, Địa điểm tổ chức), thông tin người tham dự (Họ tên, Số điện thoại, Email, Doanh nghiệp, Chức vụ), Số may mắn quay thưởng (#XXXX), và hình ảnh Mã QR Check-in điểm danh.
+     - Tự động gửi vé chi tiết vào mục **Thông Báo** và **Tin Nhắn** nội bộ của hội viên trên App.
+   - **Lưu ý quan trọng về Soát vé & Điểm danh (Check-in UX):**
+     - Người tham gia sự kiện **KHÔNG** tự dùng camera quét mã QR của sự kiện.
+     - Khi đến sự kiện, người tham dự chỉ cần mở Email hoặc mở màn hình **"Vé Sự Kiện Của Tôi"** trên App để xuất trình Mã QR Check-in.
+     - Ban Tổ Chức (Hệ thống CRM / Ban Thư Ký tại bàn đón tiếp) sẽ sử dụng máy quét / camera chuyên dụng để quét mã QR trên vé của người tham dự, đối soát danh sách và điểm danh vào cửa.
 
-![Thẻ Vé Sự Kiện Trả Về Trong Hộp Thư Tin Nhắn & Thông Báo](images/evidence/sub_31_app_event_ticket_pass.png)
-*Hình 5.5: Vé điện tử sự kiện miễn phí (0đ) với mã QR check-in và số may mắn quay thưởng (#XXXX).*
+![Modal Chi tiết Sự kiện Miễn phí (0đ)](images/evidence/sub_30_app_event_detail_modal.png)
+*Hình 5.4: Modal Chi tiết Sự kiện Miễn phí (0đ) với lịch trình, diễn giả và sơ đồ khán phòng.*
 
----
+![Form Đăng ký Vé Sự kiện Miễn phí (0đ)](images/evidence/sub_30a_app_event_free_form.png)
+*Hình 5.5: Form Đăng ký Sự kiện Miễn phí hiển thị bảng tóm tắt chi phí 0 đ.*
 
-### 5.5. Đăng Ký Vé Sự Kiện Có Phí Qua Cổng Thanh Toán VietQR Tự Động
-1. Trường hợp sự kiện có thu phí đóng góp hoặc tiệc Gala:
-   - Hệ thống mở popup **Thanh toán Chuyển khoản VietQR**.
-   - Hiển thị Mã QR động kèm đầy đủ: Số tài khoản ngân hàng thụ hưởng của CLB, Tên ngân hàng, Số tiền vé, Cú pháp chuyển khoản chuẩn tự động (vd: `VE-1983-NAMHAI`).
-   - Hội viên mở ứng dụng ngân hàng quét mã và xác nhận chuyển khoản.
-2. Sau khi kế toán xác nhận hoặc đối soát tự động:
-   - Vé chuyển sang trạng thái Đã Thanh Toán và đồng bộ trả về Thông Báo và Tin Nhắn tương tự luồng vé miễn phí.
-
-![Modal Thanh toán Vé qua Mã VietQR Ngân hàng](images/evidence/08_app_vietqr_payment_modal.png)
-*Hình 5.6: Cổng thanh toán VietQR động tạo mã chuyển khoản tự động kèm cú pháp chuẩn.*
+![Vé Pass Điện Tử Sự Kiện Miễn phí 0đ kèm QR Check-in & Số May Mắn #XXXX](images/evidence/sub_31_app_event_ticket_pass.png)
+*Hình 5.6: Vé Pass Điện Tử xác nhận đăng ký vé 0đ thành công kèm mã QR Check-in và Số may mắn (#XXXX).*
 
 ---
 
-### 5.6. Bình Chọn Trực Tiếp (Live Voting) & Bốc Thăm May Mắn (Lucky Draw)
+### 5.4. CASE 2: ĐĂNG KÝ SỰ KIỆN THU PHÍ (500.000 VNĐ) & THANH TOÁN QUA VIETQR NAPAS 247
+Đối với các sự kiện quy mô lớn có thu phí đóng góp hoặc tiệc Gala Dinner:
+1. **Xem Chi tiết Sự kiện Thu phí:**
+   - Chạm vào thẻ sự kiện *"Đại Hội Thường Niên & Gala Dinner CLB CEO 1983"* (500.000 đ).
+   - Xem chi tiết lịch trình tiệc tối, thực đơn, khách mời danh dự và quyền lợi đại biểu.
+2. **Mở Form Đăng ký Vé & Chọn Số Lượng:**
+   - Nhấn nút **"Đăng ký tham gia ngay"**.
+   - Hội viên chọn số lượng vé (1 vé, 2 vé, hoặc nhập số lượng tùy chọn), chọn hạng vé (Standard / VIP).
+   - Hệ thống tự động tính toán tổng tiền thanh toán: `Đơn giá: 500.000 đ` · `Tổng phí: 500.000 đ` (hoặc nhân theo số lượng vé).
+3. **Xác nhận & Mở Cổng Thanh toán VietQR Napas 247:**
+   - Nhấn nút **"Xác nhận & Gửi đăng ký"**.
+   - Modal Thông Báo & Cổng thanh toán VietQR hiển thị:
+     - Mã đơn vị / Mã hóa đơn thanh toán: `INV-1983-PAID-XXXX`.
+     - Thông tin tài khoản ngân hàng thụ hưởng của CLB CEO 1983.
+     - Mã VietQR Napas 247 động: Chứa sẵn số tiền chính xác và cú pháp chuyển khoản tự động.
+     - Hội viên mở bất kỳ ứng dụng ngân hàng nào quét mã VietQR để thanh toán nhanh trong 3 giây.
+     - Sau khi thanh toán, hệ thống tự động gạch nợ và chuyển vé sang trạng thái chính thức.
+4. **Quản lý Thẻ Vé Check-in Cá Nhân:**
+   - Vào menu **"Check-in của tôi"** (`/association/checkin`) để xem lại toàn bộ các thẻ vé đã đăng ký kèm mã QR động sẵn sàng quét khi tới sự kiện.
+
+![Modal Chi tiết Sự kiện Thu phí Gala Dinner (500.000 đ)](images/evidence/sub_30b_app_event_paid_detail.png)
+*Hình 5.7: Modal Chi tiết Sự kiện Thu phí Gala Dinner hiển thị đơn giá vé 500.000 VNĐ.*
+
+![Form Đăng ký Sự kiện Thu phí có Bảng Tóm Tắt Thanh Toán](images/evidence/sub_30c_app_event_paid_form.png)
+*Hình 5.8: Form Đăng ký Sự kiện Thu phí hiển thị bộ chọn số lượng vé và tổng tiền thanh toán chính xác.*
+
+![Modal Hướng dẫn Thanh toán & Cổng VietQR Napas 247](images/evidence/sub_30d_app_event_paid_qr_modal.png)
+*Hình 5.9: Cổng thanh toán VietQR Napas 247 tự động sinh mã QR chuyển khoản kèm cú pháp chuẩn.*
+
+![Màn hình Thẻ vé Check-in của tôi với Mã QR Động](images/evidence/sub_31b_app_checkin_screen.png)
+*Hình 5.10: Màn hình quản lý vé tham dự và mã QR điểm danh của hội viên.*
+
+---
+
+### 5.5. Bình Chọn Trực Tiếp (Live Voting) & Bốc Thăm May Mắn (Lucky Draw)
 Khi sự kiện đang diễn ra trong hội trường:
 1. **Bình chọn Trực tiếp (Live Voting):**
    - Ban tổ chức kích hoạt phiên biểu quyết từ CRM (vd: Bầu cử Ban chấp hành, Thông qua phương hướng hoạt động).
@@ -271,11 +303,10 @@ Khi sự kiện đang diễn ra trong hội trường:
      - **Tin nhắn chúc mừng tự động** từ Ban Quản Trị được gửi thẳng vào Hộp thư Tin nhắn của người may mắn.
 
 ![Tính năng Bình chọn Trực tiếp Live Voting trong sự kiện](images/evidence/sub_32_app_event_live_voting.png)
-*Hình 5.7: Màn hình bỏ phiếu trực tiếp thời gian thực nhận thông báo đẩy từ CRM.*
+*Hình 5.11: Màn hình bỏ phiếu trực tiếp thời gian thực nhận thông báo đẩy từ CRM.*
 
 ![Tính năng Quay số May mắn Lucky Draw sự kiện](images/evidence/sub_33_app_event_lucky_draw.png)
-*Hình 5.8: Vòng quay số may mắn bốc thăm trúng thưởng dựa trên mã số (#XXXX) cấp cho hội viên.*
-*Hình 5.8: Vòng quay may mắn Lucky Draw theo mã số may mắn và nhận thông báo chúc mừng trúng giải.*
+*Hình 5.12: Vòng quay may mắn Lucky Draw theo mã số may mắn và nhận thông báo chúc mừng trúng giải.*
 
 ---
 

@@ -211,7 +211,26 @@ function EventsScreen() {
     ticketCount: number;
     isFree?: boolean;
     luckyNumber?: string;
+    qrCodeUrl?: string;
+    event?: MyEvent | null;
   } | null>(null);
+  const [ticketPassModal, setTicketPassModal] = useState<{
+    eventTitle: string;
+    ticketCode: string;
+    luckyNumber: string;
+    ticketType: string;
+    ticketCount: number;
+    isFree: boolean;
+    date: string;
+    time: string;
+    location: string;
+    attendeeName: string;
+    attendeePhone?: string;
+    attendeeCompany?: string;
+    attendeePosition?: string;
+    qrUrl: string;
+  } | null>(null);
+
 
   // Form registration state
   const [formName, setFormName] = useState("");
@@ -298,14 +317,18 @@ function EventsScreen() {
       setSelectedEvent(null);
 
       const luckyNum = (res as any)?.luckyNumber || (res as any)?.lucky_number || `#${Math.floor(1000 + Math.random() * 9000)}`;
+      const resolvedInvNo = (res as any)?.invoiceNo || tempInvNo;
+      const resolvedQrUrl = (res as any)?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(resolvedInvNo)}`;
 
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
-        invoiceNo: (res as any)?.invoiceNo || tempInvNo,
+        invoiceNo: resolvedInvNo,
         ticketCount: actualTicketCount,
         isFree,
         luckyNumber: luckyNum,
+        qrCodeUrl: resolvedQrUrl,
+        event: registeringEvent,
       });
 
       if (isFree) {
@@ -324,6 +347,7 @@ function EventsScreen() {
       setSelectedEvent(null);
 
       const fallbackLuckyNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
+      const fallbackQr = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tempInvNo)}`;
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
@@ -331,12 +355,15 @@ function EventsScreen() {
         ticketCount: actualTicketCount,
         isFree,
         luckyNumber: fallbackLuckyNum,
+        qrCodeUrl: fallbackQr,
+        event: registeringEvent,
       });
 
       toast.success(isFree ? `Đăng ký vé miễn phí thành công! Số may mắn: ${fallbackLuckyNum}` : `Đăng ký thành công! Số may mắn: ${fallbackLuckyNum}`);
     } finally {
       setSubmittingReg(false);
     }
+
   }
 
   async function unregister(id: string, evt?: React.MouseEvent) {
@@ -369,20 +396,57 @@ function EventsScreen() {
       />
 
       <div className="px-4 pt-3">
-        <Link to="/association/checkin" className="vba-card flex items-center gap-3 p-3 shadow-xs hover:border-amber-500/40">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#2E3192] text-white shadow-xs">
-            <QrCode className="h-5 w-5" />
+        <button
+          type="button"
+          onClick={() => {
+            if (registeredEvents.length > 0) {
+              const regEvt = registeredEvents[0];
+              const evIdx = events.findIndex((x) => x.id === regEvt.id);
+              const invoiceCode = `REG-${regEvt.id.slice(0, 8).toUpperCase()}`;
+              const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
+              setTicketPassModal({
+                eventTitle: regEvt.title,
+                ticketCode: invoiceCode,
+                luckyNumber: lucky,
+                ticketType: "Standard VIP",
+                ticketCount: 1,
+                isFree: regEvt.ticketPrice === 0 || regEvt.fee === 0,
+                date: regEvt.date,
+                time: regEvt.time,
+                location: regEvt.place || "Hà Nội",
+                attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+                attendeePhone: member?.phone || "",
+                attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+                attendeePosition: member?.title || "Hội viên chính thức",
+                qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`,
+              });
+            } else {
+              setEventCategory("registered");
+              toast.info(isEn ? "You have not registered for any events yet." : "Bạn chưa đăng ký sự kiện nào. Hãy chọn sự kiện bên dưới và đăng ký nhé!");
+            }
+          }}
+          className="w-full text-left vba-card flex items-center gap-3 p-3 shadow-xs hover:border-amber-500/40 cursor-pointer transition active:scale-[0.99]"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-amber-400 shadow-xs">
+            <Ticket className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "Event QR Check-in" : t("m.events.checkin_title")}
+            <div className="text-[13px] font-bold text-[var(--vba-text)] flex items-center gap-1.5">
+              <span>{isEn ? "My Event Passes" : "Vé Sự Kiện Của Tôi"}</span>
+              {registeredEvents.length > 0 && (
+                <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  {registeredEvents.length} vé
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-[var(--vba-text-muted)]">
-              {isEn ? "Scan QR code at venue entrance for fast check-in" : t("m.events.checkin_desc")}
+              {isEn ? "View your confirmed ticket and QR pass for organizers to scan" : "Xem thẻ vé điện tử & mã QR để Ban Tổ Chức quét khi đến sự kiện"}
             </div>
           </div>
-        </Link>
+          <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" />
+        </button>
       </div>
+
 
       {/* Category Tabs: Tất cả, Sự kiện đã đăng ký, Sự kiện đã đánh dấu */}
       <div className="flex items-center gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
@@ -1078,32 +1142,49 @@ function EventsScreen() {
             </div>
 
             {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-center gap-2 text-left">
-                <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. Vui lòng sử dụng mã QR khi tới sự kiện!</span>
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-start gap-2 text-left">
+                <Check className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. <b>Thông tin vé và mã QR Check-in</b> đã được gửi về email của bạn! Ban Tổ Chức sẽ quét mã này khi bạn tới sự kiện.</span>
               </div>
             ) : (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-center gap-2 text-left">
-                <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400" />
-                <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> của bạn.</span>
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2 text-left">
+                <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400 mt-0.5" />
+                <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> và thông tin xác nhận qua email của bạn.</span>
               </div>
             )}
 
             <div className="pt-2 flex flex-col gap-2">
-              {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRegisteredSuccessInfo(null);
-                    navigate({ to: "/association/checkin" });
-                  }}
-                  style={{ color: "#ffffff" }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <span>Xem mã QR Check-in sự kiện</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const info = registeredSuccessInfo;
+                  setRegisteredSuccessInfo(null);
+                  setTicketPassModal({
+                    eventTitle: info.eventTitle,
+                    ticketCode: info.invoiceNo,
+                    luckyNumber: info.luckyNumber || "#1983",
+                    ticketType: "Standard VIP",
+                    ticketCount: info.ticketCount,
+                    isFree: Boolean(info.isFree || info.totalAmount === 0),
+                    date: "Sắp diễn ra",
+                    time: "Theo lịch trình sự kiện",
+                    location: "Địa điểm tổ chức sự kiện",
+                    attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+                    attendeePhone: member?.phone || "",
+                    attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+                    attendeePosition: member?.title || "Hội viên chính thức",
+                    qrUrl: info.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(info.invoiceNo)}`,
+                  });
+                }}
+                style={{ color: "#ffffff" }}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Ticket className="h-3.5 w-3.5 text-amber-400" />
+                <span>Xem Thẻ Vé Điện Tử Của Tôi</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+
+              {!(registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0) && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1111,12 +1192,13 @@ function EventsScreen() {
                     navigate({ to: "/association/messages", search: { peerCode: "admin" } });
                   }}
                   style={{ color: "#ffffff" }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <span>Đến mục Kết nối để thanh toán</span>
+                  <span>Đến mục Kết nối để thanh toán VietQR</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               )}
+
               <button
                 type="button"
                 onClick={() => setRegisteredSuccessInfo(null)}
@@ -1128,6 +1210,78 @@ function EventsScreen() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* MODAL 4: THẺ VÉ ĐIỆN TỬ (TICKET PASS) CÓ MÃ QR ĐỂ BAN TỔ CHỨC QUÉT */}
+      {ticketPassModal && (
+        <Dialog open={!!ticketPassModal} onOpenChange={(open) => !open && setTicketPassModal(null)}>
+          <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
+            {/* Header Ticket Banner */}
+            <div className="bg-gradient-to-br from-[#001A4D] via-[#003B95] to-[#0A192F] p-4 text-white relative">
+              <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
+                <Sparkles className="h-3 w-3" />
+                VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
+              </div>
+              <h3 className="text-base font-black text-white line-clamp-2 leading-snug">
+                {ticketPassModal.eventTitle}
+              </h3>
+              <p className="text-[11px] text-white/80 mt-1">
+                📍 {ticketPassModal.location}
+              </p>
+            </div>
+
+            {/* Ticket Body with QR Code */}
+            <div className="p-4 space-y-3">
+              <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-[#003B95]/30 inline-block shadow-sm">
+                <img
+                  src={ticketPassModal.qrUrl}
+                  alt="Mã QR Vé Sự Kiện"
+                  className="w-48 h-48 mx-auto rounded-lg"
+                />
+                <div className="text-[12px] font-mono font-black text-[#003B95] mt-2">
+                  MÃ VÉ: {ticketPassModal.ticketCode}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 border border-slate-200 dark:border-slate-800 text-xs text-left space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Đại biểu tham dự:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{ticketPassModal.attendeeName}</span>
+                </div>
+                {ticketPassModal.attendeePosition && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Chức vụ:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{ticketPassModal.attendeePosition}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center bg-amber-500/10 rounded-lg p-1.5 border border-amber-500/30">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    Số may mắn (Quay thưởng):
+                  </span>
+                  <span className="font-mono font-black text-sm text-amber-700 dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-500/30">
+                    {ticketPassModal.luckyNumber}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/60 p-2.5 text-[11px] text-blue-900 dark:text-blue-300 text-left leading-relaxed">
+                ℹ️ <b>Lưu ý:</b> Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Tổ Chức quét check-in và nhận thẻ đeo. Mã vé cũng đã được gửi về email của Anh/Chị.
+              </div>
+
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setTicketPassModal(null)}
+                  className="w-full py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold text-xs text-slate-800 dark:text-slate-200 transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
