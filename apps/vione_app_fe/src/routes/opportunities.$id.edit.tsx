@@ -1,13 +1,16 @@
 import { createFileRoute, Link, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, ImagePlus, X } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { useT } from "@/lib/i18n";
 import { ICON_OPTIONS, OPPORTUNITY_TYPES, type OpportunityTypeKey } from "@/lib/opportunities-data";
 import { getOpportunityFn, updateOpportunityFn } from "@/lib/opportunities.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
+import { formatCurrencyInput, parseCurrencyInput } from "@/lib/date-format";
+import { uploadProductMedia } from "@/lib/upload-media";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/opportunities/$id/edit")({
@@ -30,31 +33,21 @@ function EditOpportunityPage() {
   const [title, setTitle] = useState(opp.title);
   const [desc, setDesc] = useState(opp.description);
   const [type, setType] = useState<OpportunityTypeKey>(opp.type);
-  const [budgetMin, setBudgetMin] = useState(opp.budgetMin?.toString() ?? "");
-  const [budgetMax, setBudgetMax] = useState(opp.budgetMax?.toString() ?? "");
+  const [budgetMin, setBudgetMin] = useState(opp.budgetMin ? formatCurrencyInput(opp.budgetMin) : "");
+  const [budgetMax, setBudgetMax] = useState(opp.budgetMax ? formatCurrencyInput(opp.budgetMax) : "");
   const [region, setRegion] = useState(opp.region);
   const [industry, setIndustry] = useState(opp.industry);
   const [deadline, setDeadline] = useState(opp.deadline.slice(0, 10));
   const [emoji, setEmoji] = useState(opp.emoji);
   const [status, setStatus] = useState<"open" | "closed">(opp.status);
+  const [company, setCompany] = useState(opp.company ?? "");
+  const [contactName, setContactName] = useState(opp.contactName ?? "");
+  const [contactPhone, setContactPhone] = useState(opp.contactPhone ?? "");
+  const [contactTitle, setContactTitle] = useState(opp.contactTitle ?? "");
+  const [image, setImage] = useState(opp.image || (opp as any).imageUrl || "");
 
+  // Cho phép quản trị viên / nhân sự CRM chỉnh sửa cơ hội được đăng từ ứng dụng mobile
   const isOwner = opp.posterId === CURRENT_USER_ID;
-  if (!isOwner) {
-    return (
-      <AppShell>
-        <Card className="p-12 text-center">
-          <p className="mb-4 text-sm text-muted-foreground">{t("opp.edit.notOwner")}</p>
-          <Link
-            to="/opportunities/$id"
-            params={{ id: opp.id }}
-            className="text-sm font-semibold text-primary hover:underline"
-          >
-            {t("opp.detail.back")}
-          </Link>
-        </Card>
-      </AppShell>
-    );
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,13 +58,19 @@ function EditOpportunityPage() {
         title: title.trim(),
         description: desc.trim(),
         type,
-        budgetMin: budgetMin ? Number(budgetMin) : undefined,
-        budgetMax: budgetMax ? Number(budgetMax) : undefined,
+        budgetMin: budgetMin ? parseCurrencyInput(budgetMin) : undefined,
+        budgetMax: budgetMax ? parseCurrencyInput(budgetMax) : undefined,
         region: region.trim(),
         industry: industry.trim(),
         deadline: new Date(deadline).toISOString(),
         emoji,
         status,
+        contactName: contactName.trim() || undefined,
+        contactPhone: contactPhone.trim() || undefined,
+        contactTitle: contactTitle.trim() || undefined,
+        company: company.trim() || undefined,
+        image: image || undefined,
+        imageUrl: image || undefined,
       },
     });
     await router.invalidate();
@@ -169,29 +168,69 @@ function EditOpportunityPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMin")}
-              </label>
+              <label className="mb-1.5 block text-xs font-semibold">Doanh nghiệp / Tổ chức</label>
               <input
-                type="number"
-                value={budgetMin}
-                onChange={(e) => setBudgetMin(e.target.value)}
-                placeholder="0"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="VD: Tập đoàn ViConnect"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </div>
             <div>
+              <label className="mb-1.5 block text-xs font-semibold">Người liên hệ</label>
+              <input
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder="VD: Nguyễn Văn A"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Chức vụ người liên hệ</label>
+              <input
+                value={contactTitle}
+                onChange={(e) => setContactTitle(e.target.value)}
+                placeholder="VD: Giám đốc Kinh doanh"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Số điện thoại liên hệ</label>
+              <input
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="VD: 0912345678"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMax")}
+                {t("opp.form.budgetMin")} (VNĐ)
               </label>
               <input
-                type="number"
-                value={budgetMax}
-                onChange={(e) => setBudgetMax(e.target.value)}
+                value={budgetMin}
+                onChange={(e) => setBudgetMin(formatCurrencyInput(e.target.value))}
                 placeholder="0"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.budgetMax")} (VNĐ)
+              </label>
+              <input
+                value={budgetMax}
+                onChange={(e) => setBudgetMax(formatCurrencyInput(e.target.value))}
+                placeholder="0"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
           </div>
@@ -241,6 +280,82 @@ function EditOpportunityPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold">
+              Hình ảnh cơ hội (doanh nghiệp / dự án đính kèm)
+            </label>
+            {image ? (
+              <div className="relative overflow-hidden rounded-xl border border-border bg-secondary/30 p-2.5">
+                <div className="relative h-48 w-full overflow-hidden rounded-lg bg-black/10">
+                  <img
+                    src={resolveMediaUrl(image) || image}
+                    alt={title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.opacity = "0.5";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImage("")}
+                    className="absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white hover:bg-black/80 transition shadow-md"
+                    title="Xóa ảnh"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="mt-2 text-[11px] text-muted-foreground flex items-center justify-between gap-2">
+                  <span className="truncate font-mono">{image}</span>
+                  <label className="cursor-pointer text-xs font-semibold text-primary hover:underline shrink-0">
+                    Thay ảnh khác
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const uploaded = await uploadProductMedia(file, opp.posterId);
+                          setImage(uploaded);
+                          toast.success("Tải ảnh mới thành công");
+                        } catch (err: any) {
+                          toast.error(err?.message || "Lỗi tải ảnh");
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-6 hover:bg-secondary/40 transition">
+                <ImagePlus className="h-8 w-8 text-muted-foreground/60 mb-2" />
+                <p className="text-xs text-muted-foreground mb-3 text-center">
+                  Chưa có hình ảnh. Tải ảnh giới thiệu cơ hội / dự án từ thiết bị
+                </p>
+                <label className="cursor-pointer rounded-lg bg-primary/10 border border-primary/30 px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition">
+                  Chọn ảnh từ máy tính
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const uploaded = await uploadProductMedia(file, opp.posterId);
+                        setImage(uploaded);
+                        toast.success("Tải ảnh thành công");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Lỗi tải ảnh");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 border-t border-border pt-4">

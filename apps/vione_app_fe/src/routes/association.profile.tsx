@@ -121,6 +121,25 @@ function isDeadAvatar(url?: string | null): boolean {
     trimmed.includes("1789634170838-i5o6ez") ||
     trimmed.includes("i5o6ez") ||
     trimmed.includes("d9ut5z") ||
+    trimmed.includes("4qjy8i") ||
+    trimmed.includes("1789886990280-v691rs") ||
+    trimmed.includes("v691rs") ||
+    trimmed.includes("xkmg4w")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isDeadCover(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return true;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === "undefined" || trimmed === "null") return true;
+  if (
+    trimmed.includes("1789887024790-g4pkai") ||
+    trimmed.includes("g4pkai") ||
+    trimmed.includes("i5o6ez") ||
+    trimmed.includes("d9ut5z") ||
     trimmed.includes("4qjy8i")
   ) {
     return true;
@@ -158,6 +177,7 @@ export default function ProfileScreen() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const modalAvatarInputRef = useRef<HTMLInputElement>(null);
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState(false);
@@ -176,9 +196,17 @@ export default function ProfileScreen() {
     if (typeof window !== "undefined") {
       const savedCover = localStorage.getItem("vba_member_cover_photo");
       if (savedCover) {
-        setCoverPhoto(savedCover);
-      } else if (member?.coverUrl || (member as any)?.cover_url) {
-        setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+        if (isDeadCover(savedCover)) {
+          localStorage.removeItem("vba_member_cover_photo");
+          setCoverPhoto(null);
+        } else {
+          setCoverPhoto(savedCover);
+        }
+      } else {
+        const rawCover = member?.coverUrl || (member as any)?.cover_url;
+        if (rawCover && !isDeadCover(rawCover)) {
+          setCoverPhoto(rawCover);
+        }
       }
       const savedAvatar = localStorage.getItem("vba_member_avatar_photo");
       if (savedAvatar) {
@@ -855,20 +883,42 @@ export default function ProfileScreen() {
         {profileExpanded && (
           <div className="border-t border-slate-100 dark:border-slate-800 animate-in fade-in-50 duration-200">
             {/* 1. Ảnh bìa toàn cảnh (Facebook Cover Photo) */}
-            <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-gradient-to-r from-[#2E3192] via-[#0A1A3A] to-[#070D1A]">
-              <img
-                src={coverPhoto || heroImg}
-                alt="Ảnh bìa trang cá nhân"
-                className="h-full w-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-gradient-to-r from-[#0A1A3A] via-[#003B95] to-[#0A1A3A]">
+              {coverPhoto && !coverError && !isDeadCover(coverPhoto) ? (
+                <img
+                  src={resolveMediaUrl(coverPhoto) || coverPhoto}
+                  alt="Ảnh bìa trang cá nhân"
+                  onError={() => {
+                    setCoverError(true);
+                    if (typeof window !== "undefined") {
+                      try {
+                        localStorage.removeItem("vba_member_cover_photo");
+                      } catch {}
+                    }
+                  }}
+                  className="h-full w-full object-cover opacity-90"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#0A1A3A] via-[#003B95] to-[#0A1A3A] relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
+                  <div className="relative flex flex-col items-center gap-1 text-center px-4">
+                    <span className="text-amber-400/90 text-[11px] font-extrabold tracking-widest uppercase">
+                      CLB DOANH NHÂN CEO 1983
+                    </span>
+                    <span className="text-white/70 text-[10.5px]">
+                      Văn Phòng Số Cá Nhân &amp; Không Gian Kết Nối Giao Thương
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
               {/* Nút Đổi ảnh bìa — Nút xanh chuẩn CEO, chữ trắng, viền trắng rõ nét */}
               <button
                 type="button"
                 disabled={uploadingCover}
                 onClick={() => coverInputRef.current?.click()}
-                className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold backdrop-blur-md px-3 py-1.5 text-[11px] border-2 border-white shadow-lg cursor-pointer transition active:scale-95"
+                className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold backdrop-blur-md px-3 py-1.5 text-[11px] border-2 border-white shadow-lg cursor-pointer transition active:scale-95 z-10"
               >
                 <Camera className="h-3.5 w-3.5 text-white" />
                 <span className="text-white font-bold">{uploadingCover ? (isEn ? "Uploading..." : "Đang tải...") : (isEn ? "Edit Cover" : "Đổi ảnh bìa")}</span>

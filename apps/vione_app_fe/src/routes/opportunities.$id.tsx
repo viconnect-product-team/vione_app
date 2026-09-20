@@ -28,6 +28,7 @@ import {
   toggleOpportunityStatusFn,
 } from "@/lib/opportunities.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/opportunities/$id")({
@@ -178,47 +179,46 @@ function OpportunityDetailPage() {
         title={opp.title}
         subtitle={`${opp.industry} · ${opp.region}`}
         actions={
-          isOwner ? (
-            <>
-              <Link
-                to="/opportunities/$id/edit"
-                params={{ id: opp.id }}
-                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
-              >
-                {t("opp.action.edit")}
-              </Link>
-              <button
-                onClick={async () => {
-                  await toggleStatus({ data: { id: opp.id } });
-                  await router.invalidate();
-                }}
-                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
-              >
-                {opp.status === "open" ? t("opp.action.close") : t("opp.action.reopen")}
-              </button>
-              <button
-                onClick={async () => {
-                  if (confirm(t("opp.confirmDelete"))) {
-                    await removeOpp({ data: { id: opp.id } });
-                    navigate({ to: "/opportunities" });
-                  }
-                }}
-                className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" /> {t("opp.action.delete")}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setShowInterest(true)}
-              disabled={opp.status === "closed"}
-              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ background: "var(--gradient-primary)" }}
+          <>
+            <Link
+              to="/opportunities/$id/edit"
+              params={{ id: opp.id }}
+              className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
             >
-              <Send className="h-4 w-4" />
-              {t("opp.action.interest")}
+              {t("opp.action.edit")}
+            </Link>
+            <button
+              onClick={async () => {
+                await toggleStatus({ data: { id: opp.id } });
+                await router.invalidate();
+              }}
+              className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary"
+            >
+              {opp.status === "open" ? t("opp.action.close") : t("opp.action.reopen")}
             </button>
-          )
+            <button
+              onClick={async () => {
+                if (confirm(t("opp.confirmDelete"))) {
+                  await removeOpp({ data: { id: opp.id } });
+                  navigate({ to: "/opportunities" });
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" /> {t("opp.action.delete")}
+            </button>
+            {!isOwner && (
+              <button
+                onClick={() => setShowInterest(true)}
+                disabled={opp.status === "closed"}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Send className="h-4 w-4" />
+                {t("opp.action.interest")}
+              </button>
+            )}
+          </>
         }
       />
 
@@ -226,12 +226,28 @@ function OpportunityDetailPage() {
         {/* Main column */}
         <div className="space-y-6 lg:col-span-2">
           <Card className="overflow-hidden">
-            <div
-              className="flex h-40 items-center justify-center text-7xl"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <span className="drop-shadow-lg">{opp.emoji}</span>
-            </div>
+            {opp.image || (opp as any).imageUrl ? (
+              <div className="relative h-64 w-full overflow-hidden bg-muted/20">
+                <img
+                  src={resolveMediaUrl(opp.image || (opp as any).imageUrl) || opp.image}
+                  alt={opp.title}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+                <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md rounded-xl p-2 text-3xl">
+                  {opp.emoji}
+                </div>
+              </div>
+            ) : (
+              <div
+                className="flex h-40 items-center justify-center text-7xl"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <span className="drop-shadow-lg">{opp.emoji}</span>
+              </div>
+            )}
             <div className="space-y-4 p-6">
               <div className="flex flex-wrap gap-2">
                 <Pill color="primary">{t(opp.type)}</Pill>
@@ -396,6 +412,38 @@ function OpportunityDetailPage() {
               </div>
             </dl>
           </Card>
+
+          {(opp.contactName || opp.contactPhone || opp.company) && (
+            <Card className="p-5 border-primary/30 bg-primary/5">
+              <h3 className="mb-4 text-sm font-semibold flex items-center gap-2 text-primary">
+                <Users className="h-4 w-4" />
+                Thông tin người liên hệ
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="font-semibold text-foreground text-base">
+                    {opp.contactName || "Người liên hệ"}
+                  </div>
+                  {opp.contactTitle && (
+                    <div className="text-xs text-muted-foreground">{opp.contactTitle}</div>
+                  )}
+                </div>
+                {opp.company && (
+                  <div className="text-xs font-medium text-foreground">
+                    🏢 {opp.company}
+                  </div>
+                )}
+                {opp.contactPhone && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-border/50 text-xs">
+                    <Phone className="h-3.5 w-3.5 text-primary" />
+                    <a href={`tel:${opp.contactPhone}`} className="font-semibold text-primary hover:underline">
+                      {opp.contactPhone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           <Card className="p-5">
             <h3 className="mb-4 text-sm font-semibold">{t("opp.detail.poster")}</h3>

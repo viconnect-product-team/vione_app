@@ -1,4 +1,4 @@
-﻿param (
+param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -78,48 +78,39 @@ try {
             }
         }
 
-        function Compress-ToGzip {
+        function Save-And-Compress-DockerImage {
             param(
-                [Parameter(Mandatory = $true)] [string]$TarPath
+                [Parameter(Mandatory = $true)] [string]$ImageName,
+                [Parameter(Mandatory = $true)] [string]$OutGzPath
             )
-            $gzipCmd = Get-Command gzip -ErrorAction SilentlyContinue
-            $gzipPath = $null
-            if ($gzipCmd) {
-                $gzipPath = $gzipCmd.Source
-            } else {
-                $gitCandidates = @(
-                    "C:\Program Files\Git\usr\bin\gzip.exe",
-                    "C:\Program Files (x86)\Git\usr\bin\gzip.exe",
-                    "$env:LOCALAPPDATA\Programs\Git\usr\bin\gzip.exe"
-                )
-                foreach ($c in $gitCandidates) {
-                    if (Test-Path $c) {
-                        $gzipPath = $c
-                        break
-                    }
-                }
+            $gitGzip = "C:\Program Files\Git\usr\bin\gzip.exe"
+            if (-not (Test-Path $gitGzip)) {
+                $found = Get-Command gzip -ErrorAction SilentlyContinue
+                if ($found) { $gitGzip = $found.Source }
             }
 
-            if ($gzipPath) {
-                & $gzipPath -1 -f $TarPath
+            if (Test-Path $gitGzip) {
+                Write-Host "  -> Streaming trực tiếp 'docker save | gzip -1' vào $OutGzPath..." -ForegroundColor Cyan
+                cmd.exe /c "docker save $ImageName | `"$gitGzip`" -1 > `"$OutGzPath`""
+                if ($LASTEXITCODE -ne 0 -or (-not (Test-Path $OutGzPath))) {
+                    throw "Streaming Docker save thất bại cho $ImageName"
+                }
             } else {
-                $outGz = "$TarPath.gz"
-                $nodeCompress = 'const fs = require("fs"); const zlib = require("zlib"); fs.createReadStream(process.argv[1]).pipe(zlib.createGzip({ level: 1 })).pipe(fs.createWriteStream(process.argv[2])).on("finish", () => fs.unlinkSync(process.argv[1]));'
-                node -e $nodeCompress $TarPath $outGz
+                Write-Host "  -> Nén Node Stream vào $OutGzPath..." -ForegroundColor Cyan
+                $nodeCompress = 'const fs = require("fs"); const zlib = require("zlib"); const { spawn } = require("child_process"); const proc = spawn("docker", ["save", process.argv[1]], { stdio: ["ignore", "pipe", "inherit"] }); const out = fs.createWriteStream(process.argv[2]); proc.stdout.pipe(zlib.createGzip({ level: 1 })).pipe(out); proc.on("close", (code) => { if (code !== 0) process.exit(code); });'
+                node -e $nodeCompress $ImageName $OutGzPath
             }
         }
 
-        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) Docker Images cho ViOne Connect..." -ForegroundColor Cyan
+        Write-Host "`n[2/5] Xuất và nén Gzip (.tar.gz) tốc độ cao cho ViOne Connect..." -ForegroundColor Cyan
         if ($buildBE) {
             Invoke-CheckedCommand -Description "Xuất & Nén Backend Image (.tar.gz)" -Action {
-                docker save -o vione-backend.tar vione-backend:latest
-                Compress-ToGzip -TarPath "vione-backend.tar"
+                Save-And-Compress-DockerImage -ImageName "vione-backend:latest" -OutGzPath "vione-backend.tar.gz"
             }
         }
         if ($buildFE) {
             Invoke-CheckedCommand -Description "Xuất & Nén Frontend Image (.tar.gz)" -Action {
-                docker save -o vione-frontend.tar vione-frontend:latest
-                Compress-ToGzip -TarPath "vione-frontend.tar"
+                Save-And-Compress-DockerImage -ImageName "vione-frontend:latest" -OutGzPath "vione-frontend.tar.gz"
             }
         }
     } else {
@@ -160,7 +151,7 @@ try {
         $remoteLoadCmd += "docker load -i vione-frontend.tar.gz; rm -f vione-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env 2>/dev/null || true; touch .env; sed -i 's/\r//g' .env docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml down --remove-orphans; docker rm -f vione-frontend-prod vione-backend-prod vibe_frontend_prod vibe_backend_prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate --remove-orphans"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env 2>/dev/null || true; touch .env; sed -i 's/\r//g' .env docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop frontend backend 2>/dev/null || true; docker rm -f vione-frontend-prod vione-backend-prod vibe_frontend_prod vibe_backend_prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate frontend backend minio"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập ViOne Connect" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD

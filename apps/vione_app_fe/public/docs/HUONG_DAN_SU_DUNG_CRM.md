@@ -1,414 +1,230 @@
-# HƯỚNG DẪN SỬ DỤNG CHI TIẾT HỆ THỐNG WEB CRM QUẢN TRỊ HIỆP HỘI CLB CEO 1983
-**Phân hệ:** Web CRM Admin Portal — **Đơn vị vận hành:** Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983  
-**Nền tảng công nghệ:** VIONE Ecosystem Pro — **Phiên bản:** v2.6.0 Pro  
-**Ngày cập nhật:** 18/09/2026 — **Môi trường:** Live Production Staging (`http://14.225.217.232:5000/auth`)  
-**Tài liệu kèm ảnh chụp thực tế 100% mọi chức năng đang vận hành trong hệ thống**
+# HƯỚNG DẪN THAO TÁC & VẬN HÀNH CHI TIẾT HỆ THỐNG WEB CRM QUẢN TRỊ CLB CEO 1983
+**Phân hệ:** Web CRM Admin Portal — **Đơn vị quản lý:** Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983  
+**Môi trường máy chủ HTTPS:** `https://14.225.217.232:5443`  
+**Liên kết hai chiều với App Hiệp Hội:** `https://14.225.217.232:5444/association`  
+**Tài khoản Quản trị mẫu:** `admin@connect.vn` — **Mật khẩu:** `123456`
 
 ---
 
-## 📑 MỤC LỤC CHI TIẾT
+## 📑 MỤC LỤC CHI TIẾT CÁC PHÂN HỆ QUẢN TRỊ CRM
 
-1. [DANH MỤC TÀI KHOẢN VẬN HÀNH & PHÂN QUYỀN QUẢN TRỊ (RBAC)](#1-danh-mục-tài-khoản-vận-hành--phân-quyền-quản-trị-rbac)
-2. [ĐĂNG NHẬP HỆ THỐNG & GIAO DIỆN CHUẨN XANH - TRẮNG SANG TRỌNG](#2-đăng-nhập-hệ-thống--giao-diện-chuẩn-xanh---trắng-sang-trọng)
+1. [QUY CHUẨN PHÂN QUYỀN VAI TRÒ QUẢN TRỊ (RBAC)](#1-quy-chuẩn-phân-quyền-vai-trò-quản-trị-rbac)
+2. [ĐĂNG NHẬP HỆ THỐNG CRM QUẢN TRỊ BẢO MẬT](#2-đăng-nhập-hệ-thống-crm-quản-trị-bảo-mật)
 3. [BẢNG ĐIỀU KHIỂN TỔNG QUAN (DASHBOARD) & THEO DÕI CHỈ SỐ KPI](#3-bảng-điều-khiển-tổng-quan-dashboard--theo-dõi-chỉ-số-kpi)
-4. [QUẢN TRỊ DANH BẠ HỘI VIÊN & HỒ SƠ DOANH NGHIỆP 360°](#4-quản-trị-danh-bạ-hội-viên--hồ-sơ-doanh-nghiệp-360)
-   - 4.1. Tiếp nhận hồ sơ đăng ký mới từ Landing Page & App
-   - 4.2. Xem Drawer chi tiết hồ sơ hội viên
-   - 4.3. Thao tác Phê duyệt (Approve) & Từ chối (Reject)
-   - 4.4. Phân bổ Ban chuyên môn, Gán vai trò & Phân quyền
-   - 4.5. Khóa, Mở khóa tài khoản & Xuất dữ liệu Excel
-5. [QUẢN TRỊ SỰ KIỆN, SƠ ĐỒ KHÁN PHÒNG & QUÉT MÃ QR CHECK-IN CỔNG](#5-quản-trị-sự-kiện-sơ-đồ-khán-phòng--quét-mã-qr-check-in-cổng)
-   - 5.1. Danh sách sự kiện & Bộ lọc trạng thái
-   - 5.2. Tạo Mới Sự Kiện & Tự Động Bố Cục Banner Theo Từng Loại Sự Kiện
-   - 5.3. Cấu hình Sơ đồ Khán phòng (Cinema Seating Map)
-   - 5.4. Quản lý Danh sách Đăng ký, Mã số May mắn & Quét mã QR Điểm danh tốc độ cao
-6. [QUẢN TRỊ SÀN GIAO THƯƠNG MARKETPLACE (KIỂM DUYỆT & ĐỒNG BỘ APP)](#6-quản-trị-sàn-giao-thương-marketplace-kiểm-duyệt--đồng-bộ-app)
-   - 6.1. Kiểm duyệt sản phẩm đăng tải từ App hội viên
-   - 6.2. Ẩn / Khóa / Mở sản phẩm & Gắn nhãn sản phẩm tiêu biểu
-7. [QUẢN TRỊ CƠ HỘI KẾT NỐI GIAO THƯƠNG B2B (BUSINESS MATCHING SYNC)](#7-quản-trị-cơ-hội-kết-nối-giao-thương-b2b-business-matching-sync)
-   - 7.1. Giám sát các luồng nhu cầu Cần Mua - Cần Bán
-   - 7.2. Theo dõi các thương vụ Claim thành công & Thống kê giá trị giao dịch
-8. [QUẢN LÝ HOẠT ĐỘNG SỰ KIỆN: BÌNH CHỌN TRỰC TIẾP & BỐC THĂM MAY MẮN](#8-quản-lý-hoạt-động-sự-kiện-bình-chọn-trực-tiếp--bốc-thăm-may-mắn)
-   - 8.1. Thiết lập phiên biểu quyết Live Voting thời gian thực & Đẩy thông báo tức thì đến App
-   - 8.2. Cấu hình vòng quay may mắn Lucky Draw theo Mã số vé & Bắn thông báo chúc mừng trúng thưởng
-9. [QUẢN TRỊ DOANH NGHIỆP THÀNH VIÊN (COMPANIES MANAGEMENT)](#9-quản-trị-doanh-nghiệp-thành-viên-companies-management)
-10. [QUẢN LÝ TÀI CHÍNH & HỘI PHÍ THƯỜNG NIÊN & THU CHI (FINANCE & DUES)](#10-quản-lý-tài-chính--hội-phí-thường-niên--thu-chi-finance--dues)
-    - 10.1. Theo dõi BẢNG HỘI PHÍ hội viên theo niên độ
-    - 10.2. Bật / Tắt Gạch nợ Hội phí (Fee Toggle) sau khi đối soát sao kê
-11. [QUẢN LÝ TIN TỨC, NGHỊ QUYẾT & TRUYỀN THÔNG (NEWS & MEDIA)](#11-quản-lý-tin-tức-nghị-quyết--truyền-thông-news--media)
-12. [CẤU HÌNH HỆ THỐNG, TÀI KHOẢN VIETQR THỤ HƯỞNG & NHẬT KÝ KIỂM TOÁN](#12-cấu-hình-hệ-thống-tài-khoản-vietqr-thụ-hưởng--nhật-ký-kiểm-toán)
-13. [CẤU HÌNH BẢO MẬT HTTPS & FAST-DEPLOY TRÊN MÁY CHỦ DEV/STAGING](#13-cấu-hình-bảo-mật-https--fast-deploy-trên-máy-chủ-devstaging)
+4. [QUẢN TRỊ HỘI VIÊN, XÉT DUYỆT HỒ SƠ & TỰ ĐỘNG CẤP TÀI KHOẢN QUA EMAIL](#4-quản-trị-hội-viên-xét-duyệt-hồ-sơ--tự-động-cấp-tài-khoản-qua-email)
+5. [QUẢN TRỊ SỰ KIỆN, SƠ ĐỒ KHÁN PHÒNG & ĐIỀU PHỐI CHECK-IN QR CỔNG](#5-quản-trị-sự-kiện-sơ-đồ-khán-phòng--điều-phối-check-in-qr-cổng)
+6. [QUẢN TRỊ SÀN MARKETPLACE, KIỂM DUYỆT SẢN PHẨM & ĐẨY LÊN APP](#6-quản-trị-sàn-marketplace-kiểm-duyệt-sản-phẩm--đẩy-lên-app)
+7. [GIÁM SÁT CƠ HỘI GIAO THƯƠNG B2B, THEO DÕI DEALS & THỐNG KÊ KINH TẾ](#7-giám-sát-cơ-hội-giao-thương-b2b-theo-dõi-deals--thống-kê-kinh-tế)
+8. [QUẢN TRỊ DOANH NGHIỆP THÀNH VIÊN & BẢN ĐỒ CHUỖI CUNG ỨNG CLB](#8-quản-trị-doanh-nghiệp-thành-viên--bản-đồ-chuỗi-cung-ứng-clb)
+9. [QUẢN LÝ SỔ QUỸ TÀI CHÍNH, ĐỐI SOÁT VIETQR & THU HỘI PHÍ THƯỜNG NIÊN](#9-quản-lý-sổ-quỹ-tài-chính-đối-soát-vietqr--thu-hội-phí-thường-niên)
+10. [CẤU HÌNH TÀI KHOẢN QUẢN TRỊ, NHẬT KÝ KIỂM TOÁN (AUDIT LOGS) & 2FA](#10-cấu-hình-tài-khoản-quản-trị-nhật-ký-kiểm-toán-audit-logs--2fa)
 
 ---
 
-## 1. DANH MỤC TÀI KHOẢN VẬN HÀNH & PHÂN QUYỀN QUẢN TRỊ (RBAC)
+## 1. QUY CHUẨN PHÂN QUYỀN VAI TRÒ QUẢN TRỊ (RBAC)
 
-Hệ thống Web CRM Quản trị áp dụng mô hình phân quyền chặt chẽ Role-Based Access Control:
+Hệ thống Web CRM phân quyền chặt chẽ theo 4 cấp bậc tài khoản, đảm bảo tính bảo mật và đúng phạm vi trách nhiệm:
 
-| STT | Vai Trò Quản Trị | Tài Khoản Email | Mật Khẩu | Quyền Hạn Nghiệp Vụ |
+| STT | Vai Trò Vận Hành | Tài Khoản Email | Mật Khẩu | Quyền Hạn & Phạm Vi Nghiệp Vụ |
 |:---:|---|---|:---:|---|
-| 1 | **Quản Trị Viên Cấp Cao (Super Admin)** | `admin@connect.vn` | `123456` | Toàn quyền kiểm soát hệ thống: Cấu hình hệ thống, duyệt hội viên, tài chính, kiểm toán logs |
-| 2 | **Tổng Thư Ký CLB (Executive Admin)** | `ceo.tongthuky@ceo1983.com` | `123456` | Điều phối hoạt động, thẩm định hồ sơ hội viên mới, xuất bản tin tức, tạo sự kiện |
-| 3 | **Trưởng Ban Sự Kiện (Event Manager)** | `events@ceo1983.com` | `123456` | Tạo và quản lý sự kiện, cấu hình khán phòng, quét mã QR check-in, vận hành Voting & Lucky Draw |
-| 4 | **Trưởng Ban Tài Chính (Finance Manager)** | `finance@ceo1983.com` | `123456` | QUẢN LÝ HỘI PHÍ, đối soát sao kê ngân hàng VietQR, gạch nợ hội phí, báo cáo thu chi |
-
-![CRM: Phân quyền vai trò và phân bổ ban ngành](images/evidence/02_crm_members_roles_permission.png)
-*Hình 1.1: Giao diện quản lý vai trò và phân quyền hạn người dùng trên hệ thống CRM.*
+| 1 | **Quản Trị Viên Cấp Cao (Super Admin)** | `admin@connect.vn` | `123456` | Toàn quyền kiểm soát hệ thống: Quản lý người dùng, duyệt hội viên, tài chính sổ quỹ, phân quyền, cấu hình hệ thống và theo dõi audit logs |
+| 2 | **Tổng Thư Ký CLB (Executive Admin)** | `ceo.tongthuky@ceo1983.com` | `123456` | Tiếp nhận và thẩm định hồ sơ hội viên mới, xuất bản thông cáo báo chí, điều phối hoạt động chung của các ban |
+| 3 | **Trưởng Ban Sự Kiện (Event Manager)** | `events@ceo1983.com` | `123456` | Khởi tạo sự kiện, cấu hình sơ đồ ghế ngồi, quản lý danh sách đăng ký vé, quét QR check-in tại cổng, vận hành Lucky Draw |
+| 4 | **Trưởng Ban Tài Chính (Finance Manager)** | `finance@ceo1983.com` | `123456` | Quản lý sổ quỹ, đối soát sao kê ngân hàng VietQR tự động, gạch nợ hội phí thường niên, xuất phiếu thu PDF và báo cáo kế toán |
 
 ---
 
-## 2. ĐĂNG NHẬP HỆ THỐNG & GIAO DIỆN CHUẨN XANH - TRẮNG SANG TRỌNG
+## 2. ĐĂNG NHẬP HỆ THỐNG CRM QUẢN TRỊ BẢO MẬT
 
-1. Truy cập cổng Web CRM tại địa chỉ: `http://14.225.217.232:5000/auth`.
-2. Giao diện Đăng nhập được thiết kế chuẩn **Xanh Navy - Trắng ngà**, loại bỏ hoàn toàn các thương hiệu không liên quan, làm nổi bật nhận diện Hiệp hội Doanh nghiệp & VIONE Platform:
-   - Biểu tượng huy hiệu hiệp hội trang trọng.
-   - Trường nhập Email quản trị viên.
-   - Trường nhập Mật khẩu bảo mật.
-   - Nút bấm **"Đăng Nhập Quản Trị"** với hiệu ứng chuyển động mượt mà.
-3. Sau khi xác thực thành công, hệ thống điều hướng trực tiếp vào Bảng điều khiển Tổng quan (Dashboard).
+1. **Truy cập cổng quản trị:** Mở trình duyệt máy tính, truy cập: `https://14.225.217.232:5443/auth`.
+2. **Giao diện nhận diện thương hiệu:** Màn hình đăng nhập hiển thị tông màu Xanh Navy - Trắng ngà sang trọng với huy hiệu bảo mật ShieldCheck.
+3. **Thao tác đăng nhập:**
+   - **Tài khoản Email:** Nhập địa chỉ email quản trị `admin@connect.vn`.
+   - **Mật khẩu:** Nhập mật khẩu bảo mật `123456`.
+   - Bấm nút **"Đăng Nhập Hệ Thống"**.
+4. **Cơ chế xác thực:** Hệ thống kiểm tra thông tin, cấp phát JWT Bearer Token an toàn, lưu phiên `sb-access-token` và chuyển hướng trực tiếp vào Bảng điều khiển Tổng quan (Dashboard).
 
-![Màn hình Đăng nhập Web CRM Xanh - Trắng sang trọng](images/evidence/01_crm_login_blue_white.png)
-*Hình 2.1: Màn hình Đăng nhập CRM quản trị chuẩn nhận diện Xanh - Trắng sang trọng.*
+![Đăng Nhập Web CRM Quản Trị](images/evidence/step_14_crm_login_screen.png)
+*Hình 2.1: Màn hình Đăng nhập Web CRM Quản trị an toàn chuẩn nhận diện Xanh - Trắng sang trọng.*
 
 ---
 
 ## 3. BẢNG ĐIỀU KHIỂN TỔNG QUAN (DASHBOARD) & THEO DÕI CHỈ SỐ KPI
 
-Bảng điều khiển Tổng quan (`/`) cung cấp cho Ban Lãnh đạo CLB cái nhìn toàn cảnh về tình hình vận hành:
-- **Thẻ KPI Hội Viên:** Tổng số hội viên chính thức, số lượng hồ sơ mới chờ thẩm định trong tuần, tỷ lệ tăng trưởng thành viên.
-- **Thẻ KPI Sự Kiện:** Số sự kiện đang mở đăng ký, tổng số lượng vé đã phát hành, doanh thu vé sự kiện thu qua VietQR.
-- **Thẻ KPI Kết Nối Giao Thương (B2B):** Số lượng cơ hội kinh doanh đang mở, số thương vụ đã được kết nối (Claimed), ước tính tổng giá trị giao dịch nội khối.
-- **Biểu đồ Tài chính & Hội phí:** Tỷ lệ hội viên đã hoàn thành hội phí năm hiện tại so với cùng kỳ.
+Truy cập đường dẫn `/dashboard` để xem toàn cảnh sức khỏe hoạt động của CLB Doanh Nhân CEO 1983:
 
-![Bảng điều khiển Tổng quan Dashboard KPI CRM](images/evidence/sub_06_crm_dashboard_kpi.png)
-*Hình 3.1: Bảng điều khiển CRM Dashboard với các chỉ số KPI thời gian thực về Hội viên, Sự kiện và Giao thương.*
+1. **Chức năng con 1 — Thẻ KPI Hội Viên:**
+   - Thống kê tổng số lượng hội viên chính thức đang hoạt động.
+   - Thống kê số lượng hồ sơ mới nộp từ Landing Page đang chờ Ban Thư Ký thẩm định.
+   - Tỷ lệ tăng trưởng thành viên mới theo tháng và quý.
+2. **Chức năng con 2 — Thẻ KPI Sự Kiện & Hội Thảo:**
+   - Số lượng sự kiện đang mở đăng ký vé trên App.
+   - Tổng số lượt đại biểu đã xác nhận tham dự và số lượng vé phát hành.
+3. **Chức năng con 3 — Thẻ KPI Giao Thương B2B:**
+   - Tổng số sản phẩm đang niêm yết trên sàn Marketplace.
+   - Số lượng cơ hội giao thương đã được các hội viên kết nối thành công (Claimed Deals).
+4. **Chức năng con 4 — Biểu đồ Tài Chính & Hội Phí Thường Niên:**
+   - Biểu đồ tiến độ hoàn thành hội phí thường niên của toàn bộ hội viên theo năm tài chính.
+   - Báo cáo tổng nguồn thu từ vé sự kiện và tài trợ.
 
----
-
-## 4. QUẢN TRỊ DANH BẠ HỘI VIÊN & HỒ SƠ DOANH NGHIỆP 360°
-
-### 4.1. Tiếp Nhận Hồ Sơ Đăng Ký Mới Từ Landing Page & App
-1. Truy cập menu bên trái: **"Hội viên" ➔ "Danh sách Hội viên"** (`/members`).
-2. Bảng danh sách hội viên hiển thị đầy đủ các cột thông tin:
-   - Họ và tên, Avatar doanh nhân.
-   - Tên công ty pháp nhân, Mã số thuế.
-   - Ban chuyên môn sinh hoạt.
-   - Ngày nộp hồ sơ đăng ký.
-   - Trạng thái: **"Chờ phê duyệt"** (màu vàng), **"Đang hoạt động"** (màu xanh), **"Tạm khóa"** (màu đỏ).
-3. **Cơ chế Đồng Bộ Tự Động Từ Landing Page:**
-   - Khi doanh nhân gửi hồ sơ từ Cổng Landing Page (`https://14.225.217.232:5444/landing/ceo/v1`), hệ thống Backend tự động tạo tài khoản đăng nhập trong `vione_users` và **gửi ngay một bức Email HTML chào mừng chứa tên đăng nhập & mật khẩu ngẫu nhiên** về hòm thư người đăng ký.
-   - Bản ghi hồ sơ được đẩy đồng thời sang CRM dưới trạng thái **"Chờ phê duyệt"** để Ban Thư Ký kiểm tra giấy tờ pháp lý trước khi cấp toàn quyền hội viên.
-
-![CRM: Danh sách Quản lý Hội viên](images/evidence/sub_07_crm_members_list.png)
-*Hình 4.1: Màn hình CRM Quản lý Danh bạ Hội viên và danh sách hồ sơ mới tiếp nhận.*
+![Bảng Điều Khiển Tổng Quan Dashboard KPI](images/evidence/step_15_crm_dashboard_kpi.png)
+*Hình 3.1: Trung tâm chỉ huy Dashboard CRM với các chỉ số KPI vận hành thời gian thực.*
 
 ---
 
-### 4.2. Xem Drawer Chi Tiết Hồ Sơ Hội Viên 360°
-1. Nhấp chuột vào bất kỳ dòng hội viên nào trong danh sách.
-2. Drawer thông tin chi tiết trượt ra từ bên phải màn hình:
-   - **Hồ sơ cá nhân:** CCCD/Hộ chiếu, ngày sinh, số điện thoại, email.
-   - **Hồ sơ pháp nhân:** Giấy phép ĐKKD, vốn điều lệ, lĩnh vực kinh doanh, website.
-   - **Tư cách hội viên:** Số thẻ hội viên dự kiến, người giới thiệu gia nhập CLB.
+## 4. QUẢN TRỊ HỘI VIÊN, XÉT DUYỆT HỒ SƠ & TỰ ĐỘNG CẤP TÀI KHOẢN QUA EMAIL
 
-![CRM: Drawer Chi Tiết Hồ Sơ Hội Viên 360 độ](images/evidence/sub_08_crm_member_detail_drawer.png)
-*Hình 4.2: Drawer xem chi tiết hồ sơ hội viên phục vụ thẩm định tư cách doanh nghiệp.*
+Truy cập menu bên trái: **"Hội viên"** (`https://14.225.217.232:5443/members`):
 
----
+1. **Chức năng con 1 — Bảng dữ liệu hội viên đa năng:**
+   - Hiển thị danh sách đầy đủ: Ảnh đại diện, Họ tên, Tên công ty pháp nhân, Mã số thuế, Ban chuyên môn sinh hoạt, Ngày đăng ký và Trạng thái.
+2. **Chức năng con 2 — Bộ lọc & Tìm kiếm thông minh:**
+   - Tìm kiếm nhanh bằng cách gõ tên doanh nhân, tên công ty (`MediSocial`), số điện thoại hoặc email (`vumikasa6@gmail.com`).
+   - Lọc theo trạng thái: **"Chờ phê duyệt"** (màu vàng), **"Đang hoạt động"** (màu xanh lá), **"Tạm khóa"** (màu đỏ).
+   - Lọc theo Ban ngành: Ban Xúc tiến Thương mại, Ban Sự kiện, Ban Truyền thông, Ban Tài chính.
+3. **Chức năng con 3 — Mở Drawer Thẩm định chi tiết 360°:**
+   - Nhấp chuột vào bất kỳ dòng hội viên nào trên bảng.
+   - Drawer thông tin trượt ra từ bên phải màn hình hiển thị toàn bộ giấy tờ pháp lý, giấy phép kinh doanh, số thẻ hội viên dự kiến và người giới thiệu.
+4. **Chức năng con 4 — Thao tác Phê duyệt (Approve) & Tự động gửi Email:**
+   - Nhấp nút **"Phê duyệt (Approve)"** màu xanh.
+   - Hộp thoại xác nhận hiện ra, bấm **"Xác nhận phê duyệt"**.
+   - **Tiến trình tự động của hệ thống:**
+     - Trạng thái hội viên đổi sang "Đang hoạt động (Active)".
+     - Kích hoạt tài khoản đăng nhập trên Mobile App.
+     - Sinh mã thẻ hội viên định danh (ví dụ `CEO1983-000002`).
+     - Tự động sinh mật khẩu khởi tạo an toàn và **bắn một bức Email HTML chào mừng chứa tài khoản và mật khẩu trực tiếp về hộp thư `vumikasa6@gmail.com`**.
+5. **Chức năng con 5 — Phân bổ Ban chuyên môn & Gán vai trò:**
+   - Trong Drawer, chọn Ban chuyên môn sinh hoạt cho hội viên và gán chức vụ (Chủ tịch, Phó chủ tịch, Ủy viên BCH, Trưởng ban, Hội viên chính thức) ➔ Bấm **"Lưu phân bổ"**.
+6. **Chức năng con 6 — Khóa / Mở khóa tài khoản & Xuất dữ liệu Excel:**
+   - Nhấp nút **"Tạm khóa"** khi hội viên cần tạm dừng sinh hoạt.
+   - Nhấp nút **"Xuất Excel"** để tải toàn bộ danh bạ hội viên phục vụ lưu trữ nội bộ.
 
-### 4.3. Thao Tác Phê Duyệt (Approve) & Từ Chối (Reject)
-1. Trong Drawer chi tiết hoặc tại cột thao tác nhanh trên danh sách:
-   - Nhấp nút **"Phê duyệt (Approve)"**:
-     - Hệ thống hiển thị hộp thoại xác nhận.
-     - Sau khi bấm xác nhận: Trạng thái chuyển sang **"Hoạt động (Active)"**.
-     - CSDL tự động kích hoạt tài khoản đăng nhập trên Mobile App cho hội viên.
-     - Sinh Thẻ Hội Viên VIP Kỹ Thuật Số kèm mã định danh độc bản.
-   - Nhấp nút **"Từ chối (Reject)"**:
-     - Nhập lý do từ chối (vd: Không đúng đối tượng quy chế, thông tin pháp nhân chưa hợp lệ).
-     - Hệ thống lưu vết lý do và thông báo cho doanh nghiệp.
+![Danh Sách Quản Trị Hội Viên CRM](images/evidence/step_16_crm_members_approval.png)
+*Hình 4.1: Bảng quản trị danh bạ hội viên với các bộ lọc trạng thái và công cụ tìm kiếm nhanh.*
 
-![CRM: Thao tác Bấm nút Phê duyệt (Approve) Hội viên](images/evidence/sub_09_crm_approve_action.png)
-*Hình 4.3: Thao tác phê duyệt hội viên chính thức trên Web CRM.*
-
-![CRM: Trạng thái Hội viên đã được Phê duyệt Thành công](images/evidence/05_crm_member_approved.png)
-*Hình 4.4: Thông báo xác nhận phê duyệt thành công - Hội viên được cấp quyền truy cập Mobile App ngay lập tức.*
-
----
-
-### 4.4. Phân Bổ Ban Chuyên Môn & Gán Vai Trò
-1. Trong form chỉnh sửa hội viên, chọn tab **"Tổ chức & Ban ngành"**.
-2. Chọn Ban chuyên môn trực thuộc: Ban Xúc tiến Thương mại, Ban Sự kiện, Ban Truyền thông, Ban Tài chính - Kiểm tra.
-3. Gán chức danh trong hiệp hội: Chủ tịch, Phó chủ tịch, Ủy viên BCH, Trưởng ban, Hội viên chính thức.
-4. Nhấn **"Lưu thông tin"**. Chức danh và phù hiệu này lập tức hiển thị trên Thẻ VIP và App điện thoại của hội viên.
-
-![CRM: Phân quyền vai trò và phân bổ ban ngành](images/evidence/crm_roles_permissions.png)
-*Hình 4.5: Hộp thoại phân quyền vai trò (Super Admin, Executive, Member) và cấp quyền truy cập hệ thống.*
+![Drawer Thẩm Định & Phê Duyệt Hồ Sơ Chi Tiết](images/evidence/step_00c_crm_member_approval_drawer.png)
+*Hình 4.2: Drawer thẩm định thông tin pháp lý doanh nghiệp và nút bấm Phê duyệt kích hoạt gửi mail.*
 
 ---
 
-### 4.5. Khóa, Mở Khóa Tài Khoản & Xuất Dữ Liệu Excel
-1. **Khóa / Tạm dừng tài khoản:**
-   - Đối với các hội viên vi phạm quy chế hoặc NỢ HỘI PHÍ quá hạn, chọn thao tác **"Khóa tài khoản"**.
-   - Hội viên sẽ không thể đăng nhập vào App cho đến khi được mở khóa.
-2. **Xuất Danh sách Hội viên ra Excel:**
-   - Nhấn nút **"Xuất Excel"** ở góc trên bảng.
-   - Hệ thống kết xuất file `.xlsx` chuẩn hóa chứa đầy đủ danh bạ phục vụ in ấn hoặc lưu trữ hành chính.
+## 5. QUẢN TRỊ SỰ KIỆN, SƠ ĐỒ KHÁN PHÒNG & ĐIỀU PHỐI CHECK-IN QR CỔNG
 
-![CRM: Chế độ hiển thị dạng Bảng chi tiết và Xuất dữ liệu Excel](images/evidence/crm_members_table_view.png)
-*Hình 4.6: Chế độ xem danh sách hội viên dạng bảng biểu (Table View) tích hợp tính năng xuất file Excel và phân trang.*
+Truy cập menu bên trái: **"Sự kiện"** (`https://14.225.217.232:5443/events`):
 
----
+1. **Chức năng con 1 — Tạo sự kiện mới (`+ Tạo Sự Kiện`):**
+   - Nhấp nút **"+ Tạo sự kiện mới"** trên thanh công cụ.
+   - Chọn loại hình sự kiện: Diễn đàn kinh tế (Forum), Hội thảo chuyên đề (Workshop), Dạ tiệc kết nối (Networking Gala), Đào tạo kỹ năng (Training).
+   - Hệ thống tự động điền mẫu tiêu đề, gợi ý địa điểm và tạo Live Banner Preview 3D sắc nét.
+   - Cấu hình loại vé: Vé Miễn phí (0đ cho hội viên VIP) hoặc Vé Có phí (tự động gắn tài khoản VietQR thụ hưởng).
+2. **Chức năng con 2 — Cấu hình Sơ đồ Khán phòng (Cinema Seating Map):**
+   - Kéo thả tọa độ các hàng ghế sân khấu (VIP, Kim Cương, Tiêu chuẩn).
+   - Đặt tên hàng ghế, số lượng ghế mỗi dãy và giới hạn quyền chọn chỗ cho từng hạng hội viên.
+3. **Chức năng con 3 — Quản lý Danh sách Đăng ký & Số may mắn (Lucky Draw Number):**
+   - Xem bảng danh sách đại biểu đã đăng ký vé trên App.
+   - Mỗi đại biểu tự động được cấp 1 mã số may mắn `#XXXX` (ví dụ `#1983`, `#2026`) để phục vụ quay thưởng.
+4. **Chức năng con 4 — Điều phối Điểm danh Check-in QR tại cổng:**
+   - Mở công cụ **"Quét mã QR Check-in"** trên CRM (sử dụng webcam laptop hoặc máy quét mã vạch).
+   - Khi hội viên xuất trình mã QR Pass trên điện thoại, đưa vào khung ngắm ➔ Hệ thống xác thực vé dưới 1 giây, hiển thị thông tin đại biểu và đổi trạng thái thành "Đã điểm danh".
+5. **Chức năng con 5 — Vận hành Biểu quyết (Live Voting) & Vòng quay may mắn (Lucky Draw):**
+   - Mở phiên biểu quyết trực tiếp: Đẩy câu hỏi và các phương án bình chọn xuống App của tất cả đại biểu đang có mặt.
+   - Khởi động vòng quay số may mắn: Quay ngẫu nhiên theo danh sách mã số vé may mắn `#XXXX` đã check-in, bấm nút **"Bắn thông báo trúng thưởng"** mạ vàng về điện thoại của người trúng giải.
 
-## 5. QUẢN TRỊ SỰ KIỆN, SƠ ĐỒ KHÁN PHÒNG & QUÉT MÃ QR CHECK-IN CỔNG
-
-### 5.1. Danh Sách Sự Kiện & Bộ Lọc Trạng Thái
-1. Truy cập menu bên trái: **"Sự kiện" ➔ "Danh sách Sự kiện"** (`/events`).
-2. Giao diện hiển thị danh sách các sự kiện lớn nhỏ của hiệp hội:
-   - Tên chương trình, Ngày giờ tổ chức, Địa điểm tổ chức.
-   - Số lượng đại biểu đăng ký / Tổng sức chứa khán phòng.
-   - Trạng thái: Nháp, Đang mở đăng ký, Đang diễn ra, Đã kết thúc.
-
-![CRM: Danh sách Quản lý Sự kiện Hiệp hội](images/evidence/sub_27_crm_events_management.png)
-*Hình 5.1: Màn hình CRM Quản lý Sự kiện tổng hợp toàn bộ các chương trình hội thảo và đại hội.*
-
----
-
-### 5.2. Tạo Mới Sự Kiện: 2 Case Miễn Phí (0đ) & Thu Phí VietQR (500.000 VNĐ)
-Nhấn nút **"+ Tạo Sự Kiện Mới"** để mở Modal cấu hình:
-
-#### Case 1: Sự Kiện Miễn Phí (0đ) Dành Cho Hội Viên
-1. Nhập tiêu đề sự kiện: *"Tọa Đàm Kết Nối Doanh Nghiệp 4.0"*.
-2. Thiết lập đơn giá vé: **`0 đ`**.
-3. Cấu hình lịch trình Agenda, danh sách Diễn giả C-Level và tải lên Banner 16:9 sắc nét.
-4. Khi xuất bản, trên App hội viên sẽ hiển thị nhãn **"Miễn phí (0 đ)"** và cho phép đăng ký nhận vé Pass 1-chạm không cần thanh toán.
-
-![CRM: Modal Tạo Sự Kiện Miễn phí 0đ](images/evidence/crm_06_event_create_modal.png)
-*Hình 5.2a: CRM: Modal tạo sự kiện Miễn phí (0đ) với các thông tin diễn giả và lịch trình.*
-
-#### Case 2: Sự Kiện Thu Phí (500.000 VNĐ)
-1. Nhập tiêu đề sự kiện: *"Đại Hội Thường Niên & Gala Dinner CLB CEO 1983"*.
-2. Thiết lập đơn giá vé: **`500.000 đ`**.
-3. Cấu hình tài khoản ngân hàng thụ hưởng nhận tiền qua cổng VietQR Napas 247.
-4. Khi xuất bản, trên App hội viên sẽ hiển thị nhãn **"500.000 đ / vé"**, mở bảng tóm tắt chi phí và hiển thị mã VietQR động để quét thanh toán.
-
-![CRM: Modal Tạo Sự Kiện Thu Phí Gala Dinner 500k](images/evidence/crm_06b_event_create_paid_modal.png)
-*Hình 5.2b: CRM: Modal tạo sự kiện Thu phí (500.000 VNĐ) tích hợp cổng thanh toán VietQR Napas 247.*
+![Quản Trị Sự Kiện & Điều Phối Check-in](images/evidence/step_17_crm_events_management.png)
+*Hình 5.1: Màn hình Quản lý Sự kiện Hiệp hội, Sơ đồ khán phòng và Công cụ Check-in QR tức thời.*
 
 ---
 
-### 5.3. Cấu Hình Sơ Đồ Khán Phòng (Cinema Seating Map)
-1. Trong màn hình quản lý sự kiện, chọn tab **"Sơ đồ Chỗ Ngồi (Seating Map)"**.
-2. Công cụ đồ họa trực quan cho phép ban tổ chức:
-   - Phân chia các hàng ghế: Hàng A, B (Khu vực VIP - Ban Lãnh đạo), Hàng C, D (Khu vực Khách mời danh dự), Hàng E trở đi (Hội viên tiêu chuẩn).
-   - Đặt màu sắc phân biệt từng hạng ghế.
-   - Khi hội viên đăng ký trên App, số ghế đã chọn sẽ chuyển sang màu xám để tránh trùng lặp.
+## 6. QUẢN TRỊ SÀN MARKETPLACE, KIỂM DUYỆT SẢN PHẨM & ĐẨY LÊN APP
 
-![CRM: Cấu hình Sơ đồ Khán phòng Cinema Map](images/evidence/sub_28_crm_seating_cinema_map.png)
-*Hình 5.3: Công cụ thiết lập sơ đồ khán phòng và gán vị trí ghế ngồi trực quan.*
+Truy cập menu bên trái: **"Marketplace / Sản phẩm"** (`https://14.225.217.232:5443/marketplace`):
 
----
+1. **Chức năng con 1 — Tiếp nhận sản phẩm đăng từ App hội viên:**
+   - Khi hội viên (ví dụ tài khoản `vumikasa6@gmail.com`) đăng bán sản phẩm mới từ App, bài đăng hiển thị ngay tại danh sách kiểm duyệt của CRM.
+2. **Chức năng con 2 — Thẩm định thông tin sản phẩm:**
+   - Kiểm tra ảnh chụp thực tế sản phẩm, tên mặt hàng, đơn vị cung ứng.
+   - Thẩm định 2 mức giá: Giá niêm yết ngoài thị trường và Giá ưu đãi VIP dành cho hội viên CEO 1983.
+3. **Chức năng con 3 — Thao tác Phê duyệt xuất bản:**
+   - Nhấp nút **"Phê duyệt"**: Sản phẩm lập tức được xuất bản lên kệ hàng Marketplace trên App di động của toàn thể hội viên.
+4. **Chức năng con 4 — Gắn nhãn Tiêu biểu (Featured Product):**
+   - Nhấp icon ngôi sao hoặc nút **"Tiêu biểu"** để đưa sản phẩm lên vị trí Banner ưu tiên hàng đầu tại Trang chủ App.
+5. **Chức năng con 5 — Tạm ẩn / Gỡ bỏ sản phẩm:**
+   - Khi sản phẩm hết hàng hoặc phát hiện thông tin không chuẩn xác, quản trị viên nhấp nút **"Tạm ẩn"** để dừng hiển thị trên App.
 
-### 5.4. Quản Lý Danh Sách Đăng Ký & Quét Mã QR Điểm Danh Tốc Độ Cao
-1. **Danh sách Đăng ký:** Xem chi tiết từng đại biểu đã nhận vé, thời gian chuyển khoản VietQR và số ghế.
-2. **Quét Mã QR Điểm Danh (Check-in):**
-   - Ban tổ chức tại cổng đón tiếp mở màn hình **"Điểm danh QR"** trên điện thoại hoặc máy tính bảng kết nối CRM.
-   - Hướng camera vào Mã QR trên Vé Điện Tử (Ticket Pass) của đại biểu.
-   - Hệ thống phát âm thanh "Bíp" xác nhận thành công, màn hình hiển thị ngay: Tên doanh nhân, Công ty, Số ghế và đổi trạng thái sang **"Đã điểm danh"**.
-   - Ngăn chặn hoàn toàn tình trạng vé giả hoặc quét trùng lặp 2 lần.
-
-![CRM: Quản lý Danh sách Đăng ký & Trạng thái Điểm danh Check-in](images/evidence/crm_checkin_management.png)
-*Hình 5.4: Danh sách đại biểu đăng ký tham gia sự kiện và theo dõi trạng thái điểm danh thời gian thực.*
-
-![CRM: Màn hình Quét mã QR Điểm danh Sự kiện Tốc độ cao](images/evidence/crm_checkin_qr_display.png)
-*Hình 5.5: Công cụ hiển thị và quét mã QR Check-in đón tiếp đại biểu tại cổng hội nghị.*
+![Quản Trị Sàn Giao Thương Marketplace](images/evidence/step_18_crm_marketplace_sync.png)
+*Hình 6.1: Giao diện Quản trị Sàn Marketplace, Kiểm duyệt sản phẩm và Điều phối hàng hóa nội khối.*
 
 ---
 
-## 6. QUẢN TRỊ SÀN GIAO THƯƠNG MARKETPLACE (KIỂM DUYỆT & ĐỒNG BỘ APP)
+## 7. GIÁM SÁT CƠ HỘI GIAO THƯƠNG B2B, THEO DÕI DEALS & THỐNG KÊ KINH TẾ
 
-### 6.1. Kiểm Duyệt Sản Phẩm Đăng Tải Từ App Hội Viên
-1. Truy cập CRM menu **"Sàn Giao thương B2B" ➔ "Sản phẩm"** (`/marketplace`).
-2. Danh sách sản phẩm do các doanh nghiệp tự đăng từ App hiển thị chi tiết:
-   - Ảnh sản phẩm, Tên mặt hàng, Tên công ty cung ứng.
-   - Đơn giá thị trường và Mức giá ưu đãi riêng cho hội viên CEO 1983.
-3. Ban Thư ký duyệt nội dung:
-   - Kiểm tra tính phù hợp của hình ảnh và quy chuẩn thông tin.
-   - Bấm **"Phê duyệt"** để sản phẩm xuất hiện trên trang nhất của chợ App.
+Truy cập menu bên trái: **"Cơ hội giao thương"** (`https://14.225.217.232:5443/opportunities`):
 
-![CRM: Kiểm duyệt và Quản trị Sàn giao thương Marketplace](images/evidence/sub_37_crm_marketplace_sync.png)
-*Hình 6.1: Giao diện CRM Quản trị Marketplace - Kiểm soát chất lượng sản phẩm hội viên.*
+1. **Chức năng con 1 — Giám sát các luồng nhu cầu Cần Mua & Cần Bán:**
+   - Bảng kê toàn bộ các thông điệp trao cơ hội hợp tác do hội viên đăng lên từ App (Nhu cầu tìm nhà cung cấp vật tư y tế, tìm đối tác logistics, hợp tác phần mềm).
+2. **Chức năng con 2 — Theo dõi các thương vụ đã kết nối (Claimed Deals):**
+   - Xem chi tiết thương vụ nào đã được đối tác nào tiếp nhận (Claim).
+   - Theo dõi tiến độ đàm phán hợp đồng giữa 2 bên doanh nghiệp.
+3. **Chức năng con 3 — Thống kê giá trị luân chuyển nội khối:**
+   - Đo lường tổng giá trị ngân sách dự kiến của các cơ hội (ví dụ: Tổng giá trị giao dịch đạt hàng chục tỷ VNĐ).
+   - Báo cáo cho Ban Xúc tiến Thương mại định kỳ để hỗ trợ kết nối các thương vụ có quy mô lớn.
 
----
-
-### 6.2. Ẩn / Khóa / Mở Sản Phẩm & Gắn Nhãn Tiêu Biểu
-- **Gắn nhãn Sản phẩm Nổi bật:** Ghim các sản phẩm tiêu biểu lên đầu danh mục Marketplace trên App.
-- **Tạm dừng / Khóa sản phẩm:** Khi sản phẩm hết hàng hoặc nhận phản ánh chất lượng từ các hội viên khác, quản trị viên có thể bấm **"Tạm dừng hiển thị"**.
+![Quản Trị & Giám Sát Cơ Hội Giao Thương B2B](images/evidence/step_19_crm_opportunities_sync.png)
+*Hình 7.1: Màn hình Giám sát Sàn Cơ Hội Giao Thương B2B và Thống kê các Thương vụ Claimed Deals.*
 
 ---
 
-## 7. QUẢN TRỊ CƠ HỘI KẾT NỐI GIAO THƯƠNG B2B (BUSINESS MATCHING SYNC)
+## 8. QUẢN TRỊ DOANH NGHIỆP THÀNH VIÊN & BẢN ĐỒ CHUỖI CUNG ỨNG CLB
 
-### 7.1. Giám Sát Các Luồng Nhu Cầu Cần Mua - Cần Bán
-1. Truy cập CRM menu **"Kết nối Kinh doanh"** (`/opportunities`).
-2. Theo dõi các bài đăng nhu cầu của doanh nghiệp thành viên:
-   - Thống kê các ngành nghề đang có nhu cầu tìm thầu phụ nhiều nhất.
-   - Kiểm soát tính xác thực của các bài đăng có ngân sách lớn.
+Truy cập menu bên trái: **"Doanh nghiệp"** (`https://14.225.217.232:5443/companies`):
 
-![CRM: Giám sát Cơ hội Kết nối Giao thương B2B](images/evidence/sub_42_crm_opportunities_sync.png)
-*Hình 7.1: Màn hình CRM Quản lý Bảng tin Cơ hội Kinh doanh và nhu cầu kết nối.*
+1. **Chức năng con 1 — Quản lý Danh bạ Pháp nhân Doanh nghiệp:**
+   - Danh sách toàn bộ các doanh nghiệp thành viên chính thức của hiệp hội.
+   - Quản lý thông tin: Tên doanh nghiệp đầy đủ, Tên viết tắt, Mã số thuế, Vốn điều lệ, Địa chỉ trụ sở, Website.
+2. **Chức năng con 2 — Phân loại Ngành nghề & Chuỗi Cung ứng:**
+   - Gắn nhãn phân loại ngành: Y tế - Dược phẩm, Xây dựng - Bất động sản, Công nghệ thông tin, F&B, Logistics, Dịch vụ tài chính.
+3. **Chức năng con 3 — Bản đồ Chuỗi Cung ứng Khép kín:**
+   - Giúp Ban Thư Ký tra cứu nhanh doanh nghiệp nào có thể cung ứng đầu vào cho doanh nghiệp khác trong hiệp hội, ưu tiên sử dụng dịch vụ của nhau để giữ dòng tiền trong nội khối CLB CEO 1983.
 
----
-
-### 7.2. Theo Dõi Thương Vụ Claim Thành Công & Thống Kê Giao Dịch
-- Theo dõi các cơ hội đã được hội viên khác nhấn **"Claim Deal"** để hỗ trợ xúc tiến khi cần.
-- Tổng hợp báo cáo giá trị hợp đồng ký kết nội khối định kỳ để báo cáo Đại hội Hiệp hội.
+![Quản Trị Danh Bạ Doanh Nghiệp Thành Viên](images/evidence/step_21_crm_companies_directory.png)
+*Hình 8.1: Danh bạ Quản lý Doanh nghiệp Thành viên và Bản đồ Chuỗi Cung ứng Khép kín.*
 
 ---
 
-## 8. QUẢN LÝ HOẠT ĐỘNG SỰ KIỆN: BÌNH CHỌN TRỰC TIẾP & BỐC THĂM MAY MẮN
+## 9. QUẢN LÝ SỔ QUỸ TÀI CHÍNH, ĐỐI SOÁT VIETQR & THU HỘI PHÍ THƯỜNG NIÊN
 
-### 8.1. Thiết Lập Phiên Biểu Quyết Live Voting Thời Gian Thực & Đẩy Thông Báo App
-1. Truy cập CRM menu **"Hoạt động Sự kiện" ➔ "Biểu quyết & Bầu cử"** (`/voting`).
-2. Nhấn **"+ Tạo Phiên Biểu Quyết"**:
-   - Nhập nội dung câu hỏi biểu quyết (vd: *"Thông qua Nghị quyết Phương hướng Hoạt động Nhiệm kỳ 2026-2031"*).
-   - Nhập các phương án lựa chọn: Đồng ý / Không đồng ý / Ý kiến khác.
-3. Khi MC tuyên bố bắt đầu biểu quyết, quản trị viên bấm **"Kích hoạt Phiên bỏ phiếu"**:
-   - Hệ thống tự động **bắn thông báo đẩy tương tác (Interactive Notification)** về App Hiệp hội của toàn thể hội viên.
-   - Hội viên chỉ cần nhấp vào thông báo là mở ngay popup biểu quyết để chọn phương án và xác nhận biểu quyết trong 3 giây.
-   - Màn hình CRM hiển thị biểu đồ tròn kết quả nhảy số thời gian thực để trình chiếu trực tiếp lên màn hình LED sân khấu.
+Truy cập menu bên trái: **"Tài chính / Hội phí"** (`https://14.225.217.232:5443/fees`):
 
-![CRM: Quản lý Phiên Biểu Quyết Live Voting và Quay số Lucky Draw](images/evidence/crm_12_voting_luckydraw.png)
-*Hình 8.1: Màn hình điều phối phiên biểu quyết trực tiếp và đẩy thông báo tức thì đến App hội viên.*
+1. **Chức năng con 1 — Bảng theo dõi Thu Hội Phí Thường Niên:**
+   - Danh sách chi tiết toàn bộ hội viên theo năm tài chính hiện hành.
+   - Thể hiện trạng thái rõ ràng: **"Đã hoàn thành"** (màu xanh lá) và **"Chưa hoàn thành"** (màu vàng cam).
+2. **Chức năng con 2 — Cơ chế Đối soát Tự động qua VietQR:**
+   - Khi hội viên quét mã VietQR đóng hội phí trên App, cổng thanh toán tự động khớp mã giao dịch `FEE-CEO1983-XXXX`.
+   - Hệ thống tự động gạch nợ trên CRM, gia hạn ngày hết hạn trên App thêm 365 ngày và ghi nhận tăng quỹ hội.
+3. **Chức năng con 3 — Thao tác Gạch nợ Thủ công (Fee Toggle):**
+   - Đối với các khoản đóng tiền mặt trực tiếp hoặc chuyển khoản ủy nhiệm chi ngoài, thủ quỹ nhấp công tắc gạch nợ thủ công để xác nhận đã thu tiền.
+4. **Chức năng con 4 — Gửi Email Nhắc Phí Tự Động:**
+   - Nhấp nút **"Gửi nhắc phí"** đối với những hội viên sắp đến hạn gia hạn để hệ thống gửi thông báo nhắc nhở lịch sự kèm mã VietQR đóng nhanh qua App/Email.
+5. **Chức năng con 5 — Xuất Báo Cáo Sổ Quỹ Thu Chi & Phiếu Thu PDF:**
+   - Xuất sổ quỹ sang file Excel phục vụ công tác kiểm toán của Ban Kiểm Tra.
+   - Tải phiếu thu điện tử PDF có chữ ký số của CLB Doanh Nhân CEO 1983.
 
----
-
-### 8.2. Cấu Hình Vòng Quay May Mắn Lucky Draw & Bắn Thông Báo Chúc Mừng Trúng Thưởng
-1. Chọn tab **"Lucky Draw (Quay số trúng thưởng)"**.
-2. Nhập danh sách các giải thưởng: Giải Đặc biệt, Giải Nhất, Giải Nhì, Giải Tri ân.
-3. **Quay thưởng theo Mã số vé may mắn (#XXXX):**
-   - Hệ thống đồng bộ danh sách người tham gia kèm Mã số may mắn đã cấp khi đăng ký vé.
-   - Vòng quay số hiển thị tên hội viên, công ty và mã số may mắn (vd: `#8492 - Nguyễn Văn Nam (Nam Hải Group)`).
-4. Nhấn **"Bắt đầu quay số"** để thực hiện vòng quay kịch tính trên màn hình LED.
-5. **Kích hoạt gửi thông báo trúng thưởng (Lucky Draw Push Notification):**
-   - Khi chọn được người trúng giải, quản trị viên nhấn nút **"Gửi thông báo trúng"**.
-   - Hệ thống tự động kích hoạt API `POST /voting/lucky-draw/notify`, đẩy đồng thời:
-     - **Thẻ thông báo chúc mừng mạ vàng VIP** kèm biểu tượng cúp vinh danh, tên giải thưởng và mã số may mắn trên App của người trúng giải.
-     - **Tin nhắn chúc mừng tự động** từ Ban Quản Trị gửi thẳng vào Hộp thư Tin nhắn của hội viên.
-
-![CRM: Cấu hình và Vận hành Vòng quay May mắn Lucky Draw](images/evidence/crm_lucky_draw_modal.png)
-*Hình 8.2: Giao diện quay số may mắn Lucky Draw theo mã vé và kích hoạt thông báo chúc mừng trúng thưởng.*
+![Quản Lý Tài Chính & Thu Hội Phí Thường Niên](images/evidence/step_20_crm_finance_fees.png)
+*Hình 9.1: Bảng theo dõi Sổ quỹ Tài chính, Đối soát VietQR và Quản lý Hội phí Thường niên.*
 
 ---
 
-## 9. QUẢN TRỊ DOANH NGHIỆP THÀNH VIÊN (COMPANIES MANAGEMENT)
+## 10. CẤU HÌNH TÀI KHOẢN QUẢN TRỊ, NHẬT KÝ KIỂM TOÁN (AUDIT LOGS) & 2FA
 
-1. Truy cập CRM menu **"Doanh nghiệp"** (`/companies`).
-2. Quản lý toàn bộ hồ sơ pháp nhân của các công ty hội viên trong hiệp hội:
-   - Tên công ty đầy đủ theo giấy phép, Tên viết tắt, Tên thương mại.
-   - Mã số thuế, Ngày thành lập, Địa chỉ đăng ký kinh doanh.
-   - Quy mô nhân sự, Vốn điều lệ, Xếp hạng quy mô (SME / Tập đoàn).
-   - Danh sách các hội viên trực thuộc công ty này.
+Truy cập Avatar góc trên bên phải ➔ **"Cài đặt tài khoản"** (`https://14.225.217.232:5443/account-settings`):
 
-![CRM: Quản lý Doanh nghiệp Thành viên](images/evidence/crm_09_companies_management.png)
-*Hình 9.1: Màn hình CRM Quản lý Hồ sơ Pháp nhân các Doanh nghiệp thành viên.*
+1. **Chức năng con 1 — Quản lý Thông tin Quản trị viên:**
+   - Cập nhật Họ tên người vận hành, Email liên hệ, Số điện thoại hỗ trợ khẩn cấp.
+2. **Chức năng con 2 — Đổi mật khẩu an toàn định kỳ:**
+   - Thay đổi mật khẩu quản trị theo tiêu chuẩn an toàn cao (chữ hoa, chữ thường, số và ký tự đặc biệt).
+3. **Chức năng con 3 — Kích hoạt Xác thực Hai Yếu tố (2FA):**
+   - Bật mã xác thực OTP qua Google Authenticator khi đăng nhập CRM để chống xâm nhập trái phép.
+4. **Chức năng con 4 — Nhật ký Kiểm toán Hệ thống (Audit Trail / Logs):**
+   - Ghi nhận chi tiết thời gian, địa chỉ IP và hành động của mọi tài khoản quản trị: Ai duyệt hội viên nào, ai gạch nợ hội phí, ai tạo sự kiện, đảm bảo tính minh bạch tuyệt đối trong công tác quản trị hội.
 
----
-
-## 10. QUẢN LÝ TÀI CHÍNH & HỘI PHÍ THƯỜNG NIÊN & THU CHI (FINANCE & DUES)
-
-### 10.1. Theo Dõi BẢNG HỘI PHÍ Hội Viên Theo Niên Độ
-1. Truy cập CRM menu **"Tài chính & Hội phí" ➔ "QUẢN LÝ HỘI PHÍ"** (`/fees`).
-2. Bảng theo dõi hiển thị tình trạng đóng hội phí của từng doanh nghiệp:
-   - Kỳ đóng phí: Niên độ 2026 - 2027.
-   - Mức phí hội phí quy định (vd: 10.000.000 VNĐ / năm).
-   - Ngày đóng gần nhất, Ngày hết hạn hiệu lực thẻ.
-   - Trạng thái: **"Đã hoàn thành"** (màu xanh), **"Sắp đến hạn"** (màu cam), **"Quá hạn"** (màu đỏ).
-
-![CRM: QUẢN LÝ HỘI PHÍ THƯỜNG NIÊN](images/evidence/sub_50_crm_fees_management.png)
-*Hình 10.1: Bảng theo dõi tình hình ĐÓNG HỘI PHÍ và thực hiện nghĩa vụ hội phí của các doanh nghiệp.*
-
----
-
-### 10.2. Bật / Tắt Gạch Nợ Hội Phí (Fee Toggle) Sau Khi Đối Soát Sao Kê
-1. Khi doanh nghiệp chuyển khoản hội phí qua VietQR hoặc tài khoản ngân hàng của CLB:
-   - Ban Kế toán kiểm tra sao kê ngân hàng khớp số tiền và cú pháp.
-2. Tìm đến dòng của doanh nghiệp trên bảng `/fees`.
-3. **Thao tác Gạch nợ (Fee Toggle):**
-   - Bật chuyển công tắc gạch nợ sang trạng thái **"BẬT (Đã nộp)"**.
-   - Hệ thống tự động ghi nhận biên lai thu phí vào sổ quỹ kế toán.
-   - **Đồng bộ tức thì sang App:** Thời hạn trên Thẻ Hội Viên VIP của doanh nhân được cộng thêm +1 năm hiệu lực.
-
-![CRM: Thao tác Bật/Tắt Gạch nợ Hội phí](images/evidence/sub_51_crm_companies_fee_toggle.png)
-*Hình 10.2: Công tắc gạch nợ hội phí trên CRM - Cập nhật tự động quyền lợi và hạn thẻ VIP trên App.*
-
----
-
-## 11. QUẢN LÝ TIN TỨC, NGHỊ QUYẾT & TRUYỀN THÔNG (NEWS & MEDIA)
-
-1. Truy cập CRM menu **"Truyền thông & Tin tức"** (`/news`).
-2. Nhấn nút **"+ Soạn Tin Mới"**:
-   - Nhập Tiêu đề bản tin hoạt động hiệp hội.
-   - Chọn Chuyên mục: Tin Đại hội, Bản tin Xúc tiến Thương mại, Quyết định Ban Chấp Hành, Tin Doanh nghiệp Hội viên.
-   - Tải lên ảnh bìa và các hình ảnh phóng sự chất lượng cao.
-   - Soạn thảo nội dung bài viết với trình soạn thảo phong phú (Rich Text Editor).
-3. Tùy chọn **"Gửi Thông Báo Đẩy (Push Notification) Tới App"**:
-   - Khi tích chọn mục này và nhấn **"Xuất bản"**, toàn bộ điện thoại của hội viên sẽ nhận được thông báo về tin tức mới.
-
-![CRM: Quản lý Tin tức, Bài viết và Truyền thông](images/evidence/crm_13_news_management.png)
-*Hình 11.1: Trình quản lý và xuất bản tin tức, nghị quyết hiệp hội đến ứng dụng di động.*
-
----
-
-## 12. CẤU HÌNH HỆ THỐNG, TÀI KHOẢN VIETQR THỤ HƯỞNG & NHẬT KÝ KIỂM TOÁN
-
-### 12.1. Cấu Hình Tài Khoản VietQR Thụ Hưởng
-1. Truy cập CRM menu **"Cài đặt Hệ thống" ➔ "Tài chính & Thanh toán"**.
-2. Thiết lập thông tin tài khoản ngân hàng chính thức của CLB Doanh nhân CEO 1983:
-   - Tên ngân hàng thụ hưởng (vd: Vietcombank, MB Bank, Techcombank).
-   - Số tài khoản ngân hàng.
-   - Tên chủ tài khoản: `CLB DOANH NHAN CEO 1983` hoặc đại diện được ủy quyền.
-   - Cú pháp quy định thanh toán tự động cho Vé sự kiện và Hội phí.
-3. Nhấn **"Lưu cấu hình"**: Toàn bộ mã QR động sinh ra trên App và Web sẽ tự động trỏ về tài khoản này.
-
-![CRM: Cấu hình Tài khoản Ngân hàng và Cổng thanh toán VietQR](images/evidence/crm_settings_finance.png)
-*Hình 12.1: Màn hình cấu hình tài khoản thụ hưởng VietQR và chính sách thanh toán tự động.*
-
----
-
-### 12.2. Quản Lý Danh Sách Quản Trị Viên & Nhật Ký Kiểm Toán (Audit Logs)
-1. **Quản lý Tài khoản Quản trị:** Cấp phát tài khoản mới cho cán bộ thư ký, khóa tài khoản nhân sự nghỉ việc.
-2. **Nhật ký Kiểm toán (Audit Logs):**
-   - Hệ thống tự động ghi lại mọi thao tác quan trọng: Ai duyệt hội viên, ai gạch nợ hội phí, ai tạo sự kiện, vào thời gian nào kèm địa chỉ IP truy cập.
-   - Đảm bảo tính minh bạch và an toàn tuyệt đối cho cơ sở dữ liệu hiệp hội.
-
-![CRM: Nhật ký Kiểm toán Hoạt động Hệ thống (Audit Logs)](images/evidence/crm_audit_logs.png)
-*Hình 12.2: Nhật ký kiểm toán bảo mật và phân quyền ghi vết 100% lịch sử thao tác của các quản trị viên.*
-
----
-
-## 13. CẤU HÌNH BẢO MẬT HTTPS & FAST-DEPLOY TRÊN MÁY CHỦ DEV/STAGING
-
-### 13.1. Kiến Trúc Cấu Hình HTTPS Reverse Proxy
-- Hệ thống máy chủ phát triển (`14.225.217.232`) được trang bị chứng chỉ số SSL/TLS X.509 với SAN hỗ trợ cả địa chỉ IP tĩnh `14.225.217.232`, `localhost`, và tên miền wildcard động `*.14-225-217-232.sslip.io`.
-- Nginx Reverse Proxy được đóng gói Docker (`deploy/ssl/docker-compose.ssl.yml`) với các cổng định tuyến chuyên biệt:
-  - **Cổng 5443 (HTTPS):** Định tuyến bảo mật SSL tới Hệ thống Web CRM Quản trị (`http://localhost:5000`).
-  - **Cổng 5444 (HTTPS):** Định tuyến bảo mật SSL tới Ứng dụng Di động Hiệp Hội CEO 1983 (`http://localhost:5002`).
-  - Tự động kích hoạt HTTP Strict Transport Security (HSTS), TLSv1.2, TLSv1.3 và cơ chế WebSocket Proxy mượt mà cho tính năng Chat/Voting thời gian thực.
-
-### 13.2. Quy Trình Fast-Deploy Triển Khai Nhanh Bản Cập Nhật
-1. **Triển khai bình thường qua PowerShell:**
-   ```powershell
-   ./fast-deploy.ps1 -ServerIp "14.225.217.232" -User "root"
-   ```
-2. **Triển khai kèm kích hoạt chứng chỉ bảo mật HTTPS tự động:**
-   ```powershell
-   ./fast-deploy.ps1 -ServerIp "14.225.217.232" -User "root" -EnableHttps
-   ```
-   - Script tự động đồng bộ mã nguồn, đóng gói Docker container mới, cấu hình Nginx SSL và in danh sách URL kiểm thử:
-     - CRM HTTP: `http://14.225.217.232:5000`
-     - CRM HTTPS: `https://14.225.217.232:5443`
-     - App Hiệp Hội HTTP: `http://14.225.217.232:5002/association`
-     - App Hiệp Hội HTTPS: `https://14.225.217.232:5444/association`
-
----
-*Tài liệu được biên soạn và chuẩn hóa bởi Ban Công nghệ & Kỹ thuật VIONE - Hiệp hội Doanh nhân CEO 1983.*
+![Cấu Hình Tài Khoản Quản Trị & Bảo Mật](images/evidence/step_22_crm_system_settings.png)
+*Hình 10.1: Màn hình Cấu hình Tài khoản Quản trị, Nhật ký kiểm toán và Thiết lập Bảo mật Hệ thống.*

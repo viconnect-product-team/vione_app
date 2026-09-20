@@ -72,19 +72,30 @@ const CATEGORY_VALUES = [
 function mapProduct(r: Row): Product {
   return {
     id: r.id as string,
-    sellerId: r.seller_id as string,
+    sellerId: (r.seller_id || r.sellerId) as string,
     title: r.title as string,
     description: (r.description as string) ?? "",
-    price: Number(r.price),
+    price: Number(r.price || 0),
+    originalPrice: r.original_price != null ? Number(r.original_price) : r.originalPrice != null ? Number(r.originalPrice) : undefined,
+    memberPrice: r.member_price != null ? Number(r.member_price) : r.memberPrice != null ? Number(r.memberPrice) : undefined,
+    unit: (r.unit as string) ?? undefined,
+    company: (r.company as string) ?? undefined,
+    sellerName: (r.seller_name || r.sellerName) as string ?? undefined,
+    sellerPhone: (r.seller_phone || r.sellerPhone) as string ?? undefined,
+    sellerAvatar: (r.seller_avatar || r.sellerAvatar) as string ?? undefined,
     category: r.category as ProductCategoryKey,
     status: r.status as Product["status"],
-    createdAt: r.created_at as string,
+    createdAt: (r.created_at || r.createdAt) as string,
     views: (r.views as number) ?? 0,
     emoji: (r.emoji as string) ?? "🛍️",
-    pdfUrl: (r.pdf_url as string) ?? "",
-    imageUrls: (r.image_urls as string[]) ?? [],
-    websiteUrl: (r.website_url as string) ?? "",
-    facebookUrl: (r.facebook_url as string) ?? "",
+    pdfUrl: (r.pdf_url || r.pdfUrl) as string ?? "",
+    imageUrls: (() => {
+      const list = (r.image_urls || r.imageUrls || (r.images ? (Array.isArray(r.images) ? r.images : [r.images]) : [])) as string[] ?? [];
+      const single = (r.image_url || r.imageUrl || r.image || r.avatar) as string | undefined;
+      return Array.isArray(list) && list.length > 0 ? list : (single ? [single] : []);
+    })(),
+    websiteUrl: (r.website_url || r.websiteUrl) as string ?? "",
+    facebookUrl: (r.facebook_url || r.facebookUrl) as string ?? "",
   };
 }
 
@@ -111,22 +122,7 @@ export const listProductsFn = createServerFn({ method: "GET" })
     try {
       const nestProducts = await fetchNestApiFromServer<any[]>("/marketplace/products", token);
       if (Array.isArray(nestProducts) && nestProducts.length > 0) {
-        const mapped = nestProducts.map((p: any) => ({
-          id: p.id,
-          sellerId: p.sellerId || p.seller_id,
-          title: p.title,
-          description: p.description ?? "",
-          price: Number(p.price),
-          category: p.category as ProductCategoryKey,
-          status: p.status as Product["status"],
-          createdAt: p.createdAt || p.created_at,
-          views: Number(p.views ?? 0),
-          emoji: p.emoji ?? "🛍️",
-          pdfUrl: p.pdfUrl || p.pdf_url || "",
-          imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : (Array.isArray(p.image_urls) ? p.image_urls : []),
-          websiteUrl: p.websiteUrl || p.website_url || "",
-          facebookUrl: p.facebookUrl || p.facebook_url || "",
-        }));
+        const mapped = nestProducts.map((p: any) => mapProduct(p as Row));
         return signProducts(token, mapped);
       }
     } catch (e) {
@@ -165,8 +161,13 @@ export const getProductFn = createServerFn({ method: "GET" })
             createdAt: p.createdAt || p.created_at,
             views: Number(p.views ?? 0),
             emoji: p.emoji ?? "🛍️",
-            pdfUrl: p.pdfUrl || p.pdf_url || "",
-            imageUrls: Array.isArray(p.imageUrls) ? p.imageUrls : (Array.isArray(p.image_urls) ? p.image_urls : []),
+            imageUrls: (() => {
+              const list = Array.isArray(p.imageUrls) && p.imageUrls.length > 0
+                ? p.imageUrls
+                : (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls : []);
+              const single = p.imageUrl || p.image_url || p.image || p.avatar;
+              return list.length > 0 ? list : (single ? [single] : []);
+            })(),
             websiteUrl: p.websiteUrl || p.website_url || "",
             facebookUrl: p.facebookUrl || p.facebook_url || "",
           };
@@ -229,6 +230,12 @@ export const createProductFn = createServerFn({ method: "POST" })
         title: z.string().min(1).max(300),
         description: z.string().min(1).max(4000),
         price: z.number().min(0).max(1e15),
+        originalPrice: z.number().min(0).max(1e15).optional(),
+        memberPrice: z.number().min(0).max(1e15).optional(),
+        unit: z.string().max(50).optional(),
+        company: z.string().max(255).optional(),
+        sellerName: z.string().max(255).optional(),
+        sellerPhone: z.string().max(50).optional(),
         category: z.enum(CATEGORY_VALUES),
         emoji: z.string().min(1).max(16).optional(),
         pdfUrl: z.string().max(2000).optional(),
@@ -252,6 +259,12 @@ export const createProductFn = createServerFn({ method: "POST" })
         title: data.title.trim(),
         description: data.description.trim(),
         price: Math.round(data.price),
+        original_price: data.originalPrice != null ? Math.round(data.originalPrice) : null,
+        member_price: data.memberPrice != null ? Math.round(data.memberPrice) : Math.round(data.price),
+        unit: data.unit?.trim() || null,
+        company: data.company?.trim() || null,
+        seller_name: data.sellerName?.trim() || null,
+        seller_phone: data.sellerPhone?.trim() || null,
         category: data.category,
         status: "active",
         views: 0,
@@ -277,6 +290,12 @@ export const updateProductFn = createServerFn({ method: "POST" })
         title: z.string().min(1).max(300),
         description: z.string().min(1).max(4000),
         price: z.number().min(0).max(1e15),
+        originalPrice: z.number().min(0).max(1e15).optional(),
+        memberPrice: z.number().min(0).max(1e15).optional(),
+        unit: z.string().max(50).optional(),
+        company: z.string().max(255).optional(),
+        sellerName: z.string().max(255).optional(),
+        sellerPhone: z.string().max(50).optional(),
         category: z.enum(CATEGORY_VALUES),
         emoji: z.string().min(1).max(16).optional(),
         pdfUrl: z.string().max(2000).optional(),
@@ -294,6 +313,12 @@ export const updateProductFn = createServerFn({ method: "POST" })
         title: data.title.trim(),
         description: data.description.trim(),
         price: Math.round(data.price),
+        original_price: data.originalPrice != null ? Math.round(data.originalPrice) : null,
+        member_price: data.memberPrice != null ? Math.round(data.memberPrice) : Math.round(data.price),
+        unit: data.unit?.trim() || null,
+        company: data.company?.trim() || null,
+        seller_name: data.sellerName?.trim() || null,
+        seller_phone: data.sellerPhone?.trim() || null,
         category: data.category,
         emoji: data.emoji ?? "🛍️",
         pdf_url: toStoragePath(data.pdfUrl),
@@ -306,9 +331,7 @@ export const updateProductFn = createServerFn({ method: "POST" })
       .select("*")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row
-      ? signProduct((context as any).token, mapProduct(row as Row))
-      : null;
+    return row ? signProduct((context as any).token, mapProduct(row as Row)) : null;
   });
 
 export const deleteProductFn = createServerFn({ method: "POST" })

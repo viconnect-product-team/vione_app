@@ -2,6 +2,7 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
@@ -15,7 +16,8 @@ export class AuthService {
 
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private mailService?: MailService,
   ) {
     this.googleClient = new OAuth2Client();
     this.appleJwksClient = jwksClient({
@@ -106,6 +108,23 @@ export class AuthService {
     });
 
     const { password, ...result } = newUser;
+
+    // Gửi email chào mừng đăng ký thành công về email người đăng ký
+    const targetEmail = (data.email || (data.username?.includes('@') ? data.username : '') || '').trim();
+    if (this.mailService && targetEmail && targetEmail.includes('@')) {
+      const applicantName = data.name || data.fullName || data.username || 'Quý Hội viên';
+      void this.mailService.sendAppWelcomeRegistrationEmail({
+        to: targetEmail,
+        fullName: applicantName,
+        username: data.username,
+        phone: data.phone,
+        companyName: data.company || data.companyName,
+        portalUrl: 'https://14.225.217.232:5444/association/login',
+      }).catch((err) => {
+        console.warn('Could not send app welcome email:', err?.message);
+      });
+    }
+
     return {
       message: 'Registration successful',
       user: {

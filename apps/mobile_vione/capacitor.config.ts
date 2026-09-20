@@ -24,11 +24,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // BẬT CHẾ ĐỘ LIVE DEV SERVER (Tự động cập nhật UI mới nhất khi đẩy code lên server)
 const USE_REMOTE_SERVER = true;
 
-// Cấu hình URL server dev cho ViOne Connect:
-const REMOTE_URL = 'http://14.225.217.232:5000/connect-app';
+// Cấu hình URL server dev cho ViOne Connect (100% HTTPS Cổng 5445):
+const REMOTE_URL = 'https://14.225.217.232:5445/connect-app';
 
-// Cho phép kết nối qua giao thức HTTP (cleartext) với IP server dev
-const CLEARTEXT = true;
+// Chạy 100% bảo mật HTTPS
+const CLEARTEXT = false;
 
 const config: CapacitorConfig = {
   appId: 'ViOneBusinessConnect',
@@ -41,7 +41,16 @@ const config: CapacitorConfig = {
     ? {
         server: {
           url: REMOTE_URL,
-          cleartext: CLEARTEXT
+          cleartext: CLEARTEXT,
+          androidScheme: 'https',
+          allowNavigation: [
+            '14.225.217.232*',
+            '14.225.217.232:5445*',
+            '*.14-225-217-232.sslip.io*',
+            '*.sslip.io*',
+            'vione.vn*',
+            '*.vione.vn*'
+          ]
         }
       }
     : {})

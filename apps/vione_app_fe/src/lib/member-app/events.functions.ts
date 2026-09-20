@@ -15,6 +15,10 @@ export type MyEvent = {
   communityName?: string | null;
   associationName?: string | null;
   associationId?: string | null;
+  image?: string | null;
+  banner?: string | null;
+  ticketPrice?: number;
+  fee?: number;
 };
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];

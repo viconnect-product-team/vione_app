@@ -8877,7 +8877,8 @@ export class ConnectAppService implements OnModuleInit {
     try {
       const opps = await this.prisma.$queryRaw<any[]>`
         SELECT id, poster_id, title, description, type, budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at,
-               claimed_by_id, claimed_by_name, claimed_at, claimed_phone, claimed_company, association_id
+               claimed_by_id, claimed_by_name, claimed_at, claimed_phone, claimed_company, association_id,
+               contact_name, contact_phone, contact_title, company, image
         FROM public.opportunities
         ORDER BY created_at DESC
       `.catch(() => []);
@@ -8915,6 +8916,11 @@ export class ConnectAppService implements OnModuleInit {
           claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
           claimedPhone: r.claimed_phone || undefined,
           claimedCompany: r.claimed_company || undefined,
+          contactName: r.contact_name || undefined,
+          contactPhone: r.contact_phone || undefined,
+          contactTitle: r.contact_title || undefined,
+          company: r.company || undefined,
+          image: r.image || undefined,
         })),
         interests: interests.map(it => ({
           id: String(it.id),
@@ -8969,6 +8975,11 @@ export class ConnectAppService implements OnModuleInit {
           claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
           claimedPhone: r.claimed_phone || undefined,
           claimedCompany: r.claimed_company || undefined,
+          contactName: r.contact_name || undefined,
+          contactPhone: r.contact_phone || undefined,
+          contactTitle: r.contact_title || undefined,
+          company: r.company || undefined,
+          image: r.image || undefined,
         },
         interests: interests.map(it => ({
           id: String(it.id),
@@ -9182,6 +9193,13 @@ export class ConnectAppService implements OnModuleInit {
           estimatedValue: Number(o.estimated_value || bMax || bMin || 0) || undefined,
           budgetMin: bMin,
           budgetMax: bMax,
+          claimed: Boolean(o.claimed_by_id || o.claimed_at || o.claimed_by_name),
+          claimedById: o.claimed_by_id || undefined,
+          claimedByName: o.claimed_by_name || undefined,
+          claimedAt: o.claimed_at ? new Date(o.claimed_at).toISOString() : undefined,
+          claimedPhone: o.claimed_phone || undefined,
+          claimedCompany: o.claimed_company || undefined,
+          status: o.status || 'open',
         };
       });
     } catch {
@@ -10912,7 +10930,9 @@ export class ConnectAppService implements OnModuleInit {
         `;
       }
 
-      // Gửi email tự động thông báo tài khoản & mật khẩu ngẫu nhiên tới Gmail của người đăng ký
+      // Tạm thời chỉ gửi mail khi Admin phê duyệt theo đúng yêu cầu:
+      // "khi người dùng điền thông tin mới trên landing web sau đó admin sẽ phê duyệt và sẽ có mail đẩy thông báo về mail của người ta thôi"
+      /*
       if (this.mailService && email && email.includes('@')) {
         void this.mailService.sendRegistrationAccountEmail({
           to: email,
@@ -10924,6 +10944,7 @@ export class ConnectAppService implements OnModuleInit {
           portalUrl: 'https://14.225.217.232:5444/association/login',
         });
       }
+      */
 
       const targetAssocId = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
       if (targetAssocId) {

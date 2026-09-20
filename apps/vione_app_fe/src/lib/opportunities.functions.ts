@@ -23,6 +23,8 @@ function mapOpportunity(r: Row): Opportunity {
   return {
     id: r.id as string,
     posterId: (r.poster_id || r.posterId) as string,
+    posterName: (r.poster_name || r.posterName) as string ?? undefined,
+    posterAvatar: (r.poster_avatar || r.posterAvatar) as string ?? undefined,
     title: r.title as string,
     description: ((r.description as string) ?? ""),
     type: (r.type as OpportunityTypeKey) ?? "opp.type.partnership",
@@ -35,6 +37,11 @@ function mapOpportunity(r: Row): Opportunity {
     createdAt: (r.created_at || r.createdAt) as string,
     views: ((r.views as number) ?? 0),
     emoji: (r.emoji as string) ?? "💡",
+    contactName: (r.contact_name || r.contactName) as string ?? undefined,
+    contactPhone: (r.contact_phone || r.contactPhone) as string ?? undefined,
+    contactTitle: (r.contact_title || r.contactTitle) as string ?? undefined,
+    company: (r.company) as string ?? undefined,
+    image: (r.image || r.image_url || r.imageUrl) as string ?? undefined,
     claimedById: (r.claimed_by_id || r.claimedById) as string ?? undefined,
     claimedByName: (r.claimed_by_name || r.claimedByName) as string ?? undefined,
     claimedAt: (r.claimed_at || r.claimedAt) as string ?? undefined,
@@ -163,6 +170,10 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
         industry: z.string().min(1).max(200),
         deadline: z.string().min(1).max(64),
         emoji: z.string().min(1).max(16).optional(),
+        contactName: z.string().optional(),
+        contactPhone: z.string().optional(),
+        contactTitle: z.string().optional(),
+        company: z.string().optional(),
         image: z.string().optional(),
         imageUrl: z.string().optional(),
       })
@@ -201,6 +212,10 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
         status: "open",
         views: 0,
         emoji: data.emoji ?? "💡",
+        contact_name: data.contactName?.trim() || null,
+        contact_phone: data.contactPhone?.trim() || null,
+        contact_title: data.contactTitle?.trim() || null,
+        company: data.company?.trim() || null,
         image: data.image || data.imageUrl || null,
       })
       .select("*")
@@ -225,6 +240,10 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         deadline: z.string().min(1).max(64),
         emoji: z.string().min(1).max(16),
         status: z.enum(["open", "closed"]),
+        contactName: z.string().optional(),
+        contactPhone: z.string().optional(),
+        contactTitle: z.string().optional(),
+        company: z.string().optional(),
         image: z.string().optional(),
         imageUrl: z.string().optional(),
       })
@@ -245,6 +264,11 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         deadline: data.deadline,
         emoji: data.emoji,
         status: data.status,
+        contact_name: data.contactName?.trim() || null,
+        contact_phone: data.contactPhone?.trim() || null,
+        contact_title: data.contactTitle?.trim() || null,
+        company: data.company?.trim() || null,
+        image: data.image || data.imageUrl || null,
       })
       .eq("id", data.id)
       .eq("poster_id", memberId)

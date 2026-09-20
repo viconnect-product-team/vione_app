@@ -282,19 +282,25 @@ function ProductsScreen() {
     (member as any)?.executiveRole
   );
 
-  // Check if product was created by current user (or if admin has full rights)
-  const checkIsProductOwner = (p: MyProduct) => {
-    if (isAdmin) return true;
+  // Check if current user is the actual creator/author of this product
+  const checkIsProductAuthor = (p: MyProduct) => {
     if (!member && !user) return false;
     const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
     return Boolean(
-      (currentUserId && p.sellerId === currentUserId) ||
-      ((member as any)?.userId && p.sellerId === (member as any).userId) ||
-      ((member as any)?.id && p.sellerId === (member as any).id) ||
-      (member?.name && p.company?.toLowerCase().includes(member.name.toLowerCase())) ||
-      (member?.title && p.company?.toLowerCase().includes(member.title.toLowerCase()))
+      (currentUserId && p.sellerId && String(p.sellerId).toLowerCase() === String(currentUserId).toLowerCase()) ||
+      ((member as any)?.userId && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).userId).toLowerCase()) ||
+      ((member as any)?.id && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).id).toLowerCase()) ||
+      (member?.code && p.sellerId && String(p.sellerId).toLowerCase() === String(member.code).toLowerCase()) ||
+      (member?.name && p.company && p.company.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
+      (member?.title && p.company && p.company.toLowerCase().trim() === member.title.toLowerCase().trim())
     );
   };
+
+  const checkCanManageProduct = (p: MyProduct) => {
+    return checkIsProductAuthor(p) || isAdmin;
+  };
+
+  const checkIsProductOwner = checkIsProductAuthor;
 
   const allProducts = useMemo(() => {
     const arr = [...(initialProducts || [])];
@@ -503,6 +509,7 @@ function ProductsScreen() {
       company: formCompany.trim() || member?.title || "CLB Doanh Nhân CEO 1983",
       companyIntro: formCompanyIntro.trim(),
       companySize: formCompanySize,
+      sellerId: user?.id || (member as any)?.userId || (member as any)?.id || "ceo1983",
     };
 
     try {
@@ -540,7 +547,8 @@ function ProductsScreen() {
   };
 
   const renderCard = (p: MyProduct) => {
-    const isOwner = checkIsProductOwner(p);
+    const isAuthor = checkIsProductAuthor(p);
+    const canManage = checkCanManageProduct(p);
     const isInterested = interestedIds.includes(p.id);
     const menuOpen = activeProductMenuId === p.id;
     const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80";
@@ -578,8 +586,8 @@ function ProductsScreen() {
               <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white" : ""}`} />
             </button>
 
-            {/* Owner action menu button */}
-            {isOwner && (
+            {/* Owner/Admin action menu button */}
+            {canManage && (
               <div className="absolute left-2 bottom-2">
                 <div className="relative">
                   <button
@@ -670,17 +678,43 @@ function ProductsScreen() {
           </div>
         </div>
 
-        {/* Action Button: Nhận báo giá VIP */}
+        {/* Action Button: Phân quyền tác giả vs khách hàng */}
         <div className="p-2.5 pt-0">
-          <button
-            type="button"
-            onClick={() => handleOpenQuoteModal(p)}
-            style={{ color: "#ffffff" }}
-            className="w-full py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Send className="h-3 w-3 text-amber-300" />
-            <span>Nhận báo giá VIP</span>
-          </button>
+          {isAuthor ? (
+            <div className="flex items-center gap-1.5">
+              <span className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-[11px] font-bold text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+                <BadgeCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Sản phẩm của bạn</span>
+              </span>
+              <button
+                type="button"
+                onClick={(e) => startEditProduct(p, e)}
+                className="py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
+                title="Chỉnh sửa sản phẩm"
+              >
+                <Pencil className="h-3 w-3 text-blue-500" />
+                <span>Sửa</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleDeleteProduct(p.id, e)}
+                className="py-1.5 px-2 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold text-rose-600 transition active:scale-95 cursor-pointer flex items-center"
+                title="Xóa sản phẩm"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleOpenQuoteModal(p)}
+              style={{ color: "#ffffff" }}
+              className="w-full py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Send className="h-3 w-3 text-amber-300" />
+              <span>Nhận báo giá VIP</span>
+            </button>
+          )}
         </div>
       </div>
     );

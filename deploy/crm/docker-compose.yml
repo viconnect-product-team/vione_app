@@ -30,6 +30,7 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - APP_SCOPE=crm_platform
+    user: "0:0"
     volumes:
       - vione-uploads-data:/app/uploads
     ports:

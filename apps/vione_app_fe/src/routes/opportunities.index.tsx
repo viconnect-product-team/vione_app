@@ -12,6 +12,7 @@ import {
   Lightbulb,
   MapPin,
   MessageSquare,
+  Pencil,
   Plus,
   Search,
   Send,
@@ -22,6 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, Card, Pill } from "@/components/dashboard/PageKit";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
@@ -43,10 +45,18 @@ import {
   toggleOpportunityStatusFn,
 } from "@/lib/opportunities.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
+import { useAuth } from "@/context/AuthContext";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { toast } from "sonner";
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/date-format";
+
+function formatCurrencyInput(val: string): string {
+  const digits = val.replace(/\D/g, "");
+  if (!digits) return "";
+  return Number(digits).toLocaleString("vi-VN");
+}
 
 export const Route = createFileRoute("/opportunities/")({
   ssr: false,
@@ -93,11 +103,28 @@ function OpportunityCard({
       <Link
         to="/opportunities/$id"
         params={{ id: opp.id }}
-        className="flex h-28 items-center justify-center text-5xl"
+        className="relative flex h-28 items-center justify-center overflow-hidden text-5xl bg-secondary/30"
         style={{ background: "var(--gradient-primary)" }}
         aria-label={opp.title}
       >
-        <span className="drop-shadow-md">{opp.emoji}</span>
+        {(() => {
+          const img = opp.image || (opp as any).imageUrl;
+          const resolved = resolveMediaUrl(img);
+          if (resolved) {
+            return (
+              <img
+                src={resolved}
+                alt={opp.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
+        <span className="relative z-10 drop-shadow-md">{opp.emoji}</span>
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
@@ -132,6 +159,21 @@ function OpportunityCard({
           <div className="text-muted-foreground">{t("opp.budget")}</div>
           <div className="font-semibold text-foreground">{budget}</div>
         </div>
+
+        {(opp.contactName || opp.contactPhone || opp.company) && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 text-[11px] text-foreground">
+            <div className="font-semibold text-primary flex items-center gap-1">
+              <span>Liên hệ:</span>
+              <span>{opp.contactName || "Người liên hệ"}</span>
+              {opp.contactTitle && <span className="font-normal text-muted-foreground">({opp.contactTitle})</span>}
+            </div>
+            {(opp.company || opp.contactPhone) && (
+              <div className="mt-0.5 text-muted-foreground text-[10.5px]">
+                {[opp.company, opp.contactPhone].filter(Boolean).join(" · ")}
+              </div>
+            )}
+          </div>
+        )}
 
         {opp.claimedByName && (
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-[11px] text-emerald-400">
@@ -207,6 +249,7 @@ function OpportunityCard({
 function NewOpportunityModal({ onClose }: { onClose: () => void }) {
   const t = useT();
   const router = useRouter();
+  const { user } = useAuth();
   const createOpp = useServerFn(createOpportunityFn);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
@@ -220,6 +263,12 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
   );
   const [emoji, setEmoji] = useState("💡");
   const [imageUrl, setImageUrl] = useState("");
+  const [company, setCompany] = useState("");
+  const [contactName, setContactName] = useState(user?.user_metadata?.full_name || "");
+  const [contactPhone, setContactPhone] = useState(
+    (user as any)?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : ""),
+  );
+  const [contactTitle, setContactTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,12 +291,16 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
         title,
         description: desc,
         type,
-        budgetMin: budgetMin ? Number(budgetMin) : undefined,
-        budgetMax: budgetMax ? Number(budgetMax) : undefined,
+        budgetMin: budgetMin ? Number(budgetMin.replace(/\D/g, "")) : undefined,
+        budgetMax: budgetMax ? Number(budgetMax.replace(/\D/g, "")) : undefined,
         region,
         industry,
         deadline: new Date(deadline).toISOString(),
         emoji,
+        contactName: contactName.trim() || undefined,
+        contactPhone: contactPhone.trim() || undefined,
+        contactTitle: contactTitle.trim() || undefined,
+        company: company.trim() || undefined,
         image: imageUrl || undefined,
         imageUrl: imageUrl || undefined,
       },
@@ -349,6 +402,51 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
                 required
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
+              {deadline && (
+                <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                  <span>Hạn chót: {formatDisplayDate(deadline, { withWeekday: true })}</span>
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Doanh nghiệp / Tổ chức</label>
+              <input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="VD: Tập đoàn ViConnect"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Người liên hệ</label>
+              <input
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder="VD: Nguyễn Văn A"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Chức vụ người liên hệ</label>
+              <input
+                value={contactTitle}
+                onChange={(e) => setContactTitle(e.target.value)}
+                placeholder="VD: Giám đốc Kinh doanh"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold">Số điện thoại liên hệ</label>
+              <input
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="VD: 0912345678"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -376,26 +474,24 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMin")}
+                {t("opp.form.budgetMin")} (VNĐ)
               </label>
               <input
-                type="number"
                 value={budgetMin}
-                onChange={(e) => setBudgetMin(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => setBudgetMin(formatCurrencyInput(e.target.value))}
+                placeholder="VD: 50.000.000"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMax")}
+                {t("opp.form.budgetMax")} (VNĐ)
               </label>
               <input
-                type="number"
                 value={budgetMax}
-                onChange={(e) => setBudgetMax(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => setBudgetMax(formatCurrencyInput(e.target.value))}
+                placeholder="VD: 200.000.000"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
           </div>
@@ -774,6 +870,7 @@ function OpportunitiesPage() {
                   </th>
                   <th className="px-4 py-3 border-b border-border text-left">Cơ hội / Tiêu đề</th>
                   <th className="px-4 py-3 border-b border-border text-left">Người tạo cơ hội</th>
+                  <th className="px-4 py-3 border-b border-border text-left">Người liên hệ</th>
                   <th className="px-4 py-3 border-b border-border text-left">Người nhận cơ hội</th>
                   <th className="px-4 py-3 border-b border-border text-left">Phân loại</th>
                   <th className="px-4 py-3 border-b border-border text-left">Ngành & Khu vực</th>
@@ -807,9 +904,30 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Sticky Code */}
-                      <td className="sticky left-[56px] z-10 min-w-[90px] bg-card group-hover:bg-muted/70 px-3 py-3 font-mono text-[12px] font-semibold text-primary border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
-                        <span className="mr-1">{opp.emoji}</span>
-                        OPP-{opp.id.slice(0, 6).toUpperCase()}
+                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-3 py-3 font-mono text-[12px] font-semibold text-primary border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                        <div className="flex items-center gap-1.5">
+                          <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded bg-secondary/40 flex items-center justify-center text-sm">
+                            {(() => {
+                              const img = opp.image || (opp as any).imageUrl;
+                              const resolved = resolveMediaUrl(img);
+                              if (resolved) {
+                                return (
+                                  <img
+                                    src={resolved}
+                                    alt={opp.title}
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = "none";
+                                    }}
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
+                            <span className="relative z-10 text-xs">{opp.emoji}</span>
+                          </div>
+                          <span>OPP-{opp.id.slice(0, 6).toUpperCase()}</span>
+                        </div>
                       </td>
 
                       {/* Title & Description with Tooltip */}
@@ -837,7 +955,7 @@ function OpportunitiesPage() {
                           className="font-semibold text-primary hover:underline text-xs block"
                         >
                           <TruncatedText
-                            text={poster?.name || `Hội viên #${opp.posterId.slice(0, 6)}`}
+                            text={opp.posterName || poster?.name || `Hội viên #${opp.posterId.slice(0, 6)}`}
                             maxWidth="max-w-[160px]"
                           />
                         </Link>
@@ -847,6 +965,32 @@ function OpportunitiesPage() {
                             maxWidth="max-w-[160px]"
                           />
                         </div>
+                      </td>
+
+                      {/* Người liên hệ */}
+                      <td className="px-4 py-3 border-b border-border">
+                        {opp.contactName || opp.contactPhone || opp.company ? (
+                          <div>
+                            <div className="font-semibold text-foreground text-xs">
+                              <TruncatedText
+                                text={`${opp.contactName || "Người liên hệ"}${opp.contactTitle ? ` (${opp.contactTitle})` : ""}`}
+                                maxWidth="max-w-[160px]"
+                              />
+                            </div>
+                            {opp.company && (
+                              <div className="text-[11px] text-muted-foreground">
+                                <TruncatedText text={opp.company} maxWidth="max-w-[160px]" />
+                              </div>
+                            )}
+                            {opp.contactPhone && (
+                              <div className="text-[11px] text-primary font-mono">
+                                {opp.contactPhone}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/60">—</span>
+                        )}
                       </td>
 
                       {/* Người nhận cơ hội */}
@@ -914,6 +1058,14 @@ function OpportunitiesPage() {
                             title={t("tbl.view")}
                           >
                             <Eye className="h-3.5 w-3.5" />
+                          </Link>
+                          <Link
+                            to="/opportunities/$id/edit"
+                            params={{ id: opp.id }}
+                            className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+                            title={t("opp.action.edit")}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
                           </Link>
                           {isOwner ? (
                             <>

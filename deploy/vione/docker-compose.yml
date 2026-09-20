@@ -25,7 +25,9 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - PORT=4000
+    user: "0:0"
+    volumes:
+      - vione-uploads-data:/app/uploads
     ports:
       - "127.0.0.1:${TARGET_PROD_PORT_BACKEND:-5001}:4000"
     depends_on:
@@ -55,7 +57,10 @@ services:
 volumes:
   vione-minio-data-prod:
     driver: local
+  vione-uploads-data:
+    name: vione-uploads-data
 
 networks:
   vione-network:
     name: vione-network
+    external: true

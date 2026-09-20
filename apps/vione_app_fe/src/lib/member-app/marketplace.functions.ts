@@ -47,7 +47,7 @@ export const listMyProducts = createServerFn({ method: "GET" })
           price: formattedPrice,
           originalPrice: p.originalPrice || p.original_price ? `${Number(p.originalPrice || p.original_price).toLocaleString("vi-VN")} đ` : undefined,
           memberPrice: p.memberPrice || p.member_price ? `${Number(p.memberPrice || p.member_price).toLocaleString("vi-VN")} đ` : undefined,
-          sellerId: p.sellerId || p.seller_id,
+          sellerId: p.sellerId || p.seller_id || p.userId || p.user_id || p.authorId || p.author_id,
         };
       });
     } catch {

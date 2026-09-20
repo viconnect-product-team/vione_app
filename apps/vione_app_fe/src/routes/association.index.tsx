@@ -272,6 +272,7 @@ function Home() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("vba_member_cover_photo");
   });
+  const [coverError, setCoverError] = useState(false);
 
   useEffect(() => {
     if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
@@ -432,12 +433,22 @@ function Home() {
       {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ BỎ MÃ QR TRÊN ẢNH BÌA) ── */}
       <div className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-amber-500/50">
         {/* Ảnh bìa to rộng (Cover Banner) */}
-        <div className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0f4c9c]">
-          <img
-            src={coverPhoto || member?.coverUrl || (member as any)?.cover_url || heroImg}
-            alt="Cover Banner"
-            className="h-full w-full object-cover opacity-85"
-          />
+        <div className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0A1A3A]">
+          {coverPhoto && !coverError ? (
+            <img
+              src={resolveMediaUrl(coverPhoto) || coverPhoto}
+              alt="Cover Banner"
+              onError={() => {
+                setCoverError(true);
+                try { localStorage.removeItem("vba_member_cover_photo"); } catch {}
+              }}
+              className="h-full w-full object-cover opacity-85"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#19194D] via-[#2E3192] to-[#0A1A3A]">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/65" />
 
           {/* Huy hiệu VIP GOLD góc trên bên phải ảnh bìa (Đã bỏ mã QR) */}

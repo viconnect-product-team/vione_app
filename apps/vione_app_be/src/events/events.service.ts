@@ -759,14 +759,23 @@ export class EventsService {
       UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventId}
     `.catch(() => null);
 
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+
     if (memberCode) {
       if (isFree) {
-        // Sự kiện Free: Gửi tin nhắn xác nhận vé miễn phí thành công kèm số may mắn
-        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã ĐĂNG KÝ THÀNH CÔNG VÉ MIỄN PHÍ tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé điện tử: ${regId}\n- Số may mắn quay thưởng (Lucky Draw): #${luckyNum}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái vé: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng xuất trình mã vé QR tại bàn đón tiếp sự kiện.`;
+        // Sự kiện Free: Gửi tin nhắn chào mừng & Thẻ Vé Điện Tử (VIP E-Ticket Pass có mã QR)
+        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng gửi tới Anh/Chị Vé Điện Tử tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé: ${regId}\n- Số may mắn (Lucky Draw): #${luckyNum}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra'}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng sử dụng Thẻ Vé Điện Tử và mã QR bên dưới để xuất trình tại bàn đón tiếp sự kiện.`;
+
+        const ticketActionMsg = `[action:ticket|eventId:${eventId}|eventTitle:${encodeURIComponent(event.title || event.name || 'Sự kiện')}|ticketCode:${regId}|lucky:${luckyNum}|time:${encodeURIComponent(event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra')}|location:${encodeURIComponent(event.location || 'Địa điểm tổ chức sự kiện')}|attendee:${encodeURIComponent(memberName)}|qr:${encodeURIComponent(qrCodeUrl)}|type:${encodeURIComponent(ticketType)}|count:${ticketCount}]`;
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW())
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW() - interval '1 second')
+        `.catch(() => {});
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${ticketActionMsg}, NOW())
         `.catch(() => {});
 
         // Gửi thông báo đẩy cá nhân (business_notifications)
@@ -820,9 +829,9 @@ export class EventsService {
       }
     }
 
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
-
-    // Tự động gửi Email xác nhận vé sự kiện điện tử (E-Ticket) kèm Mã QR Check-in
+    // Thông báo vé sự kiện đẩy trực tiếp về App Hiệp Hội (E-Ticket, QR Check-in, Tin nhắn Action Card)
+    // Tạm thời chỉ gửi mail khi đăng ký tài khoản theo yêu cầu hệ thống.
+    /*
     if (email && email.includes('@')) {
       this.mailService.sendEventTicketEmail({
         to: email,
@@ -844,6 +853,7 @@ export class EventsService {
         this.logger.warn(`Failed to dispatch event ticket email to ${email}: ${err?.message}`);
       });
     }
+    */
 
     return {
       ok: true,

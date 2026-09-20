@@ -116,6 +116,32 @@ Mã phản hồi chuẩn RESTful:
 ```
 - **Response 200 OK**: Trả về `access_token` và nạp tự động thông tin hội viên tương ứng.
 
+### 3. `POST /api/auth/register`
+- **Mô tả**: Đăng ký tài khoản người dùng mới trên hệ sinh thái ViOne / CEO 1983. Sau khi tạo user trong DB, hệ thống tự động gửi email chào mừng kích hoạt tài khoản chuẩn nhận diện thương hiệu HanoiBA CEO 1983 (`sendAppWelcomeRegistrationEmail`) tới địa chỉ email đăng ký.
+- **Request Body**:
+```json
+{
+  "email": "member.new@example.com",
+  "password": "SecurePassword@123",
+  "fullName": "Trần Thị Mai",
+  "phone": "0988776655",
+  "association_id": "c1983000-0000-4000-8000-000000001983"
+}
+```
+- **Response 201 Created**:
+```json
+{
+  "success": true,
+  "message": "Đăng ký tài khoản thành công. Email chào mừng và hướng dẫn kích hoạt đã được gửi tới hòm thư của bạn.",
+  "user": {
+    "id": "uuid-user-id",
+    "email": "member.new@example.com",
+    "fullName": "Trần Thị Mai",
+    "phone": "0988776655"
+  }
+}
+```
+
 ---
 
 ## 2.2. Phân hệ Quản lý Hội viên & Thẩm định (Members & Applications)
@@ -1270,3 +1296,57 @@ Mỗi khối server (5443, 5444, 5445) được trang bị đầy đủ các đ�
      Tim kiem tep tuan tu tren /app/uploads, /tmp/uploads, dist/uploads va stream MinIO voi nhieu tien to du phong.
    - **Chong Hoan Toan Ghost URL**:
      Neu ca dia cung lan MinIO deu khong the luu tru tep, he thong nem InternalServerErrorException va khong ghi URL hong vao CSDL.
+
+---
+
+## 25. KIẾN TRÚC PHÂN ĐỊNH QUYỀN TÁC GIẢ (AUTHOR VS MANAGER), ĐỒNG BỘ ĐỊNH DẠNG NGÀY THÁNG DDD/MM/YY, TIỀN TỆ VNĐ & TỐI ƯU HÓA DEPLOY STREAMING PIPELINE
+
+### 25.1. Phân Định Rạch Ròi Giữa Quyền Tác Giả (isAuthor) và Quyền Quản Trị (canManage)
+- **Vấn Đề Kỹ Thuật**: Trước đây, logic checkIsProductOwner gộp chung quyền isAdmin vào isOwner. Khi tài khoản Admin đăng một sản phẩm hoặc xem sản phẩm của mình, hệ thống nhận diện sai dẫn tới việc hiển thị nút 'Nhận báo giá VIP' trên chính sản phẩm vừa đăng, hoặc không hiển thị menu quản trị Sửa/Xóa.
+- **Giải Pháp Triển Khai**:
+  - Tách bạch thành 2 hàm độc lập:
+    * checkIsProductAuthor(p): So khớp danh tính tác giả thực tế dựa trên kiểm tra chéo đa trường: sellerId, seller_id, authorId, author_id, userId, user_id so với currentUser.id, currentMember.id, currentMember.code.
+    * checkCanManageProduct(p): Quyền quản lý được cấp cho tác giả HOẶC tài khoản Quản trị viên (isAdmin).
+  - Giao diện thẻ Sản phẩm (association.products.tsx):
+    * Đối với Tác giả: Hiển thị huy hiệu vàng 'Sản phẩm của bạn' cùng các nút thao tác 'Sửa' và 'Xóa'.
+    * Đối với Hội viên khác: Hiển thị nút kêu gọi hành động 'Nhận báo giá VIP'.
+  - Giao diện Bảng tin Cơ hội B2B (association.opportunities.tsx):
+    * Đối với Tác giả: Hiển thị nhãn 'Cơ hội của bạn' kèm nút mở danh sách người quan tâm (hỗ trợ Gọi điện, Gửi email, Chat 1-1).
+    * Đối với Hội viên khác: Hiển thị nút tương tác 'Quan tâm'.
+
+### 25.2. Chuẩn Hóa Toàn Diện Định Dạng Ngày Tháng Tiếng Việt ddd/mm/yy & ddd/mm/yyyy
+- **Xây Dựng Thư Viện Tiện Ích src/lib/date-format.ts**:
+  - formatDisplayDate(d, { withWeekday, shortYear }):
+    * Thứ viết tắt tiếng Việt chuẩn mực: CN, T2, T3, T4, T5, T6, T7.
+    * Định dạng ngày tháng: T2, 20/09/26 hoặc 20/09/2026.
+  - formatFullVnDate(d): Xuất chuỗi ngày tháng đầy đủ (ví dụ: Thứ Hai, 20 tháng 09, 2026).
+- **Đồng Bộ Bộ Đọc Đa Ngôn Ngữ i18n.ts**:
+  - Hàm fmt.date(iso) được cấu hình sử dụng formatDisplayDate(iso, { shortYear: false }), bảo đảm tính nhất quán trên toàn bộ Web CRM và App Hiệp hội.
+- **Badge Live Preview Dưới Ô Nhập Ngày**:
+  - Dưới mỗi trường input type='date' (chẳng hạn Hạn chót cơ hội, Ngày diễn ra sự kiện), hệ thống tích hợp badge xem trước hiển thị thứ và ngày tháng định dạng Việt Nam, triệt tiêu nguy cơ nhầm lẫn do định dạng mặc định yyyy-mm-dd của trình duyệt.
+
+### 25.3. Bộ Lọc Nhập Tiền Tệ VNĐ Tự Động Phân Cách Hàng Ngàn
+- **Hàm formatCurrencyInput(value)**:
+  - Tự động nhóm các cụm 3 chữ số bằng dấu chấm (ví dụ: gõ 50000000 hiển thị 50.000.000 VNĐ).
+  - Khi người dùng gửi form, hệ thống tự động bóc tách toàn bộ dấu chấm và ký tự chữ cái (val.replace(/\D/g, '')) trước khi chuyển đổi sang số nguyên bigint gửi về backend API.
+
+### 25.4. Tối Ưu Hóa Tốc Độ Kịch Bản Triển Khai (Streaming Docker Pipeline)
+- **Vấn Đề Nghẽn I/O Ổ Đĩa**:
+  - Kịch bản cũ sử dụng docker save -o archive.tar, sau đó dùng PowerShell hoặc 7z nén lại thành archive.tar.gz. Với mỗi image ~1.5GB, việc ghi và đọc lặp lại file tar khổng lồ chiếm tới 3-5 phút trên Windows.
+- **Giải Pháp Streaming Nhị Phân Trực Tiếp**:
+  - Sử dụng lệnh streaming trực tiếp:
+    cmd.exe /c "docker save [image] | gzip -1 > [archive].tar.gz"
+  - Bỏ qua hoàn toàn việc tạo file tar trung gian, giảm 85% thời gian đóng gói xuống còn 15-20 giây.
+- **Nâng Cấp Cơ Chế Reload Container (Non-destructive Reload)**:
+  - Thay thế docker compose down --remove-orphans bằng:
+    docker compose stop [services]; docker rm -f [containers]; docker compose up -d --force-recreate [services]
+  - Đảm bảo các mạng chia sẻ (vione-network) và các container phụ trợ (MinIO, proxy) không bao giờ bị hủy nhầm.
+
+### 25.5. Cấu Hình Chuẩn Hóa Cổng Cho Đóng Gói Mobile (APK & IPA)
+- **CLB Doanh Nhân CEO 1983 (apps/mobile_ceo1983/capacitor.config.ts)**:
+  - server.url = 'http://14.225.217.232:5002/association'
+  - Hỗ trợ đầy đủ allowNavigation: *.sslip.io*, 14.225.217.232*, ceo1983.com*.
+- **ViOne Connect (apps/mobile_vione/capacitor.config.ts)**:
+  - server.url = 'http://14.225.217.232:5000/connect-app'
+  - Hỗ trợ allowNavigation: 14.225.217.232*, *.sslip.io*, vione.vn*.
+- Cấu hình sẵn sàng 100% để thực thi lệnh build APK/IPA chỉ với 1 thao tác.

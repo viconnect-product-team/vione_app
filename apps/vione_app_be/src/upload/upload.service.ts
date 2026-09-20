@@ -14,6 +14,7 @@ export class UploadService {
 
   private async saveToLocalDisk(subfolder: string, filename: string, buffer: Buffer): Promise<string> {
     const candidates = [
+      path.join('/app', 'uploads', subfolder),
       path.join(process.cwd(), 'uploads', subfolder),
       path.join('/tmp', 'uploads', subfolder),
       path.join(process.cwd(), 'dist', 'uploads', subfolder),

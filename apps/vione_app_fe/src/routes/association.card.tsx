@@ -375,6 +375,7 @@ function CardScreen() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("vba_member_cover_photo");
   });
+  const [coverError, setCoverError] = useState(false);
 
   useEffect(() => {
     if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
@@ -577,12 +578,22 @@ function CardScreen() {
         {member && (
           <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md overflow-hidden transition hover:border-amber-500/50">
             {/* Ảnh bìa to rộng (Cover Banner) kèm Mã QR hiện trực tiếp trên ảnh bìa */}
-            <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0f4c9c]">
-              <img
-                src={coverPhoto || heroImg}
-                alt="Cover Banner"
-                className="h-full w-full object-cover opacity-85"
-              />
+            <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]">
+              {coverPhoto && !coverError ? (
+                <img
+                  src={resolveMediaUrl(coverPhoto) || coverPhoto}
+                  alt="Cover Banner"
+                  onError={() => {
+                    setCoverError(true);
+                    try { localStorage.removeItem("vba_member_cover_photo"); } catch {}
+                  }}
+                  className="h-full w-full object-cover opacity-85"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]">
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
 
               {/* VIP badge on cover banner (bỏ QR ở ảnh bìa theo yêu cầu) */}
@@ -749,31 +760,22 @@ function CardScreen() {
                 </a>
               </div>
 
-              {/* Direct Profile Actions: Nhắn tin, Chia sẻ hồ sơ & Sửa hồ sơ */}
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <Link
-                  to="/association/messages"
-                  search={{ peerCode: member.code }}
-                  style={{ color: "#ffffff" }}
-                  className="flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
-                >
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  <span>Nhắn tin</span>
-                </Link>
+              {/* Direct Profile Actions: Chia sẻ hồ sơ & Sửa hồ sơ (Đã xóa nút Nhắn tin cho chính mình) */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 <button
                   type="button"
                   onClick={handleShareProfile}
-                  className="flex items-center justify-center gap-1 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[11px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[12px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer shadow-xs"
                 >
-                  {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
-                  <span>{copiedLink ? "Đã chép" : "Chia sẻ"}</span>
+                  {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4" />}
+                  <span>{copiedLink ? "Đã chép liên kết" : "Chia sẻ hồ sơ"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="flex items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/60 py-2.5 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/60 py-2.5 text-[12px] font-bold text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer shadow-xs"
                 >
-                  <Pencil className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span>Sửa hồ sơ</span>
                 </button>
               </div>

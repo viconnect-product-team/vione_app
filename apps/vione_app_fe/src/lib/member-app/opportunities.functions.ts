@@ -25,6 +25,13 @@ export type MyOpportunity = {
   budgetMin?: number;
   budgetMax?: number;
   views?: number;
+  claimed?: boolean;
+  claimedById?: string;
+  claimedByName?: string;
+  claimedAt?: string;
+  claimedPhone?: string;
+  claimedCompany?: string;
+  status?: string;
 };
 
 // ---------- Opportunities ----------

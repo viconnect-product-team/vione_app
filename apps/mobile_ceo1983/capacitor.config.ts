@@ -24,12 +24,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // CẤU HÌNH LIVE SERVER: Mở trực tiếp App Hiệp Hội CEO 1983 chuẩn
 const USE_REMOTE_SERVER = true;
 
-// URL Cổng Web chính thức của Phân hệ Hiệp hội CLB Doanh Nhân CEO 1983
-export const REMOTE_URL = 'http://14.225.217.232:5002/association';
-export const WEB_PORTAL_URL = 'http://14.225.217.232:5002/association';
+// URL Cổng Web chính thức của Phân hệ Hiệp hội CLB Doanh Nhân CEO 1983 (100% HTTPS Cổng 5444)
+export const REMOTE_URL = 'https://14.225.217.232:5444/association';
+export const WEB_PORTAL_URL = 'https://14.225.217.232:5444/association';
 
-// Cho phép kết nối qua giao thức HTTP (cleartext) với IP server dev để đồng bộ dữ liệu API
-const CLEARTEXT = true;
+// Chạy 100% bảo mật HTTPS
+const CLEARTEXT = false;
 
 const config: CapacitorConfig = {
   appId: 'vn.ceo1983.app',
@@ -44,9 +44,12 @@ const config: CapacitorConfig = {
     cleartext: CLEARTEXT,
     allowNavigation: [
       '14.225.217.232*',
-      '*.14.225.217.232*',
+      '14.225.217.232:5444*',
+      '*.14-225-217-232.sslip.io*',
+      '*.sslip.io*',
       'ceo1983.com*',
-      '*.ceo1983.com'
+      '*.ceo1983.com*',
+      'api.qrserver.com*'
     ]
   }
 };

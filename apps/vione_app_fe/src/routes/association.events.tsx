@@ -34,6 +34,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, type MyEvent, type MyMember } from "@/lib/member-app.functions";
 import { resolveMediaUrl } from "@/lib/api-client";
+import { formatDisplayDate } from "@/lib/date-format";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import eventImg from "@/assets/vba-event.jpg";
@@ -176,7 +177,7 @@ function EventsScreen() {
   const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>({});
 
   // Category & bookmark state
-  const [eventCategory, setEventCategory] = useState<"all" | "registered" | "bookmarked">("all");
+  const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked">("all");
   const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -199,6 +200,19 @@ function EventsScreen() {
       }
       return next;
     });
+  };
+
+  const isEventFree = (e: MyEvent) => {
+    const rawPrice = (e as any).ticketPrice !== undefined && (e as any).ticketPrice !== null
+      ? Number((e as any).ticketPrice)
+      : ((e as any).fee !== undefined ? Number((e as any).fee) : 0);
+    return rawPrice === 0;
+  };
+
+  const getEventPrice = (e: MyEvent) => {
+    return (e as any).ticketPrice !== undefined && (e as any).ticketPrice !== null
+      ? Number((e as any).ticketPrice)
+      : ((e as any).fee !== undefined ? Number((e as any).fee) : 0);
   };
 
   // Modals state
@@ -250,11 +264,17 @@ function EventsScreen() {
 
   const events = serverEvents || [];
 
+  const freeEvents = events.filter((e) => isEventFree(e));
+  const paidEvents = events.filter((e) => !isEventFree(e));
   const registeredEvents = events.filter((e) => isRegistered(e));
   const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
 
   const filteredEvents =
-    eventCategory === "registered"
+    eventCategory === "free"
+      ? freeEvents
+      : eventCategory === "paid"
+      ? paidEvents
+      : eventCategory === "registered"
       ? registeredEvents
       : eventCategory === "bookmarked"
       ? bookmarkedEventsList
@@ -410,9 +430,9 @@ function EventsScreen() {
                 luckyNumber: lucky,
                 ticketType: "Standard VIP",
                 ticketCount: 1,
-                isFree: regEvt.ticketPrice === 0 || regEvt.fee === 0,
-                date: regEvt.date,
-                time: regEvt.time,
+                isFree: Boolean((regEvt as any).ticketPrice === 0 || (regEvt as any).fee === 0 || (regEvt as any).isFree),
+                date: regEvt.date || "",
+                time: regEvt.time || "",
                 location: regEvt.place || "Hà Nội",
                 attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
                 attendeePhone: member?.phone || "",
@@ -448,10 +468,12 @@ function EventsScreen() {
       </div>
 
 
-      {/* Category Tabs: Tất cả, Sự kiện đã đăng ký, Sự kiện đã đánh dấu */}
+      {/* Category Tabs: Tất cả, Miễn phí, Có phí, Sự kiện đã đăng ký, Sự kiện đã đánh dấu */}
       <div className="flex items-center gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
         {[
           { id: "all", label: isEn ? "All" : "Tất cả", count: events.length },
+          { id: "free", label: isEn ? "Free" : "Miễn phí", count: freeEvents.length },
+          { id: "paid", label: isEn ? "Paid" : "Có phí", count: paidEvents.length },
           { id: "registered", label: isEn ? "Registered" : "Sự kiện đã đăng ký", count: registeredEvents.length },
           { id: "bookmarked", label: isEn ? "Bookmarked" : "Sự kiện đã đánh dấu", count: bookmarkedEventsList.length },
         ].map((tabItem) => {
@@ -513,7 +535,11 @@ function EventsScreen() {
         {!loading && filteredEvents.length === 0 && (
           <div className="py-10 text-center">
             <p className="text-[13px] text-[var(--vba-text-dim)]">
-              {eventCategory === "registered"
+              {eventCategory === "free"
+                ? (isEn ? "No free events available" : "Hiện không có sự kiện miễn phí nào")
+                : eventCategory === "paid"
+                ? (isEn ? "No paid events available" : "Hiện không có sự kiện có phí nào")
+                : eventCategory === "registered"
                 ? (isEn ? "You have not registered for any events yet" : "Bạn chưa đăng ký tham gia sự kiện nào")
                 : eventCategory === "bookmarked"
                 ? (isEn ? "You have not bookmarked any events yet" : "Bạn chưa đánh dấu sự kiện nào")
@@ -599,11 +625,20 @@ function EventsScreen() {
 
                     {/* 1. TOP BAR: BOOKMARK & REGISTERED BADGE */}
                     <div className="relative z-10 flex items-center justify-between p-3.5">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-semibold text-white border border-white/20">
                           <MapPin className="h-2.5 w-2.5 text-sky-400" />
                           {e.place?.split(",")[0] || "Hà Nội"}
                         </span>
+                        {isEventFree(e) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-extrabold text-white border border-emerald-400/50 shadow-xs">
+                            Miễn phí
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-extrabold text-white border border-amber-400/50 shadow-xs">
+                            {new Intl.NumberFormat("vi-VN").format(getEventPrice(e))} đ
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5">
                         {registered && (
@@ -735,7 +770,10 @@ function EventsScreen() {
                 <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 font-semibold">
                     <Calendar className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>{selectedEvent.time} | Ngày {selectedEvent.day} {selectedEvent.month}, 2026</span>
+                    <span>
+                      {selectedEvent.time ? `${selectedEvent.time} | ` : ""}
+                      Ngày {selectedEvent.date ? formatDisplayDate(selectedEvent.date) : `${selectedEvent.day} ${selectedEvent.month}, 2026`}
+                    </span>
                   </div>
 
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
@@ -745,36 +783,46 @@ function EventsScreen() {
 
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
                     <Ticket className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div className="leading-snug">
-                      <span>{selectedAgenda.offer}: </span>
-                      <a
-                        href={selectedAgenda.zaloLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
-                      >
-                        {selectedAgenda.zaloLink}
-                        <ExternalLink className="h-3 w-3 inline" />
-                      </a>
-                    </div>
+                    <span className="font-semibold">
+                      Phí tham dự:{" "}
+                      <span className={isEventFree(selectedEvent) ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
+                        {isEventFree(selectedEvent) ? "Miễn phí (0 đ)" : `${new Intl.NumberFormat("vi-VN").format(getEventPrice(selectedEvent))} đ / vé`}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      Ưu đãi: <span className="font-semibold text-amber-700 dark:text-amber-300">{selectedAgenda.offer}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Zalo Link Notice Box */}
+                <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                    <Info className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
+                    <span>Kênh kết nối & Thảo luận</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Hội viên tham dự vui lòng gia nhập nhóm Zalo để nhận tài liệu diễn giả và cập nhật thông báo:
+                  </p>
+                  <div className="pt-1">
+                    <a
+                      href={selectedAgenda.zaloLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                    >
+                      {selectedAgenda.zaloLink}
+                      <ExternalLink className="h-3 w-3 inline" />
+                    </a>
                   </div>
                 </div>
 
                 {/* Dashed Separator */}
                 <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-                {/* Registration Link Text */}
-                <div className="text-[12px] text-slate-600 dark:text-slate-300">
-                  <span>Đăng ký tại: </span>
-                  <a
-                    href={selectedAgenda.regLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[#003B95] dark:text-amber-400 font-bold underline hover:text-blue-700"
-                  >
-                    {selectedAgenda.regLink}
-                  </a>
-                </div>
 
                 {/* Lịch trình chi tiết */}
                 <div>
@@ -812,14 +860,46 @@ function EventsScreen() {
                   </a>
 
                   {isRegistered(selectedEvent) ? (
-                    <button
-                      type="button"
-                      onClick={(evt) => unregister(selectedEvent.id, evt)}
-                      disabled={busy === selectedEvent.id}
-                      className="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
-                    >
-                      {busy === selectedEvent.id ? "Đang hủy..." : "Hủy đăng ký"}
-                    </button>
+                    <div className="flex w-full sm:flex-1 gap-2">
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          const e = selectedEvent;
+                          const invNo = `EV-${e.id.slice(0, 8).toUpperCase()}`;
+                          const isFree = isEventFree(e);
+                          setTicketPassModal({
+                            eventTitle: e.title,
+                            ticketCode: invNo,
+                            luckyNumber: "#1983",
+                            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
+                            ticketCount: 1,
+                            isFree,
+                            date: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
+                            time: e.time || "Theo lịch trình sự kiện",
+                            location: e.place || "Địa điểm tổ chức sự kiện",
+                            attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+                            attendeePhone: member?.phone || "",
+                            attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+                            attendeePosition: member?.title || "Hội viên chính thức",
+                            qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invNo)}`,
+                          });
+                        }}
+                        style={{ color: "#ffffff" }}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <QrCode className="h-4 w-4" />
+                        <span>Xem vé & QR</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(evt) => unregister(selectedEvent.id, evt)}
+                        disabled={busy === selectedEvent.id}
+                        className="py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
+                      >
+                        {busy === selectedEvent.id ? "..." : "Hủy đăng ký"}
+                      </button>
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -1144,12 +1224,26 @@ function EventsScreen() {
             {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
               <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-start gap-2 text-left">
                 <Check className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. <b>Thông tin vé và mã QR Check-in</b> đã được gửi về email của bạn! Ban Tổ Chức sẽ quét mã này khi bạn tới sự kiện.</span>
+                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. Xuất trình mã QR bên dưới khi đến quầy check-in sự kiện!</span>
               </div>
             ) : (
               <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2 text-left">
                 <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400 mt-0.5" />
                 <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> và thông tin xác nhận qua email của bạn.</span>
+              </div>
+            )}
+
+            {/* Direct QR Code Display in Modal 3 */}
+            {registeredSuccessInfo.qrCodeUrl && (
+              <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-2 border-dashed border-emerald-500/50 inline-block shadow-sm">
+                <img
+                  src={registeredSuccessInfo.qrCodeUrl}
+                  alt="QR Check-in"
+                  className="w-40 h-40 mx-auto rounded-lg object-contain cursor-pointer"
+                />
+                <div className="text-[11px] font-mono font-black text-slate-800 dark:text-slate-200 mt-1.5">
+                  MÃ CHECK-IN: {registeredSuccessInfo.invoiceNo}
+                </div>
               </div>
             )}
 
@@ -1163,12 +1257,12 @@ function EventsScreen() {
                     eventTitle: info.eventTitle,
                     ticketCode: info.invoiceNo,
                     luckyNumber: info.luckyNumber || "#1983",
-                    ticketType: "Standard VIP",
+                    ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
                     ticketCount: info.ticketCount,
                     isFree: Boolean(info.isFree || info.totalAmount === 0),
-                    date: "Sắp diễn ra",
-                    time: "Theo lịch trình sự kiện",
-                    location: "Địa điểm tổ chức sự kiện",
+                    date: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
+                    time: info.event?.time || "Theo lịch trình sự kiện",
+                    location: info.event?.place || "Địa điểm tổ chức sự kiện",
                     attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
                     attendeePhone: member?.phone || "",
                     attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
@@ -1180,7 +1274,7 @@ function EventsScreen() {
                 className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
               >
                 <Ticket className="h-3.5 w-3.5 text-amber-400" />
-                <span>Xem Thẻ Vé Điện Tử Của Tôi</span>
+                <span>Xem Thẻ Vé Điện Tử VIP & Phóng To QR</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
 
@@ -1235,7 +1329,7 @@ function EventsScreen() {
                 <img
                   src={ticketPassModal.qrUrl}
                   alt="Mã QR Vé Sự Kiện"
-                  className="w-48 h-48 mx-auto rounded-lg"
+                  className="w-48 h-48 mx-auto rounded-lg object-contain"
                 />
                 <div className="text-[12px] font-mono font-black text-[#003B95] mt-2">
                   MÃ VÉ: {ticketPassModal.ticketCode}
@@ -1253,6 +1347,22 @@ function EventsScreen() {
                     <span className="font-semibold text-slate-700 dark:text-slate-300">{ticketPassModal.attendeePosition}</span>
                   </div>
                 )}
+                {ticketPassModal.attendeeCompany && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Doanh nghiệp:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ticketPassModal.attendeeCompany}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Thời gian:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{ticketPassModal.time} | {ticketPassModal.date}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Hạng vé:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {ticketPassModal.ticketType} ({ticketPassModal.ticketCount} vé)
+                  </span>
+                </div>
                 <div className="flex justify-between items-center bg-amber-500/10 rounded-lg p-1.5 border border-amber-500/30">
                   <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />

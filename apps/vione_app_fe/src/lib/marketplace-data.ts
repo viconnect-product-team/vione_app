@@ -16,6 +16,13 @@ export type Product = {
   title: string;
   description: string;
   price: number; // VND
+  originalPrice?: number;
+  memberPrice?: number;
+  unit?: string;
+  company?: string;
+  sellerName?: string;
+  sellerPhone?: string;
+  sellerAvatar?: string;
   category: ProductCategoryKey;
   status: ProductStatus;
   createdAt: string;

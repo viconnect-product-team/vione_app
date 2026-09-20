@@ -15,23 +15,7 @@ export class MinioService implements OnModuleInit {
 
     const candidateConfigs: { name: string; endPoint: string; port: number }[] = [];
 
-    // 1. Env configured endpoint
-    if (envEndpoint) {
-      candidateConfigs.push({
-        name: `env(${envEndpoint}:${envPort || 9000})`,
-        endPoint: envEndpoint,
-        port: envPort || 9000,
-      });
-    }
-
-    // 2. Direct server public IP on port 9050 (guaranteed active)
-    candidateConfigs.push({
-      name: 'host-public(14.225.217.232:9050)',
-      endPoint: '14.225.217.232',
-      port: 9050,
-    });
-
-    // 3. Docker container aliases in vione-network
+    // 1. Docker container aliases in vione-network (Fastest & direct inside docker container network)
     candidateConfigs.push({
       name: 'docker-alias(vione-minio-prod:9000)',
       endPoint: 'vione-minio-prod',
@@ -41,6 +25,22 @@ export class MinioService implements OnModuleInit {
       name: 'docker-alias(minio:9000)',
       endPoint: 'minio',
       port: 9000,
+    });
+
+    // 2. Env configured endpoint
+    if (envEndpoint) {
+      candidateConfigs.push({
+        name: `env(${envEndpoint}:${envPort || 9000})`,
+        endPoint: envEndpoint,
+        port: envPort || 9000,
+      });
+    }
+
+    // 3. Direct server public IP on port 9050
+    candidateConfigs.push({
+      name: 'host-public(14.225.217.232:9050)',
+      endPoint: '14.225.217.232',
+      port: 9050,
     });
 
     // 4. Docker bridge host gateway
@@ -97,7 +97,7 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  async uploadFile(filename: string, fileBuffer: Buffer, mimeType: string): Promise<string> {
+  async uploadFile(filename: string, fileBuffer: Buffer, mimeType: string): Promise<string | null> {
     let lastErr: any = null;
 
     for (let i = 0; i < this.clients.length; i++) {
@@ -121,9 +121,8 @@ export class MinioService implements OnModuleInit {
       }
     }
 
-    throw new InternalServerErrorException(
-      `MinIO upload failed across all endpoints: ${lastErr?.message || 'Unreachable'}`
-    );
+    console.warn(`MinIO upload unreachable or failed across all endpoints (${lastErr?.message || 'Unreachable'}). Falling back to local disk storage.`);
+    return null;
   }
 
   async getFileStream(filename: string): Promise<any> {

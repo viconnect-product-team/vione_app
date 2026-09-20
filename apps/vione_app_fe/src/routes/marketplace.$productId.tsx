@@ -55,6 +55,7 @@ import {
   deleteProductFn,
 } from "@/lib/marketplace.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/marketplace/$productId")({
@@ -646,10 +647,27 @@ function ProductDetailContent({
         <div className="space-y-5 lg:col-span-2">
           <Card className="overflow-hidden">
             <div
-              className="relative flex h-56 items-center justify-center text-8xl"
+              className="relative flex h-48 items-center justify-center overflow-hidden text-7xl sm:h-64 bg-secondary/30"
               style={{ background: "var(--gradient-card)" }}
             >
-              <span aria-hidden="true">{product.emoji}</span>
+              {(() => {
+                const imgUrl = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl;
+                const resolved = resolveMediaUrl(imgUrl);
+                if (resolved) {
+                  return (
+                    <img
+                      src={resolved}
+                      alt={product.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })()}
+              <span aria-hidden="true" className="relative z-10 drop-shadow-md">{product.emoji}</span>
               <div className="absolute right-3 top-3 flex items-center gap-1.5">
                 <button
                   onClick={togglePin}
@@ -687,24 +705,39 @@ function ProductDetailContent({
               <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground">
                 {product.title}
               </h1>
-              <div className="mb-4 text-3xl font-bold" style={{ color: "var(--primary)" }}>
-                {fmt.money(product.price)}
+              <div className="mb-4 flex flex-wrap items-baseline gap-3">
+                <span className="text-3xl font-bold" style={{ color: "var(--primary)" }}>
+                  {fmt.money(product.price)}
+                  {product.unit && <span className="text-sm font-normal text-muted-foreground ml-1.5">/ {product.unit}</span>}
+                </span>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-base text-muted-foreground line-through">
+                    {fmt.money(product.originalPrice)}
+                  </span>
+                )}
               </div>
-              {seller && (
-                <Link
-                  to="/members/$memberId"
-                  params={{ memberId: seller.id }}
-                  search={REVIEW_SEARCH_RESET}
-                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {seller.type === "company" ? (
-                    <Building2 className="h-4 w-4" aria-hidden="true" />
-                  ) : (
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                {(product.sellerName || seller?.name) && (
+                  <div className="inline-flex items-center gap-2">
                     <User className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  <span className="font-medium text-foreground">{seller.name}</span>
-                </Link>
-              )}
+                    <span className="font-medium text-foreground">{product.sellerName || seller?.name}</span>
+                  </div>
+                )}
+                {product.company && (
+                  <div className="inline-flex items-center gap-2">
+                    <Building2 className="h-4 w-4" aria-hidden="true" />
+                    <span className="font-medium text-foreground">{product.company}</span>
+                  </div>
+                )}
+                {product.sellerPhone && (
+                  <div className="inline-flex items-center gap-2">
+                    <Phone className="h-4 w-4" aria-hidden="true" />
+                    <a href={`tel:${product.sellerPhone}`} className="font-medium text-primary hover:underline">
+                      {product.sellerPhone}
+                    </a>
+                  </div>
+                )}
+              </div>
 
               {/* Permission-aware owner actions */}
               {isMine && (
@@ -793,21 +826,27 @@ function ProductDetailContent({
             <Card className="space-y-4 p-6">
               {product.imageUrls && product.imageUrls.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {product.imageUrls.map((url) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block overflow-hidden rounded-lg border border-border"
-                    >
-                      <img
-                        src={url}
-                        alt={product.title}
-                        className="h-32 w-full object-cover transition hover:scale-105"
-                      />
-                    </a>
-                  ))}
+                  {product.imageUrls.map((url) => {
+                    const resolved = resolveMediaUrl(url) || url;
+                    return (
+                      <a
+                        key={url}
+                        href={resolved}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block overflow-hidden rounded-lg border border-border bg-secondary/20"
+                      >
+                        <img
+                          src={resolved}
+                          alt={product.title}
+                          className="h-32 w-full object-cover transition hover:scale-105"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.opacity = "0.4";
+                          }}
+                        />
+                      </a>
+                    );
+                  })}
                 </div>
               )}
               <div className="flex flex-wrap gap-2">

@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/date-format";
 import vi from "../../../../packages/shared/locales/vi.json";
 import en from "../../../../packages/shared/locales/en.json";
 import ja from "../../../../packages/shared/locales/ja.json";
@@ -24,9 +25,9 @@ export const EXTRA_LANG_LOCALES: Record<ExtraLang, string> = {
   ja: "ja-JP",
   ko: "ko-KR",
   zh: "zh-CN",
-  my: "my-MM",
-  km: "km-KH",
   lo: "lo-LA",
+  km: "km-KH",
+  my: "my-MM",
 };
 
 // Reconstruct translations mapping key -> { vi, en, ja, ko, zh, lo, km, my }
@@ -66,7 +67,12 @@ export function hasTKey(key: string): key is TKey {
   return Object.prototype.hasOwnProperty.call(translations, key);
 }
 
-export const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void }>({
+type LangContextValue = {
+  lang: Lang;
+  setLang: (lang: Lang) => void;
+};
+
+export const LangContext = createContext<LangContextValue>({
   lang: "vi",
   setLang: () => {},
 });
@@ -107,7 +113,8 @@ export function useFmt() {
 
   return {
     locale,
-    date: (iso: string) => (iso === "—" ? "—" : new Date(iso).toLocaleDateString(locale)),
+    date: (iso: string) => (iso === "—" || !iso ? "—" : formatDisplayDate(iso, { shortYear: false })),
+    dateTime: (iso: string) => (iso === "—" || !iso ? "—" : formatDisplayDateTime(iso)),
     /** Localized relative time from an ISO string (e.g. "5 phút trước" / "5 min ago"). */
     rel: (iso: string | null | undefined) => {
       if (!iso) return "";

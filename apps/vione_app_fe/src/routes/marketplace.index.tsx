@@ -53,6 +53,9 @@ import {
 } from "@/lib/marketplace.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { uploadProductMedia, signProductMediaPreview } from "@/lib/upload-media";
+import { formatCurrencyInput, parseCurrencyInput, formatDisplayDate } from "@/lib/date-format";
+import { resolveMediaUrl } from "@/lib/api-client";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -170,10 +173,27 @@ function ProductCard({
       <Link
         to="/marketplace/$productId"
         params={{ productId: product.id }}
-        className="relative flex h-32 items-center justify-center text-5xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex h-32 items-center justify-center overflow-hidden text-5xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary/30"
         style={{ background: "var(--gradient-card)" }}
       >
-        <span aria-hidden="true">{product.emoji}</span>
+        {(() => {
+          const imgUrl = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl;
+          const resolved = resolveMediaUrl(imgUrl);
+          if (resolved) {
+            return (
+              <img
+                src={resolved}
+                alt={product.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
+        <span aria-hidden="true" className="relative z-10 drop-shadow-md">{product.emoji}</span>
         {selectable && (
           <button
             onClick={(e) => {
@@ -231,10 +251,21 @@ function ProductCard({
         <p className="mb-3 line-clamp-2 flex-1 text-xs text-muted-foreground">
           {product.description}
         </p>
-        <div className="mb-3 text-lg font-bold text-foreground">{fmt.money(product.price)}</div>
-        {seller && (
+        <div className="mb-3 flex flex-wrap items-baseline gap-2">
+          <span className="text-lg font-bold text-foreground">
+            {fmt.money(product.price)}
+            {product.unit && <span className="text-xs font-normal text-muted-foreground ml-1">/ {product.unit}</span>}
+          </span>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="text-xs text-muted-foreground line-through">
+              {fmt.money(product.originalPrice)}
+            </span>
+          )}
+        </div>
+        {(product.sellerName || product.company || seller) && (
           <div className="mb-3 border-t border-border pt-3 text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">{seller.name}</span>
+            <span className="font-medium text-foreground">{product.sellerName || product.company || seller?.name}</span>
+            {product.company && product.sellerName && <span className="opacity-70"> ({product.company})</span>}
             <span className="opacity-50"> • </span>
             {fmt.date(product.createdAt)}
           </div>
@@ -264,6 +295,14 @@ function ProductCard({
           </div>
         ) : (
           <div className="flex flex-1 gap-2">
+            <button
+              onClick={onEdit}
+              title="Chỉnh sửa sản phẩm"
+              aria-label={t("mk.action.edit")}
+              className="rounded-lg border border-border px-3 py-2 text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
             <button
               onClick={onQuote}
               disabled={product.status !== "active"}
@@ -316,11 +355,28 @@ function ProductRow({
       <Link
         to="/marketplace/$productId"
         params={{ productId: product.id }}
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex h-14 w-14 shrink-0 overflow-hidden items-center justify-center rounded-xl text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary/30"
         style={{ background: "var(--gradient-card)" }}
         aria-hidden="true"
       >
-        <span aria-hidden="true">{product.emoji}</span>
+        {(() => {
+          const imgUrl = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl;
+          const resolved = resolveMediaUrl(imgUrl);
+          if (resolved) {
+            return (
+              <img
+                src={resolved}
+                alt={product.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
+        <span aria-hidden="true" className="relative z-10">{product.emoji}</span>
       </Link>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -339,13 +395,19 @@ function ProductRow({
           {product.title}
         </Link>
         <div className="mt-0.5 text-[11px] text-muted-foreground">
-          {seller && <span className="font-medium text-foreground">{seller.name}</span>}
-          {seller && <span className="opacity-50"> • </span>}
+          <span className="font-medium text-foreground">{product.sellerName || product.company || seller?.name || "Hội viên"}</span>
+          <span className="opacity-50"> • </span>
           {fmt.date(product.createdAt)}
         </div>
       </div>
-      <div className="shrink-0 text-right text-sm font-bold text-foreground sm:w-32">
-        {fmt.money(product.price)}
+      <div className="shrink-0 text-right text-sm font-bold text-foreground sm:w-36">
+        <div>
+          {fmt.money(product.price)}
+          {product.unit && <span className="text-xs font-normal text-muted-foreground ml-1">/ {product.unit}</span>}
+        </div>
+        {product.originalPrice && product.originalPrice > product.price && (
+          <div className="text-xs text-muted-foreground line-through font-normal">{fmt.money(product.originalPrice)}</div>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {onTogglePin && (
@@ -387,6 +449,14 @@ function ProductRow({
         ) : (
           <>
             <button
+              onClick={onEdit}
+              title="Chỉnh sửa sản phẩm"
+              aria-label={t("mk.action.edit")}
+              className="rounded-lg border border-border p-2 text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <button
               onClick={onQuote}
               disabled={product.status !== "active"}
               aria-label={t("mk.detail.quoteBtn")}
@@ -394,13 +464,7 @@ function ProductRow({
               style={{ background: "var(--gradient-primary)" }}
             >
               <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <button
-              onClick={onContact}
-              aria-label={t("mk.action.contact")}
-              className="inline-flex items-center justify-center rounded-lg border border-border p-2 text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{t("mk.detail.quoteBtn")}</span>
             </button>
           </>
         )}
@@ -419,17 +483,31 @@ function ProductModal({
   onSaved: () => void;
 }) {
   const t = useT();
+  const { user } = useAuth();
   const isEdit = !!product;
   const createFn = useServerFn(createProductFn);
   const updateFn = useServerFn(updateProductFn);
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
-  const [price, setPrice] = useState(product ? String(product.price) : "");
+  const [price, setPrice] = useState(product?.price ? formatCurrencyInput(product.price) : "");
+  const [originalPrice, setOriginalPrice] = useState(product?.originalPrice ? formatCurrencyInput(product.originalPrice) : "");
+  const [unit, setUnit] = useState(product?.unit ?? "");
+  const [company, setCompany] = useState(product?.company ?? "");
+  const [sellerName, setSellerName] = useState(product?.sellerName ?? (user?.user_metadata?.full_name || ""));
+  const [sellerPhone, setSellerPhone] = useState(
+    product?.sellerPhone ??
+      ((user as any)?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : "")),
+  );
   const [category, setCategory] = useState<ProductCategoryKey>(
     product?.category ?? "mk.cat.service",
   );
   const [emoji, setEmoji] = useState(product?.emoji ?? "🛍️");
-  const [imageUrls, setImageUrls] = useState<string[]>(product?.imageUrls ?? []);
+  const initialImages = useMemo(() => {
+    if (product?.imageUrls && product.imageUrls.length > 0) return product.imageUrls;
+    const fallback = (product as any)?.imageUrl || (product as any)?.image || (product as any)?.image_url;
+    return fallback ? [fallback] : [];
+  }, [product]);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImages);
   const [pdfUrl, setPdfUrl] = useState(product?.pdfUrl ?? "");
   const [websiteUrl, setWebsiteUrl] = useState(product?.websiteUrl ?? "");
   const [facebookUrl, setFacebookUrl] = useState(product?.facebookUrl ?? "");
@@ -437,7 +515,9 @@ function ProductModal({
   const [busy, setBusy] = useState(false);
   // Maps a stored value (bucket path) → short-lived signed URL for preview.
   const [previews, setPreviews] = useState<Record<string, string>>({});
-  const previewOf = (v: string) => previews[v] ?? v;
+  const previewOf = (v: string) => previews[v] || resolveMediaUrl(v) || v;
+
+  const activeSellerId = product?.sellerId || user?.id || CURRENT_USER_ID || "00000000-0000-4000-8000-000000000002";
 
   const handleImages = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -445,7 +525,7 @@ function ProductModal({
     try {
       const remaining = 10 - imageUrls.length;
       const picked = Array.from(files).slice(0, Math.max(0, remaining));
-      const paths = await Promise.all(picked.map((f) => uploadProductMedia(f, CURRENT_USER_ID)));
+      const paths = await Promise.all(picked.map((f) => uploadProductMedia(f, activeSellerId)));
       const signed = await Promise.all(paths.map((p) => signProductMediaPreview(p)));
       setPreviews((prev) => {
         const next = { ...prev };
@@ -465,7 +545,7 @@ function ProductModal({
     if (!file) return;
     setUploading(true);
     try {
-      const path = await uploadProductMedia(file, CURRENT_USER_ID);
+      const path = await uploadProductMedia(file, activeSellerId);
       const signed = await signProductMediaPreview(path);
       setPreviews((prev) => ({ ...prev, [path]: signed }));
       setPdfUrl(path);
@@ -477,11 +557,23 @@ function ProductModal({
   };
 
   const submit = async () => {
-    if (!title.trim() || !description.trim() || !price) return;
+    const numPrice = parseCurrencyInput(price);
+    if (!title.trim() || !description.trim() || !numPrice) {
+      toast.error("Vui lòng nhập tên sản phẩm, mô tả và giá sản phẩm");
+      return;
+    }
+    const numOrig = originalPrice ? parseCurrencyInput(originalPrice) : undefined;
     setBusy(true);
     try {
       const extra = {
+        originalPrice: numOrig,
+        memberPrice: numPrice,
+        unit: unit.trim() || undefined,
+        company: company.trim() || undefined,
+        sellerName: sellerName.trim() || undefined,
+        sellerPhone: sellerPhone.trim() || undefined,
         imageUrls,
+        imageUrl: imageUrls[0] || undefined,
         pdfUrl: pdfUrl || undefined,
         websiteUrl: websiteUrl.trim() || undefined,
         facebookUrl: facebookUrl.trim() || undefined,
@@ -490,10 +582,10 @@ function ProductModal({
         await updateFn({
           data: {
             id: product!.id,
-            sellerId: CURRENT_USER_ID,
+            sellerId: activeSellerId,
             title,
             description,
-            price: Number(price),
+            price: numPrice,
             category,
             emoji,
             ...extra,
@@ -503,10 +595,10 @@ function ProductModal({
       } else {
         await createFn({
           data: {
-            sellerId: CURRENT_USER_ID,
+            sellerId: activeSellerId,
             title,
             description,
-            price: Number(price),
+            price: numPrice,
             category,
             emoji,
             ...extra,
@@ -516,6 +608,8 @@ function ProductModal({
       }
       onSaved();
       onClose();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Lỗi khi lưu sản phẩm");
     } finally {
       setBusy(false);
     }
@@ -540,7 +634,7 @@ function ProductModal({
         <div className="-mr-2 space-y-3 overflow-y-auto pr-2">
           <div>
             <label className="mb-1 block text-xs font-semibold text-foreground">
-              {t("mk.form.titleField")}
+              {t("mk.form.titleField")} <span className="text-destructive">*</span>
             </label>
             <input
               value={title}
@@ -552,7 +646,7 @@ function ProductModal({
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-foreground">
-              {t("mk.form.desc")}
+              {t("mk.form.desc")} <span className="text-destructive">*</span>
             </label>
             <textarea
               value={description}
@@ -563,17 +657,77 @@ function ProductModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-semibold text-foreground">
-                {t("mk.form.price")}
+                Doanh nghiệp / Tổ chức
               </label>
               <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="VD: ViConnect Group"
                 className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">
+                Đơn vị tính
+              </label>
+              <input
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="VD: Cái, Hộp, Gói, Buổi, Tháng..."
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">
+                Người liên hệ / Đại diện bán
+              </label>
+              <input
+                value={sellerName}
+                onChange={(e) => setSellerName(e.target.value)}
+                placeholder="VD: Nguyễn Văn A"
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">
+                Số điện thoại liên hệ
+              </label>
+              <input
+                value={sellerPhone}
+                onChange={(e) => setSellerPhone(e.target.value)}
+                placeholder="VD: 0912345678"
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">
+                Giá ưu đãi (VND) <span className="text-destructive">*</span>
+              </label>
+              <input
+                value={price}
+                onChange={(e) => setPrice(formatCurrencyInput(e.target.value))}
+                placeholder="VD: 10.000.000"
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring font-mono"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">
+                Giá niêm yết (VND)
+              </label>
+              <input
+                value={originalPrice}
+                onChange={(e) => setOriginalPrice(formatCurrencyInput(e.target.value))}
+                placeholder="VD: 12.000.000"
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring font-mono"
               />
             </div>
             <div>
@@ -624,9 +778,16 @@ function ProductModal({
               {imageUrls.map((url) => (
                 <div
                   key={url}
-                  className="group relative h-16 w-16 overflow-hidden rounded-lg border border-border"
+                  className="group relative h-16 w-16 overflow-hidden rounded-lg border border-border bg-secondary/40"
                 >
-                  <img src={previewOf(url)} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={previewOf(url)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.opacity = "0.4";
+                    }}
+                  />
 
                   <button
                     type="button"
@@ -1225,7 +1386,26 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                           </td>
                           <td className="px-4 py-3 border-b border-border">
                             <div className="flex items-center gap-3">
-                              <span className="text-xl shrink-0">{p.emoji || "🛍️"}</span>
+                              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-secondary/40 flex items-center justify-center text-lg">
+                                {(() => {
+                                  const imgUrl = (p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls[0] : null) || (p as any).imageUrl;
+                                  const resolved = resolveMediaUrl(imgUrl);
+                                  if (resolved) {
+                                    return (
+                                      <img
+                                        src={resolved}
+                                        alt={p.title}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLElement).style.display = "none";
+                                        }}
+                                      />
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                <span className="relative z-10">{p.emoji || "🛍️"}</span>
+                              </div>
                               <div className="min-w-0">
                                 <div className="font-semibold text-foreground text-xs line-clamp-1">{p.title}</div>
                                 <div className="text-[11px] text-muted-foreground line-clamp-1">{p.description}</div>
@@ -1236,10 +1416,15 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                             <Pill color="primary">{t(p.category)}</Pill>
                           </td>
                           <td className="px-4 py-3 text-xs font-bold text-foreground text-right border-b border-border font-mono">
-                            {fmt.money(p.price)}
+                            <div>{fmt.money(p.price)}</div>
+                            {p.originalPrice && p.originalPrice > p.price && (
+                              <div className="text-[11px] text-muted-foreground line-through font-normal">{fmt.money(p.originalPrice)}</div>
+                            )}
+                            {p.unit && <div className="text-[10px] text-muted-foreground font-normal">/ {p.unit}</div>}
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border">
-                            <div>{seller?.name || "Thành viên"}</div>
+                            <div className="font-medium text-foreground">{p.sellerName || p.company || seller?.name || "Thành viên"}</div>
+                            {p.sellerPhone && <div className="text-[11px] text-primary">{p.sellerPhone}</div>}
                             <div className="text-[10px] text-muted-foreground/70">{fmt.date(p.createdAt)}</div>
                           </td>
                           <td className="px-4 py-3 border-b border-border">
@@ -1254,21 +1439,20 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                               >
                                 <Eye className="h-3.5 w-3.5" />
                               </Link>
+                              <button
+                                onClick={() => setEditing(p)}
+                                title="Chỉnh sửa sản phẩm"
+                                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
                               {isMine ? (
-                                <>
-                                  <button
-                                    onClick={() => setEditing(p)}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleting(p)}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </>
+                                <button
+                                  onClick={() => setDeleting(p)}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                               ) : (
                                 <button
                                   onClick={() =>

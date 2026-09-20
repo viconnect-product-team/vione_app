@@ -14,6 +14,8 @@ export type OpportunityStatus = "open" | "closed";
 export type Opportunity = {
   id: string;
   posterId: string;
+  posterName?: string;
+  posterAvatar?: string;
   title: string;
   description: string;
   type: OpportunityTypeKey;
@@ -26,6 +28,11 @@ export type Opportunity = {
   createdAt: string;
   views: number;
   emoji: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactTitle?: string;
+  company?: string;
+  image?: string;
   claimedById?: string;
   claimedByName?: string;
   claimedAt?: string;

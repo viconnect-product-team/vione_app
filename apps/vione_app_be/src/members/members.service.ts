@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 
 export class CreateMemberDto {
   name!: string;
@@ -51,7 +52,10 @@ export class UpdateMemberContactDto {
 
 @Injectable()
 export class MembersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mailService?: MailService,
+  ) {}
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
     if (!userId) return false;
@@ -937,7 +941,8 @@ export class MembersService {
         }
 
         // Tự động khởi tạo tài khoản đăng nhập khi duyệt hội viên nếu chưa có (BUG-AUTH-001)
-        if (!memberUserId && status === 'active' && (email || current.email || phone || current.phone)) {
+        const isApproved = status === 'active' || status === 'approved';
+        if (!memberUserId && isApproved && (email || current.email || phone || current.phone)) {
           try {
             const newUserId = crypto.randomUUID();
             const memberEmail = email || current.email || `${(current.member_code || 'member').toLowerCase().replace(/[^a-z0-9]/g, '')}@ceo1983.com`;
@@ -967,7 +972,6 @@ export class MembersService {
 
         if (memberUserId) {
           const notifId = crypto.randomUUID();
-          const isApproved = status === 'active';
           const notifTitle = isApproved
             ? '🎉 Chúc mừng! Hồ sơ gia nhập CLB của bạn đã được phê duyệt!'
             : status === 'pending'
@@ -1005,6 +1009,35 @@ export class MembersService {
               gen_random_uuid(), ${id}, ${notifTitle}, ${notifBody}, false, false, 'member_approval', ${id}, now()
             )
           `.catch(() => {});
+
+          // Đẩy thông báo chuông vào App Hiệp Hội
+          await this.prisma.$executeRaw`
+            INSERT INTO public.notifications (
+              id, user_id, title, message, type, is_read, created_at
+            ) VALUES (
+              gen_random_uuid(), ${memberUserId || id}, ${notifTitle}, ${notifBody}, 'member_approval', false, now()
+            )
+          `.catch(() => {});
+        }
+
+        // Gửi email thông báo phê duyệt hồ sơ chính thức vào email hội viên
+        if (isApproved && this.mailService) {
+          const memberEmail = (email || current.email || '').trim();
+          if (memberEmail && memberEmail.includes('@')) {
+            const passMatch = (current.about || '').match(/Pass=([^\s|]+)/);
+            const rawPass = passMatch ? passMatch[1] : undefined;
+
+            void this.mailService.sendMemberApprovedEmail({
+              to: memberEmail,
+              fullName: name || current.name || current.contact || 'Quý Hội viên',
+              memberCode: current.code || id,
+              associationName: 'CLB Doanh Nhân CEO 1983',
+              companyName: current.company || current.organization || name,
+              portalUrl: 'https://14.225.217.232:5444/association/login',
+              username: memberEmail,
+              passwordRaw: rawPass,
+            }).catch((err) => console.warn('Could not send member approval email:', err?.message));
+          }
         }
       } catch (err) {
         console.warn('Error sending member status notification:', err);

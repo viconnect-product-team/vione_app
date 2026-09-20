@@ -30,6 +30,28 @@ export interface SendEventTicketEmailOptions {
   qrCodeUrl?: string;
 }
 
+export interface SendAppWelcomeEmailOptions {
+  to: string;
+  fullName: string;
+  username: string;
+  passwordRaw?: string;
+  phone?: string;
+  companyName?: string;
+  portalUrl?: string;
+  activateUrl?: string;
+}
+
+export interface SendMemberApprovedEmailOptions {
+  to: string;
+  fullName: string;
+  memberCode?: string;
+  associationName?: string;
+  companyName?: string;
+  portalUrl?: string;
+  username?: string;
+  passwordRaw?: string;
+}
+
 
 @Injectable()
 export class MailService {
@@ -370,6 +392,283 @@ export class MailService {
       `[EVENT_TICKET_EMAIL_DISPATCHED] To: ${cleanTo} | Event: ${eventTitle} | RegId: ${registrationId} | Name: ${fullName} | LuckyNum: ${luckyNumber}`,
     );
     return { ok: true, message: 'Event ticket created and notification logged to audit stream' };
+  }
+
+  /**
+   * Gửi email chào mừng hội viên mới đăng ký tài khoản vào App Doanh Nhân CEO 1983
+   */
+  async sendAppWelcomeRegistrationEmail(options: SendAppWelcomeEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const { to, fullName, username, passwordRaw, phone, companyName, portalUrl } = options;
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send app welcome email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const appLoginUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const subject = `[CLB CEO 1983] Chào Mừng Anh/Chị ${fullName} Gia Nhập Ứng Dụng Doanh Nhân CEO 1983`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.3; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 32px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+    
+    .account-card { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #003B95; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B95; margin-bottom: 14px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; word-break: break-all; }
+    .cred-box { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 14.5px; font-weight: 800; border: 1px dashed #7dd3fc; }
+    
+    .steps-card { background: #eff6ff; border-radius: 14px; padding: 20px; margin-bottom: 26px; border: 1px solid #bfdbfe; }
+    .steps-title { font-size: 13px; font-weight: 800; color: #1e3a8a; margin-bottom: 10px; text-transform: uppercase; }
+    .step-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #1e293b; line-height: 1.5; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #003B95; color: #ffffff; border-radius: 50%; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+    .btn-wrap { text-align: center; margin: 30px 0 14px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d !important; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    
+    .note { font-size: 12px; color: #64748b; line-height: 1.5; background: #f8fafc; padding: 12px 16px; border-radius: 10px; margin-top: 20px; border: 1px solid #e2e8f0; }
+    .footer { background: #0b1329; padding: 24px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 11.5px; line-height: 1.6; }
+    .footer-brand { color: #F59E0B; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ ĐĂNG KÝ TÀI KHOẢN THÀNH CÔNG ✦</div>
+      <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
+      <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Toàn Diện</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin chúc mừng Anh/Chị ${companyName ? `(Doanh nghiệp: <strong>${companyName}</strong>)` : ''} đã đăng ký tài khoản thành công trên nền tảng <strong>App Hiệp Hội CEO 1983</strong>.
+        <br><br>
+        Tài khoản của Anh/Chị đã được kích hoạt trên hệ thống với các thông tin như sau:
+      </div>
+
+      <div class="account-card">
+        <div class="card-title">🔐 Thông Tin Tài Khoản Đăng Nhập</div>
+        <div class="info-row">
+          <span class="info-label">Tài khoản (Email):</span>
+          <span class="info-value cred-box">${username}</span>
+        </div>
+        ${passwordRaw ? `
+        <div class="info-row">
+          <span class="info-label">Mật khẩu khởi tạo:</span>
+          <span class="info-value cred-box">${passwordRaw}</span>
+        </div>
+        ` : ''}
+        ${phone ? `
+        <div class="info-row">
+          <span class="info-label">Số điện thoại liên kết:</span>
+          <span class="info-value">${phone}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">Trạng thái tài khoản:</span>
+          <span class="info-value" style="color: #16a34a;">✓ Đã sẵn sàng truy cập</span>
+        </div>
+      </div>
+
+      <div class="steps-card">
+        <div class="steps-title">🚀 Các bước tiếp theo để tận dụng tối đa hệ sinh thái:</div>
+        <div class="step-item">
+          <span class="step-num">1</span>
+          <span><strong>Hoàn thiện Danh thiếp điện tử VIP:</strong> Cập nhật ảnh đại diện, chức vụ, logo doanh nghiệp để kết nối chạm NFC 1-giây.</span>
+        </div>
+        <div class="step-item">
+          <span class="step-num">2</span>
+          <span><strong>Đăng Gian hàng & Cơ hội giao thương:</strong> Giới thiệu sản phẩm, dịch vụ và tìm kiếm đối tác B2B trong CLB.</span>
+        </div>
+        <div class="step-item">
+          <span class="step-num">3</span>
+          <span><strong>Đăng ký Vé Sự kiện & Hội thảo:</strong> Nhận vé điện tử có mã QR check-in ngay trên điện thoại.</span>
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appLoginUrl}" class="btn-primary" target="_blank">📲 Mở App & Đăng Nhập Ngay</a>
+      </div>
+
+      <div class="note">
+        <strong>* Hỗ trợ kỹ thuật:</strong> Nếu cần trợ giúp kích hoạt tài khoản hoặc cài đặt ứng dụng lên màn hình chính điện thoại (PWA), Anh/Chị vui lòng liên hệ Ban Thư Ký CLB qua Hotline: <strong>0983 1983 83</strong> hoặc gửi phản hồi trực tiếp qua email này.
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // 1. Gửi qua SMTP nếu đã cấu hình
+    if (this.transporter) {
+      try {
+        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const info = await this.transporter.sendMail({
+          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
+          to: cleanTo,
+          subject,
+          html,
+        });
+        this.logger.log(`App welcome email sent to ${cleanTo} via SMTP. MessageId: ${info.messageId}`);
+        return { ok: true, message: 'App welcome email sent successfully via SMTP' };
+      } catch (err: any) {
+        this.logger.error(`Failed to send app welcome email to ${cleanTo} via SMTP: ${err.message}`, err.stack);
+      }
+    }
+
+    // 2. Audit log
+    this.logger.log(
+      `[APP_WELCOME_EMAIL_DISPATCHED] To: ${cleanTo} | User: ${username} | Name: ${fullName}`,
+    );
+    return { ok: true, message: 'App welcome registration logged to audit stream' };
+  }
+
+  /**
+   * Gửi email chúc mừng khi hồ sơ hội viên được Ban điều hành / Quản trị viên duyệt chính thức
+   */
+  async sendMemberApprovedEmail(options: SendMemberApprovedEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const { to, fullName, memberCode, associationName, companyName, portalUrl, username, passwordRaw } = options;
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send member approval email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const assocTitle = associationName || 'CLB Doanh Nhân CEO 1983';
+    const subject = `[${assocTitle}] Chúc Mừng Hồ Sơ Hội Viên Của Anh/Chị ${fullName} Đã Được Phê Duyệt Chính Thức`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 32px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+    .card-box { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #16a34a; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; }
+    .cred-badge { font-family: monospace; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 6px; border: 1px dashed #7dd3fc; }
+    .btn-wrap { text-align: center; margin: 30px 0 14px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff !important; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); }
+    .footer { background: #0b1329; padding: 24px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 11.5px; line-height: 1.6; }
+    .footer-brand { color: #F59E0B; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ PHÊ DUYỆT HỘI VIÊN CHÍNH THỨC ✦</div>
+      <h1 class="title">${assocTitle}</h1>
+      <p class="subtitle">Chúc mừng Anh/Chị đã chính thức trở thành Hội viên CLB</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Chủ Nhiệm & Ban Thư Ký ${assocTitle} xin trân trọng thông báo: Hồ sơ đăng ký gia nhập của Anh/Chị ${companyName ? `(đại diện cho <strong>${companyName}</strong>)` : ''} đã được <strong>phê duyệt chính thức</strong>.
+        <br><br>
+        Toàn bộ đặc quyền của Hội viên chính thức (Thẻ Doanh Nhân Số VIP, kết nối giao thương nội bộ, ưu đãi hội viên) đã được kích hoạt trên hệ thống.
+      </div>
+
+      <div class="card-box">
+        <div class="info-row">
+          <span class="info-label">Hội viên:</span>
+          <span class="info-value">${fullName}</span>
+        </div>
+        ${memberCode ? `
+        <div class="info-row">
+          <span class="info-label">Mã số Hội viên:</span>
+          <span class="info-value" style="color: #003B95; font-weight: 800;">${memberCode}</span>
+        </div>
+        ` : ''}
+        ${companyName ? `
+        <div class="info-row">
+          <span class="info-label">Doanh nghiệp:</span>
+          <span class="info-value">${companyName}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">Tài khoản đăng nhập (Email):</span>
+          <span class="info-value" style="font-family: monospace; font-weight: 700; color: #003B95;">${username || cleanTo}</span>
+        </div>
+        ${passwordRaw ? `
+        <div class="info-row">
+          <span class="info-label">Mật khẩu khởi tạo:</span>
+          <span class="info-value cred-badge">${passwordRaw}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">Trạng thái:</span>
+          <span class="info-value" style="color: #16a34a; font-weight: 800;">✓ Đã phê duyệt chính thức</span>
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở App Hội Viên & Đăng Nhập Ngay</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-brand">${assocTitle}</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    if (this.transporter) {
+      try {
+        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const info = await this.transporter.sendMail({
+          from: `"${assocTitle}" <${fromAddr}>`,
+          to: cleanTo,
+          subject,
+          html,
+        });
+        this.logger.log(`Member approved email sent to ${cleanTo}. MessageId: ${info.messageId}`);
+        return { ok: true, message: 'Member approved email sent via SMTP' };
+      } catch (err: any) {
+        this.logger.error(`Failed to send member approved email to ${cleanTo}: ${err.message}`, err.stack);
+      }
+    }
+
+    this.logger.log(`[MEMBER_APPROVED_EMAIL_DISPATCHED] To: ${cleanTo} | Name: ${fullName} | Code: ${memberCode}`);
+    return { ok: true, message: 'Member approved email logged to audit stream' };
   }
 }
 
