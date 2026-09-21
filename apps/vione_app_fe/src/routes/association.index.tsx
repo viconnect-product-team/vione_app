@@ -1045,7 +1045,20 @@ function Home() {
       <AssociationMemberQrModal
         open={memberQrModalOpen}
         onClose={() => setMemberQrModalOpen(false)}
-        memberCode={member?.code || "M1983-002"}
+        memberCode={
+          member?.code ||
+          (typeof window !== "undefined"
+            ? (() => {
+                try {
+                  const m = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+                  return m?.code || null;
+                } catch {
+                  return null;
+                }
+              })()
+            : null) ||
+          "M1983-292"
+        }
         memberName={displayName}
         memberTitle={displayTitle}
         memberCompany={displayCompany}

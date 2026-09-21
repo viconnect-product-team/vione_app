@@ -196,7 +196,7 @@ function OpportunityCard({
             search={REVIEW_SEARCH_RESET}
             className="truncate font-medium text-primary hover:underline"
           >
-            {poster?.name ?? "—"}
+            {opp.posterName || opp.contactName || poster?.name || opp.company || "Hội viên CLB"}
           </Link>
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1">
@@ -836,7 +836,7 @@ function OpportunitiesPage() {
                             search={REVIEW_SEARCH_RESET}
                             className="font-semibold text-primary hover:underline"
                           >
-                            {m?.name ?? it.memberId}
+                            {(it as any).memberName || (it as any).name || m?.name || it.contact || it.memberId}
                           </Link>
                           <span className="text-[11px] text-muted-foreground">
                             {fmt.date(it.createdAt)}

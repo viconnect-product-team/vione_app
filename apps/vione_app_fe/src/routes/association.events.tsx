@@ -27,6 +27,10 @@ import {
   ShieldCheck,
   Loader2,
   ExternalLink,
+  Trophy,
+  GraduationCap,
+  Handshake,
+  Coffee,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -157,6 +161,230 @@ function getEventAgenda(e: MyEvent, index: number): EventAgendaInfo {
     offer: "Ưu đãi 199K cho 60 khách đăng ký đầu tiên có tham gia group zalo",
     regLink: "https://www.cto.vn/familybusiness",
   };
+}
+
+export type EventSectionKey = "gala" | "workshop" | "b2b" | "regular";
+
+export function getEventSectionKey(e: MyEvent, index: number): EventSectionKey {
+  const agenda = getEventAgenda(e, index);
+  const cat = (agenda.category || "").toUpperCase();
+  const title = (e.title || "").toUpperCase();
+
+  if (
+    cat.includes("GALA") ||
+    cat.includes("ĐẠI HỘI") ||
+    title.includes("GALA") ||
+    title.includes("ĐẠI HỘI") ||
+    title.includes("KỶ NIỆM") ||
+    index === 0
+  ) {
+    return "gala";
+  }
+  if (
+    cat.includes("WORKSHOP") ||
+    cat.includes("ĐÀO TẠO") ||
+    cat.includes("CHUYÊN ĐỀ") ||
+    title.includes("WORKSHOP") ||
+    title.includes("KHÓA HỌC") ||
+    title.includes("GIA ĐÌNH")
+  ) {
+    return "workshop";
+  }
+  if (
+    cat.includes("B2B") ||
+    cat.includes("GIAO THƯƠNG") ||
+    cat.includes("TỌA ĐÀM") ||
+    cat.includes("DIỄN ĐÀN") ||
+    title.includes("B2B") ||
+    title.includes("KẾT NỐI") ||
+    title.includes("GIAO THƯƠNG")
+  ) {
+    return "b2b";
+  }
+  return "regular";
+}
+
+export function formatEventDateBadge(dateVal?: string, fallbackIndex: number = 0) {
+  if (dateVal) {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const days = ["CN,", "T2,", "T3,", "T4,", "T5,", "T6,", "T7,"];
+      const weekday = days[d.getDay()] || "CN,";
+      return { weekday, dayMonth: `${day}/${month}` };
+    }
+  }
+  const defaultDates = [
+    { weekday: "CN,", dayMonth: "27/09" },
+    { weekday: "T7,", dayMonth: "28/03" },
+    { weekday: "T6,", dayMonth: "15/10" },
+    { weekday: "T5,", dayMonth: "20/11" },
+  ];
+  return defaultDates[fallbackIndex % defaultDates.length];
+}
+
+export const SECTIONS_CONFIG = [
+  {
+    key: "gala" as const,
+    title: "Đại Hội & Gala Toàn Thể",
+    titleEn: "Grand Gala & Summits",
+    subtitle: "Chi tiết về đại hội cấp hiệp hội & vinh danh doanh nhân tiêu biểu, dạ tiệc tối nhà hàng sang trọng và các sự kiện tầm cỡ...",
+    subtitleEn: "Official association summits, honorary entrepreneur galas, luxury evening banquets and premier celebrations...",
+    icon: Trophy,
+    variant: "hero" as const,
+  },
+  {
+    key: "workshop" as const,
+    title: "Hội Thảo & Workshop Chuyên Đề",
+    titleEn: "Workshops & Masterclasses",
+    subtitle: "Nâng cao năng lực quản trị, chuyển đổi số, kế thừa cơ nghiệp gia đình đa thế hệ & tối ưu hóa vận hành tinh gọn...",
+    subtitleEn: "Executive governance masterclasses, digital transformation, multi-generation family business succession...",
+    icon: GraduationCap,
+    variant: "grid" as const,
+  },
+  {
+    key: "b2b" as const,
+    title: "Tọa Đàm & Giao Thương B2B",
+    titleEn: "B2B Matching & Business Forums",
+    subtitle: "Kết nối cung cầu, tìm kiếm đối tác chiến lược, ký kết hợp tác kinh doanh đa ngành và xúc tiến đầu tư...",
+    subtitleEn: "Connecting supply & demand, strategic business partnerships, cross-industry dealmaking and investments...",
+    icon: Handshake,
+    variant: "default" as const,
+  },
+  {
+    key: "regular" as const,
+    title: "Sinh Hoạt Định Kỳ & Coffee CEO",
+    titleEn: "Regular Meetings & Coffee Networking",
+    subtitle: "Gặp gỡ thân mật hàng tuần, giao lưu cởi mở, kết nối hội viên và chia sẻ bài học kinh nghiệm điều hành thực chiến...",
+    subtitleEn: "Weekly casual meetups, open networking, peer connections and practical business leadership sharing...",
+    icon: Coffee,
+    variant: "default" as const,
+  },
+];
+
+function EventPosterCard({
+  event,
+  index,
+  onSelect,
+  isBookmarked,
+  onToggleBookmark,
+  registered,
+  isFree,
+  price,
+  variant = "default",
+}: {
+  event: MyEvent;
+  index: number;
+  onSelect: (e: MyEvent) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (id: string) => void;
+  registered: boolean;
+  isFree: boolean;
+  price: number;
+  variant?: "hero" | "grid" | "default";
+}) {
+  const rawImg = (event as any).image;
+  const evImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : null;
+  const fallbackImg = defaultEventImages[index % defaultEventImages.length];
+  const displayImg = evImg || fallbackImg;
+  const agenda = getEventAgenda(event, index);
+
+  const topBadgeInfo = (() => {
+    const cat = (agenda.category || "").toUpperCase();
+    const title = (event.title || "").toUpperCase();
+    if (variant === "hero" || cat.includes("GALA") || cat.includes("ĐẠI HỘI") || title.includes("GALA") || index === 0) {
+      return { text: "TIÊU ĐIỂM THƯỢNG ĐỈNH", icon: Sparkles };
+    }
+    if (cat.includes("WORKSHOP") || cat.includes("ĐÀO TẠO")) {
+      return { text: "WORKSHOP CHUYÊN ĐỀ", icon: GraduationCap };
+    }
+    if (cat.includes("B2B") || cat.includes("GIAO THƯƠNG") || cat.includes("TỌA ĐÀM")) {
+      return { text: "GIAO THƯƠNG B2B", icon: Handshake };
+    }
+    return { text: "NETWORKING DOANH NHÂN", icon: Coffee };
+  })();
+
+  const TopIcon = topBadgeInfo.icon;
+
+  return (
+    <div
+      role="listitem"
+      onClick={() => onSelect(event)}
+      className="group relative w-full h-64 sm:h-72 rounded-[26px] overflow-hidden border-2 border-[#C9A86A]/75 dark:border-amber-500/60 shadow-xl bg-slate-950 cursor-pointer select-none transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+    >
+      {/* Cover Banner Image */}
+      <img
+        src={displayImg}
+        alt={event.title}
+        loading="lazy"
+        onError={(evt) => {
+          const target = evt.currentTarget;
+          if (target.src !== fallbackImg) {
+            target.src = fallbackImg;
+          }
+        }}
+        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-95"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/35 pointer-events-none transition-opacity group-hover:opacity-85" />
+
+      {/* Top Left: Badge Tiêu Điểm Thượng Đỉnh (Chuẩn 100% như ảnh mẫu) */}
+      <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 rounded-full bg-[#FDF3D8] text-[#4A3205] border border-amber-300/60 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wide shadow-md">
+        <TopIcon className="h-3.5 w-3.5 fill-[#4A3205] text-[#4A3205]" />
+        <span>{topBadgeInfo.text}</span>
+      </div>
+
+      {/* Dải điều khiển ở đáy thẻ (Bottom Bar): Countdown Timer + Category + Status + Bookmark */}
+      {/* TUYỆT ĐỐI KHÔNG CÓ CÁI BADGE NGÀY BỊ THỪA Ở GÓC DƯỚI BÊN TRÁI NÀY! */}
+      <div className="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        {/* 1. Countdown Timer Pill */}
+        <div className="rounded-full bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-lg flex items-center gap-1.5 text-white font-mono font-bold text-[12px] shrink-0">
+          <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <EventCountdownBanner event={event} index={index} whiteText={true} />
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* 2. Category Pill */}
+          <span className="rounded-full bg-[#F59E0B] text-slate-950 font-black text-[11px] px-3.5 py-1.5 uppercase tracking-wider shadow-lg border border-amber-300 truncate">
+            {agenda.category}
+          </span>
+
+          {/* 3. Status Pill: Đã đăng ký / Miễn phí / Giá vé */}
+          {registered ? (
+            <span className="rounded-full bg-white text-[#003B95] font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-slate-200 flex items-center gap-1 shrink-0">
+              <Check className="h-3.5 w-3.5 stroke-[3]" />
+              Đã đăng ký
+            </span>
+          ) : isFree ? (
+            <span className="rounded-full bg-white text-emerald-600 font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-emerald-200 flex items-center gap-1 shrink-0">
+              Miễn phí
+            </span>
+          ) : (
+            <span className="rounded-full bg-white text-amber-600 font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-amber-200 shrink-0">
+              {new Intl.NumberFormat("vi-VN").format(price)} đ
+            </span>
+          )}
+
+          {/* 4. Bookmark Button */}
+          <button
+            type="button"
+            onClick={(evt) => {
+              evt.stopPropagation();
+              onToggleBookmark(event.id);
+            }}
+            className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-lg shrink-0 ${
+              isBookmarked
+                ? "bg-white text-slate-950 border border-white"
+                : "bg-black/60 hover:bg-black/80 text-white border border-white/25"
+            }`}
+            title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
+          >
+            <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function EventsScreen() {
@@ -506,10 +734,10 @@ function EventsScreen() {
         })}
       </div>
 
-      {/* Events List */}
-      <div className="mt-4 space-y-3 px-4" role="list">
+      {/* Events List Grouped by Distinct Sections */}
+      <div className="mt-4 space-y-7 px-4" role="list">
         {loading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[1, 2].map((sk) => (
               <div
                 key={sk}
@@ -532,9 +760,10 @@ function EventsScreen() {
             ))}
           </div>
         )}
+
         {!loading && filteredEvents.length === 0 && (
-          <div className="py-10 text-center">
-            <p className="text-[13px] text-[var(--vba-text-dim)]">
+          <div className="py-12 text-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
+            <p className="text-[13.5px] font-medium text-[var(--vba-text-dim)]">
               {eventCategory === "free"
                 ? (isEn ? "No free events available" : "Hiện không có sự kiện miễn phí nào")
                 : eventCategory === "paid"
@@ -547,145 +776,104 @@ function EventsScreen() {
             </p>
           </div>
         )}
-        {!loading && filteredEvents.map((e: any, index: number) => {
-          const rawImg = e.image;
-          const evImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : null;
-          const registered = isRegistered(e);
-          const isBookmarked = !!bookmarkedIds[e.id];
-          const agenda = getEventAgenda(e, index);
 
-          return (
-            <div
-              key={e.id}
-              role="listitem"
-              onClick={() => setSelectedEvent(e)}
-              className="group relative flex flex-col transition-all duration-300 cursor-pointer rounded-3xl p-1 bg-gradient-to-b from-white/30 via-white/10 to-transparent backdrop-blur-md shadow-xl hover:shadow-[0_22px_45px_rgba(0,0,0,0.35)] hover:-translate-y-1.5"
-            >
-              {/* Event Banner Floating Elevated Card */}
-              {(() => {
-                const fallbackImg = defaultEventImages[index % defaultEventImages.length];
-                const displayImg = evImg || fallbackImg;
-                return (
-                  <div className="relative flex flex-col min-h-[195px] sm:min-h-[215px] overflow-hidden rounded-[22px] border border-white/25 shadow-inner transition-all duration-300 bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] text-white">
-                    {/* Event Background: Ảnh thật từ CRM hoặc Gradient thương hiệu sang trọng */}
-                    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-                      <img
-                        src={displayImg}
-                        alt={e.title}
-                        loading="lazy"
-                        onError={(evt) => {
-                          const target = evt.currentTarget;
-                          if (target.src !== fallbackImg) {
-                            target.src = fallbackImg;
-                          }
-                        }}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-65"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/25" />
+        {!loading && filteredEvents.length > 0 && (
+          SECTIONS_CONFIG.map((sec) => {
+            const secEvents = filteredEvents.filter((e) => {
+              const originalIndex = events.findIndex((x) => x.id === e.id);
+              return getEventSectionKey(e, originalIndex >= 0 ? originalIndex : 0) === sec.key;
+            });
+
+            if (secEvents.length === 0) return null;
+
+            const Icon = sec.icon;
+            const firstEvt = secEvents[0];
+
+            return (
+              <section key={sec.key} className="space-y-3.5">
+                {/* Section Header chuẩn 100% mẫu ảnh người dùng */}
+                <div className="flex items-start justify-between gap-3 pb-1 pt-1">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {/* Icon tròn bên trái */}
+                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-full bg-[#FBF6E9] dark:bg-amber-950/40 border border-[#E9D9B4] dark:border-amber-800/60 text-[#B88728] dark:text-amber-400 shadow-2xs shrink-0">
+                      <Icon className="h-5 w-5 stroke-[2.2]" />
                     </div>
-
-                    {/* Dynamic Golden Swoosh Wave Background */}
-                    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-                      <svg
-                        className="absolute inset-0 h-full w-full"
-                        viewBox="0 0 500 300"
-                        preserveAspectRatio="none"
-                        fill="none"
-                      >
-                        <defs>
-                          <linearGradient id={`goldGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.1" />
-                            <stop offset="30%" stopColor="#FFFFFF" stopOpacity="0.6" />
-                            <stop offset="65%" stopColor="#FFFFFF" stopOpacity="0.9" />
-                            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.2" />
-                          </linearGradient>
-                          <linearGradient id={`goldGlowGrad-${e.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-                            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <path
-                          d="M -50,280 C 120,270 200,160 300,140 C 390,120 430,145 540,60"
-                          stroke={`url(#goldGlowGrad-${e.id})`}
-                          strokeWidth="24"
-                          strokeLinecap="round"
-                          className="blur-xl opacity-60"
-                        />
-                        <path
-                          d="M -30,270 C 130,260 210,155 310,135 C 400,115 440,135 530,50"
-                          stroke={`url(#goldGrad-${e.id})`}
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-blue-500/20 blur-3xl" />
-                      <div className="absolute top-1/2 -left-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-                    </div>
-
-                    {/* 1. TOP BAR: BOOKMARK & REGISTERED BADGE */}
-                    <div className="relative z-10 flex items-center justify-between p-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                          <MapPin className="h-2.5 w-2.5 text-sky-400" />
-                          {e.place?.split(",")[0] || "Hà Nội"}
-                        </span>
-                        {isEventFree(e) ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-extrabold text-white border border-emerald-400/50 shadow-xs">
-                            Miễn phí
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-extrabold text-white border border-amber-400/50 shadow-xs">
-                            {new Intl.NumberFormat("vi-VN").format(getEventPrice(e))} đ
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {registered && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-bold text-white shadow-xs border border-white/40">
-                            <Check className="h-2.5 w-2.5 stroke-[2.5] text-white" />
-                            Đã đăng ký
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(evt) => {
-                            evt.stopPropagation();
-                            toggleBookmark(e.id);
-                          }}
-                          className={`grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-xs ${
-                            isBookmarked
-                              ? "bg-white text-slate-950 font-bold border border-white"
-                              : "bg-black/50 hover:bg-black/70 text-white border border-white/30"
-                          }`}
-                          title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
-                        >
-                          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 2. BANNER FOOTER: TOÀN BỘ TEXT MÀU TRẮNG, ĐẾM NGƯỢC NẰM TRÊN TÊN SỰ KIỆN */}
-                    <div className="relative z-10 mt-auto p-4 pt-6 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col justify-end">
-                      {/* Countdown Timer placed ABOVE Event Title */}
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <EventCountdownBanner event={e} index={index} whiteText={true} />
-                        <span className="text-[11px] font-bold text-white group-hover:text-white/90 transition-colors flex items-center gap-1 shrink-0 bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/35 shadow-xs">
-                          {isEn ? "Details" : "Xem chi tiết"} <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform text-white" />
-                        </span>
-                      </div>
-
-                      {/* Event Title inside poster - TOÀN BỘ TEXT MÀU TRẮNG */}
-                      <h3 className="text-[15.5px] sm:text-[17px] font-black text-white leading-snug drop-shadow-md group-hover:text-white/95 transition-colors line-clamp-2">
-                        {e.title}
-                      </h3>
+                    {/* Tiêu đề & Mô tả ở giữa */}
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-[15px] sm:text-[16.5px] font-black text-slate-900 dark:text-white uppercase tracking-wide leading-snug">
+                        {isEn ? sec.titleEn : sec.title}
+                      </h2>
+                      <p className="text-[11.5px] sm:text-[12px] text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed mt-0.5">
+                        {isEn ? sec.subtitleEn : sec.subtitle}
+                      </p>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-          );
-        })}
+
+                  {/* Date Badge ở góc trên bên phải Section Header */}
+                  {firstEvt && (() => {
+                    const originalIndex = events.findIndex((x) => x.id === firstEvt.id);
+                    const dateBadge = formatEventDateBadge(firstEvt.date, originalIndex >= 0 ? originalIndex : 0);
+                    return (
+                      <div className="flex flex-col items-center justify-center rounded-xl bg-[#ECEFF3] dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 px-2.5 py-1 min-w-[50px] shadow-2xs shrink-0">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-none">
+                          {dateBadge.weekday}
+                        </span>
+                        <span className="text-[12.5px] font-black text-slate-800 dark:text-slate-100 leading-tight mt-0.5">
+                          {dateBadge.dayMonth}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Section Cards */}
+                {sec.variant === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {secEvents.map((e) => {
+                      const originalIndex = events.findIndex((x) => x.id === e.id);
+                      const evIndex = originalIndex >= 0 ? originalIndex : 0;
+                      return (
+                        <EventPosterCard
+                          key={e.id}
+                          event={e}
+                          index={evIndex}
+                          onSelect={setSelectedEvent}
+                          isBookmarked={!!bookmarkedIds[e.id]}
+                          onToggleBookmark={toggleBookmark}
+                          registered={isRegistered(e)}
+                          isFree={isEventFree(e)}
+                          price={getEventPrice(e)}
+                          variant="grid"
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    {secEvents.map((e) => {
+                      const originalIndex = events.findIndex((x) => x.id === e.id);
+                      const evIndex = originalIndex >= 0 ? originalIndex : 0;
+                      return (
+                        <EventPosterCard
+                          key={e.id}
+                          event={e}
+                          index={evIndex}
+                          onSelect={setSelectedEvent}
+                          isBookmarked={!!bookmarkedIds[e.id]}
+                          onToggleBookmark={toggleBookmark}
+                          registered={isRegistered(e)}
+                          isFree={isEventFree(e)}
+                          price={getEventPrice(e)}
+                          variant={sec.variant}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })
+        )}
       </div>
 
       {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN (IMAGE 4 POSTER & HIGHLIGHTS) */}

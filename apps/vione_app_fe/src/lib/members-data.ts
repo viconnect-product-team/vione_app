@@ -26,6 +26,7 @@ export type Member = {
   region: RegionKey;
   status: MemberStatus;
   joinedAt: string; // ISO
+  createdAt?: string; // ISO
   feeYear: number;
   feePaid: boolean;
   address: string;

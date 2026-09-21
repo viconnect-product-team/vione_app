@@ -27,7 +27,7 @@
    - 3.3 [UI-03]: Danh bạ Hội viên & Tra cứu Đối tác (`/association/members`)
    - 3.4 [UI-04]: Lịch Sự kiện, Vé QR & Trạm Điểm danh (`/association/events`, `/checkin`)
    - 3.5 [UI-05]: Cổng NỘP HỘI PHÍ Trực tuyến VietQR (`/association/renew/pay`)
-   - 3.6 [UI-06]: Thẻ Hội viên 3D Kỹ thuật số (`/association/card`)
+   - 3.6 [UI-06]: Thẻ Hội viên VIP & Thẻ Visit Card Doanh Nhân (`/association/card`)
    - 3.7 [UI-07]: Bảng tin B2B Moments & Feed Giao thương (`/connect-app/moment`)
    - 3.8 [UI-08]: Hộp thư Trò chuyện Realtime (`/connect-app/inbox`)
    - 3.9 [UI-09]: Điều phối Lịch hẹn B2B 1-on-1 (`/business-connect/meetings`)
@@ -115,7 +115,7 @@ Mọi màn hình danh sách trên hệ thống Web CRM (`/members`, `/companies`
 | **/checkin** | Trạm Quét QR Lễ tân | Quét mã QR của đại biểu | `POST /api/events/checkin-verify`| `event_registrations (checked_in_at, status)` | Nhận diện trong < 200ms, chống quét trùng lặp |
 | **/association/renew/pay**| Màn hình NỘP HỘI PHÍ| Quét mã VietQR chuyển khoản | `GET /api/fees/invoices/my-latest`| `invoices (amount, invoice_no, due_date)` | VietQR Napas 247 đúng số tài khoản và cú pháp |
 | **/association/renew/result**| Kết quả Gia hạn | Xem chứng nhận gia hạn | `GET /api/renewal/status` | `members.term_end`, `renewal_audit_log` | Hạn thẻ tự động cộng thêm đúng 1 năm (`+1 year`) |
-| **/association/card** | Thẻ Hội viên 3D Flip | Chạm lật thẻ & Tải vCard | `GET /api/public/card/{slug}.vcf` | `members`, `member_business_cards` | Trả về chuẩn `text/vcard; charset=utf-8` |
+| **/association/card** | Thẻ Visit Card Doanh Nhân | Chạm lật thẻ & Tải vCard | `GET /api/public/card/{slug}.vcf` | `members`, `member_business_cards` | Trả về chuẩn `text/vcard; charset=utf-8` |
 | **/connect-app/moment** | Bảng tin B2B Social | Đăng bài nhu cầu hợp tác | `POST /api/moments` | `business_relationship_moments` | Ràng buộc `brm_target_xor` (`target_kind = connection`)|
 | **/connect-app/network**| Mạng lưới Doanh nhân | Nhấn "Gửi lời mời kết nối" | `POST /api/connections/request` | `connections (owner_id, peer_id, status)` | Trạng thái ban đầu `pending`, sau duyệt `accepted` |
 | **/connect-app/inbox** | Khung chat 1-on-1 | Gửi tin nhắn tức thời | `POST /api/messages/direct` | `direct_messages (thread_id, body)` | Realtime WebSocket, mã hóa ký tự UTF-8 |

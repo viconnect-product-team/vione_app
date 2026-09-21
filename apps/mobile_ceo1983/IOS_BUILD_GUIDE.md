@@ -6,7 +6,7 @@ Tài liệu này hướng dẫn chi tiết quy trình xuất file **Android APK*
 - **Bundle Identifier iOS**: `vn.ceo1983.app`
 - **Package Name Android**: `vn.ceo1983.app`
 - **Tài khoản Expo / EAS**: `unicom-vibe-coding-team`
-- **Start URL trên Server**: `http://14.225.217.232:5000/association`
+- **Start URL trên Server**: `https://14.225.217.232:5444/association`
 
 ---
 
@@ -15,7 +15,7 @@ Tài liệu này hướng dẫn chi tiết quy trình xuất file **Android APK*
 Ứng dụng Mobile CEO 1983 chạy ở chế độ **Live Remote Server** (`capacitor.config.ts`):
 ```ts
 const USE_REMOTE_SERVER = true;
-const REMOTE_URL = 'http://14.225.217.232:5000/association';
+const REMOTE_URL = 'https://14.225.217.232:5444/association';
 ```
 
 - **Khi sửa UI / Logic Frontend / Sửa tính năng**: **KHÔNG CẦN BUILD LẠI NATIVE!**

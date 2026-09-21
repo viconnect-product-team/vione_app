@@ -22,14 +22,8 @@ $bound = [System.Collections.Generic.Dictionary[string, object]]::new($PSBoundPa
 [void]$bound.Remove("NoHttps")
 $bound["EnableHttps"] = $EnableHttps
 
-# 1. Gọi trực tiếp bộ deploy của Web CRM Quản trị & Landing
+# 1. Gọi trực tiếp bộ deploy của Web CRM Quản trị & Landing (đã bao gồm Nginx SSL Reverse Proxy khi bật EnableHttps)
 & "$PSScriptRoot/deploy/crm/fast-deploy.ps1" @bound
-
-# 2. Khởi động Nginx SSL Proxy để đảm bảo kết nối HTTPS
-if ($EnableHttps) {
-    Write-Host "`n[SSL] Khởi động Nginx SSL Reverse Proxy..." -ForegroundColor Yellow
-    & "$PSScriptRoot/deploy/ssl/deploy-ssl.ps1"
-}
 
 Write-Host "`n=================================================================" -ForegroundColor Green
 Write-Host "TRIỂN KHAI HỆ THỐNG WEB CRM QUẢN TRỊ & LANDING THÀNH CÔNG!" -ForegroundColor Green

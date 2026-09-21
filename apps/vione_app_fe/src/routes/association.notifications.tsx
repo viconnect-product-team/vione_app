@@ -21,6 +21,8 @@ import {
   UserCheck,
   UserX,
   Trash2,
+  Ticket,
+  QrCode,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -499,12 +501,53 @@ function NotificationsScreen() {
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<MyNotification | null>(null);
 
+  const isLuckyDrawNotification = (n: any): boolean => {
+    if (!n) return false;
+    const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
+    return /lucky draw|bốc thăm|quay số|trúng thưởng|giải thưởng|chúc mừng.*trúng/i.test(text);
+  };
+
+  const isEventNotification = (n: any): boolean => {
+    if (!n) return false;
+    if (n.refType === "event" || n.type === "event" || n.notificationKind?.includes("event")) return true;
+    const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
+    return /sự kiện|vé tham dự|đăng ký vé|check-in|gala|diễn đàn|bàn tiệc/i.test(text);
+  };
+
   const isFeeNotification = (n: any): boolean => {
     if (!n) return false;
-    if (n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || n.notificationKind === "invoice" || n.notificationKind === "payment") return true;
-    if (Boolean(n.safeDisplayData?.invoiceId) || Boolean(n.safeDisplayData?.amount)) return true;
     const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
-    return /hội phí|phí thường niên|quản lý hội phí|phí sự kiện|tiền vé|thanh toán|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
+
+    // Explicitly exclude 0đ, free, or complimentary event passes
+    if (
+      text.includes("0đ") ||
+      text.includes("0 đ") ||
+      text.includes("0 vnd") ||
+      text.includes("miễn phí") ||
+      text.includes("free") ||
+      n.safeDisplayData?.amount === 0 ||
+      n.safeDisplayData?.amount === "0"
+    ) {
+      return false;
+    }
+
+    if (
+      n.type === "fee" ||
+      n.notificationKind === "overdue_payment_reminder" ||
+      n.notificationKind === "invoice" ||
+      n.notificationKind === "payment"
+    ) {
+      return true;
+    }
+
+    if (
+      Boolean(n.safeDisplayData?.invoiceId) ||
+      (Boolean(n.safeDisplayData?.amount) && Number(n.safeDisplayData.amount) > 0)
+    ) {
+      return true;
+    }
+
+    return /hội phí|phí thường niên|quản lý hội phí|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
   };
 
   const handlePayNotification = (n: any) => {
@@ -1469,6 +1512,85 @@ function NotificationsScreen() {
               {formatNotifBody(selectedNotif)}
             </div>
 
+            {/* KHỐI CHÚC MỪNG TRÚNG THƯỞNG LUCKY DRAW */}
+            {isLuckyDrawNotification(selectedNotif) && (
+              <div className="rounded-2xl bg-gradient-to-br from-amber-500/15 via-amber-500/10 to-transparent border-2 border-amber-500/40 p-4 space-y-3 text-left shadow-sm">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black text-sm">
+                  <span className="text-xl">🎉</span>
+                  <span>CHÚC MỪNG HỘI VIÊN TRÚNG THƯỞNG!</span>
+                </div>
+                <div className="rounded-xl bg-white dark:bg-slate-900 p-3 border border-amber-200 dark:border-amber-900/50 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Mã trúng thưởng may mắn:</span>
+                    <span className="font-mono font-black text-base text-[#003B95] dark:text-amber-400">#1140</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Giải thưởng:</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-300">Giải Đặc Biệt Gala CEO 1983</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Trạng thái nhận giải:</span>
+                    <span className="font-bold text-emerald-600">Đã xác thực hợp lệ</span>
+                  </div>
+                </div>
+                <p className="text-[11.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Vui lòng mang theo màn hình thông báo này hoặc mã định danh hội viên trên App tới Bàn Lễ Tân Ban Thư Ký để nhận giải thưởng.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNotif(null);
+                    void navigate({ to: "/association/events" });
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>Xem Chi Tiết Sự Kiện Gala</span>
+                </button>
+              </div>
+            )}
+
+            {/* KHỐI VÉ THAM DỰ SỰ KIỆN (0Đ / MIỄN PHÍ) */}
+            {!isFeeNotification(selectedNotif) && isEventNotification(selectedNotif) && !isLuckyDrawNotification(selectedNotif) && (
+              <div className="rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border-2 border-emerald-500/30 p-4 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <Ticket className="h-4 w-4 text-emerald-600" />
+                    Vé tham dự sự kiện:
+                  </span>
+                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    0đ · Miễn phí Hội viên
+                  </span>
+                </div>
+                <div className="text-[12px] text-slate-600 dark:text-slate-400 space-y-1">
+                  <p>Trạng thái vé: <b className="text-emerald-700 dark:text-emerald-400">Đã đăng ký thành công</b></p>
+                  <p>Hội viên vui lòng xuất trình mã vé điện tử QR tại cổng đón tiếp của sự kiện để check-in tự động trong 1 giây.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedNotif(null);
+                      void navigate({ to: "/association/checkin" });
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <QrCode className="h-4 w-4 text-white" />
+                    <span>Mở Vé & Check-in QR</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedNotif(null);
+                      void navigate({ to: "/association/events" });
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-800 dark:text-slate-200 font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <span>Xem Sự Kiện</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* KHỐI THANH TOÁN DÀNH CHO THÔNG BÁO CÓ PHÍ */}
             {isFeeNotification(selectedNotif) && (
               <div className="rounded-2xl bg-red-500/10 dark:bg-red-500/15 border-2 border-red-500/30 p-4 space-y-3 text-left">
@@ -1515,6 +1637,19 @@ function NotificationsScreen() {
               >
                 Đóng
               </button>
+              {!isFeeNotification(selectedNotif) && isEventNotification(selectedNotif) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNotif(null);
+                    void navigate({ to: "/association/checkin" });
+                  }}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002766] hover:from-[#002B70] hover:to-[#001D4D] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <QrCode className="h-3.5 w-3.5 text-white" />
+                  <span>Mở Vé & Check-in QR</span>
+                </button>
+              )}
               {isFeeNotification(selectedNotif) && (
                 <button
                   type="button"

@@ -33,7 +33,7 @@
    - 2.2 [SRS-02]: Cổng Đăng nhập Di động Chuẩn hóa (`/auth/mobile/`)
    - 2.3 [SRS-03]: Quản lý Sự kiện, Khán phòng Sân khấu & Điểm danh QR 0.2s
    - 2.4 [SRS-04]: QUẢN LÝ HỘI PHÍ, VietQR Động & Tự động Gia hạn (+1 năm)
-   - 2.5 [SRS-05]: Danh thiếp Kỹ thuật số 3D & Chạm kết nối 1-Tap NFC
+   - 2.5 [SRS-05]: Danh thiếp Visit Card & Chạm kết nối 1-Tap NFC
    - 2.6 [SRS-06]: Sàn Giao thương B2B & Điều phối Cuộc hẹn 1-on-1
    - 2.7 [SRS-07]: Quản trị Nền tảng, Phân quyền RBAC & Kiểm toán Bất biến
 3. [PHẦN 3: THIẾT KẾ KỸ THUẬT & MÁY TRẠNG THÁI (TECHSPEC & STATE MACHINES)](#phần-3-thiết-kế-kỹ-thuật--máy-trạng-thái)
@@ -54,7 +54,7 @@ Các Hiệp hội Doanh nghiệp và CLB Doanh nhân (như CLB Doanh nhân CEO 1
 | **Ban Lãnh đạo (Chủ tịch / BCH)** | Không nắm được con số thực về tỷ lệ sinh hoạt, doanh thu hội phí bị chậm trễ, khó kiểm soát tài chính. | Quyết sách chậm trễ, thiếu căn cứ số liệu, uy tín hiệp hội suy giảm. | **Dashboard CRM thời gian thực**: Nắm bắt tỷ lệ tăng trưởng, dòng tiền thu chi, cảnh báo quá hạn 360°. |
 | **Ban Thư ký** | Quản lý danh bạ bằng file Excel rời rạc; mất hàng giờ điểm danh đại biểu bằng giấy tại các sự kiện lớn. | Thất lạc dữ liệu, nhầm lẫn thông tin đại biểu, ùn tắc cổng đón tiếp. | **Trạm Check-in QR tốc độ cao (0.2s)** và sơ đồ ghế sân khấu thông minh. |
 | **Ban Tài chính / Kế toán** | THU HỘI PHÍ thủ công; gửi tin nhắn Zalo đòi nợ nhạy cảm; khó đối soát các khoản chuyển khoản ngân hàng. | Tỷ lệ quá hạn cao, sai sót hóa đơn, mất nhiều công sức đối chiếu. | **Cổng VietQR động**: Tự động điền số tiền, cú pháp; Webhook gia hạn thẻ tự động ngay trong 1 giây. |
-| **Hội viên Doanh nhân** | Danh thiếp giấy nhanh hỏng, dễ vứt bỏ; không biết các hội viên khác làm ngành gì để hợp tác. | Mất cơ hội kinh doanh, không nhận được giá trị thiết thực khi tham gia Hội. | **Thẻ số NFC / 3D Card** & Sàn giao thương B2B kết hợp lịch hẹn 1-on-1. |
+| **Hội viên Doanh nhân** | Danh thiếp giấy nhanh hỏng, dễ vứt bỏ; không biết các hội viên khác làm ngành gì để hợp tác. | Mất cơ hội kinh doanh, không nhận được giá trị thiết thực khi tham gia Hội. | **Thẻ số NFC / Thẻ Visit Card** & Sàn giao thương B2B kết hợp lịch hẹn 1-on-1. |
 
 ## 1.2 Mục tiêu chiến lược & Chỉ số Thành công cốt lõi (OKRs / KPIs)
 1. **Số hóa 100% Quy trình Hội viên**: 100% hồ sơ ứng viên được nộp trực tuyến từ Landing Page, thẩm định và phê duyệt trên CRM.
@@ -126,8 +126,8 @@ Các Hiệp hội Doanh nghiệp và CLB Doanh nhân (như CLB Doanh nhân CEO 1
     And Màn hình hội viên tự động chuyển sang /association/renew/result chúc mừng
   ```
 
-## 2.5 [SRS-05]: Danh thiếp Kỹ thuật số 3D & Chạm kết nối 1-Tap NFC
-- **Mô tả nghiệp vụ**: Cung cấp thẻ hội viên kỹ thuật số có hiệu ứng 3D chân thực, hỗ trợ xuất file vCard danh bạ chuẩn quốc tế và chia sẻ qua NFC.
+## 2.5 [SRS-05]: Danh thiếp Visit Card & Chạm kết nối 1-Tap NFC
+- **Mô tả nghiệp vụ**: Cung cấp thẻ visit card doanh nhân kỹ thuật số sang trọng, hỗ trợ xuất file vCard danh bạ chuẩn quốc tế và chia sẻ qua NFC.
 - **Tiêu chí Nghiệm thu**:
   ```gherkin
   Scenario: Xuất file danh bạ vCard chia sẻ danh thiếp
@@ -215,7 +215,7 @@ stateDiagram-v2
 | **SRS-03b**| Điểm danh QR Check-in | `event_registrations` | `POST /api/events/checkin-verify` | `TC-CRM-009` | **PASS (100%)** |
 | **SRS-04** | Phát hành HÓA ĐƠN HỘI PHÍ | `invoices` | `POST /api/fees/invoices/generate` | `TC-CRM-010` | **PASS (100%)** |
 | **SRS-04b**| Gia hạn Thẻ tự động VietQR| `members`, `renewal_audit_log` | `POST /api/webhooks/payment/vietqr` | `TC-ASC-009` | **PASS (100%)** |
-| **SRS-05** | Thẻ 3D & Xuất vCard | `members`, `business_cards` | `GET /api/public/card/{slug}.vcf` | `TC-ASC-010` | **PASS (100%)** |
+| **SRS-05** | Thẻ Visit Card & Xuất vCard | `members`, `business_cards` | `GET /api/public/card/{slug}.vcf` | `TC-ASC-010` | **PASS (100%)** |
 | **SRS-06** | Khoảnh khắc B2B Moments | `business_relationship_moments`| `POST /api/moments` | `TC-VNE-002` | **PASS (100%)** |
 | **SRS-06b**| Lời mời Kết nối B2B | `connections` | `POST /api/connections/request` | `TC-VNE-004` | **PASS (100%)** |
 | **SRS-06c**| Chat Realtime 1-on-1 | `direct_messages` | `POST /api/messages/direct` | `TC-VNE-006` | **PASS (100%)** |

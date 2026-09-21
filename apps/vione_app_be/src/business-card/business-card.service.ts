@@ -402,16 +402,28 @@ export class BusinessCardService {
     const sinceDate = new Date();
     sinceDate.setDate(sinceDate.getDate() - days);
 
+    // Look up associated member IDs for this user to ensure we capture all leads
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.members WHERE user_id = ${userId}::uuid OR id::text = ${userId}
+    `.catch(() => []);
+    const memberIds = memberRows.map((m) => m.id);
+    const searchOwnerIds = [userId, ...memberIds];
+
     const leads = await this.prisma.business_card_leads.findMany({
       where: {
-        owner_member_id: userId,
+        owner_member_id: { in: searchOwnerIds },
         created_at: { gte: sinceDate },
       },
       select: { status: true, created_at: true },
     }).catch(() => []);
 
     const myCards = await this.prisma.member_business_cards.findMany({
-      where: { owner_user_id: userId },
+      where: {
+        OR: [
+          { owner_user_id: userId },
+          { member_id: { in: memberIds } }
+        ]
+      },
       select: { id: true },
     }).catch(() => []);
     const cardIds = myCards.map((c) => c.id);
@@ -569,7 +581,8 @@ export class BusinessCardService {
     // Try finding member first by code, id, or user_id
     let memRows = await this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
-             m.avatar, m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
+             m.avatar, m.about, m.department, m.executive_role, m.cover_url,
+             m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
              a.public_card_enabled, a.public_card_requires_active_member
       FROM public.members m
       LEFT JOIN public.associations a ON m.association_id = a.id
@@ -597,7 +610,8 @@ export class BusinessCardService {
         if (searchUserId || searchMemberId) {
           memRows = await this.prisma.$queryRaw<any[]>`
             SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
-                   m.avatar, m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
+                   m.avatar, m.about, m.department, m.executive_role, m.cover_url,
+                   m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
                    a.public_card_enabled, a.public_card_requires_active_member
             FROM public.members m
             LEFT JOIN public.associations a ON m.association_id = a.id
@@ -682,9 +696,11 @@ export class BusinessCardService {
     let resolvedPersonName =
       cardRow?.display_name ||
       settings?.display_name ||
+      (m.type === "individual" ? m.name : m.contact) ||
       m.contact ||
       userRow?.name ||
       userRow?.full_name ||
+      m.name ||
       "";
 
     if (
@@ -692,7 +708,11 @@ export class BusinessCardService {
       resolvedPersonName.toLowerCase() === "admin" ||
       resolvedPersonName.toLowerCase() === "platform administrator"
     ) {
-      resolvedPersonName = userRow?.full_name || userRow?.name || m.contact || "Hội viên CLB Doanh Nhân CEO 1983";
+      resolvedPersonName =
+        userRow?.full_name ||
+        userRow?.name ||
+        (m.type === "individual" ? m.name : m.contact) ||
+        "Hội viên CLB Doanh Nhân CEO 1983";
       if (
         resolvedPersonName.toLowerCase() === "admin" ||
         resolvedPersonName.toLowerCase() === "platform administrator"
@@ -705,7 +725,7 @@ export class BusinessCardService {
     let resolvedCompanyName =
       cardRow?.company_name ||
       settings?.display_company ||
-      m.name ||
+      (m.type === "individual" ? (m.about || "CLB Doanh Nhân CEO 1983") : m.name) ||
       "CLB Doanh Nhân CEO 1983";
 
     if (
@@ -718,6 +738,8 @@ export class BusinessCardService {
     // Resolve Title
     const resolvedTitle =
       cardRow?.professional_title ||
+      m.executive_role ||
+      m.department ||
       (m.type === "company" ? "Đại diện Doanh nghiệp Hội viên" : "Lãnh đạo Doanh nghiệp Hội viên");
 
     // Resolve Photo

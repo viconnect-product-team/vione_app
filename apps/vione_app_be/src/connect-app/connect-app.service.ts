@@ -8876,17 +8876,36 @@ export class ConnectAppService implements OnModuleInit {
   async listAllOpportunities(userId: string) {
     try {
       const opps = await this.prisma.$queryRaw<any[]>`
-        SELECT id, poster_id, title, description, type, budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at,
-               claimed_by_id, claimed_by_name, claimed_at, claimed_phone, claimed_company, association_id,
-               contact_name, contact_phone, contact_title, company, image
-        FROM public.opportunities
-        ORDER BY created_at DESC
+        SELECT o.id, o.poster_id, o.title, o.description, o.type, o.budget_min, o.budget_max, o.region, o.industry, o.deadline, o.status, o.views, o.emoji, o.created_at, o.updated_at,
+               o.claimed_by_id, o.claimed_by_name, o.claimed_at, o.claimed_phone, o.claimed_company, o.association_id,
+               COALESCE(o.contact_name, m.contact, m.name, u.name, 'Ban Quản Trị') as contact_name,
+               COALESCE(o.contact_phone, m.phone, '') as contact_phone,
+               COALESCE(o.contact_title, m.executive_role, 'Đại diện hợp tác') as contact_title,
+               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+               o.image,
+               COALESCE(m.contact, u.name, m.name, o.contact_name, 'Hội viên CLB') as poster_name,
+               COALESCE(m.cover_url, u.avatar_url, '') as poster_avatar,
+               COALESCE(m.phone, o.contact_phone, '') as poster_phone,
+               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as poster_company
+        FROM public.opportunities o
+        LEFT JOIN public.members m ON (o.poster_id = m.user_id::text OR o.poster_id = m.id OR o.poster_id = m.code)
+        LEFT JOIN public.vione_users u ON (o.poster_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (o.poster_id = bi.owner_user_id::text)
+        ORDER BY o.created_at DESC
       `.catch(() => []);
 
       const interests = await this.prisma.$queryRaw<any[]>`
-        SELECT id, opportunity_id, member_id, message, contact, interest_level, created_at
-        FROM public.opportunity_interests
-        ORDER BY created_at DESC
+        SELECT oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
+               COALESCE(m.contact, m.name, u.name, oi.contact, 'Hội viên') as member_name,
+               COALESCE(m.cover_url, u.avatar_url, '') as member_avatar,
+               COALESCE(m.phone, oi.contact, '') as member_phone,
+               COALESCE(m.email, u.email, '') as member_email,
+               COALESCE(m.name, bi.company_name, '') as member_company
+        FROM public.opportunity_interests oi
+        LEFT JOIN public.members m ON (oi.member_id = m.user_id::text OR oi.member_id = m.id OR oi.member_id = m.code)
+        LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (oi.member_id = bi.owner_user_id::text)
+        ORDER BY oi.created_at DESC
       `.catch(() => []);
 
       const interestCounts: Record<string, number> = {};
@@ -8899,6 +8918,10 @@ export class ConnectAppService implements OnModuleInit {
         opportunities: opps.map(r => ({
           id: String(r.id),
           posterId: String(r.poster_id || ''),
+          posterName: r.poster_name || undefined,
+          posterAvatar: r.poster_avatar || undefined,
+          posterPhone: r.poster_phone || undefined,
+          posterCompany: r.poster_company || undefined,
           title: r.title,
           description: r.description || '',
           type: r.type || 'opp.type.partnership',
@@ -8926,8 +8949,13 @@ export class ConnectAppService implements OnModuleInit {
           id: String(it.id),
           opportunityId: String(it.opportunity_id),
           memberId: String(it.member_id || ''),
+          memberName: it.member_name || undefined,
+          memberAvatar: it.member_avatar || undefined,
+          memberPhone: it.member_phone || undefined,
+          memberEmail: it.member_email || undefined,
+          memberCompany: it.member_company || undefined,
           message: it.message || '',
-          contact: it.contact || '',
+          contact: it.contact || it.member_phone || '',
           interestLevel: it.interest_level || 'high',
           createdAt: it.created_at ? new Date(it.created_at).toISOString() : new Date().toISOString(),
         })),
@@ -8942,22 +8970,47 @@ export class ConnectAppService implements OnModuleInit {
   async getOpportunityById(opportunityId: string) {
     try {
       const opps = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.opportunities WHERE id = ${opportunityId} LIMIT 1
+        SELECT o.*,
+               COALESCE(o.contact_name, m.contact, m.name, u.name, 'Ban Quản Trị') as contact_name,
+               COALESCE(o.contact_phone, m.phone, '') as contact_phone,
+               COALESCE(o.contact_title, m.executive_role, 'Đại diện hợp tác') as contact_title,
+               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+               COALESCE(m.contact, u.name, m.name, o.contact_name, 'Hội viên CLB') as poster_name,
+               COALESCE(m.cover_url, u.avatar_url, '') as poster_avatar,
+               COALESCE(m.phone, o.contact_phone, '') as poster_phone,
+               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as poster_company
+        FROM public.opportunities o
+        LEFT JOIN public.members m ON (o.poster_id = m.user_id::text OR o.poster_id = m.id OR o.poster_id = m.code)
+        LEFT JOIN public.vione_users u ON (o.poster_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (o.poster_id = bi.owner_user_id::text)
+        WHERE o.id = ${opportunityId} LIMIT 1
       `.catch(() => []);
       if (!opps[0]) return null;
       const r = opps[0];
 
       const interests = await this.prisma.$queryRaw<any[]>`
-        SELECT id, opportunity_id, member_id, message, contact, interest_level, created_at
-        FROM public.opportunity_interests
-        WHERE opportunity_id = ${opportunityId}
-        ORDER BY created_at DESC
+        SELECT oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
+               COALESCE(m.contact, m.name, u.name, oi.contact, 'Hội viên') as member_name,
+               COALESCE(m.cover_url, u.avatar_url, '') as member_avatar,
+               COALESCE(m.phone, oi.contact, '') as member_phone,
+               COALESCE(m.email, u.email, '') as member_email,
+               COALESCE(m.name, bi.company_name, '') as member_company
+        FROM public.opportunity_interests oi
+        LEFT JOIN public.members m ON (oi.member_id = m.user_id::text OR oi.member_id = m.id OR oi.member_id = m.code)
+        LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (oi.member_id = bi.owner_user_id::text)
+        WHERE oi.opportunity_id = ${opportunityId}
+        ORDER BY oi.created_at DESC
       `.catch(() => []);
 
       return {
         opportunity: {
           id: String(r.id),
           posterId: String(r.poster_id || ''),
+          posterName: r.poster_name || undefined,
+          posterAvatar: r.poster_avatar || undefined,
+          posterPhone: r.poster_phone || undefined,
+          posterCompany: r.poster_company || undefined,
           title: r.title,
           description: r.description || '',
           type: r.type || 'opp.type.partnership',
@@ -8985,8 +9038,13 @@ export class ConnectAppService implements OnModuleInit {
           id: String(it.id),
           opportunityId: String(it.opportunity_id),
           memberId: String(it.member_id || ''),
+          memberName: it.member_name || undefined,
+          memberAvatar: it.member_avatar || undefined,
+          memberPhone: it.member_phone || undefined,
+          memberEmail: it.member_email || undefined,
+          memberCompany: it.member_company || undefined,
           message: it.message || '',
-          contact: it.contact || '',
+          contact: it.contact || it.member_phone || '',
           interestLevel: it.interest_level || 'high',
           createdAt: it.created_at ? new Date(it.created_at).toISOString() : new Date().toISOString(),
         })),
@@ -9230,14 +9288,15 @@ export class ConnectAppService implements OnModuleInit {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT 
           oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
-          COALESCE(m.name, u.name, 'Hội viên CLB') as name,
-          COALESCE(m.company, '') as company,
-          COALESCE(m.phone, u.phone, oi.contact, '') as phone,
+          COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as name,
+          COALESCE(m.name, bi.company_name, '') as company,
+          COALESCE(m.phone, oi.contact, '') as phone,
           COALESCE(m.email, u.email, '') as email,
           COALESCE(m.code, '') as member_code
         FROM public.opportunity_interests oi
         LEFT JOIN public.members m ON (oi.member_id = m.user_id::text OR oi.member_id = m.id OR oi.member_id = m.code)
         LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (oi.member_id = bi.owner_user_id::text)
         WHERE oi.opportunity_id = ${opportunityId}
         ORDER BY oi.created_at DESC
       `;
@@ -9363,7 +9422,7 @@ export class ConnectAppService implements OnModuleInit {
     const members = await this.prisma.$queryRaw<any[]>`
       SELECT m.code, m.name, m.contact,
              COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as display_name,
-             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
+             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
       FROM public.members m
       LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
       LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
@@ -9487,15 +9546,15 @@ export class ConnectAppService implements OnModuleInit {
     const mine = myCode.toLowerCase();
     const peer = peerCode.toLowerCase();
     const isSystem = peer === 'admin' || peer === 'system';
-
     const isGroup = peer.startsWith('group_');
+    const isChannel = peer.startsWith('channel_');
 
     const [rawMsgs, peerMem] = await Promise.all([
-      isGroup
+      (isGroup || isChannel)
         ? this.prisma.$queryRaw<any[]>`
             SELECT id, from_id, to_id, text, created_at, read_at
             FROM public.messages
-            WHERE LOWER(to_id) = ${peer}
+            WHERE LOWER(to_id) = ${peer} OR LOWER(from_id) = ${peer}
             ORDER BY created_at ASC
           `.catch((): any[] => [])
         : this.prisma.$queryRaw<any[]>`
@@ -9541,16 +9600,82 @@ export class ConnectAppService implements OnModuleInit {
       );
     }
 
+    // Khởi tạo tin nhắn cho các Ban chuyên môn / Kênh chính thức nếu chưa có tin nhắn
+    if (isChannel && msgs.length === 0) {
+      const channelSeeds: Record<string, string[]> = {
+        channel_secretariat: [
+          'Chào mừng Quý Anh/Chị Hội viên đến với Kênh Ban Thư Ký & Ban Điều Hành CLB Doanh Nhân CEO 1983.',
+          '[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.vione.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]',
+          'Văn bản chỉ đạo & kế hoạch hoạt động quý 1/2026 đã được Ban Thư Ký cập nhật. Kính mời Quý Hội viên theo dõi và đồng hành.',
+        ],
+        channel_media: [
+          'Chào mừng Quý Hội viên đến với Kênh Ban Truyền Thông Hiệp Hội CEO 1983.',
+          'Bản tin hoạt động CLB: Đẩy mạnh các chiến dịch truyền thông nhận diện thương hiệu cho các doanh nghiệp hội viên trên đa nền tảng.',
+          'Thông cáo báo chí: Chuỗi sự kiện Gala Doanh Nhân & Lễ tôn vinh Doanh nghiệp tiêu biểu 2026 chuẩn bị khởi động.',
+        ],
+        channel_promotion: [
+          'Chào mừng Quý Hội viên đến với Kênh Ban Xúc Tiến Giao Thương CLB CEO 1983.',
+          'Chương trình Matching B2B: Ban Xúc tiến mở cổng tiếp nhận nhu cầu liên kết chuỗi cung ứng giữa các doanh nghiệp hội viên.',
+          'Cơ hội kết nối tuần này: Nhu cầu tìm đối tác tổng thầu thi công nội thất, cung cấp nguyên vật liệu và giải pháp công nghệ số.',
+        ],
+        channel_deals: [
+          'Chào mừng Quý Hội viên đến với Kênh Cơ Hội & Deal B2B CLB CEO 1983.',
+          'Tổng hợp các gói hợp tác kinh doanh độc quyền và chính sách chiết khấu ưu đãi nội bộ giữa các doanh nghiệp trong CLB.',
+          'Deal hot tháng 3: Gói tài trợ truyền thông và gian hàng triển lãm B2B dành riêng cho hội viên chính thức.',
+        ],
+        channel_events: [
+          'Chào mừng Quý Hội viên đến với Kênh Ban Sự Kiện & Hội Nghị CLB CEO 1983.',
+          'Lịch sự kiện sắp tới: Đại hội thường niên CLB CEO 1983 và Diễn đàn Kinh tế Tư nhân 2026.',
+          'Vé tham dự sự kiện và mã QR Check-in đã sẵn sàng trong mục Vé sự kiện của bạn.',
+        ],
+      };
+
+      const seedList = channelSeeds[peer] || [
+        `Chào mừng Quý Anh/Chị đến với kênh ${peerCode}.`,
+        'Các thông báo và cập nhật mới nhất từ Ban chuyên môn sẽ được gửi trực tiếp tại đây.',
+      ];
+
+      for (let sIdx = 0; sIdx < seedList.length; sIdx++) {
+        const seedText = seedList[sIdx];
+        const offsetMins = (seedList.length - sIdx) * 30;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), ${peer}, ${peer}, ${seedText}, now() - (${offsetMins} * interval '1 minute'))
+        `.catch(() => null);
+
+        msgs.push({
+          id: `channel-${peer}-${sIdx}`,
+          from_id: peer,
+          to_id: peer,
+          text: seedText,
+          created_at: new Date(Date.now() - offsetMins * 60000).toISOString(),
+          read_at: null,
+        });
+      }
+    }
+
     await this.prisma.$executeRaw`
       UPDATE public.messages
       SET read_at = now()
       WHERE LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine} AND read_at IS NULL
     `.catch(() => null);
 
+    const channelNames: Record<string, string> = {
+      channel_secretariat: '🏛️ Kênh Ban Thư Ký & Ban Điều Hành',
+      channel_media: '📢 Kênh Ban Truyền Thông Hiệp Hội',
+      channel_promotion: '🤝 Kênh Ban Xúc Tiến Giao Thương',
+      channel_deals: '🎯 Kênh Cơ Hội & Deal B2B',
+      channel_events: '🌟 Kênh Ban Sự Kiện & Hội Nghị',
+    };
+
+    const resolvedPeerName = isChannel
+      ? (channelNames[peer] || `Kênh ${peerCode}`)
+      : (isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem[0]?.name ?? peerCode.toUpperCase()));
+
     return {
-      peerName: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem[0]?.name ?? peerCode.toUpperCase()),
+      peerName: resolvedPeerName,
       avatarUrl: isSystem ? '/ceo1983-logo.png' : (peerMem[0]?.avatar ?? null),
-      isSystem,
+      isSystem: isSystem || isChannel,
       messages: msgs.map((m) => ({
         id: m.id,
         text: m.text,
@@ -10117,9 +10242,16 @@ export class ConnectAppService implements OnModuleInit {
   async listActiveProducts() {
     try {
       const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT p.*, a.name as association_name
+        SELECT p.*, a.name as association_name,
+               COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
+               COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
+               COALESCE(m.phone, '') as seller_phone,
+               COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
         FROM public.products p
         LEFT JOIN public.associations a ON p.association_id = a.id
+        LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
+        LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+        LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
         WHERE p.status = 'active'
         ORDER BY p.created_at DESC
         LIMIT 100
@@ -10137,7 +10269,11 @@ export class ConnectAppService implements OnModuleInit {
         return {
           id: String(p.id),
           name: p.name || p.title || 'Sản phẩm doanh nghiệp',
-          company: p.company || p.association_name || 'CLB Doanh Nhân CEO 1983',
+          title: p.title || p.name || 'Sản phẩm doanh nghiệp',
+          company: p.seller_company || p.company || p.association_name || 'CLB Doanh Nhân CEO 1983',
+          sellerName: p.seller_name || undefined,
+          sellerAvatar: p.seller_avatar || undefined,
+          sellerPhone: p.seller_phone || undefined,
           category: p.category || 'Sản phẩm & Dịch vụ',
           likes: Number(p.likes ?? 0),
           views: Number(p.views ?? 0),
@@ -10823,10 +10959,11 @@ export class ConnectAppService implements OnModuleInit {
       console.warn('Demo request insert error:', e);
     }
 
-    // 3. Generate random secure password & provision user account
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const randomChar = ['K', 'H', 'T', 'V', 'P', 'Q', 'M', 'N'][Math.floor(Math.random() * 8)];
-    const rawPassword = `CEO1983@${randomChar}${randomSuffix}`;
+    // 3. Sinh chuỗi ký tự mật khẩu ngẫu nhiên (8 ký tự) & gửi qua email thông báo
+    const randomChars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const rawPassword = Array.from(crypto.randomBytes(8))
+      .map((byte) => randomChars[byte % randomChars.length])
+      .join('');
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     const now = new Date();
@@ -10850,31 +10987,37 @@ export class ConnectAppService implements OnModuleInit {
         userId = existing.id;
         await this.prisma.$executeRaw`
           UPDATE public.vione_users 
-          SET password_hash = ${hashedPassword}, email = ${email.toLowerCase()}, phone = ${phone}, name = ${fullName}, updated_at = now()
+          SET password = ${hashedPassword}, email = ${email.toLowerCase()}, name = ${fullName}, updated_at = now()
           WHERE id = ${existing.id}::uuid
         `.catch(() => null);
       } else {
         userId = crypto.randomUUID();
         await this.prisma.$executeRaw`
-          INSERT INTO public.vione_users (id, username, email, phone, name, password_hash, email_verified, is_active, created_at, updated_at)
-          VALUES (${userId}::uuid, ${email.toLowerCase()}, ${email.toLowerCase()}, ${phone}, ${fullName}, ${hashedPassword}, true, true, now(), now())
-          ON CONFLICT (id) DO NOTHING
+          INSERT INTO public.vione_users (id, username, email, name, password, email_verified, created_at, updated_at)
+          VALUES (${userId}::uuid, ${email.toLowerCase()}, ${email.toLowerCase()}, ${fullName}, ${hashedPassword}, true, now(), now())
+          ON CONFLICT (id) DO UPDATE SET password = ${hashedPassword}, email = ${email.toLowerCase()}, name = ${fullName}, updated_at = now()
         `.catch(() => null);
       }
 
-      // Sync to auth.users for compatibility
+      // Sync to auth.users for compatibility & mark onboarding_status = 'new' (must change password)
       if (userId) {
         await this.prisma.$executeRaw`
-          INSERT INTO auth.users (id, email, role)
-          VALUES (${userId}::uuid, ${email.toLowerCase()}, 'authenticated')
-          ON CONFLICT (id) DO UPDATE SET email = ${email.toLowerCase()}
+          INSERT INTO auth.users (id, email, encrypted_password, role)
+          VALUES (${userId}::uuid, ${email.toLowerCase()}, ${hashedPassword}, 'authenticated')
+          ON CONFLICT (id) DO UPDATE SET email = ${email.toLowerCase()}, encrypted_password = ${hashedPassword}
+        `.catch(() => null);
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.user_profiles (user_id, display_name, onboarding_status, created_at, updated_at)
+          VALUES (${userId}::uuid, ${fullName}, 'new'::public.onboarding_status, now(), now())
+          ON CONFLICT (user_id) DO UPDATE SET onboarding_status = 'new'::public.onboarding_status, updated_at = now()
         `.catch(() => null);
       }
     } catch (uErr) {
       console.warn('User account provisioning note:', uErr);
     }
 
-    const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} / Pass=${rawPassword}`;
+    const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} / Pass=[Random đã gửi qua Email]`;
 
     try {
       if (assocId) {
@@ -10930,9 +11073,7 @@ export class ConnectAppService implements OnModuleInit {
         `;
       }
 
-      // Tạm thời chỉ gửi mail khi Admin phê duyệt theo đúng yêu cầu:
-      // "khi người dùng điền thông tin mới trên landing web sau đó admin sẽ phê duyệt và sẽ có mail đẩy thông báo về mail của người ta thôi"
-      /*
+      // Gửi email thông báo tài khoản với mật khẩu ngẫu nhiên tới hòm thư hội viên mới
       if (this.mailService && email && email.includes('@')) {
         void this.mailService.sendRegistrationAccountEmail({
           to: email,
@@ -10941,10 +11082,9 @@ export class ConnectAppService implements OnModuleInit {
           passwordRaw: rawPassword,
           companyName: company,
           memberCode: memberId,
-          portalUrl: 'https://14.225.217.232:5444/association/login',
+          portalUrl: 'https://vba.vione.vn/association/login',
         });
       }
-      */
 
       const targetAssocId = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
       if (targetAssocId) {
@@ -11428,8 +11568,16 @@ export class ConnectAppService implements OnModuleInit {
   // ==========================================
   async listMarketplaceProducts(query?: any) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.products
-      ORDER BY created_at DESC
+      SELECT p.*,
+             COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
+             COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
+             COALESCE(m.phone, '') as seller_phone,
+             COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
+      FROM public.products p
+      LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
+      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+      LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
+      ORDER BY p.created_at DESC
     `.catch((err) => {
       console.error(`listMarketplaceProducts error: ${err?.message}`);
       return [];
@@ -11441,6 +11589,10 @@ export class ConnectAppService implements OnModuleInit {
       return {
         id: r.id,
         sellerId: r.seller_id,
+        sellerName: r.seller_name || undefined,
+        sellerAvatar: r.seller_avatar || undefined,
+        sellerPhone: r.seller_phone || undefined,
+        sellerCompany: r.seller_company || undefined,
         title: r.title,
         name: r.title,
         description: r.description ?? '',
@@ -11448,7 +11600,7 @@ export class ConnectAppService implements OnModuleInit {
         originalPrice: r.original_price ? Number(r.original_price) : undefined,
         memberPrice: r.member_price ? Number(r.member_price) : undefined,
         category: r.category ?? 'mk.cat.other',
-        company: r.company || 'CLB Doanh Nhân CEO 1983',
+        company: r.seller_company || r.company || 'CLB Doanh Nhân CEO 1983',
         status: r.status ?? 'active',
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
         time: r.created_at ? new Date(r.created_at).toISOString() : '',
@@ -11466,7 +11618,16 @@ export class ConnectAppService implements OnModuleInit {
 
   async getMarketplaceProductById(id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.products WHERE id = ${id} LIMIT 1
+      SELECT p.*,
+             COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
+             COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
+             COALESCE(m.phone, '') as seller_phone,
+             COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
+      FROM public.products p
+      LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
+      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+      LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
+      WHERE p.id = ${id} LIMIT 1
     `.catch(() => []);
     if (rows.length === 0) return null;
     const r = rows[0];
@@ -11476,17 +11637,32 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => {});
 
     const quotes = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.quote_requests WHERE product_id = ${id} ORDER BY created_at DESC
+      SELECT q.*,
+             COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as buyer_name,
+             COALESCE(m.cover_url, u.avatar_url, '') as buyer_avatar,
+             COALESCE(m.phone, q.contact, '') as buyer_phone,
+             COALESCE(m.name, bi.company_name, '') as buyer_company
+      FROM public.quote_requests q
+      LEFT JOIN public.members m ON (q.buyer_id = m.user_id::text OR q.buyer_id = m.id OR q.buyer_id = m.code)
+      LEFT JOIN public.vione_users u ON (q.buyer_id = u.id::text)
+      LEFT JOIN public.business_identities bi ON (q.buyer_id = bi.owner_user_id::text)
+      WHERE q.product_id = ${id}
+      ORDER BY q.created_at DESC
     `.catch(() => []);
 
     return {
       product: {
         id: r.id,
         sellerId: r.seller_id,
+        sellerName: r.seller_name || undefined,
+        sellerAvatar: r.seller_avatar || undefined,
+        sellerPhone: r.seller_phone || undefined,
+        sellerCompany: r.seller_company || undefined,
         title: r.title,
         description: r.description ?? '',
         price: Number(r.price ?? 0),
         category: r.category ?? 'mk.cat.other',
+        company: r.seller_company || r.company || 'CLB Doanh Nhân CEO 1983',
         status: r.status ?? 'active',
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : '',
         views: Number(r.views ?? 0) + 1,
@@ -11501,9 +11677,13 @@ export class ConnectAppService implements OnModuleInit {
         id: q.id,
         productId: q.product_id,
         buyerId: q.buyer_id,
+        buyerName: q.buyer_name || undefined,
+        buyerAvatar: q.buyer_avatar || undefined,
+        buyerPhone: q.buyer_phone || undefined,
+        buyerCompany: q.buyer_company || undefined,
         quantity: Number(q.quantity ?? 1),
         message: q.message ?? '',
-        contact: q.contact ?? '',
+        contact: q.contact ?? q.buyer_phone ?? '',
         status: q.status ?? 'sent',
         reminderCount: Number(q.reminder_count ?? 0),
         cancelReason: q.cancel_reason ?? '',

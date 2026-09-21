@@ -267,7 +267,7 @@ function MembersPage() {
   const [type, setType] = useUrlState<MemberType | "all">("type", "all");
   const [status, setStatus] = useUrlState<MemberStatus | "all">("status", "all");
   const [favOnly, setFavOnly] = useState(false);
-  const [sort, setSort] = useState<"name" | "newest" | "code" | "renewal">("name");
+  const [sort, setSort] = useState<"name" | "newest" | "code" | "renewal">("newest");
   const [sel, setSel] = useState<Set<string>>(new Set());
 
   const [open, setOpen] = useState(false);
@@ -444,8 +444,12 @@ function MembersPage() {
     const copy = [...filtered];
     copy.sort((a, b) => {
       switch (sort) {
-        case "newest":
+        case "newest": {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.joinedAt ? new Date(a.joinedAt).getTime() : 0);
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.joinedAt ? new Date(b.joinedAt).getTime() : 0);
+          if (timeB !== timeA) return timeB - timeA;
           return (b.joinedAt || "").localeCompare(a.joinedAt || "");
+        }
         case "code":
           return a.code.localeCompare(b.code, undefined, { numeric: true });
         case "renewal": {
@@ -472,9 +476,9 @@ function MembersPage() {
       region: (m) => t(m.region),
       type: (m) => m.type,
       status: (m) => m.status,
-      joined: (m) => m.joinedAt,
+      joined: (m) => m.createdAt || m.joinedAt,
     },
-    { initialPageSize: 24 },
+    { initialPageSize: 24, initialSortKey: "joined", initialSortDir: "desc" },
   );
 
   const reset = () => {

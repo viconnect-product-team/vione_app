@@ -89,12 +89,14 @@ Mã phản hồi chuẩn RESTful:
   "success": true,
   "access_token": "eyJhbGciOiJIUzI1NiIsIn...",
   "refresh_token": "def50200...",
+  "mustChangePassword": false,
   "user": {
     "id": "00000000-0000-4000-8000-000000000002",
     "member_code": "M1983-002",
     "full_name": "James Nguyễn",
     "role": "bch_pho_chu_tich",
     "status": "active",
+    "mustChangePassword": false,
     "term_end": "2027-09-13",
     "association": {
       "id": "c1983000-0000-4000-8000-000000001983",
@@ -104,6 +106,7 @@ Mã phản hồi chuẩn RESTful:
   }
 }
 ```
+> **Lưu ý nghiệp vụ Bảo mật Onboarding**: Nếu tài khoản hội viên mới (`user_profiles.onboarding_status === 'new'`), cờ `mustChangePassword` sẽ trả về `true`. Ứng dụng App Hiệp Hội tự động phát hiện cờ này và điều hướng bắt buộc sang `/association/settings?action=change_password&required=true`. Sau khi đổi mật khẩu thành công (`onboarding_status = 'completed'`), hệ thống tự động đăng xuất và điều hướng ra màn hình đăng nhập để xác thực lại.
 
 ### 2. `POST /api/auth/mobile/card-scan`
 - **Mô tả**: Đăng nhập nhanh bằng thẻ vật lý NFC hoặc quét mã QR in trên thẻ hội viên.
@@ -306,9 +309,26 @@ Mã phản hồi chuẩn RESTful:
 }
 ```
 
+### 5. `GET /api/events/:id/seating-map` & Sơ đồ Ghế Khán Phòng Tương Tác (Manual Floor Seating)
+- **Mô tả**: Quản lý và trực quan hóa sơ đồ chỗ ngồi sự kiện. Hỗ trợ 2 chế độ hiển thị:
+  1. **Xem theo hàng cố định (Cinema Rows)**: Phân bổ hàng ghế chữ cái (A, B, C...) kèm chỉ số ghế và danh mục (VIP/Standard).
+  2. **Xếp ghế bằng tay dưới sân khấu (Interactive Draggable Floor Canvas)**: Cho phép Ban tổ chức dùng chuột/chạm kéo thả tự do tọa độ `(x, y)` từng ghế khán phòng, thêm ghế VIP/Tiêu chuẩn tức thì và căn đều khoảng cách.
+- **Thẻ Sự Kiện & Bố Cục Section Đa Dạng (Event Section Architecture & Visual Poster Card)**: 
+  - Danh sách sự kiện App Hiệp Hội được cấu trúc hóa theo từng Section chuyên biệt rõ ràng:
+    1. **Đại Hội & Gala Toàn Thể**: Hero Poster lớn tỷ lệ vàng (h-64/h-72), viền vàng kim hoàng gia `border-amber-400/50`, ánh kim amber glow, badge Tiêu Điểm Thượng Đỉnh.
+    2. **Hội Thảo & Workshop Chuyên Đề**: Lưới Grid 2 cột sắc nét trên màn hình rộng, badge Xanh dương tri thức.
+    3. **Tọa Đàm & Giao Thương B2B**: Bố cục thẻ xúc tiến thương mại đối tác, badge Xanh ngọc phát triển.
+    4. **Sinh Hoạt Định Kỳ & Coffee CEO**: Bố cục thẻ thân mật thường nhật, badge Tím sang trọng.
+  - Tối giản 100% text thân thẻ ngoài danh sách (không có text rườm rà dưới thân thẻ), chuyển thành poster hội trường sang trọng `rounded-3xl` với Date Badge trắng đỏ chuẩn quốc tế (Tháng/Ngày/Thứ), Badge trạng thái `✓ Đã đăng ký`/Giá vé/Miễn phí + Bookmark góc trên phải, và capsule mờ tối hiển thị đồng hồ + bộ đếm ngược countdown timer + category ở đáy. Nhấp vào thẻ để mở Modal chi tiết toàn diện.
+
 ---
 
 ## 2.4. Phân hệ Tài chính, Hội phí & Cổng VietQR (Fees, Invoices & Webhooks)
+
+### 0. `GET /api/admin/invoices`
+- **Mô tả**: Truy vấn danh sách hóa đơn toàn hệ thống cho quản trị viên CRM.
+- **Ràng buộc Schema PostgreSQL**:
+  - Mã hội viên và số điện thoại được liên kết từ bảng `members` (`m.code`, `m.phone`). Bảng `vione_users` không chứa cột `code` và `phone`. Query bắt buộc sử dụng `COALESCE(m.code, '')` và `COALESCE(m.phone, '')` để tránh lỗi PostgreSQL 42703.
 
 ### 1. `POST /api/fees/invoices/generate`
 - **Mô tả**: Phát hành HÓA ĐƠN HỘI PHÍ cho hội viên.
@@ -405,7 +425,7 @@ Mã phản hồi chuẩn RESTful:
 
 ---
 
-## 2.6. Phân hệ Sàn Giao thương B2B (Marketplace & Quotes)
+## 2.6. Phân hệ Sàn Giao thương B2B (Marketplace & Opportunities)
 
 ### 1. `POST /api/marketplace/products`
 - **Mô tả**: Đăng bán sản phẩm / dịch vụ của doanh nghiệp lên chợ thương mại nội bộ.
@@ -419,6 +439,18 @@ Mã phản hồi chuẩn RESTful:
   "status": "active"
 }
 ```
+
+### 2. `GET /api/marketplace/products` & `GET /api/marketplace/products/:id`
+- **Mô tả**: Lấy danh sách hoặc chi tiết sản phẩm. Hệ thống tự động LEFT JOIN với `members` và `vione_users` để trả về đầy đủ định danh người đăng (`sellerName`, `sellerAvatar`, `sellerPhone`, `sellerCompany`), hỗ trợ hiển thị thẻ sản phẩm và danh bạ người yêu cầu báo giá (`quotes`).
+
+### 3. `GET /api/opportunities` & `GET /api/opportunities/:id`
+- **Mô tả**: Lấy danh sách hoặc chi tiết cơ hội giao thương B2B. Hệ thống LEFT JOIN với bảng `members` và `vione_users` để trả về thông tin người khởi tạo (`posterName`, `posterAvatar`, `posterPhone`, `posterCompany`) cùng danh sách người quan tâm (`interests`).
+
+### 4. `GET /api/opportunities/:id/interests`
+- **Mô tả**: Endpoint chuyên biệt trả về danh sách hội viên bày tỏ sự quan tâm đến cơ hội, gồm: `memberName`, `memberAvatar`, `memberPhone`, `memberEmail`, `company`, `expressedAt`.
+
+### 5. `POST /api/public/club-registration`
+- **Mô tả**: Nhận hồ sơ đăng ký từ Landing Page CEO v1 (`/landing/ceo/v1`). Bổ sung trường `industry` (Lĩnh vực hoạt động). Hệ thống tự động tạo hồ sơ hội viên và cấp tài khoản đăng nhập tức thì với mật khẩu mặc định an toàn là `123456` (được mã hóa bằng bcrypt). Người dùng có thể đăng nhập ngay vào App Hiệp Hội bằng SĐT/Email.
 
 ---
 

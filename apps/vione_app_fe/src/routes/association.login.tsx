@@ -21,12 +21,14 @@ export const Route = createFileRoute("/association/login")({
     username?: string;
     email?: string;
     registered?: string;
+    reset?: string;
   } => ({
     ...(typeof search.redirect === "string" ? { redirect: search.redirect } : {}),
     ...(search.reason === "expired" ? { reason: "expired" as const } : {}),
     ...(typeof search.username === "string" ? { username: search.username } : {}),
     ...(typeof search.email === "string" ? { email: search.email } : {}),
     ...(typeof search.registered === "string" ? { registered: search.registered } : {}),
+    ...(typeof search.reset === "string" ? { reset: search.reset } : {}),
   }),
   head: () => ({
     meta: [{ title: "Đăng nhập — Hiệp hội Doanh nhân CEO 1983" }],
@@ -53,7 +55,7 @@ function safeRedirect(target?: string): string | null {
 
 function AssociationLoginPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, reason, username, email: searchEmail, registered } = Route.useSearch();
+  const { redirect: redirectTo, reason, username, email: searchEmail, registered, reset } = Route.useSearch();
   const { user, setAuthData } = useAuth();
 
   const [identifier, setIdentifier] = useState(""); // Email or Member Code
@@ -81,6 +83,14 @@ function AssociationLoginPage() {
       toast.success("🎉 Đăng ký thành công! Quý CEO vui lòng nhập mật khẩu để đăng nhập vào App Hiệp Hội.");
     }
   }, [registered]);
+
+  useEffect(() => {
+    if (reset === "success") {
+      toast.success("✓ Đổi mật khẩu thành công! Quý CEO vui lòng đăng nhập lại bằng mật khẩu mới vừa tạo.", {
+        duration: 7000,
+      });
+    }
+  }, [reset]);
 
   useEffect(() => {
     if (reason === "expired") {
@@ -118,6 +128,19 @@ function AssociationLoginPage() {
       if (res?.access_token && res?.user) {
         setAuthData(res);
         applyRememberPreference(remember, cleanId);
+
+        if (res.mustChangePassword || res.user?.mustChangePassword) {
+          toast.warning("Hội viên mới bắt buộc phải thay đổi mật khẩu khởi tạo trước khi sử dụng ứng dụng.", {
+            duration: 6000,
+          });
+          navigate({
+            to: "/association/settings" as any,
+            search: { action: "change_password", required: "true" } as any,
+            replace: true,
+          });
+          return;
+        }
+
         toast.success(`Chào mừng hội viên ${res.user.user_metadata?.full_name || cleanId} trở lại!`);
         const target = safeRedirect(redirectTo) || "/association";
         navigate({ to: target as any, replace: true });

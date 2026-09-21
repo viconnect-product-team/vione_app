@@ -12,6 +12,11 @@ export class ProductsController {
     return this.connectAppService.listActiveProducts();
   }
 
+  @Get(':id')
+  async getProductById(@Param('id') id: string) {
+    return this.connectAppService.getMarketplaceProductById(id);
+  }
+
   @Post('quote')
   async requestProductQuote(
     @Request() req: any,

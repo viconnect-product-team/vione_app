@@ -27,14 +27,14 @@ $bound["EnableHttps"] = $EnableHttps
 
 if ($Target -in @("all", "both")) {
     Write-Host '=================================================================' -ForegroundColor Magenta
-    Write-Host '[BƯỚC 1/2] BẮT ĐẦU TRIỂN KHAI APP HIỆP HỘI CLB CEO 1983 (PORT 5002/5003)...' -ForegroundColor Magenta
+    Write-Host '[BƯỚC 1/2] BẮT ĐẦU TRIỂN KHAI APP HIỆP HỘI CLB CEO 1983 (PORT 5444/5002)...' -ForegroundColor Magenta
     Write-Host '=================================================================' -ForegroundColor Magenta
     & "$PSScriptRoot/deploy/ceo1983/fast-deploy.ps1" @bound
 
     Write-Host "`n=================================================================" -ForegroundColor Magenta
-    Write-Host '[BƯỚC 2/2] BẮT ĐẦU TRIỂN KHAI WEB CRM PLATFORM VÀ LANDING (PORT 5000/5001)...' -ForegroundColor Magenta
+    Write-Host '[BƯỚC 2/2] BẮT ĐẦU TRIỂN KHAI WEB CRM PLATFORM VÀ LANDING (PORT 5443/5004)...' -ForegroundColor Magenta
     Write-Host '=================================================================' -ForegroundColor Magenta
-    & "$PSScriptRoot/deploy/vione/fast-deploy.ps1" @bound
+    & "$PSScriptRoot/deploy/crm/fast-deploy.ps1" @bound
 
     if ($EnableHttps) {
         Write-Host "`n=================================================================" -ForegroundColor Magenta
@@ -45,12 +45,15 @@ if ($Target -in @("all", "both")) {
 
     Write-Host "`n=================================================================" -ForegroundColor Green
     Write-Host 'HOÀN TẤT TRIỂN KHAI TOÀN DIỆN CẢ 2 PHÂN HỆ LÊN DEV SERVER THÀNH CÔNG!' -ForegroundColor Green
-    Write-Host '1. Web CRM Platform & Landing (HTTPS): https://14.225.217.232:5443 (HTTP: :5000)' -ForegroundColor Yellow
+    Write-Host '1. Web CRM Platform & Landing (HTTPS): https://14.225.217.232:5443 (HTTP: :5004)' -ForegroundColor Yellow
     Write-Host '2. App Hiệp Hội CLB CEO 1983 (HTTPS)  : https://14.225.217.232:5444 (HTTP: :5002)' -ForegroundColor Yellow
     Write-Host '3. Cổng Chuẩn SSL 443 (HTTPS)         : https://14.225.217.232/association và https://14.225.217.232/' -ForegroundColor Yellow
     Write-Host '4. Miền sslip.io hỗ trợ PWA iOS (SSL) : https://dev-app.14-225-217-232.sslip.io:5444/association' -ForegroundColor Yellow
     Write-Host '=================================================================' -ForegroundColor Green
-} elseif ($Target -in @("crm", "vione")) {
+} elseif ($Target -eq "crm") {
+    & "$PSScriptRoot/deploy/crm/fast-deploy.ps1" @bound
+    if ($EnableHttps) { & "$PSScriptRoot/deploy/ssl/deploy-ssl.ps1" }
+} elseif ($Target -eq "vione") {
     & "$PSScriptRoot/deploy/vione/fast-deploy.ps1" @bound
     if ($EnableHttps) { & "$PSScriptRoot/deploy/ssl/deploy-ssl.ps1" }
 } else {

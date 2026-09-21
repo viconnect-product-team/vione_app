@@ -130,28 +130,36 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   const trimmed = url.trim();
   if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
 
-  const publicBase = getPublicBackendUrl();
-
-  // NÂNG CẤP BẢO MẬT HTTPS: Nếu trang web đang chạy HTTPS mà URL nhận được chứa http:// hoặc chứa cổng nội bộ (5001, 5003, 4000)
-  // Tự động chuyển đổi sang Origin HTTPS hiện tại để tránh lỗi Mixed Content
-  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+  // Tự động chuyển đổi sang Origin hiện tại để tránh lỗi Mixed Content hoặc vỡ ảnh khi mang cổng nội bộ khác
+  if (typeof window !== "undefined") {
     if (
       trimmed.startsWith("http://14.225.217.232") ||
+      trimmed.startsWith("https://14.225.217.232") ||
       trimmed.includes(":5001") ||
       trimmed.includes(":5002") ||
       trimmed.includes(":5003") ||
       trimmed.includes(":5004") ||
       trimmed.includes(":5005") ||
-      trimmed.includes(":4000")
+      trimmed.includes(":4000") ||
+      trimmed.includes("localhost:") ||
+      trimmed.includes("127.0.0.1:")
     ) {
       try {
-        const parsed = new URL(trimmed);
-        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+        const parsed = new URL(trimmed.startsWith("http") ? trimmed : `http://${trimmed}`);
+        if (
+          parsed.pathname.startsWith("/api/upload/") ||
+          parsed.pathname.startsWith("/upload/") ||
+          parsed.pathname.startsWith("/api/")
+        ) {
+          return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+        }
       } catch {
         // fallback bên dưới
       }
     }
   }
+
+  const publicBase = getPublicBackendUrl();
 
   // If URL contains internal Docker host backend:4000
   if (trimmed.includes("backend:4000")) {
@@ -308,22 +316,69 @@ function cleanUrls(body: any): any {
   return body;
 }
 
-async function handleResponse(response: Response) {
+async function handleResponse(response: Response, endpoint = "") {
   if (response.status === 401) {
+    const isAuthEndpoint =
+      endpoint.includes("/auth/login") ||
+      endpoint.includes("/auth/register") ||
+      endpoint.includes("/auth/reset-password") ||
+      endpoint.includes("/auth/forgot-password");
+
+    let errMsg = "Unauthorized";
+    try {
+      const errText = await response.text();
+      if (errText) {
+        const errJson = JSON.parse(errText);
+        errMsg = errJson?.message || errMsg;
+      }
+    } catch {
+      // ignore
+    }
+
     if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      const isLoginPage =
+        pathname === "/auth" ||
+        pathname === "/association/login" ||
+        pathname.startsWith("/association/login") ||
+        pathname === "/vione/login" ||
+        pathname.startsWith("/vione/login");
+
+      // NẾU LỖI XẢY RA KHI ĐANG Ở TRANG ĐĂNG NHẬP HOẶC KHI GỌI ENDPOINT ĐĂNG NHẬP:
+      // TUYỆT ĐỐI KHÔNG REDIRECT, để màn hình login hiển thị thông báo lỗi cho người dùng nhập lại!
+      if (isAuthEndpoint || isLoginPage) {
+        throw new Error(errMsg === "Unauthorized" ? "Thông tin đăng nhập hoặc mật khẩu không chính xác." : errMsg);
+      }
+
+      // Xóa phiên đăng nhập hết hạn
       localStorage.removeItem("vibe_token");
       localStorage.removeItem("vibe_refresh_token");
       document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      const pathname = window.location.pathname;
-      if (pathname !== "/auth") {
-        window.location.href = `/auth?reason=expired&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+
+      // Nếu token hết hạn ở App Hiệp hội -> về /association/login
+      if (pathname.startsWith("/association")) {
+        window.location.href = `/association/login?reason=expired&redirect=${encodeURIComponent(pathname + window.location.search)}`;
+      } else if (pathname.startsWith("/connect-app")) {
+        window.location.href = `/vione/login?reason=expired&redirect=${encodeURIComponent(pathname + window.location.search)}`;
+      } else {
+        window.location.href = `/auth?reason=expired&redirect=${encodeURIComponent(pathname + window.location.search)}`;
       }
     }
-    throw new Error("Unauthorized");
+    throw new Error(errMsg);
   }
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+    let errDetail = response.statusText;
+    try {
+      const errText = await response.text();
+      if (errText) {
+        const errJson = JSON.parse(errText);
+        errDetail = errJson?.message || errDetail;
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errDetail || `API request failed: ${response.status}`);
   }
   const text = await response.text();
   if (!text || text === "null") {
@@ -373,7 +428,7 @@ export async function fetchNestApi<T = any>(
     headers,
   });
 
-  return handleResponse(response);
+  return handleResponse(response, endpoint);
 }
 
 export async function fetchNestApiFromServer<T = any>(

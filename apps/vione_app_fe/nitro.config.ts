@@ -26,5 +26,6 @@ export default defineConfig({
   routeRules: {
     '/upload/**': { proxy: `${backendTarget}/api/upload/**` },
     '/api/upload/**': { proxy: `${backendTarget}/api/upload/**` },
+    '/uploads/**': { proxy: `${backendTarget}/api/upload/**` },
   },
 });

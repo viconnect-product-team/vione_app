@@ -1,10 +1,14 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
     [switch]$BackendOnly,
-    [switch]$InstallDeps
+    [switch]$InstallDeps,
+    [switch]$EnableHttps = $true,
+    [switch]$NoHttps
 )
+
+if ($NoHttps) { $EnableHttps = $false }
 
 # =========================================================================
 # Kịch bản triển khai độc lập Web CRM Platform CLB CEO 1983 (Hướng 2 - Standalone Compose)
@@ -45,7 +49,11 @@ try {
                 $env:NODE_OPTIONS = "--max-old-space-size=4096"
                 $env:VITE_APP_SCOPE = "crm_platform"
                 $env:VITE_APP_NAME = "ViOne CRM Platform"
-                $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5004"
+                if ($EnableHttps) {
+                    $env:VITE_PUBLIC_APP_URL = "https://14.225.217.232:5443"
+                } else {
+                    $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5004"
+                }
                 $env:NEST_API_URL = "http://crm-backend:4000"
                 
                 if ($InstallDeps -or (-not (Test-Path "node_modules"))) {
@@ -66,7 +74,7 @@ try {
         }
         if ($buildFE) {
             Invoke-CheckedCommand -Description "Xây dựng Frontend Image (crm-frontend)" -Action {
-                docker build -t crm-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
+                docker build --no-cache -t crm-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
             }
         }
 
@@ -143,7 +151,7 @@ try {
         $remoteLoadCmd += "docker load -i crm-frontend.tar.gz; rm -f crm-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; cp -f .env.association .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Web CRM Platform" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
@@ -152,9 +160,19 @@ try {
     Write-Host "`n[5/5] Dọn dẹp bộ nhớ đệm tạm thời tại máy cục bộ..." -ForegroundColor Cyan
     Remove-Item crm-backend.tar.gz, crm-frontend.tar.gz, crm-backend.tar, crm-frontend.tar -ErrorAction SilentlyContinue
 
+    if ($EnableHttps) {
+        Write-Host "`n[BỔ SUNG] Đồng bộ Nginx Reverse Proxy SSL / HTTPS..." -ForegroundColor Magenta
+        & "$DEPLOY_DIR/../ssl/deploy-ssl.ps1"
+    }
+
     Write-Host "=================================================================" -ForegroundColor Green
     Write-Host "TRIỂN KHAI ĐỘC LẬP WEB CRM PLATFORM VÀ LANDING CEO 1983 THÀNH CÔNG!" -ForegroundColor Green
-    Write-Host "Cổng Frontend CRM : http://${SERVER_IP}:5004" -ForegroundColor Yellow
+    if ($EnableHttps) {
+        Write-Host "Cổng Frontend CRM (HTTPS): https://${SERVER_IP}:5443" -ForegroundColor Yellow
+        Write-Host "Cổng Frontend CRM (HTTP) : http://${SERVER_IP}:5004" -ForegroundColor DarkGray
+    } else {
+        Write-Host "Cổng Frontend CRM : http://${SERVER_IP}:5004" -ForegroundColor Yellow
+    }
     Write-Host "Cổng Backend CRM  : http://${SERVER_IP}:5005" -ForegroundColor Yellow
     Write-Host "=================================================================" -ForegroundColor Green
 } finally {

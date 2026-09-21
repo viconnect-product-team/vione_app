@@ -7,7 +7,7 @@
 ## ⭐️ 1. NGUYÊN TẮC CỐT LÕI: KHI NÀO CẦN BUILD NATIVE APP?
 
 Hệ thống Mobile của ViOne được kiến trúc theo mô hình **Hybrid Live Remote Server**:
-- File native wrapper (Android / iOS) hoạt động như một shell bản địa hiệu năng cao, trỏ trực tiếp đến máy chủ backend/frontend (`http://14.225.217.232:5000/connect-app` hoặc `/association`).
+- File native wrapper (Android / iOS) hoạt động như một shell bản địa hiệu năng cao, trỏ trực tiếp đến máy chủ backend/frontend (`https://14.225.217.232:5444/connect-app` hoặc `https://14.225.217.232:5444/association`).
 - Khi bạn cập nhật giao diện (UI), sửa lỗi, đổi màu sắc, thêm chức năng CRM hay đổi API:
   👉 **BẠN KHÔNG CẦN BUILD LẠI FILE APK / IPA!**
   👉 Bạn chỉ cần triển khai bản web lên máy chủ (chạy file script `fast-deploy.ps1` hoặc `deploy-all.ps1`). Toàn bộ người dùng trên điện thoại sẽ tự động nhận giao diện và tính năng mới ngay khi mở ứng dụng.
@@ -30,7 +30,7 @@ Monorepo quản lý độc lập 2 ứng dụng tương ứng với 2 tệp khá
 | **Tên hiển thị trên điện thoại** | `ViOne Connect` | `CEO 1983` |
 | **Package ID Android** | `com.vione.app` | `vn.ceo1983.app` |
 | **Bundle Identifier iOS** | `ViOneBusinessConnect` | `vn.ceo1983.app` |
-| **URL khởi động mặc định** | `http://14.225.217.232:5000/connect-app` | `http://14.225.217.232:5000/association` |
+| **URL khởi động mặc định** | `https://14.225.217.232:5444/connect-app` | `https://14.225.217.232:5444/association` |
 | **Tính năng phần cứng** | Thẻ Titanium NFC, QR Code, File chooser | Thẻ Hội viên NFC, QR Check-in, File chooser |
 
 ---

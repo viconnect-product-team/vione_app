@@ -13,11 +13,11 @@ export class UploadService {
   ) {}
 
   private async saveToLocalDisk(subfolder: string, filename: string, buffer: Buffer): Promise<string> {
+    const os = require('os');
     const candidates = [
       path.join('/app', 'uploads', subfolder),
-      path.join(process.cwd(), 'uploads', subfolder),
       path.join('/tmp', 'uploads', subfolder),
-      path.join(process.cwd(), 'dist', 'uploads', subfolder),
+      path.join(os.tmpdir(), 'vione_uploads', subfolder),
     ];
     let saved = false;
     for (const uploadDir of candidates) {
@@ -45,18 +45,9 @@ export class UploadService {
     const safeFilename = `avatars/${baseFilename}`;
 
     let saved = false;
-    let localUrl = `/upload/file/avatars/${baseFilename}`;
+    let url: string | null = null;
 
-    // 1. Luôn ghi vào ổ đĩa cục bộ làm fallback chắc chắn
-    try {
-      localUrl = await this.saveToLocalDisk('avatars', baseFilename, file.buffer);
-      saved = true;
-    } catch (diskErr: any) {
-      console.warn('Local disk write notice in saveAvatar:', diskErr?.message);
-    }
-
-    // 2. Cố gắng tải lên MinIO nếu có sẵn (không ném 500 nếu MinIO lỗi)
-    let url = localUrl;
+    // 1. Ưu tiên tải trực tiếp lên MinIO (S3 Object Storage)
     try {
       const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
       if (minioUrl) {
@@ -65,10 +56,19 @@ export class UploadService {
       }
     } catch (minioErr: any) {
       console.warn('MinIO upload unreachable/failed, fallback to disk storage:', minioErr?.message);
-      url = localUrl;
     }
 
+    // 2. Chỉ ghi vào ổ đĩa cục bộ làm fallback nếu MinIO không khả dụng
     if (!saved) {
+      try {
+        url = await this.saveToLocalDisk('avatars', baseFilename, file.buffer);
+        saved = true;
+      } catch (diskErr: any) {
+        console.warn('Local disk write notice in saveAvatar:', diskErr?.message);
+      }
+    }
+
+    if (!saved || !url) {
       throw new InternalServerErrorException('Không thể lưu trữ tệp ảnh lên hệ thống. Vui lòng thử lại sau.');
     }
     
@@ -88,6 +88,13 @@ export class UploadService {
       UPDATE public.user_profiles
       SET avatar_url = ${url}
       WHERE user_id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save url to database members
+    await this.prisma.$executeRaw`
+      UPDATE public.members
+      SET avatar = ${url}
+      WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
     `.catch(() => null);
     
     // Save url to database business_identities
@@ -120,18 +127,9 @@ export class UploadService {
     const safeFilename = `${folder}/${baseFilename}`;
 
     let saved = false;
-    let localUrl = `/upload/file/${folder}/${baseFilename}`;
+    let url: string | null = null;
 
-    // 1. Luôn ghi vào ổ đĩa cục bộ làm fallback chắc chắn
-    try {
-      localUrl = await this.saveToLocalDisk(folder, baseFilename, file.buffer);
-      saved = true;
-    } catch (diskErr: any) {
-      console.warn('Local disk write notice in saveFile:', diskErr?.message);
-    }
-
-    // 2. Cố gắng tải lên MinIO nếu có sẵn (không ném 500 nếu MinIO lỗi)
-    let url = localUrl;
+    // 1. Ưu tiên tải trực tiếp lên MinIO (S3 Object Storage)
     try {
       const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
       if (minioUrl) {
@@ -140,10 +138,19 @@ export class UploadService {
       }
     } catch (minioErr: any) {
       console.warn('MinIO upload unreachable/failed, fallback to disk storage:', minioErr?.message);
-      url = localUrl;
     }
 
+    // 2. Chỉ ghi vào ổ đĩa cục bộ làm fallback nếu MinIO không khả dụng
     if (!saved) {
+      try {
+        url = await this.saveToLocalDisk(folder, baseFilename, file.buffer);
+        saved = true;
+      } catch (diskErr: any) {
+        console.warn('Local disk write notice in saveFile:', diskErr?.message);
+      }
+    }
+
+    if (!saved || !url) {
       throw new InternalServerErrorException('Không thể lưu trữ tệp tin lên hệ thống. Vui lòng thử lại sau.');
     }
 

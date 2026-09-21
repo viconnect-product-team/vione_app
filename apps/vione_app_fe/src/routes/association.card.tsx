@@ -437,6 +437,19 @@ function CardScreen() {
   const state = resolveState(member?.status, member?.validUntil ?? null);
   const stateStyle = STATE_STYLES[state];
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const currentMemberCode =
+    member?.code ||
+    (typeof window !== "undefined"
+      ? (() => {
+          try {
+            const m = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+            return m?.code || null;
+          } catch {
+            return null;
+          }
+        })()
+      : null) ||
+    "M1983-292";
   const pass = member
     ? buildMembershipPass({
         memberCode: member.code,
@@ -549,8 +562,8 @@ function CardScreen() {
             company={d.company || "CÂU LẠC BỘ CEO1983"}
             website="https://ceo1983club.com"
             clubEmail="info@ceo1983club.com"
-            cardCode={member?.code || "CEO1983-001"}
-            qrValue={member?.code ? `${origin}/card/${member.code}` : "https://ceo1983club.com"}
+            cardCode={currentMemberCode}
+            qrValue={`${origin}/card/${currentMemberCode}`}
             avatarUrl={d.photo}
             showActions={true}
           />
@@ -949,7 +962,7 @@ function CardScreen() {
       <AssociationMemberQrModal
         open={memberQrModalOpen}
         onClose={() => setMemberQrModalOpen(false)}
-        memberCode={member?.code || "M1983-002"}
+        memberCode={currentMemberCode}
         memberName={d.name || "Hội viên CEO 1983"}
         memberTitle={customProfile?.title || member?.title || "Ban Quản Trị"}
         memberCompany={d.company || "CLB Doanh Nhân CEO 1983"}

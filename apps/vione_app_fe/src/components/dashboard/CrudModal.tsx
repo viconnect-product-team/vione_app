@@ -166,7 +166,7 @@ export function CrudModal({
               ) : f.type === "textarea" ? (
                 <textarea
                   value={String(values[f.name] ?? "")}
-                  placeholder={f.placeholder}
+                  placeholder={f.placeholder || `Nhập ${typeof f.label === "string" ? f.label.toLowerCase() : "nội dung"}...`}
                   onChange={(e) => set(f.name, e.target.value)}
                   className={`${inputCls} h-24 py-2`}
                 />
@@ -191,7 +191,7 @@ export function CrudModal({
                 <input
                   type={f.type}
                   value={String(values[f.name] ?? "")}
-                  placeholder={f.placeholder}
+                  placeholder={f.placeholder || `Nhập ${typeof f.label === "string" ? f.label.toLowerCase() : ""}...`}
                   onChange={(e) => set(f.name, e.target.value)}
                   className={inputCls}
                 />

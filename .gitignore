@@ -44,3 +44,7 @@ credentials/
 *.p8
 *.p12
 *.mobileprovision
+
+# Uploads and temporary media
+uploads/
+**/uploads/**

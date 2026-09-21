@@ -2563,6 +2563,49 @@ function ChatThread({
         new Date(a.createdAt || a.time).getTime() - new Date(b.createdAt || b.time).getTime(),
     );
 
+    // Nếu là Kênh Ban chuyên môn của Hiệp hội và chưa có tin nhắn, tự động nạp tin tức chính thức
+    if (all.length === 0 && peer.peerCode.startsWith("channel_")) {
+      const channelDefaults: Record<string, string[]> = {
+        channel_secretariat: [
+          "Chào mừng Quý Anh/Chị Hội viên đến với Kênh Ban Thư Ký & Ban Điều Hành CLB Doanh Nhân CEO 1983.",
+          "[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.vione.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]",
+          "Văn bản chỉ đạo & kế hoạch hoạt động năm 2026 đã được Ban Thư Ký cập nhật. Kính mời Quý Hội viên theo dõi và đồng hành.",
+        ],
+        channel_media: [
+          "Chào mừng Quý Hội viên đến với Kênh Ban Truyền Thông Hiệp Hội CEO 1983.",
+          "Bản tin hoạt động CLB: Đẩy mạnh các chiến dịch truyền thông nhận diện thương hiệu cho các doanh nghiệp hội viên trên đa nền tảng.",
+          "Thông cáo báo chí: Chuỗi sự kiện Gala Doanh Nhân & Lễ tôn vinh Doanh nghiệp tiêu biểu 2026 chuẩn bị khởi động.",
+        ],
+        channel_promotion: [
+          "Chào mừng Quý Hội viên đến với Kênh Ban Xúc Tiến Giao Thương CLB CEO 1983.",
+          "Chương trình Matching B2B: Ban Xúc tiến mở cổng tiếp nhận nhu cầu liên kết chuỗi cung ứng giữa các doanh nghiệp hội viên.",
+          "Cơ hội kết nối tuần này: Nhu cầu tìm đối tác tổng thầu thi công nội thất, cung cấp nguyên vật liệu và giải pháp công nghệ số.",
+        ],
+        channel_deals: [
+          "Chào mừng Quý Hội viên đến với Kênh Cơ Hội & Deal B2B CLB CEO 1983.",
+          "Tổng hợp các gói hợp tác kinh doanh độc quyền và chính sách chiết khấu ưu đãi nội bộ giữa các doanh nghiệp trong CLB.",
+          "Deal hot tháng 3: Gói tài trợ truyền thông và gian hàng triển lãm B2B dành riêng cho hội viên chính thức.",
+        ],
+        channel_events: [
+          "Chào mừng Quý Hội viên đến với Kênh Ban Sự Kiện & Hội Nghị CLB CEO 1983.",
+          "Lịch sự kiện sắp tới: Đại hội thường niên CLB CEO 1983 và Diễn đàn Kinh tế Tư nhân 2026.",
+          "Vé tham dự sự kiện và mã QR Check-in đã sẵn sàng trong mục Sự kiện & Vé của bạn.",
+        ],
+      };
+      const seeds = channelDefaults[peer.peerCode] || [
+        `Chào mừng Quý Hội viên đến với Kênh ${peer.name}.`,
+        "Thông báo và tài liệu mới từ Ban chuyên môn sẽ được gửi trực tiếp tại đây.",
+      ];
+      return seeds.map((s, idx) => ({
+        id: `channel-seed-${peer.peerCode}-${idx}`,
+        text: s,
+        mine: false,
+        time: idx === 0 ? "2 ngày trước" : idx === 1 ? "Hôm qua" : "Hôm nay",
+        createdAt: new Date(Date.now() - (seeds.length - idx) * 3600000).toISOString(),
+        seen: true,
+      }));
+    }
+
     // Chống duplicate tin nhắn (cùng nội dung, cùng người gửi trong khoảng 15s)
     const deduped: ChatMessage[] = [];
     const seenSignatures = new Set<string>();
@@ -2580,7 +2623,7 @@ function ChatThread({
     }
 
     return deduped.filter((m) => !deletedForMeMsgIds.has(m.id));
-  }, [data.messages, localMessages, deletedForMeMsgIds]);
+  }, [data.messages, localMessages, deletedForMeMsgIds, peer.peerCode, peer.name]);
 
   const handleToggleReaction = (msgId: string, emoji: string) => {
     setMsgReactions((prev) => {
@@ -3126,37 +3169,100 @@ function ChatThread({
                     <Users className="h-2.5 w-2.5" />
                     {peer.memberCount || (peer.members?.length ? peer.members.length + 1 : 2)} TV
                   </span>
-                ) : (peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system") && (
+                ) : (peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system" || peer.peerCode?.startsWith("channel_")) && (
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                 )}
               </div>
-              <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <div className="truncate text-[11.5px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
                 {isGroup ? (
                   <span className="text-indigo-600 dark:text-indigo-400 font-medium">
                     {peer.memberCount || (peer.members?.length ? peer.members.length + 1 : 2)} thành viên · Chi tiết ›
                   </span>
+                ) : peer.peerCode?.startsWith("channel_") ? (
+                  <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3 text-amber-500 shrink-0" />
+                    Kênh chính thức CLB
+                  </span>
                 ) : peer.isSystem || peer.peerCode === "admin" || peer.peerCode === "system" ? (
-                  "Kênh thông báo hệ thống"
-                ) : isPeerOnline ? (
-                  <>
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Đang hoạt động</span>
-                    <span>· Xem profile ›</span>
-                  </>
+                  <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3 text-amber-500 shrink-0" />
+                    Kênh thông báo hệ thống
+                  </span>
                 ) : (
                   <>
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500 shrink-0" />
-                    <span className="text-slate-500 dark:text-slate-400 font-normal">Không trực tuyến</span>
-                    <span>· Xem profile ›</span>
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full shrink-0 ${
+                        connState.isConnected
+                          ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
+                          : "bg-slate-400 dark:bg-slate-500"
+                      }`}
+                    />
+                    <span
+                      className={`font-semibold ${
+                        connState.isConnected
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      {connState.isConnected ? "Đã kết nối" : "Chưa kết nối"}
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-600">·</span>
+                    <span className={isPeerOnline ? "text-emerald-500 font-medium" : "text-slate-400"}>
+                      {isPeerOnline ? "Đang hoạt động" : "Không trực tuyến"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleOpenPeerProfile}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                    >
+                      · Xem profile ›
+                    </button>
                   </>
                 )}
-              </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Header Actions (Group vs Direct Call) */}
         <div className="flex items-center gap-1 shrink-0 ml-2">
+          {!isGroup && !connState.isConnected && !peer.isSystem && !peer.peerCode?.startsWith("channel_") && peer.peerCode !== "admin" && peer.peerCode !== "system" && (
+            connState.isIncomingPending ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleAcceptConnection}
+                  disabled={isConnecting}
+                  className="px-2.5 py-1 rounded-full text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] transition shadow-2xs cursor-pointer"
+                >
+                  {isConnecting ? "..." : "Đồng ý"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeclineConnection}
+                  disabled={isConnecting}
+                  className="px-2 py-1 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Từ chối
+                </button>
+              </div>
+            ) : connState.isOutgoingPending ? (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40">
+                Chờ đồng ý
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSendConnectionRequest}
+                disabled={isConnecting}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[#003B95] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition border border-blue-200 dark:border-blue-800 cursor-pointer active:scale-95"
+                title="Gửi lời mời kết nối"
+              >
+                <UserPlus className="h-3 w-3" />
+                <span>{isConnecting ? "Đang gửi..." : "Kết nối"}</span>
+              </button>
+            )
+          )}
           {isGroup ? (
             <button
               type="button"
@@ -3206,61 +3312,6 @@ function ChatThread({
 
       {/* Message List */}
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {/* Banner Cảnh báo Tin nhắn chờ chuẩn Messenger */}
-        {!isGroup && !connState.isConnected && !peer.isSystem && peer.peerCode !== "admin" && peer.peerCode !== "system" && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-50/95 dark:bg-amber-950/30 p-3.5 mb-3 text-slate-800 dark:text-slate-200 shadow-xs">
-            <div className="flex items-start gap-2.5">
-              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 mt-0.5">
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[13px] font-bold text-slate-900 dark:text-white">
-                  {displayName} chưa nằm trong danh sách kết nối của bạn
-                </h4>
-                <p className="text-[11.5px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                  Tin nhắn này thuộc mục <strong className="text-amber-600 dark:text-amber-400">Tin nhắn chờ</strong>. Nhắn tin không tự động coi là đã kết nối. Chỉ khi đối phương đồng ý lời mời kết nối thì hai bên mới chính thức trở thành kết nối của nhau.
-                </p>
-                <div className="mt-2.5 flex items-center gap-2 flex-wrap">
-                  {connState.isIncomingPending ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleAcceptConnection}
-                        disabled={isConnecting}
-                        className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition cursor-pointer"
-                      >
-                        {isConnecting ? "Đang xử lý..." : "Chấp nhận kết nối"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDeclineConnection}
-                        disabled={isConnecting}
-                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95 transition cursor-pointer"
-                      >
-                        Từ chối
-                      </button>
-                    </>
-                  ) : connState.isOutgoingPending ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      <Clock className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Đã gửi lời mời kết nối (Chờ đồng ý)</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSendConnectionRequest}
-                      disabled={isConnecting}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition cursor-pointer"
-                    >
-                      <UserPlus className="h-3.5 w-3.5 text-white" />
-                      <span>{isConnecting ? "Đang gửi..." : "Gửi lời mời kết nối"}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {loading && (
           <p className="py-8 text-center text-[13px] text-slate-400">{t("m.messages.loading")}</p>
@@ -3278,8 +3329,8 @@ function ChatThread({
               !prevMsg ||
               new Date(m.createdAt || m.time).toDateString() !==
                 new Date(prevMsg.createdAt || prevMsg.time).toDateString();
-            const isRetracted = m.retracted || retractedMsgIds.has(m.id);
-            const reactions = msgReactions[m.id] || m.reactions || [];
+            const isRetracted = (m as any).retracted || retractedMsgIds.has(m.id);
+            const reactions = msgReactions[m.id] || (m as any).reactions || [];
             const content = parseMessageContent(m.text);
 
             return (

@@ -39,6 +39,44 @@ export type BanquetTable = {
   y: number; // percentage 0 - 100
 };
 
+export type FloorSeat = {
+  id: string;
+  label: string;
+  category: "vip" | "standard";
+  row: string;
+  number: number;
+  x: number; // percentage 0 - 100
+  y: number; // percentage 0 - 100
+  title?: string;
+};
+
+const generateInitialFloorSeats = (): FloorSeat[] => {
+  const rows = [
+    { row: "A", name: "Hàng VIP A", category: "vip" as const, count: 8, y: 18 },
+    { row: "B", name: "Hàng VIP B", category: "vip" as const, count: 8, y: 40 },
+    { row: "C", name: "Hàng Tiêu Chuẩn C", category: "standard" as const, count: 10, y: 64 },
+    { row: "D", name: "Hàng Doanh Nhân D", category: "standard" as const, count: 10, y: 86 },
+  ];
+  const list: FloorSeat[] = [];
+  rows.forEach((r) => {
+    const step = 84 / (r.count + 1);
+    for (let i = 0; i < r.count; i++) {
+      const num = i + 1;
+      list.push({
+        id: `${r.row}-${String(num).padStart(2, "0")}`,
+        label: `${r.name} - Ghế ${r.row}-${String(num).padStart(2, "0")}`,
+        category: r.category,
+        row: r.row,
+        number: num,
+        x: Math.round(8 + num * step),
+        y: r.y,
+        title: `${r.row}${num}`,
+      });
+    }
+  });
+  return list;
+};
+
 type Props = {
   currentSeat?: string;
   occupiedSeats?: Record<string, { attendeeName: string; attendeeCode?: string }>;
@@ -249,6 +287,96 @@ export function CinemaSeatingMap({
       window.removeEventListener("pointerup", handlePointerUp);
     };
   }, [draggingStageSeatId]);
+
+  // ── Manual Floor Seats Drag & Drop Under The Stage ──
+  const [cinemaViewMode, setCinemaViewMode] = useState<"floor-manual" | "rows">("floor-manual");
+  const floorCanvasRef = useRef<HTMLDivElement | null>(null);
+  const [floorSeats, setFloorSeats] = useState<FloorSeat[]>(generateInitialFloorSeats);
+  const [draggingFloorSeatId, setDraggingFloorSeatId] = useState<string | null>(null);
+  const dragFloorSeatStartRef = useRef<{
+    mouseX: number;
+    mouseY: number;
+    seatX: number;
+    seatY: number;
+  } | null>(null);
+
+  const handlePointerDownFloorSeat = (e: React.PointerEvent, seatId: string) => {
+    if (e.button !== 0) return;
+    const target = floorSeats.find((s) => s.id === seatId);
+    if (!target) return;
+
+    setDraggingFloorSeatId(seatId);
+    dragFloorSeatStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      seatX: target.x,
+      seatY: target.y,
+    };
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    if (!draggingFloorSeatId) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!dragFloorSeatStartRef.current || !floorCanvasRef.current) return;
+      const rect = floorCanvasRef.current.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const deltaX = e.clientX - dragFloorSeatStartRef.current.mouseX;
+      const deltaY = e.clientY - dragFloorSeatStartRef.current.mouseY;
+
+      const deltaPercentX = (deltaX / rect.width) * 100;
+      const deltaPercentY = (deltaY / rect.height) * 100;
+
+      const newX = Math.round(
+        Math.max(4, Math.min(96, dragFloorSeatStartRef.current.seatX + deltaPercentX))
+      );
+      const newY = Math.round(
+        Math.max(6, Math.min(94, dragFloorSeatStartRef.current.seatY + deltaPercentY))
+      );
+
+      setFloorSeats((prev) =>
+        prev.map((s) => (s.id === draggingFloorSeatId ? { ...s, x: newX, y: newY } : s))
+      );
+    };
+
+    const handlePointerUp = () => {
+      setDraggingFloorSeatId(null);
+      dragFloorSeatStartRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggingFloorSeatId]);
+
+  const handleAddFloorSeat = (category: "vip" | "standard") => {
+    const nextNum = floorSeats.length + 1;
+    const letter = category === "vip" ? "V" : "K";
+    const newSeat: FloorSeat = {
+      id: `${letter}-${String(nextNum).padStart(2, "0")}`,
+      label: `Khán Phòng - Ghế ${category === "vip" ? "VIP" : "Tiêu Chuẩn"} ${letter}-${String(nextNum).padStart(2, "0")}`,
+      category,
+      row: letter,
+      number: nextNum,
+      x: 50,
+      y: 50,
+      title: `${letter}${nextNum}`,
+    };
+    setFloorSeats((prev) => [...prev, newSeat]);
+  };
+
+  const handleResetFloorSeats = () => {
+    setFloorSeats(generateInitialFloorSeats());
+  };
+
+  const handleDeleteFloorSeat = (seatId: string) => {
+    setFloorSeats((prev) => prev.filter((s) => s.id !== seatId));
+  };
 
   const handleAddStageSeat = () => {
     const nextNum = stageSeats.length + 1;
@@ -727,8 +855,147 @@ export function CinemaSeatingMap({
             </div>
           </div>
 
-          {/* Rows of the Auditorium */}
-          <div className="space-y-4 max-w-3xl mx-auto overflow-x-auto pb-16 min-h-[300px]">
+          {/* Stage Under-Area: Toggle Between Manual Freeform Drag & Drop and Standard Rows */}
+          <div className="mx-auto max-w-3xl mb-4 flex items-center justify-between flex-wrap gap-2 px-1">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/70 border border-border">
+              <button
+                type="button"
+                onClick={() => setCinemaViewMode("floor-manual")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  cinemaViewMode === "floor-manual"
+                    ? "bg-amber-500 text-slate-950 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Move className="w-3.5 h-3.5" />
+                <span>Xếp Ghế Bằng Tay (Kéo Thả Tự Do)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCinemaViewMode("rows")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  cinemaViewMode === "rows"
+                    ? "bg-amber-500 text-slate-950 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <GripHorizontal className="w-3.5 h-3.5" />
+                <span>Xem Theo Hàng Cố Định</span>
+              </button>
+            </div>
+
+            {cinemaViewMode === "floor-manual" && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleAddFloorSeat("vip")}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 border border-amber-500/40 text-[11px] font-bold cursor-pointer transition shadow-xs"
+                >
+                  <Plus className="w-3 h-3 text-amber-500" />
+                  <span>+ Ghế VIP</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddFloorSeat("standard")}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-800 dark:text-sky-200 border border-sky-500/40 text-[11px] font-bold cursor-pointer transition shadow-xs"
+                >
+                  <Plus className="w-3 h-3 text-sky-500" />
+                  <span>+ Ghế Tiêu Chuẩn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetFloorSeats}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground text-[11px] font-bold cursor-pointer transition border border-border"
+                  title="Căn đều lại vị trí các ghế khán phòng"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Căn Đều</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 2A. INTERACTIVE FLOOR CANVAS (DRAGGABLE SEATS UNDER STAGE) */}
+          {cinemaViewMode === "floor-manual" ? (
+            <div className="mx-auto max-w-3xl mb-8">
+              <div className="text-[11px] text-muted-foreground font-medium text-center mb-2 flex items-center justify-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>Bạn có thể <strong>kéo rê từng chiếc ghế bằng chuột/tay</strong> để sắp xếp sơ đồ khán phòng dưới sân khấu tùy ý.</span>
+              </div>
+
+              <div
+                ref={floorCanvasRef}
+                className="relative w-full h-[480px] sm:h-[520px] rounded-2xl border-2 border-dashed border-border/80 bg-slate-950/90 shadow-2xl overflow-hidden p-4 select-none"
+                style={{
+                  backgroundImage: "radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px)",
+                  backgroundSize: "24px 24px",
+                }}
+              >
+                {/* Sàn khán phòng & ánh đèn sân khấu hắt xuống */}
+                <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-amber-500/20 via-amber-500/5 to-transparent pointer-events-none" />
+
+                <div className="absolute top-2 left-3 flex items-center gap-1.5 text-[10px] font-mono uppercase font-black tracking-widest text-slate-400">
+                  <span>KHÁN PHÒNG DƯỚI SÂN KHẤU ({floorSeats.length} GHẾ)</span>
+                </div>
+
+                {/* Các ghế xếp tự do dưới sân khấu */}
+                {floorSeats.map((seat) => {
+                  const isOccupied = occupiedSeats[seat.label] || occupiedSeats[seat.id];
+                  const isSelected = selectedSeatId === seat.label || selectedSeatId === seat.id;
+                  const isDragging = draggingFloorSeatId === seat.id;
+
+                  return (
+                    <div
+                      key={seat.id}
+                      onPointerDown={(e) => handlePointerDownFloorSeat(e, seat.id)}
+                      onClick={() => {
+                        if (!isOccupied) {
+                          setSelectedSeatId(seat.label);
+                          onSelectSeat(seat.label);
+                        }
+                      }}
+                      onMouseEnter={() =>
+                        setHoveredSeat({
+                          id: seat.id,
+                          label: seat.label,
+                          occupant: isOccupied?.attendeeName,
+                        })
+                      }
+                      onMouseLeave={() => setHoveredSeat(null)}
+                      style={{
+                        left: `${seat.x}%`,
+                        top: `${seat.y}%`,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                      className={`absolute flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] px-2 py-1.5 rounded-xl transition-transform cursor-grab active:cursor-grabbing select-none ${
+                        isDragging
+                          ? "scale-115 z-30 ring-2 ring-amber-400 shadow-2xl brightness-125"
+                          : "z-10 hover:scale-105 shadow-md"
+                      } ${
+                        isSelected
+                          ? "bg-emerald-600 text-white font-black ring-2 ring-emerald-300 shadow-emerald-500/50 shadow-lg"
+                          : isOccupied
+                          ? "bg-rose-600/80 text-white border border-rose-400 opacity-60 line-through"
+                          : seat.category === "vip"
+                          ? "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-950 font-black border border-amber-300 shadow-amber-500/20"
+                          : "bg-slate-800 text-white font-bold border border-slate-700 hover:border-sky-400 shadow-xs"
+                      }`}
+                      title={`${seat.label} - Giữ chuột để kéo sang vị trí khác`}
+                    >
+                      <span className="text-[9.5px] uppercase font-mono tracking-tight font-black leading-none">
+                        {seat.id}
+                      </span>
+                      <span className="text-[8px] font-semibold truncate max-w-[46px] text-center leading-tight mt-0.5 opacity-90">
+                        {isOccupied ? isOccupied.attendeeName : seat.title || `${seat.row}${seat.number}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* 2B. Traditional Rows */
+            <div className="space-y-4 max-w-3xl mx-auto overflow-x-auto pb-16 min-h-[300px]">
             {(cinemaRows || []).map((row) => {
               const seats = getRowSeats(row);
               const half = Math.ceil(seats.length / 2);
@@ -845,6 +1112,7 @@ export function CinemaSeatingMap({
               </button>
             </div>
           </div>
+          )}
 
           {/* Seat Status Legend */}
           <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center justify-center gap-4 text-xs">

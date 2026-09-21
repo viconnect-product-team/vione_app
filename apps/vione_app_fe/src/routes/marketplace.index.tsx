@@ -124,7 +124,12 @@ function sortProducts(list: Product[], sort: Sort): Product[] {
       return arr.sort((a, b) => a.price - b.price);
     case "newest":
     default:
-      return arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return arr.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return (b.createdAt || "").localeCompare(a.createdAt || "");
+      });
   }
 }
 
@@ -262,14 +267,14 @@ function ProductCard({
             </span>
           )}
         </div>
-        {(product.sellerName || product.company || seller) && (
-          <div className="mb-3 border-t border-border pt-3 text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">{product.sellerName || product.company || seller?.name}</span>
+        <div className="mb-3 border-t border-border pt-3 text-[11px] text-muted-foreground flex items-center justify-between">
+          <div className="truncate">
+            <span className="font-semibold text-primary">Người đăng: </span>
+            <span className="font-medium text-foreground">{product.sellerName || product.company || seller?.name || "Hội viên CLB"}</span>
             {product.company && product.sellerName && <span className="opacity-70"> ({product.company})</span>}
-            <span className="opacity-50"> • </span>
-            {fmt.date(product.createdAt)}
           </div>
-        )}
+          <span className="shrink-0 text-[10.5px] opacity-75">{fmt.date(product.createdAt)}</span>
+        </div>
         {isMine ? (
           <div className="flex gap-2">
             <button
@@ -947,6 +952,7 @@ function DiscoverySection({
 }
 
 function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => void }) {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const navigate = useNavigate();
@@ -1005,13 +1011,19 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
     setSelected(new Set());
   };
 
-  const mine = all.filter((p) => p.sellerId === CURRENT_USER_ID);
+  const isMyProduct = (p: Product) => {
+    if (user?.id && (p.sellerId === user.id || (p as any).seller_id === user.id)) return true;
+    if (user?.email && p.sellerPhone === user.email) return true;
+    if (user?.user_metadata?.full_name && p.sellerName === user.user_metadata.full_name) return true;
+    return p.sellerId === CURRENT_USER_ID;
+  };
+  const mine = all.filter(isMyProduct);
   const active = all.filter((p) => p.status === "active");
 
   const hasFilters = cat !== "all" || query.trim() !== "" || pinnedOnly || sort !== "newest";
 
   const visible = useMemo(() => {
-    let list = tab === "mine" ? mine : all.filter((p) => p.sellerId !== CURRENT_USER_ID);
+    let list = tab === "mine" ? mine : all;
     if (cat !== "all") list = list.filter((p) => p.category === cat);
     if (pinnedOnly) list = list.filter((p) => pinned.has(p.id));
     const q = query.trim().toLowerCase();
@@ -1020,6 +1032,8 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
         (p) =>
           p.title.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
+          (p.sellerName?.toLowerCase().includes(q) ?? false) ||
+          (p.company?.toLowerCase().includes(q) ?? false) ||
           (getSeller(p.sellerId)?.name.toLowerCase().includes(q) ?? false),
       );
     }

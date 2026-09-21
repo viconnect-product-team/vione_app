@@ -17,6 +17,10 @@ export type MyProduct = {
   originalPrice?: string;
   memberPrice?: string;
   sellerId?: string;
+  sellerName?: string;
+  sellerAvatar?: string;
+  sellerPhone?: string;
+  sellerCompany?: string;
 };
 
 // ---------- Products ----------
@@ -48,6 +52,10 @@ export const listMyProducts = createServerFn({ method: "GET" })
           originalPrice: p.originalPrice || p.original_price ? `${Number(p.originalPrice || p.original_price).toLocaleString("vi-VN")} đ` : undefined,
           memberPrice: p.memberPrice || p.member_price ? `${Number(p.memberPrice || p.member_price).toLocaleString("vi-VN")} đ` : undefined,
           sellerId: p.sellerId || p.seller_id || p.userId || p.user_id || p.authorId || p.author_id,
+          sellerName: p.sellerName || p.seller_name || p.userName || p.user_name || p.contactName || p.company,
+          sellerAvatar: p.sellerAvatar || p.seller_avatar || p.avatar || null,
+          sellerPhone: p.sellerPhone || p.seller_phone || p.phone || null,
+          sellerCompany: p.sellerCompany || p.seller_company || p.company || null,
         };
       });
     } catch {

@@ -304,7 +304,20 @@ export function Ceo1983BusinessCardVisit({
       <AssociationMemberQrModal
         open={qrModalOpen}
         onClose={() => setQrModalOpen(false)}
-        memberCode={cardCode || "M1983-002"}
+        memberCode={
+          cardCode ||
+          (typeof window !== "undefined"
+            ? (() => {
+                try {
+                  const m = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+                  return m?.code || null;
+                } catch {
+                  return null;
+                }
+              })()
+            : null) ||
+          "M1983-292"
+        }
         memberName={name}
         memberTitle={title}
         memberCompany={company}

@@ -169,11 +169,6 @@ function Index() {
       const isCrmPortal =
         search?.get("portal") === "crm" ||
         (typeof window !== "undefined" && sessionStorage.getItem("crm_portal") === "1");
-      const isMobileAppOrDevice =
-        typeof window !== "undefined" &&
-        (Boolean((window as any).Capacitor) ||
-          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-          window.innerWidth <= 768);
       const isCeo1983 =
         typeof window !== "undefined" &&
         (import.meta.env.VITE_APP_SCOPE === "association_app" ||
@@ -183,10 +178,6 @@ function Index() {
       if (isCeo1983 && window.location.pathname === "/") {
         navigate({ to: "/association", replace: true });
         return;
-      }
-
-      if (isMobileAppOrDevice && !isCrmPortal && !isCeo1983 && window.location.pathname === "/") {
-        navigate({ to: "/connect-app", replace: true });
       }
     } catch {
       /* ignore */
@@ -278,18 +269,7 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
         (new URLSearchParams(window.location.search).get("portal") === "crm" ||
           sessionStorage.getItem("crm_portal") === "1");
 
-      const isMobileAppOrDevice =
-        typeof window !== "undefined" &&
-        (Boolean((window as any).Capacitor) ||
-          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-          window.innerWidth <= 768);
 
-      // Mobile/Capacitor opening root "/" without explicit CRM flag always goes to ViOne app (/connect-app)
-      if (isMobileAppOrDevice && !isCrmPortal) {
-        setStatus("redirecting");
-        navigate({ to: "/connect-app", replace: true });
-        return;
-      }
 
       if (authStatus === 'out') {
         if (redirectAnonToLanding) {

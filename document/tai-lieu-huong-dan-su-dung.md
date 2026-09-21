@@ -47,7 +47,7 @@
    - 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
    - 5.4. Lịch Sự kiện, Vé Điện tử & QR Check-in (`/association/events`, `/association/checkin`)
    - 5.5. Tra cứu & NỘP HỘI PHÍ VietQR (Quy trình quét mã và chờ duyệt thủ công)
-   - 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
+   - 5.6. Thẻ Hội viên VIP & Thẻ Visit Card Doanh Nhân (`/association/card`, `/association/business-cards`)
    - 5.7. Kho Đặc quyền Doanh nghiệp & Thư viện Tài liệu (`/association/perks`, `/association/library`)
    - 5.8. Hộp thư Trao đổi với Ban Thư ký & Hồ sơ Cá nhân (`/association/messages`, `/association/profile`)
    - 5.9. Ứng dụng Di động Native App (Android APK & iOS TestFlight)
@@ -389,8 +389,8 @@ sequenceDiagram
   - Ngay sau khi chuyển khoản, cổng Webhook nhận diện giao dịch thành công.
   - Màn hình tự động chuyển sang `/association/renew/result`: Hiển thị biên nhận thu tiền điện tử, thời hạn thẻ tự động kéo dài thêm 1 năm và cấp chứng nhận số.
 
-## 5.6. Thẻ Hội viên Kỹ thuật số 3D & Chia sẻ vCard (`/association/card`, `/association/business-cards`)
-- **Thẻ 3D Flip Độc bản**:
+## 5.6. Thẻ Hội viên VIP & Thẻ Visit Card Doanh Nhân (`/association/card`, `/association/business-cards`)
+- **Thẻ Visit Card Độc Bản**:
   - Chạm vào thẻ trên màn hình để lật mặt trước (ảnh đại diện, chức vụ, logo hiệp hội) và mặt sau (mã QR vCard, hotline, địa chỉ văn phòng).
 - **Chia sẻ Nhanh Chóng**:
   - Đưa mã QR cho đối tác quét trực tiếp bằng camera điện thoại để lưu danh bạ mà không cần cài thêm ứng dụng ngoài.

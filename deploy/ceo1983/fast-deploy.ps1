@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -74,7 +74,7 @@ try {
         }
         if ($buildFE) {
             Invoke-CheckedCommand -Description "Xây dựng Frontend Image (ceo1983-frontend)" -Action {
-                docker build -t ceo1983-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
+                docker build --no-cache -t ceo1983-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
             }
         }
 
@@ -123,8 +123,12 @@ try {
         ssh "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
     }
 
+    # Đảm bảo có tệp tin .env.association cục bộ
+    Copy-Item "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env.association" -Force -ErrorAction SilentlyContinue
+
     $filesToUpload = @(
         (Resolve-Path "$DEPLOY_DIR/.env.production").Path,
+        (Resolve-Path "$DEPLOY_DIR/.env.association").Path,
         (Resolve-Path "$DEPLOY_DIR/docker-compose.yml").Path
     )
     if (-not $SkipBuild) {
@@ -147,7 +151,7 @@ try {
         $remoteLoadCmd += "docker load -i ceo1983-frontend.tar.gz; rm -f ceo1983-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; mv -f .env.production .env.association 2>/dev/null || true; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.association 2>/dev/null || true; touch .env.association; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
     Invoke-CheckedCommand -Description "Thực thi cấu trúc container độc lập Hiệp Hội" -Action {
         ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD

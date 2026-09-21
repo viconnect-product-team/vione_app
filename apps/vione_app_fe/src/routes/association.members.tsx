@@ -588,7 +588,20 @@ function MembersScreen() {
       <InviteMemberModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
-        memberCode={myMember?.code || "M1983-002"}
+        memberCode={
+          myMember?.code ||
+          (typeof window !== "undefined"
+            ? (() => {
+                try {
+                  const m = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+                  return m?.code || null;
+                } catch {
+                  return null;
+                }
+              })()
+            : null) ||
+          "M1983-292"
+        }
         memberName={myMember?.name || "Lãnh đạo Doanh nghiệp"}
       />
     </div>

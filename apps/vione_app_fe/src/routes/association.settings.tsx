@@ -14,6 +14,7 @@ import {
   Sparkles,
   AlertTriangle,
   X,
+  Info,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -33,11 +34,19 @@ import {
 
 export const Route = createFileRoute("/association/settings")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): {
+    action?: string;
+    required?: string;
+  } => ({
+    ...(typeof search.action === "string" ? { action: search.action } : {}),
+    ...(typeof search.required === "string" ? { required: search.required } : {}),
+  }),
   component: AssociationSettingsScreen,
 });
 
 function AssociationSettingsScreen() {
   const navigate = useNavigate();
+  const { action, required } = Route.useSearch();
   const { logout: authLogout } = useAuth();
   const { theme, setTheme } = useTheme();
   const fetchMember = useServerFn(getMyMember);
@@ -94,14 +103,24 @@ function AssociationSettingsScreen() {
         });
       }
 
-      toast.success("Đổi mật khẩu thành công! Quyền 'Đăng xuất' đã được kích hoạt.");
+      toast.success("✓ Đổi mật khẩu thành công! Quý hội viên vui lòng đăng nhập lại với mật khẩu mới.", {
+        duration: 8000,
+      });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setPasswordChangedInSession(true);
       try {
-        sessionStorage.setItem("vba_password_changed_in_session", "true");
+        sessionStorage.removeItem("vba_password_changed_in_session");
       } catch {}
+      await signOutSession();
+      authLogout?.();
+      navigate({
+        to: "/association/login" as any,
+        search: { reset: "success" } as any,
+        replace: true,
+      });
+      return;
     } catch (err: any) {
       toast.error(err.message || "Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.");
     } finally {
@@ -175,7 +194,19 @@ function AssociationSettingsScreen() {
         </div>
 
         {/* 1. Change Password Section */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
+        {required === "true" && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/50 text-amber-900 dark:text-amber-200 text-xs leading-relaxed flex items-start gap-3 shadow-md mb-2">
+            <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block font-bold text-[13px] text-amber-600 dark:text-amber-400 mb-0.5">
+                Bảo Mật Bắt Buộc Cho Hội Viên Mới
+              </strong>
+              Bạn đang sử dụng mật khẩu khởi tạo từ hệ thống. Để bảo vệ dữ liệu hội viên và quyền riêng tư, bắt buộc đổi sang mật khẩu cá nhân mới của bạn. Sau khi đổi thành công, hệ thống sẽ tự động chuyển bạn ra màn hình đăng nhập để đăng nhập lại.
+            </div>
+          </div>
+        )}
+
+        <section id="password-section" className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
             <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Đổi mật khẩu tài khoản
           </h3>

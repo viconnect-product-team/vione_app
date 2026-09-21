@@ -210,11 +210,22 @@ networks:
     name: vione-network
 ```
 
-### 6.2. Lệnh Triển khai độc lập:
+### 6.2. Hệ Thống Lệnh Triển Khai Độc Lập 3 Phân Hệ:
 ```powershell
-# Chạy từ thư mục gốc:
-npm run deploy:association:fe    # Deploy siêu tốc Frontend
-npm run deploy:association       # Deploy toàn diện Frontend + Backend
+# 1. Triển khai độc lập App Hiệp Hội CLB Doanh Nhân CEO 1983 (Port 5002/5003, HTTPS 5444):
+.\deploy-ceo1983.ps1
+
+# 2. Triển khai độc lập Web CRM Quản Trị & Landing CEO 1983 (Port 5004/5005, HTTPS 5443):
+.\deploy-crm.ps1
+
+# 3. Triển khai độc lập ViOne App Mạng Xã Hội Doanh Nhân (Port 5000/5001, HTTPS 5445):
+.\deploy-vione.ps1
+
+# 4. Triển khai linh hoạt qua Fast Deploy Wrapper:
+.\fast-deploy.ps1 -Target all       # Triển khai cả CEO 1983 + CRM + SSL Reverse Proxy
+.\fast-deploy.ps1 -Target ceo1983   # Triển khai chỉ CEO 1983
+.\fast-deploy.ps1 -Target crm       # Triển khai chỉ CRM
+.\fast-deploy.ps1 -Target vione     # Triển khai chỉ ViOne App
 ```
 
 ---

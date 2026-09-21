@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -74,7 +74,7 @@ try {
         }
         if ($buildFE) {
             Invoke-CheckedCommand -Description "Xây dựng Frontend Image (vione-frontend)" -Action {
-                docker build -t vione-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
+                docker build --no-cache -t vione-frontend:latest -f "$DEPLOY_DIR/Dockerfile.frontend" .
             }
         }
 

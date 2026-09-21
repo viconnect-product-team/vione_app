@@ -226,11 +226,11 @@ export class AdminService implements OnModuleInit {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT 
           i.*,
-          COALESCE(m.code, u.code, '') as member_code,
+          COALESCE(m.code, '') as member_code,
           COALESCE(m.name, u.name, u.email, 'Hội viên') as member_name,
           COALESCE(m.contact, u.name, '') as member_contact,
           COALESCE(m.email, u.email, '') as member_email,
-          COALESCE(m.phone, u.phone, '') as member_phone,
+          COALESCE(m.phone, '') as member_phone,
           COALESCE(m.type, 'company') as member_type,
           m.level as member_level,
           m.industry as member_industry,

@@ -48,16 +48,19 @@ export class AuthService {
   async login(user: any) {
     const payload = { username: user.username, sub: user.id, name: user.name, email: user.email };
     const refreshPayload = { sub: user.id, type: 'refresh' };
+    const mustChangePassword = await this.usersService.checkMustChangePassword(user.id);
     
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
       refresh_token: this.jwtService.sign(refreshPayload, { expiresIn: '7d' }),
+      mustChangePassword,
       user: {
         id: user.id,
         username: user.username,
         email: user.email,
         name: user.name,
         avatar_url: user.avatar_url,
+        mustChangePassword,
       },
     };
   }

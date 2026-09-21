@@ -36,7 +36,10 @@ services:
     ports:
       - "${ASSOCIATION_PORT_BACKEND:-5005}:4000"
     networks:
-      - vione-network
+      vione-network:
+        aliases:
+          - backend
+          - crm-backend
 
 volumes:
   vione-uploads-data:

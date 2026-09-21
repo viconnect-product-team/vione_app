@@ -73,6 +73,7 @@ export class OpportunityController {
 
   @Get(':id/interests')
   async getOpportunityInterests(@Param('id') id: string) {
-    return this.connectAppService.getOpportunityInterestedMembers(id);
+    const list = await this.connectAppService.getOpportunityInterestedMembers(id);
+    return { ok: true, interests: list };
   }
 }

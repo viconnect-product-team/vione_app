@@ -382,10 +382,34 @@ export class UsersService {
       )
       .catch(() => {});
 
+    // Đánh dấu onboarding_status = 'completed' để hoàn tất quy trình đổi mật khẩu bắt buộc
+    await this.prisma.$executeRaw`
+      UPDATE public.user_profiles
+      SET onboarding_status = 'completed'::public.onboarding_status, updated_at = now()
+      WHERE user_id = ${userId}::uuid
+    `.catch(() => null);
+
     return {
       success: true,
       message: 'Mật khẩu đã được thay đổi thành công',
     };
+  }
+
+  async checkMustChangePassword(userId: string): Promise<boolean> {
+    try {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT onboarding_status::text as onboarding_status
+        FROM public.user_profiles
+        WHERE user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+      if (rows && rows[0]) {
+        return rows[0].onboarding_status === 'new';
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   async deactivateAccount(userId: string, password?: string) {

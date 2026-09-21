@@ -7,69 +7,18 @@
 // Statically imports NO *.server file, so it is safe to import from
 // *.functions.ts.
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveMemberId } from "@/lib/current-member";
-import { BusinessCardRepository } from "./business-card.repository";
-import { LeadRepository } from "./lead.repository";
-import {
-  LEAD_STATUSES,
-  type BusinessCardLead,
-  type BusinessCardStats,
-  type DailyPoint,
-  type LeadHistoryEntry,
-  type LeadReplyEntry,
-  type LeadStatus,
-  type ReplyChannel,
+import { fetchNestApiFromServer } from "@/lib/api-client";
+import type {
+  BusinessCardLead,
+  BusinessCardStats,
+  LeadStatus,
+  ReplyChannel,
 } from "./lead.types";
-
-function readHistory(meta: Record<string, unknown> | null): LeadHistoryEntry[] {
-  const raw = Array.isArray(meta?.history) ? (meta!.history as unknown[]) : [];
-  return raw
-    .map((h) => h as Record<string, unknown>)
-    .filter((h) => typeof h.to === "string" && typeof h.at === "string")
-    .map((h) => ({
-      at: h.at as string,
-      from: (h.from as LeadStatus | null) ?? null,
-      to: h.to as LeadStatus,
-      note: (h.note as string | null) ?? null,
-    }));
-}
-
-function readReplies(meta: Record<string, unknown> | null): LeadReplyEntry[] {
-  const raw = Array.isArray(meta?.replies) ? (meta!.replies as unknown[]) : [];
-  return raw
-    .map((h) => h as Record<string, unknown>)
-    .filter((h) => typeof h.body === "string" && typeof h.at === "string")
-    .map((h) => ({
-      at: h.at as string,
-      channel: ((h.channel as ReplyChannel) ?? "note") as ReplyChannel,
-      templateId: (h.templateId as string | null) ?? null,
-      subject: (h.subject as string | null) ?? null,
-      body: h.body as string,
-    }));
-}
-
-const NEST_API =
-  typeof window !== "undefined" &&
-  (window.location.protocol === "https:" ||
-    window.location.port === "5443" ||
-    window.location.port === "5444" ||
-    window.location.port === "5445")
-    ? ""
-    : (import.meta.env.VITE_API_URL || "http://localhost:3000");
-const API_URL = NEST_API ? (NEST_API.endsWith("/api") ? NEST_API : `${NEST_API}/api`) : "/api";
-const getHeaders = (token?: string): Record<string, string> => {
-  const defaultToken = typeof window !== 'undefined' ? localStorage.getItem('vibe_token') : null;
-  const t = token || defaultToken;
-  return t ? { "Content-Type": "application/json", Authorization: `Bearer ${t}` } : { "Content-Type": "application/json" };
-};
 
 export const LeadService = {
   /** List and project all leads owned by the current member. */
   async listMyLeads(token: string): Promise<BusinessCardLead[]> {
-    const res = await fetch(`${API_URL}/business-cards/leads/me`, { headers: getHeaders(token) });
-    if (!res.ok) throw new Error("Failed to list leads");
-    return res.json();
+    return await fetchNestApiFromServer<BusinessCardLead[]>("/business-cards/leads/me", token);
   },
 
   /** Change lead status and append a status-history entry. */
@@ -79,12 +28,14 @@ export const LeadService = {
     status: LeadStatus,
     note?: string,
   ): Promise<{ ok: boolean }> {
-    const res = await fetch(`${API_URL}/business-cards/leads/${id}/status`, {
-      method: "PATCH",
-      headers: getHeaders(token),
-      body: JSON.stringify({ status, note })
-    });
-    return res.json();
+    return await fetchNestApiFromServer<{ ok: boolean }>(
+      `/business-cards/leads/${id}/status`,
+      token,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status, note }),
+      },
+    );
   },
 
   /** Append a reply entry and optionally mark the lead as responded. */
@@ -99,12 +50,14 @@ export const LeadService = {
       markResponded?: boolean;
     },
   ): Promise<{ ok: boolean }> {
-    const res = await fetch(`${API_URL}/business-cards/leads/${input.id}/reply`, {
-      method: "POST",
-      headers: getHeaders(token),
-      body: JSON.stringify(input)
-    });
-    return res.json();
+    return await fetchNestApiFromServer<{ ok: boolean }>(
+      `/business-cards/leads/${input.id}/reply`,
+      token,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    );
   },
 
   /** Notification-center workflow: change status AND append history + reply. */
@@ -114,18 +67,34 @@ export const LeadService = {
     status: "read" | "contacting" | "won" | "lost",
     note?: string,
   ): Promise<{ ok: boolean }> {
-    const res = await fetch(`${API_URL}/business-cards/leads/${id}/workflow`, {
-      method: "POST",
-      headers: getHeaders(token),
-      body: JSON.stringify({ status, note })
-    });
-    return res.json();
+    return await fetchNestApiFromServer<{ ok: boolean }>(
+      `/business-cards/leads/${id}/workflow`,
+      token,
+      {
+        method: "POST",
+        body: JSON.stringify({ status, note }),
+      },
+    );
   },
 
   /** Aggregate lead + interaction analytics for the current member. */
   async getStats(token: string, days?: number): Promise<BusinessCardStats> {
-    const res = await fetch(`${API_URL}/business-cards/leads/stats?days=${days || 30}`, { headers: getHeaders(token) });
-    if (!res.ok) throw new Error("Failed to fetch stats");
-    return res.json();
+    try {
+      return await fetchNestApiFromServer<BusinessCardStats>(
+        `/business-cards/leads/stats?days=${days || 30}`,
+        token,
+      );
+    } catch {
+      return {
+        totalLeads: 0,
+        totalInteractions: 0,
+        uniqueViews: 0,
+        respondedLeads: 0,
+        responseRate: 0,
+        daily: [],
+        statusBreakdown: [],
+        rangeDays: days || 30,
+      };
+    }
   },
 };

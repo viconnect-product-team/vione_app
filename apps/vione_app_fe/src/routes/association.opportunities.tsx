@@ -135,6 +135,14 @@ function OpportunitiesScreen() {
   const handleOpenOppDetail = async (o: MyOpportunity & { description?: string }) => {
     setSelectedOpp(o);
     try {
+      const detail = await fetchNestApi<any>(`/opportunities/${o.id}`);
+      if (detail && detail.id) {
+        setSelectedOpp(detail);
+        const list = detail.interests || detail.interestedMembers || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setInterestedMembers(list);
+        }
+      }
       await fetchNestApi(`/opportunities/${o.id}/view`, { method: "POST" });
       setSelectedOpp((prev) => (prev && prev.id === o.id ? { ...prev, views: (prev.views || 0) + 1 } : prev));
     } catch {
@@ -231,17 +239,22 @@ function OpportunitiesScreen() {
   };
 
   useEffect(() => {
-    if (selectedOpp && checkIsMine(selectedOpp)) {
+    if (selectedOpp) {
+      if ((selectedOpp as any).interests || (selectedOpp as any).interestedMembers) {
+        const preloaded = (selectedOpp as any).interests || (selectedOpp as any).interestedMembers || [];
+        if (Array.isArray(preloaded) && preloaded.length > 0) {
+          setInterestedMembers(preloaded);
+        }
+      }
       setLoadingInterests(true);
-      fetchNestApi<{ ok: boolean; interests: any[] }>(`/opportunities/${selectedOpp.id}/interests`)
+      fetchNestApi<any>(`/opportunities/${selectedOpp.id}/interests`)
         .then((res) => {
-          if (res?.interests) {
-            setInterestedMembers(res.interests);
-          } else {
-            setInterestedMembers([]);
+          const list = Array.isArray(res) ? res : res?.interests || [];
+          if (Array.isArray(list)) {
+            setInterestedMembers(list);
           }
         })
-        .catch(() => setInterestedMembers([]))
+        .catch(() => {})
         .finally(() => setLoadingInterests(false));
     } else {
       setInterestedMembers([]);
@@ -962,14 +975,10 @@ function OpportunitiesScreen() {
               {/* 3. CARD ACTION FOOTER */}
               <div className="px-4 py-3 flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  {o.contactName ? (
-                    <span className="truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <User className="h-3 w-3 shrink-0" />
-                      <span>LH: {o.contactName}</span>
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-medium text-slate-400">CLB CEO 1983 thẩm định</span>
-                  )}
+                  <span className="truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <User className="h-3 w-3 shrink-0" />
+                    <span className="truncate">Người đăng: {o.posterName || o.contactName || o.company || "Hội viên CLB"}</span>
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
@@ -1155,8 +1164,8 @@ function OpportunitiesScreen() {
                 </span>
               </div>
 
-              {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội */}
-              {checkIsMine(selectedOpp) && (
+              {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội hoặc ban quản trị */}
+              {Boolean(checkCanManageOpp(selectedOpp) || interestedMembers.length > 0) && (
                 <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-bold text-[13px] text-slate-900 dark:text-amber-300">
@@ -1245,19 +1254,18 @@ function OpportunitiesScreen() {
                   <span><strong>Hình thức:</strong> {normalizeTag(selectedOpp.tag)} · Ưu đãi độc quyền hội viên CEO 1983</span>
                 </div>
 
-                {(selectedOpp.contactName || selectedOpp.contactPhone) && (
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
-                    <User className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span><strong>Đầu mối phụ trách:</strong> {selectedOpp.contactName || "Ban Xúc tiến Thương mại"} {selectedOpp.contactTitle ? `(${selectedOpp.contactTitle})` : ""}</span>
-                      {selectedOpp.contactPhone && (
-                        <span className="block mt-0.5">
-                          Hotline: <a href={`tel:${selectedOpp.contactPhone}`} className="text-emerald-600 dark:text-emerald-400 font-bold underline">{selectedOpp.contactPhone}</a>
-                        </span>
-                      )}
-                    </div>
+                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
+                  <User className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span><strong>Người đăng / Đầu mối:</strong> {selectedOpp.posterName || selectedOpp.contactName || "Hội viên CLB CEO 1983"} {selectedOpp.contactTitle ? `(${selectedOpp.contactTitle})` : ""}</span>
+                    {selectedOpp.company && <span className="block text-slate-500 dark:text-slate-400 text-[11.5px]">{selectedOpp.company}</span>}
+                    {(selectedOpp.posterPhone || selectedOpp.contactPhone) && (
+                      <span className="block mt-0.5">
+                        Hotline / Zalo: <a href={`tel:${selectedOpp.posterPhone || selectedOpp.contactPhone}`} className="text-emerald-600 dark:text-emerald-400 font-bold underline">{selectedOpp.posterPhone || selectedOpp.contactPhone}</a>
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 

@@ -83,6 +83,15 @@ export class MailService {
     }
   }
 
+  private getCleanFromEmail(): string {
+    const raw = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+    const match = raw.match(/<([^>]+)>/);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return raw.replace(/["']/g, '').trim();
+  }
+
   /**
    * Gửi email thông tin tài khoản đăng nhập (Email + Mật khẩu ngẫu nhiên) cho hội viên mới
    */
@@ -186,7 +195,7 @@ export class MailService {
     // 1. Nếu có transporter, thực hiện gửi email thật
     if (this.transporter) {
       try {
-        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const fromAddr = this.getCleanFromEmail();
         const info = await this.transporter.sendMail({
           from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
           to: cleanTo,
@@ -373,7 +382,7 @@ export class MailService {
     // 1. Gửi qua SMTP nếu đã cấu hình transporter
     if (this.transporter) {
       try {
-        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const fromAddr = this.getCleanFromEmail();
         const info = await this.transporter.sendMail({
           from: `"Ban Tổ Chức Sự Kiện CEO 1983" <${fromAddr}>`,
           to: cleanTo,
@@ -524,7 +533,7 @@ export class MailService {
     // 1. Gửi qua SMTP nếu đã cấu hình
     if (this.transporter) {
       try {
-        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const fromAddr = this.getCleanFromEmail();
         const info = await this.transporter.sendMail({
           from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
           to: cleanTo,
@@ -653,7 +662,7 @@ export class MailService {
 
     if (this.transporter) {
       try {
-        const fromAddr = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+        const fromAddr = this.getCleanFromEmail();
         const info = await this.transporter.sendMail({
           from: `"${assocTitle}" <${fromAddr}>`,
           to: cleanTo,

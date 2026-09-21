@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -31,6 +31,7 @@ import {
   Award,
   Sparkles,
   Check,
+  MessageSquare,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -147,6 +148,7 @@ function ProductsScreen() {
   const isEn = lang === "en";
   const search = Route.useSearch();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const fetchProducts = useServerFn(listMyProducts);
   const doQuote = useServerFn(requestQuote);
@@ -209,20 +211,58 @@ function ProductsScreen() {
   const [quoteNote, setQuoteNote] = useState("");
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
 
+  // Author/Admin Quotes Inspection state
+  const [viewingQuotesProduct, setViewingQuotesProduct] = useState<MyProduct | null>(null);
+  const [productQuotes, setProductQuotes] = useState<any[]>([]);
+  const [loadingProductQuotes, setLoadingProductQuotes] = useState(false);
+
   const handleOpenQuoteModal = (p: MyProduct) => {
     setQuoteProduct(p);
     setQuoteQty("1");
     setQuoteNote("");
+    if (member?.phone || (user as any)?.phone) {
+      setQuotePhone(member?.phone || (user as any)?.phone);
+    }
   };
 
-  const handleSubmitQuote = (e: React.FormEvent) => {
+  const handleOpenProductQuotes = async (p: MyProduct) => {
+    setViewingQuotesProduct(p);
+    setLoadingProductQuotes(true);
+    try {
+      const res = await fetchNestApi<any>(`/marketplace/products/${p.id}`);
+      if (res && res.quotes) {
+        setProductQuotes(Array.isArray(res.quotes) ? res.quotes : []);
+      } else {
+        setProductQuotes([]);
+      }
+    } catch {
+      setProductQuotes([]);
+    } finally {
+      setLoadingProductQuotes(false);
+    }
+  };
+
+  const handleSubmitQuote = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!quoteProduct) return;
     setQuoteSubmitting(true);
-    setTimeout(() => {
-      setQuoteSubmitting(false);
+    try {
+      await fetchNestApi(`/marketplace/quotes`, {
+        method: "POST",
+        body: JSON.stringify({
+          productId: quoteProduct.id,
+          quantity: parseInt(quoteQty, 10) || 1,
+          phone: quotePhone,
+          message: quoteNote || "Hội viên yêu cầu báo giá VIP",
+        }),
+      });
       toast.success(isEn ? "Quote request sent successfully!" : "Đã gửi yêu cầu báo giá thành công!");
       setQuoteProduct(null);
-    }, 600);
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể gửi yêu cầu báo giá, vui lòng thử lại sau!");
+    } finally {
+      setQuoteSubmitting(false);
+    }
   };
 
   // Company Storefront modal state
@@ -238,7 +278,7 @@ function ProductsScreen() {
 
   // Lock body scroll when modal is open to ensure 100% stable centering on mobile
   useEffect(() => {
-    if (quoteProduct || postModalOpen || editingProduct || viewingCompany) {
+    if (quoteProduct || postModalOpen || editingProduct || viewingCompany || viewingQuotesProduct) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -246,7 +286,7 @@ function ProductsScreen() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [quoteProduct, postModalOpen, editingProduct, viewingCompany]);
+  }, [quoteProduct, postModalOpen, editingProduct, viewingCompany, viewingQuotesProduct]);
 
   // Form states for posting product with full CRM pricing fields & Company storefront
   const [formPhoto, setFormPhoto] = useState("");
@@ -291,6 +331,9 @@ function ProductsScreen() {
       ((member as any)?.userId && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).userId).toLowerCase()) ||
       ((member as any)?.id && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).id).toLowerCase()) ||
       (member?.code && p.sellerId && String(p.sellerId).toLowerCase() === String(member.code).toLowerCase()) ||
+      (member?.name && p.sellerName && p.sellerName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
+      ((user as any)?.name && p.sellerName && p.sellerName.toLowerCase().trim() === (user as any).name.toLowerCase().trim()) ||
+      ((user as any)?.user_metadata?.full_name && p.sellerName && p.sellerName.toLowerCase().trim() === (user as any).user_metadata.full_name.toLowerCase().trim()) ||
       (member?.name && p.company && p.company.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
       (member?.title && p.company && p.company.toLowerCase().trim() === member.title.toLowerCase().trim())
     );
@@ -637,10 +680,15 @@ function ProductsScreen() {
 
           {/* Product Details Info */}
           <div className="p-3">
-            {/* Company Name */}
-            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate mb-1">
-              <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
-              <span className="truncate">{p.company || "CLB Doanh Nhân CEO 1983"}</span>
+            {/* Company & Seller Name */}
+            <div className="flex items-center justify-between gap-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate mb-1">
+              <span className="flex items-center gap-1 truncate max-w-[60%]">
+                <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
+                <span className="truncate">{p.company || "CLB Doanh Nhân CEO 1983"}</span>
+              </span>
+              <span className="shrink-0 text-amber-600 dark:text-amber-400 font-semibold normal-case truncate max-w-[40%]">
+                Đăng bởi: {p.sellerName || "Hội viên"}
+              </span>
             </div>
 
             {/* Product Title */}
@@ -682,14 +730,19 @@ function ProductsScreen() {
         <div className="p-2.5 pt-0">
           {isAuthor ? (
             <div className="flex items-center gap-1.5">
-              <span className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-[11px] font-bold text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
-                <BadgeCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Sản phẩm của bạn</span>
-              </span>
+              <button
+                type="button"
+                onClick={() => handleOpenProductQuotes(p)}
+                className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-[11px] font-bold text-amber-700 dark:text-amber-300 text-center flex items-center justify-center gap-1 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
+                title="Xem danh sách người quan tâm & yêu cầu báo giá"
+              >
+                <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Người quan tâm</span>
+              </button>
               <button
                 type="button"
                 onClick={(e) => startEditProduct(p, e)}
-                className="py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
+                className="py-1.5 px-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
                 title="Chỉnh sửa sản phẩm"
               >
                 <Pencil className="h-3 w-3 text-blue-500" />
@@ -705,15 +758,27 @@ function ProductsScreen() {
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => handleOpenQuoteModal(p)}
-              style={{ color: "#ffffff" }}
-              className="w-full py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Send className="h-3 w-3 text-amber-300" />
-              <span>Nhận báo giá VIP</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleOpenQuoteModal(p)}
+                style={{ color: "#ffffff" }}
+                className="flex-1 py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Send className="h-3 w-3 text-amber-300" />
+                <span>Nhận báo giá VIP</span>
+              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenProductQuotes(p)}
+                  className="py-2 px-2.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer"
+                  title="Xem yêu cầu báo giá (Quyền Admin)"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -1571,6 +1636,108 @@ function ProductsScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── MODAL XEM DANH SÁCH NGƯỜI QUAN TÂM & YÊU CẦU BÁO GIÁ SẢN PHẨM ── */}
+      {mounted && viewingQuotesProduct && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
+          onClick={() => setViewingQuotesProduct(null)}
+        >
+          <div
+            className="my-auto w-full max-w-[500px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="min-w-0 flex-1 pr-2">
+                <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="h-5 w-5 text-amber-500" />
+                  <span>Hội viên quan tâm / Báo giá</span>
+                </h3>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{viewingQuotesProduct.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingQuotesProduct(null)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {loadingProductQuotes ? (
+                <p className="text-xs text-slate-400 text-center py-6">Đang tải danh sách người quan tâm...</p>
+              ) : productQuotes.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Chưa có yêu cầu báo giá nào</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Khi có hội viên gửi yêu cầu báo giá hoặc bấm quan tâm, thông tin liên hệ sẽ xuất hiện tại đây.</p>
+                </div>
+              ) : (
+                productQuotes.map((q: any) => (
+                  <div key={q.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-[#003B95] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                          {q.buyerName ? q.buyerName.charAt(0).toUpperCase() : "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{q.buyerName || "Hội viên CLB"}</h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{q.buyerCompany || "Hội viên CEO 1983"}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 shrink-0">
+                        {fmt.rel(q.createdAt)}
+                      </span>
+                    </div>
+
+                    {q.quantity && (
+                      <p className="text-xs text-slate-700 dark:text-slate-300">
+                        <strong>Số lượng / Quy mô:</strong> {q.quantity}
+                      </p>
+                    )}
+
+                    {(q.note || q.message) && (
+                      <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 italic">
+                        "{q.note || q.message}"
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/40">
+                      <div className="text-xs text-slate-500">
+                        {q.phone && <span>SĐT: <strong className="text-emerald-600 dark:text-emerald-400">{q.phone}</strong></span>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {q.phone && (
+                          <a
+                            href={`tel:${q.phone}`}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 hover:bg-emerald-600 transition"
+                          >
+                            <Phone className="h-3 w-3" />
+                            <span>Gọi</span>
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewingQuotesProduct(null);
+                            navigate({ to: "/association/messages", search: { peerCode: q.buyerId || q.phone } });
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-[#003B95] text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#002B70] transition cursor-pointer"
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          <span>Nhắn tin</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>,
         document.body

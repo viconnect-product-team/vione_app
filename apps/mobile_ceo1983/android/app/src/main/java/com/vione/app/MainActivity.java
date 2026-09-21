@@ -15,8 +15,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.net.http.SslError;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -387,6 +389,7 @@ public class MainActivity extends BridgeActivity {
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
             WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
             settings.setMediaPlaybackRequiresUserGesture(false);
             settings.setAllowFileAccess(true);
             settings.setAllowContentAccess(true);
@@ -403,6 +406,14 @@ public class MainActivity extends BridgeActivity {
         setupNativeBridge();
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
+
+            webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    // Cho phép tiếp tục tải trang với SSL Self-Signed trên IP nội bộ
+                    handler.proceed();
+                }
+            });
 
             webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
                 @Override

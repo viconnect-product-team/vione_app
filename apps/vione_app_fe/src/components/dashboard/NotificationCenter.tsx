@@ -207,7 +207,7 @@ export function NotificationCenter() {
       bodyLower.includes("kết bạn") ||
       titleLower.includes("khoảnh khắc")
     ) {
-      void navigate({ to: "/connect-app/network" });
+      void navigate({ to: "/members" });
       return;
     }
 

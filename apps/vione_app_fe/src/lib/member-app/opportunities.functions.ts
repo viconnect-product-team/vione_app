@@ -15,6 +15,8 @@ export type MyOpportunity = {
   posterCode?: string;
   posterName?: string;
   posterCompany?: string;
+  posterPhone?: string;
+  posterAvatar?: string;
   image?: string | null;
   contactName?: string | null;
   contactPhone?: string | null;

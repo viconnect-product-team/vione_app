@@ -44,10 +44,10 @@ function NewsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fields: CrudField[] = [
-    { name: "title", label: t("news.col.title"), type: "text", required: true },
-    { name: "category", label: t("news.col.category"), type: "text", required: true },
-    { name: "author", label: t("news.col.author"), type: "text", required: true },
-    { name: "publishedAt", label: t("news.col.date"), type: "text", placeholder: "2026-01-31" },
+    { name: "title", label: t("news.col.title"), type: "text", required: true, placeholder: "Nhập tiêu đề bài viết tin tức..." },
+    { name: "category", label: t("news.col.category"), type: "text", required: true, placeholder: "VD: Hoạt động CLB, Giao thương B2B, Thông báo..." },
+    { name: "author", label: t("news.col.author"), type: "text", required: true, placeholder: "VD: Ban Thư Ký, Ban Truyền Thông..." },
+    { name: "publishedAt", label: t("news.col.date"), type: "text", placeholder: "YYYY-MM-DD (VD: 2026-09-27)" },
     {
       name: "status",
       label: t("events.col.status"),
@@ -64,7 +64,7 @@ function NewsPage() {
       type: "image",
       placeholder: "Tải ảnh lên từ máy tính hoặc dán link ảnh...",
     },
-    { name: "excerpt", label: t("news.col.excerpt"), type: "textarea" },
+    { name: "excerpt", label: t("news.col.excerpt"), type: "textarea", placeholder: "Nhập đoạn tóm lược nội dung chính hiển thị ngoài danh sách tin tức..." },
   ];
 
   const onSubmit = async (v: CrudValues) => {

@@ -38,6 +38,7 @@ import { fetchNestApi } from "@/lib/api-client";
 import { listOpportunitiesFn } from "@/lib/opportunities.functions";
 import { listActivityLogFn } from "@/lib/activity.functions";
 import type { Opportunity } from "@/lib/opportunities-data";
+import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
 import type { ActivityLog } from "@/lib/extra-data";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from "@/components/dashboard/StateKit";
@@ -298,9 +299,49 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
     return d.opportunities
       .filter((o) => o.status === "open")
       .map((opp) => ({ opp, interests: d.interestCounts[opp.id] ?? 0 }))
-      .sort((a, b) => b.interests - a.interests || b.opp.views - a.opp.views)
+      .sort((a, b) => {
+        const timeA = a.opp.createdAt ? new Date(a.opp.createdAt).getTime() : 0;
+        const timeB = b.opp.createdAt ? new Date(b.opp.createdAt).getTime() : 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return b.interests - a.interests || b.opp.views - a.opp.views;
+      })
       .slice(0, 4);
   }, [oppsQ.data]);
+
+  const productsQ = useQuery({
+    queryKey: ["dashboard-products-client"],
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any[]>("/marketplace/products");
+        return Array.isArray(res) ? res : [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: authReady,
+  });
+
+  const recentProducts = useMemo(() => {
+    const list = [...(productsQ.data ?? [])];
+    return list
+      .sort((a, b) => {
+        const timeA = a.createdAt || a.created_at ? new Date(a.createdAt || a.created_at).getTime() : 0;
+        const timeB = b.createdAt || b.created_at ? new Date(b.createdAt || b.created_at).getTime() : 0;
+        return timeB - timeA;
+      })
+      .slice(0, 4);
+  }, [productsQ.data]);
+
+  const recentMembers = useMemo(() => {
+    const list = [...(membersQ.data ?? [])];
+    return list
+      .sort((a, b) => {
+        const timeA = a.createdAt || a.created_at || a.joinedAt || a.joined_at ? new Date(a.createdAt || a.created_at || a.joinedAt || a.joined_at).getTime() : 0;
+        const timeB = b.createdAt || b.created_at || b.joinedAt || b.joined_at ? new Date(b.createdAt || b.created_at || b.joinedAt || b.joined_at).getTime() : 0;
+        return timeB - timeA;
+      })
+      .slice(0, 4);
+  }, [membersQ.data]);
 
   const recent = useMemo<ActivityLog[]>(() => (activityQ.data ?? []).slice(0, 6), [activityQ.data]);
 
@@ -639,6 +680,100 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{relTime(a.at, t)}</p>
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+
+      {/* Realtime Live Feed: Hội viên mới & Sản phẩm Marketplace mới nhất */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Panel
+          title="Hội viên mới gia nhập"
+          action={<ViewAll to="/members" label={t("exec.viewAll")} />}
+        >
+          {membersQ.isLoading ? (
+            <ListSkeleton rows={4} />
+          ) : recentMembers.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <ul className="space-y-2.5">
+              {recentMembers.map((m: any) => (
+                <li key={m.id}>
+                  <Link
+                    to="/members/$memberId"
+                    params={{ memberId: m.id }}
+                    search={REVIEW_SEARCH_RESET}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {(m.name || "U").charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-semibold text-foreground">
+                          {m.name}
+                        </div>
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {m.company || m.industry || "Doanh nghiệp thành viên"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-500/10 text-emerald-500">
+                        {m.status === "active" ? "Chính thức" : "Mới đăng ký"}
+                      </span>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {relTime(m.createdAt || m.created_at || m.joinedAt || m.joined_at, t)}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          title="Sản phẩm & Dịch vụ mới lên sàn"
+          action={<ViewAll to="/marketplace" label={t("exec.viewAll")} />}
+        >
+          {productsQ.isLoading ? (
+            <ListSkeleton rows={4} />
+          ) : recentProducts.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <ul className="space-y-2.5">
+              {recentProducts.map((p: any) => (
+                <li key={p.id}>
+                  <Link
+                    to="/marketplace/$productId"
+                    params={{ productId: p.id }}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-base">
+                        {p.emoji || "🛍️"}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-semibold text-foreground">
+                          {p.title || p.name}
+                        </div>
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {p.sellerName || p.company || "Hội viên CLB"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[12px] font-bold text-primary">
+                        {p.price ? fmtMoney(Number(p.price)) : "Liên hệ"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {relTime(p.createdAt || p.created_at, t)}
+                      </div>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>

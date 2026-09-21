@@ -301,14 +301,19 @@ function PublicCardView() {
     },
   ];
 
+  const cardQrUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/card/${code}`
+      : `https://vba.vione.vn/card/${code}`;
+
   return (
-    <div className="vba-app min-h-[100dvh] bg-slate-950 text-slate-100 antialiased">
+    <div className="vba-app min-h-[100dvh] bg-slate-50 text-slate-800 antialiased">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[500px] flex-col px-4 pb-16">
         {/* Header navigation & language */}
         <header className="flex items-center justify-between py-4">
           <Link
             to="/association"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md px-3.5 py-1.5 text-[12px] font-bold text-amber-400 shadow-sm transition hover:bg-white/10"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[12px] font-bold text-[#003B95] shadow-xs transition hover:bg-slate-100"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>{t("back")}</span>
@@ -317,7 +322,7 @@ function PublicCardView() {
           <div
             role="group"
             aria-label="Language"
-            className="inline-flex items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md p-0.5 text-[11px] font-semibold shadow-sm"
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white p-0.5 text-[11px] font-semibold shadow-xs"
           >
             {(["vi", "en"] as Lang[]).map((l) => (
               <button
@@ -327,8 +332,8 @@ function PublicCardView() {
                 aria-pressed={lang === l}
                 className={`inline-flex h-7 min-w-[44px] items-center justify-center gap-1 rounded-full px-2.5 transition font-bold ${
                   lang === l
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
               >
                 {l === "vi" ? "🇻🇳 VI" : "🇬🇧 EN"}
@@ -375,7 +380,7 @@ function PublicCardView() {
 
                 {/* QR Code on front of card */}
                 <div className="rounded-xl bg-white p-1.5 shadow-md border border-amber-400/30 shrink-0">
-                  <QrCanvas value={`CEO1983-MEMBER:${code}`} size={56} />
+                  <QrCanvas value={cardQrUrl} size={56} />
                 </div>
               </div>
 
@@ -401,66 +406,66 @@ function PublicCardView() {
                     height={60}
                   />
                 ) : (
-                  <span className="flex h-15 w-15 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-tr from-amber-600 to-amber-400 text-[18px] font-black text-slate-950 shadow-lg">
+                  <div className="flex h-15 w-15 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-500 to-amber-700 text-[18px] font-black text-slate-950 shadow-lg">
                     {initials}
-                  </span>
+                  </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[17px] sm:text-[19px] font-black text-white tracking-wide truncate drop-shadow-md">
-                      {primaryName}
-                    </span>
-                    <BadgeCheck className="h-5 w-5 shrink-0 text-amber-400" />
-                  </div>
-                  <div className="text-[12px] font-bold text-amber-300 truncate mt-0.5">
+                  <h1 className="text-[17px] font-black tracking-wide text-white drop-shadow-sm truncate">
+                    {primaryName}
+                  </h1>
+                  <p className="text-[12px] font-bold text-amber-300/95 truncate mt-0.5">
                     {primaryTitle}
-                  </div>
-                  <div className="text-[11.5px] font-medium text-slate-200 truncate">
+                  </p>
+                  <p className="text-[11.5px] font-medium text-slate-300 truncate">
                     {secondaryCompany}
-                  </div>
+                  </p>
                 </div>
               </div>
 
-              {/* Card Footer: Code & Valid Until */}
-              <div className="relative z-10 flex justify-between border-t border-white/15 pt-2.5">
-                <div>
-                  <div className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">{t("code")}</div>
-                  <div className="text-[13px] font-black tracking-wider text-amber-300 font-mono">{code}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[9px] font-semibold text-slate-300 uppercase tracking-wider">{t("validUntil")}</div>
-                  <div className="text-[12px] font-bold tracking-wider text-white">
-                    {formattedValidUntil}
-                  </div>
-                </div>
+              {/* Card Footer: Code & Flip hint */}
+              <div className="relative z-10 flex items-center justify-between border-t border-amber-400/20 pt-2.5 text-[10px]">
+                <span className="font-mono font-bold tracking-wider text-amber-300">
+                  ID: {code}
+                </span>
+                <span className="flex items-center gap-1 font-semibold text-slate-300/90 hover:text-amber-300 transition">
+                  <RotateCw className="h-3 w-3 animate-spin-slow" />
+                  {t("flipCard")}
+                </span>
               </div>
             </div>
 
             {/* ================= BACK SIDE ================= */}
-            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between p-6 border border-amber-400/40 bg-gradient-to-br from-[#061224] via-[#00224F] to-[#00142E] text-white shadow-xl">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06),transparent_60%)] pointer-events-none" />
+            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between p-5 border border-amber-400/40 bg-gradient-to-br from-[#001D4D] via-[#002B70] to-[#001533] text-white shadow-xl">
+              {/* Luxury gold pattern */}
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
-              <div className="text-center relative z-10">
-                <div className="mx-auto w-12 h-12 rounded-full border border-amber-400/40 bg-amber-400/10 flex items-center justify-center mb-2">
-                  <Crown className="h-6 w-6 text-amber-400" />
-                </div>
-                <h3 className="text-[14px] font-black tracking-wider uppercase text-amber-300">
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="text-[11px] font-black uppercase tracking-widest text-amber-300">
                   CLB DOANH NHÂN CEO 1983
-                </h3>
-                <p className="text-[10px] font-bold tracking-widest text-slate-300 mt-1 uppercase">
-                  GẮN KẾT • CHIA SẺ • ĐỒNG HÀNH • PHÁT TRIỂN
+                </div>
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold rounded-full bg-amber-400/20 border border-amber-400/40 px-2 py-0.5 text-amber-300">
+                  CEO 1983
+                </span>
+              </div>
+
+              {/* Center Slogan */}
+              <div className="relative z-10 text-center my-auto px-4">
+                <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white/5 border border-amber-400/30 mb-2">
+                  <ShieldCheck className="h-7 w-7 text-amber-400" />
+                </div>
+                <div className="text-[13px] font-black uppercase tracking-wider text-white">
+                  KẾT NỐI BỀN VỮNG • KIẾN TẠO TƯƠNG LAI
+                </div>
+                <p className="text-[10px] text-slate-300 mt-1 max-w-[280px] mx-auto leading-relaxed">
+                  Cộng đồng Doanh nhân 1983 tiên phong chuyển đổi số, chia sẻ giá trị và phát triển thịnh vượng.
                 </p>
               </div>
 
-              <div className="relative z-10 border-y border-white/10 py-3 my-auto space-y-1.5 text-center text-[11px] text-slate-300">
-                <p>Hệ sinh thái kết nối & xúc tiến thương mại doanh nhân Việt Nam.</p>
-                <p className="font-semibold text-amber-200">Hotline: 0983.83.1983 • info@ceo1983club.com</p>
-                <p className="text-[10px] text-slate-400">Trụ sở: Tòa nhà CEO 1983, Hà Nội</p>
-              </div>
-
-              <div className="relative z-10 flex items-center justify-between text-[9.5px] text-slate-400">
-                <span>Xác thực điện tử 24/7</span>
-                <span className="font-mono text-amber-300">{code}</span>
+              {/* Back Footer */}
+              <div className="relative z-10 flex items-center justify-between border-t border-amber-400/20 pt-2.5 text-[10px] text-slate-300">
+                <span>Hotline: 0983 83 1983</span>
+                <span className="text-amber-300 font-semibold">ceo1983club.com</span>
               </div>
             </div>
           </div>
@@ -472,9 +477,9 @@ function PublicCardView() {
           <button
             type="button"
             onClick={() => setIsFlipped(!isFlipped)}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
           >
-            <RotateCw className="h-4 w-4 text-amber-400" />
+            <RotateCw className="h-4 w-4 text-amber-500" />
             <span className="text-[10.5px] font-bold">{t("flipCard")}</span>
           </button>
 
@@ -482,9 +487,9 @@ function PublicCardView() {
           <button
             type="button"
             onClick={handleDownloadVCard}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 transition active:scale-95 text-amber-300"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-300/80 bg-amber-50 hover:bg-amber-100 transition active:scale-95 text-amber-900 shadow-xs"
           >
-            <Download className="h-4 w-4 text-amber-400" />
+            <Download className="h-4 w-4 text-amber-600" />
             <span className="text-[10.5px] font-bold">{t("saveContact")}</span>
           </button>
 
@@ -492,18 +497,18 @@ function PublicCardView() {
           {hasPhone ? (
             <a
               href={`tel:${cleanPhone}`}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 transition active:scale-95 text-emerald-300"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100 transition active:scale-95 text-emerald-900 shadow-xs"
             >
-              <Phone className="h-4 w-4 text-emerald-400" />
+              <Phone className="h-4 w-4 text-emerald-600" />
               <span className="text-[10.5px] font-bold">Gọi điện</span>
             </a>
           ) : (
             <button
               type="button"
               onClick={handleShare}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
             >
-              <Share2 className="h-4 w-4 text-blue-400" />
+              <Share2 className="h-4 w-4 text-[#003B95]" />
               <span className="text-[10.5px] font-bold">{t("shareCard")}</span>
             </button>
           )}
@@ -514,52 +519,52 @@ function PublicCardView() {
               href={`https://zalo.me/${cleanPhone}`}
               target="_blank"
               rel="noreferrer"
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 transition active:scale-95 text-blue-300"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-300/80 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-xs"
             >
-              <MessageCircle className="h-4 w-4 text-blue-400" />
+              <MessageCircle className="h-4 w-4 text-[#003B95]" />
               <span className="text-[10.5px] font-bold">Zalo</span>
             </a>
           ) : (
             <button
               type="button"
               onClick={handleShare}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition active:scale-95 text-slate-200"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
             >
-              {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Share2 className="h-4 w-4 text-blue-400" />}
+              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Share2 className="h-4 w-4 text-[#003B95]" />}
               <span className="text-[10.5px] font-bold">{copied ? "Đã copy" : t("shareCard")}</span>
             </button>
           )}
         </div>
 
         {/* Authenticated Confirmation Banner */}
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 shadow-xs">
-          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-400" />
-          <p className="text-[12px] font-medium leading-snug text-emerald-200">
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 shadow-xs">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" />
+          <p className="text-[12px] font-semibold leading-snug text-emerald-900">
             {t("authentic")}
           </p>
         </div>
 
         {/* Detailed Verified Profile */}
-        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-md p-4 shadow-sm">
-          <h2 className="mb-3 flex items-center gap-2 text-[13.5px] font-bold text-white">
-            <Building2 className="h-4 w-4 text-amber-400" />
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-[14px] font-bold text-[#003B95]">
+            <Building2 className="h-4 w-4 text-amber-500" />
             <span>{t("info")}</span>
           </h2>
 
-          <dl className="divide-y divide-white/5 text-[12.5px]">
+          <dl className="divide-y divide-slate-100 text-[12.5px]">
             {rows.map((r) => (
               <div key={r.label} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="flex items-center gap-2 text-slate-400 shrink-0">
-                  <r.icon className="h-4 w-4 text-amber-400" />
-                  <span className="text-[12px]">{r.label}</span>
+                <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                  <r.icon className="h-4 w-4 text-amber-500" />
+                  <span className="text-[12px] font-medium">{r.label}</span>
                 </div>
-                <div className="min-w-0 flex-1 text-right font-semibold text-slate-200">
+                <div className="min-w-0 flex-1 text-right font-semibold text-slate-800">
                   {r.isLink && r.href ? (
                     <a
                       href={r.href}
                       target={r.href.startsWith("http") ? "_blank" : undefined}
                       rel={r.href.startsWith("http") ? "noreferrer" : undefined}
-                      className="inline-flex items-center gap-1 text-amber-400 hover:underline"
+                      className="inline-flex items-center gap-1 text-[#003B95] hover:text-[#002766] hover:underline"
                     >
                       <span className="truncate max-w-[220px]">
                         {r.value ? r.value.replace(/^https?:\/\//, "") : "—"}
