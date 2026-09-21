@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -16,23 +16,23 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 chcp 65001 > $null
 
 # =========================================================================
-# LỆNH ĐỘC LẬP: TRIỂN KHAI HỆ THỐNG WEB CRM QUẢN TRỊ & LANDING (PORT 5443)
+# LENH DOC LAP: TRIEN KHAI HE THONG WEB CRM QUAN TRI & LANDING (PORT 5443)
 # =========================================================================
 
 Write-Host "=================================================================" -ForegroundColor Magenta
-Write-Host ">>> BẮT ĐẦU TRIỂN KHAI ĐỘC LẬP: HỆ THỐNG WEB CRM PLATFORM & LANDING <<<" -ForegroundColor Magenta
+Write-Host ">>> BAT DAU TRIEN KHAI DOC LAP: HE THONG WEB CRM PLATFORM & LANDING <<<" -ForegroundColor Magenta
 Write-Host "=================================================================" -ForegroundColor Magenta
 
 $bound = [System.Collections.Generic.Dictionary[string, object]]::new($PSBoundParameters)
 [void]$bound.Remove("NoHttps")
 $bound["EnableHttps"] = $EnableHttps
 
-# 1. Gọi trực tiếp bộ deploy của Web CRM Quản trị & Landing (đã bao gồm Nginx SSL Reverse Proxy khi bật EnableHttps)
+# 1. Goi truc tiep bo deploy cua Web CRM Quan tri & Landing (da bao gom Nginx SSL Reverse Proxy khi bat EnableHttps)
 & "$PSScriptRoot/deploy/crm/fast-deploy.ps1" @bound
 
 Write-Host "`n=================================================================" -ForegroundColor Green
-Write-Host "TRIỂN KHAI HỆ THỐNG WEB CRM QUẢN TRỊ & LANDING THÀNH CÔNG!" -ForegroundColor Green
+Write-Host "TRIEN KHAI HE THONG WEB CRM QUAN TRI & LANDING THANH CONG!" -ForegroundColor Green
 Write-Host "1. Web CRM Platform (HTTPS)    : https://14.225.217.232:5443" -ForegroundColor Yellow
 Write-Host "2. Landing CEO 1983 V1 (HTTPS) : https://14.225.217.232:5443/landing/ceo/v1" -ForegroundColor Yellow
-Write-Host "(Lưu ý: Hệ thống chạy chế độ bảo mật 100% HTTPS)" -ForegroundColor DarkGray
+Write-Host "(Luu y: He thong chay che do bao mat 100% HTTPS)" -ForegroundColor DarkGray
 Write-Host "=================================================================" -ForegroundColor Green

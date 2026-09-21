@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -16,23 +16,23 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 chcp 65001 > $null
 
 # =========================================================================
-# LỆNH ĐỘC LẬP: TRIỂN KHAI APP HIỆP HỘI CLB DOANH NHÂN CEO 1983 (PORT 5444)
+# LENH DOC LAP: TRIEN KHAI APP HIEP HOI CLB DOANH NHAN CEO 1983 (PORT 5444)
 # =========================================================================
 
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host ">>> BẮT ĐẦU TRIỂN KHAI ĐỘC LẬP: APP HIỆP HỘI CLB CEO 1983 <<<" -ForegroundColor Cyan
+Write-Host ">>> BAT DAU TRIEN KHAI DOC LAP: APP HIEP HOI CLB CEO 1983 <<<" -ForegroundColor Cyan
 Write-Host "=================================================================" -ForegroundColor Cyan
 
 $bound = [System.Collections.Generic.Dictionary[string, object]]::new($PSBoundParameters)
 [void]$bound.Remove("NoHttps")
 $bound["EnableHttps"] = $EnableHttps
 
-# 1. Gọi trực tiếp bộ deploy của CEO 1983 (đã bao gồm Nginx SSL Reverse Proxy khi bật EnableHttps)
+# 1. Goi truc tiep bo deploy cua CEO 1983 (da bao gom Nginx SSL Reverse Proxy khi bat EnableHttps)
 & "$PSScriptRoot/deploy/ceo1983/fast-deploy.ps1" @bound
 
 Write-Host "`n=================================================================" -ForegroundColor Green
-Write-Host "TRIỂN KHAI APP HIỆP HỘI CLB CEO 1983 THÀNH CÔNG!" -ForegroundColor Green
-Write-Host "1. App Hiệp Hội (HTTPS)               : https://14.225.217.232:5444" -ForegroundColor Yellow
-Write-Host "2. Tên Miền Hỗ Trợ PWA Mobile iOS/App : https://dev-app.14-225-217-232.sslip.io:5444/association" -ForegroundColor Yellow
-Write-Host "(Lưu ý: Hệ thống chạy chế độ bảo mật 100% HTTPS)" -ForegroundColor DarkGray
+Write-Host "TRIEN KHAI APP HIEP HOI CLB CEO 1983 THANH CONG!" -ForegroundColor Green
+Write-Host "1. App Hiep Hoi (HTTPS)               : https://14.225.217.232:5444" -ForegroundColor Yellow
+Write-Host "2. Ten Mien Ho Tro PWA Mobile iOS/App : https://dev-app.14-225-217-232.sslip.io:5444/association" -ForegroundColor Yellow
+Write-Host "(Luu y: He thong chay che do bao mat 100% HTTPS)" -ForegroundColor DarkGray
 Write-Host "=================================================================" -ForegroundColor Green
