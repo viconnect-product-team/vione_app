@@ -2,11 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
  * =========================================================================
- * VIONE MOBILE - CẤU HÌNH CAPACITOR THEO MÔI TRƯỜNG
+ * CEO 1983 MOBILE - CẤU HÌNH CAPACITOR THEO MÔI TRƯỜNG
  * =========================================================================
  *
  * [CHẾ ĐỘ HIỆN TẠI] DEV LIVE SERVER:
- * - Đang bật `server.url` trỏ về IP Dev (14.225.217.232:5000).
+ * - Đang bật `server.url` trỏ về IP Dev (14.225.217.232:5444).
  * - Sửa giao diện/logic FE chỉ cần deploy lên server dev là APK tự đổi, không cần build lại.
  *
  * [HƯỚNG A] ĐÓNG GÓI TĨNH STANDALONE / OFFLINE:
@@ -16,7 +16,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  *
  * [HƯỚNG B] PRODUCTION QUA DOMAIN HTTPS CHÍNH THỨC:
  * - Đổi `USE_REMOTE_SERVER = true`.
- * - Đổi `REMOTE_URL` thành domain production chính thức có SSL (ví dụ: 'https://app.vione.vn').
+ * - Đổi `REMOTE_URL` thành domain production chính thức có SSL (ví dụ: 'https://app.ceo1983.vn').
  * - Đổi `CLEARTEXT = false`.
  * =========================================================================
  */

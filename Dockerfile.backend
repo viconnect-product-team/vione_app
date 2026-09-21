@@ -5,7 +5,7 @@ RUN apk add --no-cache libc6-compat
 RUN npm install -g turbo
 
 COPY . .
-RUN turbo prune @vibe/vione_app_be --docker
+RUN turbo prune @ceo1983/app_be --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM node:22-alpine AS installer
@@ -21,7 +21,7 @@ RUN npm ci --ignore-scripts=false && npm rebuild bcrypt
 COPY --from=builder /app/out/full/ .
 # Generate Prisma Client
 RUN cd packages/db && npx prisma generate
-RUN npx turbo run build --filter=@vibe/vione_app_be...
+RUN npx turbo run build --filter=@ceo1983/app_be...
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -32,8 +32,8 @@ COPY --chown=appuser:appgroup --from=installer /app/packages/db/package.json ./p
 COPY --chown=appuser:appgroup --from=installer /app/packages/db/prisma ./packages/db/prisma
 COPY --chown=appuser:appgroup --from=installer /app/packages/db/index.js ./packages/db/
 
-COPY --chown=appuser:appgroup --from=installer /app/apps/vione_app_be/package.json ./apps/vione_app_be/
-COPY --chown=appuser:appgroup --from=installer /app/apps/vione_app_be/dist ./apps/vione_app_be/dist
+COPY --chown=appuser:appgroup --from=installer /app/apps/ceo1983_app_be/package.json ./apps/ceo1983_app_be/
+COPY --chown=appuser:appgroup --from=installer /app/apps/ceo1983_app_be/dist ./apps/ceo1983_app_be/dist
 COPY --chown=appuser:appgroup --from=installer /app/node_modules ./node_modules
 
 COPY --chown=appuser:appgroup docker-entrypoint.s[h] ./
@@ -47,4 +47,4 @@ RUN mkdir -p /app/uploads/avatars /app/uploads/documents /tmp/uploads/avatars /t
 USER appuser
 
 EXPOSE 4000
-CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; if [ -f apps/vione_app_be/dist/src/main.js ]; then node apps/vione_app_be/dist/src/main; else node apps/vione_app_be/dist/main; fi"]
+CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; fi; if [ -f apps/ceo1983_app_be/dist/src/main.js ]; then node apps/ceo1983_app_be/dist/src/main; else node apps/ceo1983_app_be/dist/main; fi"]

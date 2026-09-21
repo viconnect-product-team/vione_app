@@ -1,4 +1,4 @@
-﻿param (
+param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -62,7 +62,7 @@ try {
                     Write-Host "  -> Bỏ qua 'npm install' (đã có node_modules). Dùng -InstallDeps nếu muốn tải lại." -ForegroundColor DarkGray
                 }
 
-                Invoke-CheckedCommand -Description "Build Web App Hiệp Hội" -Action { npm run build --prefix apps/vione_app_fe }
+                Invoke-CheckedCommand -Description "Build Web App Hiệp Hội" -Action { npm run build --prefix apps/ceo1983_app_fe }
             }
         }
 

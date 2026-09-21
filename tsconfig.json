@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./apps/vione_app_fe/src/*"]
+      "@/*": ["./apps/ceo1983_app_fe/src/*"]
     }
   },
-  "include": ["apps/vione_app_fe/src/**/*"]
+  "include": ["apps/ceo1983_app_fe/src/**/*"]
 }

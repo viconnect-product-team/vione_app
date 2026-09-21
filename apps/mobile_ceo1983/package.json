@@ -9,7 +9,7 @@
     "sync:ios": "npx cap sync ios",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios",
-    "build:static": "npm run build --prefix ../vione_app_fe && npx cap sync",
+    "build:static": "npm run build --prefix ../ceo1983_app_fe && npx cap sync",
     "build:apk": "npx eas-cli build --profile preview --platform android",
     "build:apk:fast": "npx cap copy android && cd android && gradlew.bat assembleDebug",
     "build:apk:dev": "npx eas-cli build --profile development --platform android",
