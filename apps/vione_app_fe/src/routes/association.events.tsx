@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Bookmark,
   Check,
@@ -31,6 +31,9 @@ import {
   GraduationCap,
   Handshake,
   Coffee,
+  ChevronLeft,
+  ChevronRight,
+  History,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -387,6 +390,181 @@ function EventPosterCard({
   );
 }
 
+// COMPONENT 5 SỰ KIỆN CHẠY TỪ PHẢI SANG TRÁI VỚI HIỆU ỨNG COVERFLOW NỔI TO Ở GIỮA
+function UpcomingEventsCoverflow({
+  events,
+  onSelectEvent,
+}: {
+  events: MyEvent[];
+  onSelectEvent: (e: MyEvent) => void;
+}) {
+  const fiveEvents = useMemo(() => {
+    const list: MyEvent[] = [...events];
+    if (list.length < 5) {
+      const fallbackList: MyEvent[] = [
+        {
+          id: "ev-1",
+          title: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+          date: "2026-09-27",
+          time: "07:30 - 13:00",
+          place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+          day: 27,
+          month: 9,
+          image: defaultEventImages[0],
+        } as any,
+        {
+          id: "ev-2",
+          title: "Gala Dinner Thượng Đỉnh: Xúc tiến đầu tư & Hợp tác chiến lược",
+          date: "2026-10-15",
+          time: "18:00 - 21:30",
+          place: "Khách sạn JW Marriott, Hà Nội",
+          day: 15,
+          month: 10,
+          image: defaultEventImages[1],
+        } as any,
+        {
+          id: "ev-3",
+          title: "Workshop Chuyên đề: Tiếp Nối Cơ Nghiệp Gia Đình Đa Thế Hệ",
+          date: "2026-10-28",
+          time: "08:00 - 11:30",
+          place: "Tòa nhà CEO Tower, Hà Nội",
+          day: 28,
+          month: 10,
+          image: defaultEventImages[2],
+        } as any,
+        {
+          id: "ev-4",
+          title: "Diễn đàn Kinh tế & Chuyển đổi số Doanh nghiệp 2026",
+          date: "2026-11-12",
+          time: "08:30 - 12:00",
+          place: "Khách sạn Lotte, Hà Nội",
+          day: 12,
+          month: 11,
+          image: defaultEventImages[3],
+        } as any,
+        {
+          id: "ev-5",
+          title: "Tọa đàm Giao thương B2B & Kết nối Chuỗi Cung ứng Toàn Cầu",
+          date: "2026-11-25",
+          time: "14:00 - 17:30",
+          place: "Vinpearl Landmark 81",
+          day: 25,
+          month: 11,
+          image: defaultEventImages[4],
+        } as any,
+      ];
+      for (const fb of fallbackList) {
+        if (list.length >= 5) break;
+        if (!list.some((x) => x.id === fb.id)) {
+          list.push(fb);
+        }
+      }
+    }
+    return list.slice(0, 5);
+  }, [events]);
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Tự động chạy tuần hoàn từ phải sang trái (activeIdx tăng dần)
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % fiveEvents.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [isPaused, fiveEvents.length]);
+
+  return (
+    <div
+      className="relative w-full pt-1 pb-1 overflow-hidden select-none"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      {/* 3D Coverflow Stage */}
+      <div className="relative h-48 sm:h-56 flex items-center justify-center">
+        {fiveEvents.map((evt, idx) => {
+          let offset = (idx - activeIdx) % fiveEvents.length;
+          if (offset < -2) offset += fiveEvents.length;
+          if (offset > 2) offset -= fiveEvents.length;
+
+          const isCenter = offset === 0;
+
+          let translateX = "0%";
+          let scale = 1;
+          let zIndex = 20;
+          let opacity = 1;
+
+          if (offset === 0) {
+            translateX = "0%";
+            scale = 1.15;
+            zIndex = 30;
+            opacity = 1;
+          } else if (offset === -1) {
+            translateX = "-62%";
+            scale = 0.88;
+            zIndex = 15;
+            opacity = 0.65;
+          } else if (offset === 1) {
+            translateX = "62%";
+            scale = 0.88;
+            zIndex = 15;
+            opacity = 0.65;
+          } else if (offset === -2) {
+            translateX = "-112%";
+            scale = 0.72;
+            zIndex = 5;
+            opacity = 0.3;
+          } else if (offset === 2) {
+            translateX = "112%";
+            scale = 0.72;
+            zIndex = 5;
+            opacity = 0.3;
+          }
+
+          const rawImg = (evt as any).image;
+          const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
+
+          return (
+            <div
+              key={evt.id || idx}
+              onClick={() => {
+                if (isCenter) {
+                  onSelectEvent(evt);
+                } else {
+                  setActiveIdx(idx);
+                }
+              }}
+              style={{
+                transform: `translateX(${translateX}) scale(${scale})`,
+                zIndex,
+                opacity,
+              }}
+              className={`absolute top-0 bottom-0 w-[72%] sm:w-[58%] max-w-[340px] my-auto cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl transition-all duration-700 ease-out ${
+                isCenter
+                  ? "ring-2 ring-[#003B95]/60 shadow-[0_15px_35px_rgba(0,59,149,0.4)]"
+                  : "hover:opacity-90"
+              }`}
+            >
+              {/* CHỈ CÓ ẢNH THUẦN TÚY - KHÔNG CÓ TEXT BÊN NGOÀI */}
+              <img
+                src={imgUrl}
+                alt=""
+                className="w-full h-full object-cover select-none pointer-events-none"
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Đường viền bottom rất mỏng ở giữa, không kéo full màn hình */}
+      <div className="w-28 sm:w-36 h-[1.5px] bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent mx-auto mt-4 mb-2" />
+    </div>
+  );
+}
+
 function EventsScreen() {
   const t = useT();
   const { lang } = useLang();
@@ -406,12 +584,25 @@ function EventsScreen() {
 
   // Category & bookmark state
   const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked">("all");
+  const [eventsPage, setEventsPage] = useState(1);
+  const EVENTS_PER_PAGE = 4;
+
   const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
     try {
       return JSON.parse(localStorage.getItem("vba_bookmarked_events") || "{}");
     } catch {
       return {};
+    }
+  });
+
+  // Lịch sử sự kiện xem gần đây
+  const [recentEventIds, setRecentEventIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem("vba_recent_viewed_events") || "[]");
+    } catch {
+      return [];
     }
   });
 
@@ -445,6 +636,18 @@ function EventsScreen() {
 
   // Modals state
   const [selectedEvent, setSelectedEvent] = useState<MyEvent | null>(null);
+
+  const handleSelectEvent = (e: MyEvent) => {
+    setSelectedEvent(e);
+    setRecentEventIds((prev) => {
+      const updated = [e.id, ...prev.filter((id) => id !== e.id)].slice(0, 8);
+      try {
+        localStorage.setItem("vba_recent_viewed_events", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
   const [registeringEvent, setRegisteringEvent] = useState<MyEvent | null>(null);
   const [registeredSuccessInfo, setRegisteredSuccessInfo] = useState<{
     eventTitle: string;
@@ -636,14 +839,58 @@ function EventsScreen() {
     }
   }
 
+  const paginatedEvents = useMemo(() => {
+    return filteredEvents.slice((eventsPage - 1) * EVENTS_PER_PAGE, eventsPage * EVENTS_PER_PAGE);
+  }, [filteredEvents, eventsPage]);
+
+  const totalEventPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+
+  const recentEventsList = useMemo(() => {
+    const matched = events.filter((e) => recentEventIds.includes(e.id));
+    if (matched.length === 0) {
+      return events.slice(0, 3);
+    }
+    return matched;
+  }, [events, recentEventIds]);
+
   return (
     <div className="vba-animate min-h-full pb-24">
+      {/* 1. Header CEO1983 - background trắng xanh đơn giản chiều cao 20px */}
+      <div className="h-[20px] bg-gradient-to-r from-blue-50/90 via-sky-100/80 to-blue-50/90 dark:from-slate-950 dark:via-blue-950/40 dark:to-slate-950 border-b border-blue-200/50 dark:border-blue-900/40 flex items-center justify-center text-[10px] font-black tracking-widest text-[#003B95] dark:text-sky-300 uppercase select-none">
+        CEO 1983
+      </div>
+
       <MemberHeader
         title={isEn ? "Club Events" : t("m.events.title")}
         back
       />
 
-      <div className="px-4 pt-3">
+      {/* 2. Section: Sự kiện sắp tới - 5 sự kiện chạy từ phải sang trái, ảnh giữa nổi to hơn, chỉ có ảnh, viền bottom mỏng ở giữa */}
+      <div className="px-4 pt-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#003B95]"></span>
+            </span>
+            <span className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Sự kiện sắp tới
+            </span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#003B95] dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+            5 sự kiện tiêu điểm
+          </span>
+        </div>
+
+        <UpcomingEventsCoverflow
+          events={events}
+          onSelectEvent={handleSelectEvent}
+        />
+      </div>
+
+      {/* Vé Sự Kiện Của Tôi */}
+      <div className="px-4 pt-1">
         <button
           type="button"
           onClick={() => {
@@ -695,47 +942,60 @@ function EventsScreen() {
         </button>
       </div>
 
+      {/* 3. Section: List các sự kiện với menu phân chia & phân trang riêng biệt */}
+      <div className="px-4 pt-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
+            <Calendar className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+            {isEn ? "All Club Events" : "Danh sách các sự kiện"}
+          </h2>
+          <span className="text-[11px] font-bold text-slate-400 font-mono">
+            {filteredEvents.length} {isEn ? "events" : "sự kiện"}
+          </span>
+        </div>
 
-      {/* Category Tabs: Tất cả, Miễn phí, Có phí, Sự kiện đã đăng ký, Sự kiện đã đánh dấu */}
-      <div className="flex items-center gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
-        {[
-          { id: "all", label: isEn ? "All" : "Tất cả", count: events.length },
-          { id: "free", label: isEn ? "Free" : "Miễn phí", count: freeEvents.length },
-          { id: "paid", label: isEn ? "Paid" : "Có phí", count: paidEvents.length },
-          { id: "registered", label: isEn ? "Registered" : "Sự kiện đã đăng ký", count: registeredEvents.length },
-          { id: "bookmarked", label: isEn ? "Bookmarked" : "Sự kiện đã đánh dấu", count: bookmarkedEventsList.length },
-        ].map((tabItem) => {
-          const active = eventCategory === tabItem.id;
-          return (
-            <button
-              key={tabItem.id}
-              type="button"
-              onClick={() => setEventCategory(tabItem.id as any)}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                active
-                  ? "bg-[#2E3192] text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-              }`}
-              style={active ? { backgroundColor: "#2E3192", color: "#FFFFFF" } : undefined}
-            >
-              <span style={active ? { color: "#FFFFFF" } : undefined}>{tabItem.label}</span>
-              <span
-                className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
+        {/* Menu phân chia: Tất cả, Đã đăng ký, Miễn phí, Có phí, Đã đánh dấu */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          {[
+            { id: "all", label: isEn ? "All" : "Tất cả", count: events.length },
+            { id: "registered", label: isEn ? "Registered" : "Đã đăng ký", count: registeredEvents.length },
+            { id: "free", label: isEn ? "Free" : "Miễn phí", count: freeEvents.length },
+            { id: "paid", label: isEn ? "Paid" : "Có phí", count: paidEvents.length },
+            { id: "bookmarked", label: isEn ? "Bookmarked" : "Đã lưu", count: bookmarkedEventsList.length },
+          ].map((tabItem) => {
+            const active = eventCategory === tabItem.id;
+            return (
+              <button
+                key={tabItem.id}
+                type="button"
+                onClick={() => {
+                  setEventCategory(tabItem.id as any);
+                  setEventsPage(1);
+                }}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   active
-                    ? "bg-white/25 text-white"
-                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 }`}
-                style={active ? { color: "#FFFFFF" } : undefined}
+                style={active ? { backgroundColor: "#003B95", color: "#FFFFFF" } : undefined}
               >
-                {tabItem.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span style={active ? { color: "#FFFFFF" } : undefined}>{tabItem.label}</span>
+                <span
+                  className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
+                    active
+                      ? "bg-white/25 text-white"
+                      : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                  }`}
+                  style={active ? { color: "#FFFFFF" } : undefined}
+                >
+                  {tabItem.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Events List Grouped by Distinct Sections */}
-      <div className="mt-4 space-y-7 px-4" role="list">
+        {/* Events Cards List */}
         {loading && (
           <div className="space-y-4">
             {[1, 2].map((sk) => (
@@ -777,103 +1037,165 @@ function EventsScreen() {
           </div>
         )}
 
-        {!loading && filteredEvents.length > 0 && (
-          SECTIONS_CONFIG.map((sec) => {
-            const secEvents = filteredEvents.filter((e) => {
+        {!loading && paginatedEvents.length > 0 && (
+          <div className="space-y-4">
+            {paginatedEvents.map((e) => {
               const originalIndex = events.findIndex((x) => x.id === e.id);
-              return getEventSectionKey(e, originalIndex >= 0 ? originalIndex : 0) === sec.key;
-            });
-
-            if (secEvents.length === 0) return null;
-
-            const Icon = sec.icon;
-            const firstEvt = secEvents[0];
-
-            return (
-              <section key={sec.key} className="space-y-3.5">
-                {/* Section Header chuẩn 100% mẫu ảnh người dùng */}
-                <div className="flex items-start justify-between gap-3 pb-1 pt-1">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    {/* Icon tròn bên trái */}
-                    <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-full bg-[#FBF6E9] dark:bg-amber-950/40 border border-[#E9D9B4] dark:border-amber-800/60 text-[#B88728] dark:text-amber-400 shadow-2xs shrink-0">
-                      <Icon className="h-5 w-5 stroke-[2.2]" />
-                    </div>
-                    {/* Tiêu đề & Mô tả ở giữa */}
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-[15px] sm:text-[16.5px] font-black text-slate-900 dark:text-white uppercase tracking-wide leading-snug">
-                        {isEn ? sec.titleEn : sec.title}
-                      </h2>
-                      <p className="text-[11.5px] sm:text-[12px] text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed mt-0.5">
-                        {isEn ? sec.subtitleEn : sec.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Date Badge ở góc trên bên phải Section Header */}
-                  {firstEvt && (() => {
-                    const originalIndex = events.findIndex((x) => x.id === firstEvt.id);
-                    const dateBadge = formatEventDateBadge(firstEvt.date, originalIndex >= 0 ? originalIndex : 0);
-                    return (
-                      <div className="flex flex-col items-center justify-center rounded-xl bg-[#ECEFF3] dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 px-2.5 py-1 min-w-[50px] shadow-2xs shrink-0">
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-none">
-                          {dateBadge.weekday}
-                        </span>
-                        <span className="text-[12.5px] font-black text-slate-800 dark:text-slate-100 leading-tight mt-0.5">
-                          {dateBadge.dayMonth}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Section Cards */}
-                {sec.variant === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {secEvents.map((e) => {
-                      const originalIndex = events.findIndex((x) => x.id === e.id);
-                      const evIndex = originalIndex >= 0 ? originalIndex : 0;
-                      return (
-                        <EventPosterCard
-                          key={e.id}
-                          event={e}
-                          index={evIndex}
-                          onSelect={setSelectedEvent}
-                          isBookmarked={!!bookmarkedIds[e.id]}
-                          onToggleBookmark={toggleBookmark}
-                          registered={isRegistered(e)}
-                          isFree={isEventFree(e)}
-                          price={getEventPrice(e)}
-                          variant="grid"
-                        />
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-3.5">
-                    {secEvents.map((e) => {
-                      const originalIndex = events.findIndex((x) => x.id === e.id);
-                      const evIndex = originalIndex >= 0 ? originalIndex : 0;
-                      return (
-                        <EventPosterCard
-                          key={e.id}
-                          event={e}
-                          index={evIndex}
-                          onSelect={setSelectedEvent}
-                          isBookmarked={!!bookmarkedIds[e.id]}
-                          onToggleBookmark={toggleBookmark}
-                          registered={isRegistered(e)}
-                          isFree={isEventFree(e)}
-                          price={getEventPrice(e)}
-                          variant={sec.variant}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            );
-          })
+              const evIndex = originalIndex >= 0 ? originalIndex : 0;
+              return (
+                <EventPosterCard
+                  key={e.id}
+                  event={e}
+                  index={evIndex}
+                  onSelect={handleSelectEvent}
+                  isBookmarked={!!bookmarkedIds[e.id]}
+                  onToggleBookmark={toggleBookmark}
+                  registered={isRegistered(e)}
+                  isFree={isEventFree(e)}
+                  price={getEventPrice(e)}
+                  variant="default"
+                />
+              );
+            })}
+          </div>
         )}
+
+        {/* PHÂN TRANG RIÊNG BIỆT CHO SECTION DANH SÁCH SỰ KIỆN */}
+        {totalEventPages > 1 && (
+          <div className="flex items-center justify-between pt-3 pb-1 border-t border-slate-200/70 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={eventsPage <= 1}
+              onClick={() => setEventsPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Trước</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalEventPages }, (_, i) => i + 1).map((p) => {
+                const isCur = p === eventsPage;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setEventsPage(p)}
+                    className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
+                      isCur
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              disabled={eventsPage >= totalEventPages}
+              onClick={() => setEventsPage((p) => Math.min(totalEventPages, p + 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+            >
+              <span>Sau</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Section: Sự kiện xem gần đây */}
+      <div className="px-4 mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-xl bg-blue-500/15 text-[#003B95] dark:text-blue-400">
+              <History className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wide text-slate-900 dark:text-white">
+                Sự kiện xem gần đây
+              </h3>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
+                Những sự kiện bạn đã quan tâm và mở xem chi tiết
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {recentEventsList.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-5 text-center">
+            <p className="text-xs text-slate-400">Bạn chưa mở xem sự kiện nào gần đây</p>
+          </div>
+        ) : (
+          <div className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
+            {recentEventsList.map((e, rIdx) => {
+              const rImg = (e as any).image ? resolveMediaUrl((e as any).image) || (e as any).image : defaultEventImages[rIdx % defaultEventImages.length];
+              return (
+                <div
+                  key={e.id || rIdx}
+                  onClick={() => handleSelectEvent(e)}
+                  className="min-w-[220px] max-w-[240px] rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-xs hover:border-[#003B95]/40 transition overflow-hidden cursor-pointer flex flex-col justify-between group shrink-0"
+                >
+                  <div className="relative h-28 w-full overflow-hidden">
+                    <img
+                      src={rImg}
+                      alt={e.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[9.5px] font-bold text-white border border-white/20">
+                      <Clock className="h-3 w-3 text-amber-400" />
+                      {e.time || "08:00"}
+                    </span>
+                  </div>
+                  <div className="p-3">
+                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                      {e.title}
+                    </h4>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
+                      {e.place || "Hà Nội"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 5. Footer: Banner đẹp phong cách CEO 1983 */}
+      <div className="mx-4 mt-7 rounded-3xl overflow-hidden shadow-xl border border-amber-400/40 bg-gradient-to-br from-[#061536] via-[#0A255C] to-[#040E24] text-white p-5 relative">
+        <div className="relative z-10 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/30 to-amber-600/30 border border-amber-400/40 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 shadow-xs">
+              <Sparkles className="h-3 w-3 text-amber-400" />
+              CLB DOANH NHÂN CEO 1983
+            </span>
+            <span className="text-[10px] font-bold text-slate-300">
+              Hotline: 0983.19.83.83
+            </span>
+          </div>
+          <div>
+            <h3 className="text-base sm:text-lg font-black leading-tight text-white tracking-wide">
+              KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI
+            </h3>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Mạng lưới kết nối thượng đỉnh của các nhà lãnh đạo và doanh nhân tiêu biểu. Đồng hành cùng nhau phát triển vững bền.
+            </p>
+          </div>
+          <div className="pt-1 flex items-center gap-2">
+            <Link
+              to="/association/messages"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-4 py-2 text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
+            >
+              <span>Liên hệ Ban Thư Ký</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN (IMAGE 4 POSTER & HIGHLIGHTS) */}

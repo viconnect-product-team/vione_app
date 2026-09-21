@@ -756,9 +756,9 @@ function Home() {
         </div>
       </div>
 
-      {/* ── 3. TRAO CƠ HỘI & ĐĂNG SẢN PHẨM ── */}
+      {/* ── 3. CHIA SẺ CƠ HỘI & MARKETPLACE ── */}
       <div className="mx-4 mt-4 grid grid-cols-2 gap-3">
-        {/* Trao cơ hội - Nút bấm Cobalt Navy */}
+        {/* Chia sẻ cơ hội - Nút bấm Cobalt Navy */}
         <Link
           to="/association/opportunities"
           className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden"
@@ -770,7 +770,7 @@ function Home() {
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-blue-400 shadow-xs overflow-hidden border border-[#2E3192]/20">
                 <img
                   src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Hand%20gestures/Handshake.png"
-                  alt="Trao cơ hội"
+                  alt="Chia sẻ cơ hội"
                   className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
@@ -782,7 +782,7 @@ function Home() {
               )}
             </div>
             <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "TRADE OPPORTUNITIES" : "TRAO CƠ HỘI"}
+              {isEn ? "SHARE OPPORTUNITIES" : "CHIA SẺ CƠ HỘI"}
             </div>
             <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
               {isEn ? "Share business deals and connect for success" : "Chia sẻ cơ hội Kết nối thành công"}
@@ -795,7 +795,7 @@ function Home() {
           </span>
         </Link>
 
-        {/* Đăng giới thiệu sản phẩm - Nút bấm Cobalt Navy chuẩn CEO */}
+        {/* Marketplace 5.0 - Nút bấm Cobalt Navy chuẩn CEO */}
         <Link
           to="/association/products"
           search={{ action: undefined }}
@@ -808,7 +808,7 @@ function Home() {
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-blue-400 shadow-xs overflow-hidden border border-[#2E3192]/20">
                 <img
                   src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png"
-                  alt="Đăng sản phẩm"
+                  alt="Marketplace"
                   className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
@@ -820,13 +820,13 @@ function Home() {
               )}
             </div>
             <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "SHOWCASE PRODUCTS" : "ĐĂNG SẢN PHẨM"}
+              {isEn ? "MARKETPLACE" : "MARKETPLACE"}
             </div>
             <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
-              {isEn ? "Promote enterprise products to customers" : "Quảng bá sản phẩm Kết nối khách hàng"}
+              {isEn ? "Promote enterprise products to customers" : "Sàn giao thương & Tiếp thị liên kết"}
             </p>
           </div>
-          {/* Nút Đăng ngay - Chuẩn màu xanh CEO chữ trắng */}
+          {/* Nút Khám phá sàn - Chuẩn màu xanh CEO chữ trắng */}
           <button
             type="button"
             onClick={(e) => {

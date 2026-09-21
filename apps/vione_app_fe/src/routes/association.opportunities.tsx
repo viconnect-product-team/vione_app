@@ -31,6 +31,8 @@ import {
   Flame,
   TrendingUp,
   Coins,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -363,7 +365,8 @@ function OpportunitiesScreen() {
   }, [allOpportunities, tab, q, member]);
 
   const [pageOpps, setPageOpps] = useState(1);
-  const OPP_PAGE_SIZE = 5;
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const OPP_PAGE_SIZE = 6;
 
   useEffect(() => {
     setPageOpps(1);
@@ -537,8 +540,13 @@ function OpportunitiesScreen() {
 
   return (
     <div className="vba-animate pb-24">
+      {/* 20px CEO1983 Header - White-Blue Background */}
+      <div className="h-[20px] bg-gradient-to-r from-blue-50/90 via-sky-100/80 to-blue-50/90 dark:from-slate-950 dark:via-blue-950/40 dark:to-slate-950 border-b border-blue-200/50 dark:border-blue-900/40 flex items-center justify-center text-[10px] font-black tracking-widest text-[#003B95] dark:text-sky-300 uppercase select-none">
+        CEO 1983
+      </div>
+
       <MemberHeader
-        title="Trao cơ hội"
+        title="Chia sẻ cơ hội"
         subtitle="Chia sẻ cơ hội kết nối giao thương thành công"
         back
         right={
@@ -789,285 +797,444 @@ function OpportunitiesScreen() {
         ))}
       </div>
 
-      {/* SECTION 4: DANH SÁCH TẤT CẢ CƠ HỘI */}
+      {/* SECTION 4: DANH SÁCH CHIA SẺ CƠ HỘI */}
       <div className="mt-4 px-4 flex items-center justify-between">
         <h4 className="text-[13px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
           <Clock className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
-          <span>Cơ hội mới nhất & Giao thương ({list.length})</span>
+          <span>Danh sách chia sẻ cơ hội ({list.length})</span>
         </h4>
+
+        {/* View Mode Toggle: Grid / List */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`h-7 w-7 rounded-lg grid place-items-center transition cursor-pointer ${
+              viewMode === "grid"
+                ? "bg-white dark:bg-slate-700 text-[#003B95] dark:text-amber-400 shadow-xs"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            }`}
+            title="Dạng lưới"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`h-7 w-7 rounded-lg grid place-items-center transition cursor-pointer ${
+              viewMode === "list"
+                ? "bg-white dark:bg-slate-700 text-[#003B95] dark:text-amber-400 shadow-xs"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            }`}
+            title="Dạng danh sách"
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="mt-2 space-y-3 px-4">
-        {loading && (
-          <p className="py-12 text-center text-[13px] text-slate-400">
-            Đang tải danh sách cơ hội giao thương...
-          </p>
-        )}
-        {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
-          const tagVi = normalizeTag(o.tag);
-          const rawOppImg = o.image;
-          const oppImg =
-            (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/"))
-              ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
-              : null) || defaultOppImages[index % defaultOppImages.length];
+      {loading && (
+        <p className="py-12 text-center text-[13px] text-slate-400">
+          Đang tải danh sách cơ hội giao thương...
+        </p>
+      )}
 
-          return (
-            <div
-              key={o.id}
-              onClick={() => handleOpenOppDetail(o)}
-              className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-500/50 hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-[#131a26] group"
-            >
-              {/* 1. POSTER BANNER ON TOP (IMAGE 3) */}
-              <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
-                <img
-                  src={oppImg}
-                  alt={o.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+      {/* CHẾ ĐỘ XEM DẠNG LƯỚI (GRID 2 CỘT) */}
+      {viewMode === "grid" ? (
+        <div className="mt-2 grid grid-cols-2 gap-2.5 sm:gap-3 px-4">
+          {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
+            const tagVi = normalizeTag(o.tag);
+            const rawOppImg = o.image;
+            const oppImg =
+              (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/"))
+                ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
+                : null) || defaultOppImages[index % defaultOppImages.length];
 
-                {/* Top Badges */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#003B95]/90 backdrop-blur-md px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
-                    <Sparkles className="h-3 w-3 text-amber-300" />
-                    {tagVi}
-                  </span>
-
-                  <div className="flex items-center gap-1.5">
-                    {/* View Count Badge */}
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 shadow-sm border border-white/20">
-                      <Eye className="h-3 w-3 text-amber-300" />
-                      <span>{o.views || 0}</span>
+            return (
+              <div
+                key={o.id}
+                onClick={() => handleOpenOppDetail(o)}
+                className="vba-card flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-[#003B95]/40 hover:shadow-md transition cursor-pointer bg-white dark:bg-[#131a26] group"
+              >
+                <div>
+                  {/* Poster Image */}
+                  <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={oppImg}
+                      alt={o.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[#003B95]/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-black uppercase text-amber-300 border border-amber-400/30">
+                      {tagVi}
                     </span>
-
-                    {o.interested && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                        <Check className="h-3 w-3 stroke-[2.5]" />
-                        Đã quan tâm
-                      </span>
-                    )}
-
-                    {checkIsMine(o) && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenOppDetail(o);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 backdrop-blur-md px-2.5 py-1 text-[10px] font-extrabold shadow-sm border border-amber-300/40 cursor-pointer transition"
-                        title="Xem danh sách người quan tâm"
-                      >
-                        <Users className="h-3 w-3" />
-                        <span>Người quan tâm</span>
-                      </span>
-                    )}
-
-                    {checkCanManageOpp(o) && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveOppMenuId(activeOppMenuId === o.id ? null : o.id);
-                          }}
-                          className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
-                          title="Tùy chọn cơ hội"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                        {activeOppMenuId === o.id && (
-                          <div
-                            className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                setActiveOppMenuId(null);
-                                startEditOpp(o, e);
-                              }}
-                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-amber-500" />
-                              <span>Chỉnh sửa</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                setActiveOppMenuId(null);
-                                handleDeleteOpp(o.id, e);
-                              }}
-                              className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                              <span>Xóa</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[9px] font-bold text-amber-400">
+                      {formatSmartPrice(o.value)}
+                    </span>
                   </div>
-                </div>
 
-                {/* Poster Title & Company & Posting Date */}
-                <div className="absolute bottom-3 left-4 right-4 z-10">
-                  <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white line-clamp-2 leading-tight drop-shadow-md group-hover:text-amber-200 transition-colors">
-                    {o.title}
-                  </h3>
-                  <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-amber-300/90">
-                    <p className="flex items-center gap-1.5 truncate">
-                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                  {/* Body info */}
+                  <div className="p-2.5">
+                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                      {o.title}
+                    </h4>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 flex items-center gap-1">
+                      <Building2 className="h-3 w-3 shrink-0 text-slate-400" />
                       <span>{o.company}</span>
                     </p>
-                    <span className="text-[10px] text-white/80 shrink-0 font-medium ml-2">
-                      📅 {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
-                    </span>
                   </div>
                 </div>
-              </div>
 
-              {/* 2. 3-COLUMN METADATA BAR (IMAGE 3 LAYOUT) */}
-              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-3 text-center border-b border-slate-100 dark:border-white/5">
-                {/* Col 1: NGÀY ĐĂNG */}
-                <div className="px-1.5 flex flex-col items-center justify-start">
-                  <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
-                    <Calendar className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
-                    <span>NGÀY ĐĂNG</span>
-                  </div>
-                  <p className="text-[11.5px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                {/* Footer action */}
+                <div className="p-2.5 pt-0 flex items-center justify-between gap-1 border-t border-slate-100 dark:border-white/5 mt-1">
+                  <span className="text-[10px] text-slate-400">
                     {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
-                  </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {fmt.rel(o.time)}
-                  </p>
-                </div>
-
-                {/* Col 2: GIÁ TRỊ DEAL TỪ CRM */}
-                <div className="px-1.5 flex flex-col items-center justify-start">
-                  <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-0.5">
-                    <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
-                    <span>GIÁ TRỊ DEAL</span>
-                  </div>
-                  <p className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 leading-snug whitespace-normal break-words text-center">
-                    {formatSmartPrice(o.value)}
-                  </p>
-                  <p className="text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Từ CRM CEO 1983
-                  </p>
-                </div>
-
-                {/* Col 3: ĐỊA BÀN */}
-                <div className="px-1.5 flex flex-col items-center justify-start">
-                  <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
-                    <MapPin className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
-                    <span>ĐỊA BÀN</span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug">
-                    Toàn quốc & B2B
-                  </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Hội viên CLB
-                  </p>
-                </div>
-              </div>
-
-              {/* 3. CARD ACTION FOOTER */}
-              <div className="px-4 py-3 flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <span className="truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <User className="h-3 w-3 shrink-0" />
-                    <span className="truncate">Người đăng: {o.posterName || o.contactName || o.company || "Hội viên CLB"}</span>
                   </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={(evt) => {
-                      evt.stopPropagation();
-                      handleOpenOppDetail(o);
-                    }}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#003B95] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer"
-                  >
-                    Xem chi tiết
-                  </button>
-
                   {checkIsMine(o) ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenOppDetail(o);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 transition active:scale-95 cursor-pointer"
-                    >
-                      <Users className="h-3.5 w-3.5" />
-                      <span>Cơ hội của bạn</span>
-                    </button>
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      Của bạn
+                    </span>
                   ) : o.interested ? (
-                    <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Đã quan tâm
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <Check className="h-3 w-3 stroke-[2.5]" /> Đã quan tâm
                     </span>
                   ) : (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         interest(o.id);
                       }}
                       disabled={busy === o.id}
                       style={{ color: "#ffffff" }}
-                      className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-50"
+                      className="rounded-lg bg-[#003B95] hover:bg-[#002B70] px-2.5 py-1 text-[10.5px] font-bold text-white shadow-2xs transition active:scale-95 cursor-pointer disabled:opacity-50"
                     >
-                      {busy === o.id ? "Đang gửi..." : "Quan tâm"}
+                      {busy === o.id ? "..." : "Quan tâm"}
                     </button>
                   )}
                 </div>
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* CHẾ ĐỘ XEM DẠNG DANH SÁCH (LIST) */
+        <div className="mt-2 space-y-3 px-4">
+          {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
+            const tagVi = normalizeTag(o.tag);
+            const rawOppImg = o.image;
+            const oppImg =
+              (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/"))
+                ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
+                : null) || defaultOppImages[index % defaultOppImages.length];
+
+            return (
+              <div
+                key={o.id}
+                onClick={() => handleOpenOppDetail(o)}
+                className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-500/50 hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-[#131a26] group"
+              >
+                {/* 1. POSTER BANNER ON TOP (IMAGE 3) */}
+                <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
+                  <img
+                    src={oppImg}
+                    alt={o.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+
+                  {/* Top Badges */}
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#003B95]/90 backdrop-blur-md px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
+                      <Sparkles className="h-3 w-3 text-amber-300" />
+                      {tagVi}
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 shadow-sm border border-white/20">
+                        <Eye className="h-3 w-3 text-amber-300" />
+                        <span>{o.views || 0}</span>
+                      </span>
+
+                      {o.interested && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+                          <Check className="h-3 w-3 stroke-[2.5]" />
+                          Đã quan tâm
+                        </span>
+                      )}
+
+                      {checkIsMine(o) && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOppDetail(o);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 backdrop-blur-md px-2.5 py-1 text-[10px] font-extrabold shadow-sm border border-amber-300/40 cursor-pointer transition"
+                          title="Xem danh sách người quan tâm"
+                        >
+                          <Users className="h-3 w-3" />
+                          <span>Người quan tâm</span>
+                        </span>
+                      )}
+
+                      {checkCanManageOpp(o) && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setActiveOppMenuId(activeOppMenuId === o.id ? null : o.id);
+                            }}
+                            className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
+                            title="Tùy chọn cơ hội"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                          {activeOppMenuId === o.id && (
+                            <div
+                              className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  setActiveOppMenuId(null);
+                                  startEditOpp(o, e);
+                                }}
+                                className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-amber-500" />
+                                <span>Chỉnh sửa</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  setActiveOppMenuId(null);
+                                  handleDeleteOpp(o.id, e);
+                                }}
+                                className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                <span>Xóa</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Poster Title & Company & Posting Date */}
+                  <div className="absolute bottom-3 left-4 right-4 z-10">
+                    <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white line-clamp-2 leading-tight drop-shadow-md group-hover:text-amber-200 transition-colors">
+                      {o.title}
+                    </h3>
+                    <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-amber-300/90">
+                      <p className="flex items-center gap-1.5 truncate">
+                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>{o.company}</span>
+                      </p>
+                      <span className="text-[10px] text-white/80 shrink-0 font-medium ml-2">
+                        📅 {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 3-COLUMN METADATA BAR (IMAGE 3 LAYOUT) */}
+                <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-3 text-center border-b border-slate-100 dark:border-white/5">
+                  <div className="px-1.5 flex flex-col items-center justify-start">
+                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
+                      <Calendar className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                      <span>NGÀY ĐĂNG</span>
+                    </div>
+                    <p className="text-[11.5px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                      {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {fmt.rel(o.time)}
+                    </p>
+                  </div>
+
+                  <div className="px-1.5 flex flex-col items-center justify-start">
+                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-0.5">
+                      <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
+                      <span>GIÁ TRỊ DEAL</span>
+                    </div>
+                    <p className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 leading-snug whitespace-normal break-words text-center">
+                      {formatSmartPrice(o.value)}
+                    </p>
+                    <p className="text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      Từ CRM CEO 1983
+                    </p>
+                  </div>
+
+                  <div className="px-1.5 flex flex-col items-center justify-start">
+                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
+                      <MapPin className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                      <span>ĐỊA BÀN</span>
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug">
+                      Toàn quốc & B2B
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Hội viên CLB
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. CARD ACTION FOOTER */}
+                <div className="px-4 py-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <User className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Người đăng: {o.posterName || o.contactName || o.company || "Hội viên CLB"}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(evt) => {
+                        evt.stopPropagation();
+                        handleOpenOppDetail(o);
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#003B95] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer"
+                    >
+                      Xem chi tiết
+                    </button>
+
+                    {checkIsMine(o) ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenOppDetail(o);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 transition active:scale-95 cursor-pointer"
+                      >
+                        <Users className="h-3.5 w-3.5" />
+                        <span>Cơ hội của bạn</span>
+                      </button>
+                    ) : o.interested ? (
+                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Đã quan tâm
+                      </span>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          interest(o.id);
+                        }}
+                        disabled={busy === o.id}
+                        style={{ color: "#ffffff" }}
+                        className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-50"
+                      >
+                        {busy === o.id ? "Đang gửi..." : "Quan tâm"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && list.length === 0 && (
+        <div className="mx-4 my-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 p-6">
+          <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+          <p className="text-[13px] font-semibold text-slate-600 dark:text-slate-300">
+            Không tìm thấy cơ hội giao thương nào phù hợp
+          </p>
+          <p className="text-[11.5px] text-slate-400 mt-1">
+            Thử chọn mục khác hoặc bấm "Đăng cơ hội" để kết nối với các doanh nhân!
+          </p>
+        </div>
+      )}
+
+      {/* Phân trang Bảng Tin Chia Sẻ Cơ Hội (Requirement 5) */}
+      {list.length > OPP_PAGE_SIZE && (() => {
+        const totalOppPages = Math.ceil(list.length / OPP_PAGE_SIZE);
+        return (
+          <div className="mx-4 mt-4 flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 text-xs text-slate-500 shadow-xs">
+            <button
+              type="button"
+              disabled={pageOpps <= 1}
+              onClick={() => setPageOpps((prev) => Math.max(1, prev - 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Trước</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalOppPages }, (_, i) => i + 1).map((p) => {
+                const isCur = p === pageOpps;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPageOpps(p)}
+                    className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
+                      isCur
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
             </div>
-          );
-        })}
 
-        {!loading && list.length === 0 && (
-          <div className="py-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 p-6">
-            <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-            <p className="text-[13px] font-semibold text-slate-600 dark:text-slate-300">
-              Không tìm thấy cơ hội giao thương nào phù hợp
-            </p>
-            <p className="text-[11.5px] text-slate-400 mt-1">
-              Thử chọn mục khác hoặc bấm "Đăng cơ hội" để kết nối với các doanh nhân!
-            </p>
+            <button
+              type="button"
+              disabled={pageOpps >= totalOppPages}
+              onClick={() => setPageOpps((prev) => Math.min(totalOppPages, prev + 1))}
+              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+            >
+              <span>Sau</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
-        )}
+        );
+      })()}
 
-        {/* Phân trang Bảng Tin Trao Cơ Hội (Requirement 5) */}
-        {list.length > OPP_PAGE_SIZE && (
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 text-xs text-slate-500 shadow-xs">
-            <span className="text-[11.5px] font-medium">
-              Trang <b>{pageOpps}</b> / {Math.ceil(list.length / OPP_PAGE_SIZE)} ({list.length} cơ hội)
+      {/* FOOTER BANNER: CHIA SẺ CƠ HỘI CEO 1983 */}
+      <div className="mx-4 mt-7 rounded-3xl overflow-hidden shadow-xl border border-amber-400/40 bg-gradient-to-br from-[#061536] via-[#0A255C] to-[#040E24] text-white p-5 relative">
+        <div className="relative z-10 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/30 to-amber-600/30 border border-amber-400/40 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 shadow-xs">
+              <Handshake className="h-3 w-3 text-amber-400" />
+              GIAO THƯƠNG THƯỢNG ĐỈNH
             </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={pageOpps <= 1}
-                onClick={() => setPageOpps((prev) => Math.max(1, prev - 1))}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
-                title="Trang trước"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                disabled={pageOpps >= Math.ceil(list.length / OPP_PAGE_SIZE)}
-                onClick={() => setPageOpps((prev) => Math.min(Math.ceil(list.length / OPP_PAGE_SIZE), prev + 1))}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
-                title="Trang sau"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+            <span className="text-[10px] font-bold text-slate-300">
+              CLB DOANH NHÂN CEO 1983
+            </span>
           </div>
-        )}
+          <div>
+            <h3 className="text-base sm:text-lg font-black leading-tight text-white tracking-wide">
+              CHIA SẺ CƠ HỘI · KẾT NỐI THÀNH CÔNG
+            </h3>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Mỗi cơ hội được chia sẻ là một nhịp cầu giao thương đưa doanh nghiệp cùng vươn xa và bứt phá thịnh vượng.
+            </p>
+          </div>
+          <div className="pt-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-4 py-2 text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Chia sẻ cơ hội mới</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Opportunity Detail Modal (React Portal - IMAGE 4 LAYOUT) */}
