@@ -38,6 +38,7 @@ import {
   Volume2,
   VolumeX,
   Share2,
+  ArrowRight,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -609,7 +610,7 @@ function ProductsScreen() {
     return (
       <div
         key={p.id}
-        className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-md hover:border-[#003B95]/40 transition-all duration-300"
+        className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 transition-all duration-300"
       >
         <div>
           {/* Product Image Box */}
@@ -617,31 +618,33 @@ function ProductsScreen() {
             <img
               src={mediaImg}
               alt={p.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
             />
-            {/* Category Tag Overlay */}
-            <span className="absolute left-2 top-2 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white tracking-wide">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+            {/* Category Tag */}
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-slate-950/60 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-semibold text-white tracking-wide border border-white/10 shadow-xs">
               {p.category || "Dịch vụ"}
             </span>
 
-            {/* Interest Heart Button */}
+            {/* Wishlist Heart Action */}
             <button
               type="button"
               onClick={(e) => toggleInterest(p.id, e)}
-              className={`absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full backdrop-blur-xs transition cursor-pointer shadow-xs ${
+              className={`absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-xs ${
                 isInterested
                   ? "bg-rose-500 text-white shadow-rose-500/30"
-                  : "bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-rose-500"
+                  : "bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-rose-500 hover:bg-white"
               }`}
               title={isInterested ? "Đã lưu quan tâm" : "Lưu quan tâm"}
             >
               <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white" : ""}`} />
             </button>
 
-            {/* Owner/Admin action menu button */}
+            {/* Owner/Admin Action Menu */}
             {canManage && (
-              <div className="absolute left-2 bottom-2">
+              <div className="absolute left-2.5 bottom-2.5">
                 <div className="relative">
                   <button
                     type="button"
@@ -649,14 +652,14 @@ function ProductsScreen() {
                       e.stopPropagation();
                       setActiveProductMenuId(menuOpen ? null : p.id);
                     }}
-                    className="grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white hover:bg-black transition cursor-pointer"
-                    title="Tùy chọn"
+                    className="grid h-7 w-7 place-items-center rounded-full bg-slate-950/70 backdrop-blur-md text-white hover:bg-slate-900 transition-all cursor-pointer shadow-xs border border-white/15"
+                    title="Tùy chọn quản trị"
                   >
-                    <MoreVertical className="h-3 w-3" />
+                    <MoreVertical className="h-3.5 w-3.5" />
                   </button>
                   {menuOpen && (
                     <div
-                      className="absolute left-0 bottom-7 w-28 rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 py-1 z-30 animate-scale-in"
+                      className="absolute left-0 bottom-8 w-32 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-30 animate-scale-in"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -665,10 +668,10 @@ function ProductsScreen() {
                           setActiveProductMenuId(null);
                           startEditProduct(p, e);
                         }}
-                        className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
                       >
-                        <Pencil className="h-3 w-3 text-blue-500" />
-                        <span>Sửa tin</span>
+                        <Pencil className="h-3.5 w-3.5 text-blue-500" />
+                        <span>Sửa thông tin</span>
                       </button>
                       <button
                         type="button"
@@ -676,10 +679,10 @@ function ProductsScreen() {
                           setActiveProductMenuId(null);
                           handleDeleteProduct(p.id, e);
                         }}
-                        className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer font-medium"
                       >
-                        <Trash2 className="h-3 w-3" />
-                        <span>Xóa tin</span>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Xóa bài đăng</span>
                       </button>
                     </div>
                   )}
@@ -687,74 +690,67 @@ function ProductsScreen() {
               </div>
             )}
 
-            {/* Corner Perk Badge: Liên kết trực tiếp đến ưu đãi App Hiệp Hội (/association/perks) */}
+            {/* VIP Perk Badge */}
             <Link
               to="/association/perks"
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:scale-105 active:scale-95 text-white px-2 py-0.5 text-[9px] font-black shadow-md shadow-amber-500/30 transition border border-amber-300/40"
+              className="absolute right-2.5 bottom-2.5 z-10 flex items-center gap-1 rounded-full bg-amber-400/90 hover:bg-amber-400 backdrop-blur-md text-slate-950 px-2.5 py-0.5 text-[9.5px] font-black shadow-md transition-transform hover:scale-105 border border-amber-300/40"
               title="Ưu đãi độc quyền liên kết App Hiệp Hội"
             >
-              <Sparkles className="h-2.5 w-2.5 text-amber-200 fill-amber-200 animate-pulse" />
-              <span>Ưu đãi VIP</span>
+              <span>ƯU ĐÃI VIP</span>
             </Link>
           </div>
 
           {/* Product Details Info */}
-          <div className="p-3">
-            {/* Company & Seller Name */}
-            <div className="flex items-center justify-between gap-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate mb-1">
-              <span className="flex items-center gap-1 truncate max-w-[60%]">
-                <Building2 className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
-                <span className="truncate">{p.company || "CLB Doanh Nhân CEO 1983"}</span>
+          <div className="p-3.5">
+            {/* Company & Seller Subtitle */}
+            <div className="flex items-center justify-between gap-2 text-[10.5px] text-slate-400 dark:text-slate-500 font-medium truncate mb-1">
+              <span className="truncate uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                {p.company || "CLB CEO 1983"}
               </span>
-              <span className="shrink-0 text-amber-600 dark:text-amber-400 font-semibold normal-case truncate max-w-[40%]">
-                Đăng bởi: {p.sellerName || "Hội viên"}
+              <span className="shrink-0 text-amber-600 dark:text-amber-400 font-medium">
+                {p.sellerName || "Hội viên"}
               </span>
             </div>
 
             {/* Product Title */}
-            <h4 className="text-xs font-black text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition mb-2">
+            <h4 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors mb-2.5 min-h-[34px]">
               {p.name}
             </h4>
 
-            {/* Price section: VIP Member Price in prominent Red/Amber */}
-            <div className="space-y-0.5 mb-2">
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-amber-400">
+            {/* Price Section */}
+            <div className="space-y-0.5 mb-2.5">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-sm sm:text-base font-black text-rose-600 dark:text-amber-400">
                   {formatSmartProductPrice(p.memberPrice || p.price)}
                 </span>
                 {p.originalPrice && p.originalPrice !== p.memberPrice && (
-                  <span className="text-[10px] text-slate-400 line-through">
+                  <span className="text-[11px] text-slate-400 line-through">
                     {formatSmartProductPrice(p.originalPrice)}
                   </span>
                 )}
               </div>
-              <span className="inline-block text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-                Ưu đãi độc quyền CEO 1983
+              <span className="inline-block text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                Đặc quyền Hội viên CEO 1983
               </span>
             </div>
 
-            {/* Views counter & contact */}
-            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
-              <span className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span>{p.views || 1} lượt xem</span>
-              </span>
-              <span className="text-[9.5px] font-medium text-slate-500">
-                {(p as any).unit ? `ĐVT: ${(p as any).unit}` : "Báo giá VIP"}
-              </span>
+            {/* Meta Strip without rigid icons */}
+            <div className="flex items-center justify-between text-[10.5px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span>{p.views || 1} lượt xem</span>
+              <span>{(p as any).unit ? `ĐVT: ${(p as any).unit}` : "Báo giá VIP"}</span>
             </div>
           </div>
         </div>
 
-        {/* Action Button: Phân quyền tác giả vs khách hàng */}
-        <div className="p-2.5 pt-0">
+        {/* Action Button */}
+        <div className="p-3 pt-0">
           {isAuthor ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleOpenProductQuotes(p)}
-                className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-[11px] font-bold text-amber-700 dark:text-amber-300 text-center flex items-center justify-center gap-1 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
+                className="flex-1 py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-xs font-bold text-amber-800 dark:text-amber-300 text-center flex items-center justify-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
                 title="Xem danh sách người quan tâm & yêu cầu báo giá"
               >
                 <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -763,31 +759,22 @@ function ProductsScreen() {
               <button
                 type="button"
                 onClick={(e) => startEditProduct(p, e)}
-                className="py-1.5 px-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
+                className="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
                 title="Chỉnh sửa sản phẩm"
               >
-                <Pencil className="h-3 w-3 text-blue-500" />
                 <span>Sửa</span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => handleDeleteProduct(p.id, e)}
-                className="py-1.5 px-2 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold text-rose-600 transition active:scale-95 cursor-pointer flex items-center"
-                title="Xóa sản phẩm"
-              >
-                <Trash2 className="h-3 w-3" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleOpenQuoteModal(p)}
                 style={{ color: "#ffffff" }}
-                className="flex-1 py-2 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002B70] hover:to-[#172554] text-white text-xs font-bold shadow-sm transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
-                <Send className="h-3 w-3 text-amber-300" />
                 <span>Nhận báo giá VIP</span>
+                <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
               </button>
               {isAdmin && (
                 <button

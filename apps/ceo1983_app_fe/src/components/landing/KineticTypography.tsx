@@ -9,7 +9,7 @@ export function KineticWords({
   text,
   className = "",
   highlightIndices = [],
-  highlightClass = "text-rose-600 underline decoration-rose-300 decoration-wavy",
+  highlightClass = "text-amber-400 font-extrabold",
   delay = 0,
 }: {
   text: string;
@@ -27,12 +27,12 @@ export function KineticWords({
         return (
           <motion.span
             key={idx}
-            initial={{ y: 40, opacity: 0, filter: "blur(6px)" }}
+            initial={{ y: 35, opacity: 0, filter: "blur(8px)" }}
             whileInView={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-            viewport={{ once: false, amount: 0.25 }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{
-              duration: 0.55,
-              delay: delay + idx * 0.05,
+              duration: 0.6,
+              delay: delay + idx * 0.04,
               ease: [0.16, 1, 0.3, 1],
             }}
             className={`inline-block ${isHighlight ? highlightClass : ""}`}
@@ -46,50 +46,79 @@ export function KineticWords({
 }
 
 /**
- * Kinetic Title Box with Slide-up & Underline Glow
+ * Kinetic Luxury Gold Heading
+ * Features staggered word reveal and sweeping gold sheen effect
  */
-export function KineticTitleBox({
-  badge,
+export function KineticGoldHeading({
+  tag,
   title,
   subtitle,
   className = "",
 }: {
-  badge: string;
+  tag?: string;
   title: string;
   subtitle?: string;
   className?: string;
 }) {
   return (
-    <div className={`space-y-4 text-center ${className}`}>
-      {/* Animated Badge */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        whileInView={{ scale: 1, opacity: 1 }}
-        viewport={{ once: false, amount: 0.4 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase bg-rose-50 border border-rose-200 text-rose-700 shadow-sm"
-      >
-        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-        <span>{badge}</span>
-      </motion.div>
+    <div className={`space-y-3 text-center ${className}`}>
+      {tag && (
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, filter: "blur(6px)" }}
+          whileInView={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
+          viewport={{ once: false, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold tracking-widest uppercase bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border border-amber-400/30 text-amber-300 backdrop-blur-md shadow-[0_0_20px_rgba(216,178,130,0.15)]"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+          <span>{tag}</span>
+        </motion.div>
+      )}
 
-      {/* Kinetic Title */}
-      <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 font-serif">
-        <KineticWords text={title} />
+      <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+        <KineticWords
+          text={title}
+          className="justify-center"
+          highlightClass="bg-gradient-to-r from-[#FFE6A5] via-[#D8B282] to-[#B8860B] bg-clip-text text-transparent"
+        />
       </h2>
 
-      {/* Kinetic Subtitle */}
       {subtitle && (
         <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          viewport={{ once: false, amount: 0.4 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto font-sans"
+          initial={{ y: 20, opacity: 0, filter: "blur(6px)" }}
+          whileInView={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+          viewport={{ once: false, amount: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="text-xs sm:text-sm md:text-base text-slate-300 font-medium max-w-3xl mx-auto leading-relaxed"
         >
           {subtitle}
         </motion.p>
       )}
     </div>
+  );
+}
+
+/**
+ * Text Fade Up with blur-to-focus animation
+ */
+export function KineticTextFadeUp({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ y: 25, opacity: 0, filter: "blur(8px)" }}
+      whileInView={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+      viewport={{ once: false, amount: 0.2 }}
+      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }

@@ -2260,5 +2260,38 @@ html:has([contenteditable="true"]:focus) .vba-bottom-bar {
   transform: translateY(100%) !important;
 }
 
+/* Ceo1983 Orbital Menu Animations */
+@keyframes orbit-counter {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes orbit-clockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orbit-counter {
+  animation: orbit-counter var(--orbit-duration, 40s) linear infinite;
+}
+
+.animate-orbit-clockwise {
+  animation: orbit-clockwise var(--orbit-duration, 40s) linear infinite;
+}
+
+.orbital-paused .animate-orbit-counter,
+.orbital-paused .animate-orbit-clockwise {
+  animation-play-state: paused !important;
+}
+
+
 
 

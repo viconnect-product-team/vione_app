@@ -309,14 +309,21 @@ function EventPosterCard({
   })();
 
   const TopIcon = topBadgeInfo.icon;
+  const eventDateStr = event.date
+    ? new Date(event.date).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : `${event.day || 27}/${event.month || 9}/2026`;
 
   return (
     <div
       role="listitem"
       onClick={() => onSelect(event)}
-      className="group relative w-full h-64 sm:h-72 rounded-[26px] overflow-hidden border-2 border-[#C9A86A]/75 dark:border-amber-500/60 shadow-xl bg-slate-950 cursor-pointer select-none transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+      className="group relative w-full h-72 sm:h-80 rounded-[28px] overflow-hidden border border-slate-700/50 hover:border-amber-400/80 shadow-xl bg-slate-950 cursor-pointer select-none transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between"
     >
-      {/* Cover Banner Image */}
+      {/* Cover Banner Image with Smooth Scale */}
       <img
         src={displayImg}
         alt={event.title}
@@ -327,63 +334,88 @@ function EventPosterCard({
             target.src = fallbackImg;
           }
         }}
-        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-95"
+        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/35 pointer-events-none transition-opacity group-hover:opacity-85" />
 
-      {/* Top Left: Badge Tiêu Điểm Thượng Đỉnh (Chuẩn 100% như ảnh mẫu) */}
-      <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 rounded-full bg-[#FDF3D8] text-[#4A3205] border border-amber-300/60 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wide shadow-md">
-        <TopIcon className="h-3.5 w-3.5 fill-[#4A3205] text-[#4A3205]" />
-        <span>{topBadgeInfo.text}</span>
-      </div>
+      {/* Modern Multi-Stop Gradient Scrim */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30 pointer-events-none transition-opacity group-hover:opacity-95" />
 
-      {/* Dải điều khiển ở đáy thẻ (Bottom Bar): Countdown Timer + Category + Status + Bookmark */}
-      {/* TUYỆT ĐỐI KHÔNG CÓ CÁI BADGE NGÀY BỊ THỪA Ở GÓC DƯỚI BÊN TRÁI NÀY! */}
-      <div className="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-        {/* 1. Countdown Timer Pill */}
-        <div className="rounded-full bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-lg flex items-center gap-1.5 text-white font-mono font-bold text-[12px] shrink-0">
-          <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-          <EventCountdownBanner event={event} index={index} whiteText={true} />
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* 2. Category Pill */}
-          <span className="rounded-full bg-[#F59E0B] text-slate-950 font-black text-[11px] px-3.5 py-1.5 uppercase tracking-wider shadow-lg border border-amber-300 truncate">
-            {agenda.category}
+      {/* Top Floating Bar: Category Pill & Bookmark Action */}
+      <div className="relative z-10 p-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950/70 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30 shadow-sm">
+            <TopIcon className="h-3.5 w-3.5 text-amber-400" />
+            <span>{topBadgeInfo.text}</span>
           </span>
-
-          {/* 3. Status Pill: Đã đăng ký / Miễn phí / Giá vé */}
-          {registered ? (
-            <span className="rounded-full bg-white text-[#003B95] font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-slate-200 flex items-center gap-1 shrink-0">
-              <Check className="h-3.5 w-3.5 stroke-[3]" />
-              Đã đăng ký
-            </span>
-          ) : isFree ? (
-            <span className="rounded-full bg-white text-emerald-600 font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-emerald-200 flex items-center gap-1 shrink-0">
-              Miễn phí
-            </span>
-          ) : (
-            <span className="rounded-full bg-white text-amber-600 font-black text-[11.5px] px-3.5 py-1.5 shadow-lg border border-amber-200 shrink-0">
-              {new Intl.NumberFormat("vi-VN").format(price)} đ
+          {agenda.category && (
+            <span className="hidden sm:inline-flex rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[10.5px] font-semibold text-slate-200 border border-white/15">
+              {agenda.category}
             </span>
           )}
+        </div>
 
-          {/* 4. Bookmark Button */}
-          <button
-            type="button"
-            onClick={(evt) => {
-              evt.stopPropagation();
-              onToggleBookmark(event.id);
-            }}
-            className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md transition-all active:scale-95 cursor-pointer shadow-lg shrink-0 ${
-              isBookmarked
-                ? "bg-white text-slate-950 border border-white"
-                : "bg-black/60 hover:bg-black/80 text-white border border-white/25"
-            }`}
-            title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
-          >
-            <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
-          </button>
+        <button
+          type="button"
+          onClick={(evt) => {
+            evt.stopPropagation();
+            onToggleBookmark(event.id);
+          }}
+          className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-md ${
+            isBookmarked
+              ? "bg-amber-400 text-slate-950 border border-amber-300"
+              : "bg-slate-950/60 hover:bg-slate-900 text-slate-300 hover:text-white border border-white/20"
+          }`}
+          title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
+        >
+          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
+        </button>
+      </div>
+
+      {/* Bottom Editorial Content: Date, Title, Location, Status & Countdown */}
+      <div className="relative z-10 p-4 sm:p-5 pt-0 space-y-2.5">
+        {/* Date & Time Metadata */}
+        <div className="flex items-center gap-2 text-[11.5px] font-medium text-amber-300/90 tracking-wide">
+          <span>{eventDateStr}</span>
+          <span className="h-1 w-1 rounded-full bg-amber-400/60" />
+          <span>{event.time || "08:00 - 12:00"}</span>
+        </div>
+
+        {/* Prominent Event Title */}
+        <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors drop-shadow-sm">
+          {event.title}
+        </h3>
+
+        {/* Location preview */}
+        {event.place && (
+          <p className="text-[12px] text-slate-300 line-clamp-1 opacity-90 font-normal">
+            {event.place}
+          </p>
+        )}
+
+        {/* Bottom Status Strip */}
+        <div className="pt-2 flex items-center justify-between gap-2 border-t border-white/10 flex-wrap">
+          {/* Status Pill */}
+          <div className="flex items-center gap-2">
+            {registered ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Đã đăng ký
+              </span>
+            ) : isFree ? (
+              <span className="inline-flex items-center rounded-full bg-blue-500/20 text-sky-300 border border-sky-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
+                Miễn phí
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
+                {new Intl.NumberFormat("vi-VN").format(price)} đ
+              </span>
+            )}
+          </div>
+
+          {/* Countdown Pill */}
+          <div className="flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 border border-white/15 text-[11px] text-slate-300 font-mono">
+            <EventCountdownBanner event={event} index={index} whiteText={true} />
+          </div>
         </div>
       </div>
     </div>

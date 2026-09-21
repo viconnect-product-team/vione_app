@@ -698,64 +698,52 @@ function OpportunitiesScreen() {
       </div>
 
       {/* SECTION 2: STATS SUMMARY BAR */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="p-3 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Tổng Cơ Hội</span>
-              <div className="h-7 w-7 rounded-xl bg-blue-50 dark:bg-blue-950/50 grid place-items-center text-[#003B95] dark:text-blue-400">
-                <Briefcase className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-xl font-black text-slate-900 dark:text-white">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-850 border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-[#003B95]/30 transition">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+              Tổng Cơ Hội
+            </span>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
               {allOpportunities.length || 12}
             </p>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-              +100% hội viên xác thực
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+              100% Hội viên xác thực
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Đối Tác Kết Nối</span>
-              <div className="h-7 w-7 rounded-xl bg-amber-50 dark:bg-amber-950/50 grid place-items-center text-amber-600 dark:text-amber-400">
-                <Handshake className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-xl font-black text-slate-900 dark:text-white">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-850 border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-amber-400/30 transition">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+              Đối Tác Kết Nối
+            </span>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
               {Math.max(28, allOpportunities.length * 3)}
             </p>
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
               Mạng lưới B2B liên kết
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Quy Mô Deals</span>
-              <div className="h-7 w-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 grid place-items-center text-emerald-600 dark:text-emerald-400">
-                <Coins className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-xl font-black text-slate-900 dark:text-white">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-850 border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-emerald-400/30 transition">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+              Quy Mô Deals
+            </span>
+            <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
               &gt; 50 Tỷ
             </p>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
               Thẩm định qua CRM
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Đang Mở Deals</span>
-              <div className="h-7 w-7 rounded-xl bg-rose-50 dark:bg-rose-950/50 grid place-items-center text-rose-600 dark:text-rose-400">
-                <Flame className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-xl font-black text-slate-900 dark:text-white">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-850 border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-rose-400/30 transition">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+              Đang Mở Deals
+            </span>
+            <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
               {allOpportunities.filter((o) => !o.claimed).length || 8}
             </p>
-            <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
+            <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
               Sẵn sàng giao thương
             </p>
           </div>
@@ -854,40 +842,39 @@ function OpportunitiesScreen() {
               <div
                 key={o.id}
                 onClick={() => handleOpenOppDetail(o)}
-                className="vba-card flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-[#003B95]/40 hover:shadow-md transition cursor-pointer bg-white dark:bg-[#131a26] group"
+                className="flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-amber-400/50 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white dark:bg-[#131a26] group"
               >
                 <div>
                   {/* Poster Image */}
-                  <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-slate-900">
+                  <div className="relative h-28 sm:h-36 w-full overflow-hidden bg-slate-900">
                     <img
                       src={oppImg}
                       alt={o.title}
                       loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-[#003B95]/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-black uppercase text-amber-300 border border-amber-400/30">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                    <span className="absolute top-2 left-2 inline-flex items-center rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">
                       {tagVi}
                     </span>
-                    <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[9px] font-bold text-amber-400">
+                    <span className="absolute bottom-2 right-2 inline-flex items-center rounded-full bg-amber-400 text-slate-950 px-2.5 py-0.5 text-[10px] font-black shadow-md">
                       {formatSmartPrice(o.value)}
                     </span>
                   </div>
 
                   {/* Body info */}
-                  <div className="p-2.5">
-                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                  <div className="p-3">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate mb-1">
+                      {o.company || "CLB CEO 1983"}
+                    </p>
+                    <h4 className="text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                       {o.title}
                     </h4>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 flex items-center gap-1">
-                      <Building2 className="h-3 w-3 shrink-0 text-slate-400" />
-                      <span>{o.company}</span>
-                    </p>
                   </div>
                 </div>
 
                 {/* Footer action */}
-                <div className="p-2.5 pt-0 flex items-center justify-between gap-1 border-t border-slate-100 dark:border-white/5 mt-1">
+                <div className="p-3 pt-0 flex items-center justify-between gap-1 border-t border-slate-100 dark:border-white/5 mt-1">
                   <span className="text-[10px] text-slate-400">
                     {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
                   </span>
@@ -896,7 +883,7 @@ function OpportunitiesScreen() {
                       Của bạn
                     </span>
                   ) : o.interested ? (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400">
                       <Check className="h-3 w-3 stroke-[2.5]" /> Đã quan tâm
                     </span>
                   ) : (
@@ -908,7 +895,7 @@ function OpportunitiesScreen() {
                       }}
                       disabled={busy === o.id}
                       style={{ color: "#ffffff" }}
-                      className="rounded-lg bg-[#003B95] hover:bg-[#002B70] px-2.5 py-1 text-[10.5px] font-bold text-white shadow-2xs transition active:scale-95 cursor-pointer disabled:opacity-50"
+                      className="rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002B70] hover:to-[#172554] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 cursor-pointer disabled:opacity-50"
                     >
                       {busy === o.id ? "..." : "Quan tâm"}
                     </button>
@@ -933,29 +920,27 @@ function OpportunitiesScreen() {
               <div
                 key={o.id}
                 onClick={() => handleOpenOppDetail(o)}
-                className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-500/50 hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-[#131a26] group"
+                className="flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-400/60 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white dark:bg-[#131a26] group"
               >
-                {/* 1. POSTER BANNER ON TOP (IMAGE 3) */}
+                {/* 1. POSTER BANNER ON TOP */}
                 <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
                   <img
                     src={oppImg}
                     alt={o.title}
                     loading="lazy"
-                    className="h-full w-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30 pointer-events-none" />
 
                   {/* Top Badges */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#003B95]/90 backdrop-blur-md px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
-                      <Sparkles className="h-3 w-3 text-amber-300" />
+                    <span className="inline-flex items-center rounded-full bg-slate-950/70 backdrop-blur-md px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
                       {tagVi}
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white/90 shadow-sm border border-white/20">
-                        <Eye className="h-3 w-3 text-amber-300" />
-                        <span>{o.views || 0}</span>
+                      <span className="inline-flex items-center rounded-full bg-slate-950/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-slate-300 border border-white/10">
+                        {o.views || 0} lượt xem
                       </span>
 
                       {o.interested && (
@@ -971,11 +956,10 @@ function OpportunitiesScreen() {
                             e.stopPropagation();
                             handleOpenOppDetail(o);
                           }}
-                          className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 hover:bg-amber-400 text-slate-950 backdrop-blur-md px-2.5 py-1 text-[10px] font-extrabold shadow-sm border border-amber-300/40 cursor-pointer transition"
+                          className="inline-flex items-center rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 px-2.5 py-1 text-[10px] font-bold shadow-sm cursor-pointer transition"
                           title="Xem danh sách người quan tâm"
                         >
-                          <Users className="h-3 w-3" />
-                          <span>Người quan tâm</span>
+                          Người quan tâm
                         </span>
                       )}
 
@@ -988,14 +972,14 @@ function OpportunitiesScreen() {
                               e.stopPropagation();
                               setActiveOppMenuId(activeOppMenuId === o.id ? null : o.id);
                             }}
-                            className="h-7 w-7 rounded-full grid place-items-center bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
+                            className="h-7 w-7 rounded-full grid place-items-center bg-slate-950/60 hover:bg-slate-900 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
                             title="Tùy chọn cơ hội"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
                           {activeOppMenuId === o.id && (
                             <div
-                              className="absolute right-0 mt-1 w-32 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-30 animate-scale-in"
+                              className="absolute right-0 mt-1 w-32 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-30 animate-scale-in"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
@@ -1027,60 +1011,54 @@ function OpportunitiesScreen() {
                     </div>
                   </div>
 
-                  {/* Poster Title & Company & Posting Date */}
-                  <div className="absolute bottom-3 left-4 right-4 z-10">
-                    <h3 className="text-[16px] sm:text-[17px] font-extrabold text-white line-clamp-2 leading-tight drop-shadow-md group-hover:text-amber-200 transition-colors">
+                  {/* Poster Title & Company & Date */}
+                  <div className="absolute bottom-3.5 left-4 right-4 z-10 space-y-1">
+                    <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 leading-snug drop-shadow-md group-hover:text-amber-200 transition-colors">
                       {o.title}
                     </h3>
-                    <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-amber-300/90">
-                      <p className="flex items-center gap-1.5 truncate">
-                        <Building2 className="h-3.5 w-3.5 shrink-0" />
-                        <span>{o.company}</span>
-                      </p>
-                      <span className="text-[10px] text-white/80 shrink-0 font-medium ml-2">
-                        📅 {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
+                    <div className="flex items-center justify-between text-[11px] font-medium text-amber-300/90">
+                      <span className="truncate">{o.company}</span>
+                      <span className="text-[10.5px] text-slate-300 shrink-0 ml-2">
+                        {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. 3-COLUMN METADATA BAR (IMAGE 3 LAYOUT) */}
+                {/* 2. 3-COLUMN METADATA BAR WITHOUT RIGID ICONS */}
                 <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-3 text-center border-b border-slate-100 dark:border-white/5">
-                  <div className="px-1.5 flex flex-col items-center justify-start">
-                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
-                      <Calendar className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
-                      <span>NGÀY ĐĂNG</span>
-                    </div>
-                    <p className="text-[11.5px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                  <div className="px-2 flex flex-col items-center justify-start">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                      NGÀY ĐĂNG
+                    </span>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
                       {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
                     </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[10px] text-slate-400">
                       {fmt.rel(o.time)}
                     </p>
                   </div>
 
-                  <div className="px-1.5 flex flex-col items-center justify-start">
-                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-0.5">
-                      <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
-                      <span>GIÁ TRỊ DEAL</span>
-                    </div>
-                    <p className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 leading-snug whitespace-normal break-words text-center">
+                  <div className="px-2 flex flex-col items-center justify-start">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-0.5">
+                      GIÁ TRỊ DEAL
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
                       {formatSmartPrice(o.value)}
                     </p>
-                    <p className="text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                       Từ CRM CEO 1983
                     </p>
                   </div>
 
-                  <div className="px-1.5 flex flex-col items-center justify-start">
-                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-0.5">
-                      <MapPin className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
-                      <span>ĐỊA BÀN</span>
-                    </div>
-                    <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug">
+                  <div className="px-2 flex flex-col items-center justify-start">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                      ĐỊA BÀN
+                    </span>
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                       Toàn quốc & B2B
                     </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[10px] text-slate-400">
                       Hội viên CLB
                     </p>
                   </div>
@@ -1088,23 +1066,24 @@ function OpportunitiesScreen() {
 
                 {/* 3. CARD ACTION FOOTER */}
                 <div className="px-4 py-3 flex items-center justify-between gap-2">
+
                   <div className="min-w-0 flex-1">
-                    <span className="truncate text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <User className="h-3 w-3 shrink-0" />
-                      <span className="truncate">Người đăng: {o.posterName || o.contactName || o.company || "Hội viên CLB"}</span>
+                    <span className="truncate text-[11.5px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <span>Đăng bởi:</span>
+                      <strong className="text-amber-600 dark:text-amber-400 font-semibold truncate">{o.posterName || o.contactName || o.company || "Hội viên CLB"}</strong>
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={(evt) => {
                         evt.stopPropagation();
                         handleOpenOppDetail(o);
                       }}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#003B95] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#003B95] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer"
                     >
-                      Xem chi tiết
+                      Chi tiết
                     </button>
 
                     {checkIsMine(o) ? (
@@ -1114,13 +1093,12 @@ function OpportunitiesScreen() {
                           e.stopPropagation();
                           handleOpenOppDetail(o);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 transition active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 px-3 py-1.5 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs"
                       >
-                        <Users className="h-3.5 w-3.5" />
                         <span>Cơ hội của bạn</span>
                       </button>
                     ) : o.interested ? (
-                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                         <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Đã quan tâm
                       </span>
                     ) : (
@@ -1131,7 +1109,7 @@ function OpportunitiesScreen() {
                         }}
                         disabled={busy === o.id}
                         style={{ color: "#ffffff" }}
-                        className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-50"
+                        className="rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002B70] hover:to-[#172554] px-4 py-1.5 text-xs font-bold text-white shadow-sm active:scale-95 transition cursor-pointer disabled:opacity-50"
                       >
                         {busy === o.id ? "Đang gửi..." : "Quan tâm"}
                       </button>
