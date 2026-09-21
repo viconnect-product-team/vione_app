@@ -10,6 +10,11 @@ param (
 
 if ($NoHttps) { $EnableHttps = $false }
 
+# Thiet lap ma hoa UTF-8 cho console de khong bi loi font tieng Viet tren PowerShell
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 > $null
+
 # =========================================================================
 # Kịch bản triển khai độc lập Web CRM Platform CLB CEO 1983 (Hướng 2 - Standalone Compose)
 # Tách biệt hoàn toàn khỏi ViOne: Container riêng, Port 5004/5005 riêng, Compose riêng
