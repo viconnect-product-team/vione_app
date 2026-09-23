@@ -32,6 +32,7 @@ import { downloadCsv } from "@/lib/csv";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { useTableControls } from "@/hooks/use-table-controls";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import {
   type IndustryKey,
   type Member,
@@ -913,33 +914,35 @@ function MembersPage() {
                         <span className="font-medium text-muted-foreground text-xs">{(tc.page - 1) * tc.pageSize + idx + 1}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[72px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                    <td className="sticky left-[72px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
                       {m.code}
                     </td>
-                    <td className="px-4 py-3 border-b border-border">
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar m={m} className="h-9 w-9 text-[11px]" />
                         <div className="min-w-0">
-                          <div className="truncate font-semibold text-foreground">{m.name}</div>
-                          <div className="truncate text-[11px] text-muted-foreground">
-                            {m.email || m.contact}
-                          </div>
+                          <TruncatedText text={m.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground" />
+                          <TruncatedText text={m.email || m.contact || ""} maxWidth="max-w-[240px]" className="text-[11px] text-muted-foreground" />
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-foreground border-b border-border">{t(m.industry)}</td>
-                    <td className="px-4 py-3 text-foreground border-b border-border">{t(m.region)}</td>
-                    <td className="px-4 py-3 border-b border-border">
+                    <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
+                      <TruncatedText text={t(m.industry)} maxWidth="max-w-[160px]" />
+                    </td>
+                    <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
+                      <TruncatedText text={t(m.region)} maxWidth="max-w-[140px]" />
+                    </td>
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                       <TypeChip type={m.type} />
                     </td>
-                    <td className="px-4 py-3 border-b border-border">
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                       <StatusBadge status={m.status} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground border-b border-border">
+                    <td className="px-4 py-3 text-muted-foreground border-b border-border whitespace-nowrap">
                       {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}
                     </td>
                     {isAdmin && (
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                         <AccountStatusBadge status={(acctStatuses[m.id] as MemberAccountStatus) ?? "none"} />
                       </td>
                     )}

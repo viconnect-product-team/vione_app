@@ -1,4 +1,4 @@
-﻿param (
+param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -32,11 +32,22 @@ $ErrorActionPreference = "Stop"
 function Invoke-CheckedCommand {
     param(
         [Parameter(Mandatory = $true)] [string]$Description,
-        [Parameter(Mandatory = $true)] [scriptblock]$Action
+        [Parameter(Mandatory = $true)] [scriptblock]$Action,
+        [int]$MaxRetries = 1
     )
-    & $Action
-    if ($LASTEXITCODE -ne 0) {
-        throw "Loi: Tien trinh [$Description] that bai voi ma loi $LASTEXITCODE"
+    $attempt = 1
+    while ($true) {
+        & $Action
+        if ($LASTEXITCODE -eq 0) {
+            break
+        }
+        if ($attempt -lt $MaxRetries) {
+            Write-Host "`n[Canh bao] Tien trinh [$Description] tam thoi chua phan hoi (ma loi $LASTEXITCODE). Tu dong thu lai sau 3s (Lan $attempt/$MaxRetries)..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 3
+            $attempt++
+        } else {
+            throw "Loi: Tien trinh [$Description] that bai voi ma loi $LASTEXITCODE sau $attempt lan thu."
+        }
     }
 }
 
@@ -122,10 +133,12 @@ try {
         Write-Host "`n[1-2/5] BO QUA quy trinh Build va dong goi (SkipBuild)..." -ForegroundColor Yellow
     }
 
+    $SSH_OPTS = @("-o", "ConnectTimeout=30", "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3")
+
     Write-Host "`n[3/5] Khoi tao thu muc va dong bo tep tin doc lap len may chu ha tang ($SERVER_IP)..." -ForegroundColor Cyan
 
-    Invoke-CheckedCommand -Description "Tao thu muc ~/crm tren server" -Action {
-        ssh "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
+    Invoke-CheckedCommand -Description "Tao thu muc ~/crm tren server" -MaxRetries 3 -Action {
+        ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
     }
 
     # Dam bao co tep tin .env.crm cuc bo
@@ -141,8 +154,8 @@ try {
         if ($buildFE -and (Test-Path "crm-frontend.tar.gz")) { $filesToUpload += (Resolve-Path "crm-frontend.tar.gz").Path }
     }
 
-    $scpArgs = $filesToUpload + "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
-    Invoke-CheckedCommand -Description "Chuyen giao tep tin qua SCP vao ~/crm" -Action {
+    $scpArgs = @() + $SSH_OPTS + $filesToUpload + "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
+    Invoke-CheckedCommand -Description "Chuyen giao tep tin qua SCP vao ~/crm" -MaxRetries 3 -Action {
         scp @scpArgs
     }
 
@@ -158,8 +171,8 @@ try {
 
     $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
-    Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Web CRM Platform" -Action {
-        ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
+    Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Web CRM Platform" -MaxRetries 3 -Action {
+        ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
     }
 
     Write-Host "`n[5/5] Don dep bo nho dem tam thoi tai may cuc bo..." -ForegroundColor Cyan

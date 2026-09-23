@@ -14,6 +14,21 @@ export class CreateCommunityDto {
   about?: string;
 }
 
+function cleanCommunityId(communityId: string): string {
+  if (!communityId) return 'c1983000-0000-4000-8000-000000001983';
+  let id = communityId;
+  try {
+    id = decodeURIComponent(communityId);
+  } catch {}
+  if (id.includes('/') || id.startsWith('http')) {
+    const parts = id.split('/').filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (/^[0-9a-fA-F-]{36}$/.test(last)) return last;
+    return 'c1983000-0000-4000-8000-000000001983';
+  }
+  return id;
+}
+
 @Controller(['communities', 'connect-app/community'])
 @UseGuards(OptionalJwtAuthGuard)
 export class CommunityController {
@@ -101,12 +116,12 @@ export class CommunityController {
   // --- Parameterized :communityId Routes ---
   @Get(':communityId')
   async getCommunityDetail(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.getCommunityDetail(req.user.id, communityId);
+    return this.connectAppService.getCommunityDetail(req.user.id, cleanCommunityId(communityId));
   }
 
   @Get(':communityId/activity-preview')
   async getCommunityActivityPreview(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.getCommunityActivityPreview(req.user.id, communityId);
+    return this.connectAppService.getCommunityActivityPreview(req.user.id, cleanCommunityId(communityId));
   }
 
   @Get(':communityId/members')

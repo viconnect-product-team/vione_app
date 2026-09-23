@@ -76,6 +76,18 @@ export class ConnectAppService implements OnModuleInit {
         ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends';
       `);
       await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS brm_target_xor;
+        ALTER TABLE public.business_relationship_moments ADD CONSTRAINT brm_target_xor CHECK (
+          (target_kind = 'connection' AND target_user_id IS NOT NULL AND target_card_id IS NULL AND target_guest_id IS NULL) OR
+          (target_kind = 'saved_card' AND target_card_id IS NOT NULL AND target_user_id IS NULL AND target_guest_id IS NULL) OR
+          (target_kind = 'guest_contact' AND target_guest_id IS NOT NULL AND target_user_id IS NULL AND target_card_id IS NULL) OR
+          (target_kind = 'general' AND target_user_id IS NULL AND target_card_id IS NULL AND target_guest_id IS NULL)
+        );
+        ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS business_relationship_moments_target_kind_check;
+        ALTER TABLE public.business_relationship_moments ADD CONSTRAINT business_relationship_moments_target_kind_check
+          CHECK (target_kind = ANY (ARRAY['connection'::text, 'saved_card'::text, 'guest_contact'::text, 'general'::text]));
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
         ALTER TABLE public.business_relationship_moment_comments
         ADD COLUMN IF NOT EXISTS photo_url TEXT;
       `);

@@ -604,28 +604,28 @@ function EventsPage() {
                       <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
                         {(tc.page - 1) * tc.pageSize + idx + 1}
                       </td>
-                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
                         EV-{e.id.slice(0, 6).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 border-b border-border">
-                        <TruncatedText text={e.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground text-xs" />
-                        <TruncatedText text={e.description} maxWidth="max-w-[240px]" className="text-[11px] text-muted-foreground" />
+                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                        <TruncatedText text={e.name} maxWidth="max-w-[260px]" className="font-semibold text-foreground text-xs" />
+                        <TruncatedText text={e.description} maxWidth="max-w-[260px]" className="text-[11px] text-muted-foreground" />
                       </td>
-                      <td className="px-4 py-3 text-xs border-b border-border">
+                      <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
                         <div className="font-medium text-foreground">
                           {d.toLocaleDateString("vi-VN")} {e.time ? `• ${e.time}` : ""}
                         </div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <TruncatedText text={e.location || "Online"} maxWidth="max-w-[180px]" />
+                          <TruncatedText text={e.location || "Online"} maxWidth="max-w-[200px]" />
                         </div>
                       </td>
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                         <span className="inline-flex rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           {t(TYPE_KEY[e.type as EventItem["type"]] ?? "events.type.forum")}
                         </span>
                       </td>
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                         <div className="text-xs font-semibold text-foreground">
                           {e.registered} / {e.capacity}
                         </div>

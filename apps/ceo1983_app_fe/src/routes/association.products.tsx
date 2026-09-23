@@ -39,7 +39,15 @@ import {
   VolumeX,
   Share2,
   ArrowRight,
+  Download,
+  FileSpreadsheet,
+  ArrowLeft,
+  ShieldCheck,
+  Mail,
+  Package,
 } from "lucide-react";
+import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
+import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -272,7 +280,7 @@ function ProductsScreen() {
     }
   };
 
-  // Company Storefront modal state
+  // Company Storefront state (Full-screen B2B Storefront, not a popup modal)
   const [viewingCompany, setViewingCompany] = useState<{
     name: string;
     avatarUrl?: string | null;
@@ -282,11 +290,40 @@ function ProductsScreen() {
     website?: string;
   } | null>(null);
   const [companyCatFilter, setCompanyCatFilter] = useState<string>("all");
+  const [companySearch, setCompanySearch] = useState<string>("");
   const [wishlistCartOpen, setWishlistCartOpen] = useState(false);
+  const [excelImportOpen, setExcelImportOpen] = useState(false);
+
+  const handleImportExcelProducts = async (importedItems: ParsedProductItem[]) => {
+    for (const item of importedItems) {
+      const payload = {
+        name: item.title,
+        title: item.title,
+        description: item.description || item.title,
+        price: item.price,
+        originalPrice: item.originalPrice || item.price,
+        memberPrice: item.memberPrice || item.price,
+        unit: item.unit || "Gói",
+        currency: "VND",
+        category: item.categoryName || "Dịch vụ",
+        status: "active",
+        imageUrl: item.imageUrl || null,
+        imageUrls: item.imageUrl ? [item.imageUrl] : [],
+        company: item.company || (viewingCompany ? viewingCompany.name : member?.title) || "CLB Doanh Nhân CEO 1983",
+        sellerId: user?.id || (member as any)?.userId || (member as any)?.id || "ceo1983",
+      };
+      try {
+        await fetchNestApi("/products", { method: "POST", body: JSON.stringify(payload) });
+      } catch {
+        await fetchNestApi("/marketplace/products", { method: "POST", body: JSON.stringify(payload) }).catch(() => {});
+      }
+    }
+    reload();
+  };
 
   // Lock body scroll when modal is open to ensure 100% stable centering on mobile
   useEffect(() => {
-    if (quoteProduct || postModalOpen || editingProduct || viewingCompany || viewingQuotesProduct || wishlistCartOpen) {
+    if (quoteProduct || postModalOpen || editingProduct || viewingQuotesProduct || wishlistCartOpen || excelImportOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -294,7 +331,7 @@ function ProductsScreen() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [quoteProduct, postModalOpen, editingProduct, viewingCompany, viewingQuotesProduct, wishlistCartOpen]);
+  }, [quoteProduct, postModalOpen, editingProduct, viewingQuotesProduct, wishlistCartOpen, excelImportOpen]);
 
   // Form states for posting product with full CRM pricing fields & Company storefront
   const [formPhoto, setFormPhoto] = useState("");
@@ -368,6 +405,43 @@ function ProductsScreen() {
   const totalViews = useMemo(() => {
     return allProducts.reduce((sum, p) => sum + (p.views || 1), 0);
   }, [allProducts]);
+
+  // B2B Company Storefront derived states
+  const companyProducts = useMemo(() => {
+    if (!viewingCompany) return [];
+    const targetComp = viewingCompany.name.toLowerCase().trim();
+    return allProducts.filter(
+      (p) => (p.company || "").toLowerCase().trim() === targetComp
+    );
+  }, [allProducts, viewingCompany]);
+
+  const isCompanyOwner = useMemo(() => {
+    if (!viewingCompany) return false;
+    if (isAdmin) return true;
+    const targetComp = viewingCompany.name.toLowerCase().trim();
+    if ((member as any)?.company && (member as any).company.toLowerCase().trim() === targetComp) return true;
+    if ((member as any)?.companyName && (member as any).companyName.toLowerCase().trim() === targetComp) return true;
+    if (member?.title && member.title.toLowerCase().trim() === targetComp) return true;
+    return companyProducts.some((p) => checkCanManageProduct(p));
+  }, [viewingCompany, isAdmin, member, companyProducts]);
+
+  const companyCategories = useMemo(() => {
+    const cats = Array.from(new Set(companyProducts.map((p) => p.category).filter(Boolean))) as string[];
+    return cats;
+  }, [companyProducts]);
+
+  const filteredCompanyProducts = useMemo(() => {
+    return companyProducts.filter((p) => {
+      if (companyCatFilter !== "all" && p.category !== companyCatFilter) return false;
+      if (companySearch.trim()) {
+        const qLower = companySearch.toLowerCase().trim();
+        const matchesName = p.name.toLowerCase().includes(qLower);
+        const matchesDesc = (p.description || "").toLowerCase().includes(qLower);
+        if (!matchesName && !matchesDesc) return false;
+      }
+      return true;
+    });
+  }, [companyProducts, companyCatFilter, companySearch]);
 
   const list = useMemo(() => {
     return allProducts.filter((p) => {
@@ -600,21 +674,22 @@ function ProductsScreen() {
     }
   };
 
-  const renderCard = (p: MyProduct) => {
+  const renderCard = (p: MyProduct, index: number = 0) => {
     const isAuthor = checkIsProductAuthor(p);
     const canManage = checkCanManageProduct(p);
     const isInterested = interestedIds.includes(p.id);
     const menuOpen = activeProductMenuId === p.id;
     const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80";
+    const isStaggered = index % 2 === 1;
 
     return (
       <div
         key={p.id}
-        className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 transition-all duration-300"
+        className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 transition-all duration-300 break-inside-avoid mb-3"
       >
         <div>
-          {/* Product Image Box */}
-          <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+          {/* Product Image Box - Staggered Height for Masonry Grid */}
+          <div className={`relative ${isStaggered ? "aspect-[4/5]" : "aspect-square sm:aspect-[4/3]"} w-full overflow-hidden bg-slate-100 dark:bg-slate-800`}>
             <img
               src={mediaImg}
               alt={p.name}
@@ -705,7 +780,18 @@ function ProductsScreen() {
           <div className="p-3.5">
             {/* Company & Seller Subtitle */}
             <div className="flex items-center justify-between gap-2 text-[10.5px] text-slate-400 dark:text-slate-500 font-medium truncate mb-1">
-              <span className="truncate uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewingCompany({
+                    name: p.company || "CLB CEO 1983",
+                    avatarUrl: (p as any).companyAvatar || null,
+                    industry: p.category,
+                  });
+                }}
+                className="truncate uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 hover:text-[#2E3192] dark:hover:text-amber-400 cursor-pointer transition-colors"
+                title={`Xem gian hàng ${p.company || "CLB CEO 1983"}`}
+              >
                 {p.company || "CLB CEO 1983"}
               </span>
               <span className="shrink-0 text-amber-600 dark:text-amber-400 font-medium">
@@ -714,7 +800,7 @@ function ProductsScreen() {
             </div>
 
             {/* Product Title */}
-            <h4 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors mb-2.5 min-h-[34px]">
+            <h4 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#2E3192] dark:group-hover:text-amber-400 transition-colors mb-2.5 min-h-[34px]">
               {p.name}
             </h4>
 
@@ -750,16 +836,16 @@ function ProductsScreen() {
               <button
                 type="button"
                 onClick={() => handleOpenProductQuotes(p)}
-                className="flex-1 py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-xs font-bold text-amber-800 dark:text-amber-300 text-center flex items-center justify-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
+                className="flex-1 h-8.5 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-xs font-bold text-amber-800 dark:text-amber-300 text-center flex items-center justify-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
                 title="Xem danh sách người quan tâm & yêu cầu báo giá"
               >
-                <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Người quan tâm</span>
+                <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="truncate">Người quan tâm</span>
               </button>
               <button
                 type="button"
                 onClick={(e) => startEditProduct(p, e)}
-                className="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center gap-1"
+                className="h-8.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1 shrink-0"
                 title="Chỉnh sửa sản phẩm"
               >
                 <span>Sửa</span>
@@ -770,17 +856,16 @@ function ProductsScreen() {
               <button
                 type="button"
                 onClick={() => handleOpenQuoteModal(p)}
-                style={{ color: "#ffffff" }}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002B70] hover:to-[#172554] text-white text-xs font-bold shadow-sm transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 h-8.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-black shadow-xs hover:brightness-105 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Nhận báo giá VIP</span>
-                <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
+                <ArrowRight className="h-3.5 w-3.5 text-slate-950 shrink-0" />
               </button>
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => handleOpenProductQuotes(p)}
-                  className="py-2 px-2.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer"
+                  className="h-8.5 px-2.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer flex items-center justify-center shrink-0"
                   title="Xem yêu cầu báo giá (Quyền Admin)"
                 >
                   <Users className="h-3.5 w-3.5" />
@@ -793,23 +878,381 @@ function ProductsScreen() {
     );
   };
 
+  const renderCompanyStorefront = () => {
+    if (!viewingCompany) return null;
+    return (
+      <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 pb-20">
+
+        {/* Sticky Nav with Back Button */}
+        <div className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setViewingCompany(null);
+              setCompanyCatFilter("all");
+              setCompanySearch("");
+            }}
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#2E3192] dark:hover:text-amber-400 transition cursor-pointer group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Quay lại Chợ giao thương</span>
+          </button>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="truncate max-w-[160px] sm:max-w-xs font-semibold text-slate-700 dark:text-slate-300">
+              {viewingCompany.name}
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-amber-600 dark:text-amber-400 font-bold">Gian hàng B2B</span>
+          </div>
+        </div>
+
+        {/* Hero Storefront Banner */}
+        <div className="relative bg-gradient-to-br from-[#2E3192] via-[#1E2269] to-[#0F172A] text-white p-5 sm:p-8 shadow-md">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 max-w-5xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden bg-white/10 border-2 border-white/30 shadow-xl shrink-0">
+                <img
+                  src={viewingCompany.avatarUrl || "/ceo1983-official-logo.png"}
+                  alt={viewingCompany.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg sm:text-2xl font-black text-white truncate">
+                    {viewingCompany.name}
+                  </h1>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 border border-amber-300/40 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-xs">
+                    <BadgeCheck className="h-3.5 w-3.5 text-amber-400" />
+                    Xác thực CEO 1983
+                  </span>
+                  {isCompanyOwner && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Chủ sở hữu gian hàng
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-blue-100/90 mt-1 flex items-center gap-2 flex-wrap font-medium">
+                  <span>{viewingCompany.industry || "Doanh nghiệp thành viên"}</span>
+                  <span>•</span>
+                  <span>Hội viên chính thức CLB CEO 1983</span>
+                </p>
+                <p className="mt-2.5 text-xs text-white/85 leading-relaxed max-w-2xl">
+                  {viewingCompany.bio ||
+                    "Doanh nghiệp thành viên chính thức CLB Doanh Nhân CEO 1983. Cam kết cung ứng giải pháp và sản phẩm chất lượng cao với chính sách ưu đãi đặc quyền cho các hội viên."}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Toolbar Inside Company Storefront */}
+            <div className="mt-5 pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <Package className="h-4 w-4 text-amber-400" />
+                  <span className="font-bold text-white">{companyProducts.length}</span>
+                  <span className="text-blue-200 text-[11px]">Sản phẩm & Dịch vụ</span>
+                </div>
+                <div className="h-3 w-px bg-white/20" />
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                  <span className="text-blue-200 text-[11px]">Cam kết bảo trợ CLB</span>
+                </div>
+              </div>
+
+              {/* Company Owner controls: Excel Import/Export and Add Product */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isCompanyOwner ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setExcelImportOpen(true)}
+                      className="h-9 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      title="Nhập danh sách sản phẩm từ file Excel"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                      <span>Nhập Excel</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => exportProductsToExcel(companyProducts)}
+                      className="h-9 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      title="Xuất danh sách sản phẩm ra file Excel"
+                    >
+                      <Download className="h-4 w-4 text-emerald-400" />
+                      <span>Xuất Excel</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormCompany(viewingCompany.name);
+                        setPostModalOpen(true);
+                      }}
+                      className="h-9 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Thêm sản phẩm</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (companyProducts[0]) {
+                        handleOpenQuoteModal(companyProducts[0]);
+                      } else {
+                        toast.info("Gian hàng hiện chưa có sản phẩm để báo giá.");
+                      }
+                    }}
+                    className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+                  >
+                    <Mail className="h-4 w-4" />
+                    <span>Yêu cầu báo giá VIP</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Bar & Products Catalog */}
+        <div className="max-w-5xl mx-auto px-4 py-5 space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Category tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
+              <button
+                type="button"
+                onClick={() => setCompanyCatFilter("all")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  companyCatFilter === "all"
+                    ? "bg-[#2E3192] text-white shadow-xs"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                Tất cả ({companyProducts.length})
+              </button>
+              {companyCategories.map((cat) => {
+                const count = companyProducts.filter((p) => p.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCompanyCatFilter(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                      companyCatFilter === cat
+                        ? "bg-[#2E3192] text-white shadow-xs"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {cat} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search input in Storefront */}
+            <div className="relative min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={companySearch}
+                onChange={(e) => setCompanySearch(e.target.value)}
+                placeholder="Tìm kiếm trong gian hàng..."
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-8.5 pr-8 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#2E3192]"
+              />
+              {companySearch && (
+                <button
+                  type="button"
+                  onClick={() => setCompanySearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Product Grid */}
+          {filteredCompanyProducts.length === 0 ? (
+            <div className="py-16 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-6">
+              <Package className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                {companySearch ? "Không tìm thấy sản phẩm phù hợp" : "Gian hàng chưa có sản phẩm thuộc danh mục này"}
+              </h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                {isCompanyOwner
+                  ? "Hãy nhấn 'Thêm sản phẩm' hoặc 'Nhập Excel' để đưa sản phẩm của doanh nghiệp bạn lên sàn giao thương."
+                  : "Vui lòng chọn danh mục khác hoặc quay lại sau."}
+              </p>
+              {isCompanyOwner && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormCompany(viewingCompany.name);
+                    setPostModalOpen(true);
+                  }}
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2E3192] text-white text-xs font-bold shadow-xs hover:bg-[#232677] transition cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Đăng sản phẩm ngay</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="columns-2 sm:columns-3 gap-3 [&>*]:break-inside-avoid [&>*]:mb-3">
+              {filteredCompanyProducts.map((p, idx) => {
+                const canManage = isCompanyOwner || checkCanManageProduct(p);
+                const isInterested = interestedIds.includes(p.id);
+                const isStaggered = idx % 2 === 1;
+                return (
+                  <div
+                    key={p.id}
+                    className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-xl hover:border-[#2E3192]/30 dark:hover:border-amber-400/30 transition-all duration-200 break-inside-avoid mb-3"
+                  >
+                    <div className={`relative ${isStaggered ? "aspect-[4/5]" : "aspect-square sm:aspect-4/3"} w-full bg-slate-100 dark:bg-slate-800 overflow-hidden`}>
+                      <img
+                        src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
+                        alt={p.name}
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      {canManage && (
+                        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditProduct(p, e);
+                            }}
+                            className="h-7 w-7 rounded-lg bg-black/60 hover:bg-blue-600 text-white grid place-items-center transition cursor-pointer backdrop-blur-xs"
+                            title="Sửa sản phẩm"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProduct(p.id, e);
+                            }}
+                            className="h-7 w-7 rounded-lg bg-black/60 hover:bg-rose-600 text-white grid place-items-center transition cursor-pointer backdrop-blur-xs"
+                            title="Xóa sản phẩm"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      <span className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 rounded-full bg-amber-400/95 text-slate-950 px-2 py-0.5 text-[9px] font-black shadow-xs">
+                        ƯU ĐÃI VIP B2B
+                      </span>
+                    </div>
+
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        {p.category && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {p.category}
+                          </span>
+                        )}
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug mt-0.5 mb-1.5 group-hover:text-[#2E3192] dark:group-hover:text-amber-400 transition-colors">
+                          {p.name}
+                        </h4>
+                        {p.description && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                            {p.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-baseline justify-between gap-2 mb-3">
+                          <div>
+                            <span className="text-[10px] text-slate-400 uppercase font-semibold">Giá Hội Viên</span>
+                            <div className="text-base font-black text-rose-600 dark:text-amber-400">
+                              {formatSmartProductPrice(p.memberPrice || p.price)}
+                            </div>
+                          </div>
+                          {Boolean(p.originalPrice && (p.memberPrice || p.price) && Number(p.originalPrice) > Number(p.memberPrice || p.price)) && (
+                            <span className="text-xs text-slate-400 line-through">
+                              {formatSmartProductPrice(p.originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        {canManage ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditProduct(p, e);
+                              }}
+                              className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span>Sửa thông tin</span>
+                            </button>
+                            {p.quoteRequestsCount !== undefined && p.quoteRequestsCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingQuotesProduct(p)}
+                                className="px-2.5 py-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                                title="Xem các yêu cầu báo giá"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                                <span>{p.quoteRequestsCount}</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleInterest(p.id)}
+                              className={`h-9 w-9 rounded-xl grid place-items-center transition cursor-pointer border shrink-0 ${
+                                isInterested
+                                  ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-600"
+                                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500"
+                              }`}
+                              title={isInterested ? "Bỏ quan tâm" : "Lưu vào giỏ quan tâm"}
+                            >
+                              <Heart className={`h-4 w-4 ${isInterested ? "fill-rose-600" : ""}`} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuoteModal(p)}
+                              className="flex-1 h-9 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                              <Mail className="h-3.5 w-3.5 text-amber-300" />
+                              <span>Nhận báo giá VIP</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="vba-animate pb-24 text-slate-900 dark:text-white">
-      {/* 20px Header Bar: CEO1983 Trắng Xanh Đơn Giản */}
-      <div className="h-[20px] w-full bg-gradient-to-r from-blue-50 via-white to-sky-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-b border-blue-100/80 dark:border-blue-950/40 flex items-center justify-between px-3 text-[10px] font-semibold text-blue-900 dark:text-blue-200 select-none">
-        <span className="flex items-center gap-1 font-bold tracking-wider text-[#003B95] dark:text-blue-400">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#003B95] animate-pulse"></span>
-          CEO 1983
-        </span>
-        <span className="text-[9px] text-blue-600/80 dark:text-blue-300/70 font-medium">
-          Marketplace & Tiếp Thị Liên Kết 5.0
-        </span>
-      </div>
-
-      <MemberHeader
-        title={isEn ? "Marketplace 5.0" : "Marketplace"}
-        back
-      />
+      {viewingCompany ? (
+        renderCompanyStorefront()
+      ) : (
+        <>
+          <MemberHeader
+            title={isEn ? "Marketplace 5.0" : "Marketplace"}
+            back
+          />
 
       {/* KPI / Statistics Bar (Tổng đang có, đã quan tâm, đã xem) */}
       <div className="px-4 pt-3">
@@ -818,7 +1261,7 @@ function ProductsScreen() {
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {isEn ? "Total Products" : "Tổng sản phẩm"}
             </div>
-            <div className="mt-1 text-lg font-black text-[#003B95] dark:text-amber-400">
+            <div className="mt-1 text-lg font-black text-amber-500">
               {totalProducts}
             </div>
             <div className="text-[9.5px] text-slate-500 dark:text-slate-400">
@@ -861,7 +1304,7 @@ function ProductsScreen() {
             onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
             className={`h-10 w-10 rounded-2xl grid place-items-center transition cursor-pointer border ${
               categoryMenuOpen || selectedCategory !== "all"
-                ? "bg-[#003B95] text-white border-[#003B95] shadow-sm"
+                ? "bg-[#2E3192] text-white border-[#2E3192] shadow-sm"
                 : "bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:bg-slate-200"
             }`}
             title="Danh mục sản phẩm"
@@ -892,7 +1335,7 @@ function ProductsScreen() {
                   }}
                   className={`w-full px-3.5 py-2.5 text-left text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
                     selectedCategory === cat.id
-                      ? "bg-[#003B95]/10 text-[#003B95] dark:text-amber-400 font-bold border-l-3 border-[#003B95]"
+                      ? "bg-[#2E3192]/10 text-[#2E3192] dark:text-amber-400 font-bold border-l-3 border-[#2E3192]"
                       : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -987,7 +1430,7 @@ function ProductsScreen() {
                   }}
                   className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between cursor-pointer ${
                     sortMode === s.id
-                      ? "bg-[#003B95]/10 text-[#003B95] dark:text-amber-400 font-bold"
+                      ? "bg-[#2E3192]/10 text-[#2E3192] dark:text-amber-400 font-bold"
                       : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -1001,11 +1444,10 @@ function ProductsScreen() {
           <button
             type="button"
             onClick={() => setPostModalOpen(true)}
-            style={{ color: "#ffffff" }}
-            className="h-10 px-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white flex items-center gap-1.5 text-[12px] font-bold shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap"
+            className="h-10 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 flex items-center gap-1.5 text-[12px] font-black shadow-md hover:brightness-105 transition active:scale-95 cursor-pointer whitespace-nowrap"
             title="Đăng sản phẩm"
           >
-            <Plus className="h-4 w-4 text-amber-300" />
+            <Plus className="h-4 w-4 text-slate-950 stroke-[3]" />
             <span className="hidden sm:inline">Đăng SP</span>
           </button>
         </div>
@@ -1022,20 +1464,18 @@ function ProductsScreen() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                 active
-                  ? "bg-[#003B95] text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
+                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5"
               }`}
-              style={active ? { backgroundColor: "#003B95", color: "#FFFFFF" } : undefined}
             >
-              <span style={active ? { color: "#FFFFFF" } : undefined}>{cat.label}</span>
+              <span>{cat.label}</span>
               {cat.count !== undefined && (
                 <span
                   className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
                     active
-                      ? "bg-white/25 text-white"
+                      ? "bg-slate-950/20 text-slate-950"
                       : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   }`}
-                  style={active ? { color: "#FFFFFF" } : undefined}
                 >
                   {cat.count}
                 </span>
@@ -1047,7 +1487,7 @@ function ProductsScreen() {
 
       {/* ── PR SECTION: VIDEO SHOWCASE REEL & AFFILIATE B2B 5.0 (KHÔNG PHÂN TRANG) ── */}
       <div className="px-4 pt-3">
-        <div className="relative overflow-hidden rounded-3xl border border-blue-200/60 dark:border-blue-900/40 bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#0A2540] text-white shadow-lg p-4">
+        <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-lg p-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             {/* Video Pitch Showcase */}
             <div className="relative aspect-[16/9] sm:aspect-[4/3] w-full sm:w-48 rounded-2xl overflow-hidden bg-black/60 shrink-0 border border-white/20 shadow-md group">
@@ -1140,7 +1580,7 @@ function ProductsScreen() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Search className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                  <Search className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
                   <span>
                     {q ? `Kết quả tìm kiếm cho "${q}"` : `Danh mục: ${categoriesList.find((c) => c.id === selectedCategory)?.label}`}
                   </span>
@@ -1167,10 +1607,11 @@ function ProductsScreen() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                {/* Staggered Masonry Grid (Lưới so le nhau) */}
+                <div className="columns-2 sm:columns-3 gap-2.5 sm:gap-3 [&>*]:break-inside-avoid [&>*]:mb-3">
                   {list
                     .slice((pageFilter - 1) * FILTER_PAGE_SIZE, pageFilter * FILTER_PAGE_SIZE)
-                    .map((p) => renderCard(p))}
+                    .map((p, idx) => renderCard(p, idx))}
                 </div>
 
                 {/* Phân trang Section Tìm kiếm / Lọc */}
@@ -1227,11 +1668,11 @@ function ProductsScreen() {
                 </span>
               </div>
 
-              {/* Grid 2 Cột */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Staggered Masonry Grid 2 Cột So Le Nhau */}
+              <div className="columns-2 sm:columns-3 gap-2.5 sm:gap-3 [&>*]:break-inside-avoid [&>*]:mb-3">
                 {newestProducts
                   .slice((pageNew - 1) * PAGE_SIZE, pageNew * PAGE_SIZE)
-                  .map((p) => renderCard(p))}
+                  .map((p, idx) => renderCard(p, idx))}
               </div>
 
               {/* Phân trang Section 1 */}
@@ -1285,11 +1726,11 @@ function ProductsScreen() {
                 </span>
               </div>
 
-              {/* Grid 2 Cột */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Staggered Masonry Grid 2 Cột So Le Nhau */}
+              <div className="columns-2 sm:columns-3 gap-2.5 sm:gap-3 [&>*]:break-inside-avoid [&>*]:mb-3">
                 {popularProducts
                   .slice((pagePopular - 1) * PAGE_SIZE, pagePopular * PAGE_SIZE)
-                  .map((p) => renderCard(p))}
+                  .map((p, idx) => renderCard(p, idx))}
               </div>
 
               {/* Phân trang Section 2 */}
@@ -1350,7 +1791,7 @@ function ProductsScreen() {
                   .map((comp) => (
                     <div
                       key={comp.company}
-                      className="flex flex-col justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-[#003B95]/50 transition-all"
+                      className="flex flex-col justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-[#2E3192]/50 transition-all"
                     >
                       <div>
                         <div className="flex items-center gap-2.5 mb-2">
@@ -1378,7 +1819,7 @@ function ProductsScreen() {
                           </div>
                           <div className="flex justify-between text-slate-600 dark:text-slate-300">
                             <span>Sản phẩm niêm yết:</span>
-                            <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">{comp.count} sản phẩm</span>
+                            <span className="font-mono font-bold text-[#2E3192] dark:text-amber-400">{comp.count} sản phẩm</span>
                           </div>
                           <div className="flex justify-between text-slate-600 dark:text-slate-300">
                             <span>Tổng lượt xem:</span>
@@ -1397,7 +1838,7 @@ function ProductsScreen() {
                           });
                         }}
                         style={{ color: "#ffffff" }}
-                        className="w-full py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full py-2 px-3 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <Store className="h-3.5 w-3.5 text-amber-300" />
                         <span>Xem gian hàng</span>
@@ -1439,42 +1880,36 @@ function ProductsScreen() {
         )}
       </div>
 
-      {/* ── FOOTER BANNER: MARKETPLACE AFFILIATE 5.0 ── */}
-      <div className="mt-8 px-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#0A4BB5] p-5 text-white shadow-xl">
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      {/* ── FOOTER BANNER: COMPACT MODERN STRIP ── */}
+      <div className="mt-6 mb-4 px-4">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-[#2E3192]/10 dark:bg-amber-400/10 grid place-items-center shrink-0">
+              <Store className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+            </div>
             <div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-blue-950 text-[10px] font-black uppercase tracking-wider mb-2 shadow-xs">
-                Sàn Giao Thương & Tiếp Thị Liên Kết 5.0
-              </span>
-              <h4 className="text-base sm:text-lg font-black tracking-tight">
-                CEO 1983 Marketplace - Kết Nối B2B Đỉnh Cao
-              </h4>
-              <p className="text-xs text-blue-100/80 max-w-md mt-1 leading-relaxed">
-                Hơn 100+ doanh nghiệp thành viên tin dùng. Cơ chế Affiliate hoa hồng minh bạch, kết nối trực tiếp cung - cầu, chiết khấu đặc quyền hội viên.
+              <div className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center justify-center sm:justify-start gap-1.5">
+                <span>CEO 1983 Marketplace</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold">5.0</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Sàn giao thương B2B & liên kết giá trị doanh nghiệp hội viên
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link
-                to="/association/perks"
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-blue-950 text-xs font-black shadow-md transition active:scale-95 whitespace-nowrap flex items-center gap-1.5"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-blue-950" />
-                <span>Ưu Đãi VIP</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setPostModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-bold transition active:scale-95 whitespace-nowrap cursor-pointer"
-              >
-                Đăng Sản Phẩm
-              </button>
-            </div>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-10 -top-10 w-44 h-44 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/association/perks"
+              className="h-8 px-3 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>Ưu đãi VIP</span>
+            </Link>
+          </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* ── MODAL ĐĂNG SẢN PHẨM: ĐÃ SỬA THEME SÁNG TRANG NHÃ & CHÍNH GIỮA MÀN MOBILE ── */}
       {mounted && postModalOpen && createPortal(
@@ -1488,7 +1923,7 @@ function ProductsScreen() {
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <PackageCheck className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
+                <PackageCheck className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
                 {isEn ? "Post New Product / Service" : "Đăng Sản Phẩm / Dịch Vụ Mới"}
               </h3>
               <button
@@ -1504,8 +1939,8 @@ function ProductsScreen() {
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
                 {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
                 <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 p-3.5 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">
-                    <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#2E3192] dark:text-amber-400">
+                    <Store className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
                     <span>1. Thông tin Doanh Nghiệp & Gian Hàng</span>
                   </div>
 
@@ -1519,7 +1954,7 @@ function ProductsScreen() {
                       value={formCompany}
                       onChange={(e) => setFormCompany(e.target.value)}
                       placeholder={isEn ? "Company name" : "Ví dụ: Công ty Cổ phần Công nghệ ABC"}
-                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#2E3192]"
                     />
                   </div>
 
@@ -1603,7 +2038,7 @@ function ProductsScreen() {
                       </div>
                     ) : (
                       <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
-                        <ImagePlus className="h-6 w-6 text-[#003B95] dark:text-amber-400 mb-1" />
+                        <ImagePlus className="h-6 w-6 text-[#2E3192] dark:text-amber-400 mb-1" />
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                           {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên"}
                         </span>
@@ -1720,7 +2155,7 @@ function ProductsScreen() {
                 <button
                   type="submit"
                   style={{ color: "#ffffff" }}
-                  className="w-full rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer"
+                  className="w-full rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer"
                 >
                   {isEn ? "Publish Product to Marketplace" : "Đăng Sản Phẩm Lên Gian Hàng"}
                 </button>
@@ -1743,7 +2178,7 @@ function ProductsScreen() {
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
+                <FileText className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
                 {isEn ? "Request VIP Quotation" : "Yêu Cầu Báo Giá VIP"}
               </h3>
               <button
@@ -1821,7 +2256,7 @@ function ProductsScreen() {
                   type="submit"
                   disabled={quoteSubmitting}
                   style={{ color: "#ffffff" }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
                 >
                   <Send className="h-3.5 w-3.5" />
                   <span>{quoteSubmitting ? (isEn ? "Sending request..." : "Đang gửi...") : (isEn ? "Send Quote Request Now" : "Gửi Yêu Cầu Báo Giá")}</span>
@@ -1874,7 +2309,7 @@ function ProductsScreen() {
                   <div key={q.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-[#003B95] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
                           {q.buyerName ? q.buyerName.charAt(0).toUpperCase() : "U"}
                         </div>
                         <div className="min-w-0">
@@ -1919,7 +2354,7 @@ function ProductsScreen() {
                             setViewingQuotesProduct(null);
                             navigate({ to: "/association/messages", search: { peerCode: q.buyerId || q.phone } });
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-[#003B95] text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#002B70] transition cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-[#2E3192] text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#232677] transition cursor-pointer"
                         >
                           <MessageSquare className="h-3 w-3" />
                           <span>Nhắn tin</span>
@@ -1947,7 +2382,7 @@ function ProductsScreen() {
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
+                <Pencil className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
                 {isEn ? "Edit Product / Service" : "Chỉnh Sửa Sản Phẩm / Dịch Vụ"}
               </h3>
               <button
@@ -2114,7 +2549,7 @@ function ProductsScreen() {
                   type="submit"
                   disabled={updatingProduct}
                   style={{ color: "#ffffff" }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
                 >
                   <span>{updatingProduct ? (isEn ? "Saving..." : "Đang lưu...") : (isEn ? "Save Changes" : "Lưu Thay Đổi")}</span>
                 </button>
@@ -2125,112 +2560,7 @@ function ProductsScreen() {
         document.body
       )}
 
-      {/* ── MODAL GIAN HÀNG DOANH NGHIỆP (COMPANY STOREFRONT) ── */}
-      {mounted && viewingCompany && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setViewingCompany(null)}
-        >
-          <div
-            className="my-auto w-full max-w-[480px] max-h-[88dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Storefront Header with Royal Blue Gradient */}
-            <div className="relative bg-gradient-to-r from-[#003B95] via-[#002B70] to-[#1E3A8A] p-5 text-white shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewingCompany(null)}
-                className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full bg-black/35 text-white hover:bg-black/60 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              <div className="flex items-center gap-3 mt-1">
-                <div className="relative h-14 w-14 rounded-2xl overflow-hidden bg-white/10 border-2 border-white/30 shrink-0 shadow-md">
-                  <img
-                    src={viewingCompany.avatarUrl || "/ceo1983-official-logo.png"}
-                    alt={viewingCompany.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <h2 className="text-sm sm:text-base font-black text-white truncate drop-shadow-xs">
-                      {viewingCompany.name}
-                    </h2>
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-400/25 border border-amber-300/40 px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                      <BadgeCheck className="h-3 w-3 text-amber-400" /> Xác thực CEO 1983
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-blue-100/80 mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span>{viewingCompany.industry || "Doanh nghiệp thành viên"}</span>
-                    <span>•</span>
-                    <span>Hội viên chính thức CLB CEO 1983</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Bio / Intro */}
-              <div className="mt-3.5 rounded-xl bg-white/10 backdrop-blur-xs p-2.5 text-[11px] text-white/90 leading-relaxed border border-white/10">
-                {viewingCompany.bio || `Doanh nghiệp thành viên chính thức CLB Doanh Nhân CEO 1983. Cam kết cung ứng giải pháp và sản phẩm chất lượng cao với chính sách ưu đãi đặc quyền cho các hội viên.`}
-              </div>
-            </div>
-
-            {/* Storefront Products Catalog */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:thin]">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
-                  <span>Danh Mục Sản Phẩm ({allProducts.filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase()).length})</span>
-                </h3>
-                <span className="text-[10px] text-slate-400">Cam kết bảo trợ CLB</span>
-              </div>
-
-              {allProducts.filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase()).length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
-                  Gian hàng hiện đang chuẩn bị thêm sản phẩm mới.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2.5">
-                  {allProducts
-                    .filter(p => p.company?.toLowerCase() === viewingCompany.name.toLowerCase())
-                    .map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2.5 overflow-hidden"
-                      >
-                        <div className="aspect-square w-full rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 mb-2">
-                          <img
-                            src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                            alt={p.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <p className="text-[11.5px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight">
-                          {p.name}
-                        </p>
-                        <p className="text-[12px] font-black text-red-600 dark:text-amber-400 mt-1 whitespace-normal break-words leading-tight">
-                          {formatSmartProductPrice(p.memberPrice || p.price)}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setViewingCompany(null);
-                            handleOpenQuoteModal(p);
-                          }}
-                          className="mt-2 w-full py-1 rounded-lg bg-[#003B95] text-white text-[10.5px] font-bold hover:bg-[#002B70] transition cursor-pointer"
-                        >
-                          Nhận báo giá
-                        </button>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* ── MODAL GIAN HÀNG DOANH NGHIỆP: ĐÃ CHUYỂN SANG GIAO DIỆN TOÀN MÀN HÌNH B2B STOREFRONT ── */}
 
       {/* ── MODAL GIỎ HÀNG QUAN TÂM (WISHLIST CART MODAL) ── */}
       {mounted && wishlistCartOpen && createPortal(
@@ -2243,7 +2573,7 @@ function ProductsScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-[#002B70] to-[#003B95] p-4 text-white flex items-center justify-between shrink-0">
+            <div className="relative bg-gradient-to-r from-[#232677] to-[#2E3192] p-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-400 text-blue-950 font-bold shadow-xs">
                   <ShoppingCart className="h-5 w-5" />
@@ -2278,7 +2608,7 @@ function ProductsScreen() {
                   .map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-[#003B95]/40 transition"
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-[#2E3192]/40 transition"
                     >
                       <div className="h-16 w-16 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0">
                         <img
@@ -2288,7 +2618,7 @@ function ProductsScreen() {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold text-[#003B95] dark:text-amber-400 block truncate">
+                        <span className="text-[10px] font-bold text-[#2E3192] dark:text-amber-400 block truncate">
                           {p.company || "CLB CEO 1983"}
                         </span>
                         <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
@@ -2307,7 +2637,7 @@ function ProductsScreen() {
                             setWishlistCartOpen(false);
                             handleOpenQuoteModal(p);
                           }}
-                          className="py-1 px-2.5 rounded-lg bg-[#003B95] text-white text-[10.5px] font-bold hover:bg-[#002B70] transition cursor-pointer"
+                          className="py-1 px-2.5 rounded-lg bg-[#2E3192] text-white text-[10.5px] font-bold hover:bg-[#232677] transition cursor-pointer"
                         >
                           Báo giá VIP
                         </button>
@@ -2329,7 +2659,7 @@ function ProductsScreen() {
               <Link
                 to="/association/perks"
                 onClick={() => setWishlistCartOpen(false)}
-                className="text-xs font-bold text-[#003B95] dark:text-amber-400 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#2E3192] dark:text-amber-400 hover:underline flex items-center gap-1"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Xem ưu đãi VIP</span>
@@ -2346,6 +2676,12 @@ function ProductsScreen() {
         </div>,
         document.body
       )}
+
+      <ProductExcelModal
+        open={excelImportOpen}
+        onClose={() => setExcelImportOpen(false)}
+        onImportProducts={handleImportExcelProducts}
+      />
     </div>
   );
 }

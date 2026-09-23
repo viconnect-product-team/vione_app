@@ -424,18 +424,6 @@ function CardScreen() {
 
   const d = resolveDisplay(member, settings, customProfile, customAvatar, user);
   const vcard = buildVCard(member, d);
-  const originForQr = typeof window !== "undefined" ? window.location.origin : "";
-  // Prefer the server-signed, short-lived QR token. Fall back to the code-based
-  // verify URL (still resolved server-side by verifyMemberPassFn), then vCard.
-  const qrValue = identity?.qrToken
-    ? `${originForQr}/verify?t=${encodeURIComponent(identity.qrToken)}`
-    : member
-      ? `${originForQr}/verify?code=${encodeURIComponent(member.code)}`
-      : vcard;
-
-  const theme: CardTheme = resolveTheme(themeId, brand?.brandPrimary ?? null);
-  const state = resolveState(member?.status, member?.validUntil ?? null);
-  const stateStyle = STATE_STYLES[state];
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const currentMemberCode =
     member?.code ||
@@ -450,6 +438,14 @@ function CardScreen() {
         })()
       : null) ||
     "M1983-292";
+
+  // URL danh thiếp số công khai - khi quét từ bất kỳ ứng dụng nào (Zalo, Camera iOS/Android) đều mở ra hồ sơ hội viên
+  const resolvedCardCode = member?.code || currentMemberCode || "M1983-001";
+  const qrValue = `${origin}/card/${encodeURIComponent(resolvedCardCode)}`;
+
+  const theme: CardTheme = resolveTheme(themeId, brand?.brandPrimary ?? null);
+  const state = resolveState(member?.status, member?.validUntil ?? null);
+  const stateStyle = STATE_STYLES[state];
   const pass = member
     ? buildMembershipPass({
         memberCode: member.code,

@@ -1,4 +1,4 @@
-﻿param (
+param (
     [switch]$SkipBuild,
     [switch]$SkipWebBuild,
     [switch]$FrontendOnly,
@@ -32,11 +32,22 @@ $ErrorActionPreference = "Stop"
 function Invoke-CheckedCommand {
     param(
         [Parameter(Mandatory = $true)] [string]$Description,
-        [Parameter(Mandatory = $true)] [scriptblock]$Action
+        [Parameter(Mandatory = $true)] [scriptblock]$Action,
+        [int]$MaxRetries = 1
     )
-    & $Action
-    if ($LASTEXITCODE -ne 0) {
-        throw "Loi: Tien trinh [$Description] that bai voi ma loi $LASTEXITCODE"
+    $attempt = 1
+    while ($true) {
+        & $Action
+        if ($LASTEXITCODE -eq 0) {
+            break
+        }
+        if ($attempt -lt $MaxRetries) {
+            Write-Host "`n[Canh bao] Tien trinh [$Description] tam thoi chua phan hoi (ma loi $LASTEXITCODE). Tu dong thu lai sau 3s (Lan $attempt/$MaxRetries)..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 3
+            $attempt++
+        } else {
+            throw "Loi: Tien trinh [$Description] that bai voi ma loi $LASTEXITCODE sau $attempt lan thu."
+        }
     }
 }
 
@@ -51,7 +62,7 @@ try {
                 Write-Host "`n[0/5] Bo qua Build Frontend (Web) cuc bo (-SkipWebBuild)..." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[0/5] Build Frontend Hiep Hoi (Web) cuc bo voi Scope = association_app..." -ForegroundColor Cyan
-                $env:NODE_OPTIONS = "--max-old-space-size=4096"
+                $env:NODE_OPTIONS = "--max-old-space-size=8192"
                 $env:VITE_APP_SCOPE = "association_app"
                 $env:VITE_APP_NAME = "CLB Doanh Nhan CEO 1983"
                 if ($EnableHttps) {
@@ -122,10 +133,12 @@ try {
         Write-Host "`n[1-2/5] BO QUA quy trinh Build va dong goi (SkipBuild)..." -ForegroundColor Yellow
     }
 
+    $SSH_OPTS = @("-o", "ConnectTimeout=30", "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3")
+
     Write-Host "`n[3/5] Khoi tao thu muc va dong bo tep tin doc lap len may chu ha tang ($SERVER_IP)..." -ForegroundColor Cyan
 
-    Invoke-CheckedCommand -Description "Tao thu muc ~/association tren server" -Action {
-        ssh "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
+    Invoke-CheckedCommand -Description "Tao thu muc ~/association tren server" -MaxRetries 3 -Action {
+        ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" "mkdir -p $REMOTE_PATH"
     }
 
     # Dam bao co tep tin .env.association cuc bo
@@ -141,8 +154,8 @@ try {
         if ($buildFE -and (Test-Path "ceo1983-frontend.tar.gz")) { $filesToUpload += (Resolve-Path "ceo1983-frontend.tar.gz").Path }
     }
 
-    $scpArgs = $filesToUpload + "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
-    Invoke-CheckedCommand -Description "Chuyen giao tep tin qua SCP vao ~/association" -Action {
+    $scpArgs = @() + $SSH_OPTS + $filesToUpload + "${SERVER_USER}@${SERVER_IP}:${REMOTE_PATH}/"
+    Invoke-CheckedCommand -Description "Chuyen giao tep tin qua SCP vao ~/association" -MaxRetries 3 -Action {
         scp @scpArgs
     }
 
@@ -158,8 +171,8 @@ try {
 
     $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.association 2>/dev/null || true; touch .env.association; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
-    Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Hiep Hoi" -Action {
-        ssh "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
+    Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Hiep Hoi" -MaxRetries 3 -Action {
+        ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD
     }
 
     Write-Host "`n[5/5] Don dep bo nho dem tam thoi tai may cuc bo..." -ForegroundColor Cyan

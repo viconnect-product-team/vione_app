@@ -293,22 +293,6 @@ function EventPosterCard({
   const displayImg = evImg || fallbackImg;
   const agenda = getEventAgenda(event, index);
 
-  const topBadgeInfo = (() => {
-    const cat = (agenda.category || "").toUpperCase();
-    const title = (event.title || "").toUpperCase();
-    if (variant === "hero" || cat.includes("GALA") || cat.includes("ĐẠI HỘI") || title.includes("GALA") || index === 0) {
-      return { text: "TIÊU ĐIỂM THƯỢNG ĐỈNH", icon: Sparkles };
-    }
-    if (cat.includes("WORKSHOP") || cat.includes("ĐÀO TẠO")) {
-      return { text: "WORKSHOP CHUYÊN ĐỀ", icon: GraduationCap };
-    }
-    if (cat.includes("B2B") || cat.includes("GIAO THƯƠNG") || cat.includes("TỌA ĐÀM")) {
-      return { text: "GIAO THƯƠNG B2B", icon: Handshake };
-    }
-    return { text: "NETWORKING DOANH NHÂN", icon: Coffee };
-  })();
-
-  const TopIcon = topBadgeInfo.icon;
   const eventDateStr = event.date
     ? new Date(event.date).toLocaleDateString("vi-VN", {
         day: "2-digit",
@@ -317,105 +301,118 @@ function EventPosterCard({
       })
     : `${event.day || 27}/${event.month || 9}/2026`;
 
+  const dayNumber = event.date ? new Date(event.date).getDate() : (event.day || 27);
+  const monthStr = event.date ? `Th${new Date(event.date).getMonth() + 1}` : `Th${event.month || 9}`;
+
   return (
     <div
       role="listitem"
       onClick={() => onSelect(event)}
-      className="group relative w-full h-72 sm:h-80 rounded-[28px] overflow-hidden border border-slate-700/50 hover:border-amber-400/80 shadow-xl bg-slate-950 cursor-pointer select-none transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between"
+      className="group relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 dark:border-white/10 shadow-xs hover:shadow-xl bg-white dark:bg-[#0f172a]/90 backdrop-blur-md cursor-pointer select-none transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400/50 flex flex-col sm:flex-row items-stretch"
     >
-      {/* Cover Banner Image with Smooth Scale */}
-      <img
-        src={displayImg}
-        alt={event.title}
-        loading="lazy"
-        onError={(evt) => {
-          const target = evt.currentTarget;
-          if (target.src !== fallbackImg) {
-            target.src = fallbackImg;
-          }
-        }}
-        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
-      />
+      {/* ── LEFT POSTER IMAGE ── */}
+      <div className="w-full sm:w-[38%] md:w-[34%] relative self-stretch min-h-[160px] sm:min-h-[180px] overflow-hidden bg-slate-950 shrink-0">
+        <img
+          src={displayImg}
+          alt={event.title}
+          loading="lazy"
+          onError={(evt) => {
+            const target = evt.currentTarget;
+            if (target.src !== fallbackImg) {
+              target.src = fallbackImg;
+            }
+          }}
+          className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-95"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-black/25 pointer-events-none" />
 
-      {/* Modern Multi-Stop Gradient Scrim */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30 pointer-events-none transition-opacity group-hover:opacity-95" />
-
-      {/* Top Floating Bar: Category Pill & Bookmark Action */}
-      <div className="relative z-10 p-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950/70 backdrop-blur-md px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30 shadow-sm">
-            <TopIcon className="h-3.5 w-3.5 text-amber-400" />
-            <span>{topBadgeInfo.text}</span>
-          </span>
-          {agenda.category && (
-            <span className="hidden sm:inline-flex rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[10.5px] font-semibold text-slate-200 border border-white/15">
-              {agenda.category}
-            </span>
-          )}
+        {/* Top Left: Holographic Date Badge */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col items-center justify-center rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/20 px-2.5 py-1 text-white shadow-lg">
+          <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">{monthStr}</span>
+          <span className="text-base font-black leading-none">{dayNumber}</span>
         </div>
 
+        {/* Top Right: Bookmark Button */}
         <button
           type="button"
           onClick={(evt) => {
             evt.stopPropagation();
             onToggleBookmark(event.id);
           }}
-          className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-md ${
+          className={`absolute top-3 right-3 z-10 grid h-8 w-8 place-items-center rounded-full transition-all active:scale-95 cursor-pointer shadow-md backdrop-blur-md ${
             isBookmarked
-              ? "bg-amber-400 text-slate-950 border border-amber-300"
-              : "bg-slate-950/60 hover:bg-slate-900 text-slate-300 hover:text-white border border-white/20"
+              ? "bg-amber-500 text-slate-950 font-bold"
+              : "bg-black/50 text-white/80 hover:text-white hover:bg-black/70 border border-white/20"
           }`}
           title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
         >
-          <Bookmark className={`h-3.5 w-3.5 ${isBookmarked ? "fill-slate-950 text-slate-950" : "text-white"}`} />
+          <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-slate-950 text-slate-950" : ""}`} />
         </button>
+
+        {/* Bottom Left: Live Registration Chip */}
+        <div className="absolute bottom-2.5 left-2.5 z-10">
+          {registered ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-blue-400/30">
+              <Check className="h-3 w-3 stroke-[3]" />
+              Đã đăng ký
+            </span>
+          ) : isFree ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-emerald-400/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              Đang mở · Miễn phí
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/95 text-slate-950 text-[10px] font-black px-2.5 py-0.5 backdrop-blur-md shadow-md border border-amber-300/40">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-950 animate-pulse" />
+              {new Intl.NumberFormat("vi-VN").format(price)} đ
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Editorial Content: Date, Title, Location, Status & Countdown */}
-      <div className="relative z-10 p-4 sm:p-5 pt-0 space-y-2.5">
-        {/* Date & Time Metadata */}
-        <div className="flex items-center gap-2 text-[11.5px] font-medium text-amber-300/90 tracking-wide">
-          <span>{eventDateStr}</span>
-          <span className="h-1 w-1 rounded-full bg-amber-400/60" />
-          <span>{event.time || "08:00 - 12:00"}</span>
+      {/* ── RIGHT METADATA & ACTIONS (TINH GỌN, SANG TRỌNG, KHÔNG RỐI CHỮ) ── */}
+      <div className="flex-1 p-3.5 sm:p-4 flex flex-col justify-between bg-white dark:bg-slate-900/90 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-white/10">
+        <div className="space-y-2">
+          {/* Category Chip & Time */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-[10px] px-2.5 py-0.5 uppercase tracking-wider border border-amber-500/20">
+              {agenda.category || "Sự kiện CLB"}
+            </span>
+            <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+              <Clock className="h-3 w-3 text-slate-400" />
+              {event.time || "Cả ngày"}
+            </span>
+          </div>
+
+          {/* Event Title */}
+          <h3 className="text-[14.5px] sm:text-[15.5px] font-extrabold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+            {event.title}
+          </h3>
+
+          {/* Date & Location */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-slate-600 dark:text-slate-300 text-[11.5px] pt-0.5">
+            <div className="flex items-center gap-1.5 shrink-0 font-semibold">
+              <Calendar className="h-3.5 w-3.5 text-amber-500" />
+              <span>{eventDateStr}</span>
+            </div>
+            <div className="hidden sm:inline text-slate-300 dark:text-slate-700">•</div>
+            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 truncate">
+              <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <span className="truncate">{event.place || "Hà Nội"}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Prominent Event Title */}
-        <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors drop-shadow-sm">
-          {event.title}
-        </h3>
+        {/* Bottom CTA Action Bar */}
+        <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+          <span className="text-[11px] font-medium text-slate-400">
+            {registered ? "Đã giữ chỗ thành công" : "Mở cho toàn thể Hội viên"}
+          </span>
 
-        {/* Location preview */}
-        {event.place && (
-          <p className="text-[12px] text-slate-300 line-clamp-1 opacity-90 font-normal">
-            {event.place}
-          </p>
-        )}
-
-        {/* Bottom Status Strip */}
-        <div className="pt-2 flex items-center justify-between gap-2 border-t border-white/10 flex-wrap">
-          {/* Status Pill */}
-          <div className="flex items-center gap-2">
-            {registered ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Đã đăng ký
-              </span>
-            ) : isFree ? (
-              <span className="inline-flex items-center rounded-full bg-blue-500/20 text-sky-300 border border-sky-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
-                Miễn phí
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 text-[11px] font-bold shadow-xs">
-                {new Intl.NumberFormat("vi-VN").format(price)} đ
-              </span>
-            )}
-          </div>
-
-          {/* Countdown Pill */}
-          <div className="flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 border border-white/15 text-[11px] text-slate-300 font-mono">
-            <EventCountdownBanner event={event} index={index} whiteText={true} />
-          </div>
+          <span className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
+            <span>Chi tiết</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
         </div>
       </div>
     </div>
@@ -503,7 +500,7 @@ function UpcomingEventsCoverflow({
     if (isPaused) return;
     const timer = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % fiveEvents.length);
-    }, 3500);
+    }, 3800);
     return () => clearInterval(timer);
   }, [isPaused, fiveEvents.length]);
 
@@ -515,8 +512,8 @@ function UpcomingEventsCoverflow({
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      {/* 3D Coverflow Stage */}
-      <div className="relative h-48 sm:h-56 flex items-center justify-center">
+      {/* 3D Coverflow Stage - Giảm chiều cao 1 nửa (h-32 sm:h-36) theo yêu cầu người dùng */}
+      <div className="relative h-32 sm:h-36 flex items-center justify-center">
         {fiveEvents.map((evt, idx) => {
           let offset = (idx - activeIdx) % fiveEvents.length;
           if (offset < -2) offset += fiveEvents.length;
@@ -531,33 +528,42 @@ function UpcomingEventsCoverflow({
 
           if (offset === 0) {
             translateX = "0%";
-            scale = 1.15;
+            scale = 1.06;
             zIndex = 30;
             opacity = 1;
           } else if (offset === -1) {
-            translateX = "-62%";
+            translateX = "-64%";
             scale = 0.88;
             zIndex = 15;
             opacity = 0.65;
           } else if (offset === 1) {
-            translateX = "62%";
+            translateX = "64%";
             scale = 0.88;
             zIndex = 15;
             opacity = 0.65;
           } else if (offset === -2) {
-            translateX = "-112%";
+            translateX = "-115%";
             scale = 0.72;
             zIndex = 5;
-            opacity = 0.3;
+            opacity = 0.25;
           } else if (offset === 2) {
-            translateX = "112%";
+            translateX = "115%";
             scale = 0.72;
             zIndex = 5;
-            opacity = 0.3;
+            opacity = 0.25;
           }
 
           const rawImg = (evt as any).image;
           const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
+          const agenda = getEventAgenda(evt, idx);
+
+          const eventDateStr = evt.date
+            ? new Date(evt.date).toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : `${evt.day || 27}/${evt.month || 9}/2026`;
 
           return (
             <div
@@ -574,25 +580,78 @@ function UpcomingEventsCoverflow({
                 zIndex,
                 opacity,
               }}
-              className={`absolute top-0 bottom-0 w-[72%] sm:w-[58%] max-w-[340px] my-auto cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl transition-all duration-700 ease-out ${
+              className={`group/slide absolute top-0 bottom-0 w-[84%] sm:w-[68%] max-w-[420px] my-auto cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden shadow-lg transition-all duration-500 ease-out ${
                 isCenter
-                  ? "ring-2 ring-[#003B95]/60 shadow-[0_15px_35px_rgba(0,59,149,0.4)]"
+                  ? "ring-2 ring-amber-400/90 shadow-[0_12px_28px_rgba(0,0,0,0.55)]"
                   : "hover:opacity-90"
               }`}
             >
-              {/* CHỈ CÓ ẢNH THUẦN TÚY - KHÔNG CÓ TEXT BÊN NGOÀI */}
+              {/* Ảnh poster sự kiện */}
               <img
                 src={imgUrl}
-                alt=""
+                alt={evt.title}
                 className="w-full h-full object-cover select-none pointer-events-none"
               />
+
+              {/* Lớp gradient cinematic phủ lên ảnh */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/35 pointer-events-none" />
+
+              {/* Header trên ảnh: Badge ngày tháng & Thẻ danh mục */}
+              <div className="absolute top-2 inset-x-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                <span className="inline-flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm">
+                  <Calendar className="h-2.5 w-2.5 text-amber-400" />
+                  <span>{eventDateStr}</span>
+                </span>
+                <span className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 shadow-sm">
+                  {agenda.category || "Tiêu điểm"}
+                </span>
+              </div>
+
+              {/* Content dưới đáy ảnh: Tiêu đề + Địa điểm + Nút xem nhanh */}
+              <div className="absolute bottom-0 inset-x-0 p-2.5 text-white flex flex-col justify-end pointer-events-none">
+                <h4 className="font-extrabold text-[12px] sm:text-[13.5px] leading-tight line-clamp-1 text-white drop-shadow-md">
+                  {evt.title}
+                </h4>
+
+                <div className="mt-1 flex items-center justify-between text-[10px] text-slate-200/90 font-medium">
+                  <span className="flex items-center gap-1 truncate max-w-[70%]">
+                    <MapPin className="h-2.5 w-2.5 text-amber-400 shrink-0" />
+                    <span className="truncate">{evt.place || "Hà Nội"}</span>
+                  </span>
+                  {isCenter ? (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-400 text-slate-950 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide shadow-sm">
+                      <span>Xem ngay</span>
+                      <ArrowRight className="h-2.5 w-2.5" />
+                    </span>
+                  ) : evt.time ? (
+                    <span className="text-slate-300 text-[9.5px]">{evt.time}</span>
+                  ) : null}
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Đường viền bottom rất mỏng ở giữa, không kéo full màn hình */}
-      <div className="w-28 sm:w-36 h-[1.5px] bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent mx-auto mt-4 mb-2" />
+      {/* Dấu chấm chuyển trang hiện đại (Pagination Dots) */}
+      <div className="flex items-center justify-center gap-1.5 mt-3 mb-1">
+        {fiveEvents.map((_, dotIdx) => {
+          const isActive = dotIdx === activeIdx;
+          return (
+            <button
+              key={dotIdx}
+              type="button"
+              onClick={() => setActiveIdx(dotIdx)}
+              aria-label={`Chuyển đến slide ${dotIdx + 1}`}
+              className={`transition-all duration-300 rounded-full cursor-pointer ${
+                isActive
+                  ? "w-6 h-1.5 bg-[#2E3192] dark:bg-amber-400 shadow-xs"
+                  : "w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
+              }`}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -707,6 +766,7 @@ function EventsScreen() {
     attendeePosition?: string;
     qrUrl: string;
   } | null>(null);
+  const [allTicketsModalOpen, setAllTicketsModalOpen] = useState(false);
 
 
   // Form registration state
@@ -887,11 +947,6 @@ function EventsScreen() {
 
   return (
     <div className="vba-animate min-h-full pb-24">
-      {/* 1. Header CEO1983 - background trắng xanh đơn giản chiều cao 20px */}
-      <div className="h-[20px] bg-gradient-to-r from-blue-50/90 via-sky-100/80 to-blue-50/90 dark:from-slate-950 dark:via-blue-950/40 dark:to-slate-950 border-b border-blue-200/50 dark:border-blue-900/40 flex items-center justify-center text-[10px] font-black tracking-widest text-[#003B95] dark:text-sky-300 uppercase select-none">
-        CEO 1983
-      </div>
-
       <MemberHeader
         title={isEn ? "Club Events" : t("m.events.title")}
         back
@@ -902,15 +957,15 @@ function EventsScreen() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#003B95]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
             </span>
             <span className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-amber-500" />
               Sự kiện sắp tới
             </span>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#003B95] dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
             5 sự kiện tiêu điểm
           </span>
         </div>
@@ -952,21 +1007,21 @@ function EventsScreen() {
               toast.info(isEn ? "You have not registered for any events yet." : "Bạn chưa đăng ký sự kiện nào. Hãy chọn sự kiện bên dưới và đăng ký nhé!");
             }
           }}
-          className="w-full text-left vba-card flex items-center gap-3 p-3 shadow-xs hover:border-amber-500/40 cursor-pointer transition active:scale-[0.99]"
+          className="w-full text-left rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-900/80 backdrop-blur-md flex items-center gap-3 p-3 shadow-xs hover:border-amber-400/50 cursor-pointer transition active:scale-[0.99]"
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-amber-400 shadow-xs">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-500 border border-amber-500/30 shadow-xs">
             <Ticket className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-bold text-[var(--vba-text)] flex items-center gap-1.5">
+            <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>{isEn ? "My Event Passes" : "Vé Sự Kiện Của Tôi"}</span>
               {registeredEvents.length > 0 && (
-                <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.2 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   {registeredEvents.length} vé
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-[var(--vba-text-muted)]">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
               {isEn ? "View your confirmed ticket and QR pass for organizers to scan" : "Xem thẻ vé điện tử & mã QR để Ban Tổ Chức quét khi đến sự kiện"}
             </div>
           </div>
@@ -978,7 +1033,7 @@ function EventsScreen() {
       <div className="px-4 pt-3 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-            <Calendar className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+            <Calendar className="h-4 w-4 text-amber-500" />
             {isEn ? "All Club Events" : "Danh sách các sự kiện"}
           </h2>
           <span className="text-[11px] font-bold text-slate-400 font-mono">
@@ -1006,19 +1061,17 @@ function EventsScreen() {
                 }}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   active
-                    ? "bg-[#003B95] text-white shadow-xs"
-                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
+                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5"
                 }`}
-                style={active ? { backgroundColor: "#003B95", color: "#FFFFFF" } : undefined}
               >
-                <span style={active ? { color: "#FFFFFF" } : undefined}>{tabItem.label}</span>
+                <span>{tabItem.label}</span>
                 <span
                   className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
                     active
-                      ? "bg-white/25 text-white"
+                      ? "bg-slate-950/20 text-slate-950"
                       : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   }`}
-                  style={active ? { color: "#FFFFFF" } : undefined}
                 >
                   {tabItem.count}
                 </span>
@@ -1115,7 +1168,7 @@ function EventsScreen() {
                     onClick={() => setEventsPage(p)}
                     className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
                       isCur
-                        ? "bg-[#003B95] text-white shadow-xs"
+                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                     }`}
                   >
@@ -1142,7 +1195,7 @@ function EventsScreen() {
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-blue-500/15 text-[#003B95] dark:text-blue-400">
+            <span className="grid h-7 w-7 place-items-center rounded-xl bg-blue-500/15 text-[#2E3192] dark:text-blue-400">
               <History className="h-4 w-4" />
             </span>
             <div>
@@ -1168,7 +1221,7 @@ function EventsScreen() {
                 <div
                   key={e.id || rIdx}
                   onClick={() => handleSelectEvent(e)}
-                  className="min-w-[220px] max-w-[240px] rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-xs hover:border-[#003B95]/40 transition overflow-hidden cursor-pointer flex flex-col justify-between group shrink-0"
+                  className="min-w-[220px] max-w-[240px] rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-xs hover:border-[#2E3192]/40 transition overflow-hidden cursor-pointer flex flex-col justify-between group shrink-0"
                 >
                   <div className="relative h-28 w-full overflow-hidden">
                     <img
@@ -1183,7 +1236,7 @@ function EventsScreen() {
                     </span>
                   </div>
                   <div className="p-3">
-                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#2E3192] dark:group-hover:text-blue-400 transition">
                       {e.title}
                     </h4>
                     <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 flex items-center gap-1">
@@ -1198,37 +1251,234 @@ function EventsScreen() {
         )}
       </div>
 
-      {/* 5. Footer: Banner đẹp phong cách CEO 1983 */}
-      <div className="mx-4 mt-7 rounded-3xl overflow-hidden shadow-xl border border-amber-400/40 bg-gradient-to-br from-[#061536] via-[#0A255C] to-[#040E24] text-white p-5 relative">
-        <div className="relative z-10 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/30 to-amber-600/30 border border-amber-400/40 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 shadow-xs">
-              <Sparkles className="h-3 w-3 text-amber-400" />
-              CLB DOANH NHÂN CEO 1983
-            </span>
-            <span className="text-[10px] font-bold text-slate-300">
-              Hotline: 0983.19.83.83
-            </span>
+      {/* 5. Footer: Thiết kế tối giản, thanh lịch, chuẩn xu hướng hiện đại */}
+      <div className="mx-4 mt-6 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#2E3192]/10 dark:bg-blue-500/15 text-[#2E3192] dark:text-amber-400 shrink-0">
+              <Sparkles className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                CLB Doanh Nhân CEO 1983 · Kết Nối Thịnh Vượng
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Kế thừa giá trị, kiến tạo tương lai và đồng hành phát triển bền vững.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-black leading-tight text-white tracking-wide">
-              KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI
-            </h3>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Mạng lưới kết nối thượng đỉnh của các nhà lãnh đạo và doanh nhân tiêu biểu. Đồng hành cùng nhau phát triển vững bền.
-            </p>
-          </div>
-          <div className="pt-1 flex items-center gap-2">
-            <Link
-              to="/association/messages"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-4 py-2 text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
-            >
-              <span>Liên hệ Ban Thư Ký</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          <Link
+            to="/association/messages"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
+          >
+            <span>Liên hệ Ban Thư Ký</span>
+            <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
+          </Link>
         </div>
       </div>
+
+
+      {/* ── MODAL DANH SÁCH TẤT CẢ VÉ SỰ KIỆN ĐÃ ĐĂNG KÝ (PHÂN BIỆT RÕ RÀNG TỪNG SỰ KIỆN) ── */}
+      <Dialog open={allTicketsModalOpen} onOpenChange={setAllTicketsModalOpen}>
+        <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+            <div className="flex items-center gap-2.5">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <Ticket className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  Danh sách vé sự kiện của bạn
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {registeredEvents.length > 0
+                    ? `Hiện bạn đang có ${registeredEvents.length} vé tham gia sự kiện`
+                    : "Chưa có vé sự kiện nào được đăng ký"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAllTicketsModalOpen(false)}
+              className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="p-4 sm:p-5 space-y-4">
+            {registeredEvents.length === 0 ? (
+              <div className="py-12 text-center space-y-3">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                  <Ticket className="h-8 w-8" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Bạn chưa có vé tham dự sự kiện nào
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                    Hãy duyệt danh sách sự kiện và đăng ký để nhận mã vé điện tử & QR check-in nhé!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAllTicketsModalOpen(false)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#232677] transition cursor-pointer"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Khám phá sự kiện ngay</span>
+                </button>
+              </div>
+            ) : (
+              registeredEvents.map((e, idx) => {
+                const evIdx = events.findIndex((x) => x.id === e.id);
+                const invoiceCode = `REG-${e.id.slice(0, 8).toUpperCase()}`;
+                const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`;
+                const isFree = isEventFree(e);
+                const agenda = getEventAgenda(e, evIdx >= 0 ? evIdx : idx);
+
+                const borderColors = [
+                  "border-l-[#2E3192] border-t-blue-100 dark:border-t-blue-900/30",
+                  "border-l-purple-600 border-t-purple-100 dark:border-t-purple-900/30",
+                  "border-l-emerald-600 border-t-emerald-100 dark:border-t-emerald-900/30",
+                  "border-l-amber-500 border-t-amber-100 dark:border-t-amber-900/30",
+                ];
+                const badgeBgs = [
+                  "bg-blue-600 text-white",
+                  "bg-purple-600 text-white",
+                  "bg-emerald-600 text-white",
+                  "bg-amber-600 text-white",
+                ];
+
+                return (
+                  <div
+                    key={e.id}
+                    className={`relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-l-4 ${
+                      borderColors[idx % borderColors.length]
+                    }`}
+                  >
+                    {/* Header phân biệt rõ ràng vé sự kiện số mấy */}
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs ${
+                            badgeBgs[idx % badgeBgs.length]
+                          }`}
+                        >
+                          Sự kiện #{idx + 1}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[200px] sm:max-w-xs">
+                          {agenda.category || "HỘI NGHỊ DOANH NHÂN"}
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <Check className="h-3 w-3 stroke-[2.5]" /> Đã xác nhận
+                      </span>
+                    </div>
+
+                    {/* Nội dung vé & thông tin sự kiện */}
+                    <div className="p-4 flex flex-col sm:flex-row items-center gap-4">
+                      {/* Cột QR Code với scan badge */}
+                      <div className="flex flex-col items-center gap-1.5 shrink-0">
+                        <div className="relative p-2 rounded-2xl bg-white border border-slate-200 dark:border-slate-700 shadow-xs">
+                          <img
+                            src={qrUrl}
+                            alt={`Mã QR vé ${e.title}`}
+                            className="h-28 w-28 object-contain"
+                          />
+                          <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-rose-500/40 pointer-events-none" />
+                        </div>
+                        <span className="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                          Quét check-in
+                        </span>
+                      </div>
+
+                      {/* Cột thông tin sự kiện và vé */}
+                      <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                            {e.title}
+                          </h4>
+                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                            {agenda.subtitle}
+                          </p>
+                        </div>
+
+                        {/* Metadata chip strip */}
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg font-medium">
+                            <Clock className="h-3 w-3 text-[#2E3192] dark:text-amber-400" />
+                            {e.time || "08:00"} · Ngày {e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`}
+                          </span>
+                          <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg font-medium truncate max-w-[180px]">
+                            <MapPin className="h-3 w-3 text-rose-500" />
+                            {e.place || "Hà Nội"}
+                          </span>
+                        </div>
+
+                        {/* Ticket Code & Lucky number */}
+                        <div className="flex items-center justify-center sm:justify-start gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <div>
+                            <span className="text-[9.5px] text-slate-400 block font-medium">MÃ VÉ</span>
+                            <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                              {invoiceCode}
+                            </span>
+                          </div>
+                          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+                          <div>
+                            <span className="text-[9.5px] text-slate-400 block font-medium">SỐ MAY MẮN</span>
+                            <span className="font-mono text-xs font-extrabold text-amber-600 dark:text-amber-400">
+                              {lucky}
+                            </span>
+                          </div>
+                          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+                          <div>
+                            <span className="text-[9.5px] text-slate-400 block font-medium">LOẠI VÉ</span>
+                            <span className="text-xs font-bold text-[#2E3192] dark:text-blue-400">
+                              {isFree ? "Miễn phí" : "VIP Pass"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Full Screen Ticket Action */}
+                        <div className="pt-2 flex items-center justify-center sm:justify-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAllTicketsModalOpen(false);
+                              setTicketPassModal({
+                                eventTitle: e.title,
+                                ticketCode: invoiceCode,
+                                luckyNumber: lucky,
+                                ticketType: isFree ? "Vé Miễn Phí (Standard)" : "VIP Standard Pass",
+                                ticketCount: 1,
+                                isFree,
+                                date: e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`,
+                                time: e.time || "08:00",
+                                location: e.place || "Hà Nội",
+                                attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+                                attendeePhone: member?.phone || "",
+                                attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+                                attendeePosition: member?.title || "Hội viên chính thức",
+                                qrUrl,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                            <span>Mở thẻ vé toàn màn hình</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN (IMAGE 4 POSTER & HIGHLIGHTS) */}
       {selectedEvent && (() => {
@@ -1311,7 +1561,7 @@ function EventsScreen() {
                 {/* Highlighted Event Keypoints (Image 4 Style) */}
                 <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 font-semibold">
-                    <Calendar className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <Calendar className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
                     <span>
                       {selectedEvent.time ? `${selectedEvent.time} | ` : ""}
                       Ngày {selectedEvent.date ? formatDisplayDate(selectedEvent.date) : `${selectedEvent.day} ${selectedEvent.month}, 2026`}
@@ -1319,12 +1569,12 @@ function EventsScreen() {
                   </div>
 
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <MapPin className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
                     <span className="font-semibold">{selectedEvent.place}</span>
                   </div>
 
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Ticket className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <Ticket className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
                     <span className="font-semibold">
                       Phí tham dự:{" "}
                       <span className={isEventFree(selectedEvent) ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
@@ -1334,7 +1584,7 @@ function EventsScreen() {
                   </div>
 
                   <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <Users className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
                     <span>
                       Ưu đãi: <span className="font-semibold text-amber-700 dark:text-amber-300">{selectedAgenda.offer}</span>
                     </span>
@@ -1344,7 +1594,7 @@ function EventsScreen() {
                 {/* Zalo Link Notice Box */}
                 <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
                   <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
-                    <Info className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
+                    <Info className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0" />
                     <span>Kênh kết nối & Thảo luận</span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">
@@ -1355,7 +1605,7 @@ function EventsScreen() {
                       href={selectedAgenda.zaloLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                      className="text-[#2E3192] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
                     >
                       {selectedAgenda.zaloLink}
                       <ExternalLink className="h-3 w-3 inline" />
@@ -1369,10 +1619,10 @@ function EventsScreen() {
                 {/* Lịch trình chi tiết */}
                 <div>
                   <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
-                  <div className="space-y-2 border-l-2 border-[#003B95]/40 pl-3">
+                  <div className="space-y-2 border-l-2 border-[#2E3192]/40 pl-3">
                     {selectedAgenda.schedule.map((item, i) => (
                       <div key={i} className="text-xs">
-                        <span className="font-bold text-[#003B95] dark:text-amber-400">{item.time}</span>
+                        <span className="font-bold text-[#2E3192] dark:text-amber-400">{item.time}</span>
                         <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
                       </div>
                     ))}
@@ -1395,9 +1645,9 @@ function EventsScreen() {
                     href={selectedAgenda.zaloLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                    className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#2E3192] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
                   >
-                    <MessageSquare className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                    <MessageSquare className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
                     <span>Tham gia nhóm Zalo sự kiện</span>
                   </a>
 
@@ -1447,7 +1697,7 @@ function EventsScreen() {
                       type="button"
                       onClick={(evt) => handleOpenRegister(selectedEvent, evt)}
                       style={{ color: "#ffffff" }}
-                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Ticket className="h-4 w-4" />
                       <span>Đăng ký tham gia ngay</span>
@@ -1603,7 +1853,7 @@ function EventsScreen() {
                         onClick={() => setFormTicketCount(num)}
                         className={`flex-1 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
                           formTicketCount === num
-                            ? "bg-[#003B95] text-white"
+                            ? "bg-[#2E3192] text-white"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                         }`}
                       >
@@ -1852,7 +2102,7 @@ function EventsScreen() {
         <Dialog open={!!ticketPassModal} onOpenChange={(open) => !open && setTicketPassModal(null)}>
           <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
             {/* Header Ticket Banner */}
-            <div className="bg-gradient-to-br from-[#001A4D] via-[#003B95] to-[#0A192F] p-4 text-white relative">
+            <div className="bg-gradient-to-br from-[#001A4D] via-[#2E3192] to-[#0A192F] p-4 text-white relative">
               <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
                 <Sparkles className="h-3 w-3" />
                 VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
@@ -1867,13 +2117,13 @@ function EventsScreen() {
 
             {/* Ticket Body with QR Code */}
             <div className="p-4 space-y-3">
-              <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-[#003B95]/30 inline-block shadow-sm">
+              <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-[#2E3192]/30 inline-block shadow-sm">
                 <img
                   src={ticketPassModal.qrUrl}
                   alt="Mã QR Vé Sự Kiện"
                   className="w-48 h-48 mx-auto rounded-lg object-contain"
                 />
-                <div className="text-[12px] font-mono font-black text-[#003B95] mt-2">
+                <div className="text-[12px] font-mono font-black text-[#2E3192] mt-2">
                   MÃ VÉ: {ticketPassModal.ticketCode}
                 </div>
               </div>

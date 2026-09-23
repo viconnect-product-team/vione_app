@@ -12,6 +12,7 @@ export type MyProduct = {
   likes: number;
   views: number;
   time: string;
+  description?: string;
   imageUrl?: string;
   price?: string;
   originalPrice?: string;
@@ -21,6 +22,7 @@ export type MyProduct = {
   sellerAvatar?: string;
   sellerPhone?: string;
   sellerCompany?: string;
+  quoteRequestsCount?: number;
 };
 
 // ---------- Products ----------

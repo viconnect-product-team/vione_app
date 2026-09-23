@@ -15,6 +15,10 @@ export default defineConfig({
         http: 'node:http',
       },
     },
+    build: {
+      sourcemap: false,
+      chunkSizeWarningLimit: 2500,
+    },
     server: {
       port: 5173,
       watch: {

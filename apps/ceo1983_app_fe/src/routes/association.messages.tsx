@@ -79,6 +79,7 @@ import {
   Building2,
   Sparkles,
 } from "lucide-react";
+import { CeoWebRtcCallModal } from "@/components/common/CeoWebRtcCallModal";
 import { uploadChatAttachment } from "@/lib/upload-media";
 import { toast } from "sonner";
 import { resolveMediaUrl } from "@/lib/api-client";
@@ -3296,15 +3297,18 @@ function ChatThread({
         </div>
       </div>
 
-      {/* Messenger Call Modal */}
+      {/* Real WebRTC Call Modal */}
       {callModal.open && (
-        <MessengerCallModal
+        <CeoWebRtcCallModal
+          open={callModal.open}
           type={callModal.type}
+          peerUserId={peer.peerCode}
           peerName={displayName}
           peerAvatar={peer.avatarUrl}
+          peerTitle={(peer as any)?.title || (matchedMember as any)?.title || "Hội viên CEO 1983"}
           onClose={() => setCallModal({ open: false, type: "audio" })}
           onEndCall={(result) => {
-            const callPayload = `[call:${result.type}|duration:${result.duration}|status:${result.status}]`;
+            const callPayload = `[call:${result.callType}|duration:${result.duration}|status:${result.status}]`;
             void sendCallLogMessage(callPayload);
           }}
         />

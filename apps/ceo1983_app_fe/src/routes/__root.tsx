@@ -45,6 +45,7 @@ function makeQueryClient() {
 }
 import { Toaster } from "@/components/ui/sonner";
 import { MockModeBanner } from "@/components/MockModeBanner";
+import { VoiceNavAssistant } from "@/components/ai/VoiceNavAssistant";
 
 import appCss from "../styles.css?url";
 
@@ -162,7 +163,8 @@ export const Route = createRootRoute({
         href: appCss,
       },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png" },
       { rel: "icon", type: "image/png", sizes: "64x64", href: "/favicon.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png" },
       // Web fonts for Business Card industry templates.
@@ -414,6 +416,7 @@ function RootComponent() {
           <MockModeBanner />
           <AuthProvider>
             <GlobalRealtimeNotifications />
+            <VoiceNavAssistant />
             <AuthGate>
               <Outlet />
             </AuthGate>
