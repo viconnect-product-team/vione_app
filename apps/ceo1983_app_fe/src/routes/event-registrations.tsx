@@ -25,6 +25,7 @@ import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/P
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
+  addEventAttendeeFn,
   listEventsWithRegistrationsFn,
   recordWalkInCashPaymentFn,
   sendPaymentReminderFn,
@@ -53,11 +54,30 @@ export function RegPage() {
   const updateSeating = useServerFn(updateRegistrationSeatingFn);
   const recordCash = useServerFn(recordWalkInCashPaymentFn);
   const sendReminder = useServerFn(sendPaymentReminderFn);
+  const addAttendee = useServerFn(addEventAttendeeFn);
 
   const [q, setQ] = useState("");
   const [eventId, setEventId] = useState("all");
   const [status, setStatus] = useState<Registration["status"] | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
+
+  // Add Attendee / QR Checkin Modal state
+  const [addAttendeeModalOpen, setAddAttendeeModalOpen] = useState(false);
+  const [attendeeMode, setAttendeeMode] = useState<"qr" | "manual">("qr");
+  const [qrCodeInput, setQrCodeInput] = useState("");
+  const [isScanningCamera, setIsScanningCamera] = useState(false);
+  const [newAttendee, setNewAttendee] = useState({
+    eventId: EVENTS[0]?.id || "",
+    memberName: "",
+    memberCode: "",
+    email: "",
+    phone: "",
+    company: "",
+    ticketType: "VIP",
+    seatAssignment: "Bàn VIP 01",
+    paymentStatus: "paid" as "paid" | "pending",
+    checkedIn: true,
+  });
 
   // Seating Modal state
   const [seatingModalOpen, setSeatingModalOpen] = useState(false);
@@ -191,6 +211,106 @@ export function RegPage() {
     }
   };
 
+  const handleProcessQrCode = async (codeToProcess?: string) => {
+    const code = (codeToProcess || qrCodeInput).trim();
+    if (!code) {
+      toast.error("Vui lòng nhập hoặc quét mã QR");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Find if attendee already exists in registrations
+      const matched = REGISTRATIONS.find(
+        (r) =>
+          r.id.toLowerCase() === code.toLowerCase() ||
+          r.memberCode.toLowerCase() === code.toLowerCase() ||
+          r.email.toLowerCase() === code.toLowerCase() ||
+          r.memberName.toLowerCase().includes(code.toLowerCase()),
+      );
+
+      const targetEvtId = matched ? matched.eventId : newAttendee.eventId || EVENTS[0]?.id || "evt-1";
+      const memberName = matched ? matched.memberName : `Đại biểu ${code}`;
+      const memberCode = matched ? matched.memberCode : code;
+
+      await addAttendee({
+        data: {
+          eventId: targetEvtId,
+          memberName,
+          memberCode,
+          email: matched?.email || "",
+          phone: matched?.phone || "",
+          company: matched?.company || "",
+          ticketType: matched?.ticketType || "VIP",
+          seatAssignment: matched?.seatAssignment || "Bàn VIP 01",
+          paymentStatus: "paid",
+          checkedIn: true,
+        },
+      });
+
+      toast.success(`Đã quét QR & Check-in thành công: ${memberName} (${memberCode})`);
+      setQrCodeInput("");
+      setAddAttendeeModalOpen(false);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xử lý mã QR điểm danh");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmitNewAttendee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAttendee.memberName.trim()) {
+      toast.error("Vui lòng nhập họ và tên đại biểu");
+      return;
+    }
+    if (!newAttendee.eventId) {
+      toast.error("Vui lòng chọn sự kiện");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await addAttendee({
+        data: {
+          eventId: newAttendee.eventId,
+          memberName: newAttendee.memberName.trim(),
+          memberCode: newAttendee.memberCode.trim() || undefined,
+          email: newAttendee.email.trim() || undefined,
+          phone: newAttendee.phone.trim() || undefined,
+          company: newAttendee.company.trim() || undefined,
+          ticketType: newAttendee.ticketType,
+          seatAssignment: newAttendee.seatAssignment,
+          paymentStatus: newAttendee.paymentStatus,
+          checkedIn: newAttendee.checkedIn,
+        },
+      });
+
+      toast.success(
+        `Đã thêm người tham gia: ${newAttendee.memberName}${newAttendee.checkedIn ? " (Đã Check-in có mặt)" : ""}`,
+      );
+      setNewAttendee({
+        eventId: EVENTS[0]?.id || "",
+        memberName: "",
+        memberCode: "",
+        email: "",
+        phone: "",
+        company: "",
+        ticketType: "VIP",
+        seatAssignment: "Bàn VIP 01",
+        paymentStatus: "paid",
+        checkedIn: true,
+      });
+      setAddAttendeeModalOpen(false);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi thêm người tham gia sự kiện");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleOpenQr = (r: Registration) => {
     setQrReg(r);
     setQrModalOpen(true);
@@ -203,6 +323,16 @@ export function RegPage() {
         subtitle="Quản lý hội viên tham dự, xếp chỗ VIP/bàn tiệc, theo dõi thanh toán 3 ngày & thu tiền mặt tại chỗ"
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setAttendeeMode("qr");
+                setAddAttendeeModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition"
+            >
+              <QrCode className="h-4 w-4" />
+              + Quét QR / Thêm người tham gia
+            </button>
             <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted">
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("common.exportExcel")}
@@ -669,6 +799,253 @@ export function RegPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Attendee & QR Check-in Modal */}
+      {addAttendeeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 text-amber-500 font-bold">
+                <QrCode className="h-5 w-5" />
+                <h3 className="text-base font-bold text-foreground">
+                  Thêm Người & Điểm Danh Sự Kiện (QR Code)
+                </h3>
+              </div>
+              <button
+                onClick={() => setAddAttendeeModalOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Mode Tabs */}
+            <div className="grid grid-cols-2 rounded-xl bg-muted p-1 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setAttendeeMode("qr")}
+                className={`py-2 rounded-lg transition ${
+                  attendeeMode === "qr"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Quét QR / Điểm danh nhanh
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttendeeMode("manual")}
+                className={`py-2 rounded-lg transition ${
+                  attendeeMode === "manual"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Thêm thông tin người mới
+              </button>
+            </div>
+
+            {attendeeMode === "qr" ? (
+              <div className="space-y-4">
+                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 mb-2">
+                    <QrCode className="h-8 w-8 animate-pulse" />
+                  </div>
+                  <p className="text-sm font-bold text-foreground">Quét mã QR từ Thẻ hội viên / Vé điện tử</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hướng camera máy quét vào mã QR hoặc nhập trực tiếp mã đại biểu/số điện thoại bên dưới.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-foreground">
+                    Mã QR / Mã Hội Viên / Email / Tên đại biểu:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={qrCodeInput}
+                      onChange={(e) => setQrCodeInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleProcessQrCode();
+                        }
+                      }}
+                      placeholder="VD: CEO-1983-MB-001 hoặc nhập tên..."
+                      className="h-10 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                    />
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => handleProcessQrCode()}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition disabled:opacity-50"
+                    >
+                      {submitting ? "Đang xử lý..." : "Điểm danh"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick suggestions from existing list */}
+                <div className="pt-2">
+                  <span className="text-[11px] font-semibold text-muted-foreground block mb-2">
+                    Chọn nhanh người tham gia để điểm danh:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {REGISTRATIONS.slice(0, 8).map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => handleProcessQrCode(r.memberCode || r.id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-secondary/50 px-2 py-1 text-[11px] text-foreground hover:bg-amber-500/10 hover:border-amber-500/30 transition"
+                      >
+                        <CheckCircle2 className="h-3 w-3 text-amber-500" />
+                        <span>{r.memberName}</span>
+                        <span className="text-muted-foreground font-mono">({r.memberCode})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitNewAttendee} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="font-semibold text-foreground block mb-1">Thuộc Sự kiện:</label>
+                  <select
+                    value={newAttendee.eventId}
+                    onChange={(e) => setNewAttendee({ ...newAttendee, eventId: e.target.value })}
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                  >
+                    {EVENTS.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.name} ({ev.date})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">
+                      Họ và tên đại biểu <span className="text-destructive">*</span>:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newAttendee.memberName}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, memberName: e.target.value })}
+                      placeholder="Nguyễn Văn A"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">Mã Hội Viên:</label>
+                    <input
+                      type="text"
+                      value={newAttendee.memberCode}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, memberCode: e.target.value })}
+                      placeholder="CEO-1983-MB-..."
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">Số điện thoại:</label>
+                    <input
+                      type="tel"
+                      value={newAttendee.phone}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, phone: e.target.value })}
+                      placeholder="0912 345 678"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">Email:</label>
+                    <input
+                      type="email"
+                      value={newAttendee.email}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, email: e.target.value })}
+                      placeholder="ceo@company.com"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-foreground block mb-1">Doanh nghiệp / Công ty:</label>
+                  <input
+                    type="text"
+                    value={newAttendee.company}
+                    onChange={(e) => setNewAttendee({ ...newAttendee, company: e.target.value })}
+                    placeholder="Tập đoàn Alpha / Công ty Cổ phần..."
+                    className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">Hạng vé:</label>
+                    <select
+                      value={newAttendee.ticketType}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, ticketType: e.target.value })}
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    >
+                      <option value="VIP">Hạng VIP Đặc Biệt</option>
+                      <option value="Tiêu chuẩn">Hạng Tiêu Chuẩn</option>
+                      <option value="Khách mời">Khách Mời Danh Dự</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-semibold text-foreground block mb-1">Xếp chỗ ngồi / Bàn tiệc:</label>
+                    <input
+                      type="text"
+                      value={newAttendee.seatAssignment}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, seatAssignment: e.target.value })}
+                      placeholder="Bàn VIP 01 - Ghế 05"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl bg-muted/60 p-3">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={newAttendee.checkedIn}
+                      onChange={(e) => setNewAttendee({ ...newAttendee, checkedIn: e.target.checked })}
+                      className="rounded border-border text-amber-500 focus:ring-amber-500"
+                    />
+                    <span>Xác nhận đã có mặt tại sự kiện (Check-in ngay)</span>
+                  </label>
+                  <span className="text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">
+                    {newAttendee.paymentStatus === "paid" ? "Đã thu phí" : "Chưa thu"}
+                  </span>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={() => setAddAttendeeModalOpen(false)}
+                    className="rounded-xl border border-border bg-card px-4 py-2 font-semibold text-foreground hover:bg-muted"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 font-semibold text-white shadow-sm transition disabled:opacity-50"
+                  >
+                    {submitting ? "Đang lưu..." : "Xác nhận thêm & Điểm danh"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

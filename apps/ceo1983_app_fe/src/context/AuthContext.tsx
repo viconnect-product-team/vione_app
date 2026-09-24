@@ -8,8 +8,14 @@ export interface AppUser {
   username?: string;
   name?: string;
   avatar_url?: string;
+  role?: string;
+  department?: string;
+  boardName?: string;
+  title?: string;
+  phone?: string;
   /** Alias cho các nơi dùng user.user_metadata.full_name */
-  user_metadata?: { full_name?: string; avatar_url?: string };
+  user_metadata?: { full_name?: string; avatar_url?: string; [key: string]: any };
+  [key: string]: any;
 }
 
 export interface AppSession {
@@ -59,15 +65,25 @@ function isTokenValid(token: string): boolean {
 }
 
 function tokenToUser(decoded: Record<string, any>): AppUser {
+  const email = decoded.email || decoded.username || '';
+  const role = decoded.role || decoded.user_role || decoded.user_metadata?.role || (email.toLowerCase().includes('admin') ? 'admin' : '');
   return {
-    id: decoded.sub,
-    email: decoded.email || decoded.username,
+    id: decoded.sub || decoded.id || '',
+    email,
     username: decoded.username,
-    name: decoded.name || '',
+    name: decoded.name || decoded.full_name || '',
     avatar_url: decoded.avatar_url || '',
+    role,
+    department: decoded.department || '',
+    boardName: decoded.boardName || '',
+    title: decoded.title || '',
+    phone: decoded.phone || '',
+    isBoardOfDirectors: decoded.isBoardOfDirectors || Boolean(decoded.boardName) || false,
     user_metadata: {
-      full_name: decoded.name || '',
+      full_name: decoded.name || decoded.full_name || '',
       avatar_url: decoded.avatar_url || '',
+      role,
+      ...(decoded.user_metadata || {}),
     },
   };
 }
@@ -121,22 +137,29 @@ async function apiRefresh(refreshToken: string): Promise<AppSession | null> {
 }
 
 function mapApiUser(apiUser: any, accessToken: string): AppUser {
-  if (apiUser?.id) {
-    return {
-      id: apiUser.id,
-      email: apiUser.email || apiUser.username,
-      username: apiUser.username,
-      name: apiUser.name || '',
-      avatar_url: apiUser.avatar_url || '',
-      user_metadata: {
-        full_name: apiUser.name || '',
-        avatar_url: apiUser.avatar_url || '',
-      },
-    };
-  }
-  // fallback: decode từ JWT
-  const decoded = decodeJwt(accessToken);
-  return decoded ? tokenToUser(decoded) : { id: '' };
+  const decoded = decodeJwt(accessToken) || {};
+  const email = apiUser?.email || apiUser?.username || decoded.email || decoded.username || '';
+  const role = apiUser?.role || decoded.role || decoded.user_role || (email.toLowerCase().includes('admin') ? 'admin' : '');
+
+  return {
+    id: apiUser?.id || decoded.sub || '',
+    email,
+    username: apiUser?.username || decoded.username,
+    name: apiUser?.name || decoded.name || '',
+    avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
+    role,
+    department: apiUser?.department || decoded.department || '',
+    boardName: apiUser?.boardName || decoded.boardName || '',
+    title: apiUser?.title || decoded.title || '',
+    phone: apiUser?.phone || decoded.phone || '',
+    isBoardOfDirectors: apiUser?.isBoardOfDirectors || decoded.isBoardOfDirectors || Boolean(apiUser?.boardName || decoded.boardName) || false,
+    user_metadata: {
+      full_name: apiUser?.name || decoded.name || '',
+      avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
+      role,
+      ...(apiUser?.user_metadata || decoded.user_metadata || {}),
+    },
+  };
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────

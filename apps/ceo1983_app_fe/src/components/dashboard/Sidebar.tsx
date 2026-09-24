@@ -48,6 +48,7 @@ import {
   ChevronUp,
   ChevronDown,
   LayoutTemplate,
+  Palette,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -106,10 +107,10 @@ const businessConnect: Item[] = [
   { key: "nav.bc.connections", icon: Handshake, to: "/business-connect/connections" },
   { key: "nav.bc.meetings", icon: Users2, to: "/business-connect/meetings" },
   {
-    key: "nav.landingTemplates" as TKey,
-    icon: LayoutTemplate,
+    key: "nav.themeManagement" as TKey,
+    icon: Palette,
     to: "/admin/landing-templates",
-    label: "Template Landing",
+    label: "Quản lý chủ đề",
   },
 ];
 const system: Item[] = [
@@ -125,10 +126,10 @@ const admin: Item[] = [
     label: "Quản lý Thẻ Doanh Nhân",
   },
   {
-    key: "nav.landingTemplates" as TKey,
-    icon: LayoutTemplate,
+    key: "nav.themeManagement" as TKey,
+    icon: Palette,
     to: "/admin/landing-templates",
-    label: "Template Landing",
+    label: "Quản lý chủ đề",
   },
 ];
 

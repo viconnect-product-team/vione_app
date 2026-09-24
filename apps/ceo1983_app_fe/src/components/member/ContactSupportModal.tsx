@@ -43,19 +43,19 @@ interface CommitteeItem {
 const COMMITTEES: CommitteeItem[] = [
   {
     id: "thuong-truc",
-    name: "Ban Thường Trực CLB",
+    name: "Ban Thường Trực & BQT CLB",
     leader: "Anh Lê Xuân Tùng",
     role: "Chủ tịch CLB Doanh Nhân CEO 1983",
     phone: "098.1983.888",
     email: "chutich@ceo1983.vn",
     icon: Crown,
-    color: "#D97706",
-    bgLight: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40",
+    color: "#003B95",
+    bgLight: "bg-blue-50/80 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/40",
     description: "Điều hành chung, hoạch định chiến lược phát triển và đại diện đối ngoại cấp cao.",
   },
   {
     id: "thu-ky",
-    name: "Ban Thư Ký & Điều Phối Hội Viên",
+    name: "Ban Thư Ký & Vận Hành",
     leader: "Chị Nguyễn Thị Bích Ngọc",
     role: "Tổng Thư Ký CLB",
     phone: "098.333.1983",
@@ -66,8 +66,44 @@ const COMMITTEES: CommitteeItem[] = [
     description: "Tiếp nhận hồ sơ, hỗ trợ kỹ thuật app 24/7, vận hành kết nối thường nhật.",
   },
   {
+    id: "thanh-vien",
+    name: "Ban Thành Viên & Thẩm Định",
+    leader: "Anh Hoàng Minh Thắng",
+    role: "Trưởng Ban Thành Viên",
+    phone: "090.888.1983",
+    email: "thanhvien@ceo1983.vn",
+    icon: Users,
+    color: "#4F46E5",
+    bgLight: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40",
+    description: "Thẩm định tiêu chuẩn gia nhập, xác thực năng lực pháp lý, chăm sóc và gia hạn hội viên.",
+  },
+  {
+    id: "tai-chinh",
+    name: "Ban Tài Chính & Ngân Sách",
+    leader: "Anh Phạm Hồng Quang",
+    role: "Trưởng Ban Tài Chính",
+    phone: "094.555.1983",
+    email: "taichinh@ceo1983.vn",
+    icon: ShieldCheck,
+    color: "#0F766E",
+    bgLight: "bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800/40",
+    description: "Quản trị ngân sách, thu chi hội phí minh bạch, tài chính dự án và quỹ tương trợ.",
+  },
+  {
+    id: "truyen-thong",
+    name: "Ban Truyền Thông & Sự Kiện",
+    leader: "Chị Vũ Mai Hương",
+    role: "Trưởng Ban Truyền Thông",
+    phone: "097.666.1983",
+    email: "truyenthong@ceo1983.vn",
+    icon: Sparkles,
+    color: "#0284C7",
+    bgLight: "bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800/40",
+    description: "Tổ chức Gala thường niên, Caravan, Cafe Doanh nhân và lan tỏa thương hiệu hội viên.",
+  },
+  {
     id: "xuc-tien",
-    name: "Ban Xúc Tiến Thương Mại & Đầu Tư B2B",
+    name: "Ban Xúc Tiến Thương Mại B2B & Đầu Tư",
     leader: "Anh Trần Đăng Khoa",
     role: "Phó Chủ Tịch Thường Trực",
     phone: "091.234.1983",
@@ -78,40 +114,16 @@ const COMMITTEES: CommitteeItem[] = [
     description: "Khớp nối chuỗi cung ứng, xúc tiến mua bán chéo B2B và cơ hội đầu tư doanh nghiệp.",
   },
   {
-    id: "phat-trien",
-    name: "Ban Phát Triển Hội Viên & Thẩm Định",
-    leader: "Anh Hoàng Minh Thắng",
-    role: "Phó Chủ Tịch CLB",
-    phone: "090.888.1983",
-    email: "hoivien@ceo1983.vn",
-    icon: Users,
-    color: "#4F46E5",
-    bgLight: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40",
-    description: "Thẩm định tiêu chuẩn gia nhập, xác thực năng lực pháp lý và hồ sơ hội viên mới.",
-  },
-  {
-    id: "truyen-thong",
-    name: "Ban Truyền Thông & Sự Kiện",
-    leader: "Chị Vũ Mai Hương",
-    role: "Trưởng Ban Truyền Thông",
-    phone: "097.666.1983",
-    email: "truyenthong@ceo1983.vn",
-    icon: Sparkles,
-    color: "#DB2777",
-    bgLight: "bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-800/40",
-    description: "Tổ chức Gala thường niên, Caravan, Cafe Doanh nhân và lan tỏa thương hiệu hội viên.",
-  },
-  {
-    id: "tai-chinh",
-    name: "Ban Tài Chính & Pháp Chế",
-    leader: "Anh Phạm Hồng Quang",
-    role: "Trưởng Ban Pháp Chế",
-    phone: "094.555.1983",
-    email: "taichinh.phapche@ceo1983.vn",
+    id: "phap-che",
+    name: "Ban Kiểm Soát & Pháp Chế",
+    leader: "Luật Sư Nguyễn Văn Hùng",
+    role: "Trưởng Ban Pháp Chế & KSNB",
+    phone: "093.888.1983",
+    email: "phapche@ceo1983.vn",
     icon: Scale,
-    color: "#EA580C",
-    bgLight: "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/40",
-    description: "Quản trị ngân sách, thu chi hội phí minh bạch, bảo trợ pháp lý và sở hữu trí tuệ.",
+    color: "#334155",
+    bgLight: "bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/50",
+    description: "Bảo trợ pháp lý doanh nghiệp, kiểm soát quy chế điều lệ và sở hữu trí tuệ.",
   },
   {
     id: "chuyen-doi-so",
@@ -121,8 +133,8 @@ const COMMITTEES: CommitteeItem[] = [
     phone: "093.222.1983",
     email: "chuyendoiso@ceo1983.vn",
     icon: Laptop,
-    color: "#7C3AED",
-    bgLight: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/40",
+    color: "#4338CA",
+    bgLight: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/40",
     description: "Ứng dụng công nghệ AI/CRM, tối ưu hóa nền tảng số hiệp hội và đào tạo quản trị.",
   },
 ];
@@ -199,12 +211,12 @@ export function ContactSupportModal({ open, onClose }: ContactSupportModalProps)
             onClick={() => setActiveTab("committees")}
             className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "committees"
-                ? "border-[#003B95] text-[#003B95] dark:border-amber-400 dark:text-amber-400"
+                ? "border-[#003B95] text-[#003B95] dark:border-blue-400 dark:text-blue-400"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800"
             }`}
           >
             <Users className="h-3.5 w-3.5" />
-            <span>7 Ban Chuyên Môn ({COMMITTEES.length})</span>
+            <span>8 Ban Chuyên Môn ({COMMITTEES.length})</span>
           </button>
 
           <button
@@ -212,7 +224,7 @@ export function ContactSupportModal({ open, onClose }: ContactSupportModalProps)
             onClick={() => setActiveTab("form")}
             className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "form"
-                ? "border-[#003B95] text-[#003B95] dark:border-amber-400 dark:text-amber-400"
+                ? "border-[#003B95] text-[#003B95] dark:border-blue-400 dark:text-blue-400"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800"
             }`}
           >
@@ -267,7 +279,7 @@ export function ContactSupportModal({ open, onClose }: ContactSupportModalProps)
                               {c.name}
                             </h3>
                             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                              <span className="text-[11px] font-bold text-blue-900 dark:text-blue-300">
                                 {c.leader}
                               </span>
                               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -370,23 +382,20 @@ export function ContactSupportModal({ open, onClose }: ContactSupportModalProps)
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1.5">
                     Ban ngành tiếp nhận hỗ trợ:
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { id: "ky-thuat", label: "Kỹ thuật App" },
-                      { id: "hoi-vien", label: "Hồ sơ Hội viên" },
-                      { id: "giao-thuong", label: "Xúc tiến B2B" },
-                    ].map((opt) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {COMMITTEES.map((comm) => (
                       <button
-                        key={opt.id}
+                        key={comm.id}
                         type="button"
-                        onClick={() => setTopic(opt.id)}
-                        className={`rounded-xl py-2 px-1.5 text-[10.5px] font-bold border transition text-center cursor-pointer ${
-                          topic === opt.id
-                            ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-amber-300"
-                            : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-slate-600 dark:text-slate-400"
+                        onClick={() => setTopic(comm.id)}
+                        className={`rounded-xl py-2 px-1 text-[10.5px] font-bold border transition text-center cursor-pointer truncate ${
+                          topic === comm.id
+                            ? "border-[#003B95] bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300"
+                            : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-slate-600 dark:text-slate-400 hover:bg-slate-50"
                         }`}
+                        title={comm.name}
                       >
-                        {opt.label}
+                        {comm.name.replace("Ban ", "")}
                       </button>
                     ))}
                   </div>

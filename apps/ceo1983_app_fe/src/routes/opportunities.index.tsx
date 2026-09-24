@@ -108,21 +108,29 @@ function OpportunityCard({
         aria-label={opp.title}
       >
         {(() => {
-          const img = opp.image || (opp as any).imageUrl;
-          const resolved = resolveMediaUrl(img);
-          if (resolved) {
-            return (
-              <img
-                src={resolved}
-                alt={opp.title}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-            );
-          }
-          return null;
+          const typeFallbacks: Record<string, string> = {
+            "opp.type.partnership": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80",
+            "opp.type.investment": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+            "opp.type.supply": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+            "opp.type.demand": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80",
+            "opp.type.distribution": "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
+          };
+          const raw = opp.image || (opp as any).imageUrl || (opp as any).imageUrls?.[0];
+          const fallback = typeFallbacks[opp.type] || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80";
+          const resolved = resolveMediaUrl(raw) || fallback;
+          return (
+            <img
+              src={resolved}
+              alt={opp.title}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+          );
         })()}
         <span className="relative z-10 drop-shadow-md">{opp.emoji}</span>
       </Link>

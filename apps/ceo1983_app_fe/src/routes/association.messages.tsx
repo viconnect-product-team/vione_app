@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
@@ -243,6 +243,23 @@ export type ActionTicketData = {
   count?: number;
 };
 
+export type ActionB2bInviteData = {
+  type: string;
+  inviteId: string;
+  senderName: string;
+  senderPhone: string;
+  senderCompany: string;
+  senderCode?: string;
+  purpose: string;
+  opportunityId?: string;
+  opportunityTitle?: string;
+  recipientCode?: string;
+  recipientName?: string;
+  status: "pending" | "accepted" | "declined";
+  declineReason?: string;
+  createdAt: string;
+};
+
 export type ReplyQuoteData = {
   id?: string;
   senderName: string;
@@ -259,6 +276,7 @@ type ParsedContent = {
   | { type: "action_payment"; data: ActionPaymentData }
   | { type: "action_meeting"; data: ActionMeetingData }
   | { type: "action_ticket"; data: ActionTicketData }
+  | { type: "b2b_connect_invite"; data: ActionB2bInviteData }
   | { type: "text"; text: string }
 );
 
@@ -274,6 +292,19 @@ function safeDecode(val?: string): string {
 function parseMessageContent(rawBody: string): ParsedContent {
   let body = rawBody;
   let replyQuote: ReplyQuoteData | undefined;
+
+  // B2B Meeting Connection Invite (Requirement 11)
+  if (body.startsWith("[B2B_CONNECT_INVITE]")) {
+    try {
+      const jsonStr = body.replace("[B2B_CONNECT_INVITE]", "").trim();
+      const inviteData = JSON.parse(jsonStr);
+      return {
+        replyQuote,
+        type: "b2b_connect_invite",
+        data: inviteData,
+      };
+    } catch {}
+  }
 
   // Phát hiện tiền tố trích dẫn trả lời [reply:id|name:Sender|text:Quoted]
   const replyMatch = body.match(/^\[reply:([^|]+)\|name:([^|]+)\|text:([^\]]+)\]([\s\S]*)$/i);
@@ -2379,6 +2410,99 @@ function ChatThread({
     }
   };
 
+  const handleAcceptB2bInvite = async (msg: ChatMessage, inviteData: any) => {
+    try {
+      const updatedData = { ...inviteData, status: "accepted" };
+      const newText = `[B2B_CONNECT_INVITE]${JSON.stringify(updatedData)}`;
+
+      setLocalMessages((prev) =>
+        prev.map((item) => (item.id === msg.id ? { ...item, text: newText } : item))
+      );
+
+      const threadKey = `vba_direct_msgs_${peer.peerCode.toLowerCase()}`;
+      try {
+        const raw = localStorage.getItem(threadKey);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          const nextArr = arr.map((item: any) => (item.id === msg.id ? { ...item, text: newText } : item));
+          localStorage.setItem(threadKey, JSON.stringify(nextArr));
+        }
+      } catch {}
+
+      try {
+        const storedC = localStorage.getItem("vba.connected_members");
+        const cList: string[] = storedC ? JSON.parse(storedC) : [];
+        if (!cList.includes(peer.peerCode.toLowerCase())) {
+          cList.push(peer.peerCode.toLowerCase());
+          localStorage.setItem("vba.connected_members", JSON.stringify(cList));
+        }
+      } catch {}
+
+      window.dispatchEvent(new Event("vba.connection.changed"));
+
+      try {
+        await send({
+          data: {
+            peerCode: peer.peerCode,
+            text: `[system] Tôi đã đồng ý lời mời kết nối và hẹn gặp giao thương với Anh/Chị! Rất mong được hợp tác phát triển.`,
+          },
+        });
+      } catch {}
+
+      if (inviteData.connectionId) {
+        try {
+          await respondMemberConnectionFn({
+            data: {
+              connectionId: inviteData.connectionId,
+              action: "accept",
+            },
+          });
+        } catch {}
+      }
+
+      toast.success("Đã đồng ý kết nối giao thương thành công!");
+    } catch {
+      toast.error("Không thể xử lý kết nối");
+    }
+  };
+
+  const handleDeclineB2bInvite = async (msg: ChatMessage, inviteData: any) => {
+    const reason = window.prompt("Lý do hủy kết nối (Không bắt buộc nhập):", "") || "";
+    try {
+      const updatedData = { ...inviteData, status: "declined", declineReason: reason.trim() || undefined };
+      const newText = `[B2B_CONNECT_INVITE]${JSON.stringify(updatedData)}`;
+
+      setLocalMessages((prev) =>
+        prev.map((item) => (item.id === msg.id ? { ...item, text: newText } : item))
+      );
+
+      const threadKey = `vba_direct_msgs_${peer.peerCode.toLowerCase()}`;
+      try {
+        const raw = localStorage.getItem(threadKey);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          const nextArr = arr.map((item: any) => (item.id === msg.id ? { ...item, text: newText } : item));
+          localStorage.setItem(threadKey, JSON.stringify(nextArr));
+        }
+      } catch {}
+
+      if (inviteData.connectionId) {
+        try {
+          await respondMemberConnectionFn({
+            data: {
+              connectionId: inviteData.connectionId,
+              action: "decline",
+            },
+          });
+        } catch {}
+      }
+
+      toast.info("Đã từ chối lời mời kết nối");
+    } catch {
+      toast.error("Không thể xử lý yêu cầu");
+    }
+  };
+
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -3413,7 +3537,7 @@ function ChatThread({
                             setActiveContextMenuMsgId(activeContextMenuMsgId === m.id ? null : m.id);
                           }}
                           className={`relative rounded-2xl shadow-xs transition-all select-none ${
-                            content.type === "action_payment"
+                            content.type === "action_payment" || content.type === "b2b_connect_invite"
                               ? "rounded-2xl bg-transparent border-0 shadow-none p-0 max-w-full"
                               : content.type === "action_meeting"
                                 ? "max-w-full overflow-hidden border border-amber-500/30"
@@ -3516,6 +3640,114 @@ function ChatThread({
                             <ZaloTransactionCard data={content.data} isFromMe={m.mine} />
                           ) : content.type === "action_ticket" ? (
                             <EventTicketCard data={content.data} isFromMe={m.mine} />
+                          ) : content.type === "b2b_connect_invite" ? (
+                            <div className="p-3.5 space-y-2.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-amber-500/50 rounded-2xl shadow-md min-w-[270px] max-w-sm">
+                              <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                    <Handshake className="h-4 w-4" />
+                                  </div>
+                                  <div>
+                                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white leading-tight">
+                                      Hẹn gặp & Bàn chiến lược
+                                    </h4>
+                                    <p className="text-[9.5px] font-medium text-amber-600 dark:text-amber-400">
+                                      Kết nối CEO 1983
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="text-[9.5px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                  Giao thương
+                                </span>
+                              </div>
+
+                              <div className="space-y-1 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 text-[11px] border border-slate-200/80 dark:border-slate-700/80">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-500 dark:text-slate-400">Người gửi:</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    {content.data.senderName}
+                                  </span>
+                                </div>
+                                {content.data.senderCompany && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-slate-500 dark:text-slate-400">Doanh nghiệp:</span>
+                                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[170px]">
+                                      {content.data.senderCompany}
+                                    </span>
+                                  </div>
+                                )}
+                                {content.data.senderPhone && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-slate-500 dark:text-slate-400">Hotline/Zalo:</span>
+                                    <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                      {content.data.senderPhone}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {content.data.purpose && (
+                                <div className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+                                  <p className="text-[9.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-0.5">
+                                    Nội dung đề xuất:
+                                  </p>
+                                  {content.data.purpose}
+                                </div>
+                              )}
+
+                              {content.data.opportunityTitle && (
+                                <Link
+                                  to="/association/opportunities"
+                                  className="flex items-center gap-1.5 p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-[10.5px] text-blue-700 dark:text-blue-300 hover:underline"
+                                >
+                                  <Sparkles className="h-3 w-3 shrink-0 text-amber-500" />
+                                  <span className="truncate font-medium">
+                                    Cơ hội liên kết: {content.data.opportunityTitle}
+                                  </span>
+                                </Link>
+                              )}
+
+                              {content.data.status === "accepted" ? (
+                                <div className="flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800">
+                                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                  Đã đồng ý kết nối & Lên lịch hẹn
+                                </div>
+                              ) : content.data.status === "declined" ? (
+                                <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10.5px] border border-slate-200 dark:border-slate-700">
+                                  <div className="flex items-center gap-1 font-bold text-rose-500">
+                                    <X className="h-3 w-3 shrink-0" />
+                                    Đã từ chối kết nối
+                                  </div>
+                                  {content.data.declineReason && (
+                                    <p className="mt-0.5 text-[10px] italic text-slate-500">
+                                      Lý do: {content.data.declineReason}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : !m.mine ? (
+                                <div className="flex items-center gap-2 pt-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAcceptB2bInvite(m, content.data)}
+                                    className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[11px] font-bold transition active:scale-95 shadow-xs cursor-pointer"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                    Đồng ý kết nối
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeclineB2bInvite(m, content.data)}
+                                    className="inline-flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition active:scale-95 cursor-pointer"
+                                  >
+                                    Hủy
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-center py-1 text-[10.5px] italic text-slate-400">
+                                  Đang chờ đối tác phản hồi...
+                                </div>
+                              )}
+                            </div>
                           ) : content.type === "action_meeting" ? (
                             /* Action Card: Meeting Invitation */
                             <div className="p-3.5 space-y-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-l-4 border-amber-500 rounded-2xl">

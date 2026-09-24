@@ -73,8 +73,14 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Ứng dụng CEO 1983 cần truy cập máy ảnh để quét mã QR hội viên và chụp ảnh đại diện.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng CEO 1983 cần quyền truy cập microphone để bạn tương tác và ra lệnh bằng giọng nói với Trợ lý ảo AI.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ứng dụng CEO 1983 sử dụng nhận dạng giọng nói để chuyển lời nói của bạn thành khẩu lệnh điều hướng AI.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Ứng dụng CEO 1983 cần truy cập thư viện ảnh để tải lên ảnh đại diện và tài liệu hội viên.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Ứng dụng CEO 1983 cần quyền lưu ảnh danh thiếp, mã QR và tài liệu vào thư viện ảnh của bạn.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

@@ -186,21 +186,30 @@ function ProductCard({
         style={{ background: "var(--gradient-card)" }}
       >
         {(() => {
-          const imgUrl = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl;
-          const resolved = resolveMediaUrl(imgUrl);
-          if (resolved) {
-            return (
-              <img
-                src={resolved}
-                alt={product.title}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-            );
-          }
-          return null;
+          const catFallbacks: Record<string, string> = {
+            "mk.cat.service": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.tech": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.fnb": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.retail": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.finance": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.realestate": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+          };
+          const raw = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl || (product as any).image;
+          const fallback = catFallbacks[product.category] || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
+          const resolved = resolveMediaUrl(raw) || fallback;
+          return (
+            <img
+              src={resolved}
+              alt={product.title}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+          );
         })()}
         <span aria-hidden="true" className="relative z-10 drop-shadow-md">{product.emoji}</span>
         {selectable && (
@@ -369,21 +378,30 @@ function ProductRow({
         aria-hidden="true"
       >
         {(() => {
-          const imgUrl = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl;
-          const resolved = resolveMediaUrl(imgUrl);
-          if (resolved) {
-            return (
-              <img
-                src={resolved}
-                alt={product.title}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-            );
-          }
-          return null;
+          const catFallbacks: Record<string, string> = {
+            "mk.cat.service": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.tech": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.fnb": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.retail": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.finance": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+            "mk.cat.realestate": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+          };
+          const raw = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl || (product as any).image;
+          const fallback = catFallbacks[product.category] || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
+          const resolved = resolveMediaUrl(raw) || fallback;
+          return (
+            <img
+              src={resolved}
+              alt={product.title}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+          );
         })()}
         <span aria-hidden="true" className="relative z-10">{product.emoji}</span>
       </Link>

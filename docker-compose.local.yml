@@ -1,4 +1,4 @@
-name: vione
+name: ceo1983-hiephoi
 
 services:
   backend:
@@ -6,7 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile.backend
       target: runner
-    container_name: vione-backend-local
+    image: ceo1983-backend:latest
+    container_name: ceo1983-backend-local
     restart: unless-stopped
     env_file:
       - .env
@@ -16,7 +17,7 @@ services:
     ports:
       - "4002:4000"
     networks:
-      - vione-network
+      - ceo1983-network
     depends_on:
       - db
 
@@ -24,7 +25,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: vione-frontend-local
+    image: ceo1983-frontend:latest
+    container_name: ceo1983-frontend-local
     restart: unless-stopped
     env_file:
       - .env
@@ -38,11 +40,11 @@ services:
     depends_on:
       - backend
     networks:
-      - vione-network
+      - ceo1983-network
 
   db:
     image: postgres:15
-    container_name: vione-db-local
+    container_name: ceo1983-db-local
     restart: always
     environment:
       POSTGRES_USER: app1
@@ -51,13 +53,13 @@ services:
     ports:
       - "6432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ceo1983_postgres_data:/var/lib/postgresql/data
     networks:
-      - vione-network
+      - ceo1983-network
 
   minio:
     image: minio/minio:latest
-    container_name: vione-minio-local
+    container_name: ceo1983-minio-local
     restart: always
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -66,15 +68,15 @@ services:
       - "9050:9000"
       - "9051:9001"
     volumes:
-      - vione-minio-data-local:/data
+      - ceo1983-minio-data-local:/data
     command: server /data --console-address ":9001"
     networks:
-      - vione-network
+      - ceo1983-network
 
 networks:
-  vione-network:
+  ceo1983-network:
     driver: bridge
 
 volumes:
-  postgres_data:
-  vione-minio-data-local:
+  ceo1983_postgres_data:
+  ceo1983-minio-data-local:

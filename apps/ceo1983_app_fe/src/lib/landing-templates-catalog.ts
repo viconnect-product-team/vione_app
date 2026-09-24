@@ -251,16 +251,16 @@ export const ACTIVE_LANDING_TEMPLATE_STORAGE_KEY = "ceo1983_active_landing_templ
 export const LANDING_TEMPLATE_CHANGE_EVENT = "ceo1983-landing-template-changed";
 
 export function getActiveLandingTemplateId(): string {
-  if (typeof window === "undefined") return "b2b-v1";
+  if (typeof window === "undefined") return "ceo1983-figma";
   try {
     const saved = localStorage.getItem(ACTIVE_LANDING_TEMPLATE_STORAGE_KEY);
-    if (saved && LANDING_TEMPLATES_CATALOG.some((t) => t.id === saved)) {
+    if (saved && saved !== "b2b-v1" && LANDING_TEMPLATES_CATALOG.some((t) => t.id === saved)) {
       return saved;
     }
   } catch {
     /* ignore */
   }
-  return "b2b-v1";
+  return "ceo1983-figma";
 }
 
 export function setActiveLandingTemplateId(templateId: string): void {

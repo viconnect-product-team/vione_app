@@ -811,20 +811,32 @@ function EventCard({
   const fmt = useFmt();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-      <div className="relative h-32 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
-        {(e as any).imageUrl || (e as any).image ? (
-          <img
-            src={(e as any).imageUrl || (e as any).image}
-            alt={e.name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 opacity-20"
-            style={{ background: "radial-gradient(circle at 80% 20%, white, transparent 60%)" }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+      <div className="relative h-36 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
+        {(() => {
+          const typeFallbacks: Record<string, string> = {
+            forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+            workshop: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+            networking: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+            training: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+          };
+          const fallback = typeFallbacks[e.type] || typeFallbacks.forum;
+          const raw = (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
+          const resolved = raw || fallback;
+          return (
+            <img
+              src={resolved}
+              alt={e.name}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(ev) => {
+                const target = ev.target as HTMLImageElement;
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+          );
+        })()}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
         <div className="absolute left-3 top-3">
           <StatusPill status={getEffectiveStatus(e)} />
         </div>
@@ -891,13 +903,33 @@ function FeaturedCard({ event: e, onOpen }: { event: EventItem; onOpen: () => vo
       className="mb-5 block w-full overflow-hidden rounded-3xl border border-border text-left shadow-[var(--shadow-card)] transition hover:shadow-[var(--shadow-glow)]"
     >
       <div className="relative grid gap-0 md:grid-cols-[1.1fr_1fr]">
-        <div className="relative min-h-[180px] p-6" style={{ background: TYPE_COVER[e.type] }}>
-          <div
-            className="absolute inset-0 opacity-25"
-            style={{ background: "radial-gradient(circle at 85% 15%, white, transparent 55%)" }}
-            aria-hidden="true"
-          />
-          <div className="relative flex h-full flex-col">
+        <div className="relative min-h-[180px] p-6 overflow-hidden" style={{ background: TYPE_COVER[e.type] }}>
+          {(() => {
+            const typeFallbacks: Record<string, string> = {
+              forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+              workshop: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+              networking: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+              training: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+            };
+            const fallback = typeFallbacks[e.type] || typeFallbacks.forum;
+            const raw = (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
+            const resolved = raw || fallback;
+            return (
+              <img
+                src={resolved}
+                alt={e.name}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(ev) => {
+                  const target = ev.target as HTMLImageElement;
+                  if (target.src !== fallback) {
+                    target.src = fallback;
+                  }
+                }}
+              />
+            );
+          })()}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30" />
+          <div className="relative z-10 flex h-full flex-col">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> {t("events.featured")}
             </span>

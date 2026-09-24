@@ -54,7 +54,7 @@ import { ShareCardModal } from "@/components/member/ShareCardModal";
 import { CardPreviewModal } from "@/components/member/CardPreviewModal";
 import { FastScanModal } from "@/components/member/FastScanModal";
 import { ConfirmDialog } from "@/components/member/ConfirmDialog";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 
 import { performWithUndo } from "@/lib/undo-action";
 import { cardPermissionErrorKey } from "@/lib/card-permission-error";
@@ -1430,6 +1430,7 @@ function CardRow({
   const setStatus = useServerFn(setBusinessCardStatusFn);
   const del = useServerFn(deleteBusinessCardFn);
   const setPrimary = useServerFn(setPrimaryBusinessCardFn);
+  const getFn = useServerFn(getMyBusinessCardFn);
   const [busy, setBusy] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [fastScanOpen, setFastScanOpen] = useState(false);
@@ -1481,13 +1482,24 @@ function CardRow({
       performWithUndo({
         message: t("bc.primaryScheduled"),
         undoLabel: t("bc.undo"),
-        commit: () => commit(() => setPrimary({ data: { id: card.id } })),
+        commit: () =>
+          commit(async () => {
+            await setPrimary({ data: { id: card.id } });
+            toast.success("Đã đặt làm danh thiếp chính!");
+            await onChanged();
+          }),
       });
     }
   };
 
   const published = card.status === "published";
-  const resolvedAvatar = card.avatarUrl ? resolveMediaUrl(card.avatarUrl) || card.avatarUrl : null;
+  const cachedCardAvatar =
+    typeof window !== "undefined" && card.id
+      ? localStorage.getItem(`vba_card_avatar_${card.id}`) ||
+        localStorage.getItem(`vba_secondary_card_avatar_${card.id}`)
+      : null;
+  const effectiveAvatar = card.avatarUrl || cachedCardAvatar || null;
+  const resolvedAvatar = effectiveAvatar ? resolveMediaUrl(effectiveAvatar) || effectiveAvatar : null;
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
@@ -1765,14 +1777,14 @@ function CardEditor({
         },
       });
       try {
-        const existing = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-        if (d.displayName) existing.name = d.displayName;
-        if (d.professionalTitle) existing.title = d.professionalTitle;
-        if (d.companyName) existing.company = d.companyName;
-        if (d.avatarUrl) existing.avatar = d.avatarUrl;
-        localStorage.setItem("vba_custom_profile", JSON.stringify(existing));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("profile-updated"));
+        // Tách biệt hoàn toàn Danh thiếp số và Profile cá nhân:
+        // Cập nhật danh thiếp số độc lập, không thay đổi profile, thẻ hội viên hay danh thiếp khác
+        if (d.avatarUrl && d.id) {
+          localStorage.setItem(`vba_card_avatar_${d.id}`, d.avatarUrl);
+          localStorage.setItem(`vba_secondary_card_avatar_${d.id}`, d.avatarUrl);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("storage"));
+          }
         }
       } catch {}
       toast.success(t("bc.saved"));

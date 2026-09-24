@@ -134,6 +134,16 @@ export class EventsController {
     return this.eventsService.sendPaymentReminder(req.user.id, id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/attendees/add-or-checkin')
+  async addOrCheckinAttendee(
+    @Request() req: any,
+    @Param('id') eventId: string,
+    @Body() body: any,
+  ) {
+    return this.eventsService.addOrCheckinAttendee(req.user.id, eventId, body);
+  }
+
   @Delete(':id')
   async deleteEvent(@Request() req: any, @Param('id') id: string) {
     return this.eventsService.deleteEvent(req.user.id, id);

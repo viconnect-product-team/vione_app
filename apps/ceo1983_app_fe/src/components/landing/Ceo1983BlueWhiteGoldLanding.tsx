@@ -297,11 +297,12 @@ function HeroTitaniumVipCard() {
   );
 }
 
-/** ========================================================================= */
-/** MAIN COMPONENT: CEO1983 BLUE-WHITE-GOLD LANDING                          */
-/** ========================================================================= */
 export function Ceo1983BlueWhiteGoldLanding() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const p = new URLSearchParams(window.location.search);
+    return p.get("apply") === "true" || p.get("register") === "true" || p.get("signup") === "true";
+  });
   const [submitting, setSubmitting] = useState(false);
 
   // Tra cứu hồ sơ & Auto-polling 4s
@@ -1145,34 +1146,18 @@ export function Ceo1983BlueWhiteGoldLanding() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Quy mô Doanh Thu Năm
-                    </label>
-                    <select
-                      value={formData.revenue}
-                      onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#003B95]"
-                    >
-                      <option value="Dưới 10 Tỷ VNĐ">Dưới 10 Tỷ VNĐ</option>
-                      <option value="10 - 50 Tỷ VNĐ">10 - 50 Tỷ VNĐ</option>
-                      <option value="50 - 200 Tỷ VNĐ">50 - 200 Tỷ VNĐ</option>
-                      <option value="Trên 200 Tỷ VNĐ">Trên 200 Tỷ VNĐ</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Lĩnh vực hoạt động
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Bất động sản, Công nghệ..."
-                      value={formData.industry}
-                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Lĩnh vực hoạt động *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Bất động sản, Công nghệ, Sản xuất..."
+                    value={formData.industry}
+                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent"
+                  />
                 </div>
 
                 <div className="pt-3">

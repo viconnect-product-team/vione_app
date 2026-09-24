@@ -536,6 +536,8 @@ export class AdminService implements OnModuleInit {
     }
   }
 
+  private dismissedNotifIds = new Set<string>();
+
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
   async listNotifications(userId: string, associationId?: string, appScope?: string) {
@@ -543,6 +545,16 @@ export class AdminService implements OnModuleInit {
     const seenMap = new Set<string>();
     const filterScope = appScope && appScope !== 'all' ? appScope : null;
     const isAdmin = await this.checkIsAdmin(userId, associationId);
+
+    const dismissedIds = new Set<string>(this.dismissedNotifIds);
+    try {
+      const dRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT id FROM public.dismissed_notifications LIMIT 1000
+      `).catch(() => []);
+      for (const d of dRows) {
+        if (d.id) dismissedIds.add(String(d.id));
+      }
+    } catch {}
 
     // 1. Query broadcast notifications from public.notifications
     try {
@@ -569,6 +581,11 @@ export class AdminService implements OnModuleInit {
       for (const r of rows) {
         // Staff-only notifications are only visible to admins
         if (r.audience === 'staff' && !isAdmin) {
+          continue;
+        }
+
+        const notifId = r.code || r.id;
+        if (dismissedIds.has(String(notifId)) || dismissedIds.has(String(r.id)) || (r.code && dismissedIds.has(String(r.code)))) {
           continue;
         }
 
@@ -642,6 +659,7 @@ export class AdminService implements OnModuleInit {
         }
 
         for (const bz of bzRows) {
+          if (dismissedIds.has(String(bz.id))) continue;
           const safe = bz.safe_display_data || {};
           const title = safe.title || bz.title_key || 'Thông báo';
           const body = safe.body || bz.body_key || '';
@@ -681,13 +699,15 @@ export class AdminService implements OnModuleInit {
         `.catch(() => []);
 
         for (const m of pendingMembers) {
+          const pendingId = `PENDING-MB-${m.id}`;
+          if (dismissedIds.has(pendingId) || dismissedIds.has(String(m.id))) continue;
           const title = `Đăng ký hội viên mới: ${m.contact || m.name} - ${m.name}`;
           const body = `Ứng viên ${m.contact || m.name} (${m.phone || m.email || 'CLB CEO 1983'}) vừa nộp hồ sơ xin gia nhập. Bấm để duyệt ngay.`;
           const key = `${title}:${body}`;
           if (!seenMap.has(key)) {
             seenMap.add(key);
             notifs.push({
-              id: `PENDING-MB-${m.id}`,
+              id: pendingId,
               title,
               body,
               audience: 'staff',
@@ -921,15 +941,32 @@ export class AdminService implements OnModuleInit {
   }
 
   async deleteNotification(id: string) {
+    if (!id) return { ok: true };
+    this.dismissedNotifIds.add(id);
+
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.dismissed_notifications (
+          id text PRIMARY KEY,
+          dismissed_at timestamptz DEFAULT NOW()
+        )
+      `).catch(() => null);
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.dismissed_notifications (id) VALUES ($1)
+        ON CONFLICT (id) DO NOTHING
+      `, id).catch(() => null);
+    } catch {}
+
     await this.prisma.$executeRawUnsafe(`
       DELETE FROM public.notifications
-      WHERE code = '${id}' OR id::text = '${id}'
-    `).catch(() => null);
+      WHERE code = $1 OR id::text = $1
+    `, id).catch(() => null);
 
     await this.prisma.$executeRawUnsafe(`
       DELETE FROM public.business_notifications
-      WHERE id::text = '${id}'
-    `).catch(() => null);
+      WHERE id::text = $1
+    `, id).catch(() => null);
 
     return { ok: true };
   }

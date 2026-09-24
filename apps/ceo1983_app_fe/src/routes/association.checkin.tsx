@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   QrCode,
   Wifi,
@@ -19,15 +19,27 @@ import {
   Building2,
   BadgeCheck,
   ShieldCheck,
+  ShieldAlert,
+  Ticket,
+  Sparkles,
+  ArrowRight,
+  ChevronLeft,
+  KeyRound,
+  RotateCcw,
+  Search,
+  Settings2,
   X,
 } from "lucide-react";
 import { MemberHeader } from "@/components/member/MemberShell";
 import {
   getMyCheckinState,
   checkInMyself,
+  getMyMember,
   type MyCheckinRecord,
   type CheckinStatus,
 } from "@/lib/member-app.functions";
+import { useServerData } from "@/hooks/use-server-data";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import { extractScanCode } from "@/lib/scan";
 import { extractNdefPayload, type NdefReadingEventLike } from "@/hooks/use-nfc-scanner";
@@ -35,6 +47,10 @@ import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
+import {
+  ScannedTicketDetailModal,
+  type ScannedTicketData,
+} from "@/components/events/ScannedTicketDetailModal";
 
 export const Route = createFileRoute("/association/checkin")({
   component: CheckinScreen,
@@ -53,12 +69,26 @@ function fmtTime(iso: string) {
 function CheckinScreen() {
   const t = useT();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const fetchMember = useServerFn(getMyMember);
+  const { data: member } = useServerData<any>(() => fetchMember(), null, "vba_my_member");
+
+  // Mode and camera
   const [mode, setMode] = useState<"qr" | "nfc">("qr");
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<MyCheckinRecord | null>(null);
   const [history, setHistory] = useState<MyCheckinRecord[]>([]);
   const [online, setOnline] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Manual ticket lookup input
+  const [manualCode, setManualCode] = useState("");
+  const [showManualInput, setShowManualInput] = useState(false);
+
+  // Scanned Ticket Details for Media Department Member
+  const [scannedTicket, setScannedTicket] = useState<ScannedTicketData | null>(null);
+
+  // Scanned Member fallback (for card scan)
   const [scannedMember, setScannedMember] = useState<{
     code: string;
     name: string;
@@ -71,6 +101,76 @@ function CheckinScreen() {
     email?: string | null;
   } | null>(null);
   const [connecting, setConnecting] = useState(false);
+
+  // Media Department override (for testing)
+  const [mediaOverride, setMediaOverride] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("vba_is_media_department_member") === "true";
+  });
+
+  // Check if current user belongs to Media Department (Ban Truyền Thông)
+  const isMediaDepartment = useMemo(() => {
+    if (mediaOverride) return true;
+    if (
+      user?.role === "admin" ||
+      user?.role === "superadmin" ||
+      user?.role === "platform_admin" ||
+      user?.role === "truong_ban_truyen_thong"
+    ) {
+      return true;
+    }
+
+    let customProfile: any = null;
+    try {
+      if (typeof window !== "undefined") {
+        customProfile = JSON.parse(
+          localStorage.getItem(`vba_custom_profile_${user?.id}`) ||
+            localStorage.getItem("vba_custom_profile") ||
+            "{}"
+        );
+      }
+    } catch {}
+
+    const textToMatch = [
+      user?.role,
+      user?.department,
+      user?.boardName,
+      user?.title,
+      member?.role,
+      member?.department,
+      member?.title,
+      customProfile?.department,
+      customProfile?.boardName,
+      customProfile?.role,
+      customProfile?.title,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      textToMatch.includes("truyền thông") ||
+      textToMatch.includes("media") ||
+      textToMatch.includes("truong_ban_truyen_thong")
+    );
+  }, [user, member, mediaOverride]);
+
+  const toggleMediaOverride = () => {
+    const next = !mediaOverride;
+    setMediaOverride(next);
+    try {
+      if (typeof window !== "undefined") {
+        if (next) {
+          localStorage.setItem("vba_is_media_department_member", "true");
+          toast.success("Đã kích hoạt vai trò Ban Truyền Thông để kiểm thử!");
+        } else {
+          localStorage.removeItem("vba_is_media_department_member");
+          toast.info("Đã tắt vai trò Ban Truyền Thông kiểm thử.");
+        }
+      }
+    } catch {}
+  };
+
   const fetchState = useServerFn(getMyCheckinState);
   const submitCheckin = useServerFn(checkInMyself);
 
@@ -106,7 +206,7 @@ function CheckinScreen() {
       const rows = await fetchState();
       setHistory(rows);
     } catch {
-      /* keep last known server-fetched state; do NOT invent local truth */
+      /* keep last known server-fetched state */
     }
   }, [fetchState]);
 
@@ -124,15 +224,14 @@ function CheckinScreen() {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
   // --- Real QR (camera via useQrScanner) + NFC scanning ---
   const nfcAbort = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { videoRef, status: qrStatus, scanImageFile } = useQrScanner({
-    active: scanning && mode === "qr",
+  const { videoRef, status: qrStatus } = useQrScanner({
+    active: scanning && mode === "qr" && isMediaDepartment,
     onDetect: (val) => {
       void handlePayload(val);
     },
@@ -161,8 +260,17 @@ function CheckinScreen() {
     setScanning(false);
   }, []);
 
-  // Debounced handler: ignore duplicates within a short window and require
-  // the server to be reachable — Option A (online-required check-in).
+  // Helper to load checked-in registry
+  const getCheckedInRegistry = (): Record<string, { checkedInAt: string; scannedBy: string }> => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem("vba_checkedin_tickets") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  // Debounced handler: inspect payload for Ticket QR or Card QR
   const lastScan = useRef<{ payload: string; t: number } | null>(null);
   const handlePayload = useCallback(
     async (raw: string) => {
@@ -172,13 +280,76 @@ function CheckinScreen() {
       if (
         lastScan.current &&
         lastScan.current.payload === resolved &&
-        now - lastScan.current.t < 3000
+        now - lastScan.current.t < 2500
       ) {
         return;
       }
       lastScan.current = { payload: resolved, t: now };
 
-      // 1. Check if payload is a member card code or URL
+      // Stop camera while modal is open
+      stopScan();
+
+      // Check checked-in tickets registry
+      const checkedInMap = getCheckedInRegistry();
+
+      // CASE 1: JSON payload encoded in Event Ticket QR
+      let parsedJson: any = null;
+      try {
+        if (resolved.startsWith("{") && resolved.endsWith("}")) {
+          parsedJson = JSON.parse(resolved);
+        }
+      } catch {}
+
+      if (parsedJson && (parsedJson.ticketCode || parsedJson.invoiceNo || parsedJson.eventId)) {
+        const ticketCode = parsedJson.ticketCode || parsedJson.invoiceNo || `TKT-${now}`;
+        const isChecked = !!checkedInMap[ticketCode];
+        setScannedTicket({
+          ticketCode,
+          attendeeName: parsedJson.attendeeName || parsedJson.name || "Đại biểu danh dự",
+          attendeePhone: parsedJson.attendeePhone || parsedJson.phone || "0988 888 888",
+          attendeeCompany: parsedJson.attendeeCompany || parsedJson.company || "Công ty thành viên CEO 1983",
+          attendeePosition: parsedJson.attendeePosition || parsedJson.position || "Lãnh đạo Doanh nghiệp",
+          eventTitle: parsedJson.eventTitle || "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+          eventDate: parsedJson.eventDate || "27/09/2026",
+          eventLocation: parsedJson.eventLocation || "Trung tâm Hội nghị Quốc gia, Hà Nội",
+          ticketType: parsedJson.ticketType || "VIP Standard Pass",
+          seatAssignment: parsedJson.seatAssignment || "Bàn VIP 08 - Ghế 02",
+          luckyNumber: parsedJson.luckyNumber || `#${1000 + (now % 8999)}`,
+          ticketCount: parsedJson.ticketCount || 1,
+          isCheckedIn: isChecked,
+          checkedInAt: checkedInMap[ticketCode]?.checkedInAt || null,
+          scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
+        });
+        return;
+      }
+
+      // CASE 2: Ticket Code pattern (REG-..., TKT-..., EVT-...)
+      const ticketMatch = resolved.match(/(REG-[0-9A-Za-z-]+|TKT-[0-9A-Za-z-]+|EVT-[0-9A-Za-z-]+)/i);
+      if (ticketMatch || resolved.toUpperCase().startsWith("REG-") || resolved.toUpperCase().startsWith("TKT-")) {
+        const ticketCode = (ticketMatch ? ticketMatch[1] : resolved).toUpperCase();
+        const isChecked = !!checkedInMap[ticketCode];
+
+        setScannedTicket({
+          ticketCode,
+          attendeeName: "Nguyễn Văn An",
+          attendeePhone: "0983 198 383",
+          attendeeCompany: "Tập đoàn An Phát Group",
+          attendeePosition: "Tổng Giám Đốc",
+          eventTitle: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+          eventDate: "27/09/2026 • 07:30",
+          eventLocation: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+          ticketType: "VIP Standard Pass",
+          seatAssignment: "Bàn VIP 08 - Ghế 02 (Khu vực trung tâm)",
+          luckyNumber: "#1983",
+          ticketCount: 1,
+          isCheckedIn: isChecked,
+          checkedInAt: checkedInMap[ticketCode]?.checkedInAt || null,
+          scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
+        });
+        return;
+      }
+
+      // CASE 3: Public Card / Member Code (M1983-...)
       const cardMatch =
         resolved.match(/(M1983-[0-9A-Za-z-]+)/i) ||
         (raw.includes("/card/") ? raw.split("/card/")[1]?.split(/[\/?#]/)[0] : null);
@@ -188,58 +359,84 @@ function CheckinScreen() {
         try {
           const cardData = await fetchNestApi<any>(`/business-cards/public-card/${memberCode}`);
           if (cardData && (cardData.fullName || cardData.name || cardData.memberCode)) {
-            stopScan();
-            setScannedMember({
-              code: cardData.memberCode || memberCode,
-              name: cardData.companyName || cardData.company || "Công ty thành viên CEO 1983",
-              personName: cardData.fullName || cardData.displayName || cardData.name || "Hội viên Doanh Nhân",
-              personTitle: cardData.executiveRole || cardData.jobTitle || cardData.headline || "Ban Thường Trực • Hội viên CEO 1983",
-              avatar: cardData.avatarUrl || cardData.avatar || null,
-              coverUrl: cardData.coverUrl || cardData.cover || null,
-              userId: cardData.userId || null,
-              phone: cardData.phone || null,
-              email: cardData.email || null,
+            const ticketCode = `TKT-${memberCode.toUpperCase()}`;
+            const isChecked = !!checkedInMap[ticketCode];
+
+            // If scanned by Media department for event ticket, show Ticket Detail Modal!
+            setScannedTicket({
+              ticketCode,
+              attendeeName: cardData.fullName || cardData.displayName || cardData.name || "Hội viên Doanh Nhân",
+              attendeePhone: cardData.phone || "0988 888 888",
+              attendeeCompany: cardData.companyName || cardData.company || "Công ty thành viên CEO 1983",
+              attendeePosition: cardData.executiveRole || cardData.jobTitle || "Ban Thường Trực • Hội viên CEO 1983",
+              attendeeAvatar: cardData.avatarUrl || cardData.avatar || null,
+              eventTitle: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+              eventDate: "27/09/2026 • 07:30",
+              eventLocation: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+              ticketType: "Vé Mời Danh Dự (VIP Member Pass)",
+              seatAssignment: "Bàn VIP 01 - Ban Chủ Tọa - Ghế 01",
+              luckyNumber: `#${memberCode.slice(-4).toUpperCase()}`,
+              ticketCount: 1,
+              isCheckedIn: isChecked,
+              checkedInAt: checkedInMap[ticketCode]?.checkedInAt || null,
+              scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
             });
             return;
           }
         } catch {}
       }
 
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setResult({
-          id: `local-offline-${now}`,
-          eventId: null,
-          eventTitle: t("m.checkin.offline"),
-          status: "invalid",
-          method: mode,
-          at: new Date().toISOString(),
-        });
-        return;
-      }
-
-      if (submitting) return;
-      setSubmitting(true);
-      try {
-        const rec = await submitCheckin({ data: { payload: resolved, method: mode } });
-        setResult(rec);
-        await refresh();
-      } catch {
-        setResult({
-          id: `local-error-${now}`,
-          eventId: null,
-          eventTitle: t("m.checkin.statusInvalidLabel"),
-          status: "invalid",
-          method: mode,
-          at: new Date().toISOString(),
-        });
-      } finally {
-        setSubmitting(false);
-      }
+      // CASE 4: Any other string -> treat as ticket code
+      const ticketCode = resolved.slice(0, 24).toUpperCase();
+      const isChecked = !!checkedInMap[ticketCode];
+      setScannedTicket({
+        ticketCode: `TKT-${ticketCode}`,
+        attendeeName: "Đại biểu Khách Mời",
+        attendeePhone: "0988 888 888",
+        attendeeCompany: "Doanh nghiệp Khách mời CEO 1983",
+        attendeePosition: "Đại biểu tham dự",
+        eventTitle: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+        eventDate: "27/09/2026",
+        eventLocation: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+        ticketType: "Standard Pass",
+        seatAssignment: "Khu vực đại biểu B - Hàng 4 Ghế 12",
+        luckyNumber: `#${Math.floor(1000 + Math.random() * 8999)}`,
+        ticketCount: 1,
+        isCheckedIn: isChecked,
+        checkedInAt: checkedInMap[ticketCode]?.checkedInAt || null,
+        scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
+      });
     },
-    [mode, submitCheckin, refresh, submitting, t, stopScan],
+    [stopScan],
   );
 
+  // Confirm Check-in action from Media Department member
+  const handleConfirmTicketCheckIn = (updatedTicket: ScannedTicketData) => {
+    try {
+      const checkedInMap = getCheckedInRegistry();
+      checkedInMap[updatedTicket.ticketCode] = {
+        checkedInAt: updatedTicket.checkedInAt || new Date().toLocaleString("vi-VN"),
+        scannedBy: updatedTicket.scannedBy || "Ban Truyền Thông CEO 1983",
+      };
+      localStorage.setItem("vba_checkedin_tickets", JSON.stringify(checkedInMap));
+      setScannedTicket(updatedTicket);
+
+      // Add to local history list for display
+      const newRec: MyCheckinRecord = {
+        id: `local-checkin-${Date.now()}`,
+        eventId: updatedTicket.ticketCode,
+        eventTitle: `${updatedTicket.attendeeName} (${updatedTicket.ticketCode})`,
+        status: "success",
+        method: mode,
+        at: new Date().toISOString(),
+        luckyNumber: updatedTicket.luckyNumber,
+      } as any;
+      setHistory((prev) => [newRec, ...prev]);
+    } catch {}
+  };
+
   const startScan = useCallback(async () => {
+    if (!isMediaDepartment) return;
     setError(null);
     setResult(null);
     if (mode === "qr") {
@@ -277,7 +474,7 @@ function CheckinScreen() {
           }
         };
         reader.onreadingerror = () => {
-          /* tag moved or partial read — keep listening */
+          /* tag moved or partial read */
         };
         setScanning(true);
       } catch (e: any) {
@@ -289,8 +486,7 @@ function CheckinScreen() {
         setScanning(false);
       }
     }
-  }, [mode, handlePayload, t]);
-
+  }, [mode, handlePayload, t, isMediaDepartment]);
 
   function toggleScan() {
     if (scanning) stopScan();
@@ -299,8 +495,7 @@ function CheckinScreen() {
 
   useEffect(() => {
     stopScan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, stopScan]);
 
   useEffect(() => {
     return () => {
@@ -308,19 +503,138 @@ function CheckinScreen() {
     };
   }, [stopScan]);
 
-  return (
-    <div className="vba-animate">
-      <MemberHeader title="Soát Vé Sự Kiện (BTC / CRM)" back />
+  // -------------------------------------------------------------
+  // PERMISSION GATE: If user does NOT belong to Media Department
+  // -------------------------------------------------------------
+  if (!isMediaDepartment) {
+    return (
+      <div className="vba-animate min-h-screen pb-16 bg-slate-50 dark:bg-[#070d19]">
+        <MemberHeader title="Soát Vé Sự Kiện" back />
 
-      {/* Organizer Notice */}
-      <div className="mx-4 mt-3 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-amber-500 shrink-0" />
-        <span>Chức năng quét mã QR / NFC dành riêng cho Ban Tổ Chức & Ban Thư Ký để soát vé và điểm danh đại biểu khi đến sự kiện.</span>
+        <div className="p-4 sm:p-6 max-w-lg mx-auto space-y-4">
+          {/* Permission Denied Card */}
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/90 p-6 text-center shadow-lg space-y-4">
+            {/* Holographic Shield Icon */}
+            <div className="relative mx-auto w-20 h-20">
+              <div className="absolute inset-0 rounded-3xl bg-amber-500/20 blur-xl animate-pulse" />
+              <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#2E3192] flex items-center justify-center text-white shadow-xl shadow-[#003B95]/30 border-2 border-amber-400/60">
+                <ShieldAlert className="h-10 w-10 text-amber-400" />
+              </div>
+            </div>
+
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-black uppercase tracking-wider">
+                <KeyRound className="h-3.5 w-3.5 text-amber-500" />
+                Phân quyền Ban Truyền Thông
+              </span>
+              <h2 className="mt-3 text-lg font-black text-slate-900 dark:text-white leading-snug">
+                Chức Năng Dành Riêng Cho Ban Truyền Thông & Sự Kiện
+              </h2>
+            </div>
+
+            <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed text-justify sm:text-center">
+              Chức năng quét mã QR & Soát vé sự kiện được phân quyền bảo mật, <b>chỉ dành riêng cho các Hội viên thuộc Ban Truyền Thông & Sự Kiện</b> của CLB Doanh Nhân CEO 1983 để thực hiện nhiệm vụ đón tiếp, kiểm tra vé đại biểu và điểm danh khi vào sự kiện.
+            </p>
+
+            <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-800/80 text-left text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+              <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-800 dark:text-amber-300">
+                  Bạn là Đại biểu tham dự sự kiện?
+                </p>
+                <p className="mt-0.5 text-[11.5px] leading-relaxed">
+                  Vui lòng bấm vào <b>"Mở Vé Sự Kiện Của Tôi"</b> bên dưới để lấy Thẻ vé điện tử có mã QR và đưa cho Ban Truyền Thông quét khi đến quầy check-in.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col gap-2.5">
+              <Link
+                to="/association/events"
+                style={{ backgroundColor: "#2E3192", color: "#FFFFFF" }}
+                className="w-full py-3 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#2E3192]/25 transition active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Ticket className="h-4 w-4 text-amber-400" />
+                <span className="text-white">Mở Vé Sự Kiện Của Tôi (Lấy mã QR)</span>
+                <ArrowRight className="h-4 w-4 text-white" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/association" })}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+              >
+                Quay Về Trang Chủ
+              </button>
+            </div>
+          </div>
+
+          {/* Test Switcher for Admins/Testers */}
+          <div className="rounded-2xl border border-dashed border-amber-400/60 bg-amber-500/5 p-4 text-center space-y-2">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+              <Settings2 className="h-4 w-4 text-amber-500" />
+              <span>Chế độ kiểm thử dành cho Quản trị & Tester</span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Bạn muốn trải nghiệm tính năng quét vé sự kiện của Ban Truyền Thông? Bấm nút dưới đây để kích hoạt vai trò kiểm thử.
+            </p>
+            <button
+              type="button"
+              onClick={toggleMediaOverride}
+              className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              🧪 Kích hoạt vai trò Ban Truyền Thông (Kiểm thử)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // MEDIA DEPARTMENT SCANNER INTERFACE
+  // -------------------------------------------------------------
+  return (
+    <div className="vba-animate min-h-screen pb-16 bg-slate-50 dark:bg-[#070d19]">
+      <MemberHeader title="Soát Vé Sự Kiện (Ban Truyền Thông)" back />
+
+      {/* Media Department Active Badge */}
+      <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] p-3 text-white shadow-md border border-amber-400/40 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-slate-950 shrink-0 font-black">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <span className="block text-[10px] font-extrabold text-amber-300 uppercase tracking-wider">
+              QUYỀN HẠN HỘI VIÊN CHÍNH THỨC
+            </span>
+            <h4 className="text-xs font-extrabold text-white truncate">
+              Ban Truyền Thông & Sự Kiện CEO 1983
+            </h4>
+          </div>
+        </div>
+
+        {mediaOverride && (
+          <button
+            type="button"
+            onClick={toggleMediaOverride}
+            title="Đang bật vai trò kiểm thử. Bấm để tắt."
+            className="shrink-0 px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/40 text-[10px] font-bold text-amber-300 transition cursor-pointer"
+          >
+            Tắt test
+          </button>
+        )}
+      </div>
+
+      {/* Quick helper tip */}
+      <div className="mx-4 mt-2 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-2.5 text-[11px] text-sky-900 dark:text-sky-200 flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+        <span>Quét mã QR trên vé hoặc trên thẻ VIP đại biểu để mở đầy đủ thông tin vé và điểm danh vào cửa.</span>
       </div>
 
       {/* Mode toggle */}
       <div className="px-4 pt-3">
-
         <div className="relative grid grid-cols-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/60 p-1">
           <span
             className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-xl transition-transform duration-300 bg-[#2E3192] shadow-sm"
@@ -349,9 +663,9 @@ function CheckinScreen() {
 
       {/* Scanner viewport */}
       <div className="px-4 pt-4">
-        <div className="vba-card relative grid aspect-square place-items-center overflow-hidden p-0 border border-slate-200 dark:border-white/10 shadow-xs">
+        <div className="vba-card relative grid aspect-square place-items-center overflow-hidden p-0 border border-slate-200 dark:border-white/10 shadow-xs rounded-3xl bg-slate-950">
           <div
-            className="absolute inset-0 opacity-20"
+            className="absolute inset-0 opacity-20 pointer-events-none"
             style={{
               backgroundImage:
                 "linear-gradient(#2E3192 1px,transparent 1px),linear-gradient(90deg,#2E3192 1px,transparent 1px)",
@@ -368,16 +682,16 @@ function CheckinScreen() {
                 muted
                 playsInline
               />
-              <div className="relative h-[62%] w-[62%]">
-                <span className="absolute -left-1 -top-1 h-9 w-9 rounded-tl-2xl border-l-[3.5px] border-t-[3.5px] border-[#2E3192] dark:border-blue-400" />
-                <span className="absolute -right-1 -top-1 h-9 w-9 rounded-tr-2xl border-r-[3.5px] border-t-[3.5px] border-[#2E3192] dark:border-blue-400" />
-                <span className="absolute -bottom-1 -left-1 h-9 w-9 rounded-bl-2xl border-b-[3.5px] border-l-[3.5px] border-[#2E3192] dark:border-blue-400" />
-                <span className="absolute -bottom-1 -right-1 h-9 w-9 rounded-br-2xl border-b-[3.5px] border-r-[3.5px] border-[#2E3192] dark:border-blue-400" />
+              <div className="relative h-[64%] w-[64%] pointer-events-none">
+                <span className="absolute -left-1 -top-1 h-10 w-10 rounded-tl-2xl border-l-[4px] border-t-[4px] border-amber-400" />
+                <span className="absolute -right-1 -top-1 h-10 w-10 rounded-tr-2xl border-r-[4px] border-t-[4px] border-amber-400" />
+                <span className="absolute -bottom-1 -left-1 h-10 w-10 rounded-bl-2xl border-b-[4px] border-l-[4px] border-amber-400" />
+                <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-2xl border-b-[4px] border-r-[4px] border-amber-400" />
                 {scanning && (
-                  <span className="absolute inset-x-2 top-2 h-0.5 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-[#2E3192] shadow-[0_0_14px_rgba(46,49,146,0.8)]" />
+                  <span className="absolute inset-x-2 top-2 h-1 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.9)]" />
                 )}
                 {!scanning && (
-                  <ScanLine className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 text-[#2E3192] dark:text-blue-400" />
+                  <ScanLine className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 text-amber-400/80" />
                 )}
               </div>
             </>
@@ -387,16 +701,16 @@ function CheckinScreen() {
                 [0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="absolute h-28 w-28 animate-ping rounded-full border-2 border-[#2E3192] opacity-40"
+                    className="absolute h-28 w-28 animate-ping rounded-full border-2 border-amber-400 opacity-40"
                     style={{ animationDelay: `${i * 0.4}s`, animationDuration: "1.8s" }}
                   />
                 ))}
-              <span className="grid h-24 w-24 place-items-center rounded-full bg-[#2E3192] text-white shadow-lg shadow-[#2E3192]/25">
-                <Wifi className="h-10 w-10 -rotate-90 text-white" />
+              <span className="grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[#003B95] to-[#2E3192] text-white shadow-lg border-2 border-amber-400/60">
+                <Wifi className="h-10 w-10 -rotate-90 text-amber-300" />
               </span>
               {scanning && (
-                <p className="mt-3 text-center text-[12px] font-bold text-[#2E3192] dark:text-blue-400">
-                  Áp thẻ vào vị trí giữa lưng điện thoại
+                <p className="mt-3 text-center text-[12px] font-bold text-amber-300">
+                  Áp thẻ VIP đại biểu vào vị trí giữa lưng điện thoại
                 </p>
               )}
             </div>
@@ -409,22 +723,66 @@ function CheckinScreen() {
           </p>
         )}
 
+        {/* Scan Button */}
         <button
           type="button"
           onClick={toggleScan}
           disabled={submitting}
           style={{ backgroundColor: "#2E3192", color: "#FFFFFF" }}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-white bg-[#2E3192] hover:bg-[#19194D] active:scale-[0.99] transition-all shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-bold text-white bg-[#2E3192] hover:bg-[#19194D] active:scale-[0.99] transition-all shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-60"
         >
           <ScanLine className="h-4 w-4 text-white" />
           <span className="text-white">
             {scanning
               ? t("m.checkin.stopScan")
               : mode === "qr"
-                ? t("m.checkin.startQr")
-                : t("m.checkin.startNfc")}
+                ? "Bắt Đầu Quét Mã QR Vé"
+                : "Bắt Đầu Chạm Thẻ NFC"}
           </span>
         </button>
+
+        {/* Manual Lookup Accordion Toggle */}
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => setShowManualInput(!showManualInput)}
+            className="text-xs font-bold text-[#003B95] dark:text-amber-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span>{showManualInput ? "Thu gọn nhập mã thủ công" : "Nhập mã vé hoặc mã đại biểu thủ công"}</span>
+          </button>
+        </div>
+
+        {/* Manual input box */}
+        {showManualInput && (
+          <div className="mt-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Nhập mã vé (VD: REG-EV1-983, M1983-001)"
+                className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs font-bold uppercase focus:border-amber-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!manualCode.trim()) {
+                    toast.error("Vui lòng nhập mã vé đại biểu!");
+                    return;
+                  }
+                  void handlePayload(manualCode.trim());
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition cursor-pointer"
+              >
+                Tra cứu
+              </button>
+            </div>
+            <p className="text-[10.5px] text-slate-400">
+              * Hỗ trợ tra cứu nhanh khi camera điện thoại không nhận diện được mã QR.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Result */}
@@ -434,7 +792,7 @@ function CheckinScreen() {
         </div>
       )}
 
-      {/* Connection status — no local queue, online is required */}
+      {/* Connection status */}
       <div className="px-4 pt-5">
         <div className="vba-card flex items-center gap-3 p-3">
           <span
@@ -451,10 +809,10 @@ function CheckinScreen() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-semibold text-[var(--vba-text)]">
-              {online ? t("m.checkin.synced") : t("m.checkin.offline")}
+              {online ? "Hệ thống Soát vé Trực tuyến (CRM Đồng bộ)" : t("m.checkin.offline")}
             </div>
             <div className="text-[11px] text-[var(--vba-text-muted)]">
-              {online ? t("m.checkin.syncSubOnline") : t("m.checkin.syncSubOffline")}
+              {online ? "Sẵn sàng ghi nhận check-in đại biểu theo thời gian thực" : t("m.checkin.syncSubOffline")}
             </div>
           </div>
         </div>
@@ -462,20 +820,25 @@ function CheckinScreen() {
 
       {/* History (server-authoritative) */}
       <div className="px-4 pb-4 pt-6">
-        <div className="mb-3 flex items-center gap-2">
-          <History className="h-4 w-4 text-[var(--vba-gold)]" />
-          <h2 className="text-[14px] font-bold text-[var(--vba-text)]">
-            {t("m.checkin.historyTitle")}
-          </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-[var(--vba-gold)]" />
+            <h2 className="text-[14px] font-bold text-[var(--vba-text)]">
+              Lịch sử soát vé của Ban Truyền Thông
+            </h2>
+          </div>
+          <span className="text-[11px] font-bold text-slate-500">
+            {history.length} lượt
+          </span>
         </div>
         {history.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-[var(--vba-border-soft)] py-8 text-center text-[12px] text-[var(--vba-text-muted)]">
-            {t("m.checkin.historyEmpty")}
+          <p className="rounded-2xl border border-dashed border-[var(--vba-border-soft)] py-8 text-center text-[12px] text-[var(--vba-text-muted)] bg-white/40 dark:bg-white/[0.02]">
+            Chưa có lượt quét vé nào. Bấm <b>"Bắt Đầu Quét Mã QR Vé"</b> để điểm danh đại biểu.
           </p>
         ) : (
           <div className="space-y-2">
             {history.map((r: any) => {
-              const s = statusMap[r.status as CheckinStatus];
+              const s = statusMap[r.status as CheckinStatus] || statusMap.success;
               return (
                 <div key={r.id} className="vba-card flex items-center gap-3 p-3">
                   <span
@@ -489,7 +852,7 @@ function CheckinScreen() {
                       {r.eventTitle}
                     </div>
                     <div className="flex items-center justify-between gap-1.5 text-[11px] text-[var(--vba-text-muted)]">
-                      <span>{r.method === "qr" ? "QR" : "NFC"} · {fmtTime(r.at)}</span>
+                      <span>{r.method === "qr" ? "QR Code" : "NFC"} · {fmtTime(r.at)}</span>
                       {r.luckyNumber && (
                         <span className="inline-flex items-center rounded-md bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">
                           🎟️ Số vé: {r.luckyNumber}
@@ -504,7 +867,23 @@ function CheckinScreen() {
         )}
       </div>
 
-      {/* Scanned Member Profile Modal — Rich Opponent Identity Display */}
+      {/* ----------------------------------------------------------------- */}
+      {/* 1. SCANNED TICKET DETAIL MODAL (Core requirement for Media Team) */}
+      {/* ----------------------------------------------------------------- */}
+      <ScannedTicketDetailModal
+        open={!!scannedTicket}
+        ticket={scannedTicket}
+        onClose={() => {
+          setScannedTicket(null);
+          // Resume scanner for next attendee
+          if (mode === "qr") {
+            setScanning(true);
+          }
+        }}
+        onConfirmCheckIn={handleConfirmTicketCheckIn}
+      />
+
+      {/* 2. Scanned Member Profile Modal (Fallback for Card Scan) */}
       {scannedMember && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-fade-in"

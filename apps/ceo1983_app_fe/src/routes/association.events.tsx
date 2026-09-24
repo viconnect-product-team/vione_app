@@ -227,6 +227,37 @@ export function formatEventDateBadge(dateVal?: string, fallbackIndex: number = 0
   return defaultDates[fallbackIndex % defaultDates.length];
 }
 
+export function makeTicketQrUrl(ticketData: {
+  ticketCode: string;
+  attendeeName: string;
+  attendeePhone?: string;
+  attendeeCompany?: string;
+  attendeePosition?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventLocation?: string;
+  ticketType?: string;
+  seatAssignment?: string;
+  luckyNumber?: string;
+  ticketCount?: number;
+}) {
+  const jsonPayload = JSON.stringify({
+    ticketCode: ticketData.ticketCode,
+    name: ticketData.attendeeName,
+    phone: ticketData.attendeePhone || "0988 888 888",
+    company: ticketData.attendeeCompany || "CLB Doanh Nhân CEO 1983",
+    position: ticketData.attendeePosition || "Hội viên chính thức",
+    eventTitle: ticketData.eventTitle,
+    eventDate: ticketData.eventDate,
+    eventLocation: ticketData.eventLocation,
+    ticketType: ticketData.ticketType || "VIP Standard Pass",
+    seatAssignment: ticketData.seatAssignment || "Bàn VIP 08 - Ghế 02",
+    luckyNumber: ticketData.luckyNumber || "#1983",
+    ticketCount: ticketData.ticketCount || 1,
+  });
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(jsonPayload)}`;
+}
+
 export const SECTIONS_CONFIG = [
   {
     key: "gala" as const,
@@ -986,6 +1017,10 @@ function EventsScreen() {
               const evIdx = events.findIndex((x) => x.id === regEvt.id);
               const invoiceCode = `REG-${regEvt.id.slice(0, 8).toUpperCase()}`;
               const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
+              const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+              const attendeePhone = member?.phone || "";
+              const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+              const attendeePosition = member?.title || "Hội viên chính thức";
               setTicketPassModal({
                 eventTitle: regEvt.title,
                 ticketCode: invoiceCode,
@@ -996,11 +1031,24 @@ function EventsScreen() {
                 date: regEvt.date || "",
                 time: regEvt.time || "",
                 location: regEvt.place || "Hà Nội",
-                attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-                attendeePhone: member?.phone || "",
-                attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-                attendeePosition: member?.title || "Hội viên chính thức",
-                qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`,
+                attendeeName,
+                attendeePhone,
+                attendeeCompany,
+                attendeePosition,
+                qrUrl: makeTicketQrUrl({
+                  ticketCode: invoiceCode,
+                  attendeeName,
+                  attendeePhone,
+                  attendeeCompany,
+                  attendeePosition,
+                  eventTitle: regEvt.title,
+                  eventDate: regEvt.date ? formatDisplayDate(regEvt.date) : "27/09/2026",
+                  eventLocation: regEvt.place || "Hà Nội",
+                  ticketType: "Standard VIP",
+                  seatAssignment: "Bàn VIP 08 - Ghế 02",
+                  luckyNumber: lucky,
+                  ticketCount: 1,
+                }),
               });
             } else {
               setEventCategory("registered");
@@ -1334,9 +1382,27 @@ function EventsScreen() {
                 const evIdx = events.findIndex((x) => x.id === e.id);
                 const invoiceCode = `REG-${e.id.slice(0, 8).toUpperCase()}`;
                 const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`;
                 const isFree = isEventFree(e);
                 const agenda = getEventAgenda(e, evIdx >= 0 ? evIdx : idx);
+                const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+                const attendeePhone = member?.phone || "";
+                const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+                const attendeePosition = member?.title || "Hội viên chính thức";
+                const seatAssignment = `Bàn VIP ${(evIdx >= 0 ? evIdx + 1 : idx + 1).toString().padStart(2, "0")} - Ghế 02`;
+                const qrUrl = makeTicketQrUrl({
+                  ticketCode: invoiceCode,
+                  attendeeName,
+                  attendeePhone,
+                  attendeeCompany,
+                  attendeePosition,
+                  eventTitle: e.title,
+                  eventDate: e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`,
+                  eventLocation: e.place || "Hà Nội",
+                  ticketType: isFree ? "Vé Miễn Phí (Standard)" : "VIP Standard Pass",
+                  seatAssignment,
+                  luckyNumber: lucky,
+                  ticketCount: 1,
+                });
 
                 const borderColors = [
                   "border-l-[#2E3192] border-t-blue-100 dark:border-t-blue-900/30",
@@ -1660,6 +1726,24 @@ function EventsScreen() {
                           const e = selectedEvent;
                           const invNo = `EV-${e.id.slice(0, 8).toUpperCase()}`;
                           const isFree = isEventFree(e);
+                          const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+                          const attendeePhone = member?.phone || "";
+                          const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+                          const attendeePosition = member?.title || "Hội viên chính thức";
+                          const ticketQr = makeTicketQrUrl({
+                            ticketCode: invNo,
+                            attendeeName,
+                            attendeePhone,
+                            attendeeCompany,
+                            attendeePosition,
+                            eventTitle: e.title,
+                            eventDate: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
+                            eventLocation: e.place || "Địa điểm tổ chức sự kiện",
+                            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
+                            seatAssignment: "Bàn VIP 08 - Ghế 02",
+                            luckyNumber: "#1983",
+                            ticketCount: 1,
+                          });
                           setTicketPassModal({
                             eventTitle: e.title,
                             ticketCode: invNo,
@@ -1670,11 +1754,11 @@ function EventsScreen() {
                             date: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
                             time: e.time || "Theo lịch trình sự kiện",
                             location: e.place || "Địa điểm tổ chức sự kiện",
-                            attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-                            attendeePhone: member?.phone || "",
-                            attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-                            attendeePosition: member?.title || "Hội viên chính thức",
-                            qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invNo)}`,
+                            attendeeName,
+                            attendeePhone,
+                            attendeeCompany,
+                            attendeePosition,
+                            qrUrl: ticketQr,
                           });
                         }}
                         style={{ color: "#ffffff" }}
@@ -2045,6 +2129,24 @@ function EventsScreen() {
                 onClick={() => {
                   const info = registeredSuccessInfo;
                   setRegisteredSuccessInfo(null);
+                  const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+                  const attendeePhone = member?.phone || "";
+                  const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+                  const attendeePosition = member?.title || "Hội viên chính thức";
+                  const ticketQr = makeTicketQrUrl({
+                    ticketCode: info.invoiceNo,
+                    attendeeName,
+                    attendeePhone,
+                    attendeeCompany,
+                    attendeePosition,
+                    eventTitle: info.eventTitle,
+                    eventDate: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
+                    eventLocation: info.event?.place || "Địa điểm tổ chức sự kiện",
+                    ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
+                    seatAssignment: "Bàn VIP 08 - Ghế 02",
+                    luckyNumber: info.luckyNumber || "#1983",
+                    ticketCount: info.ticketCount,
+                  });
                   setTicketPassModal({
                     eventTitle: info.eventTitle,
                     ticketCode: info.invoiceNo,
@@ -2055,11 +2157,11 @@ function EventsScreen() {
                     date: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
                     time: info.event?.time || "Theo lịch trình sự kiện",
                     location: info.event?.place || "Địa điểm tổ chức sự kiện",
-                    attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-                    attendeePhone: member?.phone || "",
-                    attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-                    attendeePosition: member?.title || "Hội viên chính thức",
-                    qrUrl: info.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(info.invoiceNo)}`,
+                    attendeeName,
+                    attendeePhone,
+                    attendeeCompany,
+                    attendeePosition,
+                    qrUrl: ticketQr,
                   });
                 }}
                 style={{ color: "#ffffff" }}

@@ -773,7 +773,6 @@ export function Ceo1983Landing() {
     fullName: "",
     phone: "",
     company: "",
-    revenue: "10-50",
     industry: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -834,7 +833,6 @@ export function Ceo1983Landing() {
           fullName: formData.fullName,
           phone: formData.phone,
           company: formData.company,
-          revenue: formData.revenue,
           industry: formData.industry,
           clubSlug: "ceo-1983",
         },
@@ -3844,24 +3842,6 @@ export function Ceo1983Landing() {
                     />
                   </div>
 
-                  <div>
-                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formRevenue}</label>
-                    <select
-                      value={formData.revenue}
-                      onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${themeClass(
-                        "bg-[#0B1224] border-[#D8B282]/30 text-white",
-                        "bg-white border-[#D8B282]/40 text-[#181512] shadow-xs",
-                        "bg-zinc-900 border-yellow-400 text-yellow-300"
-                      )
-                        }`}
-                    >
-                      <option value="under-10">{t.formRev1}</option>
-                      <option value="10-50">{t.formRev2}</option>
-                      <option value="50-200">{t.formRev3}</option>
-                      <option value="above-200">{t.formRev4}</option>
-                    </select>
-                  </div>
 
                   <div>
                     <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>{t.formIndustry}</label>

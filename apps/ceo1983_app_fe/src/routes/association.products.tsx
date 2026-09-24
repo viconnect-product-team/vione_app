@@ -405,6 +405,9 @@ function ProductsScreen() {
   const totalViews = useMemo(() => {
     return allProducts.reduce((sum, p) => sum + (p.views || 1), 0);
   }, [allProducts]);
+  const totalMarketplaceValue = useMemo(() => {
+    return allProducts.reduce((sum, p) => sum + (Number(p.memberPrice || p.price) || 0), 0);
+  }, [allProducts]);
 
   // B2B Company Storefront derived states
   const companyProducts = useMemo(() => {
@@ -525,6 +528,76 @@ function ProductsScreen() {
     }
     return Array.from(map.values()).sort((a, b) => b.count - a.count || b.totalViews - a.totalViews);
   }, [allProducts]);
+
+  // Nhắn tin trực tiếp cho người bán / công ty khi hỏi về sản phẩm (Requirement 13)
+  const handleMessageSeller = (p: MyProduct) => {
+    const sellerCode = (p as any).sellerCode || (p as any).sellerId || "";
+    const sellerName = (p as any).contactName || (p as any).sellerName || p.company || "Hội viên CLB CEO 1983";
+    navigate({
+      to: "/association/messages",
+      search: {
+        peerCode: sellerCode,
+        peerName: sellerName,
+        topic: `Tư vấn sản phẩm: ${p.name}`,
+      } as any,
+    });
+  };
+
+  // Quảng cáo sản phẩm công ty lung linh sang trọng (Requirement 4)
+  const [sponsoredAdIdx, setSponsoredAdIdx] = useState(0);
+  const [sponsoredAdHovered, setSponsoredAdHovered] = useState(false);
+
+  const sponsoredProducts = useMemo(() => {
+    if (allProducts.length > 0) {
+      return allProducts.slice(0, 5);
+    }
+    return [
+      {
+        id: "sp-default-1",
+        name: "Giải pháp ERP & Số hóa Quản trị Doanh nghiệp Toàn diện",
+        company: "Tập Đoàn Công Nghệ Uranus",
+        category: "Công nghệ & Phần mềm",
+        price: 45000000,
+        memberPrice: 38000000,
+        originalPrice: 55000000,
+        imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80",
+        description: "Tích hợp quản lý CRM, tài chính, chuỗi cung ứng và nhân sự trên nền tảng Cloud hiện đại.",
+        sellerName: "Phạm Văn Vũ",
+      },
+      {
+        id: "sp-default-2",
+        name: "Gói Dịch Vụ Tư Vấn Pháp Lý & Tái Cấu Trúc Doanh Nghiệp M&A",
+        company: "Viconnect Law & Partners",
+        category: "Tài chính & Đầu tư",
+        price: 30000000,
+        memberPrice: 24000000,
+        originalPrice: 40000000,
+        imageUrl: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800&auto=format&fit=crop&q=80",
+        description: "Bảo trợ pháp lý, rà soát hợp đồng thương mại quốc tế và xúc tiến đầu tư an toàn cho CEO.",
+        sellerName: "Nguyễn Minh Châu",
+      },
+      {
+        id: "sp-default-3",
+        name: "Hệ Thống Điện Mặt Trời Áp Mái Cho Nhà Xưởng & Khu Công Nghiệp",
+        company: "Green Energy Corporation",
+        category: "Sản xuất & Công nghiệp",
+        price: 250000000,
+        memberPrice: 215000000,
+        originalPrice: 280000000,
+        imageUrl: "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop&q=80",
+        description: "Tiết kiệm 40% chi phí điện năng, đạt chứng chỉ Net-Zero xanh cho doanh nghiệp xuất khẩu.",
+        sellerName: "Trần Đức Nam",
+      },
+    ] as unknown as MyProduct[];
+  }, [allProducts]);
+
+  useEffect(() => {
+    if (sponsoredAdHovered || sponsoredProducts.length <= 1) return;
+    const timer = setInterval(() => {
+      setSponsoredAdIdx((prev) => (prev + 1) % sponsoredProducts.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [sponsoredAdHovered, sponsoredProducts.length]);
 
   const startEditProduct = (p: MyProduct, e?: React.MouseEvent) => {
     if (e) {
@@ -769,7 +842,7 @@ function ProductsScreen() {
             <Link
               to="/association/perks"
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-2.5 bottom-2.5 z-10 flex items-center gap-1 rounded-full bg-amber-400/90 hover:bg-amber-400 backdrop-blur-md text-slate-950 px-2.5 py-0.5 text-[9.5px] font-black shadow-md transition-transform hover:scale-105 border border-amber-300/40"
+              className="absolute right-2.5 bottom-2.5 z-10 flex items-center gap-1 rounded-full bg-[#003B95] text-white px-2.5 py-0.5 text-[9.5px] font-bold shadow-xs transition-transform hover:scale-105 border border-white/20"
               title="Ưu đãi độc quyền liên kết App Hiệp Hội"
             >
               <span>ƯU ĐÃI VIP</span>
@@ -789,25 +862,25 @@ function ProductsScreen() {
                     industry: p.category,
                   });
                 }}
-                className="truncate uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 hover:text-[#2E3192] dark:hover:text-amber-400 cursor-pointer transition-colors"
+                className="truncate uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 hover:text-[#003B95] dark:hover:text-blue-400 cursor-pointer transition-colors"
                 title={`Xem gian hàng ${p.company || "CLB CEO 1983"}`}
               >
                 {p.company || "CLB CEO 1983"}
               </span>
-              <span className="shrink-0 text-amber-600 dark:text-amber-400 font-medium">
+              <span className="shrink-0 text-[#003B95] dark:text-blue-400 font-medium">
                 {p.sellerName || "Hội viên"}
               </span>
             </div>
 
             {/* Product Title */}
-            <h4 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#2E3192] dark:group-hover:text-amber-400 transition-colors mb-2.5 min-h-[34px]">
+            <h4 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors mb-2.5 min-h-[34px]">
               {p.name}
             </h4>
 
             {/* Price Section */}
             <div className="space-y-0.5 mb-2.5">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-sm sm:text-base font-black text-rose-600 dark:text-amber-400">
+                <span className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
                   {formatSmartProductPrice(p.memberPrice || p.price)}
                 </span>
                 {p.originalPrice && p.originalPrice !== p.memberPrice && (
@@ -836,10 +909,10 @@ function ProductsScreen() {
               <button
                 type="button"
                 onClick={() => handleOpenProductQuotes(p)}
-                className="flex-1 h-8.5 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-xs font-bold text-amber-800 dark:text-amber-300 text-center flex items-center justify-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer"
+                className="flex-1 h-8.5 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-bold text-[#003B95] dark:text-blue-300 text-center flex items-center justify-center gap-1.5 hover:bg-blue-100 transition cursor-pointer"
                 title="Xem danh sách người quan tâm & yêu cầu báo giá"
               >
-                <Users className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
                 <span className="truncate">Người quan tâm</span>
               </button>
               <button
@@ -855,11 +928,22 @@ function ProductsScreen() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMessageSeller(p);
+                }}
+                className="h-8.5 w-8.5 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 grid place-items-center transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
+                title="Nhắn tin cho công ty / người bán sản phẩm này"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => handleOpenQuoteModal(p)}
-                className="flex-1 h-8.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-black shadow-xs hover:brightness-105 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Nhận báo giá VIP</span>
-                <ArrowRight className="h-3.5 w-3.5 text-slate-950 shrink-0" />
+                <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
               </button>
               {isAdmin && (
                 <button
@@ -991,9 +1075,9 @@ function ProductsScreen() {
                         setFormCompany(viewingCompany.name);
                         setPostModalOpen(true);
                       }}
-                      className="h-9 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+                      className="h-9 px-3.5 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-4 w-4 text-white" />
                       <span>Thêm sản phẩm</span>
                     </button>
                   </>
@@ -1007,9 +1091,9 @@ function ProductsScreen() {
                         toast.info("Gian hàng hiện chưa có sản phẩm để báo giá.");
                       }
                     }}
-                    className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+                    className="h-9 px-4 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                   >
-                    <Mail className="h-4 w-4" />
+                    <Mail className="h-4 w-4 text-white" />
                     <span>Yêu cầu báo giá VIP</span>
                   </button>
                 )}
@@ -1223,6 +1307,17 @@ function ProductsScreen() {
                             </button>
                             <button
                               type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMessageSeller(p);
+                              }}
+                              className="h-9 w-9 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 dark:hover:bg-amber-500 dark:hover:text-slate-950 text-slate-700 dark:text-slate-200 grid place-items-center transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
+                              title="Nhắn tin cho công ty / người bán"
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleOpenQuoteModal(p)}
                               className="flex-1 h-9 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                             >
@@ -1254,42 +1349,55 @@ function ProductsScreen() {
             back
           />
 
-      {/* KPI / Statistics Bar (Tổng đang có, đã quan tâm, đã xem) */}
+      {/* KPI / Statistics Bar: Bố trí tổng số lượng & tổng giá trị trong vba-card theo phong cách trung tính hiện đại */}
       <div className="px-4 pt-3">
-        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs">
-          <div className="text-center border-r border-slate-100 dark:border-slate-800 pr-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              {isEn ? "Total Products" : "Tổng sản phẩm"}
+        <div className="vba-card rounded-2xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
+                {isEn ? "Marketplace Overview" : "Thống Kê Gian Hàng & Sản Phẩm"}
+              </span>
             </div>
-            <div className="mt-1 text-lg font-black text-amber-500">
-              {totalProducts}
-            </div>
-            <div className="text-[9.5px] text-slate-500 dark:text-slate-400">
-              {isEn ? "Live on market" : "Đang có trên sàn"}
-            </div>
+            <span className="text-[10px] text-slate-400 font-medium">
+              CLB CEO 1983
+            </span>
           </div>
 
-          <div className="text-center border-r border-slate-100 dark:border-slate-800 px-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              {isEn ? "Interested" : "Đã quan tâm"}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* 1. Tổng số lượng sản phẩm */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
+              <div>
+                <div className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400">
+                  {isEn ? "Total Products" : "Tổng số lượng"}
+                </div>
+                <div className="mt-0.5 text-xl font-black text-slate-900 dark:text-white font-mono">
+                  {totalProducts} <span className="text-xs font-semibold text-slate-400">{isEn ? "items" : "sản phẩm"}</span>
+                </div>
+                <span className="text-[9.5px] text-slate-400">{isEn ? "Live on market" : "Đang giao dịch trên sàn"}</span>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                <Package className="h-5 w-5" />
+              </div>
             </div>
-            <div className="mt-1 text-lg font-black text-rose-500">
-              {totalInterested}
-            </div>
-            <div className="text-[9.5px] text-slate-500 dark:text-slate-400">
-              {isEn ? "Quote requests" : "Yêu cầu báo giá"}
-            </div>
-          </div>
 
-          <div className="text-center pl-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              {isEn ? "Views" : "Đã xem"}
-            </div>
-            <div className="mt-1 text-lg font-black text-emerald-500">
-              {totalViews}
-            </div>
-            <div className="text-[9.5px] text-slate-500 dark:text-slate-400">
-              {isEn ? "Store visits" : "Lượt truy cập"}
+            {/* 2. Tổng giá trị gian hàng */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
+              <div>
+                <div className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400">
+                  {isEn ? "Total Value" : "Tổng giá trị"}
+                </div>
+                <div className="mt-0.5 text-xl font-black text-slate-900 dark:text-white font-mono">
+                  {formatSmartProductPrice(totalMarketplaceValue)}
+                </div>
+                <span className="text-[9.5px] text-slate-400">{isEn ? "Catalog value" : "Giá niêm yết hội viên"}</span>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5" />
+              </div>
             </div>
           </div>
         </div>
@@ -1382,10 +1490,10 @@ function ProductsScreen() {
         <button
           type="button"
           onClick={() => setWishlistCartOpen(true)}
-          className="relative h-10 px-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/40 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1.5 text-xs font-bold transition active:scale-95 cursor-pointer shrink-0 shadow-xs"
+          className="relative h-10 px-3 rounded-2xl bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 flex items-center gap-1.5 text-xs font-bold transition active:scale-95 cursor-pointer shrink-0 shadow-2xs"
           title="Giỏ hàng sản phẩm quan tâm"
         >
-          <ShoppingCart className="h-4.5 w-4.5 text-amber-500" />
+          <ShoppingCart className="h-4.5 w-4.5 text-[#003B95] dark:text-blue-400" />
           <span className="hidden sm:inline">Quan tâm</span>
           {interestedIds.length > 0 && (
             <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-black grid place-items-center animate-pulse">
@@ -1394,14 +1502,14 @@ function ProductsScreen() {
           )}
         </button>
 
-        {/* Right: Filter Icon & Post Product (Requirement 4) */}
+        {/* Right: Filter Icon & Post Product */}
         <div className="relative flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setFilterMenuOpen(!filterMenuOpen)}
             className={`h-10 w-10 rounded-2xl grid place-items-center transition cursor-pointer border ${
               filterMenuOpen || sortMode !== "newest"
-                ? "bg-amber-500 text-white border-amber-500 shadow-sm"
+                ? "bg-[#003B95] text-white border-[#003B95] shadow-xs"
                 : "bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:bg-slate-200"
             }`}
             title="Bộ lọc & Sắp xếp"
@@ -1430,12 +1538,12 @@ function ProductsScreen() {
                   }}
                   className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between cursor-pointer ${
                     sortMode === s.id
-                      ? "bg-[#2E3192]/10 text-[#2E3192] dark:text-amber-400 font-bold"
+                      ? "bg-[#003B95]/10 text-[#003B95] dark:text-blue-400 font-bold"
                       : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <span>{s.label}</span>
-                  {sortMode === s.id && <Check className="h-3.5 w-3.5 text-amber-500" />}
+                  {sortMode === s.id && <Check className="h-3.5 w-3.5 text-[#003B95]" />}
                 </button>
               ))}
             </div>
@@ -1444,10 +1552,10 @@ function ProductsScreen() {
           <button
             type="button"
             onClick={() => setPostModalOpen(true)}
-            className="h-10 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 flex items-center gap-1.5 text-[12px] font-black shadow-md hover:brightness-105 transition active:scale-95 cursor-pointer whitespace-nowrap"
+            className="h-10 px-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002b6e] text-white flex items-center gap-1.5 text-[12px] font-bold shadow-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
             title="Đăng sản phẩm"
           >
-            <Plus className="h-4 w-4 text-slate-950 stroke-[3]" />
+            <Plus className="h-4 w-4 text-white stroke-[2.5]" />
             <span className="hidden sm:inline">Đăng SP</span>
           </button>
         </div>
@@ -1464,7 +1572,7 @@ function ProductsScreen() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                 active
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
+                  ? "bg-[#003B95] text-white font-bold shadow-xs"
                   : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5"
               }`}
             >
@@ -1473,7 +1581,7 @@ function ProductsScreen() {
                 <span
                   className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
                     active
-                      ? "bg-slate-950/20 text-slate-950"
+                      ? "bg-white/20 text-white"
                       : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   }`}
                 >
@@ -1485,84 +1593,141 @@ function ProductsScreen() {
         })}
       </div>
 
-      {/* ── PR SECTION: VIDEO SHOWCASE REEL & AFFILIATE B2B 5.0 (KHÔNG PHÂN TRANG) ── */}
+      {/* ── SPONSOR B2B AD SHOWCASE CAROUSEL: Nền sáng sang trọng hiện đại, KHÔNG DÙNG NỀN TỐI ── */}
       <div className="px-4 pt-3">
-        <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-lg p-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            {/* Video Pitch Showcase */}
-            <div className="relative aspect-[16/9] sm:aspect-[4/3] w-full sm:w-48 rounded-2xl overflow-hidden bg-black/60 shrink-0 border border-white/20 shadow-md group">
-              <video
-                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-                poster="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&auto=format&fit=crop&q=80"
-                autoPlay
-                loop
-                muted={isVideoMuted}
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                <span>CEO Live</span>
-              </div>
-              <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIsVideoMuted(!isVideoMuted)}
-                  className="h-6 w-6 rounded-full bg-black/70 hover:bg-black text-white grid place-items-center transition cursor-pointer"
-                  title={isVideoMuted ? "Bật âm thanh" : "Tắt âm thanh"}
-                >
-                  {isVideoMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                </button>
-              </div>
-            </div>
+        <div
+          onMouseEnter={() => setSponsoredAdHovered(true)}
+          onMouseLeave={() => setSponsoredAdHovered(false)}
+          className="relative overflow-hidden rounded-3xl border border-blue-200/90 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/60 dark:bg-[#131a27] text-slate-900 dark:text-white shadow-md p-4 sm:p-5 transition-all duration-300"
+        >
+          {/* Subtle Ambient Shimmer */}
+          <div className="absolute -top-12 -right-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Content & Affiliate Pitch */}
-            <div className="min-w-0 flex-1 space-y-2 text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-blue-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
-                  Affiliate 15% - 25%
-                </span>
-                <span className="text-[11px] text-blue-200 font-semibold flex items-center gap-1">
-                  <BadgeCheck className="h-3.5 w-3.5 text-amber-400" />
-                  Bảo trợ CLB CEO 1983
-                </span>
+          {/* Carousel Slide Card */}
+          {(() => {
+            const currentAd = sponsoredProducts[sponsoredAdIdx] || sponsoredProducts[0];
+            if (!currentAd) return null;
+            const companyName = currentAd.company || "Doanh nghiệp thành viên CEO 1983";
+            const imgUrl = resolveMediaUrl(currentAd.imageUrl) || currentAd.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80";
+
+            return (
+              <div className="relative z-10 flex flex-col md:flex-row items-stretch md:items-center gap-4 sm:gap-6">
+                {/* Product Ad Visual Showcase */}
+                <div className="relative aspect-[16/9] sm:aspect-[4/3] w-full md:w-56 rounded-2xl overflow-hidden bg-slate-900 shrink-0 border-2 border-blue-200/90 dark:border-blue-800 shadow-md group">
+                  <img
+                    key={currentAd.id + sponsoredAdIdx}
+                    src={imgUrl}
+                    alt={currentAd.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/20" />
+                  <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-[#003B95] px-2.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white shadow-xs">
+                    <Sparkles className="h-3 w-3" />
+                    Quảng Cáo Doanh Nghiệp
+                  </span>
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[11px] font-black text-white">
+                    <span className="truncate">{formatSmartProductPrice(currentAd.memberPrice || currentAd.price)}</span>
+                    <span className="text-[10px] text-white/80 font-normal">Đặc quyền VIP</span>
+                  </div>
+                </div>
+
+                {/* Content & Direct Inquiry */}
+                <div className="min-w-0 flex-1 space-y-2.5">
+                  {/* Company & Sponsor Header */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-blue-100 text-[#003B95] border border-blue-200 grid place-items-center font-bold text-xs shrink-0">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs sm:text-sm font-extrabold text-[#003B95] dark:text-blue-400 truncate max-w-[200px] sm:max-w-xs block">
+                          {companyName}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {currentAd.category || "Doanh nghiệp thành viên CLB CEO 1983"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Carousel navigation counter */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                        0{sponsoredAdIdx + 1} / 0{sponsoredProducts.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSponsoredAdIdx((prev) => (prev - 1 + sponsoredProducts.length) % sponsoredProducts.length)}
+                        className="h-6 w-6 rounded-full border border-slate-300 dark:border-slate-700 grid place-items-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        title="Trước"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSponsoredAdIdx((prev) => (prev + 1) % sponsoredProducts.length)}
+                        className="h-6 w-6 rounded-full border border-slate-300 dark:border-slate-700 grid place-items-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        title="Sau"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Product Title */}
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug line-clamp-2 hover:text-[#003B95] transition-colors">
+                    {currentAd.name}
+                  </h3>
+
+                  {/* Product description */}
+                  {currentAd.description && (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                      {currentAd.description}
+                    </p>
+                  )}
+
+                  {/* Actions: Nhắn tin cho người bán & Xem gian hàng */}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleMessageSeller(currentAd)}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 text-white" />
+                      <span>Nhắn tin hỏi sản phẩm</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewingCompany({
+                          name: companyName,
+                          bio: currentAd.description || "",
+                          avatarUrl: imgUrl,
+                          industry: currentAd.category,
+                        });
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Store className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" />
+                      <span>Xem gian hàng</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.info("Để đăng ký chạy quảng cáo nổi bật cho sản phẩm doanh nghiệp, Quý hội viên vui lòng liên hệ Ban Thư Ký CLB CEO 1983.");
+                      }}
+                      className="text-[11px] text-[#003B95] dark:text-blue-400 hover:underline flex items-center gap-1 ml-auto cursor-pointer font-semibold"
+                    >
+                      <span>Đăng ký quảng cáo</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-sm sm:text-base font-black text-white leading-snug">
-                Sàn Thương Mại & Tiếp Thị Liên Kết 5.0
-              </h3>
-              <p className="text-xs text-blue-100/80 leading-relaxed line-clamp-2">
-                Hội viên chia sẻ sản phẩm, nhận hoa hồng kết nối tức thì và tiếp cận mạng lưới 100+ doanh nghiệp hàng đầu.
-              </p>
-              <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                <Link
-                  to="/association/perks"
-                  className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-blue-950 text-xs font-bold shadow-xs transition active:scale-95 flex items-center gap-1"
-                >
-                  <Sparkles className="h-3 w-3 text-blue-950" />
-                  <span>Xem Ưu Đãi VIP</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: "CEO 1983 Marketplace",
-                        text: "Khám phá Sàn Thương Mại & Affiliate CLB CEO 1983",
-                        url: window.location.href,
-                      }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                      toast.success("Đã sao chép liên kết Marketplace!");
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition active:scale-95 flex items-center gap-1 cursor-pointer"
-                >
-                  <Share2 className="h-3 w-3" />
-                  <span>Chia sẻ link</span>
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -1651,7 +1816,7 @@ function ProductsScreen() {
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 p-3.5 sm:p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/15 text-amber-500">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-50 text-[#003B95] dark:bg-blue-900/30 dark:text-blue-300">
                     <Flame className="h-4 w-4" />
                   </span>
                   <div>
@@ -1663,7 +1828,7 @@ function ProductsScreen() {
                     </p>
                   </div>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-bold font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#003B95] dark:text-blue-300 text-xs font-bold font-mono">
                   {newestProducts.length} SP
                 </span>
               </div>
@@ -1764,10 +1929,10 @@ function ProductsScreen() {
             </div>
 
             {/* SECTION 3: DOANH NGHIỆP / CÔNG TY NỔI BẬT NHẤT (1 người đại diện cho 1 công ty dùng) */}
-            <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-white dark:via-slate-900 to-amber-500/10 p-3.5 sm:p-4 shadow-sm space-y-3">
+            <div className="rounded-3xl border border-blue-200 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/50 via-white dark:via-slate-900 to-indigo-50/30 p-3.5 sm:p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#003B95] text-white shadow-xs">
                     <Building2 className="h-4 w-4" />
                   </span>
                   <div>
@@ -1779,7 +1944,7 @@ function ProductsScreen() {
                     </p>
                   </div>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-[#003B95] dark:text-blue-300 text-xs font-bold font-mono">
                   {featuredCompanies.length} Công ty
                 </span>
               </div>
@@ -2573,9 +2738,9 @@ function ProductsScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-[#232677] to-[#2E3192] p-4 text-white flex items-center justify-between shrink-0">
+            <div className="relative bg-gradient-to-r from-[#002087] to-[#003B95] p-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-400 text-blue-950 font-bold shadow-xs">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 text-white border border-white/30 backdrop-blur-md font-bold shadow-xs">
                   <ShoppingCart className="h-5 w-5" />
                 </span>
                 <div>

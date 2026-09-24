@@ -33,6 +33,7 @@ import {
   Coins,
   LayoutGrid,
   List,
+  Package,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -42,8 +43,10 @@ import {
   listMyOpportunities,
   expressInterest,
   getMyMember,
+  listMyProducts,
   type MyOpportunity,
   type MyMember,
+  type MyProduct,
 } from "@/lib/member-app.functions";
 import { uploadChatAttachment } from "@/lib/upload-media";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -110,6 +113,40 @@ function OpportunitiesScreen() {
     loading,
     reload,
   } = useServerData<MyOpportunity[]>(() => fetchOpps(), []);
+
+  const fetchProducts = useServerFn(listMyProducts);
+  const { data: products = [] } = useServerData<MyProduct[]>(() => fetchProducts(), []);
+
+  // Thống kê Realtime: Tổng số cơ hội, Tổng số sản phẩm, Tổng giá trị (Requirement 3)
+  const totalOppCount = opportunities?.length || 0;
+  const totalProdCount = products?.length || 0;
+  const totalOpportunitiesValue = useMemo(() => {
+    let sum = 0;
+    (opportunities || []).forEach((o) => {
+      if (o.budgetMax) {
+        sum += Number(o.budgetMax) || 0;
+      } else if (o.budgetMin) {
+        sum += Number(o.budgetMin) || 0;
+      } else if (o.value) {
+        const str = String(o.value).trim().toLowerCase();
+        const num = parseFloat(str.replace(/[^\d.-]/g, ""));
+        if (!isNaN(num)) {
+          if (str.includes("tỷ") || str.includes("ty")) {
+            sum += num * 1_000_000_000;
+          } else if (str.includes("tr") || str.includes("trieu")) {
+            sum += num * 1_000_000;
+          } else {
+            sum += num;
+          }
+        }
+      }
+    });
+    (products || []).forEach((p) => {
+      const price = Number(p.memberPrice || p.price) || 0;
+      sum += price;
+    });
+    return sum;
+  }, [opportunities, products]);
 
   const [mounted, setMounted] = useState(false);
 
@@ -555,6 +592,60 @@ function OpportunitiesScreen() {
         }
       />
 
+      {/* ── REALTIME STATS BAR (Bố trí tổng số lượng & tổng giá trị trong vba-card theo phong cách trung tính hiện đại) ── */}
+      <div className="px-4 pt-3.5 pb-1">
+        <div className="vba-card rounded-2xl p-4 shadow-xs">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
+                Thống Kê Cơ Hội Giao Thương
+              </span>
+            </div>
+            <span className="text-[10.5px] text-slate-400 font-medium">
+              CLB CEO 1983
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* 1. Tổng số lượng cơ hội */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Tổng số lượng
+                </div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  {totalOppCount} <span className="text-xs font-semibold text-slate-400">cơ hội</span>
+                </div>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Đang kết nối</span>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#2E3192] dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Handshake className="h-5 w-5" />
+              </div>
+            </div>
+
+            {/* 2. Tổng giá trị */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Tổng giá trị
+                </div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
+                  {formatSmartPrice(totalOpportunitiesValue)}
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">Quy mô luân chuyển</span>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* SECTION 1: CƠ HỘI NỔI BẬT SPOTLIGHT CAROUSEL (TỰ ĐỘNG CHUYỂN ẢNH 2 GIÂY/LẦN) */}
       <div className="px-4 pt-3">
         <div className="flex items-center justify-between mb-2">
@@ -611,7 +702,7 @@ function OpportunitiesScreen() {
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
               onClick={() => handleOpenOppDetail(cur)}
-              className="relative overflow-hidden rounded-3xl border border-amber-400/40 bg-slate-900 shadow-xl transition-all duration-300 cursor-pointer group"
+              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md transition-all duration-300 cursor-pointer group"
             >
               {/* Image Container with 2s crossfade / hover zoom */}
               <div className="relative h-56 sm:h-64 w-full overflow-hidden">
@@ -625,12 +716,12 @@ function OpportunitiesScreen() {
 
                 {/* Floating Top Bar */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-slate-950 shadow-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-400 border border-amber-400/30 shadow-md">
                     <Sparkles className="h-3.5 w-3.5" />
                     {normalizeTag(cur.tag)}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10.5px] font-bold text-amber-300 border border-amber-400/30">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10.5px] font-bold text-amber-300 border border-white/10">
                       <Flame className="h-3.5 w-3.5 text-amber-400" />
                       {formatSmartPrice(cur.value)}
                     </span>
@@ -691,92 +782,7 @@ function OpportunitiesScreen() {
         })()}
       </div>
 
-      {/* SECTION 2: B2B LIVE DEAL RADAR TERMINAL (THIẾT KẾ ĐỘT PHÁ, VƯỢT THỜI ĐẠI) */}
-      <div className="px-4 pt-3">
-        <div className="relative overflow-hidden rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0c1427] via-[#101b35] to-[#070d1e] p-4 sm:p-5 text-white shadow-2xl">
-          {/* Holographic corner glows */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Radar Header with Live Beacon */}
-          <div className="relative z-10 flex items-center justify-between pb-3 border-b border-white/10 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 font-mono">
-                B2B DEAL RADAR 5.0
-              </span>
-              <span className="hidden sm:inline text-slate-500">•</span>
-              <span className="hidden sm:inline text-[11px] text-slate-300 font-medium">
-                Sàn kết nối giao thương tức thì
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-400/15 border border-amber-300/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
-              <Sparkles className="h-3 w-3 text-amber-400" />
-              <span>Bảo trợ CLB CEO 1983</span>
-            </div>
-          </div>
-
-          {/* Dynamic Metrics Pillars */}
-          <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3.5">
-            {/* Pillar 1 */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:border-amber-400/40 transition group">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block group-hover:text-amber-300 transition-colors">
-                Quy mô Deals
-              </span>
-              <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono mt-0.5">
-                &gt; 50 TỶ
-              </p>
-              <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-0.5 mt-0.5">
-                <span>✦</span> Thẩm định qua CRM
-              </span>
-            </div>
-
-            {/* Pillar 2 */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:border-blue-400/40 transition group">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block group-hover:text-blue-300 transition-colors">
-                Cơ hội đang mở
-              </span>
-              <p className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">
-                {allOpportunities.length || 12}
-              </p>
-              <span className="text-[10px] text-blue-300 font-medium flex items-center gap-0.5 mt-0.5">
-                <span>✦</span> 100% Hội viên thật
-              </span>
-            </div>
-
-            {/* Pillar 3 */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:border-emerald-400/40 transition group">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block group-hover:text-emerald-300 transition-colors">
-                Mạng lưới liên kết
-              </span>
-              <p className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-0.5">
-                {Math.max(28, allOpportunities.length * 3)}+
-              </p>
-              <span className="text-[10px] text-slate-400 font-medium flex items-center gap-0.5 mt-0.5">
-                <span>✦</span> Doanh nghiệp B2B
-              </span>
-            </div>
-
-            {/* Pillar 4 */}
-            <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:border-rose-400/40 transition group">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block group-hover:text-rose-300 transition-colors">
-                Tỷ lệ khớp lệnh
-              </span>
-              <p className="text-xl sm:text-2xl font-black text-rose-400 font-mono mt-0.5">
-                92%
-              </p>
-              <span className="text-[10px] text-slate-400 font-medium flex items-center gap-0.5 mt-0.5">
-                <span>✦</span> Xúc tiến chủ động
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION 3: TÌM KIẾM & PHÂN LOẠI */}
+      {/* SECTION 2: TÌM KIẾM & PHÂN LOẠI */}
       <div className="px-4 pt-4">
         <div className="flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
@@ -868,7 +874,7 @@ function OpportunitiesScreen() {
               <div
                 key={o.id}
                 onClick={() => handleOpenOppDetail(o)}
-                className="flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-xs hover:border-amber-400/50 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white dark:bg-[#131a26] group"
+                className="vba-card flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#2E3192]/40 dark:hover:border-slate-700 hover:shadow-md transition-all duration-300 cursor-pointer group"
               >
                 <div>
                   {/* Poster Image */}
@@ -945,7 +951,7 @@ function OpportunitiesScreen() {
               <div
                 key={o.id}
                 onClick={() => handleOpenOppDetail(o)}
-                className="flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-sm hover:border-amber-400/60 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white dark:bg-[#131a26] group"
+                className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#2E3192]/40 dark:hover:border-slate-700 hover:shadow-md transition-all duration-300 cursor-pointer group"
               >
                 {/* 1. POSTER BANNER ON TOP */}
                 <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">

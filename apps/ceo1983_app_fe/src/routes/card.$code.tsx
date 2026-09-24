@@ -18,8 +18,10 @@ import {
   MessageCircle,
   Crown,
   Check,
+  Facebook,
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
+import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
 import { getPublicCard, type PublicCard } from "@/lib/card.functions";
 import { toast } from "sonner";
 
@@ -214,20 +216,14 @@ function PublicCardView() {
   const hasEmail = Boolean(member.email && !member.email.includes("ẩn"));
   const cleanPhone = hasPhone ? member.phone!.replace(/[^0-9+]/g, "") : "";
 
-  // Dynamic vCard download for 1-tap phone address book import
+  // Dynamic vCard download: CHỈ LƯU TÊN VÀ SỐ ĐIỆN THOẠI (Bỏ chức vụ, bỏ mô tả theo yêu cầu)
   const handleDownloadVCard = () => {
     try {
       const vcardContent = [
         "BEGIN:VCARD",
         "VERSION:3.0",
         `FN:${primaryName}`,
-        `ORG:${secondaryCompany}`,
-        `TITLE:${primaryTitle}`,
-        hasPhone ? `TEL;TYPE=CELL:${member.phone}` : "",
-        hasEmail ? `EMAIL;TYPE=WORK:${member.email}` : "",
-        member.website ? `URL:${member.website}` : "URL:https://ceo1983club.com",
-        member.address ? `ADR;TYPE=WORK:;;${member.address};;;;` : "",
-        `NOTE:Hội viên chính thức CLB Doanh Nhân CEO 1983 - Mã: ${code}`,
+        hasPhone ? `TEL;TYPE=CELL:${cleanPhone || member.phone}` : "",
         "END:VCARD",
       ]
         .filter(Boolean)
@@ -342,198 +338,80 @@ function PublicCardView() {
           </div>
         </header>
 
-        {/* 3D Interactive Card Container */}
-        <div className="relative [perspective:1200px] w-full aspect-[16/10] sm:aspect-[1.7/1] my-2 select-none">
-          <div
-            className={`relative w-full h-full duration-700 [transform-style:preserve-3d] transition-transform rounded-2xl shadow-2xl cursor-pointer ${
-              isFlipped ? "[transform:rotateY(180deg)]" : ""
-            }`}
-            onClick={() => setIsFlipped(!isFlipped)}
-            title="Bấm để lật thẻ"
-          >
-            {/* ================= FRONT SIDE ================= */}
-            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] flex flex-col justify-between p-5 border border-amber-400/40 bg-gradient-to-br from-[#00224F] via-[#003B95] to-[#0A192F] text-white shadow-xl">
-              {/* Background luxury elements */}
-              <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" />
-              <div className="absolute -left-12 -bottom-12 h-44 w-44 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.08),transparent_50%)] pointer-events-none" />
-
-              {/* Card Top Brand & Mini QR */}
-              <div className="relative z-10 flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <img
-                    src={appIcon}
-                    alt="CLB CEO 1983"
-                    className="h-11 w-11 rounded-xl shadow-md border border-amber-400/40 bg-white/10 p-0.5 object-contain"
-                    width={44}
-                    height={44}
-                  />
-                  <div className="leading-tight">
-                    <div className="text-[12px] font-black tracking-wider uppercase text-white drop-shadow-xs">
-                      CLB DOANH NHÂN CEO 1983
-                    </div>
-                    <div className="text-[8.5px] font-bold tracking-widest uppercase text-amber-300 mt-0.5">
-                      NÂNG TẦM GIÁ TRỊ • TIÊN PHONG KẾT NỐI
-                    </div>
-                  </div>
-                </div>
-
-                {/* QR Code on front of card */}
-                <div className="rounded-xl bg-white p-1.5 shadow-md border border-amber-400/30 shrink-0">
-                  <QrCanvas value={cardQrUrl} size={56} />
-                </div>
-              </div>
-
-              {/* Badge */}
-              <div className="relative z-10 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 border border-amber-400/50 px-2.5 py-0.5 text-[10px] font-black text-amber-300 shadow-xs">
-                  <Crown className="h-3 w-3 text-amber-400" />
-                  {t("memberCard")}
-                </span>
-                <span className="text-[10px] font-bold text-amber-200/80">
-                  {isCompany ? t("company") : t("individual")}
-                </span>
-              </div>
-
-              {/* Member Profile Main */}
-              <div className="relative z-10 flex items-center gap-3.5 my-auto">
-                {resolvedPhoto ? (
-                  <img
-                    src={resolvedPhoto}
-                    alt={primaryName}
-                    className="h-15 w-15 shrink-0 rounded-full border-2 border-amber-400 object-cover shadow-lg bg-slate-800"
-                    width={60}
-                    height={60}
-                  />
-                ) : (
-                  <div className="flex h-15 w-15 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-gradient-to-br from-amber-500 to-amber-700 text-[18px] font-black text-slate-950 shadow-lg">
-                    {initials}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-[17px] font-black tracking-wide text-white drop-shadow-sm truncate">
-                    {primaryName}
-                  </h1>
-                  <p className="text-[12px] font-bold text-amber-300/95 truncate mt-0.5">
-                    {primaryTitle}
-                  </p>
-                  <p className="text-[11.5px] font-medium text-slate-300 truncate">
-                    {secondaryCompany}
-                  </p>
-                </div>
-              </div>
-
-              {/* Card Footer: Code & Flip hint */}
-              <div className="relative z-10 flex items-center justify-between border-t border-amber-400/20 pt-2.5 text-[10px]">
-                <span className="font-mono font-bold tracking-wider text-amber-300">
-                  ID: {code}
-                </span>
-                <span className="flex items-center gap-1 font-semibold text-slate-300/90 hover:text-amber-300 transition">
-                  <RotateCw className="h-3 w-3 animate-spin-slow" />
-                  {t("flipCard")}
-                </span>
-              </div>
-            </div>
-
-            {/* ================= BACK SIDE ================= */}
-            <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between p-5 border border-amber-400/40 bg-gradient-to-br from-[#001D4D] via-[#002B70] to-[#001533] text-white shadow-xl">
-              {/* Luxury gold pattern */}
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="text-[11px] font-black uppercase tracking-widest text-amber-300">
-                  CLB DOANH NHÂN CEO 1983
-                </div>
-                <span className="inline-flex items-center gap-1 text-[9px] font-bold rounded-full bg-amber-400/20 border border-amber-400/40 px-2 py-0.5 text-amber-300">
-                  CEO 1983
-                </span>
-              </div>
-
-              {/* Center Slogan */}
-              <div className="relative z-10 text-center my-auto px-4">
-                <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white/5 border border-amber-400/30 mb-2">
-                  <ShieldCheck className="h-7 w-7 text-amber-400" />
-                </div>
-                <div className="text-[13px] font-black uppercase tracking-wider text-white">
-                  KẾT NỐI BỀN VỮNG • KIẾN TẠO TƯƠNG LAI
-                </div>
-                <p className="text-[10px] text-slate-300 mt-1 max-w-[280px] mx-auto leading-relaxed">
-                  Cộng đồng Doanh nhân 1983 tiên phong chuyển đổi số, chia sẻ giá trị và phát triển thịnh vượng.
-                </p>
-              </div>
-
-              {/* Back Footer */}
-              <div className="relative z-10 flex items-center justify-between border-t border-amber-400/20 pt-2.5 text-[10px] text-slate-300">
-                <span>Hotline: 0983 83 1983</span>
-                <span className="text-amber-300 font-semibold">ceo1983club.com</span>
-              </div>
-            </div>
-          </div>
+        {/* ── THẺ DANH THIẾP SỐ CEO 1983 EXECUTIVE (CHUẨN 100% GIAO DIỆN THẺ HỘI VIÊN) ── */}
+        <div className="my-2">
+          <Ceo1983BusinessCardVisit
+            name={primaryName}
+            title={primaryTitle}
+            phone={hasPhone ? member.phone! : ""}
+            email={hasEmail ? member.email! : ""}
+            company={secondaryCompany}
+            companyLogoUrl={(member as any)?.companyLogoUrl || (member as any)?.companyLogo || null}
+            website={member.website || "https://ceo1983club.com"}
+            clubEmail="info@ceo1983club.com"
+            cardCode={code}
+            qrValue={cardQrUrl}
+            avatarUrl={resolvedPhoto}
+            showActions={false}
+          />
         </div>
 
-        {/* Action Controls Bar */}
-        <div className="grid grid-cols-4 gap-2 mt-4">
-          {/* Flip Card Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsFlipped(!isFlipped)}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
-          >
-            <RotateCw className="h-4 w-4 text-amber-500" />
-            <span className="text-[10.5px] font-bold">{t("flipCard")}</span>
-          </button>
-
+        {/* ── THÔNG TIN KẾT NỐI CHÍNH XUẤT HIỆN NGAY DƯỚI THẺ (Req 10) ── */}
+        <div className="grid grid-cols-4 gap-2 mt-3">
           {/* Download vCard */}
           <button
             type="button"
             onClick={handleDownloadVCard}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-300/80 bg-amber-50 hover:bg-amber-100 transition active:scale-95 text-amber-900 shadow-xs"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-300/80 bg-amber-50 hover:bg-amber-100 transition active:scale-95 text-amber-900 shadow-xs cursor-pointer"
           >
             <Download className="h-4 w-4 text-amber-600" />
-            <span className="text-[10.5px] font-bold">{t("saveContact")}</span>
+            <span className="text-[10px] font-bold">{t("saveContact")}</span>
           </button>
 
           {/* Call / Contact */}
           {hasPhone ? (
             <a
               href={`tel:${cleanPhone}`}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100 transition active:scale-95 text-emerald-900 shadow-xs"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100 transition active:scale-95 text-emerald-900 shadow-xs cursor-pointer"
             >
               <Phone className="h-4 w-4 text-emerald-600" />
-              <span className="text-[10.5px] font-bold">Gọi điện</span>
+              <span className="text-[10px] font-bold">Gọi điện</span>
             </a>
           ) : (
-            <button
-              type="button"
-              onClick={handleShare}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
-            >
-              <Share2 className="h-4 w-4 text-[#003B95]" />
-              <span className="text-[10.5px] font-bold">{t("shareCard")}</span>
-            </button>
+            <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
+              <Phone className="h-4 w-4 text-slate-300" />
+              <span className="text-[10px] font-bold">Gọi điện</span>
+            </div>
           )}
 
-          {/* Share / Zalo */}
+          {/* Zalo */}
           {hasPhone ? (
             <a
               href={`https://zalo.me/${cleanPhone}`}
               target="_blank"
               rel="noreferrer"
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-300/80 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-xs"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-sky-300/80 bg-sky-50 hover:bg-sky-100 transition active:scale-95 text-sky-900 shadow-xs cursor-pointer"
             >
-              <MessageCircle className="h-4 w-4 text-[#003B95]" />
-              <span className="text-[10.5px] font-bold">Zalo</span>
+              <MessageCircle className="h-4 w-4 text-[#0068FF]" />
+              <span className="text-[10px] font-bold">Zalo</span>
             </a>
           ) : (
-            <button
-              type="button"
-              onClick={handleShare}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-700 shadow-xs"
-            >
-              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Share2 className="h-4 w-4 text-[#003B95]" />}
-              <span className="text-[10.5px] font-bold">{copied ? "Đã copy" : t("shareCard")}</span>
-            </button>
+            <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
+              <MessageCircle className="h-4 w-4 text-slate-300" />
+              <span className="text-[10px] font-bold">Zalo</span>
+            </div>
           )}
+
+          {/* Facebook */}
+          <a
+            href="https://facebook.com"
+            target="_blank"
+            rel="noreferrer"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-xs cursor-pointer"
+          >
+            <Facebook className="h-4 w-4 text-[#1877F2]" />
+            <span className="text-[10px] font-bold">Facebook</span>
+          </a>
         </div>
 
         {/* Authenticated Confirmation Banner */}

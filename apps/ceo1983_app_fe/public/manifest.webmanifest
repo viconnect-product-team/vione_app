@@ -1,15 +1,27 @@
 {
-  "name": "CLB Doanh Nhân CEO 1983 — Hiệp Hội Doanh Nghiệp",
-  "short_name": "CEO 1983",
-  "description": "Ứng dụng CLB Doanh Nhân CEO 1983: Thẻ hội viên số, biểu quyết, quay số trúng thưởng, sàn sản phẩm và cơ hội kinh doanh B2B.",
+  "name": "CEO1983",
+  "short_name": "CEO1983",
+  "description": "Ứng dụng CLB Doanh Nhân CEO1983: Thẻ hội viên số, biểu quyết, quay số trúng thưởng, sàn sản phẩm và cơ hội kinh doanh B2B.",
   "start_url": "/association",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#003B95",
-  "theme_color": "#003B95",
+  "background_color": "#001D4A",
+  "theme_color": "#001D4A",
   "lang": "vi",
   "icons": [
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/app-icon-192.png",
       "sizes": "192x192",
@@ -21,12 +33,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/app-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     },
     {
       "src": "/apple-touch-icon.png",

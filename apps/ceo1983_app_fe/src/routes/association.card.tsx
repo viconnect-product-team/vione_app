@@ -5,6 +5,7 @@ import {
   Heart,
   ReceiptText,
   CalendarPlus,
+  CalendarClock,
   UserPen,
   BadgeCheck,
   QrCode,
@@ -41,6 +42,12 @@ import {
   Linkedin,
   Camera,
   Users,
+  ScanLine,
+  FileText,
+  CheckCircle2,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
@@ -49,6 +56,8 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { AssociationQrScanModal } from "@/components/member/AssociationQrScanModal";
+import { AssociationCardCaptureModal } from "@/components/member/AssociationCardCaptureModal";
 import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
 import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
@@ -73,8 +82,9 @@ import {
 import { buildMembershipPass } from "@/lib/membership-pass";
 import { walletCapabilities, walletAddUrl } from "@/lib/wallet-provider";
 import { getMyIdentityPassFn, type MyIdentityPass } from "@/lib/member-identity.functions";
-import { resolveMediaUrl } from "@/lib/api-client";
-const appIcon = "/ceo1983-logo.png";
+import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
+import { compressImage } from "@/lib/image";
+const appIcon = "/ceo1983-emblem-8.png";
 const THEME_KEY = "vba-card-theme";
 
 export const Route = createFileRoute("/association/card")({
@@ -99,18 +109,14 @@ function resolveDisplay(
 ): Display {
   const isGeneric = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên CLB CEO 1983";
   const authUserName = currentUser?.name || currentUser?.user_metadata?.full_name;
-  const isCustomForUser = customProfile?.userId && currentUser?.id && customProfile.userId === currentUser.id;
 
-  const rawName = (!isGeneric && member?.name)
-    ? member.name
-    : ((isCustomForUser ? customProfile?.name?.trim() : null) || authUserName || s?.displayName?.trim() || member?.name || "");
+  // Custom profile or display settings takes priority over default mock/seed member
+  const customName = customProfile?.name?.trim() || s?.displayName?.trim();
+  const rawName = customName || ((!isGeneric && member?.name) ? member.name : (authUserName || member?.name || ""));
   const cleanName = rawName || "Hội viên CLB CEO 1983";
 
-  const rawCompany =
-    (member as any)?.companyName ||
-    (member as any)?.company ||
-    (isCustomForUser ? customProfile?.company?.trim() : null) ||
-    s?.displayCompany?.trim();
+  const customCompany = customProfile?.company?.trim() || s?.displayCompany?.trim();
+  const rawCompany = customCompany || (member as any)?.companyName || (member as any)?.company;
   const isOldSeed = rawCompany && (rawCompany.includes("Default Platform") || rawCompany.includes("CLB CEO 1983"));
   const cleanCompany = !rawCompany || isOldSeed ? "CLB Doanh Nhân CEO 1983" : rawCompany;
 
@@ -119,11 +125,12 @@ function resolveDisplay(
     company: cleanCompany.trim(),
     photo: (() => {
       const raw =
+        customAvatar ||
+        customProfile?.avatar ||
+        s?.photoUrl ||
         member?.avatar ||
         (currentUser as any)?.avatar_url ||
         (currentUser as any)?.user_metadata?.avatar_url ||
-        (isCustomForUser ? customAvatar || customProfile?.avatar : null) ||
-        s?.photoUrl ||
         null;
       return raw ? (resolveMediaUrl(raw) || raw) : null;
     })(),
@@ -133,17 +140,12 @@ function resolveDisplay(
   };
 }
 
-/** vCard text encoded into QR/NFC so it auto-reflects the chosen display info. */
+/** vCard text encoded into QR/NFC: CHỈ LƯU TÊN VÀ SỐ ĐIỆN THOẠI (Bỏ chức vụ, bỏ mô tả) */
 function buildVCard(member: MyMember | null, d: Display): string {
   if (!member) return "";
-  const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
   const lines = ["BEGIN:VCARD", "VERSION:3.0"];
   if (d.showName && d.name) lines.push(`FN:${d.name}`);
-  if (d.showCompany && d.company) lines.push(`ORG:${d.company}`);
-  if (member.email) lines.push(`EMAIL:${member.email}`);
-  if (member.phone) lines.push(`TEL:${member.phone}`);
-  if (url) lines.push(`URL:${url}`);
-  lines.push(`NOTE:Mã hội viên ${member.code}`);
+  if (member.phone) lines.push(`TEL;TYPE=CELL:${member.phone}`);
   lines.push("END:VCARD");
   return lines.join("\n");
 }
@@ -376,20 +378,92 @@ function CardScreen() {
     return localStorage.getItem("vba_member_cover_photo");
   });
   const [coverError, setCoverError] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const direct = localStorage.getItem("vba_member_company_logo");
+      if (direct) return direct;
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
+      if (cp?.companyLogo) return cp.companyLogo;
+      const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+      if (mem?.companyLogoUrl || mem?.companyLogo) return mem.companyLogoUrl || mem.companyLogo;
+    } catch {}
+    return null;
+  });
 
   useEffect(() => {
     if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
       setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
     }
-  }, [member?.coverUrl, (member as any)?.cover_url]);
+    if (!companyLogo && ((member as any)?.companyLogoUrl || (member as any)?.companyLogo)) {
+      setCompanyLogo((member as any)?.companyLogoUrl || (member as any)?.companyLogo);
+    }
+  }, [member?.coverUrl, (member as any)?.cover_url, (member as any)?.companyLogoUrl, (member as any)?.companyLogo, coverPhoto, companyLogo]);
 
   const [copiedCode, setCopiedCode] = useState(false);
 
+  const [scanModalOpen, setScanModalOpen] = useState(false);
+  const [cardCaptureOpen, setCardCaptureOpen] = useState(false);
+  const [contractData, setContractData] = useState(() => {
+    if (typeof window === "undefined") {
+      return {
+        contractNo: "HĐ-CEO1983/2024-VIP08",
+        joinedAt: "15/08/2023",
+        validUntil: "15/08/2027",
+        tier: "Hội viên Doanh nghiệp VIP",
+        status: "Đang hiệu lực",
+      };
+    }
+    try {
+      const raw = localStorage.getItem("vba_member_contract_data");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {
+      contractNo: "HĐ-CEO1983/2024-VIP08",
+      joinedAt: "15/08/2023",
+      validUntil: "15/08/2027",
+      tier: "Hội viên Doanh nghiệp VIP",
+      status: "Đang hiệu lực",
+    };
+  });
+  const [cardPrivacy, setCardPrivacy] = useState(() => {
+    if (typeof window === "undefined") {
+      return {
+        showPhone: true,
+        showEmail: true,
+        showContract: true,
+        showAddress: true,
+        showProducts: true,
+      };
+    }
+    try {
+      const raw = localStorage.getItem("vba_member_privacy_settings");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {
+      showPhone: true,
+      showEmail: true,
+      showContract: true,
+      showAddress: true,
+      showProducts: true,
+    };
+  });
+
   useEffect(() => {
-    const handleProfileUpdate = () => {
+    const handleProfileUpdate = (e?: any) => {
       try {
         setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
         setCustomAvatar(localStorage.getItem("vba_member_avatar_photo"));
+        const logo = e?.detail?.companyLogo || localStorage.getItem("vba_member_company_logo");
+        if (logo) setCompanyLogo(logo);
+      } catch {}
+    };
+    const handleSyncContractAndPrivacy = () => {
+      try {
+        const rawContract = localStorage.getItem("vba_member_contract_data");
+        if (rawContract) setContractData(JSON.parse(rawContract));
+        const rawPrivacy = localStorage.getItem("vba_member_privacy_settings");
+        if (rawPrivacy) setCardPrivacy(JSON.parse(rawPrivacy));
       } catch {}
     };
     const handleCoverUpdate = (e?: any) => {
@@ -402,12 +476,30 @@ function CardScreen() {
         }
       } catch {}
     };
+    const handleLogoUpdate = (e?: any) => {
+      try {
+        const detailUrl = e?.detail;
+        if (detailUrl && typeof detailUrl === "string") {
+          setCompanyLogo(detailUrl);
+        } else {
+          setCompanyLogo(localStorage.getItem("vba_member_company_logo"));
+        }
+      } catch {}
+    };
     window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("vba_profile_updated", handleProfileUpdate);
+    window.addEventListener("contract-updated", handleSyncContractAndPrivacy);
+    window.addEventListener("privacy-updated", handleSyncContractAndPrivacy);
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
+    window.addEventListener("vba_member_company_logo_updated", handleLogoUpdate);
     window.addEventListener("storage", handleProfileUpdate);
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("vba_profile_updated", handleProfileUpdate);
+      window.removeEventListener("contract-updated", handleSyncContractAndPrivacy);
+      window.removeEventListener("privacy-updated", handleSyncContractAndPrivacy);
       window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);
+      window.removeEventListener("vba_member_company_logo_updated", handleLogoUpdate);
       window.removeEventListener("storage", handleProfileUpdate);
     };
   }, []);
@@ -520,6 +612,17 @@ function CardScreen() {
   }
 
   const [copiedLink, setCopiedLink] = useState(false);
+  const handleCopyLink = async () => {
+    if (!member) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      toast.success("Đã sao chép liên kết danh thiếp hội viên!");
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
   const handleShareProfile = async () => {
     if (!member) return;
     const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
@@ -556,325 +659,233 @@ function CardScreen() {
             phone={customProfile?.phone || member?.phone || "036xxxxxxx"}
             email={customProfile?.email || member?.email || "username@gmail.com"}
             company={d.company || "CÂU LẠC BỘ CEO1983"}
+            companyLogoUrl={companyLogo}
             website="https://ceo1983club.com"
             clubEmail="info@ceo1983club.com"
             cardCode={currentMemberCode}
             qrValue={`${origin}/card/${currentMemberCode}`}
             avatarUrl={d.photo}
-            showActions={true}
+            showActions={false}
+            onCompanyLogoUpdated={(url) => setCompanyLogo(url)}
           />
         </div>
 
-        {/* Offline / last sync indicator */}
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-[var(--vba-text-dim)]">
-          {online ? (
-            <>
-              <span className="h-2 w-2 rounded-full bg-[#2E3192] dark:bg-blue-400" />
-              {lang === "en" ? "Synced" : "Đã đồng bộ"}
-              {lastSync ? ` · ${new Date(lastSync).toLocaleTimeString()}` : ""}
-            </>
-          ) : (
-            <>
-              <CloudOff className="h-3.5 w-3.5" />
-              {lang === "en"
-                ? "Offline — showing cached card"
-                : "Ngoại tuyến — hiển thị thẻ đã lưu"}
-            </>
-          )}
+        {/* Thời gian hiệu lực thẻ hội viên (thay thế Đã đồng bộ theo Req 7) */}
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-400">
+          <CalendarClock className="h-3.5 w-3.5 text-amber-500" />
+          <span>
+            Thời gian hiệu lực:{" "}
+            <strong className="text-slate-900 dark:text-white font-bold">
+              {contractData.validUntil || (member as any)?.validUntil || "15/08/2027"}
+            </strong>
+          </span>
         </div>
 
-        {/* ── HỒ SƠ HỘI VIÊN CEO 1983 EXECUTIVE (ĐẶT NGAY DƯỚI THẺ HỘI VIÊN, QR TRÊN ẢNH BÌA) ── */}
-        {member && (
-          <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md overflow-hidden transition hover:border-amber-500/50">
-            {/* Ảnh bìa to rộng (Cover Banner) kèm Mã QR hiện trực tiếp trên ảnh bìa */}
-            <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]">
-              {coverPhoto && !coverError ? (
-                <img
-                  src={resolveMediaUrl(coverPhoto) || coverPhoto}
-                  alt="Cover Banner"
-                  onError={() => {
-                    setCoverError(true);
-                    try { localStorage.removeItem("vba_member_cover_photo"); } catch {}
-                  }}
-                  className="h-full w-full object-cover opacity-85"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]">
-                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/65" />
-
-              {/* VIP badge on cover banner (bỏ QR ở ảnh bìa theo yêu cầu) */}
-              <div className="absolute top-3 right-3 z-10">
-                <span className="inline-flex items-center gap-1 rounded-lg border border-amber-400/50 bg-amber-500/25 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300 backdrop-blur-md shadow-xs">
-                  <Crown className="h-3.5 w-3.5 text-amber-400" />
-                  VIP GOLD
-                </span>
-              </div>
-            </div>
-
-            {/* Thân thẻ với Avatar dập viền trắng đè lên ảnh bìa */}
-            <div className="px-4 pb-4 pt-0 relative">
-              <div className="flex items-end justify-between -mt-9 mb-2.5">
-                {/* Avatar tròn to dập viền trắng nổi bật có chấm xanh online */}
-                <div className="relative">
-                  {d.photo ? (
-                    <img
-                      src={d.photo}
-                      alt={d.name}
-                      className="h-18 w-18 shrink-0 rounded-full object-cover ring-3 ring-white dark:ring-[#0F172A] shadow-md bg-slate-100 dark:bg-slate-800"
-                    />
-                  ) : (
-                    <span className="grid h-18 w-18 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#19194D] text-[20px] font-black text-white ring-3 ring-white dark:ring-[#0F172A] shadow-md">
-                      {initials(d.name)}
-                    </span>
-                  )}
-                  <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0F172A]" />
-                </div>
-
-                {/* Mã hội viên */}
-                {member.code && (
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 cursor-pointer transition shadow-xs"
-                    title={lang === "en" ? "Copy Member Code" : "Sao chép mã hội viên"}
-                  >
-                    <span>{member.code}</span>
-                    {copiedCode ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
-                  </button>
-                )}
-              </div>
-
-              {/* Thông tin hội viên & doanh nghiệp */}
-              <div className="space-y-0.5 mb-3">
-                <div className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {d.company}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-[17px] font-black text-slate-900 dark:text-white">
-                    {d.name}
-                  </span>
-                  <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-[#0284c7] dark:text-sky-400" />
-                </div>
-                <div className="truncate text-[12px] font-semibold text-slate-600 dark:text-slate-300">
-                  {customProfile?.title || member.title || (lang === "en" ? "Official Member" : "Ban Quản Trị")}
-                </div>
-              </div>
-
-              {/* Business Contact Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] rounded-xl bg-slate-50 dark:bg-slate-850/60 p-3 border border-slate-100 dark:border-slate-800 mb-3">
-                {(customProfile?.phone || member.phone) && (
-                  <a
-                    href={`tel:${customProfile?.phone || member.phone}`}
-                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition"
-                  >
-                    <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Hotline:</strong> {customProfile?.phone || member.phone}</span>
-                  </a>
-                )}
-                {(customProfile?.email || member.email) && (
-                  <a
-                    href={`mailto:${customProfile?.email || member.email}`}
-                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition"
-                  >
-                    <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Email:</strong> {customProfile?.email || member.email}</span>
-                  </a>
-                )}
-                {(customProfile?.industry || member.industry) && (
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Tag className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Lĩnh vực:</strong> {customProfile?.industry || member.industry}</span>
-                  </div>
-                )}
-                {(customProfile?.industryDetail || (member as any)?.industryDetail) && (
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Chuyên ngành:</strong> {customProfile?.industryDetail || (member as any)?.industryDetail}</span>
-                  </div>
-                )}
-                {(customProfile?.companySize || (member as any)?.companySize) && (
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Quy mô:</strong> {customProfile?.companySize || (member as any)?.companySize}</span>
-                  </div>
-                )}
-                {(customProfile?.featuredProducts || (member as any)?.featuredProducts) && (
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <span className="truncate"><strong>Sản phẩm nổi bật:</strong> {customProfile?.featuredProducts || (member as any)?.featuredProducts}</span>
-                  </div>
-                )}
-                {(customProfile?.address || member.address) && (
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
-                    <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                    <span className="truncate"><strong>Địa chỉ:</strong> {customProfile?.address || member.address}</span>
-                  </div>
-                )}
-                {(customProfile?.website || member.website) && (
-                  <a
-                    href={(customProfile?.website || member.website).startsWith("http") ? (customProfile?.website || member.website) : `https://${customProfile?.website || member.website}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-blue-400 transition sm:col-span-2"
-                  >
-                    <Globe className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                    <span className="truncate"><strong>Website:</strong> {customProfile?.website || member.website}</span>
-                    <ExternalLink className="h-3 w-3 opacity-60 ml-auto" />
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setPrivacyModalOpen(true)}
-                  className="sm:col-span-2 mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 py-2 text-[11.5px] font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shadow-xs"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
-                  <span>Cài đặt bảo mật & Hiển thị QR / Danh thiếp số</span>
-                </button>
-              </div>
-
-              {/* Social Media Links: Facebook, Zalo, LinkedIn, Web */}
-              <div className="flex items-center gap-2 py-2 mb-3 border-y border-slate-100 dark:border-slate-800">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Liên kết:</span>
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] font-semibold text-[11px] hover:bg-blue-100 transition"
-                  title="Facebook cá nhân/doanh nghiệp"
-                >
-                  <Facebook className="h-3.5 w-3.5" />
-                  <span>Facebook</span>
-                </a>
-                <a
-                  href={`https://zalo.me/${(customProfile?.phone || member.phone || "0901000002").replace(/\s+/g, "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-[#0068FF] font-bold text-[11px] hover:bg-sky-100 transition"
-                  title="Chat Zalo"
-                >
-                  <span>Zalo</span>
-                </a>
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#0A66C2] font-semibold text-[11px] hover:bg-blue-100 transition"
-                  title="LinkedIn"
-                >
-                  <Linkedin className="h-3.5 w-3.5" />
-                  <span>LinkedIn</span>
-                </a>
-              </div>
-
-              {/* Direct Profile Actions: Chia sẻ hồ sơ & Sửa hồ sơ (Đã xóa nút Nhắn tin cho chính mình) */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={handleShareProfile}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-[#003B95]/25 bg-blue-50/60 dark:bg-slate-800/80 hover:bg-blue-100/60 py-2.5 text-[12px] font-bold text-[#003B95] dark:text-blue-400 transition active:scale-95 cursor-pointer shadow-xs"
-                >
-                  {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4" />}
-                  <span>{copiedLink ? "Đã chép liên kết" : "Chia sẻ hồ sơ"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/60 py-2.5 text-[12px] font-bold text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer shadow-xs"
-                >
-                  <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span>Sửa hồ sơ</span>
-                </button>
-              </div>
-
-              {/* TIỆN ÍCH THẺ SỐ & XÁC THỰC: NFC, GOOGLE/APPLE WALLETS, XÁC THỰC CÔNG KHAI */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                  <span>Tiện ích Thẻ số & Ví di động</span>
-                  <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <ShieldCheck className="h-3.5 w-3.5" /> Đã xác thực
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Chạm NFC */}
-                  <button
-                    onClick={shareNfc}
-                    disabled={!member || nfcBusy}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#003B95]/30 bg-blue-50/50 dark:bg-slate-800/80 py-2.5 text-[12px] font-bold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 transition cursor-pointer"
-                  >
-                    <Nfc className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
-                    <span>{nfcBusy ? "Đang ghi..." : "Chạm thẻ NFC"}</span>
-                  </button>
-
-                  {/* Trang xác thực công khai */}
-                  {pass && (
-                    <a
-                      href={pass.verifyUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 py-2.5 text-[12px] font-bold text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100/60 transition cursor-pointer text-center"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="truncate">Xác thực công khai</span>
-                    </a>
-                  )}
-                </div>
-
-                {/* Ví Apple Wallet & Google Wallet */}
-                <div className="grid grid-cols-2 gap-2">
-                  {wallets.map((w) => {
-                    const serverAvailable =
-                      w.id === "apple"
-                        ? Boolean(identity?.walletAppleAvailable)
-                        : Boolean(identity?.walletGoogleAvailable);
-                    const url = serverAvailable && pass ? walletAddUrl(w.id, pass) : null;
-                    return (
-                      <button
-                        key={w.id}
-                        onClick={() => {
-                          if (url) window.open(url, "_blank");
-                          else
-                            toast.info(
-                              lang === "en"
-                                ? `${w.label} is not configured on the server`
-                                : `${w.label} chưa được cấu hình trên máy chủ`,
-                            );
-                        }}
-                        className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 py-2 text-[11.5px] font-semibold text-slate-700 dark:text-slate-200 shadow-xs hover:border-[#003B95]/40 transition cursor-pointer"
-                      >
-                        <Wallet className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
-                        <span>{w.label}</span>
-                        {!serverAvailable && (
-                          <span className="text-[9.5px] text-slate-400">(tắt)</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+        {/* Nút thao tác dưới thẻ hội viên */}
+        <div className="mt-3.5 space-y-2">
+          {/* Cặp nút Hành động chính: Quét QR & Chụp danh thiếp nằm cạnh nhau */}
+          <div className="grid grid-cols-2 gap-2.5 w-full">
+            <button
+              type="button"
+              onClick={() => setScanModalOpen(true)}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
+            >
+              <ScanLine className="h-4.5 w-4.5 text-amber-400" />
+              <span>Quét QR</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCardCaptureOpen(true)}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 text-[13px] font-bold text-amber-700 dark:text-amber-300 transition cursor-pointer"
+            >
+              <Camera className="h-4.5 w-4.5 text-amber-500" />
+              <span>Chụp danh thiếp</span>
+            </button>
           </div>
-        )}
 
-        {/* Quick actions - 3 nút chuẩn CEO (Bỏ nút cập nhật bị thừa) */}
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          {actions.map((a: any) => {
-            const Icon = a.icon;
-            return (
-              <Link key={a.label} to={a.to} className="flex flex-col items-center gap-2 group">
-                <span className="grid h-14 w-14 place-items-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs transition-transform group-hover:scale-105 group-hover:border-[#2E3192]/50">
-                  <Icon className="h-6 w-6 stroke-[2]" />
-                </span>
-                <span className="text-center text-[10.5px] font-semibold leading-tight text-slate-700 dark:text-slate-300 group-hover:text-[#2E3192]">
-                  {a.label}
-                </span>
-              </Link>
-            );
-          })}
+          {/* 3 nút tiện ích kích thước cố định bằng nhau, nền trắng text đen */}
+          <div className="grid grid-cols-3 gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+            >
+              <Pencil className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+              <span>Chỉnh sửa</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShareProfile}
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+            >
+              <Share2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+              <span>Chia sẻ</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+            >
+              {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />}
+              <span>{copiedLink ? "Đã chép" : "Sao chép"}</span>
+            </button>
+          </div>
         </div>
+
+        {/* ── HỒ SƠ HỘI VIÊN & DOANH NGHIỆP (PROFILE) ── */}
+        <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-500/10 text-[#003B95] dark:text-blue-400 border border-blue-500/20">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[13.5px] font-bold text-slate-900 dark:text-white">
+                  Hồ sơ Doanh nghiệp & Cá nhân
+                </h3>
+                <p className="text-[11px] text-slate-500">{d.company}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
+            >
+              <span>{member?.code || currentMemberCode}</span>
+              {copiedCode ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
+            </button>
+          </div>
+
+          <div className="mt-3 space-y-2 text-[12.5px]">
+            {/* Tách riêng hàng Hội viên và hàng Chức vụ */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <span className="font-semibold text-slate-500 dark:text-slate-400">Hội viên:</span>
+              <span className="font-bold text-slate-900 dark:text-white">{d.name || member?.name || "Hội viên CEO 1983"}</span>
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <span className="font-semibold text-slate-500 dark:text-slate-400">Chức vụ:</span>
+              <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || member?.title || (member as any)?.position || "Hội viên chính thức"}</span>
+            </div>
+            {/* Đã bỏ trường Hotline / Số điện thoại liên hệ theo yêu cầu */}
+
+            {cardPrivacy.showEmail && (customProfile?.email || member?.email) && (
+              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
+                </span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.email || member?.email}</span>
+              </div>
+            )}
+
+            {(customProfile?.industry || member?.industry) && (
+              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Tag className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Lĩnh vực:
+                </span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industry || member?.industry}</span>
+              </div>
+            )}
+
+            {(customProfile?.industryDetail || (member as any)?.industryDetail) && (
+              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Chuyên ngành:
+                </span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industryDetail || (member as any)?.industryDetail}</span>
+              </div>
+            )}
+
+            {(customProfile?.companySize || (member as any)?.companySize) && (
+              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Quy mô:
+                </span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.companySize || (member as any)?.companySize}</span>
+              </div>
+            )}
+
+            {cardPrivacy.showProducts && (customProfile?.featuredProducts || (member as any)?.featuredProducts) && (
+              <div className="pt-2 border-b border-slate-50 dark:border-slate-850 pb-2">
+                <div className="font-semibold text-slate-500 flex items-center gap-1 text-[11px] uppercase tracking-wider mb-1">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Sản phẩm / dịch vụ chủ lực:
+                </div>
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2 text-slate-700 dark:text-slate-300">
+                  {customProfile?.featuredProducts || (member as any)?.featuredProducts}
+                </div>
+              </div>
+            )}
+
+            {cardPrivacy.showAddress && (customProfile?.address || member?.address) && (
+              <div className="flex items-start justify-between gap-2 py-1 border-b border-slate-50 dark:border-slate-850">
+                <span className="font-semibold text-slate-500 flex items-center gap-1 shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-rose-500" /> Địa chỉ:
+                </span>
+                <span className="text-right text-slate-800 dark:text-slate-200 text-[12px]">{customProfile?.address || member?.address}</span>
+              </div>
+            )}
+
+            {(customProfile?.website || member?.website) && (
+              <div className="flex items-center justify-between py-1">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Globe className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Website:
+                </span>
+                <a
+                  href={(customProfile?.website || member?.website).startsWith("http") ? (customProfile?.website || member?.website) : `https://${customProfile?.website || member?.website}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-[#003B95] dark:text-blue-400 hover:underline flex items-center gap-1"
+                >
+                  <span>{customProfile?.website || member?.website}</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Social Links & Share */}
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500">Kết nối:</span>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 px-2 py-1 text-[11px] font-semibold text-[#1877F2]"
+              >
+                <Facebook className="h-3.5 w-3.5" />
+                <span>Facebook</span>
+              </a>
+              <a
+                href={`https://zalo.me/${(customProfile?.phone || member?.phone || "0901000002").replace(/\s+/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 px-2 py-1 text-[11px] font-bold text-[#0068FF]"
+              >
+                <span>Zalo</span>
+              </a>
+            </div>
+            <button
+              type="button"
+              onClick={handleShareProfile}
+              className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
+              <span>{copiedLink ? "Đã chép link" : "Chia sẻ hồ sơ"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Association QR Scan Modal (Req 8) */}
+        <AssociationQrScanModal
+          open={scanModalOpen}
+          onClose={() => setScanModalOpen(false)}
+        />
+
+        {/* Association Business Card Capture & Contact Save Modal */}
+        <AssociationCardCaptureModal
+          open={cardCaptureOpen}
+          onClose={() => setCardCaptureOpen(false)}
+        />
       </div>
 
       {/* Full-screen QR modal - rendered via Portal directly into document.body to ensure 100% viewport centering */}
@@ -949,6 +960,10 @@ function CardScreen() {
           onClose={() => setEditOpen(false)}
           onSaved={() => {
             setEditOpen(false);
+            try {
+              setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
+              setCustomAvatar(localStorage.getItem("vba_member_avatar_photo"));
+            } catch {}
             reloadSettings();
           }}
         />
@@ -991,14 +1006,42 @@ function EditCardModal({
   const t = useT();
   const save = useServerFn(saveCardSettings);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState(current.name);
-  const [company, setCompany] = useState(current.company);
-  const [photo, setPhoto] = useState<string | null>(current.photo);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+
+  const [name, setName] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.name || current.name;
+    } catch {
+      return current.name;
+    }
+  });
+  const [company, setCompany] = useState(() => {
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.company || current.company;
+    } catch {
+      return current.company;
+    }
+  });
+  const [photo, setPhoto] = useState<string | null>(() => {
+    return localStorage.getItem("vba_member_avatar_photo") || current.photo;
+  });
+  const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
+    try {
+      const direct = localStorage.getItem("vba_member_company_logo");
+      if (direct) return direct;
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.companyLogo || null;
+    } catch {
+      return null;
+    }
+  });
   const [showName, setShowName] = useState(current.showName);
   const [showCompany, setShowCompany] = useState(current.showCompany);
   const [showPhoto, setShowPhoto] = useState(current.showPhoto);
 
-  // Extended Profile Attributes (Req 8)
+  // Extended Profile Attributes (Req 7)
   const [title, setTitle] = useState(() => {
     try {
       const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
@@ -1072,6 +1115,40 @@ function EditCardModal({
     }
   });
 
+  // Privacy toggles (Req 7 - Toggle what other members see when scanning QR)
+  const [privacyPhone, setPrivacyPhone] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("vba_member_privacy_settings") || "{}");
+      return p.showPhone !== false;
+    } catch {
+      return true;
+    }
+  });
+  const [privacyEmail, setPrivacyEmail] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("vba_member_privacy_settings") || "{}");
+      return p.showEmail !== false;
+    } catch {
+      return true;
+    }
+  });
+  const [privacyAddress, setPrivacyAddress] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("vba_member_privacy_settings") || "{}");
+      return p.showAddress !== false;
+    } catch {
+      return true;
+    }
+  });
+  const [privacyProducts, setPrivacyProducts] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("vba_member_privacy_settings") || "{}");
+      return p.showProducts !== false;
+    } catch {
+      return true;
+    }
+  });
+
   const [busy, setBusy] = useState(false);
 
   async function pickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1079,32 +1156,58 @@ function EditCardModal({
     e.target.value = "";
     if (!file) return;
     try {
-      const thumb = await fileToThumbnail(file);
-      setPhoto(thumb);
+      // Fast client-side image compression (<80KB) for instant responsiveness
+      const { dataUrl, blob } = await compressImage(file, 400, 400, 0.82);
+      setPhoto(dataUrl);
       setShowPhoto(true);
+
+      // Upload in background to get permanent server URL
+      uploadFileToNest(blob, file.name || "avatar.jpg")
+        .then((uploadedUrl) => {
+          if (uploadedUrl) {
+            setPhoto(uploadedUrl);
+            localStorage.setItem("vba_member_avatar_photo", uploadedUrl);
+          }
+        })
+        .catch(() => {});
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("m.card.photoLoadError"));
+    }
+  }
+
+  async function pickLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
+      setCompanyLogo(dataUrl);
+      localStorage.setItem("vba_member_company_logo", dataUrl);
+      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: dataUrl }));
+
+      uploadFileToNest(blob, file.name || "company-logo.png")
+        .then((uploadedUrl) => {
+          if (uploadedUrl) {
+            fetchNestApi("/members/me", {
+              method: "PATCH",
+              body: JSON.stringify({ companyLogoUrl: uploadedUrl }),
+            }).catch(() => null);
+          }
+        })
+        .catch(() => {});
+      toast.success("Đã chọn logo công ty");
+    } catch {
+      toast.error("Không thể xử lý logo công ty");
     }
   }
 
   async function submit() {
     setBusy(true);
     try {
-      await save({
-        data: {
-          displayName: name.trim() || null,
-          displayCompany: company.trim() || null,
-          photoUrl: photo,
-          showName,
-          showCompany,
-          showPhoto,
-        },
-      });
-
-      // Save full extended profile to local storage & trigger live sync
+      // 1. Prepare updated profile
       const updatedProfile = {
         name: name.trim() || member.name,
-        company: company.trim() || (member as any).company || member.title || "",
+        company: company.trim() || (member as any)?.company || member.title || "",
         title: title.trim(),
         phone: phone.trim(),
         email: email.trim(),
@@ -1114,14 +1217,72 @@ function EditCardModal({
         featuredProducts: featuredProducts.trim(),
         address: address.trim(),
         website: website.trim(),
+        avatar: photo || undefined,
+        companyLogo: companyLogo || undefined,
       };
-      localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
-      if (photo) {
-        localStorage.setItem("vba_member_avatar_photo", photo);
-      }
-      window.dispatchEvent(new Event("profile-updated"));
 
-      toast.success("Đã cập nhật đầy đủ hồ sơ hội viên thành công!");
+      // 2. Save locally FIRST so UI updates instantaneously without failing if server is unreachable
+      try {
+        localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
+        if (photo) {
+          localStorage.setItem("vba_member_avatar_photo", photo);
+        }
+        if (companyLogo) {
+          localStorage.setItem("vba_member_company_logo", companyLogo);
+        }
+        if (title.trim()) {
+          localStorage.setItem("vba_member_title", title.trim());
+        }
+        if (phone.trim()) {
+          localStorage.setItem("vba_member_phone", phone.trim());
+        }
+
+        const updatedPrivacy = {
+          showPhone: privacyPhone,
+          showEmail: privacyEmail,
+          showAddress: privacyAddress,
+          showProducts: privacyProducts,
+        };
+        localStorage.setItem("vba_member_privacy_settings", JSON.stringify(updatedPrivacy));
+
+        const existingMem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+        const newMem = {
+          ...existingMem,
+          name: updatedProfile.name || existingMem.name,
+          phone: updatedProfile.phone || existingMem.phone,
+          company: updatedProfile.company || existingMem.company,
+          companyName: updatedProfile.company || existingMem.companyName,
+          title: updatedProfile.title || existingMem.title,
+          avatar: photo || existingMem.avatar,
+          companyLogo: companyLogo || existingMem.companyLogo,
+          companyLogoUrl: companyLogo || existingMem.companyLogoUrl,
+        };
+        localStorage.setItem("vba_my_member", JSON.stringify(newMem));
+      } catch (storageErr) {
+        console.warn("Storage save error:", storageErr);
+      }
+
+      // 3. Dispatch global events
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: updatedProfile }));
+      window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: updatedProfile }));
+      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: photo }));
+      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: companyLogo }));
+      window.dispatchEvent(new Event("privacy-updated"));
+      window.dispatchEvent(new Event("contract-updated"));
+
+      // 4. Server sync in background
+      save({
+        data: {
+          displayName: name.trim() || null,
+          displayCompany: company.trim() || null,
+          photoUrl: photo,
+          showName,
+          showCompany,
+          showPhoto,
+        },
+      }).catch(() => null);
+
+      toast.success("Đã cập nhật hồ sơ hội viên thành công!");
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("m.card.saveError"));
@@ -1131,51 +1292,52 @@ function EditCardModal({
   }
 
   const inputCls =
-    "h-10 w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 text-[13px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition";
+    "h-10 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 px-3.5 text-[13px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition";
 
   if (typeof document === "undefined") return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center p-0 sm:p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-t-3xl border border-[var(--vba-border)] bg-[var(--vba-surface)] p-5 sm:rounded-3xl max-h-[90dvh] overflow-y-auto"
+        className="relative w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-5 max-h-[90dvh] overflow-y-auto shadow-2xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-[var(--vba-surface-2)] text-[var(--vba-text-muted)]"
+          className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
           aria-label={t("m.card.closeAriaLabel")}
         >
           <X className="h-4 w-4" />
         </button>
-        <h2 className="mb-4 text-[16px] font-bold text-[var(--vba-text)] flex items-center gap-2">
+
+        <h2 className="mb-4 text-[16px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Pencil className="h-4 w-4 text-amber-500" />
-          <span>Chỉnh sửa hồ sơ & Danh thiếp số</span>
+          <span>Chỉnh sửa hồ sơ hội viên</span>
         </h2>
 
         {/* Photo */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-3 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
           {photo ? (
-            <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-amber-400" />
+            <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-amber-500" />
           ) : (
-            <span className="grid h-16 w-16 place-items-center rounded-full bg-blue-50 dark:bg-[#2E3192]/15 text-[16px] font-bold text-[#2E3192] dark:text-blue-400 border border-[#2E3192]/20">
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-[16px] font-bold text-amber-500 border border-slate-200 dark:border-slate-700">
               {initials(name || member.name)}
             </span>
           )}
           <div className="flex gap-2">
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-text)] hover:border-[#2E3192]/50 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500 cursor-pointer"
             >
-              <ImagePlus className="h-4 w-4 text-[#2E3192] dark:text-blue-400" /> {t("m.card.pickPhoto")}
+              <ImagePlus className="h-4 w-4 text-amber-500" /> {t("m.card.pickPhoto")}
             </button>
             {photo && (
               <button
                 onClick={() => setPhoto(null)}
-                className="flex items-center gap-1.5 rounded-lg border border-[var(--vba-border-soft)] bg-[var(--vba-surface-2)] px-3 py-2 text-[12px] font-semibold text-[var(--vba-danger)] cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-[12px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" /> {t("m.card.deletePhoto")}
               </button>
@@ -1190,161 +1352,223 @@ function EditCardModal({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Họ và tên hội viên
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={member.name}
-              className={inputCls}
-            />
+        {/* Company Logo */}
+        <div className="mb-4 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+          <div className="h-14 w-20 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-xs">
+            {companyLogo ? (
+              <img src={resolveMediaUrl(companyLogo) || companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+            ) : (
+              <div className="flex flex-col items-center text-[10px] text-slate-400 font-bold">
+                <Building2 className="h-4 w-4" />
+                <span>Chưa có logo</span>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => logoFileRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500 cursor-pointer"
+            >
+              <ImagePlus className="h-4 w-4 text-amber-500" /> Chọn logo công ty
+            </button>
+            {companyLogo && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCompanyLogo(null);
+                  try {
+                    localStorage.removeItem("vba_member_company_logo");
+                  } catch {}
+                  window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: null }));
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-[12px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" /> Xóa logo
+              </button>
+            )}
+          </div>
+          <input
+            ref={logoFileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={pickLogo}
+          />
+        </div>
+
+        {/* SECTION 1: HỒ SƠ CÁ NHÂN & DOANH NGHIỆP */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-3 text-[12.5px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+            <Building2 className="h-4 w-4" />
+            <span>1. Thông tin Doanh nghiệp & Cá nhân</span>
           </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Chức vụ / Vị trí
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Tổng Giám Đốc / Founder"
-              className={inputCls}
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Họ và tên hội viên
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={member.name}
+                className={inputCls}
+              />
+            </div>
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Công ty / Doanh nghiệp
-            </label>
-            <input
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder={(member as any).company || member.title || "Tên công ty"}
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Chức vụ / Vị trí
+              </label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Tổng Giám Đốc / Founder"
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Số điện thoại / Hotline
-            </label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={member.phone || "09xxxxxxx"}
-              className={inputCls}
-            />
-          </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Công ty / Doanh nghiệp
+              </label>
+              <input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder={(member as any).company || member.title || "Tên công ty"}
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Email liên hệ
-            </label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={member.email || "email@company.com"}
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Số điện thoại / Hotline
+              </label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={member.phone || "09xxxxxxx"}
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Lĩnh vực kinh doanh
-            </label>
-            <input
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              placeholder="Công nghệ, Xây dựng, F&B..."
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Email liên hệ
+              </label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={member.email || "email@company.com"}
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Chuyên ngành / Chi tiết lĩnh vực
-            </label>
-            <input
-              value={industryDetail}
-              onChange={(e) => setIndustryDetail(e.target.value)}
-              placeholder="Chuyển đổi số, Phần mềm ERP..."
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Lĩnh vực kinh doanh
+              </label>
+              <input
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="Công nghệ, Xây dựng, F&B..."
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Quy mô nhân sự
-            </label>
-            <input
-              value={companySize}
-              onChange={(e) => setCompanySize(e.target.value)}
-              placeholder="50 - 200 nhân viên"
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Chuyên ngành chi tiết
+              </label>
+              <input
+                value={industryDetail}
+                onChange={(e) => setIndustryDetail(e.target.value)}
+                placeholder="Chuyển đổi số, Phần mềm ERP..."
+                className={inputCls}
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Website doanh nghiệp
-            </label>
-            <input
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://company.vn"
-              className={inputCls}
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Quy mô nhân sự
+              </label>
+              <input
+                value={companySize}
+                onChange={(e) => setCompanySize(e.target.value)}
+                placeholder="50 - 200 nhân viên"
+                className={inputCls}
+              />
+            </div>
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Sản phẩm / Dịch vụ nổi bật
-            </label>
-            <textarea
-              value={featuredProducts}
-              onChange={(e) => setFeaturedProducts(e.target.value)}
-              placeholder="Giải pháp tự động hóa CRM, Hạ tầng mạng Doanh nghiệp, Xuất nhập khẩu..."
-              rows={2}
-              className="w-full rounded-xl border border-amber-400/60 dark:border-amber-700 bg-white dark:bg-slate-800 p-3 text-[13px] text-slate-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition resize-none"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Website doanh nghiệp
+              </label>
+              <input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://company.vn"
+                className={inputCls}
+              />
+            </div>
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-[11.5px] font-medium text-[var(--vba-text-muted)]">
-              Địa chỉ doanh nghiệp
-            </label>
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder={member.address || "Tầng 5, Tòa nhà CEO..."}
-              className={inputCls}
-            />
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Sản phẩm / Dịch vụ nổi bật
+              </label>
+              <textarea
+                value={featuredProducts}
+                onChange={(e) => setFeaturedProducts(e.target.value)}
+                placeholder="Giải pháp phần mềm CRM, Xuất nhập khẩu..."
+                rows={2}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 p-3 text-[13px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition resize-none"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
+                Địa chỉ doanh nghiệp
+              </label>
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={member.address || "Tầng 5, Tòa nhà CEO..."}
+                className={inputCls}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Visibility toggles */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Quyền hiển thị trên thẻ</div>
+        {/* SECTION 2: CÀI ĐẶT BẢO MẬT & TOGGLE KHI QUÉT QR (Req 7) */}
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+          <div className="text-[12px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Lock className="h-4 w-4" />
+            <span>2. Quyền riêng tư (Hiển thị cho hội viên khác khi quét QR)</span>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+            Bật/tắt các thông tin bạn muốn chia sẻ khi người khác quét mã QR danh thiếp của bạn:
+          </p>
+          <Toggle label="Hiển thị Số điện thoại / Hotline khi quét QR" checked={privacyPhone} onChange={setPrivacyPhone} />
+          <Toggle label="Hiển thị Email liên hệ khi quét QR" checked={privacyEmail} onChange={setPrivacyEmail} />
+          <Toggle label="Hiển thị Địa chỉ doanh nghiệp" checked={privacyAddress} onChange={setPrivacyAddress} />
+          <Toggle label="Hiển thị Sản phẩm / Dịch vụ chủ lực" checked={privacyProducts} onChange={setPrivacyProducts} />
           <Toggle label={t("m.card.showName")} checked={showName} onChange={setShowName} />
           <Toggle label={t("m.card.showCompany")} checked={showCompany} onChange={setShowCompany} />
           <Toggle label={t("m.card.showPhoto")} checked={showPhoto} onChange={setShowPhoto} />
         </div>
 
-        <div className="mt-5 flex gap-2">
+        <div className="mt-6 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[var(--vba-border-soft)] py-2.5 text-[14px] font-semibold text-[var(--vba-text)] cursor-pointer"
+            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 py-2.5 text-[14px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750 transition cursor-pointer"
           >
             {t("m.card.cancel")}
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            style={{ color: "#ffffff" }}
-            className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-[14px] font-bold text-white shadow-md shadow-[#2E3192]/25 disabled:opacity-60 transition cursor-pointer"
+            className="flex-1 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] hover:opacity-95 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#003B95]/30 disabled:opacity-60 transition cursor-pointer flex items-center justify-center gap-2"
           >
             {busy ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
@@ -1366,18 +1590,19 @@ function Toggle({
 }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between rounded-lg px-1 py-2"
+      className="flex w-full items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer outline-none focus:outline-none"
     >
-      <span className="text-[13px] text-[var(--vba-text)]">{label}</span>
+      <span className="text-[13px] font-medium text-slate-800 dark:text-slate-200 text-left pr-2">{label}</span>
       <span
-        className={`relative h-6 w-11 rounded-full transition-colors ${
-          checked ? "bg-[#2E3192]" : "bg-[var(--vba-surface-2)]"
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out ${
+          checked ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-600"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-card transition-all ${
-            checked ? "left-[22px]" : "left-0.5"
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out mt-0.5 ${
+            checked ? "translate-x-5.5" : "translate-x-0.5"
           }`}
         />
       </span>

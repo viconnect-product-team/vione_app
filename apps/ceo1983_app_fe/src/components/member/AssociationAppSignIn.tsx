@@ -290,14 +290,15 @@ export function AssociationAppSignIn({
           </button>
         </form>
 
-        {/* Member Activation Button -> Chuyển đến Landing Page CEO 1983 mới (/landing/ceo/v1) */}
+        {/* Member Activation & Register Button -> Chuyển đến Landing Page CEO 1983 theo Figma (/landing) */}
         <div className="shrink-0 my-0.5">
           <Link
-            to="/landing/ceo/v1"
+            to="/landing"
+            search={{ apply: "true" }}
             className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-50/70 hover:bg-amber-100 text-[13.5px] font-semibold text-amber-900 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
           >
             <Shield className="h-4 w-4 text-[#003B95]" aria-hidden="true" />
-            <span>{lang === "en" ? "Activate new member account" : "Kích hoạt tài khoản hội viên mới"}</span>
+            <span>{lang === "en" ? "Register / Activate new member" : "Đăng ký hội viên mới / Kích hoạt tài khoản"}</span>
             <ChevronRight className="absolute right-4 h-4 w-4 text-[#003B95]" aria-hidden="true" />
           </Link>
         </div>

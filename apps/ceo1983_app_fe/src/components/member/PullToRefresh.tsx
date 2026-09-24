@@ -142,10 +142,14 @@ export function PullToRefresh({
     const diffX = touch.clientX - startXRef.current;
     const diffY = touch.clientY - startYRef.current;
 
-    // Xác định hướng cử chỉ sau khi di chuyển > 8px
+    // Xác định hướng cử chỉ: yêu cầu chuyển động rõ rệt để tránh nhận nhầm khi cuộn 1 tay
     if (!gestureDirectionRef.current) {
-      if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-        if (Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+      if (Math.abs(diffY) > 15) {
+        // Đang cuộn dọc: khóa ngay cử chỉ chuyển tab
+        gestureDirectionRef.current = "vertical";
+      } else if (Math.abs(diffX) > 25) {
+        // Chỉ nhận là vuốt ngang khi khoảng cách ngang áp đảo rõ rệt trục dọc
+        if (Math.abs(diffX) > Math.abs(diffY) * 2.5) {
           gestureDirectionRef.current = "horizontal";
         } else {
           gestureDirectionRef.current = "vertical";
@@ -164,8 +168,8 @@ export function PullToRefresh({
       }
     }
 
-    // ── GESTURE NGANG: TRACKING VUỐT TAB DYNAMIC ──
-    if (enableSwipeNav && gestureDirectionRef.current === "horizontal") {
+    // ── GESTURE NGANG: TRACKING VUỐT TAB DYNAMIC (chỉ khi vuốt ngang chủ động) ──
+    if (enableSwipeNav && gestureDirectionRef.current === "horizontal" && Math.abs(diffY) < 30) {
       setIsSwipingX(true);
       setSwipeDistanceX(diffX);
     }
@@ -182,16 +186,19 @@ export function PullToRefresh({
     setSwipeDistanceX(0);
 
     // ── 1. XỬ LÝ CỬ CHỈ NGANG DYNAMIC: CHUYỂN TAB / BACK ──
+    // Giảm độ nhạy: Chỉ xử lý khi người dùng chủ động vuốt ngang dứt khoát và không bị lệch dọc nhiều
     if (
       enableSwipeNav &&
-      (gestureDirectionRef.current === "horizontal" || Math.abs(diffX) > Math.abs(diffY) * 1.4)
+      gestureDirectionRef.current === "horizontal" &&
+      Math.abs(diffY) < 45
     ) {
-      const isQuickSwipe = duration < 350 && Math.abs(diffX) > 40;
-      const isDistanceSwipe = Math.abs(diffX) > 65;
+      // Ngưỡng vuốt dứt khoát (khoảng cách tối thiểu 115px hoặc flick nhanh dứt khoát)
+      const isQuickSwipe = duration < 250 && Math.abs(diffX) > 85 && Math.abs(diffY) < 25;
+      const isDistanceSwipe = Math.abs(diffX) > 115;
 
       if (isQuickSwipe || isDistanceSwipe) {
         // Cử chỉ vuốt từ mép trái màn hình (Edge Swipe Back)
-        if (startXRef.current <= 40 && diffX > 40) {
+        if (startXRef.current <= 35 && diffX > 80) {
           triggerHaptic(20);
           if (typeof window !== "undefined" && window.history.length > 1) {
             window.history.back();
@@ -199,8 +206,8 @@ export function PullToRefresh({
           }
         }
 
-        // Vuốt sang trái (Swipe Left -> Chuyển tiếp tab sau)
-        if (diffX < -50) {
+        // Vuốt sang trái (Swipe Left -> Chuyển tiếp tab sau: cần kéo dứt khoát > 115px)
+        if (diffX < -115 || (isQuickSwipe && diffX < -85)) {
           triggerHaptic(15);
           if (onSwipeLeft) {
             onSwipeLeft();
@@ -210,8 +217,8 @@ export function PullToRefresh({
           return;
         }
 
-        // Vuốt sang phải (Swipe Right -> Lùi về tab trước)
-        if (diffX > 50) {
+        // Vuốt sang phải (Swipe Right -> Lùi về tab trước: cần kéo dứt khoát > 115px)
+        if (diffX > 115 || (isQuickSwipe && diffX > 85)) {
           triggerHaptic(15);
           if (onSwipeRight) {
             onSwipeRight();

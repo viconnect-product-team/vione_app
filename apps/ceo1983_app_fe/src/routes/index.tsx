@@ -161,7 +161,7 @@ function Index() {
 
 
 
-  // Force root to connect-app for mobile or Capacitor users unless explicit CRM portal
+  // Only redirect to mobile app if explicitly scoped as association_app and NOT in CRM portal
   useEffect(() => {
     try {
       if (hasCallback) return;
@@ -169,13 +169,12 @@ function Index() {
       const isCrmPortal =
         search?.get("portal") === "crm" ||
         (typeof window !== "undefined" && sessionStorage.getItem("crm_portal") === "1");
-      const isCeo1983 =
+      const isPureMobileApp =
         typeof window !== "undefined" &&
-        (import.meta.env.VITE_APP_SCOPE === "association_app" ||
-          window.location.port === "5002" ||
-          window.location.hostname.includes("ceo1983"));
+        import.meta.env.VITE_APP_SCOPE === "association_app" &&
+        !isCrmPortal;
 
-      if (isCeo1983 && window.location.pathname === "/") {
+      if (isPureMobileApp && window.location.pathname === "/") {
         navigate({ to: "/association", replace: true });
         return;
       }
@@ -184,18 +183,8 @@ function Index() {
     }
   }, [hasCallback, navigate]);
 
-  // Session guard: on any host (including custom tenant domains), an
-  // authenticated user that lands on "/" is routed to their role home:
-  // members → /m, admins → /. Covers OAuth flows whose redirect_uri returns
-  // to the origin "/". While we resolve, hold render to avoid a content flash.
-  // On the plain app host (no tenant landing), an anonymous visitor should be
-  // sent to /landing instead of flashing the empty admin dashboard.
-  const status = usePostLoginRedirect(!tenant && !tenantHost);
-  // Hold render until we know the session status so a logged-in member never
-  // flashes (or gets stuck on) TenantNotFound before the role redirect fires.
+  const status = usePostLoginRedirect(false);
   if (status === "checking" || status === "redirecting") return <RedirectGuard />;
-  if (tenant) return <AssociationLandingView a={tenant} />;
-  if (tenantHost) return <TenantNotFound host={tenantHost} />;
   return <Dashboard />;
 }
 

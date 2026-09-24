@@ -33,7 +33,7 @@ const CLEARTEXT = false;
 
 const config: CapacitorConfig = {
   appId: 'vn.ceo1983.app',
-  appName: 'CEO 1983',
+  appName: 'CEO1983',
 
   // Thư mục chứa gói web bundle tĩnh
   webDir: 'www',

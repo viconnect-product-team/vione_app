@@ -304,3 +304,33 @@ export const sendPaymentReminderFn = createServerFn({ method: "POST" })
     );
   });
 
+export const addEventAttendeeFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        eventId: z.string().min(1),
+        memberName: z.string().min(1),
+        memberCode: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        company: z.string().optional(),
+        ticketType: z.string().optional(),
+        seatAssignment: z.string().optional(),
+        paymentStatus: z.enum(["paid", "pending"]).optional(),
+        checkedIn: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    return fetchNestApiFromServer(
+      `/events/${encodeURIComponent(data.eventId)}/attendees/add-or-checkin`,
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
+  });
+
+

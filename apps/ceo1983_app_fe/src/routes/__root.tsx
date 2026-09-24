@@ -126,11 +126,11 @@ export const Route = createRootRoute({
           "Quản lý hội viên, tổ chức sự kiện, kết nối doanh nghiệp và số hoá vận hành hiệp hội.",
       },
       { name: "author", content: "CLB Doanh Nhân CEO 1983" },
-      { name: "theme-color", content: "#4f46e5" },
+      { name: "theme-color", content: "#001D4A" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "CEO 1983" },
+      { name: "apple-mobile-web-app-title", content: "CEO1983" },
       { property: "og:title", content: "CEO 1983 — Nền tảng Quản trị Hiệp hội & App Hội viên" },
       {
         property: "og:description",
@@ -236,6 +236,20 @@ function GlobalRealtimeNotifications() {
 function AuthenticatedRealtimeNotifications() {
   useConnectAppRealtimeNotifications();
   return <GlobalIncomingCallModal />;
+}
+
+function GlobalVoiceNavAssistant() {
+  const { status, user } = useAuth();
+  const routerState = useRouterState();
+  const pathname = routerState?.location?.pathname || (typeof window !== "undefined" ? window.location.pathname : "");
+
+  if (status !== "in" || !user) return null;
+
+  // Robot chỉ xuất hiện trong mỗi app hiệp hội (/association/* hoặc /m/*), không xuất hiện ở CRM hệ thống
+  const isAssociationApp = pathname.startsWith("/association") || pathname.startsWith("/m");
+  if (!isAssociationApp) return null;
+
+  return <VoiceNavAssistant />;
 }
 
 function RootComponent() {
@@ -416,7 +430,7 @@ function RootComponent() {
           <MockModeBanner />
           <AuthProvider>
             <GlobalRealtimeNotifications />
-            <VoiceNavAssistant />
+            <GlobalVoiceNavAssistant />
             <AuthGate>
               <Outlet />
             </AuthGate>
@@ -501,6 +515,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // Public routes: auth screen, the member PWA, the install landing page,
   // the marketing landing page, and the QR-opened membership card.
   const isPublic =
+    pathname === "/" ||
     pathname === "/auth" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
@@ -513,8 +528,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/m/") ||
     pathname.startsWith("/card/") ||
     pathname === "/verify" ||
-    pathname === "/association/login" ||
-    pathname.startsWith("/association/login") ||
+    pathname.startsWith("/association") ||
+    pathname.startsWith("/connect-app") ||
+    pathname.startsWith("/vione") ||
+    pathname.startsWith("/business-connect") ||
     (pathname === "/" && tenantHost);
 
   useEffect(() => {
@@ -544,7 +561,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (isPublic) return <>{children}</>;
 
-  if (!isMounted || status === "loading") {
+  if (isMounted && status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -552,6 +569,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (status === "out") return null;
+  if (isMounted && status === "out") return null;
   return <>{children}</>;
 }

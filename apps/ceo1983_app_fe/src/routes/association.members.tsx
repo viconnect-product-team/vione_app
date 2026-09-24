@@ -19,6 +19,7 @@ import {
   UserPlus,
   Users,
   X,
+  Handshake,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -38,12 +39,13 @@ import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 import { InviteMemberModal } from "@/components/member/InviteMemberModal";
+import { BusinessConnectBottomSheet, type BusinessConnectTarget } from "@/components/common/BusinessConnectBottomSheet";
 
 export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-type FilterTab = "all" | "connected" | "pending";
+type FilterTab = "all" | "connected" | "sent";
 
 function MembersScreen() {
   const t = useT();
@@ -56,6 +58,7 @@ function MembersScreen() {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
+  const [connectTarget, setConnectTarget] = useState<BusinessConnectTarget | null>(null);
   const [localPending, setLocalPending] = useState<Set<string>>(new Set());
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
@@ -80,6 +83,29 @@ function MembersScreen() {
     }
   });
 
+  const [localSentRequests, setLocalSentRequests] = useState<Array<{
+    id: string;
+    targetUserId?: string | null;
+    targetCode: string;
+    status: "pending" | "accepted" | "rejected";
+    createdAt: string;
+  }>>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_sent_connection_requests");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveLocalSentRequests = (list: typeof localSentRequests) => {
+    setLocalSentRequests(list);
+    try {
+      localStorage.setItem("vba_sent_connection_requests", JSON.stringify(list));
+    } catch {}
+  };
+
   useEffect(() => {
     const handleConnChange = () => {
       try {
@@ -87,6 +113,10 @@ function MembersScreen() {
         setDisconnectedSet(storedD ? new Set(JSON.parse(storedD).map((s: string) => String(s).toLowerCase())) : new Set());
         const storedC = localStorage.getItem("vba.connected_members");
         setConnectedSet(storedC ? new Set(JSON.parse(storedC).map((s: string) => String(s).toLowerCase())) : new Set());
+        const storedSent = localStorage.getItem("vba_sent_connection_requests");
+        if (storedSent) {
+          setLocalSentRequests(JSON.parse(storedSent));
+        }
       } catch {}
     };
     window.addEventListener("vba.connection.changed", handleConnChange);
@@ -172,15 +202,158 @@ function MembersScreen() {
       if (tab === "connected") {
         return checkIsFriend(m);
       }
-      if (tab === "pending") {
-        return Boolean(
-          (m.userId && (outgoingMap.has(m.userId.toLowerCase()) || incomingMap.has(m.userId.toLowerCase()))) ||
-          localPending.has(targetId),
-        );
-      }
       return true;
     });
   }, [members, q, tab, myMember, connectedMap, outgoingMap, incomingMap, localPending, disconnectedSet, connectedSet]);
+
+  type SentRequestItem = {
+    id: string;
+    member: DirectoryMember | null;
+    code: string;
+    name: string;
+    company: string;
+    title: string;
+    avatar: string | null;
+    purpose?: string;
+    opportunityTitle?: string;
+    status: "pending" | "accepted" | "rejected";
+    createdAt: string;
+    userId?: string | null;
+  };
+
+  const sentList: SentRequestItem[] = useMemo(() => {
+    const map = new Map<string, SentRequestItem>();
+
+    // 1. Process server outgoing requests
+    for (const req of outgoing) {
+      const tid = (req as any).recipientUserId || (req as any).targetPersonNodeId || req.recipient?.userId || req.recipient?.personNodeId;
+      const tidClean = String(tid || "").replace(/^u:/, "").toLowerCase();
+      const m = members.find((x) => 
+        (x.userId && x.userId.toLowerCase() === tidClean) ||
+        (x.code && x.code.toLowerCase() === tidClean)
+      );
+
+      const isConn = m ? checkIsFriend(m) : false;
+      const reqStatus: "pending" | "accepted" | "rejected" = isConn
+        ? "accepted"
+        : req.status === "accepted"
+        ? "accepted"
+        : (req.status === "declined" || (req.status as any) === "rejected")
+        ? "rejected"
+        : "pending";
+
+      const itemKey = m?.code || tidClean || req.id;
+      map.set(itemKey.toLowerCase(), {
+        id: req.id,
+        member: m || null,
+        code: m?.code || tidClean,
+        name: m?.contact || m?.personName || m?.name || "Hội viên CEO 1983",
+        company: (m?.type === "company" ? m?.name : m?.company) || "CLB Doanh Nhân CEO 1983",
+        title: m?.personTitle || m?.industry || "Doanh nhân",
+        avatar: m?.avatar ? resolveMediaUrl(m.avatar) : null,
+        purpose: (req as any).message || (req as any).notes,
+        status: reqStatus,
+        createdAt: req.createdAt || new Date().toISOString(),
+        userId: m?.userId || tidClean,
+      });
+    }
+
+    // 2. Process localSentRequests
+    for (const l of localSentRequests) {
+      const key = (l.targetCode || l.targetUserId || l.id).toLowerCase();
+      const m = members.find((x) => 
+        (x.code && x.code.toLowerCase() === key) ||
+        (x.userId && x.userId.toLowerCase() === key)
+      );
+      const isConn = m ? checkIsFriend(m) : false;
+      const finalStatus: "pending" | "accepted" | "rejected" = isConn ? "accepted" : l.status;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          id: l.id,
+          member: m || null,
+          code: m?.code || l.targetCode,
+          name: m?.contact || m?.personName || m?.name || (l as any).targetName || "Hội viên CEO 1983",
+          company: (m?.type === "company" ? m?.name : m?.company) || (l as any).targetCompany || "CLB Doanh Nhân CEO 1983",
+          title: m?.personTitle || m?.industry || (l as any).targetTitle || "Doanh nhân",
+          avatar: m?.avatar ? resolveMediaUrl(m.avatar) : ((l as any).targetAvatar ? resolveMediaUrl((l as any).targetAvatar) : null),
+          purpose: (l as any).purpose || (l as any).message,
+          opportunityTitle: (l as any).opportunityTitle,
+          status: finalStatus,
+          createdAt: l.createdAt,
+          userId: m?.userId || l.targetUserId,
+        });
+      } else {
+        const existing = map.get(key)!;
+        if (isConn) existing.status = "accepted";
+        if ((l as any).purpose && !existing.purpose) existing.purpose = (l as any).purpose;
+        if ((l as any).opportunityTitle && !existing.opportunityTitle) existing.opportunityTitle = (l as any).opportunityTitle;
+      }
+    }
+
+    // 3. Process localPending
+    for (const p of localPending) {
+      const key = p.toLowerCase();
+      if (!map.has(key)) {
+        const m = members.find((x) => 
+          (x.code && x.code.toLowerCase() === key) ||
+          (x.userId && x.userId.toLowerCase() === key)
+        );
+        if (m) {
+          map.set(key, {
+            id: `pending-${m.code}`,
+            member: m,
+            code: m.code,
+            name: m.contact || m.personName || m.name,
+            company: (m.type === "company" ? m.name : m.company) || "CLB Doanh Nhân CEO 1983",
+            title: m.personTitle || m.industry || "Doanh nhân",
+            avatar: m.avatar ? resolveMediaUrl(m.avatar) : null,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+            userId: m.userId,
+          });
+        }
+      }
+    }
+
+    const term = q.trim().toLowerCase();
+    const allItems = Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (!term) return allItems;
+    return allItems.filter((i) => i.name.toLowerCase().includes(term) || i.company.toLowerCase().includes(term) || i.code.toLowerCase().includes(term));
+  }, [outgoing, localSentRequests, localPending, members, connectedSet, disconnectedSet, connectedMap, q]);
+
+  const handleCancelSentRequest = async (item: SentRequestItem) => {
+    try {
+      if (item.id && !item.id.startsWith("pending-") && !item.id.startsWith("sent-")) {
+        await cancelRequest.mutateAsync({ requestId: item.id });
+      }
+      setLocalPending((prev) => {
+        const next = new Set(prev);
+        next.delete(item.code.toLowerCase());
+        if (item.userId) next.delete(item.userId.toLowerCase());
+        return next;
+      });
+
+      const nextLocal = localSentRequests.filter((r) => 
+        r.id !== item.id && 
+        r.targetCode?.toLowerCase() !== item.code.toLowerCase() &&
+        (!item.userId || r.targetUserId?.toLowerCase() !== item.userId.toLowerCase())
+      );
+      saveLocalSentRequests(nextLocal);
+
+      toast.success(`Đã hủy lời mời kết nối gửi tới ${item.name}`);
+    } catch {
+      setLocalPending((prev) => {
+        const next = new Set(prev);
+        next.delete(item.code.toLowerCase());
+        if (item.userId) next.delete(item.userId.toLowerCase());
+        return next;
+      });
+      const nextLocal = localSentRequests.filter((r) => r.id !== item.id);
+      saveLocalSentRequests(nextLocal);
+      toast.success(`Đã hủy lời mời kết nối gửi tới ${item.name}`);
+    }
+  };
 
   const handleConnect = async (m: DirectoryMember) => {
     const target = m.userId || m.code;
@@ -221,6 +394,20 @@ function MembersScreen() {
       return next;
     });
 
+    const registerSent = () => {
+      const newSent = [
+        {
+          id: `sent-${Date.now()}`,
+          targetUserId: m.userId,
+          targetCode: m.code,
+          status: "pending" as const,
+          createdAt: new Date().toISOString(),
+        },
+        ...localSentRequests.filter((r) => r.targetCode.toLowerCase() !== m.code.toLowerCase()),
+      ];
+      saveLocalSentRequests(newSent);
+    };
+
     try {
       await fetchNestApi<any>("/network/requests", {
         method: "POST",
@@ -231,6 +418,7 @@ function MembersScreen() {
         }),
       });
       setLocalPending((prev) => new Set(prev).add(target.toLowerCase()));
+      registerSent();
       toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
     } catch {
       try {
@@ -240,6 +428,7 @@ function MembersScreen() {
             message: `Xin chào, tôi là ${myMember?.name || "Hội viên"} thuộc Hiệp hội Doanh nhân CEO 1983. Rất mong được kết nối cùng bạn!`,
           });
           setLocalPending((prev) => new Set(prev).add(target.toLowerCase()));
+          registerSent();
           toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
           return;
         }
@@ -320,9 +509,9 @@ function MembersScreen() {
   };
 
   const handleOpenChat = (peerCode: string, peerName: string) => {
-    navigate({
-      to: "/association/messages" as any,
-      search: { peerCode, peerName } as any,
+    void navigate({
+      to: "/association/messages",
+      search: { peerCode, peerName },
     });
   };
 
@@ -387,22 +576,22 @@ function MembersScreen() {
           Bạn bè ({connected.length})
         </button>
         <button
-          onClick={() => setTab("pending")}
+          onClick={() => setTab("sent")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-            tab === "pending"
+            tab === "sent"
               ? "bg-[#003B95] text-white shadow-xs"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
           <Clock className="h-3.5 w-3.5" />
-          Đang chờ ({outgoing.length + incoming.length + localPending.size})
+          Đã gửi kết nối ({sentList.length})
         </button>
       </div>
 
       <p className="sr-only" role="status" aria-live="polite" data-testid="members-announcement">
         {loading
           ? t("m.members.announce.loading")
-          : t("m.members.announce.count", { count: filtered.length })}
+          : t("m.members.announce.count", { count: tab === "sent" ? sentList.length : filtered.length })}
       </p>
 
       {/* Members List */}
@@ -418,20 +607,149 @@ function MembersScreen() {
             {t("m.members.loading")}
           </p>
         )}
-        {!loading && filtered.length === 0 && (
-          <div className="py-12 text-center space-y-2">
-            <Users className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
-            <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-              {tab === "connected"
-                ? "Bạn chưa có kết nối nào. Hãy gửi lời mời kết nối với các hội viên bên dưới!"
-                : tab === "pending"
-                ? "Không có lời mời kết nối nào đang chờ."
-                : "Không tìm thấy hội viên phù hợp."}
-            </p>
-          </div>
-        )}
 
-        {filtered.map((m) => {
+        {tab === "sent" ? (
+          sentList.length === 0 ? (
+            <div className="py-12 text-center space-y-2">
+              <Clock className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
+              <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                Bạn chưa gửi lời mời kết nối nào. Hãy tìm kiếm và kết nối với các hội viên CEO 1983!
+              </p>
+            </div>
+          ) : (
+            sentList.map((item) => (
+              <div
+                key={item.id || item.code}
+                role="listitem"
+                className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-amber-500/50 bg-white dark:bg-[#131a26] shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    {item.avatar ? (
+                      <img
+                        src={item.avatar}
+                        alt={item.name}
+                        className="h-12 w-12 rounded-full object-cover ring-2 ring-amber-500/30"
+                        onError={(e) => {
+                          e.currentTarget.src = "/ceo1983-logo.png";
+                        }}
+                      />
+                    ) : (
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 ring-2 ring-amber-500/30 font-bold text-sm">
+                        <User className="h-5 w-5" />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="truncate text-[14px] font-bold text-slate-900 dark:text-white">
+                        {item.name}
+                      </span>
+                      <span className="rounded-md bg-[#003B95]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#003B95] dark:text-amber-400">
+                        {item.code}
+                      </span>
+                    </div>
+                    {item.company && (
+                      <p className="truncate text-[12px] font-semibold text-slate-700 dark:text-slate-300 mt-0.5 flex items-center gap-1">
+                        <Building2 className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                        <span>{item.company}</span>
+                      </p>
+                    )}
+                    <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {item.title}
+                    </p>
+
+                    {item.opportunityTitle && (
+                      <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                        <Briefcase className="h-3 w-3 text-amber-500" />
+                        <span>Cơ hội: {item.opportunityTitle}</span>
+                      </div>
+                    )}
+
+                    {item.purpose && (
+                      <div className="mt-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                        <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">Lời nhắn:</span>
+                        <span>"{item.purpose}"</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status & Actions Row */}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
+                  <div>
+                    {item.status === "pending" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-2xs">
+                        <Clock className="h-3 w-3 animate-pulse" />
+                        <span>Đang chờ</span>
+                      </span>
+                    )}
+                    {item.status === "accepted" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 shadow-2xs">
+                        <Check className="h-3 w-3" />
+                        <span>Đã chấp nhận</span>
+                      </span>
+                    )}
+                    {item.status === "rejected" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 shadow-2xs">
+                        <X className="h-3 w-3" />
+                        <span>Đã từ chối</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    {item.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelSentRequest(item)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-1.5 text-[11.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                        title="Hủy yêu cầu kết nối"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span>Hủy</span>
+                      </button>
+                    )}
+                    {item.status === "accepted" && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenChat(item.code, item.name)}
+                        className="inline-flex items-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-1.5 text-[11.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span>Nhắn tin</span>
+                      </button>
+                    )}
+                    {item.status === "rejected" && item.member && (
+                      <button
+                        type="button"
+                        onClick={() => handleConnect(item.member!)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-amber-500 px-3 py-1.5 text-[11.5px] font-bold transition active:scale-95 cursor-pointer"
+                      >
+                        <Handshake className="h-3.5 w-3.5 text-amber-500" />
+                        <span>Gửi lại</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )
+        ) : (
+          <>
+            {!loading && filtered.length === 0 && (
+              <div className="py-12 text-center space-y-2">
+                <Users className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
+                <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                  {tab === "connected"
+                    ? "Bạn chưa có kết nối nào. Hãy gửi lời mời kết nối với các hội viên bên dưới!"
+                    : "Không tìm thấy hội viên phù hợp."}
+                </p>
+              </div>
+            )}
+
+            {filtered.map((m) => {
           const targetId = (m.userId || m.code).toLowerCase();
           const isFriend = checkIsFriend(m);
           const isOutgoing = Boolean(
@@ -511,63 +829,99 @@ function MembersScreen() {
                 </div>
               </div>
 
-              {/* Action Buttons Row */}
+              {/* Action Icons & Connection Row (Req 11 & Req 12) */}
               <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
-                {/* Chat Action */}
-                <button
-                  onClick={() => handleOpenChat(m.code, personDisplayName)}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] py-1.5 px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  <MessageSquare className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
-                  Nhắn tin
-                </button>
+                {/* Secondary Actions as sleek icons */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenChat(m.code, personDisplayName)}
+                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition cursor-pointer"
+                    title="Nhắn tin giao thương"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </button>
 
-                {/* Connection 2-way Lifecycle Action */}
-                {isFriend ? (
-                  <button
-                    onClick={() => handleDisconnect(m)}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-1.5 px-3 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 active:scale-[0.98] transition-all cursor-pointer group"
-                    title="Chạm để hủy kết bạn"
-                  >
-                    <UserCheck className="h-3.5 w-3.5 group-hover:hidden" />
-                    <UserMinus className="h-3.5 w-3.5 hidden group-hover:block" />
-                    <span className="group-hover:hidden">Bạn bè</span>
-                    <span className="hidden group-hover:inline">Hủy kết bạn</span>
-                  </button>
-                ) : isOutgoing ? (
-                  <button
-                    onClick={() => outgoingReqId && handleCancelInvite(outgoingReqId, personDisplayName)}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 py-1.5 px-3 text-[12px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 active:scale-[0.98] transition-all cursor-pointer"
-                    title="Chạm để hủy lời mời"
-                  >
-                    <Clock className="h-3.5 w-3.5" />
-                    Đã gửi lời mời
-                  </button>
-                ) : isIncoming ? (
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <button
-                      onClick={() => incomingReqId && handleAcceptInvite(incomingReqId, personDisplayName)}
-                      style={{ color: "#ffffff" }}
-                      className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-1.5 px-2 text-[11px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                  {m.phone && (
+                    <a
+                      href={`tel:${m.phone}`}
+                      className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer"
+                      title={`Gọi điện: ${m.phone}`}
                     >
-                      <Check className="h-3.5 w-3.5" />
-                      Đồng ý
-                    </button>
-                  </div>
-                ) : (
+                      <Phone className="h-4 w-4" />
+                    </a>
+                  )}
+
                   <button
-                    onClick={() => handleConnect(m)}
-                    style={{ color: "#ffffff" }}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-1.5 px-3 text-[12px] font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                    type="button"
+                    onClick={() => setSelectedMember(m)}
+                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
+                    title="Xem chi tiết hồ sơ hội viên"
                   >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    Kết nối
+                    <User className="h-4 w-4" />
                   </button>
-                )}
+                </div>
+
+                {/* Connection Lifecycle: Primary Action */}
+                <div className="flex items-center gap-1.5">
+                  {isFriend ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDisconnect(m)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer group"
+                      title="Chạm để hủy kết nối"
+                    >
+                      <Handshake className="h-3.5 w-3.5 group-hover:hidden text-emerald-500" />
+                      <UserMinus className="h-3.5 w-3.5 hidden group-hover:block" />
+                      <span className="group-hover:hidden">Đã kết nối</span>
+                      <span className="hidden group-hover:inline">Hủy</span>
+                    </button>
+                  ) : isOutgoing ? (
+                    <button
+                      type="button"
+                      onClick={() => outgoingReqId && handleCancelInvite(outgoingReqId, personDisplayName)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11.5px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer"
+                      title="Chạm để thu hồi lời mời"
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Đã gửi lời mời</span>
+                    </button>
+                  ) : isIncoming ? (
+                    <button
+                      type="button"
+                      onClick={() => incomingReqId && handleAcceptInvite(incomingReqId, personDisplayName)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-3.5 py-1.5 text-[11.5px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                    >
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                      <span>Đồng ý</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConnectTarget({
+                          code: m.code,
+                          name: personDisplayName,
+                          company: (companyDisplayName || m.company) ?? undefined,
+                          title: (m.personTitle || m.industry) ?? undefined,
+                          avatar: m.avatar ?? undefined,
+                          industry: m.industry ?? undefined,
+                          userId: m.userId ?? undefined,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-3.5 py-1.5 text-[11.5px] shadow-sm active:scale-95 transition cursor-pointer"
+                    >
+                      <Handshake className="h-3.5 w-3.5 text-slate-950 stroke-[2.5]" />
+                      <span>Hẹn gặp kết nối</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
+          </>
+        )}
       </div>
 
       {/* Member Profile Modal */}
@@ -603,6 +957,14 @@ function MembersScreen() {
           "M1983-292"
         }
         memberName={myMember?.name || "Lãnh đạo Doanh nghiệp"}
+      />
+
+      {/* Business Meeting Connection Bottom Sheet (Req 11) */}
+      <BusinessConnectBottomSheet
+        isOpen={Boolean(connectTarget)}
+        target={connectTarget}
+        onClose={() => setConnectTarget(null)}
+        onSuccess={() => void reloadMembers()}
       />
     </div>
   );

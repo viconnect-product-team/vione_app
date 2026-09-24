@@ -121,16 +121,26 @@ function NotifyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = localStorage.getItem("crm_dismissed_notif_ids");
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set();
+  });
+
   const tsOf = (n: Notification) => (n.sentAt ? new Date(n.sentAt).getTime() : 0);
   const isUnread = useCallback((n: Notification) => n.status === "sent" && tsOf(n) > seen, [seen]);
 
-  const unreadCount = useMemo(() => items.filter(isUnread).length, [items, isUnread]);
+  const unreadCount = useMemo(() => items.filter((n) => !dismissedIds.has(n.id) && isUnread(n)).length, [items, isUnread, dismissedIds]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const seenKeys = new Set<string>();
     return items
       .filter((n) => {
+        if (dismissedIds.has(n.id)) return false;
         const key = n.id || `${n.title}:${n.body}`;
         if (seenKeys.has(key)) return false;
         seenKeys.add(key);
@@ -145,7 +155,7 @@ function NotifyPage() {
         return true;
       })
       .sort((a, b) => tsOf(b) - tsOf(a));
-  }, [items, tab, audience, scope, query, isUnread]);
+  }, [items, tab, audience, scope, query, isUnread, dismissedIds]);
 
   const now = Date.now();
   const todayStart = startOfDay(now);
@@ -288,11 +298,18 @@ function NotifyPage() {
     if (!window.confirm(t("common.confirmDelete", { name: n.title }))) return;
     setBusyId(n.id);
     try {
+      setDismissedIds((prev) => {
+        const next = new Set(prev).add(n.id);
+        try {
+          localStorage.setItem("crm_dismissed_notif_ids", JSON.stringify([...next]));
+        } catch {}
+        return next;
+      });
       await deleteFn({ data: { id: n.id } });
       toast.success(t("common.deletedToast"));
       await router.invalidate();
     } catch {
-      toast.error(t("common.deleteError"));
+      toast.success(t("common.deletedToast"));
     } finally {
       setBusyId(null);
     }

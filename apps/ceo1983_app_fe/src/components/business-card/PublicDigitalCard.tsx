@@ -47,8 +47,19 @@ export function publicCardVcfHref(slug: string): string {
 export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
   const t = useT();
   const name = card.displayName?.trim() || card.slug;
-  const resolvedCover = resolveMediaUrl(card.coverUrl) || card.coverUrl;
-  const resolvedAvatar = resolveMediaUrl(card.avatarUrl) || card.avatarUrl;
+  const resolvedCover =
+    resolveMediaUrl(card.coverUrl) ||
+    card.coverUrl ||
+    (typeof window !== "undefined" ? localStorage.getItem("vba_member_cover_photo") : null);
+  const resolvedLogo =
+    resolveMediaUrl((card as any).companyLogoUrl || (card as any).logoUrl) ||
+    (card as any).companyLogoUrl ||
+    (card as any).logoUrl ||
+    (typeof window !== "undefined" ? localStorage.getItem("vba_member_company_logo") : null);
+  const resolvedAvatar =
+    resolveMediaUrl(card.avatarUrl) ||
+    card.avatarUrl ||
+    (typeof window !== "undefined" ? localStorage.getItem("vba_member_avatar_photo") : null);
 
   const phoneHref = sanitizePhoneHref(card.workPhone);
   const emailHref = sanitizeEmailHref(card.workEmail);
@@ -73,28 +84,33 @@ export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
 
   return (
     <article className="vba-card overflow-hidden" aria-label={name}>
-      <div className="relative h-24 bg-[var(--vba-gold-soft)]">
+      <div className="relative h-36 sm:h-44 bg-[var(--vba-gold-soft)] overflow-hidden">
         {resolvedCover ? (
-          <img src={resolvedCover} alt="" className="h-full w-full object-cover" />
+          <img src={resolvedCover} alt="Cover" className="h-full w-full object-cover" />
         ) : (
           <div className="vba-gold-grad h-full w-full opacity-30" />
         )}
+        {resolvedLogo ? (
+          <div className="absolute top-3 right-3 p-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-md border border-white/20">
+            <img src={resolvedLogo} alt="Company logo" className="h-9 w-auto max-w-[130px] object-contain" />
+          </div>
+        ) : null}
       </div>
 
       <div className="px-5 pb-5">
-        <div className="-mt-10 flex items-end gap-3">
+        <div className="relative z-20 -mt-12 flex items-end gap-3">
           {resolvedAvatar ? (
             <img
               src={resolvedAvatar}
               alt={name}
-              className="h-20 w-20 rounded-2xl border-2 border-[var(--vba-bg-2)] object-cover"
-              width={80}
-              height={80}
+              className="relative z-20 h-22 w-22 rounded-2xl border-2 border-white dark:border-slate-800 ring-4 ring-white/90 dark:ring-slate-900/90 object-cover shadow-xl bg-slate-100 dark:bg-slate-800"
+              width={88}
+              height={88}
             />
           ) : (
             <div
               aria-hidden="true"
-              className="grid h-20 w-20 place-items-center rounded-2xl border-2 border-[var(--vba-bg-2)] bg-[var(--vba-gold-soft)] text-[24px] font-bold text-[var(--vba-gold)]"
+              className="relative z-20 grid h-22 w-22 place-items-center rounded-2xl border-2 border-white dark:border-slate-800 ring-4 ring-white/90 dark:ring-slate-900/90 bg-gradient-to-br from-[#003B95] to-[#0A1A3A] text-white text-[28px] font-black shadow-xl"
             >
               {name.slice(0, 1).toUpperCase()}
             </div>
