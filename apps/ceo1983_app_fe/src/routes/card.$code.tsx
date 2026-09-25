@@ -328,7 +328,7 @@ function PublicCardView() {
                 aria-pressed={lang === l}
                 className={`inline-flex h-7 min-w-[44px] items-center justify-center gap-1 rounded-full px-2.5 transition font-bold ${
                   lang === l
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-xs"
+                    ? "bg-sky-950 text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
@@ -362,9 +362,9 @@ function PublicCardView() {
           <button
             type="button"
             onClick={handleDownloadVCard}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-amber-300/80 bg-amber-50 hover:bg-amber-100 transition active:scale-95 text-amber-900 shadow-xs cursor-pointer"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-900 shadow-xs cursor-pointer"
           >
-            <Download className="h-4 w-4 text-amber-600" />
+            <Download className="h-4 w-4 text-slate-700" />
             <span className="text-[10px] font-bold">{t("saveContact")}</span>
           </button>
 

@@ -57,8 +57,13 @@ export class UploadController {
       throw new BadRequestException('User ID not identified in auth session');
     }
 
+    const isStandalone =
+      req.query?.standalone === 'true' ||
+      req.query?.card === 'true' ||
+      req.headers?.['x-standalone-avatar'] === 'true';
+
     try {
-      const url = await this.uploadService.saveAvatar(file, userId);
+      const url = await this.uploadService.saveAvatar(file, userId, isStandalone);
       return { url };
     } catch (err: any) {
       console.error('uploadAvatar error:', err);

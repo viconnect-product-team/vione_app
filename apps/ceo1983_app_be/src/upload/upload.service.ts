@@ -39,7 +39,7 @@ export class UploadService {
     return `/upload/file/${subfolder}/${filename}`;
   }
 
-  async saveAvatar(file: any, userId: string): Promise<string> {
+  async saveAvatar(file: any, userId: string, standalone = false): Promise<string> {
     const fileExt = path.extname(file.originalname).toLowerCase() || '.jpg';
     const baseFilename = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
     const safeFilename = `avatars/${baseFilename}`;
@@ -83,6 +83,11 @@ export class UploadService {
       console.warn('user_uploads metadata insert notice:', err?.message);
     }
 
+    // Nếu là ảnh tải lên riêng cho từng danh thiếp số độc lập, chỉ trả về URL và không ghi đè hồ sơ chung
+    if (standalone) {
+      return url;
+    }
+
     // Save url to database user_profiles
     await this.prisma.$executeRaw`
       UPDATE public.user_profiles
@@ -100,13 +105,6 @@ export class UploadService {
     // Save url to database business_identities
     await this.prisma.$executeRaw`
       UPDATE public.business_identities
-      SET avatar_url = ${url}
-      WHERE owner_user_id = ${userId}::uuid
-    `.catch(() => null);
-
-    // Save url to database member_business_cards
-    await this.prisma.$executeRaw`
-      UPDATE public.member_business_cards
       SET avatar_url = ${url}
       WHERE owner_user_id = ${userId}::uuid
     `.catch(() => null);

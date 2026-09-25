@@ -147,7 +147,7 @@ function ProfileScreen() {
         <div className="mt-4 pt-3 border-t border-[var(--vba-border-soft)] grid grid-cols-3 gap-2">
           <Link
             to="/connect-app/me/edit"
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-gold-soft)] py-2.5 text-[11.5px] font-bold text-[var(--vba-gold)] hover:bg-[var(--vba-gold)] hover:text-slate-900 transition-colors border border-[var(--vba-border-accent)] shadow-xs"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-gold-soft)] py-2.5 text-[11.5px] font-bold text-[var(--vba-gold)] hover:bg-[#003B95] hover:text-white transition-colors border border-slate-200 shadow-xs"
           >
             <User className="h-3.5 w-3.5" /> Cập nhật
           </Link>

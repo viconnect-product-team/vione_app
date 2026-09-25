@@ -266,23 +266,35 @@ export function Sidebar({
   onNavigate,
 }: { mobile?: boolean; onNavigate?: () => void } = {}) {
   const t = useT();
-  const { isPlatformAdmin, isAdmin, roles } = useRole();
-  const isTongThuKy = roles.some((r) => String(r) === "tong_thu_ky");
-  const isBanThanhVien = roles.some((r) => String(r) === "truong_ban_thanh_vien");
-  const isBanTaiChinh = roles.some((r) => String(r) === "truong_ban_tai_chinh");
-  const isBanTruyenThong = roles.some((r) => String(r) === "truong_ban_truyen_thong");
-  const isBanXucTien = roles.some((r) => String(r) === "truong_ban_xuc_tien");
+  const roleState = useRole();
+  const {
+    isPlatformAdmin,
+    isAdmin,
+    srsRole,
+    isBQT,
+    isBTV,
+    isBTC,
+    isBTT,
+    isHVT,
+    canManageMembers,
+    canManageFinance,
+    canManageMedia,
+    canManageEvents,
+    canScanQR,
+    canManageSystem,
+    setRoleOverride,
+  } = roleState;
 
-  // Scoped permissions according to the permission matrix:
-  const canViewMembers = isPlatformAdmin || isAdmin || isTongThuKy || isBanThanhVien;
-  const canViewEvents = isPlatformAdmin || isAdmin || isTongThuKy || isBanTruyenThong || isBanXucTien;
-  const canViewSponsors = isPlatformAdmin || isAdmin || isTongThuKy || isBanTaiChinh;
-  const canViewFinance = isPlatformAdmin || isAdmin || isTongThuKy || isBanTaiChinh;
-  const canViewComm = isPlatformAdmin || isAdmin || isTongThuKy || isBanTruyenThong;
-  const canViewGovernance = isPlatformAdmin || isAdmin || isTongThuKy || isBanThanhVien;
-  const canViewNetwork = isPlatformAdmin || isAdmin || isTongThuKy || isBanXucTien;
-  const canViewBusinessConnect = isPlatformAdmin || isAdmin || isTongThuKy || isBanXucTien;
-  const canViewSystem = isPlatformAdmin || isAdmin;
+  // Scoped permissions according to the SRS RBAC matrix:
+  const canViewMembers = true; // All can view member directory (HVT is read-only)
+  const canViewEvents = true; // All can view events
+  const canViewSponsors = isBQT || isBTC; // Finance & sponsorship management
+  const canViewFinance = isBQT || isBTC; // Finance ONLY for ADM, BQT, BTC. Hidden from HVT, BTV, BTT!
+  const canViewComm = isBQT || isBTT || isHVT; // News & media
+  const canViewGovernance = isBQT || isBTV || isHVT; // Voting & meetings
+  const canViewNetwork = true; // B2B Marketplace & networking
+  const canViewBusinessConnect = true; // Card & 1-on-1 connections
+  const canViewSystem = canManageSystem; // System settings ONLY for ADM and BQT
 
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
 
@@ -359,6 +371,43 @@ export function Sidebar({
   const visibility = mobile ? "flex" : "hidden lg:flex";
   const width = isCollapsed ? "w-[72px]" : "w-[260px]";
 
+  // Filter individual items within groups according to permissions
+  const filteredMembers = members.filter((it) => {
+    // Only BTV, BQT, ADM can manage member segments and renewals
+    if (it.to === "/segments" || it.to === "/renewal") {
+      return canManageMembers;
+    }
+    return true;
+  });
+
+  const filteredEvents = events.filter((it) => {
+    // Only BTT, BQT, ADM can scan QR codes
+    if (it.to === "/checkin" || it.to === "/checkin-qr") {
+      return canScanQR;
+    }
+    // Only BTT, BQT, ADM can manage event attendee registrations
+    if (it.to === "/event-registrations") {
+      return canManageEvents;
+    }
+    return true;
+  });
+
+  const filteredSponsors = sponsors.filter((it) => {
+    // Financial packages and reports restricted to BTC, BQT, ADM
+    if (it.to === "/sponsor-report" || it.to === "/sponsor-packages") {
+      return canManageFinance;
+    }
+    return true;
+  });
+
+  const filteredComm = comm.filter((it) => {
+    // Broadcast notifications and email marketing restricted to BTT, BQT, ADM
+    if (it.to === "/email-marketing") {
+      return canManageMedia;
+    }
+    return true;
+  });
+
   return (
     <aside
       className={`${visibility} ${mobile ? "h-dvh" : "sticky top-0 h-dvh"} ${width} shrink-0 flex-col border-r border-sidebar-border transition-[width] duration-[var(--motion-slow)] ease-out`}
@@ -399,12 +448,40 @@ export function Sidebar({
             onClick={toggle}
             aria-label={t("nav.collapse")}
             title={t("nav.collapse")}
-            className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
           >
             <PanelLeftClose className="h-[18px] w-[18px]" />
           </button>
         )}
       </div>
+
+      {/* SRS Role Switcher Pill for Testing / RBAC Enforcement */}
+      {!isCollapsed && (
+        <div className="border-b border-sidebar-border/80 px-3 py-2 bg-sidebar-accent/25">
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sidebar-foreground/80">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              <span>Phân quyền SRS:</span>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+              {srsRole}
+            </span>
+          </div>
+          <select
+            value={srsRole}
+            onChange={(e) => setRoleOverride(e.target.value as any)}
+            className="w-full rounded-md border border-sidebar-border bg-sidebar px-2 py-1 text-[11px] font-medium text-sidebar-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            title="Chuyển đổi vai trò để kiểm thử phân quyền CRM theo SRS"
+          >
+            <option value="HVT">HVT - Hội viên thường (Chỉ xem cơ bản)</option>
+            <option value="BTT">BTT - Ban Truyền thông & Soát vé QR</option>
+            <option value="BTC">BTC - Ban Tài chính & Dòng tiền</option>
+            <option value="BTV">BTV - Ban Thành viên & Gia hạn</option>
+            <option value="BQT">BQT - Ban Quản Trị Hiệp hội</option>
+            <option value="ADM">ADM - Quản trị viên Kỹ thuật</option>
+          </select>
+        </div>
+      )}
 
       {/* Collapsed expand button */}
       {!mobile && isCollapsed && (
@@ -435,7 +512,7 @@ export function Sidebar({
         {canViewMembers && (
           <Group
             label="nav.group.members"
-            items={members}
+            items={filteredMembers}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -444,7 +521,7 @@ export function Sidebar({
         {canViewEvents && (
           <Group
             label="nav.group.events"
-            items={events}
+            items={filteredEvents}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -453,7 +530,7 @@ export function Sidebar({
         {canViewSponsors && (
           <Group
             label="nav.group.sponsors"
-            items={sponsors}
+            items={filteredSponsors}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -471,7 +548,7 @@ export function Sidebar({
         {canViewComm && (
           <Group
             label="nav.group.comm"
-            items={comm}
+            items={filteredComm}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}

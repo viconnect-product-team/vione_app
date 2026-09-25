@@ -103,7 +103,7 @@ function OpportunityCard({
       <Link
         to="/opportunities/$id"
         params={{ id: opp.id }}
-        className="relative flex h-28 items-center justify-center overflow-hidden text-5xl bg-secondary/30"
+        className="relative flex h-48 w-full aspect-[16/9] items-center justify-center overflow-hidden text-5xl bg-secondary/30"
         style={{ background: "var(--gradient-primary)" }}
         aria-label={opp.title}
       >

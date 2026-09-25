@@ -144,7 +144,7 @@ function EventsScreen() {
                     type="button"
                     onClick={() => register(e.id)}
                     disabled={busy === e.id}
-                    className="rounded-lg vba-gold-grad px-3 py-1.5 text-[11px] font-semibold text-[#1a1206] disabled:opacity-60 cursor-pointer"
+                    className="rounded-lg bg-sky-950 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-60 cursor-pointer shadow-xs"
                   >
                     {busy === e.id ? t("m.events.registering") : t("m.events.register_btn")}
                   </button>

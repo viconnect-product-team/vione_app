@@ -187,17 +187,9 @@ export class BusinessCardService {
       targetId = inserted[0]?.id;
     }
 
-    // Sync avatar to members and user_profiles
-    if (avatarUrl) {
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE public.members SET avatar = $1 WHERE user_id = $2::uuid OR id = $2::uuid`,
-        avatarUrl, userId,
-      ).catch(() => null);
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE public.user_profiles SET avatar_url = $1 WHERE user_id = $2::uuid OR id = $2::uuid`,
-        avatarUrl, userId,
-      ).catch(() => null);
-    }
+    // Each digital business card (primary or secondary) is strictly independent:
+    // avatar_url is persisted in member_business_cards for this specific card only,
+    // and does NOT overwrite the global member or user profile.
 
     // Sync skills, services, needs
     if (targetId) {

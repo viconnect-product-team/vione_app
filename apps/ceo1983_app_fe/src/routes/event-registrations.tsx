@@ -35,6 +35,7 @@ import {
 } from "@/lib/events.functions";
 import { useFmt, useT } from "@/lib/i18n";
 import { CinemaSeatingMap } from "@/components/dashboard/CinemaSeatingMap";
+import { useRole } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/event-registrations")({
   ssr: false,
@@ -46,6 +47,9 @@ export function RegPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
+  const { isBTT, isBQT, isAdmin, isPlatformAdmin } = useRole();
+  const canSwapSeats = isBTT || isBQT || isAdmin || isPlatformAdmin;
+
   const { events: EVENTS, registrations: REGISTRATIONS } = Route.useLoaderData() as {
     events: EventItem[];
     registrations: Registration[];
@@ -458,13 +462,23 @@ export function RegPage() {
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Chưa xếp chỗ</span>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSeating(r)}
-                        className="ml-2 text-[11px] text-primary underline hover:opacity-80 cursor-pointer"
-                      >
-                        {r.seatAssignment ? "Đổi" : "+ Xếp"}
-                      </button>
+                      {canSwapSeats ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSeating(r)}
+                          className="ml-2 text-[11px] text-primary underline hover:opacity-80 cursor-pointer font-semibold"
+                          title="Ban Truyền thông / BQT / Admin: Nhấn để xếp hoặc đổi chỗ ngồi"
+                        >
+                          {r.seatAssignment ? "Đổi" : "+ Xếp"}
+                        </button>
+                      ) : (
+                        <span
+                          className="ml-2 text-[10px] text-muted-foreground italic"
+                          title="Chỉ Ban Truyền Thông, Ban Quản Trị và Admin mới được xếp hoặc đổi chỗ"
+                        >
+                          (Cố định)
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3 border-b border-border/50">

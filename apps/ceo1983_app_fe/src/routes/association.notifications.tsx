@@ -1542,7 +1542,7 @@ function NotificationsScreen() {
                     setSelectedNotif(null);
                     void navigate({ to: "/association/events" });
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                 >
                   <span>Xem Chi Tiết Sự Kiện Gala</span>
                 </button>

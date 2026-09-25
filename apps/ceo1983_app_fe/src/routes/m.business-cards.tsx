@@ -52,6 +52,7 @@ import { ShareCardModal } from "@/components/member/ShareCardModal";
 import { CardPreviewModal } from "@/components/member/CardPreviewModal";
 import { FastScanModal } from "@/components/member/FastScanModal";
 import { ConfirmDialog } from "@/components/member/ConfirmDialog";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 import { performWithUndo } from "@/lib/undo-action";
 import { cardPermissionErrorKey } from "@/lib/card-permission-error";
@@ -129,11 +130,11 @@ type Draft = {
   needs: { title: string; description: string }[];
 };
 
-function emptyDraft(): Draft {
+function emptyDraft(kind: CardKind = "secondary"): Draft {
   return {
     id: null,
     slug: "",
-    cardKind: "primary",
+    cardKind: kind,
     publicMode: "members_only",
     visibility: { ...DEFAULT_VISIBILITY },
     displayName: "",
@@ -211,22 +212,25 @@ function BusinessCardsScreen() {
     if (search.tab) setTab(search.tab);
   }, [search.tab]);
 
+  const listFnRef = useRef(listFn);
+  listFnRef.current = listFn;
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setCards(await listFn());
+      setCards(await listFnRef.current());
     } catch (e) {
       toast.error(t(cardPermissionErrorKey(e)));
     } finally {
       setLoading(false);
     }
-  }, [listFn]);
+  }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const openNew = () => setEditing(emptyDraft());
+  const openNew = () => setEditing(emptyDraft(cards.length === 0 ? "primary" : "secondary"));
   const openEdit = async (id: string) => {
     try {
       const card = await getFn({ data: { id } });
@@ -273,7 +277,7 @@ function BusinessCardsScreen() {
             onClick={() => setTab(tk)}
             className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition ${
               tab === tk
-                ? "vba-gold-grad text-[#1a1206]"
+                ? "bg-[#003B95] text-white"
                 : "text-[var(--vba-text-dim)] hover:bg-card/5"
             }`}
           >
@@ -309,7 +313,7 @@ function BusinessCardsScreen() {
                       .getElementById("m-link-member-profile")
                       ?.scrollIntoView({ behavior: "smooth", block: "center" })
                   }
-                  className="vba-gold-grad mt-1 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-[#1a1206]"
+                  className="mt-1 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white bg-[#003B95] hover:bg-[#002b70] shadow-xs"
                 >
                   <Link2 className="h-4 w-4" />
                   {t("bc.empty.cta")}
@@ -360,7 +364,7 @@ function BusinessCardsScreen() {
                         aria-pressed={statusFilter === f.key}
                         className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
                           statusFilter === f.key
-                            ? "vba-gold-grad text-[#1a1206]"
+                            ? "bg-[#003B95] text-white"
                             : "text-[var(--vba-text-dim)] hover:bg-card/5"
                         }`}
                       >
@@ -440,7 +444,7 @@ function StatsPanel() {
             onClick={() => setDays(d)}
             className={`rounded-full px-3 py-1 text-[12px] font-semibold transition ${
               days === d
-                ? "vba-gold-grad text-[#1a1206]"
+                ? "bg-[#003B95] text-white"
                 : "text-[var(--vba-text-dim)] hover:bg-card/5"
             }`}
           >
@@ -924,7 +928,7 @@ function LeadRow({
         {lead.requesterEmail ? (
           <a
             href={`mailto:${lead.requesterEmail}`}
-            className="vba-gold-grad inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[#1a1206]"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white bg-[#003B95] hover:bg-[#002b70] shadow-xs"
           >
             <Mail className="h-3.5 w-3.5" />
             {t("bc.leads.reply")}
@@ -1103,7 +1107,7 @@ function LeadStatusChanger({
               onClick={() => void apply(s)}
               className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition disabled:opacity-60 ${
                 active
-                  ? "vba-gold-grad text-[#1a1206]"
+                  ? "bg-[#003B95] text-white"
                   : "bg-card/5 text-[var(--vba-text)] hover:bg-card/10"
               }`}
             >
@@ -1225,7 +1229,7 @@ function LeadReplyBlock({
         {!composing ? (
           <button
             onClick={() => setComposing(true)}
-            className="vba-gold-grad inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[#1a1206]"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white bg-[#003B95] hover:bg-[#002b70] shadow-xs"
           >
             <Send className="h-3.5 w-3.5" />
             {t("bc.reply.compose")}
@@ -1268,7 +1272,7 @@ function LeadReplyBlock({
                   onClick={() => applyTemplate(tpl.id)}
                   className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ${
                     templateId === tpl.id
-                      ? "vba-gold-grad text-[#1a1206]"
+                      ? "bg-[#003B95] text-white"
                       : "bg-card/5 text-[var(--vba-text)] hover:bg-card/10"
                   }`}
                 >
@@ -1325,7 +1329,7 @@ function LeadReplyBlock({
             <button
               disabled={busy}
               onClick={() => void submit()}
-              className="vba-gold-grad inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[#1a1206] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-white bg-[#003B95] hover:bg-[#002b70] shadow-xs disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1418,17 +1422,35 @@ function CardRow({
   };
 
   const published = card.status === "published";
+  const cachedCardAvatar =
+    typeof window !== "undefined" && (card.id || card.slug)
+      ? localStorage.getItem(`vba_card_avatar_${card.id}`) ||
+        localStorage.getItem(`vba_card_avatar_${card.slug}`) ||
+        localStorage.getItem(`vba_secondary_card_avatar_${card.id}`) ||
+        localStorage.getItem(`vba_secondary_card_avatar_${card.slug}`)
+      : null;
+  const effectiveAvatar = card.avatarUrl || cachedCardAvatar || null;
+  const resolvedAvatar = effectiveAvatar
+    ? (effectiveAvatar.startsWith("data:") || effectiveAvatar.startsWith("blob:")
+        ? effectiveAvatar
+        : resolveMediaUrl(effectiveAvatar) || effectiveAvatar)
+    : null;
 
   return (
     <div className="vba-card p-4">
       <div className="flex items-start gap-3">
-        {card.avatarUrl ? (
+        {resolvedAvatar ? (
           <img
-            src={card.avatarUrl}
+            src={resolvedAvatar}
             alt=""
             className="h-12 w-12 shrink-0 rounded-xl object-cover"
             width={48}
             height={48}
+            onError={(e) => {
+              if (cachedCardAvatar && e.currentTarget.src !== cachedCardAvatar) {
+                e.currentTarget.src = cachedCardAvatar;
+              }
+            }}
           />
         ) : (
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">
@@ -1599,7 +1621,7 @@ function CardEditor({
     }
     setSaving(true);
     try {
-      await save({
+      const res = await save({
         data: {
           id: d.id,
           slug: d.slug.trim(),
@@ -1635,6 +1657,22 @@ function CardEditor({
             .map((s) => ({ title: s.title, description: s.description || null, category: null })),
         },
       });
+      try {
+        const targetCardId = d.id || (res as any)?.id || (res as any)?.slug || d.slug;
+        if (d.avatarUrl && targetCardId) {
+          localStorage.setItem(`vba_card_avatar_${targetCardId}`, d.avatarUrl);
+          localStorage.setItem(`vba_secondary_card_avatar_${targetCardId}`, d.avatarUrl);
+          if (d.slug) {
+            localStorage.setItem(`vba_card_avatar_${d.slug}`, d.avatarUrl);
+          }
+          if ((res as any)?.id) {
+            localStorage.setItem(`vba_card_avatar_${(res as any).id}`, d.avatarUrl);
+          }
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("storage"));
+          }
+        }
+      } catch {}
       toast.success(t("bc.saved"));
       onSaved();
     } catch (e) {
@@ -1692,6 +1730,7 @@ function CardEditor({
             <AvatarUploadField
               value={d.avatarUrl}
               onChange={(url) => set("avatarUrl", url)}
+              standalone={true}
             />
             <Input
               value={d.avatarUrl}
@@ -1857,7 +1896,7 @@ function CardEditor({
           <button
             disabled={saving}
             onClick={() => void submit()}
-            className="vba-gold-grad flex flex-[2] items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-semibold text-[#1a1206] disabled:opacity-60"
+            className="flex flex-[2] items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-semibold text-white bg-[#003B95] hover:bg-[#002b70] shadow-xs disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? t("bc.saving") : t("bc.save")}
@@ -1993,7 +2032,7 @@ function Segmented({
           onClick={() => onChange(o.value)}
           className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
             value === o.value
-              ? "vba-gold-grad text-[#1a1206]"
+              ? "bg-[#003B95] text-white"
               : "text-[var(--vba-text-muted)] hover:text-[var(--vba-text)]"
           }`}
         >
@@ -2022,7 +2061,7 @@ function VisToggle({
       <span className="text-[12px] font-medium text-[var(--vba-text)]">{label}</span>
       <span
         className={`relative h-5 w-9 shrink-0 rounded-full transition ${
-          checked ? "vba-gold-grad" : "bg-[var(--vba-border-soft)]"
+          checked ? "bg-[#003B95] text-white" : "bg-[var(--vba-border-soft)]"
         }`}
       >
         <span

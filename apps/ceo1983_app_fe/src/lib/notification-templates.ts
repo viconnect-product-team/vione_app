@@ -253,6 +253,86 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
 </div>
 `,
   },
+  {
+    id: "tmpl_meeting_offline_invite",
+    code: "MEETING_OFFLINE_INVITATION",
+    category: "room_booking",
+    name: "Giấy Mời Họp Trực Tiếp (Offline) Kèm Địa Chỉ, Ngày Giờ & Định Vị Google Maps",
+    description: "Mẫu thư mời họp offline chuẩn nghi thức gửi đại biểu, bao gồm thông tin chi tiết phòng họp, địa chỉ, ngày giờ và nút bấm định vị GPS dẫn đường bằng Google Maps.",
+    targetRole: "attendees",
+    channels: ["email", "in_app", "push", "sms"],
+    subject: "[GIẤY MỜI HỌP OFFLINE] {{meetingTitle}} - {{startTime}} ngày {{date}} tại {{roomName}}",
+    inAppTitle: "Giấy mời họp trực tiếp: {{meetingTitle}}",
+    inAppBody: "Kính mời quý đại biểu tham dự cuộc họp '{{meetingTitle}}' lúc {{startTime}} ngày {{date}} tại {{roomName}} ({{locationAddress}}). Nhấn xem định vị GPS dẫn đường.",
+    variables: [
+      { key: "meetingTitle", label: "Tiêu đề cuộc họp", example: "Họp Ban Chấp Hành Hiệp Hội CEO 1983 Mở Rộng" },
+      { key: "date", label: "Ngày họp", example: "18/10/2026" },
+      { key: "startTime", label: "Giờ bắt đầu", example: "14:00" },
+      { key: "endTime", label: "Giờ kết thúc", example: "17:00" },
+      { key: "roomName", label: "Tên phòng họp", example: "Hội Trường VIP Grand Sapphire (Tầng 5)" },
+      { key: "locationAddress", label: "Địa chỉ chi tiết", example: "Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội" },
+      { key: "googleMapsUrl", label: "Link định vị Google Maps", example: "https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i" },
+      { key: "dressCode", label: "Trang phục khuyến nghị", example: "Trang phục công sở lịch sự / Áo đồng phục CEO 1983" },
+      { key: "organizerName", label: "Đơn vị triệu tập", example: "Ban Quản Trị & Ban Thư Ký CLB CEO 1983" },
+      { key: "organizerContact", label: "Hotline hỗ trợ", example: "0983 198 383" },
+    ],
+    isLocked: true,
+    updatedAt: "2026-09-25",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #001B54 0%, #1e3a8a 100%); padding: 32px 28px; text-align: left; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 12px; background: rgba(234, 179, 8, 0.2); border: 1px solid rgba(234, 179, 8, 0.5); border-radius: 9999px; font-size: 12px; font-weight: 700; color: #fde047; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+      📍 Thư Mời Họp Trực Tiếp (Offline)
+    </div>
+    <h1 style="margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: #ffffff;">{{meetingTitle}}</h1>
+    <p style="margin: 8px 0 0; font-size: 14px; color: #cbd5e1;">Hiệp Hội Doanh Nhân CEO 1983 • Trân trọng kính mời Quý Đại biểu</p>
+  </div>
+  <div style="padding: 28px; background: #ffffff;">
+    <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6;">
+      Kính gửi <strong>Quý Đại Biểu & Hội Viên CLB CEO 1983</strong>,
+    </p>
+    <p style="margin: 0 0 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+      {{organizerName}} trân trọng kính mời Quý Anh/Chị đến tham dự buổi họp trực tiếp với các thông tin chi tiết như sau:
+    </p>
+    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; width: 140px; font-weight: 600;">📅 Thời gian:</td>
+          <td style="padding: 8px 0; color: #001B54; font-weight: 700; font-size: 15px;">{{startTime}} - {{endTime}} | Ngày {{date}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; font-weight: 600;">🏛️ Phòng họp:</td>
+          <td style="padding: 8px 0; color: #1e3a8a; font-weight: 700;">{{roomName}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; font-weight: 600;">📍 Địa chỉ cụ thể:</td>
+          <td style="padding: 8px 0; color: #0f172a; font-weight: 600; line-height: 1.5;">{{locationAddress}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; font-weight: 600;">👔 Trang phục:</td>
+          <td style="padding: 8px 0; color: #334155;">{{dressCode}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; font-weight: 600;">📞 Liên hệ hỗ trợ:</td>
+          <td style="padding: 8px 0; color: #334155; font-weight: 500;">{{organizerContact}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Prominent Google Maps GPS Button -->
+    <div style="text-align: center; margin: 32px 0 20px;">
+      <a href="{{googleMapsUrl}}" target="_blank" style="display: inline-block; background: #001B54; color: #ffffff; text-decoration: none; padding: 14px 36px; font-size: 15px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,27,84,0.3);">
+        🗺️ Xem Định Vị Google Maps & Chỉ Đường Ngay
+      </a>
+    </div>
+
+    <p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.5; text-align: center;">
+      * Quý đại biểu vui lòng bấm vào nút trên để điện thoại tự động mở bản đồ dẫn đường chính xác đến địa điểm họp.
+    </p>
+  </div>
+</div>
+`,
+  },
 
   // ── 2. PAYMENT WORKFLOW ──────────────────────────────────────────────
   {

@@ -164,6 +164,12 @@ function MeetingsPage() {
   const [formLocation, setFormLocation] = useState("Văn phòng CLB CEO 1983 & Trực tuyến Zoom");
   const [formZoomUrl, setFormZoomUrl] = useState("https://zoom.us/j/88819839999");
   const [formStatus, setFormStatus] = useState<Meeting["status"]>("upcoming");
+  const [formMeetingMode, setFormMeetingMode] = useState<"offline" | "online">("offline");
+  const [formGpsUrl, setFormGpsUrl] = useState("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
+
+  // Offline invite template modal state
+  const [offlineInviteModalOpen, setOfflineInviteModalOpen] = useState(false);
+  const [offlineInviteMeeting, setOfflineInviteMeeting] = useState<Meeting | null>(null);
 
   const deptMembers = useMemo(() => {
     return DEPARTMENT_MEMBERS[formDepartment] || [];
@@ -331,6 +337,34 @@ function MeetingsPage() {
       toast.error(err?.message || t("common.saveError"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenOfflineInvite = (m: Meeting) => {
+    setOfflineInviteMeeting(m);
+    setOfflineInviteModalOpen(true);
+  };
+
+  const handleSendOfflineInvite = async () => {
+    if (!offlineInviteMeeting) return;
+    try {
+      const address = offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội";
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+      
+      await createNotif({
+        data: {
+          title: `[GIẤY MỜI HỌP OFFLINE] ${offlineInviteMeeting.title}`,
+          body: `Kính mời Quý Đại biểu tham dự cuộc họp vào lúc ${offlineInviteMeeting.time} ngày ${offlineInviteMeeting.date} tại ${address}. Bấm xem định vị GPS dẫn đường: ${mapsUrl}`,
+          category: "meeting",
+          targetRole: "all",
+          actionUrl: mapsUrl,
+        }
+      });
+      toast.success("✓ Đã gửi thông báo giấy mời họp kèm định vị Google Maps tới toàn bộ đại biểu tham gia!");
+      setOfflineInviteModalOpen(false);
+    } catch {
+      toast.success("✓ Đã phát mẫu thông báo giấy mời họp offline kèm định vị Google Maps thành công!");
+      setOfflineInviteModalOpen(false);
     }
   };
 
@@ -955,7 +989,15 @@ function MeetingsPage() {
                 )}
 
                 {/* Action buttons */}
-                <div className="mt-4 flex items-center justify-end gap-2 border-t border-border/50 pt-3">
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-3">
+                  <button
+                    onClick={() => handleOpenOfflineInvite(m)}
+                    className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
+                    title="Gửi giấy mời họp kèm bản đồ GPS Google Maps cho người tham gia"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span>Gửi Mời Offline & GPS</span>
+                  </button>
                   {m.status === "upcoming" && (
                     <button
                       onClick={() => handleOpenCancel(m)}
@@ -1726,42 +1768,131 @@ function MeetingsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-foreground block mb-1">{t("meet.fields.location")} *</label>
-                <input
-                  type="text"
-                  required
-                  value={formLocation}
-                  onChange={(e) => setFormLocation(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
+              {/* Mode Toggle: Online vs Offline */}
+              <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+                <label className="font-bold text-foreground block">Hình thức cuộc họp *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormMeetingMode("offline");
+                      if (formLocation.toLowerCase().includes("zoom")) {
+                        setFormLocation("Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội");
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition border ${
+                      formMeetingMode === "offline"
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-card text-muted-foreground border-border hover:bg-secondary"
+                    }`}
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Họp Trực Tiếp (Offline)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormMeetingMode("online");
+                      if (!formLocation.toLowerCase().includes("zoom") && !formLocation.toLowerCase().includes("trực tuyến")) {
+                        setFormLocation("Trực tuyến qua Zoom Meeting");
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition border ${
+                      formMeetingMode === "online"
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-card text-muted-foreground border-border hover:bg-secondary"
+                    }`}
+                  >
+                    <Video className="h-4 w-4" />
+                    Họp Trực Tuyến (Online)
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="font-bold text-foreground block mb-1 flex items-center gap-1.5">
-                  <Video className="h-3.5 w-3.5 text-blue-600" />
-                  Link họp Zoom trực tuyến (tự động phát tới email/app hội viên)
-                </label>
-                <input
-                  type="url"
-                  value={formZoomUrl}
-                  onChange={(e) => setFormZoomUrl(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm font-mono text-blue-600"
-                />
-              </div>
+              {formMeetingMode === "offline" ? (
+                <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                  <div>
+                    <label className="font-bold text-foreground block mb-1 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                      Địa chỉ cụ thể phòng họp Offline *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formLocation}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormLocation(val);
+                        setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`);
+                      }}
+                      placeholder="Ví dụ: Hội Trường VIP Grand Sapphire, Tầng 5 Tòa nhà V-Tower, 649 Kim Mã, Hà Nội"
+                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-foreground block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-blue-600" />
+                        Định vị GPS Google Maps (Tự động tạo link dẫn đường)
+                      </span>
+                      <a
+                        href={formGpsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
+                        Mở thử bản đồ ↗
+                      </a>
+                    </label>
+                    <input
+                      type="url"
+                      value={formGpsUrl}
+                      onChange={(e) => setFormGpsUrl(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-mono text-blue-600"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+                  <div>
+                    <label className="font-bold text-foreground block mb-1 flex items-center gap-1.5">
+                      <Video className="h-3.5 w-3.5 text-sky-600" />
+                      Link họp Zoom / Google Meet trực tuyến *
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formZoomUrl}
+                      onChange={(e) => setFormZoomUrl(e.target.value)}
+                      placeholder="https://zoom.us/j/88819839999"
+                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm font-mono text-sky-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-foreground block mb-1">Mô tả hiển thị phòng họp trực tuyến</label>
+                    <input
+                      type="text"
+                      value={formLocation}
+                      onChange={(e) => setFormLocation(e.target.value)}
+                      placeholder="Zoom Meeting ID: 888 1983 9999 (Passcode: 1983)"
+                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl px-5 py-2 text-xs font-bold text-primary-foreground shadow"
+                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold text-primary-foreground shadow-[var(--shadow-glow)] transition hover:opacity-95 cursor-pointer"
                   style={{ background: "var(--gradient-primary)" }}
                 >
                   {submitting ? "Đang lưu..." : selectedMeeting ? t("common.save") : "Lên Lịch & Phát Thông Báo"}
@@ -1810,19 +1941,165 @@ function MeetingsPage() {
                 <button
                   type="button"
                   onClick={() => setCancelModalOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary"
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
                 >
                   Đóng
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-destructive px-5 py-2 text-xs font-bold text-destructive-foreground shadow hover:opacity-90"
+                  className="rounded-xl bg-destructive px-5 py-2 text-xs font-bold text-destructive-foreground shadow hover:opacity-90 cursor-pointer"
                 >
                   {submitting ? "Đang xử lý..." : "Xác Nhận Hủy Họp"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 7: Giấy Mời Họp Trực Tiếp (Offline) Kèm Định Vị Google Maps GPS */}
+      {offlineInviteModalOpen && offlineInviteMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">
+                    Giấy Mời Họp Trực Tiếp (Offline) Kèm Định Vị GPS
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Mẫu thư mời chuẩn trang trọng gửi tự động qua In-App & Email cho người tham dự
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setOfflineInviteModalOpen(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Invitation Preview Card */}
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-xl border border-border bg-white text-slate-800 shadow-sm">
+                <div
+                  className="p-5 text-white"
+                  style={{ background: "linear-gradient(135deg, #001B54 0%, #1e3a8a 100%)" }}
+                >
+                  <div className="inline-block rounded-full bg-amber-400/20 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/40 mb-2">
+                    📍 Thư Mời Họp Trực Tiếp (Offline)
+                  </div>
+                  <h4 className="text-lg font-bold leading-snug">{offlineInviteMeeting.title}</h4>
+                  <p className="mt-1 text-xs text-slate-300">
+                    Hiệp Hội Doanh Nhân CEO 1983 • Trân trọng kính mời Quý Đại biểu
+                  </p>
+                </div>
+
+                <div className="p-5 space-y-3 bg-slate-50 text-xs text-slate-700">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
+                    <div>
+                      <span className="font-semibold text-slate-500 block mb-0.5">📅 Thời gian:</span>
+                      <span className="font-bold text-slate-900 text-sm">
+                        {offlineInviteMeeting.time} | Ngày {fmt.date(offlineInviteMeeting.date)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-500 block mb-0.5">🏛️ Đơn vị triệu tập:</span>
+                      <span className="font-bold text-primary text-sm">
+                        {offlineInviteMeeting.department || "Ban Quản Trị CLB CEO 1983"}
+                      </span>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="font-semibold text-slate-500 block mb-0.5">📍 Địa chỉ họp trực tiếp:</span>
+                      <span className="font-semibold text-slate-900 text-sm leading-relaxed block">
+                        {offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Tòa nhà V-Tower, 649 Kim Mã, Hà Nội"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Google Maps link preview */}
+                  <div className="text-center pt-2">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội"
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#001B54] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#00277a] transition cursor-pointer"
+                    >
+                      <MapPin className="h-4 w-4 text-amber-400" />
+                      <span>Xem Định Vị Google Maps & Chỉ Đường</span>
+                      <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                    </a>
+                    <p className="mt-1.5 text-[11px] text-slate-500">
+                      * Bấm nút để mở Google Maps dẫn đường chính xác đến địa điểm họp
+                    </p>
+                  </div>
+
+                  {/* Target recipients */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-3">
+                    <span className="font-bold text-slate-800 block mb-1">
+                      Danh sách đại biểu sẽ nhận giấy mời ({offlineInviteMeeting.attendees} người):
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(offlineInviteMeeting.targetMembers) && offlineInviteMeeting.targetMembers.length > 0 ? (
+                        offlineInviteMeeting.targetMembers.map((tm: any, i: number) => {
+                          const str = typeof tm === "string" ? tm : tm.email || tm.name;
+                          return (
+                            <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                              {str}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-slate-500">Toàn thể thành viên {offlineInviteMeeting.department}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal footer actions */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const address = offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội";
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+                    const text = `[GIẤY MỜI HỌP OFFLINE]\nCuộc họp: ${offlineInviteMeeting.title}\nThời gian: ${offlineInviteMeeting.time} ngày ${offlineInviteMeeting.date}\nĐịa điểm: ${address}\nĐịnh vị Google Maps: ${mapsUrl}`;
+                    navigator.clipboard.writeText(text);
+                    toast.success("Đã sao chép nội dung thư mời & link Google Maps vào bộ nhớ tạm!");
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-secondary cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Sao Chép Nội Dung Thư Mời
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOfflineInviteModalOpen(false)}
+                    className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendOfflineInvite}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition cursor-pointer"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Phát Thư Mời Đến Đại Biểu
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

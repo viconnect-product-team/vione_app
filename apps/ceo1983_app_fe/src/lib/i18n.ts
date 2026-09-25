@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useCallback } from "react";
 import { formatDisplayDate, formatDisplayDateTime } from "@/lib/date-format";
 import vi from "../../../../packages/shared/locales/vi.json";
 import en from "../../../../packages/shared/locales/en.json";
@@ -95,15 +95,18 @@ export function translate(key: TKey, lang: Lang): string {
 
 export function useT() {
   const { lang } = useLang();
-  return (key: TKey, vars?: Record<string, string | number>) => {
-    let s: string = translate(key, lang);
-    if (vars) {
-      for (const k of Object.keys(vars)) {
-        s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(vars[k]));
+  return useCallback(
+    (key: TKey, vars?: Record<string, string | number>) => {
+      let s: string = translate(key, lang);
+      if (vars) {
+        for (const k of Object.keys(vars)) {
+          s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(vars[k]));
+        }
       }
-    }
-    return s;
-  };
+      return s;
+    },
+    [lang],
+  );
 }
 
 export function useFmt() {

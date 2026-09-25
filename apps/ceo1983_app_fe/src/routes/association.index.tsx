@@ -800,7 +800,7 @@ function Home() {
             title="Bấm vào để tải lên hoặc đổi Logo công ty"
           >
             {companyLogo ? (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 shadow-sm transition group">
+              <div className="flex items-center gap-1.5 p-1 transition group hover:opacity-90">
                 <img
                   src={resolveMediaUrl(companyLogo) || companyLogo}
                   alt="Company Logo"
@@ -810,12 +810,12 @@ function Home() {
                       (e.target as HTMLImageElement).src = fallback;
                     }
                   }}
-                  className="h-7 sm:h-8 w-auto max-w-[120px] object-contain drop-shadow-sm filter"
+                  className="h-7 sm:h-8 w-auto max-w-[120px] object-contain drop-shadow filter"
                 />
-                <span className="hidden group-hover:inline-block text-[10px] text-white font-semibold">Đổi</span>
+                <span className="hidden group-hover:inline-block text-[10px] text-white/90 font-semibold drop-shadow">Đổi</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white text-[11px] font-bold shadow-sm transition active:scale-95">
+              <div className="flex items-center gap-1.5 px-2 py-1 text-white/80 hover:text-white text-[11px] font-bold transition active:scale-95 drop-shadow">
                 <Building2 className="h-3.5 w-3.5 text-white" />
                 <span>+ Logo Cty</span>
               </div>
@@ -847,11 +847,6 @@ function Home() {
               <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0F172A]" />
             </div>
 
-            {/* Badge hội viên chính thức */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-[11px] font-bold text-[#003B95] dark:text-blue-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#003B95] dark:bg-blue-400 animate-pulse" />
-              <span>Hội viên VIP</span>
-            </div>
           </div>
 
           {/* Thông tin hội viên & doanh nghiệp */}

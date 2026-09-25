@@ -214,20 +214,6 @@ export function Ceo1983BusinessCardVisit({
             </div>
           )}
 
-          {/* Vòng tròn đồng tâm chìm (Concentric Watermark Waves) */}
-          <svg
-            className="absolute -top-10 -right-10 w-64 h-64 sm:w-80 sm:h-80 pointer-events-none opacity-40"
-            viewBox="0 0 200 200"
-            fill="none"
-          >
-            <circle cx="160" cy="40" r="30" stroke="#CBD5E1" strokeWidth="1" strokeDasharray="3 3" />
-            <circle cx="160" cy="40" r="50" stroke="#E2E8F0" strokeWidth="1" />
-            <circle cx="160" cy="40" r="70" stroke="#E2E8F0" strokeWidth="1" />
-            <circle cx="160" cy="40" r="90" stroke="#E2E8F0" strokeWidth="1" />
-            <circle cx="160" cy="40" r="110" stroke="#F1F5F9" strokeWidth="1.2" />
-            <circle cx="160" cy="40" r="130" stroke="#F8FAFC" strokeWidth="1.2" />
-            <circle cx="160" cy="40" r="150" stroke="#F1F5F9" strokeWidth="1.5" />
-          </svg>
 
           {/* TOP ROW: Góc trái là Tên công ty / Huy hiệu; Góc phải là LOGO CÔNG TY & MÃ QR */}
           <div className="relative z-10 flex items-start justify-between gap-3">
@@ -367,10 +353,10 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={() => setCaptureModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all shadow-xs active:scale-95 cursor-pointer"
             title="Chụp ảnh danh thiếp lưu danh bạ số hoặc đổi nền thẻ"
           >
-            <Camera className="w-3.5 h-3.5" />
+            <Camera className="w-3.5 h-3.5 text-slate-700" />
             <span>Chụp Danh Thiếp</span>
           </button>
 

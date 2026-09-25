@@ -74,7 +74,7 @@ export function ViOneLandingWebOfficial() {
 
         <div className="flex justify-start items-center gap-4">
           <Link
-            to="/login"
+            to={"/login" as any}
             className="text-zinc-950 text-sm font-semibold font-['Inter'] hover:underline"
           >
             Đăng nhập

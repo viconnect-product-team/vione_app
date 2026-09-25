@@ -864,7 +864,7 @@ function EditCardModal({
           <button
             onClick={submit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-[var(--vba-gold)] py-2.5 text-[14px] font-bold text-[#1a1304] disabled:opacity-60"
+            className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[14px] font-bold text-white disabled:opacity-60 shadow-xs"
           >
             {busy ? t("m.card.saving") : t("m.card.save")}
           </button>

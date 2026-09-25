@@ -71,10 +71,14 @@ export class MinioService implements OnModuleInit {
       }
     }
 
-    // Check bucket existence on active client
+    // Check bucket existence on active client with fast timeout
     for (const entry of this.clients) {
       try {
-        const exists = await entry.client.bucketExists(this.bucketName);
+        const bucketCheck = entry.client.bucketExists(this.bucketName);
+        const timeoutPromise = new Promise<boolean>((_, reject) =>
+          setTimeout(() => reject(new Error('MinIO bucketExists timed out')), 1500),
+        );
+        const exists = await Promise.race([bucketCheck, timeoutPromise]);
         if (!exists) {
           await entry.client.makeBucket(this.bucketName, 'us-east-1');
           const policy = {
@@ -103,13 +107,18 @@ export class MinioService implements OnModuleInit {
     for (let i = 0; i < this.clients.length; i++) {
       const entry = this.clients[i];
       try {
-        await entry.client.putObject(
+        const putPromise = entry.client.putObject(
           this.bucketName,
           filename,
           fileBuffer,
           fileBuffer.length,
-          { 'Content-Type': mimeType }
+          { 'Content-Type': mimeType },
         );
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`MinIO putObject timeout on ${entry.name}`)), 2000),
+        );
+        await Promise.race([putPromise, timeoutPromise]);
+
         // Move successful client to the front of the list for faster subsequent operations
         if (i > 0) {
           this.clients.splice(i, 1);
@@ -129,7 +138,11 @@ export class MinioService implements OnModuleInit {
     for (let i = 0; i < this.clients.length; i++) {
       const entry = this.clients[i];
       try {
-        const stream = await entry.client.getObject(this.bucketName, filename);
+        const getPromise = entry.client.getObject(this.bucketName, filename);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`MinIO getObject timeout on ${entry.name}`)), 2000),
+        );
+        const stream = await Promise.race([getPromise, timeoutPromise]);
         if (stream) {
           if (i > 0) {
             this.clients.splice(i, 1);

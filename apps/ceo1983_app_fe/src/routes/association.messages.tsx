@@ -559,7 +559,7 @@ function EventTicketCard({ data, isFromMe }: { data: ActionTicketData; isFromMe:
           {data.qrUrl && (
             <button
               onClick={() => setShowQrModal(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 text-xs transition cursor-pointer shadow"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold py-2 text-xs transition cursor-pointer shadow"
             >
               <QrCode className="h-3.5 w-3.5" />
               Phóng to mã QR
@@ -3223,7 +3223,7 @@ function ChatThread({
                   toast.success("Hệ thống đang kiểm tra trạng thái thanh toán!");
                   setPaymentModalData(null);
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[var(--vba-gold)] py-2 text-[12px] font-bold text-slate-950 hover:brightness-110 shadow-xs"
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2 text-[12px] font-bold text-white shadow-xs"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Đã thanh toán

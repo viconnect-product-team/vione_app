@@ -386,20 +386,71 @@ function CheckinScreen() {
         } catch {}
       }
 
-      // CASE 4: Any other string -> treat as ticket code
+      // Check against local stored registered event records
+      let foundRecord: any = null;
+      try {
+        const stored = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        foundRecord = stored.find(
+          (r: any) =>
+            r.ticketCode === resolved ||
+            r.id === resolved ||
+            r.invoiceNo === resolved ||
+            resolved.includes(r.ticketCode) ||
+            resolved.includes(r.id)
+        );
+      } catch {}
+
+      if (foundRecord) {
+        const ticketCode = foundRecord.ticketCode || foundRecord.id;
+        const isChecked = !!checkedInMap[ticketCode];
+        setScannedTicket({
+          ticketCode,
+          attendeeName: foundRecord.name || member?.name || "Đại biểu danh dự",
+          attendeePhone: foundRecord.phone || member?.phone || "0988 888 888",
+          attendeeCompany: foundRecord.company || (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+          attendeePosition: foundRecord.position || member?.title || "Hội viên chính thức",
+          eventTitle: foundRecord.eventTitle || foundRecord.name || "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
+          eventDate: foundRecord.date || "27/09/2026 • 07:30",
+          eventLocation: foundRecord.place || "Trung tâm Hội nghị Quốc gia, Hà Nội",
+          ticketType: foundRecord.ticketType || "VIP Standard Pass",
+          seatAssignment: foundRecord.seatAssignment || "Bàn VIP 02 - Ghế 04",
+          luckyNumber: foundRecord.luckyNumber || "#1983",
+          ticketCount: foundRecord.ticketCount || 1,
+          isCheckedIn: isChecked,
+          checkedInAt: checkedInMap[ticketCode]?.checkedInAt || null,
+          scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
+        });
+        return;
+      }
+
+      // CASE 4: If code does NOT match any event ticket pattern or known attendee
+      const looksLikeTicket =
+        resolved.startsWith("http") &&
+        (resolved.includes("checkin") || resolved.includes("ticket") || resolved.includes("event") || resolved.includes("ceo1983"));
+
+      if (!looksLikeTicket && !resolved.startsWith("REG-") && !resolved.startsWith("TKT-") && !resolved.startsWith("EV-")) {
+        toast.error("Không phải mã của sự kiện đang diễn ra!", {
+          description: `Mã [${resolved.slice(0, 30)}] không thuộc sự kiện này. Vui lòng kiểm tra lại vé của đại biểu.`,
+          duration: 6000,
+        });
+        setError(`Không phải mã của sự kiện đang diễn ra! Mã quét được: "${resolved.slice(0, 40)}"`);
+        return;
+      }
+
+      // Valid ticket pattern
       const ticketCode = resolved.slice(0, 24).toUpperCase();
       const isChecked = !!checkedInMap[ticketCode];
       setScannedTicket({
-        ticketCode: `TKT-${ticketCode}`,
-        attendeeName: "Đại biểu Khách Mời",
+        ticketCode: ticketCode.startsWith("TKT-") || ticketCode.startsWith("REG-") ? ticketCode : `TKT-${ticketCode}`,
+        attendeeName: "Đại biểu Tham Dự Sự Kiện",
         attendeePhone: "0988 888 888",
-        attendeeCompany: "Doanh nghiệp Khách mời CEO 1983",
-        attendeePosition: "Đại biểu tham dự",
+        attendeeCompany: "Doanh nghiệp Thành viên CEO 1983",
+        attendeePosition: "Đại biểu chính thức",
         eventTitle: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
-        eventDate: "27/09/2026",
+        eventDate: "27/09/2026 • 07:30",
         eventLocation: "Trung tâm Hội nghị Quốc gia, Hà Nội",
-        ticketType: "Standard Pass",
-        seatAssignment: "Khu vực đại biểu B - Hàng 4 Ghế 12",
+        ticketType: "VIP Standard Pass",
+        seatAssignment: "Bàn VIP 03 - Ghế 05",
         luckyNumber: `#${Math.floor(1000 + Math.random() * 8999)}`,
         ticketCount: 1,
         isCheckedIn: isChecked,
@@ -407,7 +458,7 @@ function CheckinScreen() {
         scannedBy: checkedInMap[ticketCode]?.scannedBy || "Ban Truyền Thông CEO 1983",
       });
     },
-    [stopScan],
+    [stopScan, member],
   );
 
   // Confirm Check-in action from Media Department member
@@ -582,7 +633,7 @@ function CheckinScreen() {
             <button
               type="button"
               onClick={toggleMediaOverride}
-              className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-sm transition active:scale-95 cursor-pointer"
+              className="mt-1 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
             >
               🧪 Kích hoạt vai trò Ban Truyền Thông (Kiểm thử)
             </button>
@@ -773,7 +824,7 @@ function CheckinScreen() {
                   }
                   void handlePayload(manualCode.trim());
                 }}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs transition cursor-pointer shadow-xs"
               >
                 Tra cứu
               </button>

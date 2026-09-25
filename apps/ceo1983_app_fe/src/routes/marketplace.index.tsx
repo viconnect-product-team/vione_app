@@ -182,7 +182,7 @@ function ProductCard({
       <Link
         to="/marketplace/$productId"
         params={{ productId: product.id }}
-        className="relative flex h-32 items-center justify-center overflow-hidden text-5xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary/30"
+        className="relative flex h-48 w-full aspect-[16/9] items-center justify-center overflow-hidden text-5xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary/30"
         style={{ background: "var(--gradient-card)" }}
       >
         {(() => {

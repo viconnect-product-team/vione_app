@@ -198,7 +198,7 @@ function ResultScreen() {
             <>
               <button
                 onClick={() => navigate({ to: "/association/renew" })}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--vba-gold)] py-3.5 text-[14px] font-bold text-[#1a1304]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3.5 text-[14px] font-bold text-white shadow-md"
               >
                 {t("m.pay.viewRenewal")}
               </button>
@@ -215,7 +215,7 @@ function ResultScreen() {
                 onClick={retryPayment}
                 disabled={retrying}
                 aria-busy={retrying}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--vba-gold)] py-3.5 text-[14px] font-bold text-[#1a1304] disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3.5 text-[14px] font-bold text-white shadow-md disabled:opacity-60"
               >
                 {retrying ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

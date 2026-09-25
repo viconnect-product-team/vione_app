@@ -546,7 +546,7 @@ function MembersScreen() {
           onClick={() => setInviteModalOpen(true)}
           className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-md transition active:scale-95 cursor-pointer"
         >
-          <UserPlus className="h-4 w-4 text-amber-300" />
+          <UserPlus className="h-4 w-4 text-white" />
           <span className="hidden sm:inline">Mời vào CLB CEO 1983</span>
           <span className="sm:hidden">Mời vào CLB</span>
         </button>
@@ -621,7 +621,7 @@ function MembersScreen() {
               <div
                 key={item.id || item.code}
                 role="listitem"
-                className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-amber-500/50 bg-white dark:bg-[#131a26] shadow-xs"
+                className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-[#001B54]/40 bg-white dark:bg-[#131a26] shadow-xs"
               >
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
@@ -629,13 +629,13 @@ function MembersScreen() {
                       <img
                         src={item.avatar}
                         alt={item.name}
-                        className="h-12 w-12 rounded-full object-cover ring-2 ring-amber-500/30"
+                        className="h-12 w-12 rounded-full object-cover ring-2 ring-[#001B54]/20"
                         onError={(e) => {
                           e.currentTarget.src = "/ceo1983-logo.png";
                         }}
                       />
                     ) : (
-                      <span className="grid h-12 w-12 place-items-center rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 ring-2 ring-amber-500/30 font-bold text-sm">
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#001B54] dark:text-blue-300 ring-2 ring-[#001B54]/20 font-bold text-sm">
                         <User className="h-5 w-5" />
                       </span>
                     )}
@@ -646,13 +646,13 @@ function MembersScreen() {
                       <span className="truncate text-[14px] font-bold text-slate-900 dark:text-white">
                         {item.name}
                       </span>
-                      <span className="rounded-md bg-[#003B95]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#003B95] dark:text-amber-400">
+                      <span className="rounded-md bg-[#001B54] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs shrink-0 tracking-wide">
                         {item.code}
                       </span>
                     </div>
                     {item.company && (
                       <p className="truncate text-[12px] font-semibold text-slate-700 dark:text-slate-300 mt-0.5 flex items-center gap-1">
-                        <Building2 className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                        <Building2 className="h-3 w-3 text-[#001B54] dark:text-blue-300 shrink-0" />
                         <span>{item.company}</span>
                       </p>
                     )}
@@ -661,15 +661,15 @@ function MembersScreen() {
                     </p>
 
                     {item.opportunityTitle && (
-                      <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                        <Briefcase className="h-3 w-3 text-amber-500" />
+                      <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-[#001B54] dark:text-blue-300 border border-blue-200 dark:border-blue-900/40">
+                        <Briefcase className="h-3 w-3 text-[#001B54] dark:text-blue-400" />
                         <span>Cơ hội: {item.opportunityTitle}</span>
                       </div>
                     )}
 
                     {item.purpose && (
                       <div className="mt-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-                        <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">Lời nhắn:</span>
+                        <span className="font-bold text-[#001B54] dark:text-blue-300 mr-1">Lời nhắn:</span>
                         <span>"{item.purpose}"</span>
                       </div>
                     )}
@@ -768,7 +768,7 @@ function MembersScreen() {
             <div
               key={m.code}
               role="listitem"
-              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-amber-500/50 bg-white dark:bg-[#131a26] shadow-xs"
+              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-[#001B54]/40 bg-white dark:bg-[#131a26] shadow-xs"
             >
               <div className="flex items-center gap-3">
                 {/* Avatar with click to open profile */}
@@ -782,13 +782,13 @@ function MembersScreen() {
                     <img
                       src={avatarResolved}
                       alt={personDisplayName}
-                      className="h-13 w-13 rounded-full object-cover ring-2 ring-amber-500/40 group-hover:ring-amber-500 transition-all"
+                      className="h-13 w-13 rounded-full object-cover ring-2 ring-[#001B54]/20 group-hover:ring-[#001B54]/50 transition-all"
                       onError={(e) => {
                         e.currentTarget.src = "/ceo1983-logo.png";
                       }}
                     />
                   ) : (
-                    <span className="grid h-13 w-13 place-items-center rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 ring-2 ring-amber-500/30 font-bold text-sm">
+                    <span className="grid h-13 w-13 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#001B54] dark:text-blue-300 ring-2 ring-[#001B54]/20 font-bold text-sm">
                       {m.type === "individual" ? (
                         <User className="h-6 w-6" />
                       ) : (
@@ -797,7 +797,7 @@ function MembersScreen() {
                     </span>
                   )}
                   {m.verified && (
-                    <BadgeCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-amber-500 fill-white dark:fill-slate-900" />
+                    <BadgeCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-[#001B54] fill-white dark:fill-slate-900" />
                   )}
                 </button>
 
@@ -807,18 +807,18 @@ function MembersScreen() {
                     <button
                       type="button"
                       onClick={() => setSelectedMember(m)}
-                      className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
+                      className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#001B54] dark:hover:text-blue-300 transition-colors text-left cursor-pointer"
                     >
                       {personDisplayName}
                     </button>
-                    <span className="rounded-md bg-[#003B95]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#003B95] dark:text-amber-400 shrink-0">
+                    <span className="rounded-md bg-[#001B54] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs shrink-0 tracking-wide">
                       {m.code}
                     </span>
                   </div>
 
                   {companyDisplayName && companyDisplayName !== personDisplayName ? (
                     <p className="truncate text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 mt-0.5">
-                      <Building2 className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                      <Building2 className="h-3 w-3 text-[#001B54] dark:text-blue-300 shrink-0" />
                       <span>{companyDisplayName}</span>
                     </p>
                   ) : null}
@@ -836,7 +836,7 @@ function MembersScreen() {
                   <button
                     type="button"
                     onClick={() => handleOpenChat(m.code, personDisplayName)}
-                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition cursor-pointer"
+                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#001B54] dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
                     title="Nhắn tin giao thương"
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -855,7 +855,7 @@ function MembersScreen() {
                   <button
                     type="button"
                     onClick={() => setSelectedMember(m)}
-                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#003B95] dark:hover:text-amber-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
+                    className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-[#001B54] dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
                     title="Xem chi tiết hồ sơ hội viên"
                   >
                     <User className="h-4 w-4" />
@@ -880,7 +880,7 @@ function MembersScreen() {
                     <button
                       type="button"
                       onClick={() => outgoingReqId && handleCancelInvite(outgoingReqId, personDisplayName)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11.5px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[11.5px] font-semibold text-[#001B54] dark:text-blue-300 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer"
                       title="Chạm để thu hồi lời mời"
                     >
                       <Clock className="h-3.5 w-3.5" />
@@ -909,9 +909,9 @@ function MembersScreen() {
                           userId: m.userId ?? undefined,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-3.5 py-1.5 text-[11.5px] shadow-sm active:scale-95 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold px-3.5 py-1.5 text-[11.5px] shadow-sm active:scale-95 transition cursor-pointer"
                     >
-                      <Handshake className="h-3.5 w-3.5 text-slate-950 stroke-[2.5]" />
+                      <Handshake className="h-3.5 w-3.5 text-white stroke-[2.5]" />
                       <span>Hẹn gặp kết nối</span>
                     </button>
                   )}

@@ -871,11 +871,11 @@ export default function ProfileScreen() {
 
             <Link
               to="/association/card"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold px-3.5 py-2 text-xs shadow-md transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold px-3.5 py-2 text-xs shadow-md transition active:scale-95 cursor-pointer"
             >
-              <CreditCard className="h-4 w-4 text-slate-950" />
+              <CreditCard className="h-4 w-4 text-white" />
               <span>{isEn ? "Member Card & Contract" : "Thẻ Hội Viên & Hồ Sơ"}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-950" />
+              <ChevronRight className="h-3.5 w-3.5 text-white" />
             </Link>
           </div>
 

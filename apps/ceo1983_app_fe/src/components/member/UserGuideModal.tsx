@@ -416,7 +416,7 @@ export function UserGuideModal({ open, onClose }: UserGuideModalProps) {
                         }
                       } catch {}
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[11px] shadow-xs hover:opacity-95 transition cursor-pointer shrink-0 self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-[11px] shadow-xs transition cursor-pointer shrink-0 self-start sm:self-auto"
                     title="Chuyển về Trang chủ và bật Tour chỉ dẫn từng bước tương tác kiểu ngân hàng"
                   >
                     <Compass className="h-3.5 w-3.5" />

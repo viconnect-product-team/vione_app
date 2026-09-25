@@ -811,7 +811,7 @@ function EventCard({
   const fmt = useFmt();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-      <div className="relative h-36 overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
+      <div className="relative h-48 w-full aspect-[16/9] overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
         {(() => {
           const typeFallbacks: Record<string, string> = {
             forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",

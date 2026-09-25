@@ -372,12 +372,12 @@ function EventPosterCard({
           }}
           className={`absolute top-3 right-3 z-10 grid h-8 w-8 place-items-center rounded-full transition-all active:scale-95 cursor-pointer shadow-md backdrop-blur-md ${
             isBookmarked
-              ? "bg-amber-500 text-slate-950 font-bold"
+              ? "bg-sky-950 text-white font-bold"
               : "bg-black/50 text-white/80 hover:text-white hover:bg-black/70 border border-white/20"
           }`}
           title={isBookmarked ? "Bỏ đánh dấu" : "Đánh dấu sự kiện"}
         >
-          <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-slate-950 text-slate-950" : ""}`} />
+          <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-white text-white" : ""}`} />
         </button>
 
         {/* Bottom Left: Live Registration Chip */}
@@ -613,7 +613,7 @@ function UpcomingEventsCoverflow({
               }}
               className={`group/slide absolute top-0 bottom-0 w-[84%] sm:w-[68%] max-w-[420px] my-auto cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden shadow-lg transition-all duration-500 ease-out ${
                 isCenter
-                  ? "ring-2 ring-amber-400/90 shadow-[0_12px_28px_rgba(0,0,0,0.55)]"
+                  ? "shadow-[0_16px_36px_rgba(0,0,0,0.65)] ring-1 ring-white/20"
                   : "hover:opacity-90"
               }`}
             >
@@ -629,11 +629,11 @@ function UpcomingEventsCoverflow({
 
               {/* Header trên ảnh: Badge ngày tháng & Thẻ danh mục */}
               <div className="absolute top-2 inset-x-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
-                <span className="inline-flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm">
-                  <Calendar className="h-2.5 w-2.5 text-amber-400" />
+                <span className="inline-flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                  <Calendar className="h-2.5 w-2.5 text-white/80" />
                   <span>{eventDateStr}</span>
                 </span>
-                <span className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 shadow-sm">
+                <span className="rounded-full bg-[#001B54] text-white border border-white/20 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 shadow-sm">
                   {agenda.category || "Tiêu điểm"}
                 </span>
               </div>
@@ -646,11 +646,11 @@ function UpcomingEventsCoverflow({
 
                 <div className="mt-1 flex items-center justify-between text-[10px] text-slate-200/90 font-medium">
                   <span className="flex items-center gap-1 truncate max-w-[70%]">
-                    <MapPin className="h-2.5 w-2.5 text-amber-400 shrink-0" />
+                    <MapPin className="h-2.5 w-2.5 text-slate-300 shrink-0" />
                     <span className="truncate">{evt.place || "Hà Nội"}</span>
                   </span>
                   {isCenter ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-400 text-slate-950 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide shadow-sm">
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-white text-slate-900 border border-white/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide shadow-sm">
                       <span>Xem ngay</span>
                       <ArrowRight className="h-2.5 w-2.5" />
                     </span>
@@ -676,7 +676,7 @@ function UpcomingEventsCoverflow({
               aria-label={`Chuyển đến slide ${dotIdx + 1}`}
               className={`transition-all duration-300 rounded-full cursor-pointer ${
                 isActive
-                  ? "w-6 h-1.5 bg-[#2E3192] dark:bg-amber-400 shadow-xs"
+                  ? "w-6 h-1.5 bg-[#001B54] dark:bg-white shadow-xs"
                   : "w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
               }`}
             />
@@ -778,6 +778,7 @@ function EventsScreen() {
     ticketCount: number;
     isFree?: boolean;
     luckyNumber?: string;
+    seatAssignment?: string;
     qrCodeUrl?: string;
     event?: MyEvent | null;
   } | null>(null);
@@ -894,6 +895,14 @@ function EventsScreen() {
       const resolvedInvNo = (res as any)?.invoiceNo || tempInvNo;
       const resolvedQrUrl = (res as any)?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(resolvedInvNo)}`;
 
+      // Random phân bổ chỗ ngồi cho đại biểu (Bàn X - Ghế Y)
+      const randomTable = Math.floor(Math.random() * 8) + 1;
+      const randomSeatNum = Math.floor(Math.random() * 10) + 1;
+      const isVipTicket = formTicketType.toLowerCase().includes("vip");
+      const randomSeat = isVipTicket
+        ? `Bàn VIP 0${randomTable} - Ghế 0${randomSeatNum}`
+        : `Bàn Giao Thương 0${randomTable} - Ghế ${randomSeatNum < 10 ? "0" + randomSeatNum : randomSeatNum}`;
+
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
@@ -901,9 +910,50 @@ function EventsScreen() {
         ticketCount: actualTicketCount,
         isFree,
         luckyNumber: luckyNum,
+        seatAssignment: randomSeat,
         qrCodeUrl: resolvedQrUrl,
         event: registeringEvent,
       });
+
+      // Persist in localStorage for History integration
+      try {
+        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        const newRecord = {
+          id: resolvedInvNo,
+          eventId,
+          name: registeringEvent.title,
+          date: registeringEvent.date || new Date().toISOString(),
+          place: registeringEvent.place || "Hà Nội",
+          checkedIn: false,
+          ticketCode: resolvedInvNo,
+          luckyNumber: luckyNum,
+          seatAssignment: randomSeat,
+          ticketCount: actualTicketCount,
+          ticketType: formTicketType,
+          totalAmount,
+          registeredAt: new Date().toISOString(),
+          image: (registeringEvent as any).image,
+          qrCodeUrl: resolvedQrUrl,
+        };
+        const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
+        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+
+        const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
+        const newAct = {
+          id: `act-${Date.now()}`,
+          type: "event",
+          title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
+          detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${resolvedInvNo}`,
+          date: new Date().toISOString(),
+          category: "Sự kiện",
+        };
+        localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
+
+        window.dispatchEvent(new Event("vba.events.changed"));
+        window.dispatchEvent(new Event("vba.history.changed"));
+      } catch (err) {
+        console.warn("Could not save to localStorage", err);
+      }
 
       if (isFree) {
         toast.success(`Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`);
@@ -933,6 +983,45 @@ function EventsScreen() {
         event: registeringEvent,
       });
 
+      
+      try {
+        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        const newRecord = {
+          id: tempInvNo,
+          eventId,
+          name: registeringEvent.title,
+          date: registeringEvent.date || new Date().toISOString(),
+          place: registeringEvent.place || "Hà Nội",
+          checkedIn: false,
+          ticketCode: tempInvNo,
+          luckyNumber: fallbackLuckyNum,
+          ticketCount: actualTicketCount,
+          ticketType: formTicketType,
+          totalAmount,
+          registeredAt: new Date().toISOString(),
+          image: (registeringEvent as any).image,
+          qrCodeUrl: fallbackQr,
+        };
+        const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
+        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+
+        const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
+        const newAct = {
+          id: `act-${Date.now()}`,
+          type: "event",
+          title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
+          detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${tempInvNo}`,
+          date: new Date().toISOString(),
+          category: "Sự kiện",
+        };
+        localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
+
+        window.dispatchEvent(new Event("vba.events.changed"));
+        window.dispatchEvent(new Event("vba.history.changed"));
+      } catch (err) {
+        console.warn("Could not save to localStorage", err);
+      }
+
       toast.success(isFree ? `Đăng ký vé miễn phí thành công! Số may mắn: ${fallbackLuckyNum}` : `Đăng ký thành công! Số may mắn: ${fallbackLuckyNum}`);
     } finally {
       setSubmittingReg(false);
@@ -949,6 +1038,13 @@ function EventsScreen() {
       if (selectedEvent?.id === id) {
         setSelectedEvent((prev) => prev ? { ...prev, registered: false } : null);
       }
+      try {
+        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        const updatedRecords = existingRecords.filter((r: any) => r.eventId !== id);
+        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+        window.dispatchEvent(new Event("vba.events.changed"));
+        window.dispatchEvent(new Event("vba.history.changed"));
+      } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
       reload();
     } catch (e) {
@@ -956,6 +1052,13 @@ function EventsScreen() {
       if (selectedEvent?.id === id) {
         setSelectedEvent((prev) => prev ? { ...prev, registered: false } : null);
       }
+      try {
+        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        const updatedRecords = existingRecords.filter((r: any) => r.eventId !== id);
+        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+        window.dispatchEvent(new Event("vba.events.changed"));
+        window.dispatchEvent(new Event("vba.history.changed"));
+      } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
     } finally {
       setBusy(null);
@@ -968,12 +1071,74 @@ function EventsScreen() {
 
   const totalEventPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
 
-  const recentEventsList = useMemo(() => {
-    const matched = events.filter((e) => recentEventIds.includes(e.id));
-    if (matched.length === 0) {
-      return events.slice(0, 3);
+  const displayedRecentItems = useMemo(() => {
+    const viewed: { id: string; title: string; image: string; event: MyEvent }[] = [];
+    const seenTitles = new Set<string>();
+
+    for (const id of recentEventIds) {
+      const match = events.find((e) => e.id === id);
+      if (match && !seenTitles.has(match.title)) {
+        seenTitles.add(match.title);
+        const rImg = (match as any).image
+          ? resolveMediaUrl((match as any).image) || (match as any).image
+          : defaultEventImages[viewed.length % defaultEventImages.length];
+        viewed.push({
+          id: match.id,
+          title: match.title,
+          image: rImg,
+          event: match,
+        });
+      }
     }
-    return matched;
+
+    const defaultCards = [
+      {
+        id: "recent-forum-digital",
+        title: "Diễn đàn kinh tế số",
+        image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80",
+        fallbackEvent: {
+          id: "ev-digital-forum",
+          title: "Diễn đàn kinh tế số & Quản trị doanh nghiệp",
+          place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+          date: "2026-10-15T08:30:00Z",
+          time: "08:30",
+          day: 15,
+          month: 10,
+          communityName: "CLB Doanh Nhân CEO 1983",
+        },
+      },
+      {
+        id: "recent-ceo-dinner",
+        title: "CEO Executive Dinner",
+        image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&auto=format&fit=crop&q=80",
+        fallbackEvent: {
+          id: "ev-executive-dinner",
+          title: "CEO Executive Dinner: Kết nối & Dạ tiệc doanh nhân",
+          place: "Khách sạn JW Marriott, Hà Nội",
+          date: "2026-11-20T18:00:00Z",
+          time: "18:00",
+          day: 20,
+          month: 11,
+          communityName: "CLB Doanh Nhân CEO 1983",
+        },
+      },
+    ];
+
+    const result = [...viewed];
+    for (const def of defaultCards) {
+      if (!seenTitles.has(def.title)) {
+        seenTitles.add(def.title);
+        const existingEvent = events.find((e) => e.title.toLowerCase().includes(def.title.toLowerCase()));
+        result.push({
+          id: def.id,
+          title: def.title,
+          image: def.image,
+          event: (existingEvent || def.fallbackEvent) as MyEvent,
+        });
+      }
+    }
+
+    return result;
   }, [events, recentEventIds]);
 
   return (
@@ -988,15 +1153,15 @@ function EventsScreen() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#001B54]"></span>
             </span>
             <span className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-amber-500" />
+              <Sparkles className="h-4 w-4 text-[#001B54] dark:text-blue-400" />
               Sự kiện sắp tới
             </span>
           </div>
-          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#001B54]/10 text-[#001B54] dark:text-blue-300 border border-[#001B54]/20">
             5 sự kiện tiêu điểm
           </span>
         </div>
@@ -1109,7 +1274,7 @@ function EventsScreen() {
                 }}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   active
-                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
+                    ? "bg-sky-950 text-white font-bold shadow-md"
                     : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5"
                 }`}
               >
@@ -1117,7 +1282,7 @@ function EventsScreen() {
                 <span
                   className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
                     active
-                      ? "bg-slate-950/20 text-slate-950"
+                      ? "bg-white/20 text-white"
                       : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   }`}
                 >
@@ -1216,7 +1381,7 @@ function EventsScreen() {
                     onClick={() => setEventsPage(p)}
                     className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
                       isCur
-                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        ? "bg-sky-950 text-white font-bold shadow-xs"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                     }`}
                   >
@@ -1239,64 +1404,37 @@ function EventsScreen() {
         )}
       </div>
 
-      {/* 4. Section: Sự kiện xem gần đây */}
-      <div className="px-4 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-blue-500/15 text-[#2E3192] dark:text-blue-400">
-              <History className="h-4 w-4" />
-            </span>
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-wide text-slate-900 dark:text-white">
-                Sự kiện xem gần đây
-              </h3>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
-                Những sự kiện bạn đã quan tâm và mở xem chi tiết
-              </p>
-            </div>
-          </div>
+      {/* 4. Section: Sự kiện xem gần đây (recently-viewed) */}
+      <div className="px-4 mt-6 flex flex-col items-start gap-[12px] w-full max-w-[390px] mx-auto">
+        {/* SỰ KIỆN XEM GẦN ĐÂY */}
+        <div className="font-['Inter'] font-bold text-[14px] leading-[17px] text-[#001B54] dark:text-white uppercase tracking-tight">
+          SỰ KIỆN XEM GẦN ĐÂY
         </div>
 
-        {recentEventsList.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-5 text-center">
-            <p className="text-xs text-slate-400">Bạn chưa mở xem sự kiện nào gần đây</p>
-          </div>
-        ) : (
-          <div className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
-            {recentEventsList.map((e, rIdx) => {
-              const rImg = (e as any).image ? resolveMediaUrl((e as any).image) || (e as any).image : defaultEventImages[rIdx % defaultEventImages.length];
-              return (
-                <div
-                  key={e.id || rIdx}
-                  onClick={() => handleSelectEvent(e)}
-                  className="min-w-[220px] max-w-[240px] rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-xs hover:border-[#2E3192]/40 transition overflow-hidden cursor-pointer flex flex-col justify-between group shrink-0"
-                >
-                  <div className="relative h-28 w-full overflow-hidden">
-                    <img
-                      src={rImg}
-                      alt={e.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[9.5px] font-bold text-white border border-white/20">
-                      <Clock className="h-3 w-3 text-amber-400" />
-                      {e.time || "08:00"}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#2E3192] dark:group-hover:text-blue-400 transition">
-                      {e.title}
-                    </h4>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
-                      {e.place || "Hà Nội"}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Frame: Horizontal Row */}
+        <div className="flex flex-row items-start gap-[12px] overflow-x-auto no-scrollbar w-full py-0.5">
+          {displayedRecentItems.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleSelectEvent(item.event)}
+              className="box-border flex flex-col items-start p-[12px] gap-[8px] w-[160px] h-[127px] bg-[#FFFFFF] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 rounded-[12px] shrink-0 cursor-pointer shadow-xs hover:shadow-md transition active:scale-[0.98]"
+            >
+              {/* Rectangle: Poster */}
+              <img
+                src={item.image}
+                alt={item.title}
+                className="w-[136px] h-[80px] rounded-[8px] object-cover shrink-0 select-none pointer-events-none"
+              />
+              {/* Title */}
+              <div
+                title={item.title}
+                className="w-[136px] h-[15px] font-['Inter'] font-bold text-[12px] leading-[15px] text-[#001B54] dark:text-white truncate"
+              >
+                {item.title}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 5. Footer: Thiết kế tối giản, thanh lịch, chuẩn xu hướng hiện đại */}
@@ -2257,6 +2395,20 @@ function EventsScreen() {
                     {ticketPassModal.ticketType} ({ticketPassModal.ticketCount} vé)
                   </span>
                 </div>
+                {/* Randomly Assigned Seat Display */}
+                <div className="flex justify-between items-center bg-indigo-500/10 dark:bg-indigo-500/20 rounded-lg p-2 border border-indigo-500/30">
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase block">
+                      Vị trí chỗ ngồi (Hệ thống xếp tự động):
+                    </span>
+                    <span className="font-bold text-xs text-indigo-950 dark:text-indigo-100">
+                      {(ticketPassModal as any).seatAssignment || "Bàn VIP 02 - Ghế 04"}
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 dark:text-slate-400 text-right italic max-w-[120px] leading-tight">
+                    Chỉ BTT, BQT và Admin mới có quyền đổi chỗ
+                  </span>
+                </div>
                 <div className="flex justify-between items-center bg-amber-500/10 rounded-lg p-1.5 border border-amber-500/30">
                   <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
@@ -2269,7 +2421,7 @@ function EventsScreen() {
               </div>
 
               <div className="rounded-lg bg-blue-50 dark:bg-blue-950/60 p-2.5 text-[11px] text-blue-900 dark:text-blue-300 text-left leading-relaxed">
-                ℹ️ <b>Lưu ý:</b> Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Tổ Chức quét check-in và nhận thẻ đeo. Mã vé cũng đã được gửi về email của Anh/Chị.
+                ℹ️ <b>Lưu ý chỗ ngồi & check-in:</b> Chỗ ngồi được hệ thống phân bổ ngẫu nhiên theo bàn tiệc. Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Truyền Thông quét mã QR xác nhận và hướng dẫn vào đúng vị trí bàn tiệc.
               </div>
 
               <div className="pt-1">

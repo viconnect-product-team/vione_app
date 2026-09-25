@@ -38,7 +38,17 @@ export function CardPreviewModal({
   }, [slug]);
 
   const theme = useMemo(() => resolveTheme(themeId ?? null), [themeId]);
-  const nfc: NfcSupport = useMemo(() => nfcSupport(), []);
+  const cachedCardAvatar =
+    typeof window !== "undefined" && slug
+      ? localStorage.getItem(`vba_card_avatar_${slug}`) ||
+        localStorage.getItem(`vba_secondary_card_avatar_${slug}`)
+      : null;
+  const effectiveAvatar = avatarUrl || cachedCardAvatar || null;
+  const resolvedAvatar = effectiveAvatar
+    ? (effectiveAvatar.startsWith("data:") || effectiveAvatar.startsWith("blob:")
+        ? effectiveAvatar
+        : resolveMediaUrl(effectiveAvatar) || effectiveAvatar)
+    : null;
 
   return (
     <div
@@ -73,13 +83,18 @@ export function CardPreviewModal({
         <div className="flex flex-col gap-4 px-4 py-5">
           {/* Card summary */}
           <div className="flex items-center gap-3 rounded-2xl border border-[var(--vba-border-soft)] p-3">
-            {avatarUrl ? (
+            {resolvedAvatar ? (
               <img
-                src={resolveMediaUrl(avatarUrl) || avatarUrl}
+                src={resolvedAvatar}
                 alt=""
                 className="h-14 w-14 shrink-0 rounded-xl object-cover"
                 width={56}
                 height={56}
+                onError={(e) => {
+                  if (cachedCardAvatar && e.currentTarget.src !== cachedCardAvatar) {
+                    e.currentTarget.src = cachedCardAvatar;
+                  }
+                }}
               />
             ) : (
               <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[var(--vba-gold-soft)] text-[var(--vba-gold)]">

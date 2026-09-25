@@ -60,16 +60,16 @@ function LibraryScreen() {
             {t("m.library.empty")}
           </p>
         )}
-        {docs.map((d) => {
+        {docs.map((d, idx) => {
           const ext = (d.type || "PDF").toUpperCase();
           const isPdf = ext.includes("PDF");
           const isXls = ext.includes("XLS") || ext.includes("SHEET");
 
           return (
             <div
-              key={d.id}
+              key={`${d.id || "doc"}-${idx}`}
               onClick={() => setSelectedDoc(d)}
-              className="vba-card flex items-center justify-between gap-3 p-3.5 rounded-2xl cursor-pointer transition hover:border-amber-400/50 hover:shadow-md active:scale-[0.99] border border-slate-200/80 dark:border-slate-800"
+              className="vba-card flex items-center justify-between gap-3 p-3.5 rounded-2xl cursor-pointer transition hover:border-[#001B54]/40 hover:shadow-md active:scale-[0.99] border border-slate-200/80 dark:border-slate-800"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <span
@@ -102,7 +102,7 @@ function LibraryScreen() {
                   e.stopPropagation();
                   handleDownload(d);
                 }}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 hover:bg-amber-400 hover:text-slate-950 dark:bg-slate-800 dark:hover:bg-amber-400 dark:hover:text-slate-950 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 dark:hover:bg-[#003B95] dark:hover:text-white text-slate-700 dark:text-slate-200 transition cursor-pointer"
                 title={isEn ? "Download" : "Tải xuống"}
               >
                 <Download className="h-4 w-4" />

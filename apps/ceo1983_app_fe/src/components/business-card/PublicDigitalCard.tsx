@@ -56,10 +56,19 @@ export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
     (card as any).companyLogoUrl ||
     (card as any).logoUrl ||
     (typeof window !== "undefined" ? localStorage.getItem("vba_member_company_logo") : null);
-  const resolvedAvatar =
-    resolveMediaUrl(card.avatarUrl) ||
-    card.avatarUrl ||
-    (typeof window !== "undefined" ? localStorage.getItem("vba_member_avatar_photo") : null);
+  const cardSlugKey = card.slug ? `vba_card_avatar_${card.slug}` : "";
+  const cardIdKey = (card as any).id ? `vba_card_avatar_${(card as any).id}` : "";
+  const cachedCardAvatar =
+    typeof window !== "undefined"
+      ? (cardSlugKey ? localStorage.getItem(cardSlugKey) : null) ||
+        (cardIdKey ? localStorage.getItem(cardIdKey) : null)
+      : null;
+  const effectiveAvatar = card.avatarUrl || cachedCardAvatar || null;
+  const resolvedAvatar = effectiveAvatar
+    ? (effectiveAvatar.startsWith("data:") || effectiveAvatar.startsWith("blob:")
+        ? effectiveAvatar
+        : resolveMediaUrl(effectiveAvatar) || effectiveAvatar)
+    : null;
 
   const phoneHref = sanitizePhoneHref(card.workPhone);
   const emailHref = sanitizeEmailHref(card.workEmail);
@@ -106,6 +115,11 @@ export function PublicDigitalCard({ card }: { card: PublicBusinessCard }) {
               className="relative z-20 h-22 w-22 rounded-2xl border-2 border-white dark:border-slate-800 ring-4 ring-white/90 dark:ring-slate-900/90 object-cover shadow-xl bg-slate-100 dark:bg-slate-800"
               width={88}
               height={88}
+              onError={(e) => {
+                if (cachedCardAvatar && e.currentTarget.src !== cachedCardAvatar) {
+                  e.currentTarget.src = cachedCardAvatar;
+                }
+              }}
             />
           ) : (
             <div

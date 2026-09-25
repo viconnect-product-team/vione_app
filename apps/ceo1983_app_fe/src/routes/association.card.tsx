@@ -690,15 +690,15 @@ function CardScreen() {
               onClick={() => setScanModalOpen(true)}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
             >
-              <ScanLine className="h-4.5 w-4.5 text-amber-400" />
+              <ScanLine className="h-4.5 w-4.5 text-white" />
               <span>Quét QR</span>
             </button>
             <button
               type="button"
               onClick={() => setCardCaptureOpen(true)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 text-[13px] font-bold text-amber-700 dark:text-amber-300 transition cursor-pointer"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-[13px] font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition cursor-pointer"
             >
-              <Camera className="h-4.5 w-4.5 text-amber-500" />
+              <Camera className="h-4.5 w-4.5 text-slate-700 dark:text-slate-300" />
               <span>Chụp danh thiếp</span>
             </button>
           </div>

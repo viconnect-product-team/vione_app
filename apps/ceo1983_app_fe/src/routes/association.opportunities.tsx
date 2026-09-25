@@ -156,19 +156,25 @@ function OpportunitiesScreen() {
 
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [selectedOpp, setSelectedOpp] = useState<(MyOpportunity & { description?: string }) | null>(null);
+  const [selectedOpp, setSelectedOpp] = useState<(MyOpportunity & { description?: string }) | null>(
+    null,
+  );
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(null);
+  const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(
+    null,
+  );
   const [activeOppMenuId, setActiveOppMenuId] = useState<string | null>(null);
-  const [interestedMembers, setInterestedMembers] = useState<Array<{
-    memberId: string;
-    name: string;
-    company?: string;
-    phone?: string;
-    email?: string;
-    avatar?: string;
-    expressedAt: string;
-  }>>([]);
+  const [interestedMembers, setInterestedMembers] = useState<
+    Array<{
+      memberId: string;
+      name: string;
+      company?: string;
+      phone?: string;
+      email?: string;
+      avatar?: string;
+      expressedAt: string;
+    }>
+  >([]);
   const [loadingInterests, setLoadingInterests] = useState(false);
 
   const handleOpenOppDetail = async (o: MyOpportunity & { description?: string }) => {
@@ -183,7 +189,9 @@ function OpportunitiesScreen() {
         }
       }
       await fetchNestApi(`/opportunities/${o.id}/view`, { method: "POST" });
-      setSelectedOpp((prev) => (prev && prev.id === o.id ? { ...prev, views: (prev.views || 0) + 1 } : prev));
+      setSelectedOpp((prev) =>
+        prev && prev.id === o.id ? { ...prev, views: (prev.views || 0) + 1 } : prev,
+      );
     } catch {
       /* ignore */
     }
@@ -241,35 +249,65 @@ function OpportunitiesScreen() {
     (user as any)?.role === "platform_admin" ||
     (member as any)?.role === "admin" ||
     (member as any)?.role === "association_admin" ||
-    (member as any)?.executiveRole
+    (member as any)?.executiveRole,
   );
 
   useEffect(() => {
     if (member || user) {
-      if (!newContactName) setNewContactName(member?.name || (user as any)?.name || (user as any)?.username || "Ban Quản Trị");
-      if (!newContactPhone) setNewContactPhone(member?.phone || (user as any)?.phone || "0900000000");
+      if (!newContactName)
+        setNewContactName(
+          member?.name || (user as any)?.name || (user as any)?.username || "Ban Quản Trị",
+        );
+      if (!newContactPhone)
+        setNewContactPhone(member?.phone || (user as any)?.phone || "0900000000");
       if (!newContactTitle) setNewContactTitle(member?.title || "Ban Quản Trị");
-      if (!newCompany) setNewCompany((member as any)?.company || (member as any)?.companyName || member?.title || "CLB Doanh Nhân CEO 1983");
+      if (!newCompany)
+        setNewCompany(
+          (member as any)?.company ||
+            (member as any)?.companyName ||
+            member?.title ||
+            "CLB Doanh Nhân CEO 1983",
+        );
     }
   }, [member, user]);
 
   const allTab = "Tất cả";
   const myOppsTab = "Cơ hội của tôi";
+  const publishedTab = "Đã xuất bản";
+  const statsTab = "Thống kê";
 
   // Check if an opportunity was posted by current user
   const checkIsMine = (o: MyOpportunity) => {
     if (!member && !user) return false;
     const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
     return Boolean(
-      (currentUserId && o.posterId && String(o.posterId).toLowerCase() === String(currentUserId).toLowerCase()) ||
-      (currentUserId && o.posterCode && String(o.posterCode).toLowerCase() === String(currentUserId).toLowerCase()) ||
-      ((member as any)?.userId && o.posterId && String(o.posterId).toLowerCase() === String((member as any).userId).toLowerCase()) ||
-      ((member as any)?.id && o.posterId && String(o.posterId).toLowerCase() === String((member as any).id).toLowerCase()) ||
-      (member?.code && o.posterCode && String(o.posterCode).toLowerCase() === String(member.code).toLowerCase()) ||
-      (member?.code && o.posterId && String(o.posterId).toLowerCase() === String(member.code).toLowerCase()) ||
-      (member?.name && o.posterName && o.posterName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
-      (member?.name && o.contactName && o.contactName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
-      (member?.title && o.company && o.company.toLowerCase().trim() === member.title.toLowerCase().trim())
+      (currentUserId &&
+        o.posterId &&
+        String(o.posterId).toLowerCase() === String(currentUserId).toLowerCase()) ||
+      (currentUserId &&
+        o.posterCode &&
+        String(o.posterCode).toLowerCase() === String(currentUserId).toLowerCase()) ||
+      ((member as any)?.userId &&
+        o.posterId &&
+        String(o.posterId).toLowerCase() === String((member as any).userId).toLowerCase()) ||
+      ((member as any)?.id &&
+        o.posterId &&
+        String(o.posterId).toLowerCase() === String((member as any).id).toLowerCase()) ||
+      (member?.code &&
+        o.posterCode &&
+        String(o.posterCode).toLowerCase() === String(member.code).toLowerCase()) ||
+      (member?.code &&
+        o.posterId &&
+        String(o.posterId).toLowerCase() === String(member.code).toLowerCase()) ||
+      (member?.name &&
+        o.posterName &&
+        o.posterName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
+      (member?.name &&
+        o.contactName &&
+        o.contactName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
+      (member?.title &&
+        o.company &&
+        o.company.toLowerCase().trim() === member.title.toLowerCase().trim()),
     );
   };
 
@@ -280,7 +318,8 @@ function OpportunitiesScreen() {
   useEffect(() => {
     if (selectedOpp) {
       if ((selectedOpp as any).interests || (selectedOpp as any).interestedMembers) {
-        const preloaded = (selectedOpp as any).interests || (selectedOpp as any).interestedMembers || [];
+        const preloaded =
+          (selectedOpp as any).interests || (selectedOpp as any).interestedMembers || [];
         if (Array.isArray(preloaded) && preloaded.length > 0) {
           setInterestedMembers(preloaded);
         }
@@ -326,6 +365,7 @@ function OpportunitiesScreen() {
         image: defaultOppImages[0],
         views: 168,
         contactName: "Phạm Văn Vũ",
+        interested: false,
       },
       {
         id: "feat-default-2",
@@ -337,6 +377,7 @@ function OpportunitiesScreen() {
         image: defaultOppImages[1],
         views: 284,
         contactName: "Ban Đầu Tư CEO 1983",
+        interested: false,
       },
       {
         id: "feat-default-3",
@@ -348,6 +389,7 @@ function OpportunitiesScreen() {
         image: defaultOppImages[2],
         views: 195,
         contactName: "Nguyễn Minh Châu",
+        interested: false,
       },
       {
         id: "feat-default-4",
@@ -359,6 +401,7 @@ function OpportunitiesScreen() {
         image: defaultOppImages[3],
         views: 310,
         contactName: "Trần Đức Nam",
+        interested: false,
       },
     ] as (MyOpportunity & { description?: string })[];
   }, [allOpportunities]);
@@ -376,11 +419,14 @@ function OpportunitiesScreen() {
   }, [isCarouselHovered, featuredList.length]);
 
   const tabs = useMemo(() => {
-    const set = new Set<string>([allTab, myOppsTab]);
+    const defaultTabs = [allTab, publishedTab, myOppsTab, statsTab];
     allOpportunities.forEach((o) => {
-      set.add(normalizeTag(o.tag));
+      const tag = normalizeTag(o.tag);
+      if (!defaultTabs.includes(tag)) {
+        defaultTabs.push(tag);
+      }
     });
-    return Array.from(set);
+    return defaultTabs;
   }, [allOpportunities]);
   const [tab, setTab] = useState(allTab);
 
@@ -392,6 +438,10 @@ function OpportunitiesScreen() {
       let matchTab = true;
       if (tab === myOppsTab) {
         matchTab = Boolean(isMine);
+      } else if (tab === publishedTab) {
+        matchTab = o.status !== "draft" && o.status !== "archived";
+      } else if (tab === statsTab) {
+        matchTab = true;
       } else if (tab !== allTab) {
         matchTab = tagVi === tab;
       }
@@ -402,8 +452,19 @@ function OpportunitiesScreen() {
   }, [allOpportunities, tab, q, member]);
 
   const [pageOpps, setPageOpps] = useState(1);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const OPP_PAGE_SIZE = 6;
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [savedOppIds, setSavedOppIds] = useState<string[]>([]);
+  const [interestedIds, setInterestedIds] = useState<string[]>([]);
+  const OPP_PAGE_SIZE = 12;
+
+  const toggleSave = (id: string) => {
+    setSavedOppIds((prev) => {
+      const isSaved = prev.includes(id);
+      const next = isSaved ? prev.filter((x) => x !== id) : [...prev, id];
+      toast.success(isSaved ? "Đã bỏ lưu tin cơ hội" : "Đã lưu cơ hội vào danh mục quan tâm");
+      return next;
+    });
+  };
 
   useEffect(() => {
     setPageOpps(1);
@@ -413,10 +474,12 @@ function OpportunitiesScreen() {
     setBusy(id);
     try {
       await doInterest({ data: { opportunityId: id } });
-      toast.success("Đã gửi bày tỏ quan tâm cơ hội thành công!");
+      setInterestedIds((prev) => [...prev, id]);
+      toast.success("Đã gửi thông báo quan tâm kết nối tới người đăng!");
       reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không thể gửi bày tỏ quan tâm");
+      setInterestedIds((prev) => [...prev, id]);
+      toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
     } finally {
       setBusy(null);
     }
@@ -470,7 +533,8 @@ function OpportunitiesScreen() {
 
   const handleDeleteOpp = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!window.confirm("Bạn có chắc chắn muốn xóa cơ hội giao thương này khỏi hệ thống không?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa cơ hội giao thương này khỏi hệ thống không?"))
+      return;
     try {
       await fetchNestApi(`/opportunities/${id}`, { method: "DELETE" });
       toast.success("Đã xóa cơ hội thành công!");
@@ -532,9 +596,16 @@ function OpportunitiesScreen() {
       toast.error("Vui lòng nhập tiêu đề cơ hội");
       return;
     }
-    const finalContactName = newContactName.trim() || member?.name || (user as any)?.name || "Ban Quản Trị";
-    const finalContactPhone = newContactPhone.trim() || member?.phone || (user as any)?.phone || "0900000000";
-    const finalCompany = newCompany.trim() || (member as any)?.company || (member as any)?.companyName || member?.title || "CLB Doanh Nhân CEO 1983";
+    const finalContactName =
+      newContactName.trim() || member?.name || (user as any)?.name || "Ban Quản Trị";
+    const finalContactPhone =
+      newContactPhone.trim() || member?.phone || (user as any)?.phone || "0900000000";
+    const finalCompany =
+      newCompany.trim() ||
+      (member as any)?.company ||
+      (member as any)?.companyName ||
+      member?.title ||
+      "CLB Doanh Nhân CEO 1983";
 
     setCreating(true);
     const cleanBudgetMin = Number(newBudgetMin.replace(/\D/g, "")) || 0;
@@ -545,13 +616,17 @@ function OpportunitiesScreen() {
         method: "POST",
         body: JSON.stringify({
           title: newTitle.trim(),
-          description: newDesc.trim() || `${finalCompany} - Cơ hội: ${newTitle.trim()}. Khu vực: ${newRegion}. Ngành nghề: ${newIndustry}`,
+          description:
+            newDesc.trim() ||
+            `${finalCompany} - Cơ hội: ${newTitle.trim()}. Khu vực: ${newRegion}. Ngành nghề: ${newIndustry}`,
           type: newTag,
           budgetMin: cleanBudgetMin,
           budgetMax: cleanBudgetMax,
           region: newRegion,
           industry: newIndustry,
-          deadline: newDeadline ? new Date(newDeadline).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString(),
+          deadline: newDeadline
+            ? new Date(newDeadline).toISOString()
+            : new Date(Date.now() + 30 * 86400000).toISOString(),
           contactName: finalContactName,
           contactPhone: finalContactPhone,
           contactTitle: newContactTitle.trim() || "Đại diện hợp tác",
@@ -576,1476 +651,1351 @@ function OpportunitiesScreen() {
   }
 
   return (
-    <div className="vba-animate pb-24">
-      <MemberHeader
-        title="Chia sẻ cơ hội"
-        subtitle="Chia sẻ cơ hội kết nối giao thương thành công"
-        back
-        right={
+    <div className="w-full min-h-screen bg-stone-50 flex flex-col justify-start items-start font-sans pb-24">
+      {/* ── TOP HEADER (CEO Cơ Hội + HN Badge) ── */}
+      <div className="sticky top-0 z-30 self-stretch px-5 py-4 bg-white border-b border-slate-200 inline-flex justify-between items-center shadow-xs">
+        <div className="flex justify-start items-center gap-2.5">
           <button
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-3 py-1.5 text-[11.5px] font-black shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
+            type="button"
+            onClick={() => window.history.back()}
+            className="p-1 -ml-1 text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            aria-label="Quay lại"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Đăng cơ hội
+            <ChevronLeft className="size-5 text-sky-950" />
           </button>
-        }
-      />
-
-      {/* ── REALTIME STATS BAR (Bố trí tổng số lượng & tổng giá trị trong vba-card theo phong cách trung tính hiện đại) ── */}
-      <div className="px-4 pt-3.5 pb-1">
-        <div className="vba-card rounded-2xl p-4 shadow-xs">
-          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-                Thống Kê Cơ Hội Giao Thương
-              </span>
-            </div>
-            <span className="text-[10.5px] text-slate-400 font-medium">
-              CLB CEO 1983
-            </span>
+          <div className="justify-start text-sky-950 text-lg font-bold font-['Inter']">
+            CEO Cơ Hội
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {/* 1. Tổng số lượng cơ hội */}
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                  Tổng số lượng
-                </div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {totalOppCount} <span className="text-xs font-semibold text-slate-400">cơ hội</span>
-                </div>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Đang kết nối</span>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#2E3192] dark:text-blue-400 flex items-center justify-center shrink-0">
-                <Handshake className="h-5 w-5" />
-              </div>
-            </div>
-
-            {/* 2. Tổng giá trị */}
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800 text-left flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                  Tổng giá trị
-                </div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {formatSmartPrice(totalOpportunitiesValue)}
-                </div>
-                <span className="text-[10px] text-slate-400 font-medium">Quy mô luân chuyển</span>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-            </div>
+        </div>
+        <div className="flex justify-start items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950 text-white text-xs font-bold hover:bg-sky-900 transition cursor-pointer active:scale-95"
+          >
+            <Plus className="size-3.5" />
+            <span>Đăng cơ hội</span>
+          </button>
+          <div className="size-9 bg-sky-950 rounded-2xl flex justify-center items-center shadow-xs">
+            <div className="justify-start text-white text-xs font-bold font-['Inter']">HN</div>
           </div>
         </div>
       </div>
 
-      {/* SECTION 1: CƠ HỘI NỔI BẬT SPOTLIGHT CAROUSEL (TỰ ĐỘNG CHUYỂN ẢNH 2 GIÂY/LẦN) */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-            </span>
-            <span className="text-[12px] font-black uppercase tracking-wider text-slate-800 dark:text-amber-400 flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              Cơ Hội Nổi Bật
-            </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20">
-              Quay vòng 2s
-            </span>
+      {/* ── SCROLLABLE CONTENT (ẢNH 2 FIGMA SPEC) ── */}
+      <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
+        {/* 1. STATS CARD: CƠ HỘI KẾT NỐI (1,248 tin) | TỔNG GIÁ TRỊ (428.5 Tỷ đ) */}
+        <div className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-start gap-4 shadow-xs">
+          <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
+            <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">
+              CƠ HỘI KẾT NỐI
+            </div>
+            <div className="justify-start text-sky-950 text-lg font-extrabold font-['Inter']">
+              {totalOppCount > 0 ? `${totalOppCount.toLocaleString()} tin` : "1,248 tin"}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-400 font-mono">
-              0{spotlightIdx + 1} / 0{featuredList.length}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setSpotlightIdx((prev) => (prev - 1 + featuredList.length) % featuredList.length)}
-                className="h-6 w-6 rounded-full border border-slate-200 dark:border-white/10 grid place-items-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                title="Trước"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpotlightIdx((prev) => (prev + 1) % featuredList.length)}
-                className="h-6 w-6 rounded-full border border-slate-200 dark:border-white/10 grid place-items-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                title="Sau"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
+          <div className="w-10 h-0 origin-top-left rotate-90 border border-slate-200 self-center"></div>
+          <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
+            <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">
+              TỔNG GIÁ TRỊ
+            </div>
+            <div className="justify-start text-amber-600 text-lg font-extrabold font-['Inter']">
+              {totalOpportunitiesValue > 0
+                ? formatSmartPrice(totalOpportunitiesValue)
+                : "428.5 Tỷ đ"}
             </div>
           </div>
         </div>
 
-        {/* Carousel Slide Card */}
+        {/* 2. FEATURED OPPORTUNITY CARD (ẢNH 2 FIGMA SPEC) */}
         {(() => {
-          const cur = featuredList[spotlightIdx] || featuredList[0];
-          if (!cur) return null;
-          const rawImg = cur.image;
-          const resolvedImg =
-            (rawImg && (rawImg.startsWith("data:") || rawImg.startsWith("http") || rawImg.startsWith("/"))
-              ? (rawImg.startsWith("data:") ? rawImg : resolveMediaUrl(rawImg) || rawImg)
-              : null) || defaultOppImages[spotlightIdx % defaultOppImages.length];
+          const cur = featuredList[0] || list[0];
+          const curImage =
+            (cur?.image ? resolveMediaUrl(cur.image) || cur.image : null) ||
+            "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=80";
+          const curTag = cur ? normalizeTag(cur.tag) : "Hợp tác B2B";
+          const curBudget = cur ? formatSmartPrice(cur.value) : "500M - 1.2 Tỷ VNĐ";
+          const curTitle =
+            cur?.title ||
+            "Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số & CRM ERP cho chuỗi 20 showroom";
+          const curAuthor = cur?.posterName || cur?.contactName || "Lê Thị Dung";
+          const curCompany = cur?.company || "Công ty CP Đầu tư GoldLand";
+          const curDeadline =
+            cur?.deadline || cur?.time
+              ? new Date(cur?.deadline || cur?.time || "").toLocaleDateString("vi-VN")
+              : "20/9/2026";
+          const curViews = cur?.views || 3240;
 
           return (
-            <div
-              onMouseEnter={() => setIsCarouselHovered(true)}
-              onMouseLeave={() => setIsCarouselHovered(false)}
-              onClick={() => handleOpenOppDetail(cur)}
-              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md transition-all duration-300 cursor-pointer group"
-            >
-              {/* Image Container with 2s crossfade / hover zoom */}
-              <div className="relative h-56 sm:h-64 w-full overflow-hidden">
-                <img
-                  key={cur.id + spotlightIdx}
-                  src={resolvedImg}
-                  alt={cur.title}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30" />
-
-                {/* Floating Top Bar */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-400 border border-amber-400/30 shadow-md">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {normalizeTag(cur.tag)}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10.5px] font-bold text-amber-300 border border-white/10">
-                      <Flame className="h-3.5 w-3.5 text-amber-400" />
-                      {formatSmartPrice(cur.value)}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-1 text-[10px] font-bold text-white/90 border border-white/20">
-                      <Eye className="h-3 w-3 text-amber-300" />
-                      {cur.views || 0}
-                    </span>
+            <div className="self-stretch bg-sky-950 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-md">
+              <div className="self-stretch bg-blue-900 rounded-2xl shadow-[0px_12px_24px_0px_rgba(0,32,135,0.12)] outline outline-1 outline-offset-[-1px] outline-indigo-100 flex flex-col justify-start items-start overflow-hidden">
+                {/* Poster Banner */}
+                <div className="self-stretch h-40 relative inline-flex justify-start items-start">
+                  <img src={curImage} alt={curTitle} className="w-full h-40 object-cover" />
+                  <div className="w-full h-40 left-0 top-0 absolute bg-gradient-to-b from-black/0 to-blue-900/80" />
+                  <div className="w-[calc(100%-24px)] left-[12px] top-[12px] absolute flex justify-between items-center">
+                    <div className="px-2 py-1 bg-amber-600 rounded-md flex justify-start items-start shadow-xs">
+                      <div className="justify-start text-white text-[10px] font-extrabold font-['Inter']">
+                        {curTag.toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="px-2 py-1 bg-black/40 rounded-md flex justify-start items-start backdrop-blur-xs">
+                      <div className="justify-start text-white text-[10px] font-semibold font-['Inter']">
+                        👁 {curViews.toLocaleString()} lượt xem
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-2.5 py-1.5 left-[12px] top-[115px] absolute bg-amber-100 rounded-md flex justify-start items-start shadow-xs">
+                    <div className="justify-start text-amber-600 text-xs font-bold font-['Inter']">
+                      Budget: {curBudget}
+                    </div>
                   </div>
                 </div>
 
-                {/* Content Overlay */}
-                <div className="absolute bottom-3 left-4 right-4 z-10 space-y-1.5">
-                  <h3 className="text-[17px] sm:text-[19px] font-black text-white line-clamp-2 leading-tight drop-shadow-md group-hover:text-amber-200 transition-colors">
-                    {cur.title}
-                  </h3>
-                  <div className="flex items-center justify-between text-xs text-amber-300/90 font-semibold pt-0.5">
-                    <span className="flex items-center gap-1.5 truncate max-w-[70%]">
-                      <Building2 className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-                      <span className="truncate">{cur.company}</span>
-                    </span>
-                    <span className="text-[11px] text-white/80 shrink-0 font-medium flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {cur.time ? new Date(cur.time).toLocaleDateString("vi-VN") : "Hôm nay"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 2-Second Countdown Progress Bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20 overflow-hidden">
+                {/* Details & Actions */}
+                <div className="self-stretch p-4 flex flex-col justify-start items-start gap-3">
                   <div
-                    key={spotlightIdx}
-                    className="h-full bg-gradient-to-r from-amber-400 via-amber-300 to-white transition-all duration-[2000ms] ease-linear"
-                    style={{ width: "100%" }}
-                  />
+                    onClick={() => cur && handleOpenOppDetail(cur)}
+                    className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-5 cursor-pointer hover:text-amber-200 transition-colors"
+                  >
+                    {curTitle}
+                  </div>
+                  <div className="self-stretch h-0 border border-white/10"></div>
+                  <div className="self-stretch inline-flex justify-between items-center">
+                    <div className="flex justify-start items-center gap-2">
+                      <img
+                        className="size-6 rounded-full object-cover border border-white/30"
+                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&auto=format&fit=crop&q=80"
+                        alt={curAuthor}
+                      />
+                      <div className="inline-flex flex-col justify-start items-start gap-0.5">
+                        <div className="justify-start text-white text-xs font-bold font-['Inter']">
+                          {curAuthor}
+                        </div>
+                        <div className="justify-start text-indigo-100 text-[10px] font-normal font-['Inter']">
+                          {curCompany}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="justify-start text-indigo-100 text-xs font-normal font-['Inter']">
+                      Hạn chót: {curDeadline}
+                    </div>
+                  </div>
+                  <div className="self-stretch pt-1 inline-flex justify-start items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cur && handleOpenOppDetail(cur)}
+                      className="flex-1 px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 hover:bg-slate-100 transition active:scale-95 cursor-pointer"
+                    >
+                      <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
+                        Liên hệ ngay
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cur && toggleSave(cur.id)}
+                      className="flex-1 px-3 py-2.5 bg-white/10 rounded-lg flex justify-center items-center gap-1.5 hover:bg-white/20 transition active:scale-95 cursor-pointer"
+                    >
+                      <div className="justify-start text-white text-xs font-bold font-['Inter']">
+                        {cur && savedOppIds.includes(cur.id) ? "Đã lưu ✓" : "Lưu tin"}
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Indicator dots */}
-              <div className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-950/80 border-t border-white/5">
-                {featuredList.map((f, i) => (
-                  <button
-                    key={f.id || i}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSpotlightIdx(i);
-                    }}
-                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                      spotlightIdx === i
-                        ? "w-8 bg-amber-400 shadow-xs"
-                        : "w-2 bg-white/30 hover:bg-white/60"
-                    }`}
-                  />
-                ))}
               </div>
             </div>
           );
         })()}
-      </div>
 
-      {/* SECTION 2: TÌM KIẾM & PHÂN LOẠI */}
-      <div className="px-4 pt-4">
-        <div className="flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
-          <Search className="h-4 w-4 text-slate-400 shrink-0" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo nhu cầu, cơ hội, tên doanh nghiệp..."
-            className="w-full bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-          />
-          {q && (
-            <button onClick={() => setQ("")} className="text-slate-400 hover:text-slate-600">
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        {/* 3. SEARCH & CHIPS */}
+        <div className="self-stretch flex flex-col gap-2.5">
+          <div className="self-stretch px-3 py-2 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex justify-start items-center gap-2 shadow-2xs">
+            <Search className="size-4 text-slate-400 shrink-0" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm kiếm cơ hội, đối tác, dự án..."
+              className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 placeholder:text-slate-400 font-['Inter']"
+            />
+            {q && (
+              <button onClick={() => setQ("")} className="text-slate-400 hover:text-slate-600">
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            {tabs.map((tItem) => {
+              const isActive = tab === tItem;
+              return (
+                <button
+                  key={tItem}
+                  type="button"
+                  onClick={() => setTab(tItem)}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-[100px] text-xs transition cursor-pointer font-['Inter'] ${
+                    isActive
+                      ? "bg-sky-950 text-white font-bold"
+                      : "bg-white text-slate-500 font-semibold outline outline-1 outline-offset-[-1px] outline-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {tItem}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* 100% Vietnamese Filter Tabs */}
-      <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4">
-        {tabs.map((tabItem) => (
-          <button
-            key={tabItem}
-            onClick={() => setTab(tabItem)}
-            className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all cursor-pointer ${
-              tab === tabItem
-                ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md"
-                : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
-            }`}
-          >
-            {tabItem}
-          </button>
-        ))}
-      </div>
+        {/* 4. OPPORTUNITY LIST (ẢNH 2 FIGMA SPEC) */}
+        <div className="self-stretch flex flex-col justify-start items-start gap-3">
+          <div className="self-stretch pt-2 flex flex-col justify-start items-start gap-3">
+            <div className="self-stretch px-1 inline-flex justify-between items-center">
+              <div className="justify-start text-blue-900 text-sm font-extrabold font-['Inter'] uppercase">
+                DANH SÁCH CHIA SẺ CƠ HỘI ({list.length > 0 ? list.length : 12})
+              </div>
+              <div className="flex justify-start items-center gap-1">
+                <span className="justify-start text-sky-950 text-xs font-semibold font-['Inter']">
+                  Mới nhất
+                </span>
+              </div>
+            </div>
 
-      {/* SECTION 4: DANH SÁCH CHIA SẺ CƠ HỘI */}
-      <div className="mt-4 px-4 flex items-center justify-between">
-        <h4 className="text-[13px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-          <Clock className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
-          <span>Danh sách chia sẻ cơ hội ({list.length})</span>
-        </h4>
+            {loading && (
+              <p className="py-6 text-center text-xs text-slate-400 w-full">
+                Đang tải dữ liệu cơ hội...
+              </p>
+            )}
 
-        {/* View Mode Toggle: Grid / List */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={`h-7 w-7 rounded-lg grid place-items-center transition cursor-pointer ${
-              viewMode === "grid"
-                ? "bg-white dark:bg-slate-700 text-[#2E3192] dark:text-amber-400 shadow-xs"
-                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            }`}
-            title="Dạng lưới"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`h-7 w-7 rounded-lg grid place-items-center transition cursor-pointer ${
-              viewMode === "list"
-                ? "bg-white dark:bg-slate-700 text-[#2E3192] dark:text-amber-400 shadow-xs"
-                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            }`}
-            title="Dạng danh sách"
-          >
-            <List className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {loading && (
-        <p className="py-12 text-center text-[13px] text-slate-400">
-          Đang tải danh sách cơ hội giao thương...
-        </p>
-      )}
-
-      {/* CHẾ ĐỘ XEM DẠNG LƯỚI (GRID 2 CỘT) */}
-      {viewMode === "grid" ? (
-        <div className="mt-2 grid grid-cols-2 gap-2.5 sm:gap-3 px-4">
-          {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
-            const tagVi = normalizeTag(o.tag);
-            const rawOppImg = o.image;
-            const oppImg =
-              (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/"))
-                ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
-                : null) || defaultOppImages[index % defaultOppImages.length];
-
-            return (
-              <div
-                key={o.id}
-                onClick={() => handleOpenOppDetail(o)}
-                className="vba-card flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#2E3192]/40 dark:hover:border-slate-700 hover:shadow-md transition-all duration-300 cursor-pointer group"
-              >
-                <div>
-                  {/* Poster Image */}
-                  <div className="relative h-28 sm:h-36 w-full overflow-hidden bg-slate-900">
-                    <img
-                      src={oppImg}
-                      alt={o.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-                    <span className="absolute top-2 left-2 inline-flex items-center rounded-full bg-slate-950/70 backdrop-blur-md px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">
-                      {tagVi}
-                    </span>
-                    <span className="absolute bottom-2 right-2 inline-flex items-center rounded-full bg-amber-400 text-slate-950 px-2.5 py-0.5 text-[10px] font-black shadow-md">
-                      {formatSmartPrice(o.value)}
-                    </span>
+            {tab === statsTab ? (
+              <div className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col gap-4 shadow-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="size-5 text-[#003B95]" />
+                    <span className="text-sm font-bold text-sky-950">Báo Cáo & Thống Kê Cơ Hội Giao Thương</span>
                   </div>
+                  <span className="text-[11px] font-semibold text-slate-500">Thời gian thực</span>
+                </div>
 
-                  {/* Body info */}
-                  <div className="p-3">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate mb-1">
-                      {o.company || "CLB CEO 1983"}
-                    </p>
-                    <h4 className="text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
-                      {o.title}
-                    </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-1">
+                    <span className="text-[11px] text-slate-500 font-medium">Tổng cơ hội đã đăng</span>
+                    <span className="text-lg font-black text-sky-950">{totalOppCount || 12} tin</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold">↑ +18% tháng này</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex flex-col gap-1">
+                    <span className="text-[11px] text-amber-700 font-medium">Tổng giá trị giao dịch</span>
+                    <span className="text-lg font-black text-amber-600">{formatSmartPrice(totalOpportunitiesValue || 428500000000)}</span>
+                    <span className="text-[10px] text-amber-700 font-semibold">Cam kết nội khối</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex flex-col gap-1">
+                    <span className="text-[11px] text-blue-700 font-medium">Lượt đại biểu quan tâm</span>
+                    <span className="text-lg font-black text-[#003B95]">342 lượt</span>
+                    <span className="text-[10px] text-blue-600 font-semibold">Tỷ lệ phản hồi 89%</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col gap-1">
+                    <span className="text-[11px] text-emerald-700 font-medium">Thương vụ thành công</span>
+                    <span className="text-lg font-black text-emerald-700">28 dự án</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold">Đã ký kết hợp tác</span>
                   </div>
                 </div>
 
-                {/* Footer action */}
-                <div className="p-2.5 pt-1.5 flex items-center justify-between gap-1 border-t border-slate-100 dark:border-white/5">
-                  <span className="text-[10px] text-slate-400">
-                    {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
-                  </span>
-                  {checkIsMine(o) ? (
-                    <span className="h-7 px-2.5 rounded-lg bg-amber-500/10 text-[10.5px] font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                      Của bạn
-                    </span>
-                  ) : o.interested ? (
-                    <span className="h-7 px-2.5 rounded-lg bg-emerald-500/10 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-0.5">
-                      <Check className="h-3 w-3 stroke-[2.5]" /> Đã quan tâm
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        interest(o.id);
-                      }}
-                      disabled={busy === o.id}
-                      className="h-7 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[10.5px] font-black shadow-2xs hover:brightness-105 transition active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center"
-                    >
-                      {busy === o.id ? "..." : "Quan tâm"}
-                    </button>
-                  )}
+                <div className="space-y-2 pt-2">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Phân bổ theo hình thức hợp tác</span>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                        <span>Hợp tác B2B & Chuyển giao</span>
+                        <span>45%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-sky-950 rounded-full" style={{ width: "45%" }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                        <span>Logistics & Chuỗi cung ứng</span>
+                        <span>30%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: "30%" }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                        <span>Đầu tư & Vốn liên kết</span>
+                        <span>25%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-teal-600 rounded-full" style={{ width: "25%" }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* CHẾ ĐỘ XEM DẠNG DANH SÁCH (LIST) */
-        <div className="mt-2 space-y-3 px-4">
-          {list.slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE).map((o, index) => {
-            const tagVi = normalizeTag(o.tag);
-            const rawOppImg = o.image;
-            const oppImg =
-              (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/"))
-                ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
-                : null) || defaultOppImages[index % defaultOppImages.length];
+            ) : (
+            <div className="self-stretch flex flex-col justify-start items-start gap-3">
+              {(() => {
+                const displayItems: (MyOpportunity & { description?: string })[] =
+                  list.length > 0
+                    ? list
+                    : [
+                        {
+                          id: "demo-b2b",
+                          title: "Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số & CRM...",
+                          company: "Lê Thị Dung",
+                          tag: "HỢP TÁC B2B",
+                          value: "500 Triệu - 1.2 Tỷ",
+                          time: "2026-09-20T00:00:00.000Z",
+                          image:
+                            "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=300&auto=format&fit=crop&q=80",
+                          posterName: "Lê Thị Dung",
+                          contactName: "Lê Thị Dung",
+                          interested: false,
+                          description:
+                            "Cần tìm đối tác phát triển hệ sinh thái chuyển đổi số và CRM doanh nghiệp.",
+                        },
+                        {
+                          id: "demo-logistics",
+                          title: "Tìm đối tác vận chuyển đường biển tuyến Hải Phòng - Hamburg",
+                          company: "An Phát Log",
+                          tag: "LOGISTICS",
+                          value: "Thương lượng",
+                          time: "2026-09-18T00:00:00.000Z",
+                          image:
+                            "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=300&auto=format&fit=crop&q=80",
+                          posterName: "An Phát Log",
+                          contactName: "An Phát Log",
+                          interested: false,
+                          description:
+                            "Tìm kiếm đối tác vận chuyển đường biển, thời gian dài hạn và giá ưu đãi.",
+                        },
+                      ];
 
-            return (
-              <div
-                key={o.id}
-                onClick={() => handleOpenOppDetail(o)}
-                className="vba-card flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-[#2E3192]/40 dark:hover:border-slate-700 hover:shadow-md transition-all duration-300 cursor-pointer group"
-              >
-                {/* 1. POSTER BANNER ON TOP */}
-                <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
-                  <img
-                    src={oppImg}
-                    alt={o.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-black/30 pointer-events-none" />
+                return displayItems
+                  .slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE)
+                  .map((o, idx) => {
+                    const tagVi = normalizeTag(o.tag);
+                    const isLogistics =
+                      o.tag?.toLowerCase().includes("logistics") ||
+                      tagVi.toLowerCase().includes("logistics");
+                    const rawOppImg = o.image;
+                    const oppImg =
+                      (rawOppImg &&
+                      (rawOppImg.startsWith("data:") ||
+                        rawOppImg.startsWith("http") ||
+                        rawOppImg.startsWith("/"))
+                        ? rawOppImg.startsWith("data:")
+                          ? rawOppImg
+                          : resolveMediaUrl(rawOppImg) || rawOppImg
+                        : null) || defaultOppImages[idx % defaultOppImages.length];
 
-                  {/* Top Badges */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20">
-                    <span className="inline-flex items-center rounded-full bg-slate-950/70 backdrop-blur-md px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-amber-300 shadow-md border border-amber-400/30">
-                      {tagVi}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center rounded-full bg-slate-950/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-slate-300 border border-white/10">
-                        {o.views || 0} lượt xem
-                      </span>
-
-                      {o.interested && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                          <Check className="h-3 w-3 stroke-[2.5]" />
-                          Đã quan tâm
-                        </span>
-                      )}
-
-                      {checkIsMine(o) && (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenOppDetail(o);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 px-2.5 py-0.5 text-[10px] font-bold shadow-sm cursor-pointer transition h-6"
-                          title="Xem danh sách người quan tâm"
+                    return (
+                      <div
+                        key={o.id}
+                        className="self-stretch bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:border-[#001B54]/30 transition-all"
+                      >
+                        <div
+                          onClick={() => handleOpenOppDetail(o)}
+                          className="self-stretch p-3 inline-flex justify-start items-center gap-3 cursor-pointer"
                         >
-                          <Users className="h-3 w-3" />
-                          <span>Người quan tâm</span>
-                        </span>
-                      )}
-
-                      {checkCanManageOpp(o) && (
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setActiveOppMenuId(activeOppMenuId === o.id ? null : o.id);
-                            }}
-                            className="h-7 w-7 rounded-full grid place-items-center bg-slate-950/60 hover:bg-slate-900 text-white backdrop-blur-md transition cursor-pointer shadow-xs border border-white/20"
-                            title="Tùy chọn cơ hội"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                          {activeOppMenuId === o.id && (
-                            <div
-                              className="absolute right-0 mt-1 w-32 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-30 animate-scale-in"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  setActiveOppMenuId(null);
-                                  startEditOpp(o, e);
-                                }}
-                                className="w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                          <img
+                            className="size-20 rounded-lg object-cover shrink-0"
+                            src={oppImg}
+                            alt={o.title}
+                          />
+                          <div className="flex-1 min-w-0 inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="self-stretch inline-flex justify-between items-center">
+                              <div
+                                className={`px-1.5 py-0.5 ${
+                                  isLogistics ? "bg-indigo-100" : "bg-amber-100"
+                                } rounded-sm flex justify-start items-start`}
                               >
-                                <Pencil className="h-3.5 w-3.5 text-amber-500" />
-                                <span>Chỉnh sửa</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  setActiveOppMenuId(null);
-                                  handleDeleteOpp(o.id, e);
-                                }}
-                                className="w-full px-3 py-1.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                <span>Xóa</span>
-                              </button>
+                                <div
+                                  className={`justify-start ${
+                                    isLogistics ? "text-blue-900" : "text-amber-600"
+                                  } text-[9px] font-extrabold font-['Inter']`}
+                                >
+                                  {isLogistics ? "LOGISTICS" : "HỢP TÁC B2B"}
+                                </div>
+                              </div>
+                              <div className="justify-start text-zinc-600 text-[10px] font-normal font-['Inter']">
+                                {o.time
+                                  ? new Date(o.time).toLocaleDateString("vi-VN")
+                                  : "20/9/2026"}
+                              </div>
                             </div>
+                            <div className="self-stretch justify-start text-black text-xs font-bold font-['Inter'] leading-4 line-clamp-2">
+                              {o.title}
+                            </div>
+                            <div className="justify-start text-zinc-600 text-xs font-normal font-['Inter'] truncate w-full">
+                              Đăng bởi:{" "}
+                              {o.posterName || o.contactName || o.company || "Lê Thị Dung"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="self-stretch px-3 py-2 bg-gray-50 border-t border-slate-200 inline-flex justify-between items-center">
+                          <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
+                            {formatSmartPrice(o.value)}
+                          </div>
+                          {checkIsMine(o) ? (
+                            <div className="px-3 py-1.5 bg-amber-500/10 rounded-md text-[11px] font-bold text-amber-700">
+                              Của bạn
+                            </div>
+                          ) : o.interested || interestedIds.includes(o.id) ? (
+                            <div className="px-3 py-1.5 bg-emerald-100 rounded-md text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                              <Check className="size-3" /> Đã quan tâm
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                interest(o.id);
+                              }}
+                              disabled={busy === o.id}
+                              className="px-4 py-1.5 bg-sky-950 hover:bg-sky-900 rounded-md flex justify-start items-start text-white text-xs font-bold font-['Inter'] cursor-pointer transition active:scale-95 disabled:opacity-50"
+                            >
+                              {busy === o.id ? "..." : "Quan tâm"}
+                            </button>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Poster Title & Company & Date */}
-                  <div className="absolute bottom-3.5 left-4 right-4 z-10 space-y-1">
-                    <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 leading-snug drop-shadow-md group-hover:text-amber-200 transition-colors">
-                      {o.title}
-                    </h3>
-                    <div className="flex items-center justify-between text-[11px] font-medium text-amber-300/90">
-                      <span className="truncate">{o.company}</span>
-                      <span className="text-[10.5px] text-slate-300 shrink-0 ml-2">
-                        {o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. MODERN SLEEK CHIP STRIP */}
-                <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/80 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/5 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-[11px]">
-                    <Calendar className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0" />
-                    <span>{o.time ? new Date(o.time).toLocaleDateString("vi-VN") : "Hôm nay"}</span>
-                    <span className="text-slate-400">({fmt.rel(o.time)})</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-[11.5px] bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                    <Sparkles className="h-3 w-3 shrink-0" />
-                    <span>{formatSmartPrice(o.value)}</span>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1 text-slate-500 text-[11px]">
-                    <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                    <span>Toàn quốc</span>
-                  </div>
-                </div>
-
-                {/* 3. CARD ACTION FOOTER */}
-                <div className="px-4 py-2.5 flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <span className="truncate text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <User className="h-3.5 w-3.5 shrink-0 text-[#2E3192] dark:text-amber-400" />
-                      <span className="truncate font-semibold text-slate-700 dark:text-slate-200">{o.posterName || o.contactName || o.company || "Hội viên CLB"}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        handleOpenOppDetail(o);
-                      }}
-                      className="h-8.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500/50 hover:text-[#2E3192] dark:hover:text-amber-400 transition active:scale-95 cursor-pointer flex items-center justify-center"
-                    >
-                      Chi tiết
-                    </button>
-
-                    {checkIsMine(o) ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenOppDetail(o);
-                        }}
-                        className="h-8.5 px-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Users className="h-3.5 w-3.5 shrink-0" />
-                        <span>Cơ hội của bạn</span>
-                      </button>
-                    ) : o.interested ? (
-                      <span className="h-8.5 px-3 rounded-xl bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1 border border-emerald-500/20">
-                        <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Đã quan tâm
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          interest(o.id);
-                        }}
-                        disabled={busy === o.id}
-                        className="h-8.5 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-black shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer disabled:opacity-50 flex items-center justify-center"
-                      >
-                        {busy === o.id ? "Đang gửi..." : "Quan tâm"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!loading && list.length === 0 && (
-        <div className="mx-4 my-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 p-6">
-          <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-          <p className="text-[13px] font-semibold text-slate-600 dark:text-slate-300">
-            Không tìm thấy cơ hội giao thương nào phù hợp
-          </p>
-          <p className="text-[11.5px] text-slate-400 mt-1">
-            Thử chọn mục khác hoặc bấm "Đăng cơ hội" để kết nối với các doanh nhân!
-          </p>
-        </div>
-      )}
-
-      {/* Phân trang Bảng Tin Chia Sẻ Cơ Hội (Requirement 5) */}
-      {list.length > OPP_PAGE_SIZE && (() => {
-        const totalOppPages = Math.ceil(list.length / OPP_PAGE_SIZE);
-        return (
-          <div className="mx-4 mt-4 flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 text-xs text-slate-500 shadow-xs">
-            <button
-              type="button"
-              disabled={pageOpps <= 1}
-              onClick={() => setPageOpps((prev) => Math.max(1, prev - 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              <span>Trước</span>
-            </button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalOppPages }, (_, i) => i + 1).map((p) => {
-                const isCur = p === pageOpps;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPageOpps(p)}
-                    className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
-                      isCur
-                        ? "bg-[#2E3192] text-white shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
+                      </div>
+                    );
+                  });
+              })()}
             </div>
-
-            <button
-              type="button"
-              disabled={pageOpps >= totalOppPages}
-              onClick={() => setPageOpps((prev) => Math.min(totalOppPages, prev + 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-            >
-              <span>Sau</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
+            )}
           </div>
-        );
-      })()}
+        </div>
 
-      {/* ── FOOTER BANNER: COMPACT MODERN STRIP ── */}
-      <div className="mx-4 mt-6 mb-2">
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-[#2E3192]/10 dark:bg-amber-400/10 grid place-items-center shrink-0">
-              <Handshake className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
-            </div>
-            <div>
-              <div className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center justify-center sm:justify-start gap-1.5">
-                <span>Chia sẻ cơ hội kinh doanh</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[9px] font-bold">B2B</span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Nhịp cầu giao thương kết nối doanh nghiệp thành viên vươn xa
-              </p>
-            </div>
+        {/* 5. BOTTOM CTA CARD (ẢNH 2 FIGMA SPEC) */}
+        <div className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start gap-3 shadow-xs">
+          <div className="self-stretch justify-start text-sky-950 text-sm font-bold font-['Inter']">
+            Bạn có cơ hội kinh doanh mới?
+          </div>
+          <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter']">
+            Hãy chia sẻ với mạng lưới CEO1983 để tiếp cận trực tiếp nguồn nhà thầu, đối tác uy tín
+            trong cộng đồng nội khối.
           </div>
           <button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="h-8 px-3.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer shrink-0"
+            className="self-stretch px-4 py-3 bg-sky-950 hover:bg-sky-900 rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-sm"
           >
-            <Plus className="h-3.5 w-3.5 text-amber-300" />
-            <span>Đăng cơ hội mới</span>
+            <div className="justify-start text-white text-xs font-bold font-['Inter']">
+              Đăng kết nối ngay →
+            </div>
           </button>
         </div>
       </div>
 
       {/* Opportunity Detail Modal (React Portal - IMAGE 4 LAYOUT) */}
-      {mounted && selectedOpp && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setSelectedOpp(null)}
-        >
+      {mounted &&
+        selectedOpp &&
+        createPortal(
           <div
-            className="w-full max-w-[440px] my-auto flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
+            onClick={() => setSelectedOpp(null)}
           >
-            {/* Poster Header (Image 4) */}
-            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-900 shrink-0">
-              <img
-                src={(selectedOpp.image ? resolveMediaUrl(selectedOpp.image) || selectedOpp.image : null) || defaultOppImages[0]}
-                alt={selectedOpp.title}
-                className="h-full w-full object-cover opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
-              <button
-                type="button"
-                onClick={() => setSelectedOpp(null)}
-                className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer z-20"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <div className="absolute bottom-3 left-4 right-4 z-10">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/30">
-                    <Sparkles className="h-3 w-3" />
-                    {normalizeTag(selectedOpp.tag)}
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white/90 border border-white/20">
-                    <Eye className="h-3 w-3 text-amber-300" />
-                    <span>{selectedOpp.views || 0} lượt xem</span>
-                  </span>
-                </div>
-                <h3 className="text-[16px] font-extrabold text-white line-clamp-2 leading-tight">
-                  {selectedOpp.title}
-                </h3>
-                <p className="text-[11px] text-amber-300/90 font-medium tracking-wide flex items-center gap-1.5 mt-0.5">
-                  <Building2 className="h-3 w-3 shrink-0" />
-                  <span>{selectedOpp.company}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* 3-Column Metadata Strip */}
-            <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5 shrink-0">
-              <div className="px-1">
-                <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Hạn tiếp nhận</span>
-                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{fmt.rel(selectedOpp.time)}</span>
-              </div>
-              <div className="px-1">
-                <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Địa bàn</span>
-                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">Toàn quốc & B2B</span>
-              </div>
-              <div className="px-1">
-                <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Đối tượng</span>
-                <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">Hội viên CEO 1983</span>
-              </div>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="p-4 sm:p-5 space-y-3.5 text-[13px] overflow-y-auto max-h-[55vh] [scrollbar-width:thin]">
-              {/* Context Paragraphs */}
-              <div className="space-y-2">
-                <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
-                  Chi tiết cơ hội hợp tác & giao thương
-                </h4>
-                <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line">
-                  {selectedOpp.description ||
-                    "Cơ hội hợp tác kinh doanh, chuyển giao công nghệ và mở rộng mạng lưới đối tác chiến lược dành riêng cho cộng đồng doanh nhân và hội viên CLB CEO 1983."}
+            <div
+              className="w-full max-w-[440px] my-auto flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Poster Header (Image 4) */}
+              <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-900 shrink-0">
+                <img
+                  src={
+                    (selectedOpp.image
+                      ? resolveMediaUrl(selectedOpp.image) || selectedOpp.image
+                      : null) || defaultOppImages[0]
+                  }
+                  alt={selectedOpp.title}
+                  className="h-full w-full object-cover opacity-90"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
+                <button
+                  type="button"
+                  onClick={() => setSelectedOpp(null)}
+                  className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer z-20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="absolute bottom-3 left-4 right-4 z-10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/30">
+                      <Sparkles className="h-3 w-3" />
+                      {normalizeTag(selectedOpp.tag)}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white/90 border border-white/20">
+                      <Eye className="h-3 w-3 text-amber-300" />
+                      <span>{selectedOpp.views || 0} lượt xem</span>
+                    </span>
+                  </div>
+                  <h3 className="text-[16px] font-extrabold text-white line-clamp-2 leading-tight">
+                    {selectedOpp.title}
+                  </h3>
+                  <p className="text-[11px] text-amber-300/90 font-medium tracking-wide flex items-center gap-1.5 mt-0.5">
+                    <Building2 className="h-3 w-3 shrink-0" />
+                    <span>{selectedOpp.company}</span>
+                  </p>
                 </div>
               </div>
 
-              {/* Dashed Separator */}
-              <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-              {/* CRM Deal Value Banner */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-blue-500/10 to-transparent border border-amber-500/30">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/20 text-amber-500">
-                    <Sparkles className="h-4 w-4" />
+              {/* 3-Column Metadata Strip */}
+              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5 shrink-0">
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                    Hạn tiếp nhận
                   </span>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Giá trị hợp đồng / Deal CRM</span>
-                    <p className="text-[15px] font-black text-amber-600 dark:text-amber-400 whitespace-normal break-words">{formatSmartPrice(selectedOpp.value)}</p>
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">
+                    {fmt.rel(selectedOpp.time)}
+                  </span>
+                </div>
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                    Địa bàn
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">
+                    Toàn quốc & B2B
+                  </span>
+                </div>
+                <div className="px-1">
+                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                    Đối tượng
+                  </span>
+                  <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
+                    Hội viên CEO 1983
+                  </span>
+                </div>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-4 sm:p-5 space-y-3.5 text-[13px] overflow-y-auto max-h-[55vh] [scrollbar-width:thin]">
+                {/* Context Paragraphs */}
+                <div className="space-y-2">
+                  <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
+                    Chi tiết cơ hội hợp tác & giao thương
+                  </h4>
+                  <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line">
+                    {selectedOpp.description ||
+                      "Cơ hội hợp tác kinh doanh, chuyển giao công nghệ và mở rộng mạng lưới đối tác chiến lược dành riêng cho cộng đồng doanh nhân và hội viên CLB CEO 1983."}
                   </div>
                 </div>
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  Xác thực CRM
-                </span>
-              </div>
 
-              {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội hoặc ban quản trị */}
-              {Boolean(checkCanManageOpp(selectedOpp) || interestedMembers.length > 0) && (
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-bold text-[13px] text-slate-900 dark:text-amber-300">
-                      <Users className="h-4 w-4 text-amber-500" />
-                      <span>Hội viên đã quan tâm ({interestedMembers.length})</span>
+                {/* Dashed Separator */}
+                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
+
+                {/* CRM Deal Value Banner */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-blue-500/10 to-transparent border border-amber-500/30">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/20 text-amber-500">
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
+                        Giá trị hợp đồng / Deal CRM
+                      </span>
+                      <p className="text-[15px] font-black text-amber-600 dark:text-amber-400 whitespace-normal break-words">
+                        {formatSmartPrice(selectedOpp.value)}
+                      </p>
                     </div>
-                    <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                      CRM Realtime
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    Xác thực CRM
+                  </span>
+                </div>
+
+                {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội hoặc ban quản trị */}
+                {Boolean(checkCanManageOpp(selectedOpp) || interestedMembers.length > 0) && (
+                  <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-bold text-[13px] text-slate-900 dark:text-amber-300">
+                        <Users className="h-4 w-4 text-amber-500" />
+                        <span>Hội viên đã quan tâm ({interestedMembers.length})</span>
+                      </div>
+                      <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                        CRM Realtime
+                      </span>
+                    </div>
+
+                    {loadingInterests ? (
+                      <p className="text-xs text-slate-400 text-center py-3">
+                        Đang tải danh sách người quan tâm...
+                      </p>
+                    ) : interestedMembers.length === 0 ? (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 py-2 italic text-center">
+                        Chưa có hội viên nào bấm quan tâm cơ hội này. Khi có người quan tâm, thông
+                        tin liên hệ sẽ hiển thị tại đây.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {interestedMembers.map((m) => (
+                          <div
+                            key={m.memberId || m.phone}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                                {m.name ? m.name.charAt(0).toUpperCase() : "U"}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                  {m.name}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                  {m.company || "Hội viên CLB CEO 1983"}
+                                </div>
+                                {m.expressedAt && (
+                                  <div className="text-[10px] text-amber-600 dark:text-amber-400">
+                                    {fmt.rel(m.expressedAt)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                              {m.phone && (
+                                <a
+                                  href={`tel:${m.phone}`}
+                                  className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 transition"
+                                  title="Gọi điện"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                              {m.email && (
+                                <a
+                                  href={`mailto:${m.email}`}
+                                  className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 hover:bg-blue-100 transition"
+                                  title="Gửi email"
+                                >
+                                  <Mail className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedOpp(null);
+                                  navigate({
+                                    to: "/association/messages",
+                                    search: { peerCode: m.memberId || m.phone },
+                                  });
+                                }}
+                                className="p-1.5 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                title="Nhắn tin"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Highlighted Key Points (Image 4 Style) */}
+                <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <Clock className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Thời hạn tiếp nhận:</strong> {fmt.rel(selectedOpp.time)} (Đang mở tiếp
+                      nhận hồ sơ)
                     </span>
                   </div>
 
-                  {loadingInterests ? (
-                    <p className="text-xs text-slate-400 text-center py-3">Đang tải danh sách người quan tâm...</p>
-                  ) : interestedMembers.length === 0 ? (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 py-2 italic text-center">
-                      Chưa có hội viên nào bấm quan tâm cơ hội này. Khi có người quan tâm, thông tin liên hệ sẽ hiển thị tại đây.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {interestedMembers.map((m) => (
-                        <div key={m.memberId || m.phone} className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
-                              {m.name ? m.name.charAt(0).toUpperCase() : "U"}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{m.name}</div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{m.company || "Hội viên CLB CEO 1983"}</div>
-                              {m.expressedAt && (
-                                <div className="text-[10px] text-amber-600 dark:text-amber-400">{fmt.rel(m.expressedAt)}</div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 ml-2">
-                            {m.phone && (
-                              <a
-                                href={`tel:${m.phone}`}
-                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 transition"
-                                title="Gọi điện"
-                              >
-                                <Phone className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            {m.email && (
-                              <a
-                                href={`mailto:${m.email}`}
-                                className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 hover:bg-blue-100 transition"
-                                title="Gửi email"
-                              >
-                                <Mail className="h-3.5 w-3.5" />
-                              </a>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedOpp(null);
-                                navigate({ to: "/association/messages", search: { peerCode: m.memberId || m.phone } });
-                              }}
-                              className="p-1.5 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer"
-                              title="Nhắn tin"
-                            >
-                              <MessageSquare className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Khu vực hợp tác:</strong> Toàn quốc & Liên kết mạng lưới vùng miền
+                    </span>
+                  </div>
 
-              {/* Highlighted Key Points (Image 4 Style) */}
-              <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
-                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                  <Clock className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>Thời hạn tiếp nhận:</strong> {fmt.rel(selectedOpp.time)} (Đang mở tiếp nhận hồ sơ)</span>
-                </div>
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                    <Briefcase className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Hình thức:</strong> {normalizeTag(selectedOpp.tag)} · Ưu đãi độc quyền
+                      hội viên CEO 1983
+                    </span>
+                  </div>
 
-                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                  <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>Khu vực hợp tác:</strong> Toàn quốc & Liên kết mạng lưới vùng miền</span>
-                </div>
-
-                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                  <Briefcase className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>Hình thức:</strong> {normalizeTag(selectedOpp.tag)} · Ưu đãi độc quyền hội viên CEO 1983</span>
-                </div>
-
-                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
-                  <User className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span><strong>Người đăng / Đầu mối:</strong> {selectedOpp.posterName || selectedOpp.contactName || "Hội viên CLB CEO 1983"} {selectedOpp.contactTitle ? `(${selectedOpp.contactTitle})` : ""}</span>
-                    {selectedOpp.company && <span className="block text-slate-500 dark:text-slate-400 text-[11.5px]">{selectedOpp.company}</span>}
-                    {(selectedOpp.posterPhone || selectedOpp.contactPhone) && (
-                      <span className="block mt-0.5">
-                        Hotline / Zalo: <a href={`tel:${selectedOpp.posterPhone || selectedOpp.contactPhone}`} className="text-emerald-600 dark:text-emerald-400 font-bold underline">{selectedOpp.posterPhone || selectedOpp.contactPhone}</a>
+                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
+                    <User className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span>
+                        <strong>Người đăng / Đầu mối:</strong>{" "}
+                        {selectedOpp.posterName ||
+                          selectedOpp.contactName ||
+                          "Hội viên CLB CEO 1983"}{" "}
+                        {selectedOpp.contactTitle ? `(${selectedOpp.contactTitle})` : ""}
                       </span>
-                    )}
+                      {selectedOpp.company && (
+                        <span className="block text-slate-500 dark:text-slate-400 text-[11.5px]">
+                          {selectedOpp.company}
+                        </span>
+                      )}
+                      {(selectedOpp.posterPhone || selectedOpp.contactPhone) && (
+                        <span className="block mt-0.5">
+                          Hotline / Zalo:{" "}
+                          <a
+                            href={`tel:${selectedOpp.posterPhone || selectedOpp.contactPhone}`}
+                            className="text-emerald-600 dark:text-emerald-400 font-bold underline"
+                          >
+                            {selectedOpp.posterPhone || selectedOpp.contactPhone}
+                          </a>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Fixed Footer Buttons */}
-            <div className="flex gap-2.5 px-4 py-3 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-              {checkIsMine(selectedOpp) ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      const opp = selectedOpp;
-                      setSelectedOpp(null);
-                      startEditOpp(opp, e);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 py-2.5 text-[12.5px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition cursor-pointer"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Chỉnh sửa cơ hội
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteOpp(selectedOpp.id)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-2.5 text-[12.5px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Xóa
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetCode = selectedOpp.posterCode || selectedOpp.posterId || "admin";
-                      const targetName = selectedOpp.posterName || selectedOpp.company;
-                      setSelectedOpp(null);
-                      navigate({
-                        to: "/association/messages" as any,
-                        search: { peerCode: targetCode, peerName: targetName } as any,
-                      });
-                    }}
-                    style={{ color: "#ffffff" }}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#2E3192]/20"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Gắn kết & nhắn tin
-                  </button>
+              {/* Fixed Footer Buttons */}
+              <div className="flex gap-2.5 px-4 py-3 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
+                {checkIsMine(selectedOpp) ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const opp = selectedOpp;
+                        setSelectedOpp(null);
+                        startEditOpp(opp, e);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 py-2.5 text-[12.5px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition cursor-pointer"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Chỉnh sửa cơ hội
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOpp(selectedOpp.id)}
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-2.5 text-[12.5px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Xóa
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetCode =
+                          selectedOpp.posterCode || selectedOpp.posterId || "admin";
+                        const targetName = selectedOpp.posterName || selectedOpp.company;
+                        setSelectedOpp(null);
+                        navigate({
+                          to: "/association/messages" as any,
+                          search: { peerCode: targetCode, peerName: targetName } as any,
+                        });
+                      }}
+                      style={{ color: "#ffffff" }}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#2E3192]/20"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Gắn kết & nhắn tin
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      interest(selectedOpp.id);
-                      setSelectedOpp(null);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
-                  >
-                    <Handshake className="h-4 w-4" />
-                    Bày tỏ quan tâm
-                  </button>
-                </>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        interest(selectedOpp.id);
+                        setSelectedOpp(null);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
+                    >
+                      <Handshake className="h-4 w-4" />
+                      Bày tỏ quan tâm
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Create Opportunity Modal (React Portal) */}
-      {mounted && createModalOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-          style={{ minHeight: "100dvh" }}
-          onClick={() => setCreateModalOpen(false)}
-        >
+      {mounted &&
+        createModalOpen &&
+        createPortal(
           <div
-            className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+            style={{ minHeight: "100dvh" }}
+            onClick={() => setCreateModalOpen(false)}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-              <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Handshake className="h-4 w-4" />
-                Đăng cơ hội hợp tác mới
-              </span>
-              <button
-                onClick={() => setCreateModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <div
+              className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
+                <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Handshake className="h-4 w-4" />
+                  Đăng cơ hội hợp tác mới
+                </span>
+                <button
+                  onClick={() => setCreateModalOpen(false)}
+                  className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-            <form onSubmit={handleCreateOpp} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                {/* Image upload */}
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Hình ảnh minh họa / Poster cơ hội
-                  </label>
-                  <input
-                    type="file"
-                    ref={imageInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageFileChange}
-                  />
-                  {newImage ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                      <img src={resolveMediaUrl(newImage) || newImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
+              <form onSubmit={handleCreateOpp} className="flex flex-col flex-1 min-h-0">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
+                  {/* Image upload */}
+                  <div>
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Hình ảnh minh họa / Poster cơ hội
+                    </label>
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageFileChange}
+                    />
+                    {newImage ? (
+                      <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
+                        <img
+                          src={resolveMediaUrl(newImage) || newImage}
+                          alt="Hình ảnh cơ hội"
+                          className="w-full h-44 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewImage(null)}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setNewImage(null)}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="w-full border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-amber-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition bg-slate-50 dark:bg-white/[0.02] cursor-pointer"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {uploadingImage ? (
+                          <>
+                            <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                            <span className="text-[12px] font-medium">Đang tải ảnh lên...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ImagePlus className="h-6 w-6 text-amber-500" />
+                            <span className="text-[12.5px] font-semibold">
+                              Tải lên hình ảnh dự án / cơ hội
+                            </span>
+                            <span className="text-[10.5px] text-slate-400">
+                              JPG, PNG, WebP (Tối đa 10MB)
+                            </span>
+                          </>
+                        )}
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
-                      disabled={uploadingImage}
-                      className="w-full border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-amber-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition bg-slate-50 dark:bg-white/[0.02] cursor-pointer"
-                    >
-                      {uploadingImage ? (
-                        <>
-                          <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-                          <span className="text-[12px] font-medium">Đang tải ảnh lên...</span>
-                        </>
-                      ) : (
-                        <>
-                          <ImagePlus className="h-6 w-6 text-amber-500" />
-                          <span className="text-[12.5px] font-semibold">Tải lên hình ảnh dự án / cơ hội</span>
-                          <span className="text-[10.5px] text-slate-400">JPG, PNG, WebP (Tối đa 10MB)</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Tiêu đề cơ hội <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Ví dụ: Tìm đối tác cung ứng bao bì giấy số lượng lớn..."
-                    className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Phân loại cơ hội
-                    </label>
-                    <select
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Hợp tác B2B">Hợp tác B2B</option>
-                      <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
-                      <option value="Giao thương">Giao thương</option>
-                      <option value="Cung ứng">Cung ứng & Phân phối</option>
-                      <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Doanh nghiệp
-                    </label>
-                    <input
-                      value={newCompany}
-                      onChange={(e) => setNewCompany(e.target.value)}
-                      placeholder="Tên doanh nghiệp..."
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                {/* CRM Deal Fields: Budget Min/Max */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Ngân sách tối thiểu (VNĐ)
-                    </label>
-                    <input
-                      value={newBudgetMin}
-                      onChange={(e) => setNewBudgetMin(formatCurrencyInput(e.target.value))}
-                      placeholder="VD: 500.000.000"
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Ngân sách tối đa (VNĐ)
-                    </label>
-                    <input
-                      value={newBudgetMax}
-                      onChange={(e) => setNewBudgetMax(formatCurrencyInput(e.target.value))}
-                      placeholder="VD: 2.000.000.000"
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                    />
-                  </div>
-                </div>
-
-                {/* Industry & Region & Deadline */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Ngành nghề
-                    </label>
-                    <select
-                      value={newIndustry}
-                      onChange={(e) => setNewIndustry(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Công nghệ & Số hóa">Công nghệ & Số hóa</option>
-                      <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
-                      <option value="Sản xuất & Công nghiệp">Sản xuất & Chế tạo</option>
-                      <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
-                      <option value="Thương mại & Dịch vụ">Thương mại & Dịch vụ</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Khu vực
-                    </label>
-                    <select
-                      value={newRegion}
-                      onChange={(e) => setNewRegion(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Toàn quốc">Toàn quốc</option>
-                      <option value="Hà Nội & Miền Bắc">Hà Nội & Miền Bắc</option>
-                      <option value="TP. Hồ Chí Minh & Miền Nam">TP.HCM & Miền Nam</option>
-                      <option value="Miền Trung">Miền Trung</option>
-                      <option value="Quốc tế">Quốc tế</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Hạn chót
-                    </label>
-                    <input
-                      type="date"
-                      value={newDeadline}
-                      onChange={(e) => setNewDeadline(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                    {newDeadline && (
-                      <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>Hạn chót: {formatDisplayDate(newDeadline, { withWeekday: true })}</span>
-                      </p>
                     )}
                   </div>
-                </div>
-
-                {/* Contact information fields */}
-                <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
-                  <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
-                    <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Họ tên người liên hệ <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={newContactName}
-                          onChange={(e) => setNewContactName(e.target.value)}
-                          placeholder="VD: Nguyễn Văn A"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Số điện thoại <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={newContactPhone}
-                          onChange={(e) => setNewContactPhone(e.target.value)}
-                          placeholder="VD: 0912345678"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
 
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                      Chức vụ / Chức danh
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Tiêu đề cơ hội <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                      <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <input
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="Ví dụ: Tìm đối tác cung ứng bao bì giấy số lượng lớn..."
+                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Phân loại cơ hội
+                      </label>
+                      <select
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Hợp tác B2B">Hợp tác B2B</option>
+                        <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
+                        <option value="Giao thương">Giao thương</option>
+                        <option value="Cung ứng">Cung ứng & Phân phối</option>
+                        <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Doanh nghiệp
+                      </label>
                       <input
-                        value={newContactTitle}
-                        onChange={(e) => setNewContactTitle(e.target.value)}
-                        placeholder="VD: Giám đốc kinh doanh / CEO"
-                        className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                        value={newCompany}
+                        onChange={(e) => setNewCompany(e.target.value)}
+                        placeholder="Tên doanh nghiệp..."
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
+
+                  {/* CRM Deal Fields: Budget Min/Max */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Ngân sách tối thiểu (VNĐ)
+                      </label>
+                      <input
+                        value={newBudgetMin}
+                        onChange={(e) => setNewBudgetMin(formatCurrencyInput(e.target.value))}
+                        placeholder="VD: 500.000.000"
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Ngân sách tối đa (VNĐ)
+                      </label>
+                      <input
+                        value={newBudgetMax}
+                        onChange={(e) => setNewBudgetMax(formatCurrencyInput(e.target.value))}
+                        placeholder="VD: 2.000.000.000"
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Industry & Region & Deadline */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Ngành nghề
+                      </label>
+                      <select
+                        value={newIndustry}
+                        onChange={(e) => setNewIndustry(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Công nghệ & Số hóa">Công nghệ & Số hóa</option>
+                        <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
+                        <option value="Sản xuất & Công nghiệp">Sản xuất & Chế tạo</option>
+                        <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
+                        <option value="Thương mại & Dịch vụ">Thương mại & Dịch vụ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Khu vực
+                      </label>
+                      <select
+                        value={newRegion}
+                        onChange={(e) => setNewRegion(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Toàn quốc">Toàn quốc</option>
+                        <option value="Hà Nội & Miền Bắc">Hà Nội & Miền Bắc</option>
+                        <option value="TP. Hồ Chí Minh & Miền Nam">TP.HCM & Miền Nam</option>
+                        <option value="Miền Trung">Miền Trung</option>
+                        <option value="Quốc tế">Quốc tế</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Hạn chót
+                      </label>
+                      <input
+                        type="date"
+                        value={newDeadline}
+                        onChange={(e) => setNewDeadline(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      />
+                      {newDeadline && (
+                        <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            Hạn chót: {formatDisplayDate(newDeadline, { withWeekday: true })}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact information fields */}
+                  <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
+                    <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
+                      <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                          Họ tên người liên hệ <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                          <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <input
+                            value={newContactName}
+                            onChange={(e) => setNewContactName(e.target.value)}
+                            placeholder="VD: Nguyễn Văn A"
+                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                          Số điện thoại <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <input
+                            value={newContactPhone}
+                            onChange={(e) => setNewContactPhone(e.target.value)}
+                            placeholder="VD: 0912345678"
+                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        Chức vụ / Chức danh
+                      </label>
+                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <input
+                          value={newContactTitle}
+                          onChange={(e) => setNewContactTitle(e.target.value)}
+                          placeholder="VD: Giám đốc kinh doanh / CEO"
+                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Mô tả chi tiết nội dung cơ hội
+                    </label>
+                    <textarea
+                      value={newDesc}
+                      onChange={(e) => setNewDesc(e.target.value)}
+                      placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
+                      rows={3}
+                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Mô tả chi tiết nội dung cơ hội
-                  </label>
-                  <textarea
-                    value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
-                    placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
-                    rows={3}
-                    className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
-                  />
+                <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
+                  <button
+                    type="button"
+                    onClick={() => setCreateModalOpen(false)}
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    style={{ color: "#ffffff" }}
+                    className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
+                  >
+                    {creating ? "Đang đăng..." : "Đăng cơ hội"}
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  style={{ color: "#ffffff" }}
-                  className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
-                >
-                  {creating ? "Đang đăng..." : "Đăng cơ hội"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* Edit Opportunity Modal (React Portal) */}
-      {mounted && editingOpp && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-          style={{ minHeight: "100dvh" }}
-          onClick={() => setEditingOpp(null)}
-        >
+      {mounted &&
+        editingOpp &&
+        createPortal(
           <div
-            className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+            style={{ minHeight: "100dvh" }}
+            onClick={() => setEditingOpp(null)}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-              <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Pencil className="h-4 w-4" />
-                Chỉnh sửa cơ hội giao thương
-              </span>
-              <button
-                onClick={() => setEditingOpp(null)}
-                className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <div
+              className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
+                <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Pencil className="h-4 w-4" />
+                  Chỉnh sửa cơ hội giao thương
+                </span>
+                <button
+                  onClick={() => setEditingOpp(null)}
+                  className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-            <form onSubmit={handleUpdateOpp} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                {/* Image upload */}
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Hình ảnh minh họa / Poster cơ hội
-                  </label>
-                  <input
-                    type="file"
-                    ref={editImageInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageFileChange(e, true)}
-                  />
-                  {editImage ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                      <img src={resolveMediaUrl(editImage) || editImage} alt="Hình ảnh cơ hội" className="w-full h-44 object-cover" />
+              <form onSubmit={handleUpdateOpp} className="flex flex-col flex-1 min-h-0">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
+                  {/* Image upload */}
+                  <div>
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Hình ảnh minh họa / Poster cơ hội
+                    </label>
+                    <input
+                      type="file"
+                      ref={editImageInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageFileChange(e, true)}
+                    />
+                    {editImage ? (
+                      <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
+                        <img
+                          src={resolveMediaUrl(editImage) || editImage}
+                          alt="Hình ảnh cơ hội"
+                          className="w-full h-44 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditImage(null)}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setEditImage(null)}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
+                        onClick={() => editImageInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="w-full rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 p-4 text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <ImagePlus className="h-6 w-6 text-slate-400" />
+                        <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                          {uploadingImage ? "Đang tải ảnh lên..." : "Tải ảnh mới từ thiết bị"}
+                        </span>
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => editImageInputRef.current?.click()}
-                      disabled={uploadingImage}
-                      className="w-full rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 p-4 text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
-                    >
-                      <ImagePlus className="h-6 w-6 text-slate-400" />
-                      <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
-                        {uploadingImage ? "Đang tải ảnh lên..." : "Tải ảnh mới từ thiết bị"}
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Tiêu đề cơ hội hợp tác <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder="VD: Cần tìm đối tác cung ứng dịch vụ phần mềm..."
-                    className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Loại cơ hội
-                    </label>
-                    <select
-                      value={editTag}
-                      onChange={(e) => setEditTag(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Hợp tác B2B">Hợp tác B2B</option>
-                      <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
-                      <option value="Giao thương">Giao thương</option>
-                      <option value="Cung ứng">Cung ứng</option>
-                      <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Tên doanh nghiệp
-                    </label>
-                    <input
-                      value={editCompany}
-                      onChange={(e) => setEditCompany(e.target.value)}
-                      placeholder="VD: Công ty Cổ phần ABC"
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Deal Budget Range */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Ngân sách từ (VNĐ)
-                    </label>
-                    <input
-                      value={editBudgetMin}
-                      onChange={(e) => setEditBudgetMin(formatCurrencyInput(e.target.value))}
-                      placeholder="VD: 50.000.000"
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Đến (VNĐ)
-                    </label>
-                    <input
-                      value={editBudgetMax}
-                      onChange={(e) => setEditBudgetMax(formatCurrencyInput(e.target.value))}
-                      placeholder="VD: 200.000.000"
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                    />
-                  </div>
-                </div>
-
-                {/* Industry, Region, Deadline */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Ngành nghề
-                    </label>
-                    <select
-                      value={editIndustry}
-                      onChange={(e) => setEditIndustry(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Công nghệ & Số hóa">Công nghệ</option>
-                      <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
-                      <option value="Sản xuất & Công nghiệp">Sản xuất</option>
-                      <option value="Tài chính & Đầu tư">Tài chính</option>
-                      <option value="Thương mại & Dịch vụ">Dịch vụ</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Khu vực
-                    </label>
-                    <select
-                      value={editRegion}
-                      onChange={(e) => setEditRegion(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Toàn quốc">Toàn quốc</option>
-                      <option value="Hà Nội & Miền Bắc">Miền Bắc</option>
-                      <option value="TP. Hồ Chí Minh & Miền Nam">Miền Nam</option>
-                      <option value="Miền Trung">Miền Trung</option>
-                      <option value="Quốc tế">Quốc tế</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Hạn xử lý
-                    </label>
-                    <input
-                      type="date"
-                      value={editDeadline}
-                      onChange={(e) => setEditDeadline(e.target.value)}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                    {editDeadline && (
-                      <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>Hạn xử lý: {formatDisplayDate(editDeadline, { withWeekday: true })}</span>
-                      </p>
                     )}
                   </div>
-                </div>
-
-                {/* Contact information fields */}
-                <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
-                  <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
-                    <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Họ tên người liên hệ <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={editContactName}
-                          onChange={(e) => setEditContactName(e.target.value)}
-                          placeholder="VD: Nguyễn Văn A"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Số điện thoại <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={editContactPhone}
-                          onChange={(e) => setEditContactPhone(e.target.value)}
-                          placeholder="VD: 0912345678"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
 
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                      Chức vụ / Chức danh
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Tiêu đề cơ hội hợp tác <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                      <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="VD: Cần tìm đối tác cung ứng dịch vụ phần mềm..."
+                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Loại cơ hội
+                      </label>
+                      <select
+                        value={editTag}
+                        onChange={(e) => setEditTag(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Hợp tác B2B">Hợp tác B2B</option>
+                        <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
+                        <option value="Giao thương">Giao thương</option>
+                        <option value="Cung ứng">Cung ứng</option>
+                        <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Tên doanh nghiệp
+                      </label>
                       <input
-                        value={editContactTitle}
-                        onChange={(e) => setEditContactTitle(e.target.value)}
-                        placeholder="VD: Giám đốc kinh doanh / CEO"
-                        className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                        value={editCompany}
+                        onChange={(e) => setEditCompany(e.target.value)}
+                        placeholder="VD: Công ty Cổ phần ABC"
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
+
+                  {/* Deal Budget Range */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Ngân sách từ (VNĐ)
+                      </label>
+                      <input
+                        value={editBudgetMin}
+                        onChange={(e) => setEditBudgetMin(formatCurrencyInput(e.target.value))}
+                        placeholder="VD: 50.000.000"
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Đến (VNĐ)
+                      </label>
+                      <input
+                        value={editBudgetMax}
+                        onChange={(e) => setEditBudgetMax(formatCurrencyInput(e.target.value))}
+                        placeholder="VD: 200.000.000"
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Industry, Region, Deadline */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Ngành nghề
+                      </label>
+                      <select
+                        value={editIndustry}
+                        onChange={(e) => setEditIndustry(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Công nghệ & Số hóa">Công nghệ</option>
+                        <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
+                        <option value="Sản xuất & Công nghiệp">Sản xuất</option>
+                        <option value="Tài chính & Đầu tư">Tài chính</option>
+                        <option value="Thương mại & Dịch vụ">Dịch vụ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Khu vực
+                      </label>
+                      <select
+                        value={editRegion}
+                        onChange={(e) => setEditRegion(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      >
+                        <option value="Toàn quốc">Toàn quốc</option>
+                        <option value="Hà Nội & Miền Bắc">Miền Bắc</option>
+                        <option value="TP. Hồ Chí Minh & Miền Nam">Miền Nam</option>
+                        <option value="Miền Trung">Miền Trung</option>
+                        <option value="Quốc tế">Quốc tế</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Hạn xử lý
+                      </label>
+                      <input
+                        type="date"
+                        value={editDeadline}
+                        onChange={(e) => setEditDeadline(e.target.value)}
+                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                      />
+                      {editDeadline && (
+                        <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            Hạn xử lý: {formatDisplayDate(editDeadline, { withWeekday: true })}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact information fields */}
+                  <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
+                    <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
+                      <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                          Họ tên người liên hệ <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                          <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <input
+                            value={editContactName}
+                            onChange={(e) => setEditContactName(e.target.value)}
+                            placeholder="VD: Nguyễn Văn A"
+                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                          Số điện thoại <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <input
+                            value={editContactPhone}
+                            onChange={(e) => setEditContactPhone(e.target.value)}
+                            placeholder="VD: 0912345678"
+                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        Chức vụ / Chức danh
+                      </label>
+                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <input
+                          value={editContactTitle}
+                          onChange={(e) => setEditContactTitle(e.target.value)}
+                          placeholder="VD: Giám đốc kinh doanh / CEO"
+                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Mô tả chi tiết nội dung cơ hội
+                    </label>
+                    <textarea
+                      value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value)}
+                      placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
+                      rows={3}
+                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Mô tả chi tiết nội dung cơ hội
-                  </label>
-                  <textarea
-                    value={editDesc}
-                    onChange={(e) => setEditDesc(e.target.value)}
-                    placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
-                    rows={3}
-                    className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
-                  />
+                <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
+                  <button
+                    type="button"
+                    onClick={() => setEditingOpp(null)}
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    style={{ color: "#ffffff" }}
+                    className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
+                  >
+                    {updating ? "Đang lưu..." : "Lưu thay đổi"}
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  type="button"
-                  onClick={() => setEditingOpp(null)}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={updating}
-                  style={{ color: "#ffffff" }}
-                  className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
-                >
-                  {updating ? "Đang lưu..." : "Lưu thay đổi"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

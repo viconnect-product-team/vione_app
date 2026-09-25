@@ -219,14 +219,14 @@ function PerksScreen() {
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95 cursor-pointer ${
                 isActive
                   ? isLucky
-                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-md shadow-amber-500/25 ring-2 ring-amber-300"
+                    ? "bg-sky-950 text-white shadow-md shadow-blue-900/25"
                     : "bg-[#003B95] text-white shadow-md shadow-blue-900/25"
                   : isLucky
                     ? "bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-amber-800 dark:text-amber-300"
                     : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              {isLucky && <Trophy className={`h-3.5 w-3.5 ${isActive ? "text-slate-900" : "text-amber-500"}`} />}
+              {isLucky && <Trophy className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-slate-500"}`} />}
               <span>{cat}</span>
               {isLucky && (
                 <span className="h-2 w-2 rounded-full bg-red-500 animate-ping inline-block ml-0.5" />

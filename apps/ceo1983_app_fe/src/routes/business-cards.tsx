@@ -747,6 +747,7 @@ function CardEditor({
           <AvatarUploadField
             value={d.avatarUrl}
             onChange={(url) => set("avatarUrl", url)}
+            standalone={true}
           />
           <Input
             value={d.avatarUrl}

@@ -397,7 +397,7 @@ function CheckinScreen() {
         <button
           onClick={toggleScan}
           disabled={submitting}
-          className="vba-gold-grad mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-[#1a1206] disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-white bg-[#003B95] hover:bg-[#002b70] shadow-md disabled:opacity-60"
         >
           <ScanLine className="h-4 w-4" />
           {scanning

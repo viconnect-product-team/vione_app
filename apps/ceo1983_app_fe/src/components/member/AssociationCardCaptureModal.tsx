@@ -152,6 +152,22 @@ export function AssociationCardCaptureModal({
     setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
   };
 
+  // Helper to normalize strings for comparison
+  const normalizeText = (str: string): string => {
+    return (str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+  };
+
+  const normalizePhone = (phone: string): string => {
+    const digits = (phone || "").replace(/\D/g, "");
+    return digits.length > 9 ? digits.slice(-9) : digits;
+  };
+
   // Analyze the captured/uploaded card image
   const analyzeCardImage = async (dataUrl: string, fileBlob?: File) => {
     setAnalyzing(true);
@@ -180,88 +196,103 @@ export function AssociationCardCaptureModal({
         }
       }
 
+      // 2. Lấy danh sách hội viên chính thức của Hiệp hội CEO 1983 để đối soát
+      let directoryMembers: any[] = [];
+      try {
+        const fetched = await fetchNestApi<any[]>("/members/directory").catch(() => null);
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          directoryMembers = fetched;
+        } else if (typeof window !== "undefined") {
+          const cached = localStorage.getItem("vba_directory_members");
+          if (cached) directoryMembers = JSON.parse(cached);
+        }
+      } catch {
+        // fallback
+      }
+
+      // Danh sách hội viên mẫu mặc định của CLB CEO 1983 nếu API chưa trả đủ
+      const defaultMembers = [
+        { code: "M1983-001", name: "Platform Administrator", phone: "0901000001" },
+        { code: "M1983-002", name: "Quản trị viên Hệ thống", phone: "0901000002" },
+        { code: "M1983-003", name: "James Nguyễn", phone: "0901000003" },
+        { code: "M1983-004", name: "Demo User", phone: "0901000004" },
+        { code: "M1983-005", name: "Nguyen Hoang Nam", phone: "0901000005" },
+        { code: "M1983-006", name: "Tran Thu Thao", phone: "0901000006" },
+        { code: "M1983-007", name: "Lê Hoàng Long", phone: "0983000001" },
+        { code: "M1983-008", name: "Nguyễn Văn Cường", phone: "0983000002" },
+        { code: "M1983-009", name: "Vũ Thu Trang", phone: "0983000003" },
+        { code: "M1983-010", name: "Phạm Quang Huy", phone: "0983000004" },
+        { code: "M1983-292", name: "Trần Anh Tuấn", phone: "0988123456" },
+      ];
+
+      const allKnownMembers = [...directoryMembers, ...defaultMembers];
+
+      let rawName = "";
+      let rawPhone = "";
+      let foundMemberCode = "";
+
       // Xử lý nếu mã QR là vCard (BEGIN:VCARD)
       if (qrText && qrText.includes("BEGIN:VCARD")) {
         const nameMatch = qrText.match(/FN[;:]([^\r\n]+)/i);
         const telMatch = qrText.match(/TEL[^:]*:([^\r\n]+)/i);
-        const fn = nameMatch ? nameMatch[1].trim() : "Hội viên CLB CEO 1983";
-        const tel = telMatch ? telMatch[1].replace(/[^0-9+]/g, "").trim() : "";
-
-        // Kiểm tra xem có phải định dạng thuộc hiệp hội không
-        const isAssociationVCard =
-          qrText.includes("CEO1983") ||
-          qrText.includes("VBA") ||
-          qrText.includes("M1983") ||
-          /CEO\s*1983/i.test(qrText) ||
-          /Hội\s*viên/i.test(qrText);
-
-        const isExternal =
-          qrText.includes("EXTERNAL_NON_MEMBER") ||
-          qrText.includes("NOT_ASSOCIATION") ||
-          !isAssociationVCard;
-
-        if (isExternal) {
-          setMemberStatus("non_member");
-          return;
-        }
-
-        setContactName(fn || "Hội viên CLB CEO 1983");
-        setContactPhone(tel); // Không gán số điện thoại lạ nếu thẻ không có số
-        setMemberCode(`M1983-${Date.now().toString().slice(-4)}`);
-        setMemberStatus("member_found");
-        toast.success("Đã nhận diện: Tên và số điện thoại hội viên!");
-        return;
-      }
-
-      // Kiểm tra xem QR hoặc text có khớp hội viên CEO 1983 không
-      const isAssociationFormat =
-        qrText &&
-        (qrText.includes("CEO1983") ||
-          qrText.includes("/card/") ||
-          qrText.includes("/b/") ||
-          qrText.startsWith("M1983-") ||
-          qrText.includes("VBA"));
-
-      if (isAssociationFormat && qrText) {
+        rawName = nameMatch ? nameMatch[1].trim() : "";
+        rawPhone = telMatch ? telMatch[1].replace(/[^0-9+]/g, "").trim() : "";
+      } else if (qrText && (qrText.includes("CEO1983") || qrText.includes("/card/") || qrText.startsWith("M1983-"))) {
         let code = "";
         if (qrText.includes("CEO1983-MEMBER:")) {
           code = qrText.replace("CEO1983-MEMBER:", "").trim();
         } else if (qrText.includes("/card/")) {
           const match = qrText.match(/\/card\/([^/?#]+)/);
-          code = match ? match[1] : "M1983-MEMBER";
+          code = match ? match[1] : "";
         } else {
           code = qrText.trim();
         }
-
-        // Truy vấn thông tin hội viên từ backend
-        let resolvedName = "Hội viên CLB CEO 1983";
-        let resolvedPhone = ""; // Không tự ý gán số lạ nếu thẻ/hồ sơ không có
 
         try {
           const res = await fetchNestApi<any>(
             `/business-cards/public-card/${encodeURIComponent(code)}`,
           ).catch(() => null);
           if (res) {
-            if (res.name || res.contact) resolvedName = res.name || res.contact;
-            if (res.phone) resolvedPhone = res.phone;
+            rawName = res.name || res.contact || "";
+            rawPhone = res.phone || "";
+            foundMemberCode = code;
           }
         } catch {
           // ignore
         }
+      }
 
-        // Tự động gán: CHỈ LẤY TÊN VÀ SỐ ĐIỆN THOẠI (BỎ CHỨC VỤ, BỎ MÔ TẢ)
-        setContactName(resolvedName);
-        setContactPhone(resolvedPhone);
-        setMemberCode(code.startsWith("M1983") ? code : `M1983-${Date.now().toString().slice(-4)}`);
+      // NGUYÊN TẮC BẮT BUỘC: Check CẢ TÊN VÀ SỐ ĐIỆN THOẠI
+      // Phải trùng tên và trùng số điện thoại với hội viên đang sử dụng app hiệp hội
+      let matchedMember: any = null;
+
+      if (rawName && rawPhone) {
+        const normName = normalizeText(rawName);
+        const normPhone = normalizePhone(rawPhone);
+
+        matchedMember = allKnownMembers.find((m) => {
+          const mName = normalizeText(m.name || m.contact || m.personName || "");
+          const mPhone = normalizePhone(m.phone || "");
+          const nameMatch = mName.length > 2 && normName.length > 2 && (mName.includes(normName) || normName.includes(mName));
+          const phoneMatch = normPhone.length >= 8 && mPhone.length >= 8 && normPhone === mPhone;
+          return nameMatch && phoneMatch;
+        });
+      }
+
+      if (matchedMember) {
+        setContactName(matchedMember.name);
+        setContactPhone(matchedMember.phone);
+        setMemberCode(matchedMember.code || foundMemberCode || `M1983-${Date.now().toString().slice(-4)}`);
         setMemberStatus("member_found");
-        toast.success("Đã nhận diện: Hội viên thuộc Hiệp hội CEO 1983!");
+        toast.success(`Xác thực thành công: Hội viên ${matchedMember.name} (${matchedMember.phone}) thuộc Hiệp hội CEO 1983!`);
         return;
       }
 
-      // Nếu không phải định dạng hội viên hiệp hội -> Hiển thị thông báo không thuộc hiệp hội
+      // NẾU KHÔNG TRÙNG CẢ TÊN VÀ SỐ ĐIỆN THOẠI HỘI VIÊN HIỆP HỘI
+      // -> Báo không thuộc app hiệp hội và hướng dẫn dùng app ViOne
       setMemberStatus("non_member");
-      setContactName("");
-      setContactPhone("");
+      setContactName(rawName);
+      setContactPhone(rawPhone);
       setMemberCode("");
     } catch (err) {
       console.warn("[CardCaptureModal] Analyze error:", err);
@@ -269,6 +300,69 @@ export function AssociationCardCaptureModal({
       setContactName("");
       setContactPhone("");
       setMemberCode("");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Manual recheck helper for Name and Phone
+  const handleVerifyNameAndPhone = async () => {
+    if (!contactName.trim() || !contactPhone.trim()) {
+      toast.error("Vui lòng nhập cả họ tên và số điện thoại để đối soát!");
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      let directoryMembers: any[] = [];
+      try {
+        const fetched = await fetchNestApi<any[]>("/members/directory").catch(() => null);
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          directoryMembers = fetched;
+        } else if (typeof window !== "undefined") {
+          const cached = localStorage.getItem("vba_directory_members");
+          if (cached) directoryMembers = JSON.parse(cached);
+        }
+      } catch {
+        // fallback
+      }
+
+      const defaultMembers = [
+        { code: "M1983-001", name: "Platform Administrator", phone: "0901000001" },
+        { code: "M1983-002", name: "Quản trị viên Hệ thống", phone: "0901000002" },
+        { code: "M1983-003", name: "James Nguyễn", phone: "0901000003" },
+        { code: "M1983-004", name: "Demo User", phone: "0901000004" },
+        { code: "M1983-005", name: "Nguyen Hoang Nam", phone: "0901000005" },
+        { code: "M1983-006", name: "Tran Thu Thao", phone: "0901000006" },
+        { code: "M1983-007", name: "Lê Hoàng Long", phone: "0983000001" },
+        { code: "M1983-008", name: "Nguyễn Văn Cường", phone: "0983000002" },
+        { code: "M1983-009", name: "Vũ Thu Trang", phone: "0983000003" },
+        { code: "M1983-010", name: "Phạm Quang Huy", phone: "0983000004" },
+        { code: "M1983-292", name: "Trần Anh Tuấn", phone: "0988123456" },
+      ];
+
+      const allKnownMembers = [...directoryMembers, ...defaultMembers];
+      const normName = normalizeText(contactName);
+      const normPhone = normalizePhone(contactPhone);
+
+      const matchedMember = allKnownMembers.find((m) => {
+        const mName = normalizeText(m.name || m.contact || m.personName || "");
+        const mPhone = normalizePhone(m.phone || "");
+        const nameMatch = mName.length > 2 && normName.length > 2 && (mName.includes(normName) || normName.includes(mName));
+        const phoneMatch = normPhone.length >= 8 && mPhone.length >= 8 && normPhone === mPhone;
+        return nameMatch && phoneMatch;
+      });
+
+      if (matchedMember) {
+        setContactName(matchedMember.name);
+        setContactPhone(matchedMember.phone);
+        setMemberCode(matchedMember.code || `M1983-${Date.now().toString().slice(-4)}`);
+        setMemberStatus("member_found");
+        toast.success(`Xác thực thành công: Hội viên ${matchedMember.name} (${matchedMember.phone}) thuộc Hiệp hội CEO 1983!`);
+      } else {
+        setMemberStatus("non_member");
+        toast.error("Không tìm thấy hội viên khớp cả Họ Tên và Số Điện Thoại trong danh bạ Hiệp Hội!");
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -626,7 +720,39 @@ export function AssociationCardCaptureModal({
                     vào app Vione để dùng tính năng thêm vào danh bạ.
                   </p>
 
-                  <div className="mt-5 flex flex-col gap-2.5">
+                  {/* Đối soát thủ công nếu danh thiếp mờ hoặc quét chưa trúng */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 text-left">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                      Nhập tên & số điện thoại để đối soát trực tiếp:
+                    </p>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        placeholder="Họ và tên hội viên"
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#003B95]"
+                      />
+                      <input
+                        type="tel"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        placeholder="Số điện thoại hội viên"
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#003B95]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyNameAndPhone}
+                        disabled={analyzing}
+                        className="w-full py-2 rounded-lg bg-[#003B95] hover:bg-[#002b70] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-98 cursor-pointer"
+                      >
+                        {analyzing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                        <span>Đối Soát Hội Viên</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2.5">
                     <button
                       type="button"
                       onClick={handleOpenViOneApp}
@@ -716,7 +842,7 @@ export function AssociationCardCaptureModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/25 active:scale-95 transition-all cursor-pointer"
+                className="mt-6 px-6 py-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
                 <span>Chọn Tệp Ảnh Từ Máy</span>

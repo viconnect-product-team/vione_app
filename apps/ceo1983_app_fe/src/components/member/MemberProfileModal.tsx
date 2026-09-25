@@ -208,18 +208,18 @@ export function MemberProfileModal({
                 <img
                   src={avatarUrl}
                   alt={displayName}
-                  className="h-14 w-14 rounded-2xl object-cover ring-2 ring-amber-500/40 shadow-sm"
+                  className="h-14 w-14 rounded-2xl object-cover ring-2 ring-[#001B54]/20 shadow-sm"
                   onError={(e) => {
                     e.currentTarget.src = "/ceo1983-logo.png";
                   }}
                 />
               ) : (
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-[#003B95] dark:text-amber-400 ring-2 ring-amber-500/30">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-[#001B54] dark:text-blue-300 ring-2 ring-[#001B54]/20">
                   <User className="h-7 w-7" />
                 </div>
               )}
               {member.verified && (
-                <BadgeCheck className="absolute -bottom-1 -right-1 h-4.5 w-4.5 text-amber-500 fill-white dark:fill-slate-900" />
+                <BadgeCheck className="absolute -bottom-1 -right-1 h-4.5 w-4.5 text-[#001B54] fill-white dark:fill-slate-900" />
               )}
             </div>
 
@@ -229,14 +229,14 @@ export function MemberProfileModal({
                   {displayName}
                 </h3>
                 {member.code && (
-                  <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[9.5px] font-bold text-[#003B95] dark:text-amber-400 shrink-0">
+                  <span className="rounded-md bg-[#001B54] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs shrink-0 tracking-wide">
                     {member.code}
                   </span>
                 )}
               </div>
               {member.name && (
                 <p className="truncate text-[12px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400 shrink-0" />
+                  <Building2 className="h-3.5 w-3.5 text-[#001B54] dark:text-blue-300 shrink-0" />
                   <span>{member.name}</span>
                 </p>
               )}

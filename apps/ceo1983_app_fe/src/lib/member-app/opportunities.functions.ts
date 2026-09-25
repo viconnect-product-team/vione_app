@@ -34,6 +34,7 @@ export type MyOpportunity = {
   claimedPhone?: string;
   claimedCompany?: string;
   status?: string;
+  deadline?: string;
 };
 
 // ---------- Opportunities ----------
